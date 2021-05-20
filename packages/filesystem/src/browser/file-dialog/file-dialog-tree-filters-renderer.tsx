@@ -36,14 +36,14 @@ export class FileDialogTreeFilters {
 
 export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
-    readonly appliedFilters: FileDialogTreeFilters;
+    appliedFilters: FileDialogTreeFilters;
 
     constructor(
         readonly suppliedFilters: FileDialogTreeFilters,
         readonly fileDialogTree: FileDialogTree
     ) {
         super();
-        this.appliedFilters = { 'All Files': [], ...suppliedFilters, };
+        this.applyFilters();
     }
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);
@@ -73,6 +73,15 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         e.stopPropagation();
     }
 
+    protected applyFilters(): void {
+        if (this.suppliedFilters && Object.entries(this.suppliedFilters).length > 0) {
+            this.appliedFilters = this.suppliedFilters;
+            this.fileDialogTree.setFilter(Object.entries(this.suppliedFilters)[0][1]);
+        } else {
+            this.appliedFilters = { 'All Files': [] };
+        }
+    }
+
     get locationList(): HTMLSelectElement | undefined {
         const locationList = this.host.getElementsByClassName(FILE_TREE_FILTERS_LIST_CLASS)[0];
         if (locationList instanceof HTMLSelectElement) {
@@ -80,5 +89,4 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         }
         return undefined;
     }
-
 }
