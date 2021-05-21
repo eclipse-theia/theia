@@ -64,6 +64,7 @@ import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/pr
 import { TaskNode } from './task-node';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
+import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -155,6 +156,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(ShellTerminalServerProxy)
+    protected readonly shellTerminalServer: ShellTerminalServerProxy;
 
     @inject(TaskNameResolver)
     protected readonly taskNameResolver: TaskNameResolver;
@@ -952,8 +956,9 @@ export class TaskService implements TaskConfigurationClient {
     protected async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         const source = resolvedTask._source;
         const taskLabel = resolvedTask.label;
+        let taskInfo: TaskInfo | undefined;
         try {
-            const taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
+            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
             this.lastTask = { source, taskLabel, scope: resolvedTask._scope };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
@@ -964,13 +969,16 @@ export class TaskService implements TaskConfigurationClient {
              *       Reason: Maybe a new task type wants to also be displayed in a terminal.
              */
             if (typeof taskInfo.terminalId === 'number') {
-                this.attach(taskInfo.terminalId, taskInfo.taskId);
+                await this.attach(taskInfo.terminalId, taskInfo);
             }
             return taskInfo;
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
             this.logger.error(errorStr);
             this.messageService.error(errorStr);
+            if (taskInfo && typeof taskInfo.terminalId === 'number') {
+                this.shellTerminalServer.onAttachAttempted(taskInfo.terminalId);
+            }
         }
     }
 
@@ -1025,11 +1033,7 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-    async attach(terminalId: number, taskId: number): Promise<void> {
-        // Get the list of all available running tasks.
-        const runningTasks: TaskInfo[] = await this.getRunningTasks();
-        // Get the corresponding task information based on task id if available.
-        const taskInfo: TaskInfo | undefined = runningTasks.find((t: TaskInfo) => t.taskId === taskId);
+    async attach(terminalId: number, taskInfo: TaskInfo): Promise<number | void> {
         let widgetOpenMode: WidgetOpenMode = 'open';
         if (taskInfo) {
             const terminalWidget = this.terminalService.getByTerminalId(terminalId);
@@ -1045,6 +1049,7 @@ export class TaskService implements TaskConfigurationClient {
                 }
             }
         }
+        const { taskId } = taskInfo;
         // Create / find a terminal widget to display an execution output of a task that was launched as a command inside a shell.
         const widget = await this.taskTerminalWidgetManager.open({
             created: new Date().toString(),
@@ -1058,7 +1063,7 @@ export class TaskService implements TaskConfigurationClient {
             mode: widgetOpenMode,
             taskInfo
         });
-        widget.start(terminalId);
+        return widget.start(terminalId);
     }
 
     protected getTerminalWidgetId(terminalId: number): string | undefined {

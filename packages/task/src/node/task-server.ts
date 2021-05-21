@@ -29,7 +29,7 @@ import {
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
 import { Task } from './task';
-import { ProcessTask } from './process/process-task';
+import { TerminalTask } from './process/process-task';
 import { ProblemCollector } from './task-problem-collector';
 import { CustomTask } from './custom/custom-task';
 
@@ -70,7 +70,6 @@ export class TaskServerImpl implements TaskServer, Disposable {
             this.toDispose.get(taskId)!.dispose();
             this.toDispose.delete(taskId);
         }
-
         if (this.backgroundTaskStatusMap.has(taskId)) {
             this.backgroundTaskStatusMap.delete(taskId);
         }
@@ -85,8 +84,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
             }
         }
         this.logger.debug(`getTasks(): about to return task information for ${taskInfo.length} tasks`);
-
-        return Promise.resolve(taskInfo);
+        return taskInfo;
     }
 
     async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
@@ -105,7 +103,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
             task.onExit(event => {
                 this.taskManager.delete(task);
                 this.fireTaskExitedEvent(event, task);
-                this.removedCachedProblemCollector(event.ctx || '', event.taskId);
+                this.removeCachedProblemCollector(event.ctx || '', event.taskId);
                 this.disposeByTaskId(event.taskId);
             })
         );
@@ -176,41 +174,43 @@ export class TaskServerImpl implements TaskServer, Disposable {
 
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {
         this.logger.debug(log => log('task has exited:', event));
-
-        if (task instanceof ProcessTask) {
-            this.clients.forEach(client => {
+        if (task instanceof TerminalTask) {
+            for (const client of this.clients) {
                 client.onDidEndTaskProcess(event);
-            });
+            }
         }
-
-        this.clients.forEach(client => {
+        for (const client of this.clients) {
             client.onTaskExit(event);
-        });
+        };
     }
 
     protected fireTaskCreatedEvent(event: TaskInfo, task?: Task): void {
         this.logger.debug(log => log('task created:', event));
-
-        this.clients.forEach(client => {
+        for (const client of this.clients) {
             client.onTaskCreated(event);
-        });
-
-        if (task && task instanceof ProcessTask) {
-            this.clients.forEach(client => {
+        }
+        if (task && task instanceof TerminalTask) {
+            for (const client of this.clients) {
                 client.onDidStartTaskProcess(event);
-            });
+            }
         }
     }
 
     protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent): void {
-        this.clients.forEach(client => client.onDidProcessTaskOutput(event));
+        for (const client of this.clients) {
+            client.onDidProcessTaskOutput(event);
+        }
     }
 
     protected fireBackgroundTaskEndedEvent(event: BackgroundTaskEndedEvent): void {
-        this.clients.forEach(client => client.onBackgroundTaskEnded(event));
+        for (const client of this.clients) {
+            client.onBackgroundTaskEnded(event);
+        }
     }
 
-    /** Kill task for a given id. Rejects if task is not found */
+    /**
+     * Kill task for a given id. Rejects if task is not found.
+     */
     async kill(id: number): Promise<void> {
         const taskToKill = this.taskManager.get(id);
         if (taskToKill !== undefined) {
@@ -218,17 +218,21 @@ export class TaskServerImpl implements TaskServer, Disposable {
             return taskToKill.kill();
         } else {
             this.logger.info(`Could not find task to kill, task id ${id}. Already terminated?`);
-            return Promise.reject(new Error(`Could not find task to kill, task id ${id}. Already terminated?`));
+            throw new Error(`Could not find task to kill, task id ${id}. Already terminated?`);
         }
     }
 
-    /** Adds a client to this server */
+    /**
+     * Adds a client to this server.
+     */
     setClient(client: TaskClient): void {
         this.logger.debug('a client has connected - adding it to the list:');
         this.clients.push(client);
     }
 
-    /** Removes a client, from this server */
+    /**
+     * Removes a client from this server.
+     */
     disconnectClient(client: TaskClient): void {
         this.logger.debug('a client has disconnected - removed from list:');
         const idx = this.clients.indexOf(client);
@@ -255,7 +259,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         }
     }
 
-    private removedCachedProblemCollector(ctx: string, taskId: number): void {
+    private removeCachedProblemCollector(ctx: string, taskId: number): void {
         if (this.problemCollectors.has(ctx) && this.problemCollectors.get(ctx)!.has(taskId)) {
             this.problemCollectors.get(ctx)!.delete(taskId);
         }

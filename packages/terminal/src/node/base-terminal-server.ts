@@ -30,15 +30,16 @@ import {
     EnvironmentVariableCollectionWithPersistence,
     SerializableExtensionEnvironmentVariableCollection
 } from '../common/base-terminal-protocol';
-import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
+import { NodePtyProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
-    protected client: IBaseTerminalClient | undefined = undefined;
+
+    protected client: IBaseTerminalClient | undefined;
     protected terminalToDispose = new Map<number, DisposableCollection>();
 
-    readonly collections: Map<string, EnvironmentVariableCollectionWithPersistence> = new Map();
+    readonly collections = new Map<string, EnvironmentVariableCollectionWithPersistence>();
     mergedCollection: MergedEnvironmentVariableCollection;
 
     constructor(
@@ -60,7 +61,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     async attach(id: number): Promise<number> {
         const term = this.processManager.get(id);
 
-        if (term && term instanceof TerminalProcess) {
+        if (term && term instanceof NodePtyProcess) {
             return term.id;
         } else {
             this.logger.warn(`Couldn't attach - can't find terminal with id: ${id} `);
@@ -68,9 +69,21 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         }
     }
 
+    async onAttachAttempted(id: number): Promise<void> {
+        const terminal = this.processManager.get(id);
+        if (terminal instanceof TaskTerminalProcess) {
+            terminal.attachmentAttempted = true;
+            if (terminal.exited) {
+                // Didn't execute `unregisterProcess` on terminal `exit` event to enable attaching task output to terminal,
+                // Fixes https://github.com/eclipse-theia/theia/issues/2961
+                terminal.unregisterProcess();
+            }
+        }
+    }
+
     async getProcessId(id: number): Promise<number> {
         const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        if (!(terminal instanceof NodePtyProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return terminal.pid;
@@ -78,7 +91,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     async getProcessInfo(id: number): Promise<TerminalProcessInfo> {
         const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        if (!(terminal instanceof NodePtyProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return {
@@ -89,7 +102,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     async getCwdURI(id: number): Promise<string> {
         const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        if (!(terminal instanceof NodePtyProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return terminal.getCwdURI();
@@ -98,7 +111,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     async close(id: number): Promise<void> {
         const term = this.processManager.get(id);
 
-        if (term instanceof TerminalProcess) {
+        if (term instanceof NodePtyProcess) {
             term.kill();
         }
     }
@@ -113,7 +126,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     async resize(id: number, cols: number, rows: number): Promise<void> {
         const term = this.processManager.get(id);
-        if (term && term instanceof TerminalProcess) {
+        if (term && term instanceof NodePtyProcess) {
             term.resize(cols, rows);
         } else {
             console.warn("Couldn't resize terminal " + id + ", because it doesn't exist.");
@@ -129,7 +142,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         this.client.updateTerminalEnvVariables();
     }
 
-    protected postCreate(term: TerminalProcess): void {
+    protected postCreate(term: NodePtyProcess): void {
         const toDispose = new DisposableCollection();
 
         toDispose.push(term.onError(error => {

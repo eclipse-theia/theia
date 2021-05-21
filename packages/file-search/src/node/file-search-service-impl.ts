@@ -22,7 +22,6 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
-import { RawProcessFactory } from '@theia/process/lib/node';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import * as path from 'path';
 
@@ -30,9 +29,7 @@ import * as path from 'path';
 export class FileSearchServiceImpl implements FileSearchService {
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
-        /** @deprecated since 1.7.0 */
-        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
+        @inject(ILogger) protected readonly logger: ILogger
     ) { }
 
     async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {

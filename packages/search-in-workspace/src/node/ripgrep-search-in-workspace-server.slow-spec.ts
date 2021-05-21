@@ -18,7 +18,6 @@ import { Container } from '@theia/core/shared/inversify';
 import { ILogger, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { SearchInWorkspaceClient, SearchInWorkspaceResult } from '../common/search-in-workspace-interface';
 import * as path from 'path';
@@ -194,23 +193,9 @@ the oranges' orange looks slightly different from carrots' orange.
 // the rg binary.
 function createInstance(rgPath: string): RipgrepSearchInWorkspaceServer {
     const container = new Container();
-
     container.bind(ILogger).to(MockLogger);
     container.bind(RipgrepSearchInWorkspaceServer).toSelf();
-    container.bind(ProcessManager).toSelf().inSingletonScope();
-    container.bind(RawProcess).toSelf().inTransientScope();
-    container.bind(RawProcessFactory).toFactory(ctx =>
-        (options: RawProcessOptions) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-
-            child.bind(RawProcessOptions).toConstantValue(options);
-            return child.get(RawProcess);
-        }
-    );
-
     container.bind(RgPath).toConstantValue(rgPath);
-
     return container.get(RipgrepSearchInWorkspaceServer);
 }
 

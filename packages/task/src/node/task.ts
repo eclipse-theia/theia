@@ -38,19 +38,18 @@ export interface TaskOptions {
 @injectable()
 export abstract class Task implements Disposable {
 
+    readonly exitEmitter = new Emitter<TaskExitedEvent>();
+    readonly outputEmitter = new Emitter<TaskOutputEvent>();
+
     protected taskId: number;
-    protected readonly toDispose: DisposableCollection = new DisposableCollection();
-    readonly exitEmitter: Emitter<TaskExitedEvent>;
-    readonly outputEmitter: Emitter<TaskOutputEvent>;
+    protected toDispose = new DisposableCollection();
 
     constructor(
-        protected readonly taskManager: TaskManager,
-        protected readonly logger: ILogger,
-        protected readonly options: TaskOptions
+        protected taskManager: TaskManager,
+        protected logger: ILogger,
+        protected options: TaskOptions
     ) {
         this.taskId = this.taskManager.register(this, this.options.context);
-        this.exitEmitter = new Emitter<TaskExitedEvent>();
-        this.outputEmitter = new Emitter<TaskOutputEvent>();
         this.toDispose.push(this.exitEmitter);
         this.toDispose.push(this.outputEmitter);
     }
@@ -78,6 +77,7 @@ export abstract class Task implements Disposable {
     protected fireOutputLine(event: TaskOutputEvent): void {
         this.outputEmitter.fire(event);
     }
+
     /**
      * Retrieves the runtime information about this task.
      * The runtime information computation may happen asynchronous.

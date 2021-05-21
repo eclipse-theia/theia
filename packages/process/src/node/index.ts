@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './process-manager';
-export * from './process';
-export * from './raw-process';
-export * from './terminal-process';
-export * from './multi-ring-buffer';
+export * from './terminal';
+export * from './terminal-factory';
+export * from './terminal-manager';
+export * from './terminal-buffer';

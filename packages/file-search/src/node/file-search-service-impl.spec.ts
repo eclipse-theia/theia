@@ -24,16 +24,12 @@ import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
-import { RawProcessFactory } from '@theia/process/lib/node';
 
 /* eslint-disable no-unused-expressions */
 
 const testContainer = new Container();
 
 bindLogger(testContainer.bind.bind(testContainer));
-testContainer.bind(RawProcessFactory).toConstantValue(() => {
-    throw new Error('should not be used anymore');
-});
 testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
 }));

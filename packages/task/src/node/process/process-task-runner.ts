@@ -22,13 +22,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import {
-    RawProcessFactory,
-    TerminalProcessFactory,
-    ProcessErrorEvent,
-    Process,
-    TerminalProcessOptions,
-} from '@theia/process/lib/node';
+import { TerminalFactory, TerminalSpawnOptions } from '@theia/process/lib/node';
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
 } from '@theia/process/lib/common/shell-quoting';
@@ -45,19 +39,16 @@ import { deepClone } from '@theia/core';
  * Task runner that runs a task as a process or a command inside a shell.
  */
 @injectable()
-export class ProcessTaskRunner implements TaskRunner {
+export class TerminalTaskRunner implements TaskRunner {
 
     @inject(ILogger) @named('task')
-    protected readonly logger: ILogger;
+    protected logger: ILogger;
 
-    @inject(RawProcessFactory)
-    protected readonly rawProcessFactory: RawProcessFactory;
-
-    @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    @inject(TerminalFactory)
+    protected terminalFactory: TerminalFactory;
 
     @inject(TaskFactory)
-    protected readonly taskFactory: TaskFactory;
+    protected taskFactory: TaskFactory;
 
     /**
      * Runs a task from the given task configuration.
@@ -73,20 +64,11 @@ export class ProcessTaskRunner implements TaskRunner {
             // - process: directly look for an executable and pass a specific set of arguments/options.
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
-            const terminal: Process = this.terminalProcessFactory(terminalProcessOptions);
-
-            // Wait for the confirmation that the process is successfully started, or has failed to start.
-            await new Promise((resolve, reject) => {
-                terminal.onStart(resolve);
-                terminal.onError((error: ProcessErrorEvent) => {
-                    reject(ProcessTaskError.CouldNotRun(error.code));
-                });
-            });
-
+            const terminal = await this.terminalFactory.spawn(terminalProcessOptions);
             const processType = (taskConfig.taskType || taskConfig.type) as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
-                process: terminal,
+                terminal,
                 processType,
                 context: ctx,
                 config: taskConfig,
@@ -98,7 +80,7 @@ export class ProcessTaskRunner implements TaskRunner {
         }
     }
 
-    private getResolvedCommand(taskConfig: TaskConfiguration): TerminalProcessOptions {
+    private getResolvedCommand(taskConfig: TaskConfiguration): TerminalSpawnOptions {
         let systemSpecificCommand: {
             command: string | undefined
             args: Array<string | ShellQuotedString> | undefined
@@ -173,22 +155,18 @@ export class ProcessTaskRunner implements TaskRunner {
             if (/bash(.exe)?$/.test(command)) {
                 quotingFunctions = BashQuotingFunctions;
                 execArgs = ['-c'];
-
             } else if (/wsl(.exe)?$/.test(command)) {
                 quotingFunctions = BashQuotingFunctions;
                 execArgs = ['-e'];
-
             } else if (/cmd(.exe)?$/.test(command)) {
                 quotingFunctions = CmdQuotingFunctions;
                 execArgs = ['/S', '/C'];
-
             } else if (/(ps|pwsh|powershell)(.exe)?/.test(command)) {
                 quotingFunctions = PowershellQuotingFunctions;
                 execArgs = ['-c'];
             } else {
                 quotingFunctions = BashQuotingFunctions;
                 execArgs = ['-l', '-c'];
-
             }
             // Allow overriding shell options from task configuration.
             if (shell && shell.args) {
@@ -201,10 +179,7 @@ export class ProcessTaskRunner implements TaskRunner {
                 const commandLineElements: Array<string | ShellQuotedString> = [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => {
                     // We want to quote arguments only if needed.
                     if (quotingFunctions && typeof arg === 'string' && this.argumentNeedsQuotes(arg, quotingFunctions)) {
-                        return {
-                            quoting: ShellQuoting.Strong,
-                            value: arg,
-                        };
+                        return { value: arg, quoting: ShellQuoting.Strong };
                     } else {
                         return arg;
                     }

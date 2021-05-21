@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger, MaybePromise } from '@theia/core/lib/common/';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { Terminal } from '@theia/process/lib/node';
+import { TaskInfo } from '../../common/task-protocol';
 import { Task, TaskOptions } from '../task';
 import { TaskManager } from '../task-manager';
-import { TaskInfo } from '../../common/task-protocol';
-import { Process } from '@theia/process/lib/node';
 
 export const TaskCustomOptions = Symbol('TaskCustomOptions');
 export interface TaskCustomOptions extends TaskOptions {
-    process: Process
+    terminal?: Terminal
 }
 
 export const TaskFactory = Symbol('TaskFactory');
@@ -42,32 +42,25 @@ export class CustomTask extends Task {
         this.logger.info(`Created new custom task, id: ${this.id}, context: ${this.context}`);
     }
 
-    kill(): Promise<void> {
-        return Promise.resolve();
-    }
+    /**
+     * This task doesn't handle `Terminal` or processes, there is nothing to kill.
+     */
+    async kill(): Promise<void> { }
 
     getRuntimeInfo(): MaybePromise<TaskInfo> {
         return {
             taskId: this.id,
             ctx: this.context,
             config: this.options.config,
-            terminalId: this.process.id,
-            processId: this.process.id
         };
     }
 
-    public callbackTaskComplete(exitCode: number | undefined): MaybePromise<void> {
+    callbackTaskComplete(exitCode?: number): MaybePromise<void> {
         this.fireTaskExited({
             taskId: this.taskId,
             ctx: this.context,
             config: this.options.config,
-            terminalId: this.process.id,
-            processId: this.process.id,
             code: exitCode || 0
         });
-    }
-
-    get process(): Process {
-        return this.options.process;
     }
 }

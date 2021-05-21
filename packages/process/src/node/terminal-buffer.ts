@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2021 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,30 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-declare module 'string-argv' {
-    function stringArgv(...args: string[]): string[];
-    export = stringArgv;
+import type { Disposable } from '@theia/core';
+import type { Readable } from 'stream';
+
+export const TerminalBufferFactory = Symbol('TerminalBufferFactory');
+export interface TerminalBufferFactory {
+    (): TerminalBuffer
 }
 
+export interface TerminalBuffer {
+
+    readonly readerCount: number
+
+    /**
+     * Push data into this buffer.
+     */
+    push(data: string): void
+
+    /**
+     * Mark the buffer as "closed", meaning no more data will be pushed to it.
+     */
+    close(): void
+
+    /**
+     * Get a stream that emits data starting from as far as is being stored.
+     */
+    getOutputStream(encoding?: string): Readable & Disposable
+}

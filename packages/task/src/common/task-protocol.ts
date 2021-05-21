@@ -196,10 +196,13 @@ export interface TaskInfo {
 }
 
 export interface TaskServer extends JsonRpcServer<TaskClient> {
+
     /** Run a task. Optionally pass a context.  */
     run(task: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo>;
+
     /** Kill a task, by id. */
     kill(taskId: number): Promise<void>;
+
     /**
      * Returns a list of currently running tasks. If a context is provided,
      * only the tasks started in that context will be provided. Using an

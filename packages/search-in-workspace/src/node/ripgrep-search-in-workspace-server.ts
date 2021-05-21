@@ -16,12 +16,11 @@
 
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { ILogger } from '@theia/core';
-import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
+import * as cp from 'child_process';
+import { LinePreview, SearchInWorkspaceClient, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceServer } from '../common/search-in-workspace-interface';
 
 export const RgPath = Symbol('RgPath');
 
@@ -75,21 +74,20 @@ interface IRgEnd {
 @injectable()
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
-    // List of ongoing searches, maps search id to a the started rg process.
-    private ongoingSearches: Map<number, RawProcess> = new Map();
+    /**
+     * List of ongoing searches, maps search id to a the started rg process.
+     */
+    private ongoingSearches: Map<number, cp.ChildProcess | undefined> = new Map();
 
-    // Each incoming search is given a unique id, returned to the client.  This is the next id we will assigned.
+    /**
+     * Each incoming search is given a unique id, returned to the client.  This is the next id we will assigned.
+     */
     private nextSearchId: number = 1;
 
     private client: SearchInWorkspaceClient | undefined;
 
     @inject(RgPath)
     protected readonly rgPath: string;
-
-    constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
-        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
-    ) { }
 
     setClient(client: SearchInWorkspaceClient | undefined): void {
         this.client = client;
@@ -229,39 +227,26 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         }
 
         const args = [...rgArgs, what, ...searchPaths];
-        const processOptions: RawProcessOptions = {
-            command: this.rgPath,
-            args
-        };
-
-        // TODO: Use child_process directly instead of rawProcessFactory?
-        const rgProcess: RawProcess = this.rawProcessFactory(processOptions);
-        this.ongoingSearches.set(searchId, rgProcess);
-
-        rgProcess.onError(error => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let errorCode = (error as any).code;
-
-            // Try to provide somewhat clearer error messages, if possible.
-            if (errorCode === 'ENOENT') {
-                errorCode = 'could not find the ripgrep (rg) binary';
-            } else if (errorCode === 'EACCES') {
-                errorCode = 'could not execute the ripgrep (rg) binary';
-            }
-
-            const errorStr = `An error happened while searching (${errorCode}).`;
-            this.wrapUpSearch(searchId, errorStr);
-        });
-
+        let rgProcess: cp.ChildProcess;
+        try {
+            rgProcess = cp.spawn(this.rgPath, args);
+            this.ongoingSearches.set(searchId, rgProcess);
+        } catch (error) {
+            // make sure an entry exists in the searchId map for error handling logic to work
+            this.ongoingSearches.set(searchId, undefined);
+            this.onSpawnError(searchId, error);
+            return searchId;
+        }
+        rgProcess.on('error', error => this.onSpawnError(searchId, error));
+        if (typeof rgProcess.pid !== 'number') {
+            return searchId;
+        }
         // Running counter of results.
         let numResults = 0;
-
         // Buffer to accumulate incoming output.
         let databuf: string = '';
-
         let currentSearchResult: SearchInWorkspaceResult | undefined;
-
-        rgProcess.outputStream.on('data', (chunk: Buffer) => {
+        rgProcess.stdout!.on('data', (chunk: Buffer) => {
             // We might have already reached the max number of
             // results, sent a TERM signal to rg, but we still get
             // the data that was already output in the mean time.
@@ -295,7 +280,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             matches: []
                         };
                     } else {
-                        this.logger.error('Begin message without path. ' + JSON.stringify(obj));
+                        console.error('Begin message without path. ' + JSON.stringify(obj));
                     }
                 } else if (obj.type === 'end') {
                     if (currentSearchResult && this.client) {
@@ -357,15 +342,13 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
             }
         });
-
-        rgProcess.outputStream.on('end', () => {
+        rgProcess.stdout!.on('end', () => {
             // If we reached maxResults, we should have already
             // wrapped up the search.  Returning early avoids
             // logging a warning message in wrapUpSearch.
             if (options?.maxResults && numResults >= options.maxResults) {
                 return;
             }
-
             this.wrapUpSearch(searchId);
         });
 
@@ -459,17 +442,34 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         return Promise.resolve();
     }
 
-    // Send onDone to the client and clean up what we know about search searchId.
+    protected onSpawnError(searchId: number, error: Error): void {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let errorCode = (error as any).code;
+
+        // Try to provide somewhat clearer error messages, if possible.
+        if (errorCode === 'ENOENT') {
+            errorCode = 'could not find the ripgrep (rg) binary';
+        } else if (errorCode === 'EACCES') {
+            errorCode = 'could not execute the ripgrep (rg) binary';
+        }
+
+        const errorStr = `An error happened while searching (${errorCode}).`;
+        this.wrapUpSearch(searchId, errorStr);
+    }
+
+    /**
+     * Send `onDone` to the client and clean up what we know about search `searchId`
+     */
     private wrapUpSearch(searchId: number, error?: string): void {
         if (this.ongoingSearches.delete(searchId)) {
             if (this.client) {
-                this.logger.debug('Sending onDone for ' + searchId, error);
+                console.debug('Sending onDone for ' + searchId, error);
                 this.client.onDone(searchId, error);
             } else {
-                this.logger.debug('Wrapping up search ' + searchId + ' but no client');
+                console.debug('Wrapping up search ' + searchId + ' but no client');
             }
         } else {
-            this.logger.debug("Trying to wrap up a search we don't know about " + searchId);
+            console.debug("Trying to wrap up a search we don't know about " + searchId);
         }
     }
 

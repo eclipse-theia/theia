@@ -19,7 +19,7 @@ import * as url from 'url';
 import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
-import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
+import { injectable, inject, named, postConstruct, interfaces } from 'inversify';
 import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
@@ -39,6 +39,11 @@ export const MessagingContainer = Symbol('MessagingContainer');
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {
 
+    protected webSocketServer?: ws.Server;
+    protected checkAliveTimeout = 30000;
+    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
+    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
+
     @inject(MessagingContainer)
     protected readonly container: interfaces.Container;
 
@@ -53,10 +58,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     @inject(MessagingListener)
     protected readonly messagingListener: MessagingListener;
-
-    protected webSocketServer: ws.Server | undefined;
-    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
-    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
 
     @postConstruct()
     protected init(): void {
@@ -88,7 +89,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         this.wsHandlers.push(spec, callback);
     }
 
-    protected checkAliveTimeout = 30000;
     onStart(server: http.Server | https.Server): void {
         this.webSocketServer = new ws.Server({
             noServer: true,
@@ -193,8 +193,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         });
     }
 
-    protected createSocketContainer(socket: ws): Container {
-        const connectionContainer: Container = this.container.createChild() as Container;
+    protected createSocketContainer(socket: ws): interfaces.Container {
+        const connectionContainer = this.container.createChild();
         connectionContainer.bind(ws).toConstantValue(socket);
         return connectionContainer;
     }
@@ -228,17 +228,17 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
 }
 export namespace MessagingContribution {
-    export class ConnectionHandlers<T> {
-        protected readonly handlers: ((path: string, connection: T) => string | false)[] = [];
+    export class ConnectionHandlers<C> {
+        protected readonly handlers: ((path: string, connection: C) => string | false)[] = [];
 
         constructor(
-            protected readonly parent?: ConnectionHandlers<T>
+            protected readonly parent?: ConnectionHandlers<C>
         ) { }
 
-        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
+        push<T extends string>(spec: string, callback: (params: Record<T, string>, connection: C) => void): void {
             const route = new Route(spec);
             this.handlers.push((path, channel) => {
-                const params = route.match(path);
+                const params = route.match(path) as Record<T, string>;
                 if (!params) {
                     return false;
                 }
@@ -247,7 +247,7 @@ export namespace MessagingContribution {
             });
         }
 
-        route(path: string, connection: T): string | false {
+        route(path: string, connection: C): string | false {
             for (const handler of this.handlers) {
                 try {
                     const result = handler(path, connection);

@@ -18,13 +18,12 @@ import { JsonRpcProxy } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 import { OS } from '@theia/core/lib/common/os';
 
-export const IShellTerminalServer = Symbol('IShellTerminalServer');
+export const shellTerminalPath = '/services/shell-terminal';
 
+export const IShellTerminalServer = Symbol('IShellTerminalServer');
 export interface IShellTerminalServer extends IBaseTerminalServer {
     hasChildProcesses(processId: number | undefined): Promise<boolean>;
 }
-
-export const shellTerminalPath = '/services/shell-terminal';
 
 export type ShellTerminalOSPreferences<T> = {
     [key in OS.Type]: T

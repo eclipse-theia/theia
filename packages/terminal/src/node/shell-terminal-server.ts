@@ -19,16 +19,17 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { BaseTerminalServer } from './base-terminal-server';
 import { mergeProcessEnv, ShellProcessFactory } from './shell-process';
-import { ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from '@theia/core/lib/common/os';
 import * as cp from 'child_process';
 
 @injectable()
 export class ShellTerminalServer extends BaseTerminalServer {
 
+    @inject(ShellTerminalFactory)
+    protected shellTerminalFactory: ShellTerminalFactory;
+
     constructor(
         @inject(ShellProcessFactory) protected readonly shellFactory: ShellProcessFactory,
-        @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) @named('terminal') logger: ILogger) {
         super(processManager, logger);
     }
@@ -74,7 +75,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
         });
     }
 
-    public hasChildProcesses(processId: number | undefined): Promise<boolean> {
+    async hasChildProcesses(processId: number | undefined): Promise<boolean> {
         if (processId) {
             // if shell has at least one child process, assume that shell is busy
             if (isWindows) {
@@ -94,6 +95,6 @@ export class ShellTerminalServer extends BaseTerminalServer {
             }
         }
         // fall back to safe side
-        return Promise.resolve(true);
+        return true;
     }
 }

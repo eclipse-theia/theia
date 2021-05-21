@@ -29,10 +29,8 @@ export interface ProcessInfo {
 
 export interface CommandLineOptions {
     cwd: string
-    args: string[]
-    env?: {
-        [key: string]: string | null
-    }
+    args: (string | ShellQuotedString)[]
+    env?: Record<string, string | null>
 }
 
 /**
@@ -51,23 +49,17 @@ export class ShellCommandBuilder {
      * https://github.com/microsoft/vscode/blob/f395cac4fff0721a8099126172c01411812bcb4a/src/vs/workbench/contrib/debug/node/terminals.ts#L79
      *
      * @param hostProcessInfo the host terminal process infos
-     * @param commandOptions program to execute in the host terminal
+     * @param options program to execute in the host terminal
      */
-    buildCommand(hostProcessInfo: ProcessInfo | undefined, commandOptions: CommandLineOptions): string {
-
-        const host = hostProcessInfo && hostProcessInfo.executable;
-        const cwd = commandOptions.cwd;
-
-        const args = commandOptions.args.map(value => ({
-            value, quoting: ShellQuoting.Strong,
-        } as ShellQuotedString));
-
-        const env: Array<[string, string | null]> = [];
-        if (commandOptions.env) {
-            for (const key of Object.keys(commandOptions.env)) {
-                env.push([key, commandOptions.env[key]]);
-            }
-        }
+    buildCommand(hostProcessInfo: ProcessInfo | undefined, options: CommandLineOptions): string {
+        const host = hostProcessInfo?.executable;
+        const cwd = options.cwd;
+        const env = options.env ? Object.entries(options.env) : [];
+        const args = options.args.map<ShellQuotedString>(
+            value => typeof value === 'string'
+                ? { value, quoting: ShellQuoting.Strong }
+                : value
+        );
         if (host) {
             if (/(bash|wsl)(.exe)?$/.test(host)) {
                 return this.buildForBash(args, cwd, env);
@@ -80,7 +72,7 @@ export class ShellCommandBuilder {
         return this.buildForDefault(args, cwd, env);
     }
 
-    protected buildForBash(args: Array<string | ShellQuotedString>, cwd?: string, env?: Array<[string, string | null]>): string {
+    protected buildForBash(args: (string | ShellQuotedString)[], cwd?: string, env?: [string, string | null][]): string {
         let command = '';
         if (cwd) {
             command += `cd ${BashQuotingFunctions.strong(cwd)} && `;
@@ -101,7 +93,7 @@ export class ShellCommandBuilder {
         return command;
     }
 
-    protected buildForPowershell(args: Array<string | ShellQuotedString>, cwd?: string, env?: Array<[string, string | null]>): string {
+    protected buildForPowershell(args: (string | ShellQuotedString)[], cwd?: string, env?: [string, string | null][]): string {
         let command = '';
         if (cwd) {
             command += `cd ${PowershellQuotingFunctions.strong(cwd)}; `;
@@ -125,7 +117,7 @@ export class ShellCommandBuilder {
         return command;
     }
 
-    protected buildForCmd(args: Array<string | ShellQuotedString>, cwd?: string, env?: Array<[string, string | null]>): string {
+    protected buildForCmd(args: (string | ShellQuotedString)[], cwd?: string, env?: [string, string | null][]): string {
         let command = '';
         if (cwd) {
             command += `cd ${CmdQuotingFunctions.strong(cwd)} && `;
@@ -148,7 +140,7 @@ export class ShellCommandBuilder {
         return command;
     }
 
-    protected buildForDefault(args: Array<string | ShellQuotedString>, cwd?: string, env?: Array<[string, string | null]>): string {
+    protected buildForDefault(args: (string | ShellQuotedString)[], cwd?: string, env?: [string, string | null][]): string {
         return this.buildForBash(args, cwd, env);
     }
 

@@ -25,9 +25,8 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
+import { RemoteTerminalServer, REMOTE_TERMINAL_PATH } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { TerminalActiveContext, TerminalSearchVisibleContext } from './terminal-keybinding-contexts';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
@@ -89,19 +88,6 @@ export default new ContainerModule(bind => {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 
-    bind(ITerminalServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-
-    bind(ShellTerminalServerProxy).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
-    bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
-
     createCommonBindings(bind);
 
     // link matchers
@@ -121,4 +107,8 @@ export default new ContainerModule(bind => {
 
     bind(TerminalLinkmatcherDiffPost).toSelf().inSingletonScope();
     bind(TerminalContribution).toService(TerminalLinkmatcherDiffPost);
+
+    bind(RemoteTerminalServer).toDynamicValue(
+        ctx => ctx.container.get(WebSocketConnectionProvider).createProxy(REMOTE_TERMINAL_PATH)
+    ).inSingletonScope();
 });

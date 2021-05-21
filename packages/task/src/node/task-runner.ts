@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { ProcessTaskRunner } from './process/process-task-runner';
+import { TerminalTaskRunner } from './process/process-task-runner';
 import { Task } from './task';
 import { TaskConfiguration } from '../common/task-protocol';
 
@@ -55,18 +55,18 @@ export interface TaskRunner {
 @injectable()
 export class TaskRunnerRegistry {
 
-    protected runners: Map<string, TaskRunner>;
-    /** A Task Runner that will be used for executing a Task without an associated Runner. */
-    protected defaultRunner: TaskRunner;
+    protected runners = new Map<string, TaskRunner>();
 
-    @inject(ProcessTaskRunner)
-    protected readonly processTaskRunner: ProcessTaskRunner;
+    @inject(TerminalTaskRunner)
+    protected terminalTaskRunner: TerminalTaskRunner;
 
-    @postConstruct()
-    protected init(): void {
-        this.runners = new Map();
-        this.defaultRunner = this.processTaskRunner;
+    /**
+     * A Task Runner that will be used for executing a Task without an associated Runner
+     */
+    protected get defaultRunner(): TaskRunner {
+        return this.terminalTaskRunner;
     }
+
     /**
      * Registers the given {@link TaskRunner} to execute Tasks of the specified type.
      * If there is already a {@link TaskRunner} registered for the specified type the registration will

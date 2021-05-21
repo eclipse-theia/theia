@@ -64,10 +64,7 @@ export namespace WebSocketChannelConnection {
     export function is(connection: IConnection): connection is WebSocketChannelConnection {
         return (connection as WebSocketChannelConnection).channel instanceof WebSocketChannel;
     }
-
     export function create(connection: IConnection, channel: WebSocketChannel): WebSocketChannelConnection {
-        const result = connection as WebSocketChannelConnection;
-        result.channel = channel;
-        return result;
+        return Object.assign(connection, { channel });
     }
 }

@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as stream from 'stream';
-import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { Readable } from 'stream';
 
 /**
  * The MultiRingBuffer is a ring buffer implementation that allows
@@ -25,18 +25,17 @@ import { Disposable } from '@theia/core/lib/common';
  * These readers are created using the getReader or getStream functions
  * to create a reader that can be read using deq() or one that is a readable stream.
  */
-
-export class MultiRingBufferReadableStream extends stream.Readable implements Disposable {
+export class MultiRingBufferReadableStream extends Readable implements Disposable {
 
     protected more = false;
     protected disposed = false;
 
-    constructor(protected readonly ringBuffer: MultiRingBuffer,
+    constructor(
+        protected readonly ringBuffer: MultiRingBuffer,
         protected readonly reader: number,
-        protected readonly encoding = 'utf8'
+        encoding = 'utf8'
     ) {
-        super();
-        this.setEncoding(encoding);
+        super({ encoding, /* emitClose: true */ });
     }
 
     _read(size: number): void {
@@ -53,24 +52,26 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
     }
 
     onData(): void {
-        if (this.more === true) {
+        if (this.more && !this.disposed) {
             this.deq(-1);
         }
     }
 
     deq(size: number): void {
-        if (this.disposed === true) {
+        if (this.disposed) {
             return;
         }
-
-        let buffer = undefined;
-        do {
-            buffer = this.ringBuffer.deq(this.reader, size, this.encoding);
+        let buffer; do {
+            buffer = this.ringBuffer.deq(this.reader, size, this.readableEncoding!);
             if (buffer !== undefined) {
-                this.more = this.push(buffer, this.encoding);
+                this.more = this.push(buffer, this.readableEncoding!);
+            } else if (this.ringBuffer.closed) {
+                // no more data is available and no more data will be pushed
+                this.destroy();
+                return;
             }
         }
-        while (buffer !== undefined && this.more === true && this.disposed === false);
+        while (buffer !== undefined && this.more && !this.disposed);
     }
 
     dispose(): void {
@@ -89,34 +90,35 @@ export interface WrappedPosition { newPos: number, wrap: boolean }
 @injectable()
 export class MultiRingBuffer implements Disposable {
 
+    protected _closed: boolean = false;
     protected readonly buffer: Buffer;
     protected head: number = -1;
     protected tail: number = -1;
     protected readonly maxSize: number;
     protected readonly encoding: string;
 
-    /* <id, position> */
-    protected readonly readers: Map<number, number>;
-    /* <stream : id> */
-    protected readonly streams: Map<MultiRingBufferReadableStream, number>;
+    /** <id, position> */
+    protected readonly readers = new Map<number, number>();
+    /** <stream, id> */
+    protected readonly streams = new Map<MultiRingBufferReadableStream, number>();
     protected readerId = 0;
 
     constructor(
         @inject(MultiRingBufferOptions) protected readonly options: MultiRingBufferOptions
     ) {
         this.maxSize = options.size;
-        if (options.encoding !== undefined) {
-            this.encoding = options.encoding;
-        } else {
-            this.encoding = 'utf8';
-        }
         this.buffer = Buffer.alloc(this.maxSize);
-        this.readers = new Map();
-        this.streams = new Map();
+        this.encoding = options.encoding ?? 'utf8';
+    }
+
+    get closed(): boolean {
+        return this._closed;
     }
 
     enq(str: string, encoding = 'utf8'): void {
-        let buffer: Buffer = Buffer.from(str, encoding as BufferEncoding);
+        this.checkClosed();
+
+        let buffer = Buffer.from(str, encoding as BufferEncoding);
 
         // Take the last elements of string if it's too big, drop the rest
         if (buffer.length > this.maxSize) {
@@ -149,40 +151,6 @@ export class MultiRingBuffer implements Disposable {
         this.incTails(buffer.length);
         this.head = this.inc(this.head, buffer.length).newPos;
         this.onData(startHead);
-    }
-
-    getReader(): number {
-        this.readers.set(this.readerId, this.tail);
-        return this.readerId++;
-    }
-
-    closeReader(id: number): void {
-        this.readers.delete(id);
-    }
-
-    getStream(encoding?: string): MultiRingBufferReadableStream {
-        const reader = this.getReader();
-        const readableStream = new MultiRingBufferReadableStream(this, reader, encoding);
-        this.streams.set(readableStream, reader);
-        return readableStream;
-    }
-
-    closeStream(readableStream: MultiRingBufferReadableStream): void {
-        this.streams.delete(<MultiRingBufferReadableStream>readableStream);
-    }
-
-    protected onData(start: number): void {
-        /*  Any stream that has read everything already
-         *  Should go back to the last buffer in start offset */
-        for (const [id, pos] of this.readers) {
-            if (pos === -1) {
-                this.readers.set(id, start);
-            }
-        }
-        /* Notify the streams there's new data. */
-        for (const [readableStream] of this.streams) {
-            readableStream.onData();
-        }
     }
 
     deq(id: number, size = -1, encoding = 'utf8'): string | undefined {
@@ -224,6 +192,26 @@ export class MultiRingBuffer implements Disposable {
         return buffer;
     }
 
+    getReader(): number {
+        this.readers.set(this.readerId, this.tail);
+        return this.readerId++;
+    }
+
+    closeReader(id: number): void {
+        this.readers.delete(id);
+    }
+
+    getStream(encoding?: string): MultiRingBufferReadableStream {
+        const reader = this.getReader();
+        const readableStream = new MultiRingBufferReadableStream(this, reader, encoding);
+        this.streams.set(readableStream, reader);
+        return readableStream;
+    }
+
+    closeStream(readableStream: MultiRingBufferReadableStream): void {
+        this.streams.delete(<MultiRingBufferReadableStream>readableStream);
+    }
+
     sizeForReader(id: number): number {
         const pos = this.readers.get(id);
         if (pos === undefined) {
@@ -235,25 +223,6 @@ export class MultiRingBuffer implements Disposable {
 
     size(): number {
         return this.sizeFrom(this.tail, this.head, this.isWrapped(this.tail, this.head));
-    }
-
-    protected isWrapped(from: number, to: number): boolean {
-        if (to < from) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    protected sizeFrom(from: number, to: number, wrap: boolean): number {
-        if (from === -1 || to === -1) {
-            return 0;
-        } else {
-            if (wrap === false) {
-                return to - from + 1;
-            } else {
-                return to + 1 + this.maxSize - from;
-            }
-        }
     }
 
     emptyForReader(id: number): boolean {
@@ -282,25 +251,60 @@ export class MultiRingBuffer implements Disposable {
     }
 
     /**
-     * Dispose all the attached readers/streams.
+     * Mark the buffer as closed. We won't accept new data, but the streams
+     * might keep emitting data as being held by this buffer. The streams will
+     * eventually reach the end and destroy themselves.
      */
     dispose(): void {
+        this._closed = true;
+    }
+
+    protected onData(start: number): void {
+        // Any stream that has read everything already
+        // should go back to the last buffer in start offset.
+        for (const [id, pos] of this.readers.entries()) {
+            if (pos === -1) {
+                this.readers.set(id, start);
+            }
+        }
+        // Notify the streams there's new data.
         for (const readableStream of this.streams.keys()) {
-            readableStream.dispose();
+            readableStream.onData();
         }
     }
 
-    /* Position should be incremented if it goes pass end.  */
+    protected isWrapped(from: number, to: number): boolean {
+        if (to < from) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    protected sizeFrom(from: number, to: number, wrap: boolean): number {
+        if (from === -1 || to === -1) {
+            return 0;
+        } else {
+            if (wrap === false) {
+                return to - from + 1;
+            } else {
+                return to + 1 + this.maxSize - from;
+            }
+        }
+    }
+
+    /**
+     * Position should be incremented if it goes past the end.
+     */
     protected shouldIncPos(pos: number, end: number, size: number): boolean {
         const { newPos: newHead, wrap } = this.inc(end, size);
 
-        /* Tail Head */
+        // Tail Head
         if (this.isWrapped(pos, end) === false) {
             // Head needs to wrap to push the tail
             if (wrap === true && newHead >= pos) {
                 return true;
             }
-        } else { /* Head Tail */
+        } else { // Head Tail
             //  If we wrap head is pushing tail, or if it goes over pos
             if (wrap === true || newHead >= pos) {
                 return true;
@@ -311,7 +315,7 @@ export class MultiRingBuffer implements Disposable {
 
     protected incTailSize(pos: number, head: number, size: number): WrappedPosition {
         const { newPos: newHead } = this.inc(head, size);
-        /* New tail is 1 past newHead.  */
+        // New tail is 1 past newHead.
         return this.inc(newHead, 1);
     }
 
@@ -324,7 +328,9 @@ export class MultiRingBuffer implements Disposable {
         return this.incTailSize(pos, this.head, size);
     }
 
-    /* Increment the main tail and all the reader positions. */
+    /**
+     * Increment the main tail and all the reader positions.
+     */
     protected incTails(size: number): void {
         this.tail = this.incTail(this.tail, size).newPos;
 
@@ -344,5 +350,11 @@ export class MultiRingBuffer implements Disposable {
         const newPos = (pos + size) % this.maxSize;
         const wrap = newPos <= pos;
         return { newPos, wrap };
+    }
+
+    protected checkClosed(): void {
+        if (this._closed) {
+            throw new Error('this buffer is closed');
+        }
     }
 }

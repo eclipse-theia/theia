@@ -41,6 +41,10 @@ export class TaskManager implements BackendApplicationContribution {
         @inject(ILogger) @named('task') protected readonly logger: ILogger
     ) { }
 
+    get onDelete(): Event<number> {
+        return this.deleteEmitter.event;
+    }
+
     /**
      * Registers a new task (in the given context if present). Each registered
      * task is considered to be currently running.
@@ -52,16 +56,14 @@ export class TaskManager implements BackendApplicationContribution {
     register(task: Task, ctx?: string): number {
         const id = ++this.id;
         this.tasks.set(id, task);
-
         if (ctx) {
-            let tks = this.tasksPerCtx.get(ctx);
-            if (tks === undefined) {
-                tks = [];
+            let tasks = this.tasksPerCtx.get(ctx);
+            if (tasks === undefined) {
+                tasks = [];
             }
-            tks.push(task);
-            this.tasksPerCtx.set(ctx, tks);
+            tasks.push(task);
+            this.tasksPerCtx.set(ctx, tasks);
         }
-
         return id;
     }
 
@@ -110,17 +112,13 @@ export class TaskManager implements BackendApplicationContribution {
         this.deleteEmitter.fire(task.id);
     }
 
-    get onDelete(): Event<number> {
-        return this.deleteEmitter.event;
-    }
-
     /**
      * Is triggered on application stop to cleanup all ongoing tasks.
      */
     onStop(): void {
-        this.tasks.forEach((task: Task, id: number) => {
-            this.logger.debug(`Task Backend application: onStop(): cleaning task id: ${id}`);
+        for (const task of this.tasks.values()) {
+            this.logger.debug(`Task Backend application: onStop(): cleaning task id: ${task.id}`);
             this.delete(task);
-        });
+        };
     }
 }

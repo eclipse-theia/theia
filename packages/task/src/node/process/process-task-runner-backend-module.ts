@@ -14,24 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, Container } from '@theia/core/shared/inversify';
-import { ProcessTask, TaskFactory, TaskProcessOptions } from './process-task';
-import { ProcessTaskRunner } from './process-task-runner';
-import { ProcessTaskRunnerContribution } from './process-task-runner-contribution';
+import { interfaces } from '@theia/core/shared/inversify';
+import { TerminalTask, TaskFactory, TerminalTaskOptions } from './process-task';
+import { TerminalTaskRunner } from './process-task-runner';
+import { TerminalTaskRunnerContribution } from './process-task-runner-contribution';
 import { TaskRunnerContribution } from '../task-runner';
 
 export function bindProcessTaskRunnerModule(bind: interfaces.Bind): void {
-
-    bind(ProcessTask).toSelf().inTransientScope();
-    bind(TaskFactory).toFactory(ctx =>
-        (options: TaskProcessOptions) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            child.bind(TaskProcessOptions).toConstantValue(options);
-            return child.get(ProcessTask);
-        }
-    );
-    bind(ProcessTaskRunner).toSelf().inSingletonScope();
-    bind(ProcessTaskRunnerContribution).toSelf().inSingletonScope();
-    bind(TaskRunnerContribution).toService(ProcessTaskRunnerContribution);
+    bind(TaskFactory).toFactory(ctx => (options: TerminalTaskOptions) => {
+        const child = ctx.container.createChild();
+        child.bind(TerminalTaskOptions).toConstantValue(options);
+        return child.get(TerminalTask);
+    });
+    bind(TerminalTask).toSelf().inTransientScope();
+    bind(TerminalTaskRunner).toSelf().inSingletonScope();
+    bind(TerminalTaskRunnerContribution).toSelf().inSingletonScope();
+    bind(TaskRunnerContribution).toService(TerminalTaskRunnerContribution);
 }

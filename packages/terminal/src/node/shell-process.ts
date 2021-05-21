@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
+import { NodePtyProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
 import { isWindows, isOSX, OS } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -49,7 +49,7 @@ function getRootPath(rootURI?: string): string {
 }
 
 @injectable()
-export class ShellProcess extends TerminalProcess {
+export class ShellProcess extends NodePtyProcess {
 
     protected static defaultCols = 80;
     protected static defaultRows = 24;

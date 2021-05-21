@@ -92,8 +92,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
      * Creates a websocket URL to the current location
      */
     protected createWebSocketUrl(path: string): string {
-        const endpoint = new Endpoint({ path });
-        return endpoint.getWebSocketUrl().toString();
+        return new Endpoint({ path }).getWebSocketUrl().toString();
     }
 
     /**

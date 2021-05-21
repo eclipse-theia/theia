@@ -40,6 +40,10 @@ import { Key } from '@theia/core/lib/browser/keys';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
+// Device status code emitted by Xterm.js
+// Check: https://github.com/xtermjs/xterm.js/blob/release/3.14/src/InputHandler.ts#L1055-L1082
+export const DEVICE_STATUS_CODES = new Set(['\u001B[>0;276;0c', '\u001B[>85;95;0c', '\u001B[>83;40003;0c', '\u001B[?1;2c', '\u001B[?6c']);
+
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
     /* a unique string per terminal */
     created: string
@@ -48,10 +52,12 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    private readonly TERMINAL = 'Terminal';
+    @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
+
+    protected readonly toDisposeOnConnect = new DisposableCollection();
+
     protected terminalKind = 'user';
     protected _terminalId = -1;
-    protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
     protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
@@ -61,10 +67,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
+    protected needsResize = true;
+    protected termOpened = false;
+    protected initialData = '';
+
+    protected readonly onDidTermCloseEmitter = new Emitter<TerminalWidget>();
+    protected readonly onDidOpenEmitter = new Emitter<void>();
+    protected readonly onDidOpenFailureEmitter = new Emitter<void>();
+    protected readonly onDidSizeChangeEmitter = new Emitter<{ cols: number; rows: number; }>();
+    protected readonly onDataEmitter = new Emitter<string>();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
-    @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
@@ -77,19 +91,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
 
-    protected readonly onDidOpenEmitter = new Emitter<void>();
-    readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
-
-    protected readonly onDidOpenFailureEmitter = new Emitter<void>();
-    readonly onDidOpenFailure: Event<void> = this.onDidOpenFailureEmitter.event;
-
-    protected readonly onSizeChangedEmitter = new Emitter<{ cols: number; rows: number; }>();
-    readonly onSizeChanged: Event<{ cols: number; rows: number; }> = this.onSizeChangedEmitter.event;
-
-    protected readonly onDataEmitter = new Emitter<string>();
-    readonly onData: Event<string> = this.onDataEmitter.event;
-
-    protected readonly toDisposeOnConnect = new DisposableCollection();
+    private readonly TERMINAL = 'Terminal';
 
     @postConstruct()
     protected init(): void {
@@ -183,16 +185,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
+                this.onDidTermCloseEmitter.fire(this);
+                this.onDidTermCloseEmitter.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
-                this.onTermDidClose.dispose();
+                this.onDidTermCloseEmitter.fire(this);
+                this.onDidTermCloseEmitter.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -203,10 +205,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             });
             this.toDispose.push(disposable);
         }));
-        this.toDispose.push(this.onTermDidClose);
+        this.toDispose.push(this.onDidTermCloseEmitter);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this.onDidOpenFailureEmitter);
-        this.toDispose.push(this.onSizeChangedEmitter);
+        this.toDispose.push(this.onDidSizeChangeEmitter);
         this.toDispose.push(this.onDataEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
@@ -226,7 +228,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
 
         this.toDispose.push(this.term.onResize(data => {
-            this.onSizeChangedEmitter.fire(data);
+            this.onDidSizeChangeEmitter.fire(data);
         }));
 
         this.toDispose.push(this.term.onData(data => {
@@ -241,48 +243,28 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.searchBox);
     }
 
+    get onTerminalDidClose(): Event<TerminalWidget> {
+        return this.onDidTermCloseEmitter.event;
+    }
+
+    get onDidOpen(): Event<void> {
+        return this.onDidOpenEmitter.event;
+    }
+
+    get onDidOpenFailure(): Event<void> {
+        return this.onDidOpenFailureEmitter.event;
+    }
+
+    get onSizeChanged(): Event<{ cols: number; rows: number; }> {
+        return this.onDidSizeChangeEmitter.event;
+    }
+
+    get onData(): Event<string> {
+        return this.onDataEmitter.event;
+    }
+
     get kind(): 'user' | string {
         return this.terminalKind;
-    }
-
-    /**
-     * Get the cursor style compatible with `xterm`.
-     * @returns CursorStyle
-     */
-    private getCursorStyle(): CursorStyle {
-        const value = this.preferences['terminal.integrated.cursorStyle'];
-        return value === 'line' ? 'bar' : value;
-    }
-
-    /**
-     * Returns given renderer type if it is valid and supported or default renderer otherwise.
-     *
-     * @param terminalRendererType desired terminal renderer type
-     */
-    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): RendererType {
-        if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
-            return terminalRendererType;
-        }
-        return DEFAULT_TERMINAL_RENDERER_TYPE;
-    }
-
-    showHoverMessage(x: number, y: number, message: string): void {
-        this.hoverMessage.innerText = message;
-        this.hoverMessage.style.display = 'inline';
-        this.hoverMessage.style.top = `${y - 30}px`;
-        this.hoverMessage.style.left = `${x - 60}px`;
-    }
-
-    hideHover(): void {
-        this.hoverMessage.style.display = 'none';
-    }
-
-    getTerminal(): Terminal {
-        return this.term;
-    }
-
-    getSearchBox(): TerminalSearchWidget {
-        return this.searchBox;
     }
 
     get dimensions(): TerminalDimensions {
@@ -323,6 +305,52 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get lastTouchEndEvent(): TouchEvent | undefined {
         return this.lastTouchEnd;
+    }
+
+    protected get enableCopy(): boolean {
+        return this.preferences['terminal.enableCopy'];
+    }
+
+    protected get enablePaste(): boolean {
+        return this.preferences['terminal.enablePaste'];
+    }
+
+    protected get shellPreferences(): IShellTerminalPreferences {
+        return {
+            shell: {
+                Windows: this.preferences['terminal.integrated.shell.windows'] ?? undefined,
+                Linux: this.preferences['terminal.integrated.shell.linux'] ?? undefined,
+                OSX: this.preferences['terminal.integrated.shell.osx'] ?? undefined,
+            },
+            shellArgs: {
+                Windows: this.preferences['terminal.integrated.shellArgs.windows'],
+                Linux: this.preferences['terminal.integrated.shellArgs.linux'],
+                OSX: this.preferences['terminal.integrated.shellArgs.osx'],
+            }
+        };
+    }
+
+    protected get copyOnSelection(): boolean {
+        return this.preferences['terminal.integrated.copyOnSelection'];
+    }
+
+    showHoverMessage(x: number, y: number, message: string): void {
+        this.hoverMessage.innerText = message;
+        this.hoverMessage.style.display = 'inline';
+        this.hoverMessage.style.top = `${y - 30}px`;
+        this.hoverMessage.style.left = `${x - 60}px`;
+    }
+
+    hideHover(): void {
+        this.hoverMessage.style.display = 'none';
+    }
+
+    getTerminal(): Terminal {
+        return this.term;
+    }
+
+    getSearchBox(): TerminalSearchWidget {
+        return this.searchBox;
     }
 
     onDispose(onDispose: () => void): void {
@@ -371,10 +399,54 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             this.onDidOpenEmitter.fire(undefined);
+            await this.shellTerminalServer.onAttachAttempted(this._terminalId);
             return this.terminalId;
         }
         this.onDidOpenFailureEmitter.fire(undefined);
         throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
+    }
+
+    processMessage(msg: Message): void {
+        super.processMessage(msg);
+        switch (msg.type) {
+            case 'fit-request':
+                this.onFitRequest(msg);
+                break;
+            default:
+                break;
+        }
+    }
+
+    protected onFitRequest(msg: Message): void {
+        super.onFitRequest(msg);
+        MessageLoop.sendMessage(this, Widget.ResizeMessage.UnknownSize);
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.term.focus();
+    }
+
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.update();
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.searchBox, this.node);
+        super.onAfterAttach(msg);
+        this.update();
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        Widget.detach(this.searchBox);
+        super.onBeforeDetach(msg);
+    }
+
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.needsResize = true;
+        this.update();
     }
 
     protected async attachTerminal(id: number): Promise<number> {
@@ -414,44 +486,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         throw new Error('Error creating terminal widget, see the backend error log for more information.');
     }
 
-    processMessage(msg: Message): void {
-        super.processMessage(msg);
-        switch (msg.type) {
-            case 'fit-request':
-                this.onFitRequest(msg);
-                break;
-            default:
-                break;
-        }
-    }
-    protected onFitRequest(msg: Message): void {
-        super.onFitRequest(msg);
-        MessageLoop.sendMessage(this, Widget.ResizeMessage.UnknownSize);
-    }
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.term.focus();
-    }
-    protected onAfterShow(msg: Message): void {
-        super.onAfterShow(msg);
-        this.update();
-    }
-    protected onAfterAttach(msg: Message): void {
-        Widget.attach(this.searchBox, this.node);
-        super.onAfterAttach(msg);
-        this.update();
-    }
-    protected onBeforeDetach(msg: Message): void {
-        Widget.detach(this.searchBox);
-        super.onBeforeDetach(msg);
-    }
-    protected onResize(msg: Widget.ResizeMessage): void {
-        super.onResize(msg);
-        this.needsResize = true;
-        this.update();
-    }
-
-    protected needsResize = true;
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         if (!this.isVisible || !this.isAttached) {
@@ -467,10 +501,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.resizeTerminalProcess();
         }
     }
-
-    // Device status code emitted by Xterm.js
-    // Check: https://github.com/xtermjs/xterm.js/blob/release/3.14/src/InputHandler.ts#L1055-L1082
-    protected readonly deviceStatusCodes = new Set(['\u001B[>0;276;0c', '\u001B[>85;95;0c', '\u001B[>83;40003;0c', '\u001B[?1;2c', '\u001B[?6c']);
 
     protected connectTerminalProcess(): void {
         if (typeof this.terminalId !== 'number') {
@@ -489,7 +519,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
-                    if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
+                    if (data && !this.isDeviceStatusCode(data) && !this.disableEnterWhenAttachCloseListener()) {
                         return connection.sendRequest('write', data);
                     }
                 };
@@ -505,6 +535,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         }, { reconnecting: false });
     }
+
+    protected isDeviceStatusCode(data: string): boolean {
+        return DEVICE_STATUS_CODES.has(data);
+    }
+
     protected async reconnectTerminalProcess(): Promise<void> {
         if (this.options.isPseudoTerminal) {
             return;
@@ -514,8 +549,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
-    protected termOpened = false;
-    protected initialData = '';
     protected open(): void {
         if (this.termOpened) {
             return;
@@ -591,8 +624,27 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.writeln(text);
     }
 
-    get onTerminalDidClose(): Event<TerminalWidget> {
-        return this.onTermDidClose.event;
+    setTitle(title: string): void {
+        this.title.caption = title;
+        this.title.label = title;
+    }
+
+    waitOnExit(waitOnExit?: boolean | string): void {
+        if (waitOnExit) {
+            if (typeof waitOnExit === 'string') {
+                let message = waitOnExit;
+                // Bold the message and add an extra new line to make it stand out from the rest of the output
+                message = `\r\n\x1b[1m${message}\x1b[0m`;
+                this.write(message);
+            }
+            if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
+                this.shellTerminalServer.close(this.terminalId);
+                this.onDidTermCloseEmitter.fire(this);
+            }
+            this.attachPressEnterKeyToCloseListener(this.term);
+            return;
+        }
+        this.dispose();
     }
 
     dispose(): void {
@@ -600,7 +652,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
-            this.onTermDidClose.fire(this);
+            this.onDidTermCloseEmitter.fire(this);
         }
         super.dispose();
     }
@@ -624,29 +676,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.shellTerminalServer.resize(this.terminalId, cols, rows);
     }
 
-    protected get enableCopy(): boolean {
-        return this.preferences['terminal.enableCopy'];
-    }
-
-    protected get enablePaste(): boolean {
-        return this.preferences['terminal.enablePaste'];
-    }
-
-    protected get shellPreferences(): IShellTerminalPreferences {
-        return {
-            shell: {
-                Windows: this.preferences['terminal.integrated.shell.windows'] ?? undefined,
-                Linux: this.preferences['terminal.integrated.shell.linux'] ?? undefined,
-                OSX: this.preferences['terminal.integrated.shell.osx'] ?? undefined,
-            },
-            shellArgs: {
-                Windows: this.preferences['terminal.integrated.shellArgs.windows'],
-                Linux: this.preferences['terminal.integrated.shellArgs.linux'],
-                OSX: this.preferences['terminal.integrated.shellArgs.osx'],
-            }
-        };
-    }
-
     protected customKeyHandler(event: KeyboardEvent): boolean {
         const keyBindings = KeyCode.createKeyCode(event).toString();
         const ctrlCmdCopy = (isOSX && keyBindings === 'meta+c') || (!isOSX && keyBindings === 'ctrl+c');
@@ -660,35 +689,29 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return true;
     }
 
-    protected get copyOnSelection(): boolean {
-        return this.preferences['terminal.integrated.copyOnSelection'];
-    }
-
     protected attachCustomKeyEventHandler(): void {
         this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
     }
 
-    setTitle(title: string): void {
-        this.title.caption = title;
-        this.title.label = title;
+    /**
+     * Get the cursor style compatible with `xterm`.
+     * @returns CursorStyle
+     */
+    private getCursorStyle(): CursorStyle {
+        const value = this.preferences['terminal.integrated.cursorStyle'];
+        return value === 'line' ? 'bar' : value;
     }
 
-    waitOnExit(waitOnExit?: boolean | string): void {
-        if (waitOnExit) {
-            if (typeof waitOnExit === 'string') {
-                let message = waitOnExit;
-                // Bold the message and add an extra new line to make it stand out from the rest of the output
-                message = `\r\n\x1b[1m${message}\x1b[0m`;
-                this.write(message);
-            }
-            if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
-                this.shellTerminalServer.close(this.terminalId);
-                this.onTermDidClose.fire(this);
-            }
-            this.attachPressEnterKeyToCloseListener(this.term);
-            return;
+    /**
+     * Returns given renderer type if it is valid and supported or default renderer otherwise.
+     *
+     * @param terminalRendererType desired terminal renderer type
+     */
+    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): RendererType {
+        if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
+            return terminalRendererType;
         }
-        this.dispose();
+        return DEFAULT_TERMINAL_RENDERER_TYPE;
     }
 
     private attachPressEnterKeyToCloseListener(term: Terminal): void {

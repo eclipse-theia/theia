@@ -21,25 +21,14 @@
 
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
+import { environment } from '@theia/core/shared/@theia/application-package';
+import { injectable } from '@theia/core/shared/inversify';
+import * as cp from 'child_process';
 import * as net from 'net';
-import { injectable, inject } from '@theia/core/shared/inversify';
 import {
-    RawProcessFactory,
-    ProcessManager,
-    RawProcess,
-    RawForkOptions,
-    RawProcessOptions
-} from '@theia/process/lib/node';
-import {
-    DebugAdapterExecutable,
-    CommunicationProvider,
-    DebugAdapterSession,
-    DebugAdapterSessionFactory,
-    DebugAdapterFactory,
-    DebugAdapterForkExecutable
+    CommunicationProvider, DebugAdapterExecutable, DebugAdapterFactory, DebugAdapterForkExecutable, DebugAdapterSession, DebugAdapterSessionFactory
 } from '../common/debug-model';
 import { DebugAdapterSessionImpl } from './debug-adapter-session';
-import { environment } from '@theia/core/shared/@theia/application-package';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -47,48 +36,39 @@ import { environment } from '@theia/core/shared/@theia/application-package';
  */
 @injectable()
 export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
-    @inject(RawProcessFactory)
-    protected readonly processFactory: RawProcessFactory;
-    @inject(ProcessManager)
-    protected readonly processManager: ProcessManager;
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
-        const process = this.childProcess(executable);
-
-        // FIXME: propagate onError + onExit
+        const debugAdapter = this.spawnOrForkDebugAdapter(executable);
+        // TODO/FIXME: propagate onError + onExit
         return {
-            input: process.inputStream,
-            output: process.outputStream,
-            dispose: () => process.kill()
+            input: debugAdapter.stdin!,
+            output: debugAdapter.stdout!,
+            dispose: () => debugAdapter.kill()
         };
-    }
-
-    private childProcess(executable: DebugAdapterExecutable): RawProcess {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isForkOptions = (forkOptions: RawForkOptions | any): forkOptions is RawForkOptions =>
-            !!forkOptions && !!forkOptions.modulePath;
-
-        const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
-        const options: { stdio: (string | number)[], env?: object, execArgv?: string[] } = { stdio: ['pipe', 'pipe', 2] };
-
-        if (isForkOptions(processOptions)) {
-            options.stdio.push('ipc');
-            options.env = environment.electron.runAsNodeEnv();
-            options.execArgv = (executable as DebugAdapterForkExecutable).execArgv;
-        }
-
-        processOptions.options = options;
-        return this.processFactory(processOptions);
     }
 
     connect(debugServerPort: number): CommunicationProvider {
         const socket = net.createConnection(debugServerPort);
-        // FIXME: propagate socket.on('error', ...) + socket.on('close', ...)
+        // TODO/FIXME: propagate socket.on('error', ...) + socket.on('close', ...)
         return {
             input: socket,
             output: socket,
             dispose: () => socket.end()
         };
+    }
+
+    private spawnOrForkDebugAdapter(executable: DebugAdapterExecutable): cp.ChildProcess {
+        const stdio = ['pipe' as const, 'pipe' as const, 'inherit' as const];
+        if ('command' in executable) {
+            return cp.spawn(executable.command, executable.args ?? [], { stdio });
+        } else if ('modulePath' in executable) {
+            return cp.fork(executable.modulePath, executable.args ?? [], {
+                execArgv: executable.execArgv,
+                stdio: [...stdio, 'ipc'],
+            });
+        } else {
+            throw new Error(`wrong configuration: ${JSON.stringify(executable)}`);
+        }
     }
 }
 

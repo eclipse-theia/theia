@@ -31,6 +31,7 @@ export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> 
     getCwdURI(id: number): Promise<string>;
     resize(id: number, cols: number, rows: number): Promise<void>;
     attach(id: number): Promise<number>;
+    onAttachAttempted(id: number): Promise<void>;
     close(id: number): Promise<void>;
     getDefaultShell(): Promise<string>;
 
@@ -171,7 +172,7 @@ export interface MergedEnvironmentVariableCollection {
     /**
      * Applies this collection to a process environment.
      */
-    applyToProcessEnvironment(env: { [key: string]: string | null } ): void;
+    applyToProcessEnvironment(env: { [key: string]: string | null }): void;
 }
 
 export interface SerializableExtensionEnvironmentVariableCollection {
