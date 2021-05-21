@@ -30,6 +30,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
+import { DEFAULT_WINDOW_HASH } from '../browser/window/window-service';
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
 /**
@@ -268,10 +269,9 @@ export class ElectronMainApplication {
         };
     }
 
-    protected async openDefaultWindow(): Promise<BrowserWindow> {
-        const options = await this.getLastWindowOptions();
-        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow(options)]);
-        electronWindow.loadURL(uri.toString(true));
+    async openDefaultWindow(): Promise<BrowserWindow> {
+        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow()]);
+        electronWindow.loadURL(uri.withFragment(DEFAULT_WINDOW_HASH).toString(true));
         return electronWindow;
     }
 
