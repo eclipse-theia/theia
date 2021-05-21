@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
 import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
-import { Range, Position, Location } from './editor';
+import { Range, Position, Location, RevealRangeOptions } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { TextEditor } from './editor';
 
@@ -30,6 +30,7 @@ export interface WidgetId {
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
+    revealRangeOptions?: RevealRangeOptions,
     preview?: boolean;
     counter?: number
 }
@@ -95,10 +96,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const optionsWithCounter: EditorOpenerOptions = { counter: this.getCounterForUri(uri), ...options };
         const editor = await super.getWidget(uri, optionsWithCounter);
-        if (editor) {
-            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(editor, optionsWithCounter, uri);
-        }
+        // if (editor) {
+        //     // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+        //     this.revealSelection(editor, optionsWithCounter, uri);
+        // }
         return editor;
     }
 
@@ -107,7 +108,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         const optionsWithCounter: EditorOpenerOptions = { ...options, counter };
         const editor = await super.getOrCreateWidget(uri, optionsWithCounter);
         // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-        this.revealSelection(editor, options, uri);
+        // this.revealSelection(editor, options, uri);
         return editor;
     }
 
@@ -174,8 +175,12 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     // This override only serves to inform external callers that they can use EditorOpenerOptions.
-    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        return super.open(uri, options);
+    async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const editorWidget = await super.open(uri, options);
+        if (editorWidget) {
+            this.revealSelection(editorWidget, options, uri);
+        }
+        return editorWidget;
     }
 
     /**
@@ -212,7 +217,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = selection;
-                editor.revealRange(selection);
+                editor.revealRange(selection, input?.revealRangeOptions);
             }
         }
     }

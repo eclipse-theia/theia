@@ -368,7 +368,12 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     }
 
     protected buildOpenerOptions(): EditorOpenerOptions {
-        return { selection: this.filterAndRange.range };
+        return {
+            selection: this.filterAndRange.range,
+            revealRangeOptions: {
+                at: 'center'
+            }
+        };
     }
 
     private toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions): QuickOpenItem<QuickOpenItemOptions> {
@@ -425,7 +430,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 lineNumber = line > 0 ? line - 1 : 0;
 
                 const column = parseInt(patternMatch[2] ?? '', 10);
-                startColumn = Number.isFinite(column) && column > 0 ? column - 1  : 0;
+                startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
             }
         }
 
