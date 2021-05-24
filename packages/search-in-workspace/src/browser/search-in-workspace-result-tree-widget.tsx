@@ -222,6 +222,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.update();
     }
 
+    get isReplacing(): boolean {
+        return this._replaceTerm !== '' && this._showReplaceButtons;
+    }
+
     get onChange(): Event<Map<string, SearchInWorkspaceRootFolderNode>> {
         return this.changeEmitter.event;
     }
@@ -938,8 +942,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
-        const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
+        const replaceTerm = this.isReplacing ? <span className='replace-term'>{this._replaceTerm}</span> : '';
+        const className = `match${this.isReplacing ? ' strike-through' : ''}`;
         const match = typeof node.lineText === 'string' ?
             node.lineText.substr(node.character - 1, node.length)
             : node.lineText.text.substr(node.lineText.character - 1, node.length);
@@ -963,7 +967,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
         let fileUri: URI;
         const resultNode = node.parent;
-        if (resultNode && this._showReplaceButtons && preview) {
+        if (resultNode && this.isReplacing && preview) {
             const leftUri = new URI(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
