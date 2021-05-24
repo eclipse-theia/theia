@@ -18,10 +18,13 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { PluginServer } from '../../common';
 import { Command } from '@theia/core/lib/common/command';
 import { QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
+import { ProgressService } from '@theia/core/lib/common';
+import { Progress } from '@theia/core/lib/common/message-service-protocol';
 
 @injectable()
 export class PluginExtDeployCommandService /* implements QuickOpenModel */ {
-    public static COMMAND: Command = {
+
+    public static DEPLOY_PLUGIN_BY_ID_COMMAND: Command = {
         id: 'plugin-ext:deploy-plugin-id',
         category: 'Plugin',
         label: 'Deploy Plugin by Id',
@@ -33,6 +36,9 @@ export class PluginExtDeployCommandService /* implements QuickOpenModel */ {
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
 
+    @inject(ProgressService)
+    protected readonly progressService: ProgressService;
+
     deploy(): void {
         this.quickInputService?.showQuickPick([],
             {
@@ -41,10 +47,36 @@ export class PluginExtDeployCommandService /* implements QuickOpenModel */ {
                     quickPick.items = [{
                         label: filter,
                         detail: 'Deploy this plugin',
-                        execute: () => this.pluginServer.deploy(filter)
+                        execute: () => this.executeDeployment(filter)
                     }];
                 }
             }
         );
+    }
+
+    executeDeployment(name: string): void {
+        Promise.all([
+            this.progressService.showProgress({
+                text: `Deploying plugin "${name}" ...`, options: { location: 'notification' }
+            }),
+            this.pluginServer.deploy(name)
+        ]).then(([progress, result]) => {
+            let msg = '';
+
+            if (result.deployedPluginIds.length > 0) {
+                msg = `Plugin "${result.deployedPluginIds[0]}" was deployed successfully!`;
+            } else if (result.unresolvedPluginIds.length > 0) {
+                msg = `Plugin "${result.unresolvedPluginIds[0]}" was not deployed! (no plugin resolver found)`;
+            }
+
+            progress.cancel();
+            if (msg.length > 0) {
+                this.progressService.showProgress({
+                    text: msg, options: { location: 'notification' }
+                }).then((prog: Progress) => {
+                    setTimeout(prog.cancel, 5000);
+                });
+            }
+        });
     }
 }
