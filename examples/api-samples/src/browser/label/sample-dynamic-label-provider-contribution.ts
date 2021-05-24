@@ -37,7 +37,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
     }
 
     canHandle(element: object): number {
-        if (element.toString().includes('test')) {
+        if (this.isActive && element.toString().includes('test')) {
             return 30;
         }
         return 0;
