@@ -54,6 +54,8 @@ import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
 import { ProductIconThemeService } from './product-icon-theme-service';
+import { IconRegistry, ProductCodicons } from './icon-registry';
+import { IconProviderContribution } from './icon-application-contribution';
 
 export namespace CommonMenus {
 
@@ -289,7 +291,7 @@ export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 export type ThemeQuickOpenItem = QuickOpenItem & { id: string };
 
 @injectable()
-export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
+export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution, IconProviderContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -346,6 +348,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(AuthenticationService)
     protected readonly authenticationService: AuthenticationService;
+
+    @inject(IconRegistry) protected readonly iconRegistry: IconRegistry;
 
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
@@ -792,6 +796,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_PRODUCT_ICON_THEME, {
             execute: () => this.selectProductIconTheme()
         });
+        commandRegistry.registerCommand({ id: 'iconRegistry', label: 'print icon registry values' }, {
+            execute: () => console.log('SENTINEL', this.iconRegistry.icons)
+        });
     }
 
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
@@ -1119,6 +1126,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
+    }
+
+    registerIcons(iconRegistry: IconRegistry): void {
+        iconRegistry.register(...ProductCodicons);
     }
 
     registerColors(colors: ColorRegistry): void {

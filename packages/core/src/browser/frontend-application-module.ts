@@ -100,6 +100,8 @@ import { AuthenticationService, AuthenticationServiceImpl } from '../browser/aut
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
 import { DefaultProductIconThemeContribution, ProductIconThemeApplicationContribution, ProductIconThemeContribution } from './product-icon-theme-contribution';
 import { NoneProductIconTheme, ProductIconThemeService } from './product-icon-theme-service';
+import { IconRegistry } from './icon-registry';
+import { IconApplicationContribution, IconProviderContribution } from './icon-application-contribution';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -122,6 +124,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ProductIconThemeContribution).toService(DefaultProductIconThemeContribution);
     bind(ProductIconThemeApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ProductIconThemeApplicationContribution);
+
+    bind(IconRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, IconProviderContribution);
+    bind(IconApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(IconApplicationContribution);
 
     bind(ColorRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, ColorContribution);
@@ -232,7 +239,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
-    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
+    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution, IconProviderContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
 

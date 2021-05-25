@@ -22,6 +22,7 @@ import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileChangeType, FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { DisposableCollection } from '@theia/core/lib/common';
+import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
 import { Emitter, Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DeployedPlugin, getPluginId, ProductIconThemeContribution, UiTheme } from '../../common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -48,23 +49,24 @@ export const PluginProductIconThemeFactory = Symbol('PluginProductIconThemeFacto
 export type PluginProductIconThemeFactory = (definition: PluginProductIconThemeDefinition) => PluginProductIconTheme;
 
 // TO DO: Make Icon registry
-export const ProductIconMap = Symbol('ProductIconMap');
-export const ConcreteProductIconRegistry = new Map<string, string>([
-    ['explorer-view-icon', 'files'],
-    ['search-view-icon', 'search'],
-    ['run-view-icon', 'debug-alt'],
-    ['extensions-view-icon', 'extensions'],
-    ['source-control-view-icon', 'source-control'],
-    ['settings-view-bar-icon', 'settings-gear'],
-    ['outline-view-icon', 'symbol-class']
-]);
+// export const ProductIconMap = Symbol('ProductIconMap');
+// export const ConcreteProductIconRegistry = new Map<string, string>([
+//     ['explorer-view-icon', 'files'],
+//     ['search-view-icon', 'search'],
+//     ['run-view-icon', 'debug-alt'],
+//     ['extensions-view-icon', 'extensions'],
+//     ['source-control-view-icon', 'source-control'],
+//     ['settings-view-bar-icon', 'settings-gear'],
+//     ['outline-view-icon', 'symbol-class']
+// ]);
 
 @injectable()
 export class PluginProductIconTheme extends PluginProductIconThemeDefinition implements ProductIconTheme, Disposable {
     @inject(PluginProductIconThemeDefinition) protected readonly definition: PluginProductIconThemeDefinition;
     @inject(ProductIconThemeService) protected readonly productIconThemeService: ProductIconThemeService;
     @inject(FileService) protected readonly fileService: FileService;
-    @inject(ProductIconMap) protected readonly vsCodeTheiaIconMap: Map<string, string>;
+    @inject(IconRegistry) protected readonly iconRegistry: IconRegistry;
+    // @inject(ProductIconMap) protected readonly vsCodeTheiaIconMap: Map<string, string>;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDeactivate = new DisposableCollection();
@@ -162,12 +164,12 @@ export class PluginProductIconTheme extends PluginProductIconThemeDefinition imp
         for (const key in iconDefinitions) {
             if (iconDefinitions[key]) {
                 const definition = iconDefinitions[key];
-                const iconMatch = this.vsCodeTheiaIconMap.get(key);
+                const iconMatch = this.iconRegistry.getIconById(key);
                 if (iconMatch) {
                     if (definition.fontCharacter) {
                         const fontId = definition.fontId !== undefined ? fontIdMap.get(definition.fontId) : firstFont.id;
-                        if (fontId) {
-                            this.styleSheetContent += `.codicon.codicon-${iconMatch}::before {
+                        if (fontId && iconMatch.id) {
+                            this.styleSheetContent += `.codicon.codicon-${iconMatch.id}::before {
     content: '${definition.fontCharacter}' !important;
     font-family: ${fontId} !important;
 }`;

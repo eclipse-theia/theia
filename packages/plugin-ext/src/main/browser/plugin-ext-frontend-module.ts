@@ -76,12 +76,10 @@ import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
 import {
-    ConcreteProductIconRegistry,
     PluginProductIconTheme,
     PluginProductIconThemeDefinition,
     PluginProductIconThemeFactory,
     PluginProductIconThemeService,
-    ProductIconMap
 } from './plugin-product-icon-theme-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -214,7 +212,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginIconThemeService).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(PluginIconThemeService);
 
-    bind(ProductIconMap).toConstantValue(ConcreteProductIconRegistry);
     bind(PluginProductIconThemeFactory).toFactory<PluginProductIconTheme>(({ container }) => (definition: PluginProductIconThemeDefinition) => {
         const child = container.createChild();
         child.bind(PluginProductIconThemeDefinition).toConstantValue(definition);
