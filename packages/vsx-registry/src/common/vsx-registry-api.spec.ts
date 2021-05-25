@@ -155,7 +155,7 @@ describe('VSX Registry API', () => {
 
     });
 
-    describe.only('#isVersionLTE', () => {
+    describe('#isVersionLTE', () => {
 
         it('should determine if v1 is less than or equal to v2', () => {
             expect(api['isVersionLTE']('1.40.0', '1.50.0')).equal(true, 'should be satisfied since v1 is less than v2');
