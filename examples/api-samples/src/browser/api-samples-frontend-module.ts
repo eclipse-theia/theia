@@ -16,6 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindDynamicLabelProvider } from './label/sample-dynamic-label-provider-command-contribution';
+import { bindSampleFilteredCommandContribution } from './contribution-filter/sample-filtered-command-contribution';
 import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribution';
 import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 import { bindSampleMenu } from './menu/sample-menu-contribution';
@@ -31,4 +32,5 @@ export default new ContainerModule(bind => {
     bindSampleMenu(bind);
     bindSampleFileWatching(bind);
     bindVSXCommand(bind);
+    bindSampleFilteredCommandContribution(bind);
 });

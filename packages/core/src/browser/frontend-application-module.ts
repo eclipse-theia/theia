@@ -101,6 +101,7 @@ import { AuthenticationService, AuthenticationServiceImpl } from '../browser/aut
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
 import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
+import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -353,4 +354,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     }).inSingletonScope();
 
     bind(CredentialsService).to(CredentialsServiceImpl);
+
+    bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
 });

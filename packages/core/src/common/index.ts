@@ -37,6 +37,7 @@ export * from './selection';
 export * from './strings';
 export * from './application-error';
 export * from './lsp-types';
+export * from './contribution-filter';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };
