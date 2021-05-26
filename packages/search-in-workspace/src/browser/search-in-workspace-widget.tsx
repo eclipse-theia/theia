@@ -27,6 +27,7 @@ import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 
 export interface SearchFieldState {
     className: string;
@@ -62,6 +63,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected searchTerm = '';
     protected replaceTerm = '';
+
+    private searchRef = React.createRef<SearchInWorkspaceInput>();
+    private replaceRef = React.createRef<SearchInWorkspaceInput>();
+    private includeRef = React.createRef<SearchInWorkspaceInput>();
+    private excludeRef = React.createRef<SearchInWorkspaceInput>();
 
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
@@ -171,7 +177,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             searchInWorkspaceOptions: this.searchInWorkspaceOptions,
             searchTerm: this.searchTerm,
             replaceTerm: this.replaceTerm,
-            showReplaceField: this.showReplaceField
+            showReplaceField: this.showReplaceField,
+            searchHistoryState: this.searchRef.current?.state,
+            replaceHistoryState: this.replaceRef.current?.state,
+            includeHistoryState: this.includeRef.current?.state,
+            excludeHistoryState: this.excludeRef.current?.state,
         };
     }
 
@@ -188,6 +198,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.showReplaceField = oldState.showReplaceField;
         this.resultTreeWidget.replaceTerm = this.replaceTerm;
         this.resultTreeWidget.showReplaceButtons = this.showReplaceField;
+        this.searchRef.current?.setState(oldState.searchHistoryState);
+        this.replaceRef.current?.setState(oldState.replaceHistoryState);
+        this.includeRef.current?.setState(oldState.includeHistoryState);
+        this.excludeRef.current?.setState(oldState.excludeHistoryState);
         this.refresh();
     }
 
@@ -404,9 +418,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             const searchValue = (e.target as HTMLInputElement).value;
-            if (Key.ARROW_DOWN.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
-                this.resultTreeWidget.focusFirstResult();
-            } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+            if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
                 return;
             } else {
                 this.searchTerm = searchValue;
@@ -438,7 +450,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchField(): React.ReactNode {
-        const input = <input
+        const input = <SearchInWorkspaceInput
             id='search-input-field'
             className='theia-input'
             title='Search'
@@ -451,7 +463,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             onKeyDown={this.onKeyDownSearch}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}
-        ></input>;
+            ref={this.searchRef}
+        />;
         const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
         const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'tooManyResults' : '';
@@ -481,7 +494,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderReplaceField(): React.ReactNode {
         const replaceAllButtonContainer = this.renderReplaceAllButtonContainer();
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
-            <input
+            <SearchInWorkspaceInput
                 id='replace-input-field'
                 className='theia-input'
                 title='Replace'
@@ -491,8 +504,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 defaultValue={this.replaceTerm}
                 onKeyUp={this.updateReplaceTerm}
                 onFocus={this.handleFocusReplaceInputBox}
-                onBlur={this.handleBlurReplaceInputBox}>
-            </input>
+                onBlur={this.handleBlurReplaceInputBox}
+                ref={this.replaceRef}
+            />
             {replaceAllButtonContainer}
         </div>;
     }
@@ -575,7 +589,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const value = currentValue && currentValue.join(', ') || '';
         return <div className='glob-field'>
             <div className='label'>{'files to ' + kind}</div>
-            <input
+            <SearchInWorkspaceInput
                 className='theia-input'
                 type='text'
                 size={1}
@@ -608,7 +622,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                     }
                 }}
                 onFocus={kind === 'include' ? this.handleFocusIncludesInputBox : this.handleFocusExcludesInputBox}
-                onBlur={kind === 'include' ? this.handleBlurIncludesInputBox : this.handleBlurExcludesInputBox}></input>
+                onBlur={kind === 'include' ? this.handleBlurIncludesInputBox : this.handleBlurExcludesInputBox}
+                ref={kind === 'include' ? this.includeRef : this.excludeRef}
+            />
         </div>;
     }
 
