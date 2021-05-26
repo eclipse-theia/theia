@@ -21,9 +21,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileChangeType, FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
-import { DisposableCollection } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
 import { IconRegistry } from '@theia/core/lib/browser/icon-registry';
-import { Emitter, Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DeployedPlugin, getPluginId, ProductIconThemeContribution, UiTheme } from '../../common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as jsoncparser from 'jsonc-parser';
@@ -48,25 +47,12 @@ export class PluginProductIconThemeDefinition implements ProductIconThemeDefinit
 export const PluginProductIconThemeFactory = Symbol('PluginProductIconThemeFactory');
 export type PluginProductIconThemeFactory = (definition: PluginProductIconThemeDefinition) => PluginProductIconTheme;
 
-// TO DO: Make Icon registry
-// export const ProductIconMap = Symbol('ProductIconMap');
-// export const ConcreteProductIconRegistry = new Map<string, string>([
-//     ['explorer-view-icon', 'files'],
-//     ['search-view-icon', 'search'],
-//     ['run-view-icon', 'debug-alt'],
-//     ['extensions-view-icon', 'extensions'],
-//     ['source-control-view-icon', 'source-control'],
-//     ['settings-view-bar-icon', 'settings-gear'],
-//     ['outline-view-icon', 'symbol-class']
-// ]);
-
 @injectable()
 export class PluginProductIconTheme extends PluginProductIconThemeDefinition implements ProductIconTheme, Disposable {
     @inject(PluginProductIconThemeDefinition) protected readonly definition: PluginProductIconThemeDefinition;
     @inject(ProductIconThemeService) protected readonly productIconThemeService: ProductIconThemeService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(IconRegistry) protected readonly iconRegistry: IconRegistry;
-    // @inject(ProductIconMap) protected readonly vsCodeTheiaIconMap: Map<string, string>;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDeactivate = new DisposableCollection();
@@ -233,7 +219,7 @@ export class PluginProductIconThemeService implements LabelProviderContribution 
     protected readonly productIconThemeFactory: PluginProductIconThemeFactory;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
-    // readonly onDidChange = this.onDidChangeEmitter.event;
+    readonly onDidChange = this.onDidChangeEmitter.event;
 
     protected fireDidChange(): void {
         this.onDidChangeEmitter.fire({ affects: () => true });

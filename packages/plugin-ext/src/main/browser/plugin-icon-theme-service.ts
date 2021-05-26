@@ -324,17 +324,6 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         }
     }
 
-    // protected toCSSUrl(iconPath: string | undefined): string | undefined {
-    //     if (!iconPath) {
-    //         return undefined;
-    //     }
-    //     const iconUri = this.locationUri.resolve(iconPath);
-    //     const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
-    //     return relativePath && `url('${new Endpoint({
-    //         path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
-    //     }).getRestUrl().toString()}')`;
-    // }
-
     protected escapeCSS(value: string): string {
         value = value.replace(/[^\-a-zA-Z0-9]/g, '-');
         if (value.charAt(0).match(/[0-9\-]/)) {
