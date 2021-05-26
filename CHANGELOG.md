@@ -4,6 +4,7 @@
 
 [1.15.0 Milestone](https://github.com/eclipse-theia/theia/milestone/21)
 
+- [core] add API to filter contributions at runtime [#9317](https://github.com/eclipse-theia/theia/pull/9317) Contributed on behalf of STMicroelectronics
 - [editor-preview] rewrote `editor-preview`-package classes as extensions of `editor`-package classes [#9518](https://github.com/eclipse-theia/theia/pull/9517)
 
 <a name="breaking_changes_1.15.0">[Breaking Changes:](#breaking_changes_1.15.0)</a>
