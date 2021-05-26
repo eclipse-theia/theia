@@ -4,6 +4,8 @@
   "description": "Theia - Messages Extension",
   "dependencies": {
     "@theia/core": "1.13.0",
+    "@types/dompurify": "^2.0.2",
+    "dompurify": "^2.0.11",
     "markdown-it": "^8.4.0",
     "react-perfect-scrollbar": "^1.5.3",
     "ts-md5": "^1.2.2"
