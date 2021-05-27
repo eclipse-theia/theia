@@ -265,6 +265,7 @@ class EditorAndDocumentStateComputer implements Disposable {
             }
             const model = editor.getControl().getModel();
             if (model && !model.isDisposed()) {
+                model.setValue(model.getValue());
                 const editorSnapshot = new EditorSnapshot(editor);
                 editors.set(editorSnapshot.id, editorSnapshot);
                 if (activeEditor === editor) {
