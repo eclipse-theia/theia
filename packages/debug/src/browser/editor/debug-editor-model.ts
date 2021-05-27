@@ -105,6 +105,7 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().onKeyDown(() => this.hover.hide({ immediate: false })),
             this.editor.getControl().onDidChangeModelContent(() => this.update()),
             this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
+            this.editor.onDidResize(e => this.breakpointWidget.inputSize = e),
             this.sessions.onDidChange(() => this.update()),
             this.toDisposeOnUpdate
         ]);
