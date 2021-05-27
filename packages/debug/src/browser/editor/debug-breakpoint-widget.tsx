@@ -25,6 +25,7 @@ import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
+import { Dimension } from '@theia/editor/lib/browser';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     position: monaco.Position,
@@ -68,6 +69,16 @@ export class DebugBreakpointWidget implements Disposable {
     protected _input: MonacoEditor | undefined;
     get input(): MonacoEditor | undefined {
         return this._input;
+    }
+    // eslint-disable-next-line no-null/no-null
+    set inputSize(dimension: Dimension | null) {
+        if (this._input) {
+            if (dimension) {
+                this._input.setSize(dimension);
+            } else {
+                this._input.resizeToFit();
+            }
+        }
     }
 
     @postConstruct()
