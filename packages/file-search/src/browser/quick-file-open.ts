@@ -30,7 +30,7 @@ import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
-import { EditorOpenerOptions, Position, Range } from '@theia/editor/lib/browser';
+import { EditorManager, EditorOpenerOptions, Position, Range } from '@theia/editor/lib/browser';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -67,6 +67,8 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     protected readonly messageService: MessageService;
     @inject(FileSystemPreferences)
     protected readonly fsPreferences: FileSystemPreferences;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
@@ -360,11 +362,18 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     }
 
     openFile(uri: URI): void {
-        const options = this.buildOpenerOptions();
-        const resolvedOpener = this.openerService.getOpener(uri, options);
-        resolvedOpener
-            .then(opener => opener.open(uri, options))
-            .catch(error => this.messageService.error(error));
+        const editorState = this.navigationLocationService.closedEditorsStack.find(e => e.uri === uri);
+        if (editorState) {
+            console.log('editor-state exists...');
+            const editorWidget = this.editorManager.open(uri);
+            editorWidget.then(editor => editor.restoreState(editorState.viewState));
+        } else {
+            const options = this.buildOpenerOptions();
+            const resolvedOpener = this.openerService.getOpener(uri, options);
+            resolvedOpener
+                .then(opener => opener.open(uri, options))
+                .catch(error => this.messageService.error(error));
+        }
     }
 
     protected buildOpenerOptions(): EditorOpenerOptions {
@@ -425,7 +434,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 lineNumber = line > 0 ? line - 1 : 0;
 
                 const column = parseInt(patternMatch[2] ?? '', 10);
-                startColumn = Number.isFinite(column) && column > 0 ? column - 1  : 0;
+                startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
             }
         }
 
