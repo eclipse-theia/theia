@@ -1,16 +1,45 @@
 # Change Log
 
-## v1.14.0 - unreleased
+## v1.14.0 - 5/27/2021
 
 [1.14.0 Milestone](https://github.com/eclipse-theia/theia/milestone/20)
 
-- [debug] Fix behavior of `Add Configurations` command when empty `launch.json` present. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
-- [filesystem] Allow for ~ substitution in browser's file dialog [#9416](https://github.com/eclipse-theia/theia/pull/9416)
+- [api-samples] fixed dynamic label example [#9517](https://github.com/eclipse-theia/theia/pull/9517)
+- [application-manager] upgraded to `webpack v5` [#9451](https://github.com/eclipse-theia/theia/pull/9451)
+- [core] added events to notify about websocket upgrades [#9459](https://github.com/eclipse-theia/theia/pull/9459)
+- [core] added support for language-specific preferences in the frontend configuration object [#9358](https://github.com/eclipse-theia/theia/pull/9358)
+- [debug] fixed `Add Configurations` command behavior when an empty `launch.json` present [#9467](https://github.com/eclipse-theia/theia/pull/9467)
+- [debug] fixed issue when setting non-code breakpoints [#9479](https://github.com/eclipse-theia/theia/pull/9479)
+- [file-search] added support for `goto line and column` in the file search [#9478](https://github.com/eclipse-theia/theia/pull/9478)
+- [filesystem] added ability to perform a `~` substitution in the browser file dialog [#9416](https://github.com/eclipse-theia/theia/pull/9416)
+- [messages] added explicit handling to sanitize notification messages before rendering [#9520](https://github.com/eclipse-theia/theia/pull/9520)
+- [monaco] improved styling of the `rename` input [#9419](https://github.com/eclipse-theia/theia/pull/9419)
+- [output] fixed styling issue where `errors` and `warnings` were not colored [#9496](https://github.com/eclipse-theia/theia/pull/9496)
+- [plugin] added support for `extensionsUri` [#9428](https://github.com/eclipse-theia/theia/pull/9428)
+- [plugin] added support for `vscode.URI` APIs [#9422](https://github.com/eclipse-theia/theia/pull/9422)
+- [plugin] added support for the `hosted-plugin.launchOutFiles` preference [#9176](https://github.com/eclipse-theia/theia/pull/9176)
+- [plugin] aligned `FileDecoration` API with the latest version [#8911](https://github.com/eclipse-theia/theia/pull/8911)
+- [plugin] improved extensibility of `replacer` and `reviver` [#9422](https://github.com/eclipse-theia/theia/pull/9422)
+- [plugin] improved support for additional submenu contributions [#9371](https://github.com/eclipse-theia/theia/pull/9371)
+- [preferences] updated initial reading of preference files to before the `ready` promise resolves [#9362](https://github.com/eclipse-theia/theia/pull/9362)
+- [process][terminal] fixed issue where the output of short-lived tasks are not displayed [#9409](https://github.com/eclipse-theia/theia/pull/9409)
+- [quality] removed duplicate implementations of `InMemoryTextResource` [#9504](https://github.com/eclipse-theia/theia/pull/9504)
+- [search-in-workspace] added ability to perform searches outside workspace by specifying `include` path [#9307](https://github.com/eclipse-theia/theia/pull/9307)
+- [search-in-workspace] added support for the `search.smartCase` preference to control searching behavior [#9408](https://github.com/eclipse-theia/theia/pull/9408)
+- [search-in-workspace] fixed issue when revealing a result [#9504](https://github.com/eclipse-theia/theia/pull/9504)
+- [search-in-workspace] improved search behavior for additional `include`/`exclude` patterns [#9307](https://github.com/eclipse-theia/theia/pull/9307)
+- [search-in-workspace] updated `search and replace` to only display diff if a replace term is present [#9516](https://github.com/eclipse-theia/theia/pull/9516)
+- [terminal] fixed merging of environment variables [#9437](https://github.com/eclipse-theia/theia/pull/9437)
+- [terminal] removed incorrect `process.env` from the browser environment [#9452](https://github.com/eclipse-theia/theia/pull/9452)
+- [vsx-registry] added handling to sanitize readme before rendering [#9424](https://github.com/eclipse-theia/theia/pull/9424)
+- [vsx-registry] updated compatibility check for vscode builtins to verify compatible version rather than engine [#9486](https://github.com/eclipse-theia/theia/pull/9486)
 
 <a name="breaking_changes_1.14.0">[Breaking Changes:](#breaking_changes_1.14.0)</a>
 
 - [debug] `DebugConfigurationManager` no longer `@injects()` the `FileService` and now uses `MonacoTextModelService` instead. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
-- [filesystem] ReactRenderer, LocationListRenderer, and FileDialogTreeFiltersRenderer have been made injectable/factoritized. FileDialog and its children have been updated to use property injection where appropriate and initialization inside constructor has been moved to postConstruct. [#9416](https://github.com/eclipse-theia/theia/pull/9416).
+- [filesystem] `ReactRenderer`, `LocationListRenderer`, and `FileDialogTreeFiltersRenderer` have been made injectable/factoritized [#9416](https://github.com/eclipse-theia/theia/pull/9416)
+  - `FileDialog` and its children have been updated to use property injection where appropriate and initialization inside constructor has been moved to `postConstruct`
+- [vsx-registry] `VSXRegistryAPI.getLatestCompatibleVersion` now accepts `VSXSearchEntry` as a parameter [#9486](https://github.com/eclipse-theia/theia/pull/9486)
 
 ## v1.13.0 - 4/29/2021
 
