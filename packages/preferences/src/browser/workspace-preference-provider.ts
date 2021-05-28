@@ -35,11 +35,20 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
     protected readonly folderPreferenceProvider: PreferenceProvider;
 
+    protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
+
     @postConstruct()
     protected async init(): Promise<void> {
-        this._ready.resolve();
-        this.ensureDelegateUpToDate();
+        this.workspaceService.ready.then(() => {
+            // If there is no workspace after the workspace service is initialized, then no more work is needed for this provider to be ready.
+            // If there is a workspace, then we wait for the new delegate to be ready before declaring this provider ready.
+            if (!this.workspaceService.workspace) {
+                this._ready.resolve();
+            }
+        });
+        this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
         this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
+        this.workspaceService.onWorkspaceChanged(() => this.ensureDelegateUpToDate());
     }
 
     getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
@@ -49,19 +58,20 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     protected _delegate: PreferenceProvider | undefined;
     protected get delegate(): PreferenceProvider | undefined {
-        if (!this._delegate) {
-            this.ensureDelegateUpToDate();
-        }
         return this._delegate;
     }
-    protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
+
     protected ensureDelegateUpToDate(): void {
         const delegate = this.createDelegate();
         if (this._delegate !== delegate) {
             this.toDisposeOnEnsureDelegateUpToDate.dispose();
-            this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
 
             this._delegate = delegate;
+
+            if (delegate) {
+                // If this provider has not yet declared itself ready, it should do so when the new delegate is ready.
+                delegate.ready.then(() => this._ready.resolve(), () => { });
+            }
 
             if (delegate instanceof WorkspaceFilePreferenceProvider) {
                 this.toDisposeOnEnsureDelegateUpToDate.pushAll([
@@ -71,6 +81,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
             }
         }
     }
+
     protected createDelegate(): PreferenceProvider | undefined {
         const workspace = this.workspaceService.workspace;
         if (!workspace) {
@@ -78,6 +89,9 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         }
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             return this.folderPreferenceProvider;
+        }
+        if (this._delegate instanceof WorkspaceFilePreferenceProvider && this._delegate.getConfigUri().isEqual(workspace.resource)) {
+            return this._delegate;
         }
         return this.workspaceFileProviderFactory({
             workspaceUri: workspace.resource

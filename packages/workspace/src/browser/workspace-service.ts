@@ -83,6 +83,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected applicationName: string;
 
+    protected _ready = new Deferred<void>();
+    get ready(): Promise<void> {
+        return this._ready.promise;
+    }
+
     @postConstruct()
     protected async init(): Promise<void> {
         this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
@@ -105,6 +110,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.refreshRootWatchers();
             }
         });
+        this._ready.resolve();
     }
 
     /**
@@ -193,6 +199,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const uri = this._workspace.resource;
             if (this._workspace.isFile) {
                 this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
+                this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
             }
             this.setURLFragment(uri.path.toString());
         } else {
