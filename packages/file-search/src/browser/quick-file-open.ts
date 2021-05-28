@@ -40,7 +40,7 @@ export const quickFileOpen: Command = {
 
 export interface FilterAndRange {
     filter: string;
-    range: Range;
+    range?: Range;
 }
 
 // Supports patterns of <path><#|:><line><#|:|,><col?>
@@ -78,7 +78,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
      */
     protected isOpen: boolean = false;
 
-    protected filterAndRangeDefault = { filter: '', range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } } };
+    protected filterAndRangeDefault = { filter: '', range: undefined };
 
     /**
      * Tracks the user file search filter and location range e.g. fileFilter:line:column or fileFilter:line,column
@@ -413,8 +413,8 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
      * @param expression patterns of <path><#|:><line><#|:|,><col?>
      */
     protected splitFilterAndRange(expression: string): FilterAndRange {
-        let lineNumber = 0;
-        let startColumn = 0;
+        let filter = expression;
+        let range = undefined;
 
         // Find line and column number from the expression using RegExp.
         const patternMatch = LINE_COLON_PATTERN.exec(expression);
@@ -422,19 +422,18 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         if (patternMatch) {
             const line = parseInt(patternMatch[1] ?? '', 10);
             if (Number.isFinite(line)) {
-                lineNumber = line > 0 ? line - 1 : 0;
+                const lineNumber = line > 0 ? line - 1 : 0;
 
                 const column = parseInt(patternMatch[2] ?? '', 10);
-                startColumn = Number.isFinite(column) && column > 0 ? column - 1  : 0;
+                const startColumn = Number.isFinite(column) && column > 0 ? column - 1 : 0;
+
+                const position = Position.create(lineNumber, startColumn);
+
+                filter = expression.substr(0, patternMatch.index);
+                range = Range.create(position, position);
             }
         }
 
-        const position = Position.create(lineNumber, startColumn);
-        const range = { start: position, end: position };
-        const fileFilter = patternMatch ? expression.substr(0, patternMatch.index) : expression;
-        return {
-            filter: fileFilter,
-            range
-        };
+        return { filter, range };
     }
 }
