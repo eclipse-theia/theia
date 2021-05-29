@@ -30,7 +30,7 @@ import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
-import { EditorOpenerOptions, Position, Range } from '@theia/editor/lib/browser';
+import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -361,9 +361,15 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
 
     openFile(uri: URI): void {
         const options = this.buildOpenerOptions();
-        const resolvedOpener = this.openerService.getOpener(uri, options);
-        resolvedOpener
+        const closedEditor = this.navigationLocationService.closedEditorsStack.find(editor => editor.uri.path.toString() === uri.path.toString());
+        this.openerService.getOpener(uri, options)
             .then(opener => opener.open(uri, options))
+            .then(widget => {
+                // Attempt to restore the editor state if it exists, and no selection is explicitly requested.
+                if (widget instanceof EditorWidget && closedEditor && !options.selection) {
+                    widget.editor.restoreViewState(closedEditor.viewState);
+                }
+            })
             .catch(error => this.messageService.error(error));
     }
 
