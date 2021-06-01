@@ -64,8 +64,6 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             widget.onDidChangeVisibility(() => {
                 if (widget.isVisible) {
                     this.addRecentlyVisible(widget);
-                } else {
-                    this.removeRecentlyVisible(widget);
                 }
                 this.updateCurrentEditor();
             });
@@ -143,7 +141,12 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
     protected updateActiveEditor(): void {
         const widget = this.shell.activeWidget;
-        this.setActiveEditor(widget instanceof EditorWidget ? widget : undefined);
+        if (widget instanceof EditorWidget) {
+            this.addRecentlyVisible(widget);
+            this.setActiveEditor(widget);
+        } else {
+            this.setActiveEditor(undefined);
+        }
     }
 
     protected _currentEditor: EditorWidget | undefined;
@@ -278,7 +281,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     protected getCounterForUri(uri: URI): number | undefined {
-        return this.editorCounters.get(uri.toString());
+        const idWithoutCounter = EditorWidgetFactory.createID(uri);
+        const counterOfMostRecentlyVisibleEditor = this.recentlyVisibleIds.find(id => id.startsWith(idWithoutCounter))?.slice(idWithoutCounter.length + 1);
+        return counterOfMostRecentlyVisibleEditor === undefined ? undefined : parseInt(counterOfMostRecentlyVisibleEditor);
     }
 
     protected getOrCreateCounterForUri(uri: URI): number {

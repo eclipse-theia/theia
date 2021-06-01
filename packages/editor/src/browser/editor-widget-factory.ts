@@ -24,6 +24,12 @@ import { TextEditorProvider } from './editor';
 @injectable()
 export class EditorWidgetFactory implements WidgetFactory {
 
+    static createID(uri: URI, counter?: number): string {
+        return EditorWidgetFactory.ID
+            + `:${uri.toString()}`
+            + (counter !== undefined ? `:${counter}` : '');
+    }
+
     static ID = 'code-editor-opener';
 
     readonly id = EditorWidgetFactory.ID;
@@ -54,10 +60,8 @@ export class EditorWidgetFactory implements WidgetFactory {
         });
         newEditor.onDispose(() => labelListener.dispose());
 
-        newEditor.id = this.id + ':' + uri.toString();
-        if (options?.counter !== undefined) {
-            newEditor.id += `:${options.counter}`;
-        }
+        newEditor.id = EditorWidgetFactory.createID(uri, options?.counter);
+
         newEditor.title.closable = true;
         return newEditor;
     }
