@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewRevealOptions } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';

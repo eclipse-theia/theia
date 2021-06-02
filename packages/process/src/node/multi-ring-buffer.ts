@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as stream from 'stream';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common';
 
 /**

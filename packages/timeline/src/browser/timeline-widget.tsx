@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Message } from '@phosphor/messaging';
-import { inject, injectable, postConstruct } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     ApplicationShell,
     BaseWidget,
@@ -28,9 +28,9 @@ import { TimelineTreeWidget } from './timeline-tree-widget';
 import { TimelineService } from './timeline-service';
 import { CommandRegistry, SelectionService } from '@theia/core/lib/common';
 import { TimelineEmptyWidget } from './timeline-empty-widget';
-import { toArray } from '@phosphor/algorithm';
+import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 import URI from '@theia/core/lib/common/uri';
-import { URI as CodeURI } from 'vscode-uri';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { TimelineAggregate } from './timeline-service';
 
 @injectable()

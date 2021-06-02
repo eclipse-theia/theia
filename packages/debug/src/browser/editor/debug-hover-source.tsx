@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExpressionContainer, ExpressionItem, DebugVariable } from '../console/debug-console-items';
 import { DebugSessionManager } from '../debug-session-manager';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 
 @injectable()
 export class DebugHoverSource extends TreeSource {
@@ -46,13 +46,13 @@ export class DebugHoverSource extends TreeSource {
         this.fireDidChange();
     }
 
-    async evaluate(expression: string): Promise<boolean> {
+    async evaluate(expression: string): Promise<ExpressionItem | DebugVariable | undefined> {
         const evaluated = await this.doEvaluate(expression);
         const elements = evaluated && await evaluated.getElements();
         this._expression = evaluated;
         this.elements = elements ? [...elements] : [];
         this.fireDidChange();
-        return !!evaluated;
+        return evaluated;
     }
     protected async doEvaluate(expression: string): Promise<ExpressionItem | DebugVariable | undefined> {
         const { currentSession } = this.sessions;

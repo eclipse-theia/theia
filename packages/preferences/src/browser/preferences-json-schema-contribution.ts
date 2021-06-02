@@ -14,16 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { InMemoryResources } from '@theia/core';
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { PreferenceScope } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
-const USER_STORAGE_PREFIX = 'user_storage:/';
+const USER_STORAGE_PREFIX = 'user-storage:/';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
@@ -38,12 +39,16 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     registerSchemas(context: JsonSchemaRegisterContext): void {
         this.registerSchema(PreferenceScope.Default, context);
         this.registerSchema(PreferenceScope.User, context);
         this.registerSchema(PreferenceScope.Workspace, context);
         this.registerSchema(PreferenceScope.Folder, context);
 
+        this.workspaceService.updateSchema('settings', { $ref: this.getSchemaURIForScope(PreferenceScope.Workspace).toString() });
         this.schemaProvider.onDidPreferenceSchemaChanged(() => this.updateInMemoryResources());
     }
 
@@ -60,14 +65,18 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     }
 
     private updateInMemoryResources(): void {
-        this.inmemoryResources.update(new URI(PREFERENCE_URI_PREFIX + PreferenceScope[PreferenceScope.Default].toLowerCase()),
+        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Default),
             this.serializeSchema(+PreferenceScope.Default));
-        this.inmemoryResources.update(new URI(PREFERENCE_URI_PREFIX + PreferenceScope[PreferenceScope.User].toLowerCase()),
+        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.User),
             this.serializeSchema(+PreferenceScope.User));
-        this.inmemoryResources.update(new URI(PREFERENCE_URI_PREFIX + PreferenceScope[PreferenceScope.Workspace].toLowerCase()),
+        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Workspace),
             this.serializeSchema(+PreferenceScope.Workspace));
-        this.inmemoryResources.update(new URI(PREFERENCE_URI_PREFIX + PreferenceScope[PreferenceScope.Folder].toLowerCase()),
+        this.inmemoryResources.update(this.getSchemaURIForScope(PreferenceScope.Folder),
             this.serializeSchema(+PreferenceScope.Folder));
+    }
+
+    private getSchemaURIForScope(scope: PreferenceScope): URI {
+        return new URI(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
     }
 
     private getFileMatch(scope: string): string[] {

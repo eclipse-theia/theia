@@ -51,6 +51,41 @@ export interface Keybinding {
 export namespace Keybinding {
 
     /**
+     * Compares two keybindings for equality.
+     * Can optionally ignore the keybinding and/or args property in the comparison.
+     * @param a The first Keybinding in the comparison
+     * @param b The second Keybinding in the comparison
+     * @param ignoreKeybinding Ignore the 'keybinding' property in the comparison
+     * @param ignoreArgs Ignore the 'args' property in the comparison
+     */
+    export function equals(a: Keybinding, b: Keybinding, ignoreKeybinding: boolean = false, ignoreArgs: boolean = false): boolean {
+        if (a.command === b.command &&
+            (a.context || '') === (b.context || '') &&
+            (a.when || '') === (b.when || '') &&
+            (ignoreKeybinding || a.keybinding === b.keybinding) &&
+            (ignoreArgs || (a.args || '') === (b.args || ''))) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns a new object only containing properties which
+     * are described on the `Keybinding` API.
+     *
+     * @param binding the binding to create an API object for.
+     */
+    export function apiObjectify(binding: Keybinding): Keybinding {
+        return {
+            command: binding.command,
+            keybinding: binding.keybinding,
+            context: binding.context,
+            when: binding.when,
+            args: binding.args
+        };
+    }
+
+    /**
      * Returns with the string representation of the binding.
      * Any additional properties which are not described on
      * the `Keybinding` API will be ignored.
@@ -58,14 +93,7 @@ export namespace Keybinding {
      * @param binding the binding to stringify.
      */
     export function stringify(binding: Keybinding): string {
-        const copy: Keybinding = {
-            command: binding.command,
-            keybinding: binding.keybinding,
-            context: binding.context,
-            when: binding.when,
-            args: binding.args
-        };
-        return JSON.stringify(copy);
+        return JSON.stringify(apiObjectify(binding));
     }
 
     /* Determine whether object is a KeyBinding */

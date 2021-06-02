@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2021 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
@@ -31,6 +31,8 @@ import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { PluginUriFactory } from './scanners/plugin-uri-factory';
+import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -63,6 +65,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginProcessConfiguration).toConstantValue({ path: path.resolve(__dirname, 'plugin-host.js') });
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
+    bind(PluginUriFactory).to(FilePluginUriFactory).inSingletonScope();
 }
 
 export function bindHostedBackend(bind: interfaces.Bind): void {

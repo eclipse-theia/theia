@@ -16,10 +16,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
-import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
+import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 export interface VariableResolveOptions {
     context?: URI;

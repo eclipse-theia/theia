@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable } from '@theia/core/lib/common';
@@ -173,7 +173,7 @@ export class DebugSession implements CompositeTreeElement {
                 try {
                     await thread.pause();
                 } catch (e) {
-                    console.error(e);
+                    console.error('pauseAll failed:', e);
                 }
             })());
         }
@@ -187,7 +187,7 @@ export class DebugSession implements CompositeTreeElement {
                 try {
                     await thread.continue();
                 } catch (e) {
-                    console.error(e);
+                    console.error('continueAll failed:', e);
                 }
             })());
         }
@@ -416,7 +416,7 @@ export class DebugSession implements CompositeTreeElement {
                 const threads = response && response.body && response.body.threads || [];
                 this.doUpdateThreads(threads, stoppedDetails);
             } catch (e) {
-                console.error(e);
+                console.error('updateThreads failed:', e);
             }
         });
     }

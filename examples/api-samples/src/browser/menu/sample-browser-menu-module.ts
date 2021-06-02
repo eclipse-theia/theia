@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, ContainerModule } from 'inversify';
-import { Menu as MenuWidget } from '@phosphor/widgets';
+import { injectable, ContainerModule } from '@theia/core/shared/inversify';
+import { Menu as MenuWidget } from '@theia/core/shared/@phosphor/widgets';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MenuNode, CompositeMenuNode } from '@theia/core/lib/common/menu';
 import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget } from '@theia/core/lib/browser/menu/browser-menu-plugin';

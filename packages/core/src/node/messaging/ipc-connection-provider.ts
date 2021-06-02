@@ -17,7 +17,7 @@
 import * as path from 'path';
 import * as cp from 'child_process';
 import { injectable, inject } from 'inversify';
-import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-jsonrpc';
+import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-ws-jsonrpc';
 import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
 

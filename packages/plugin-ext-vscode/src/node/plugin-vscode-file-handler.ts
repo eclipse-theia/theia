@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext, PluginType } from '@theia/plugin-ext';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import * as filenamify from 'filenamify';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { getTempDir } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { FileUri } from '@theia/core/lib/node/file-uri';

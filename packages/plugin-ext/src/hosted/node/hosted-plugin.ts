@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, multiInject, postConstruct, optional } from 'inversify';
+import { injectable, inject, multiInject, postConstruct, optional } from '@theia/core/shared/inversify';
 import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
 import { HostedPluginClient, PluginModel, ServerPluginRunner, DeployedPlugin } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
@@ -71,18 +71,17 @@ export class HostedPluginSupport {
         }
     }
 
-    onMessage(message: string): void {
+    onMessage(pluginHostId: string, message: string): void {
         // need to perform routing
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const jsonMessage: any = JSON.parse(message);
         if (this.pluginRunners.length > 0) {
             this.pluginRunners.forEach(runner => {
-                if (runner.acceptMessage(jsonMessage)) {
-                    runner.onMessage(jsonMessage);
+                if (runner.acceptMessage(pluginHostId, message)) {
+                    runner.onMessage(pluginHostId, message);
                 }
             });
         } else {
-            this.hostedPluginProcess.onMessage(jsonMessage.content);
+            this.hostedPluginProcess.onMessage(pluginHostId, message);
         }
     }
 

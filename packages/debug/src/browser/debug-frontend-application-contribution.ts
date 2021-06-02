@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider } from '@theia/core/lib/browser';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
@@ -1254,10 +1254,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 defaults: { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' },
                 description: 'Background color for the highlight of line at the top stack frame position.'
             }, {
-                id: 'editor.focusedStackFrameHighlightBackground',
-                defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
-                description: 'Background color for the highlight of line at focused stack frame position.'
-            },
+            id: 'editor.focusedStackFrameHighlightBackground',
+            defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
+            description: 'Background color for the highlight of line at focused stack frame position.'
+        },
             // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {
                 id: 'statusBar.debuggingBackground', defaults: {
@@ -1287,10 +1287,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     dark: '#a31515', light: '#a31515', hc: '#a31515'
                 }, description: 'Exception widget border color.',
             }, {
-                id: 'debugExceptionWidget.background', defaults: {
-                    dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
-                }, description: 'Exception widget background color.'
-            }
+            id: 'debugExceptionWidget.background', defaults: {
+                dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
+            }, description: 'Exception widget background color.'
+        }
         );
     }
 

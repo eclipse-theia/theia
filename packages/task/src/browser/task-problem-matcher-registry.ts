@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {

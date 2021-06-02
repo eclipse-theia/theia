@@ -13,12 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { TimelineMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { TimelineService } from '@theia/timeline/lib/browser/timeline-service';
 import { Emitter } from '@theia/core/lib/common';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MAIN_RPC_CONTEXT, TimelineExt } from '../../common/plugin-api-rpc';
 import {
     InternalTimelineOptions,

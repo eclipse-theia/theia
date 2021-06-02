@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
@@ -50,7 +50,8 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         const { uri, raw } = this;
         let shouldUpdate = false;
         let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
-        if (breakpoints) {
+        // Check for breakpoints array with at least one entry
+        if (breakpoints && breakpoints.length) {
             shouldUpdate = true;
         } else {
             breakpoints = this.breakpoints.getBreakpoints(uri);

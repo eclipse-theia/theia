@@ -17,12 +17,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import debounce = require('p-debounce');
-import { injectable } from 'inversify';
-import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
+import { injectable, inject } from 'inversify';
+import { JSONExt, JSONValue } from '@phosphor/coreutils';
 import URI from '../../common/uri';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 
 export interface PreferenceProviderDataChange {
     readonly preferenceName: string;
@@ -55,6 +56,8 @@ export interface PreferenceResolveResult<T> {
  */
 @injectable()
 export abstract class PreferenceProvider implements Disposable {
+
+    @inject(PreferenceLanguageOverrideService) protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
 
     protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges>();
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges> = this.onDidPreferencesChangedEmitter.event;
@@ -191,10 +194,11 @@ export abstract class PreferenceProvider implements Disposable {
     /**
      * Retrieve the configuration URI for the given resource URI.
      * @param resourceUri the uri of the resource or `undefined`.
+     * @param sectionName the section to return the URI for, e.g. `tasks` or `launch`. Defaults to settings.
      *
      * @returns the corresponding resource URI or `undefined` if there is no valid URI.
      */
-    getConfigUri(resourceUri?: string): URI | undefined {
+    getConfigUri(resourceUri?: string, sectionName?: string): URI | undefined {
         return undefined;
     }
 
@@ -205,7 +209,7 @@ export abstract class PreferenceProvider implements Disposable {
      * @returns the first valid configuration URI contained by the given resource `undefined`
      * if there is no valid configuration URI at all.
      */
-    getContainingConfigUri?(resourceUri?: string): URI | undefined;
+    getContainingConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
 
     static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
         if (source === undefined || !JSONExt.isObject(source)) {
@@ -227,4 +231,24 @@ export abstract class PreferenceProvider implements Disposable {
         return source;
     }
 
+    protected getParsedContent(jsonData: any): { [key: string]: any } {
+        const preferences: { [key: string]: any } = {};
+        if (typeof jsonData !== 'object') {
+            return preferences;
+        }
+        // eslint-disable-next-line guard-for-in
+        for (const preferenceName in jsonData) {
+            const preferenceValue = jsonData[preferenceName];
+            if (this.preferenceOverrideService.testOverrideValue(preferenceName, preferenceValue)) {
+                // eslint-disable-next-line guard-for-in
+                for (const overriddenPreferenceName in preferenceValue) {
+                    const overriddenValue = preferenceValue[overriddenPreferenceName];
+                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;
+                }
+            } else {
+                preferences[preferenceName] = preferenceValue;
+            }
+        }
+        return preferences;
+    }
 }

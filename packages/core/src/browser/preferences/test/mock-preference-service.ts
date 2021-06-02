@@ -15,11 +15,10 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { PreferenceService, PreferenceChange } from '../';
+import { PreferenceService, PreferenceChange, OverridePreferenceName } from '../';
 import { Emitter, Event } from '../../../common';
-import { OverridePreferenceName } from '../preference-contribution';
 import URI from '../../../common/uri';
-import { PreferenceChanges } from '../preference-service';
+import { PreferenceChanges, PreferenceInspection } from '../preference-service';
 import { PreferenceScope } from '../preference-scope';
 
 @injectable()
@@ -38,17 +37,12 @@ export class MockPreferenceService implements PreferenceService {
     } {
         return {};
     }
-    inspect<T>(preferenceName: string, resourceUri?: string): {
-        preferenceName: string,
-        defaultValue: T | undefined,
-        globalValue: T | undefined, // User Preference
-        workspaceValue: T | undefined, // Workspace Preference
-        workspaceFolderValue: T | undefined // Folder Preference
-    } | undefined {
+    inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined {
         return undefined;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
+    updateValue(): Promise<void> { return Promise.resolve(); }
     ready: Promise<void> = Promise.resolve();
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
     readonly onPreferencesChanged: Event<PreferenceChanges> = new Emitter<PreferenceChanges>().event;

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR, MenuContribution, MenuModelRegistry, MenuNode, SubMenuOptions } from '@theia/core/lib/common';
-import { injectable, interfaces } from 'inversify';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
 
 const SampleCommand: Command = {
     id: 'sample-command',

@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';

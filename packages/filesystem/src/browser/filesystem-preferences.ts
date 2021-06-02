@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -23,7 +23,7 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 // See https://github.com/Microsoft/vscode/issues/30180
 export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
@@ -78,6 +78,12 @@ These have precedence over the default associations of the languages installed.'
             type: 'number',
             default: MAX_FILE_SIZE_MB,
             markdownDescription: 'Controls the max file size in MB which is possible to open.'
+        },
+        'files.trimTrailingWhitespace': {
+            'type': 'boolean',
+            'default': false,
+            'description': 'When enabled, will trim trailing whitespace when saving a file.',
+            'scope': 'language-overridable'
         }
     }
 };
@@ -91,6 +97,7 @@ export interface FileSystemConfiguration {
     'files.autoGuessEncoding': boolean;
     'files.participants.timeout': number;
     'files.maxFileSizeMB': number;
+    'files.trimTrailingWhitespace': boolean;
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');

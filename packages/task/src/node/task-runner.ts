@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ProcessTaskRunner } from './process/process-task-runner';
 import { Task } from './task';
@@ -84,14 +84,20 @@ export class TaskRunnerRegistry {
     }
 
     /**
-     * Retrieves the {@link TaskRunner} registered for the specified Task type.
-     * @param type the task type.
+     * Looks for a registered {@link TaskRunner} for each of the task types in sequence and returns the first that is found
+     * If no task runner is registered for any of the types, the default runner is returned.
+     * @param types the task types.
      *
-     * @returns the registered {@link TaskRunner} or a default runner if none is registered for the specified type.
+     * @returns the registered {@link TaskRunner} or a default runner if none is registered for the specified types.
      */
-    getRunner(type: string): TaskRunner {
-        const runner = this.runners.get(type);
-        return runner ? runner : this.defaultRunner;
+    getRunner(...types: string[]): TaskRunner {
+        for (const type of types) {
+            const runner = this.runners.get(type);
+            if (runner) {
+                return runner;
+            }
+        }
+        return this.defaultRunner;
     }
 
     /**

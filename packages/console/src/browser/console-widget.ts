@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ElementExt } from '@phosphor/domutils';
-import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
+import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';

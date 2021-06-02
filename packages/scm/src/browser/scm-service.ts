@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Emitter } from '@theia/core/lib/common';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmRepository, ScmProviderOptions } from './scm-repository';
 import { ScmCommand, ScmProvider } from './scm-provider';

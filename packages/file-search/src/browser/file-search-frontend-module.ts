@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, KeybindingContribution, QuickOpenContribution } from '@theia/core/lib/browser';
 import { QuickFileOpenFrontendContribution } from './quick-file-open-contribution';

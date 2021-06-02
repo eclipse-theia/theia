@@ -16,7 +16,8 @@
 
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
+import { inject, injectable } from '@theia/core/shared/inversify';
 
 export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
 
@@ -34,16 +35,31 @@ export class FileDialogTreeFilters {
     [name: string]: string[];
 }
 
+export const FileDialogTreeFiltersRendererFactory = Symbol('FileDialogTreeFiltersRendererFactory');
+export interface FileDialogTreeFiltersRendererFactory {
+    (options: FileDialogTreeFiltersRendererOptions): FileDialogTreeFiltersRenderer;
+}
+
+export const FileDialogTreeFiltersRendererOptions = Symbol('FileDialogTreeFiltersRendererOptions');
+export interface FileDialogTreeFiltersRendererOptions {
+    suppliedFilters: FileDialogTreeFilters;
+    fileDialogTree: FileDialogTree;
+}
+
+@injectable()
 export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
     readonly appliedFilters: FileDialogTreeFilters;
+    readonly suppliedFilters: FileDialogTreeFilters;
+    readonly fileDialogTree: FileDialogTree;
 
     constructor(
-        readonly suppliedFilters: FileDialogTreeFilters,
-        readonly fileDialogTree: FileDialogTree
+        @inject(FileDialogTreeFiltersRendererOptions) readonly options: FileDialogTreeFiltersRendererOptions
     ) {
         super();
-        this.appliedFilters = { 'All Files': [], ...suppliedFilters, };
+        this.suppliedFilters = options.suppliedFilters;
+        this.fileDialogTree = options.fileDialogTree;
+        this.appliedFilters = { 'All Files': [], ...this.suppliedFilters, };
     }
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);

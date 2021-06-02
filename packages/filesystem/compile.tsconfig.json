@@ -9,9 +9,6 @@
       "mv": [
         "src/typings/mv"
       ],
-      "nsfw": [
-        "src/typings/nsfw"
-      ],
       "trash": [
         "src/typings/trash"
       ]
@@ -21,9 +18,6 @@
     "src"
   ],
   "references": [
-    {
-      "path": "../../dev-packages/application-package/compile.tsconfig.json"
-    },
     {
       "path": "../core/compile.tsconfig.json"
     }

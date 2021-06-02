@@ -113,7 +113,7 @@ export namespace TaskOutputPresentation {
 
 export interface TaskCustomization {
     type: string;
-    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
+    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
     presentation?: TaskOutputPresentation;
     detail?: string;
@@ -149,10 +149,14 @@ export namespace TaskCustomization {
 }
 
 export enum TaskScope {
-    Workspace,
-    Global
+    Global = 1,
+    Workspace = 2
 }
 
+/**
+ * The task configuration scopes.
+ * - `string` represents the associated workspace folder uri.
+ */
 export type TaskConfigurationScope = string | TaskScope.Workspace | TaskScope.Global;
 
 export interface TaskConfiguration extends TaskCustomization {
@@ -209,6 +213,8 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
     /** Returns the list of default and registered task runners */
     getRegisteredTaskTypes(): Promise<string[]>
 
+    /** plugin callback task complete */
+    customExecutionComplete(id: number, exitCode: number | undefined): Promise<void>
 }
 
 export interface TaskCustomizationData {

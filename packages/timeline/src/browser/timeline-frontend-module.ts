@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Container, ContainerModule, interfaces } from 'inversify';
+import { Container, ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { TimelineService } from './timeline-service';
 import { TimelineWidget } from './timeline-widget';

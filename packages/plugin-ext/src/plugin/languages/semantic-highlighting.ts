@@ -24,7 +24,7 @@
 
 import { BinaryBuffer } from '@theia/core/src/common/buffer';
 import * as theia from '@theia/plugin';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SemanticTokens, SemanticTokensEdit, SemanticTokensEdits } from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
 import { toRange } from '../type-converters';

@@ -34,7 +34,7 @@ import {
     WorkspaceTextEditDto,
     PluginInfo
 } from '../../common/plugin-api-rpc';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto
@@ -45,14 +45,14 @@ import CoreURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import * as vst from 'vscode-languageserver-types';
+import * as vst from '@theia/core/shared/vscode-languageserver-types';
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { CallHierarchyService, CallHierarchyServiceProvider, Caller, Definition } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller } from './callhierarchy/callhierarchy-type-converters';
-import { Position, DocumentUri } from 'vscode-languageserver-types';
+import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
@@ -1017,9 +1017,15 @@ export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monac
     return {
         edits: (data && data.edits || []).map(edit => {
             if (WorkspaceTextEditDto.is(edit)) {
-                return { resource: monaco.Uri.revive(edit.resource), edit: edit.edit };
+                return <monaco.languages.WorkspaceTextEdit>{
+                    resource: monaco.Uri.revive(edit.resource),
+                    edit: edit.edit, metadata: edit.metadata
+                };
             } else {
-                return { newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri), options: edit.options };
+                return <monaco.languages.WorkspaceFileEdit>{
+                    newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri),
+                    options: edit.options, metadata: edit.metadata
+                };
             }
         })
     };

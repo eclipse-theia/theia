@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { injectable } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Key } from '@theia/core/lib/browser';
 import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';

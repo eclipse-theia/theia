@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { DebugAdapterExecutable, DebugAdapterContribution } from '../../common/debug-model';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
-import { injectable, unmanaged } from 'inversify';
+import { injectable, unmanaged } from '@theia/core/shared/inversify';
 
 namespace nls {
     export function localize(key: string, _default: string): string {
@@ -178,7 +178,7 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
             };
             properties['postDebugTask'] = {
                 anyOf: [taskSchema, {
-                    type: ['string', ],
+                    type: ['string'],
                 }],
                 default: '',
                 defaultSnippets: [{ body: { task: '', type: '' } }],

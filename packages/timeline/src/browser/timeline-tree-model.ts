@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import {
     CompositeTreeNode,
     SelectableTreeNode,
@@ -38,14 +38,14 @@ export class TimelineTreeModel extends TreeModelImpl {
             children: []
         } as CompositeTreeNode;
         const children = items.map(item =>
-             ({
-                timelineItem: item,
-                id: item.id ? item.id : item.timestamp.toString(),
-                parent: root,
-                detail: item.detail,
-                selected: false,
-                visible: true
-            } as TimelineNode)
+        ({
+            timelineItem: item,
+            id: item.id ? item.id : item.timestamp.toString(),
+            parent: root,
+            detail: item.detail,
+            selected: false,
+            visible: true
+        } as TimelineNode)
         );
         let loadMore;
         if (hasMoreItems) {

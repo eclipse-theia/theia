@@ -19,7 +19,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
-import { Container, ContainerModule } from 'inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import URI from '@theia/core/lib/common/uri';
@@ -192,6 +192,39 @@ describe('search-service', function (): void {
             const matches = await service.find('master', { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
             // `**/.git/refs/remotes/*/master` files should not be picked up
             assert.deepStrictEqual([], matches);
+        });
+    });
+
+    describe('search with whitespaces', () => {
+        const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
+
+        it('should support file searches with whitespaces', async () => {
+            const matches = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matches).to.be.length(2);
+            expect(matches[0].endsWith('subdir1/sub-bar/foo.txt'));
+            expect(matches[1].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support fuzzy file searches with whitespaces', async () => {
+            const matchesExact = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            const matchesFuzzy = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesExact).to.be.length(0);
+            expect(matchesFuzzy).to.be.length(1);
+            expect(matchesFuzzy[0].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support file searches with whitespaces regardless of order', async () => {
+            const matchesA = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            const matchesB = await service.find('sub foo', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesA).to.not.be.empty;
+            expect(matchesB).to.not.be.empty;
+            expect(matchesA.length).to.equal(matchesB.length);
+
+            // Due to ripgrep parallelism we cannot deepEqual the matches since order is not guaranteed.
+            expect(matchesA).to.have.members(matchesB);
         });
     });
 

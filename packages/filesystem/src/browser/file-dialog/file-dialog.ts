@@ -14,18 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Disposable, MaybeArray } from '@theia/core/lib/common';
 import { Key, LabelProvider } from '@theia/core/lib/browser';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
-import { LocationListRenderer } from '../location';
+import { LocationListRenderer, LocationListRendererFactory } from '../location';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
-import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters } from './file-dialog-tree-filters-renderer';
+import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFiltersRendererFactory } from './file-dialog-tree-filters-renderer';
 import URI from '@theia/core/lib/common/uri';
-import { Panel } from '@phosphor/widgets';
+import { Panel } from '@theia/core/shared/@phosphor/widgets';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
 export interface OpenFileDialogFactory {
@@ -43,6 +43,7 @@ export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
 export const NAVIGATION_BACK_CLASS = 'theia-NavigationBack';
 export const NAVIGATION_FORWARD_CLASS = 'theia-NavigationForward';
 export const NAVIGATION_HOME_CLASS = 'theia-NavigationHome';
+export const NAVIGATION_UP_CLASS = 'theia-NavigationUp';
 export const NAVIGATION_LOCATION_LIST_PANEL_CLASS = 'theia-LocationListPanel';
 
 export const FILTERS_PANEL_CLASS = 'theia-FiltersPanel';
@@ -54,6 +55,7 @@ export const FILENAME_LABEL_CLASS = 'theia-FileNameLabel';
 export const FILENAME_TEXTFIELD_CLASS = 'theia-FileNameTextField';
 
 export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
+export const TOOLBAR_ITEM_TRANSFORM_TIMEOUT = 100;
 
 export class FileDialogProps extends DialogProps {
 
@@ -113,18 +115,26 @@ export class SaveFileDialogProps extends FileDialogProps {
 
 export abstract class FileDialog<T> extends AbstractDialog<T> {
 
-    protected readonly back: HTMLSpanElement;
-    protected readonly forward: HTMLSpanElement;
-    protected readonly home: HTMLSpanElement;
-    protected readonly locationListRenderer: LocationListRenderer;
-    protected readonly treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
-    protected readonly treePanel: Panel;
+    protected back: HTMLSpanElement;
+    protected forward: HTMLSpanElement;
+    protected home: HTMLSpanElement;
+    protected up: HTMLSpanElement;
+    protected locationListRenderer: LocationListRenderer;
+    protected treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
+    protected treePanel: Panel;
+
+    @inject(FileDialogWidget) readonly widget: FileDialogWidget;
+    @inject(LocationListRendererFactory) readonly locationListFactory: LocationListRendererFactory;
+    @inject(FileDialogTreeFiltersRendererFactory) readonly treeFiltersFactory: FileDialogTreeFiltersRendererFactory;
 
     constructor(
-        @inject(FileDialogProps) readonly props: FileDialogProps,
-        @inject(FileDialogWidget) readonly widget: FileDialogWidget
+        @inject(FileDialogProps) readonly props: FileDialogProps
     ) {
         super(props);
+    }
+
+    @postConstruct()
+    init(): void {
         this.treePanel = new Panel();
         this.treePanel.addWidget(this.widget);
         this.toDispose.push(this.treePanel);
@@ -145,28 +155,23 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         navigationPanel.appendChild(this.home = createIconButton('fa', 'fa-home'));
         this.home.classList.add(NAVIGATION_HOME_CLASS);
         this.home.title = 'Go To Initial Location';
+        navigationPanel.appendChild(this.up = createIconButton('fa', 'fa-level-up'));
+        this.up.classList.add(NAVIGATION_UP_CLASS);
+        this.up.title = 'Navigate Up One Directory';
 
-        this.locationListRenderer = this.createLocationListRenderer();
+        const locationListRendererHost = document.createElement('div');
+        this.locationListRenderer = this.locationListFactory({ model: this.model, host: locationListRendererHost });
+        this.toDispose.push(this.locationListRenderer);
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
         navigationPanel.appendChild(this.locationListRenderer.host);
 
-        this.treeFiltersRenderer = this.createFileTreeFiltersRenderer();
+        if (this.props.filters) {
+            this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });
+        }
     }
 
     get model(): FileDialogModel {
         return this.widget.model;
-    }
-
-    protected createLocationListRenderer(): LocationListRenderer {
-        return new LocationListRenderer(this.model);
-    }
-
-    protected createFileTreeFiltersRenderer(): FileDialogTreeFiltersRenderer | undefined {
-        if (this.props.filters) {
-            return new FileDialogTreeFiltersRenderer(this.props.filters, this.widget.model.tree);
-        }
-
-        return undefined;
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -176,6 +181,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         setEnabled(this.home, !!this.model.initialLocation
             && !!this.model.location
             && this.model.initialLocation.toString() !== this.model.location.toString());
+        setEnabled(this.up, this.model.canNavigateUpward());
         this.locationListRenderer.render();
 
         if (this.treeFiltersRenderer) {
@@ -183,6 +189,28 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         }
 
         this.widget.update();
+    }
+
+    protected handleEnter(event: KeyboardEvent): boolean | void {
+        if (event.target instanceof HTMLTextAreaElement || this.targetIsDirectoryInput(event.target) || this.targetIsInputToggle(event.target)) {
+            return false;
+        }
+        this.accept();
+    }
+
+    protected handleEscape(event: KeyboardEvent): boolean | void {
+        if (event.target instanceof HTMLTextAreaElement || this.targetIsDirectoryInput(event.target)) {
+            return false;
+        }
+        this.close();
+    }
+
+    protected targetIsDirectoryInput(target: EventTarget | null): boolean {
+        return target instanceof HTMLInputElement && target.classList.contains(LocationListRenderer.Styles.LOCATION_TEXT_INPUT_CLASS);
+    }
+
+    protected targetIsInputToggle(target: EventTarget | null): boolean {
+        return target instanceof HTMLSpanElement && target.classList.contains(LocationListRenderer.Styles.LOCATION_INPUT_TOGGLE_CLASS);
     }
 
     protected appendFiltersPanel(): void {
@@ -216,14 +244,34 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.appendCloseButton('Cancel');
         this.appendAcceptButton(this.getAcceptButtonLabel());
 
-        this.addKeyListener(this.back, Key.ENTER, () => this.model.navigateBackward(), 'click');
-        this.addKeyListener(this.forward, Key.ENTER, () => this.model.navigateForward(), 'click');
+        this.addKeyListener(this.back, Key.ENTER, () => {
+            this.addTransformEffectToIcon(this.back);
+            this.model.navigateBackward();
+        }, 'click');
+
+        this.addKeyListener(this.forward, Key.ENTER, () => {
+            this.addTransformEffectToIcon(this.forward);
+            this.model.navigateForward();
+        }, 'click');
         this.addKeyListener(this.home, Key.ENTER, () => {
+            this.addTransformEffectToIcon(this.home);
             if (this.model.initialLocation) {
                 this.model.location = this.model.initialLocation;
             }
         }, 'click');
+        this.addKeyListener(this.up, Key.ENTER, () => {
+            this.addTransformEffectToIcon(this.up);
+            if (this.model.location) {
+                this.model.location = this.model.location.parent;
+            }
+        }, 'click');
         super.onAfterAttach(msg);
+    }
+
+    protected addTransformEffectToIcon(element: HTMLSpanElement): void {
+        const icon = element.getElementsByTagName('i')[0];
+        icon.classList.add('active');
+        setTimeout(() => icon.classList.remove('active'), TOOLBAR_ITEM_TRANSFORM_TIMEOUT);
     }
 
     protected abstract getAcceptButtonLabel(): string;
@@ -237,11 +285,14 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 @injectable()
 export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
 
-    constructor(
-        @inject(OpenFileDialogProps) readonly props: OpenFileDialogProps,
-        @inject(FileDialogWidget) readonly widget: FileDialogWidget
-    ) {
-        super(props, widget);
+    constructor(@inject(OpenFileDialogProps) readonly props: OpenFileDialogProps) {
+        super(props);
+    }
+
+    @postConstruct()
+    init(): void {
+        super.init();
+        const { props } = this;
         if (props.canSelectFiles !== undefined) {
             this.widget.disableFileSelection = !props.canSelectFiles;
         }
@@ -286,11 +337,14 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    constructor(
-        @inject(SaveFileDialogProps) readonly props: SaveFileDialogProps,
-        @inject(FileDialogWidget) readonly widget: FileDialogWidget
-    ) {
-        super(props, widget);
+    constructor(@inject(SaveFileDialogProps) readonly props: SaveFileDialogProps) {
+        super(props);
+    }
+
+    @postConstruct()
+    init(): void {
+        super.init();
+        const { widget } = this;
         widget.addClass(SAVE_DIALOG_CLASS);
     }
 

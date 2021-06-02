@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import * as chai from 'chai';
-import { Container, ContainerModule } from 'inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ILogger, bindContributionProvider } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { VariableContribution, VariableRegistry } from './variable';

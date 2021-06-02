@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { taskSchemaId } from './task-schema-updater';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
@@ -27,6 +27,7 @@ export const taskPreferencesSchema: PreferenceSchema = {
             $ref: taskSchemaId,
             description: 'Task definition file',
             defaultValue: {
+                version: '2.0.0',
                 tasks: []
             }
         }

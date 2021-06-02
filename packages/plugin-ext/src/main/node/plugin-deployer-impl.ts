@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, optional, multiInject, inject, named } from 'inversify';
+import { injectable, optional, multiInject, inject, named } from '@theia/core/shared/inversify';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,

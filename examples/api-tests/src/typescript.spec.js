@@ -60,8 +60,8 @@ describe('TypeScript', function () {
     const referencesPluginId = 'ms-vscode.references-view';
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const serverUri = rootUri.resolve('src-gen/backend/test-server.js');
-    const inversifyUri = rootUri.resolve('../../node_modules/inversify/dts/inversify.d.ts').normalizePath();
-    const containerUri = rootUri.resolve('../../node_modules/inversify/dts/container/container.d.ts').normalizePath();
+    const inversifyUri = rootUri.resolve('../../node_modules/inversify/lib/inversify.d.ts').normalizePath();
+    const containerUri = rootUri.resolve('../../node_modules/inversify/lib/container/container.d.ts').normalizePath();
 
     before(async function () {
         await fileService.create(serverUri, `// @ts-check

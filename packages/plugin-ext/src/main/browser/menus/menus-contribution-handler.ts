@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { URI as CodeUri } from 'vscode-uri';
-import { injectable, inject } from 'inversify';
+import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
@@ -99,135 +99,122 @@ export class MenusContributionPointHandler {
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
-        for (const location in allMenus) {
-            if (location === 'commandPalette') {
-                for (const menu of allMenus[location]) {
-                    if (menu.when) {
-                        toDispose.push(this.quickCommandService.pushCommandContext(menu.command, menu.when));
-                    }
-                }
-            } else if (location === 'editor/title') {
-                for (const action of allMenus[location]) {
-                    toDispose.push(this.registerTitleAction(location, action, {
-                        execute: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.executeCommand(action.command, this.codeEditorWidgetUtil.getResourceUri(widget)),
-                        isEnabled: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isEnabled(action.command, this.codeEditorWidgetUtil.getResourceUri(widget)),
-                        isVisible: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isVisible(action.command, this.codeEditorWidgetUtil.getResourceUri(widget))
-                    }));
-                }
-            } else if (location === 'view/title') {
-                for (const action of allMenus[location]) {
-                    toDispose.push(this.registerTitleAction(location, { ...action, when: undefined }, {
-                        execute: widget => widget instanceof PluginViewWidget && this.commands.executeCommand(action.command),
-                        isEnabled: widget => widget instanceof PluginViewWidget &&
-                            this.viewContextKeys.with({ view: widget.options.viewId }, () =>
-                                this.commands.isEnabled(action.command) && this.viewContextKeys.match(action.when)),
-                        isVisible: widget => widget instanceof PluginViewWidget &&
-                            this.viewContextKeys.with({ view: widget.options.viewId }, () =>
-                                this.commands.isVisible(action.command) && this.viewContextKeys.match(action.when))
-                    }));
-                }
-            } else if (location === 'view/item/context') {
-                for (const menu of allMenus[location]) {
-                    const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? VIEW_ITEM_INLINE_MENU : VIEW_ITEM_CONTEXT_MENU;
-                    toDispose.push(this.registerTreeMenuAction(menuPath, menu));
-                }
-            } else if (location === 'scm/title') {
-                for (const action of allMenus[location]) {
-                    toDispose.push(this.registerScmTitleAction(location, action));
-                }
-            } else if (location === 'scm/resourceGroup/context') {
-                for (const menu of allMenus[location]) {
-                    const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU : ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU;
-                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
-                }
-            } else if (location === 'scm/resourceFolder/context') {
-                for (const menu of allMenus[location]) {
-                    const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU : ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU;
-                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
-                }
-            } else if (location === 'scm/resourceState/context') {
-                for (const menu of allMenus[location]) {
-                    const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? ScmTreeWidget.RESOURCE_INLINE_MENU : ScmTreeWidget.RESOURCE_CONTEXT_MENU;
-                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
-                }
-            } else if (location === 'timeline/item/context') {
-                for (const menu of allMenus[location]) {
-                    toDispose.push(this.registerMenuAction(TIMELINE_ITEM_CONTEXT_MENU, menu,
-                        command => ({
-                            execute: (...args) => this.commands.executeCommand(command, ...this.toTimelineArgs(...args)),
-                            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTimelineArgs(...args)),
-                            isVisible: (...args) => this.commands.isVisible(command, ...this.toTimelineArgs(...args))
-                        })
-                    ));
-                }
-            } else if (location === 'comments/commentThread/context') {
-                for (const menu of allMenus[location]) {
-                    toDispose.push(this.registerMenuAction(COMMENT_THREAD_CONTEXT, menu,
-                        command => ({
-                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
-                            isEnabled: () => {
-                                const commandContributions = plugin.contributes?.commands;
-                                if (commandContributions) {
-                                    const commandContribution = commandContributions.find(c => c.command === command);
-                                    if (commandContribution && commandContribution.enablement) {
-                                        return this.contextKeyService.match(commandContribution.enablement);
-                                    }
-                                }
-                                return true;
-                            },
-                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
-                        })
-                    ));
-                }
-            } else if (location === 'comments/comment/title') {
-                for (const menu of allMenus[location]) {
-                    toDispose.push(this.registerMenuAction(COMMENT_TITLE, menu,
-                        command => ({
-                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
-                            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toCommentArgs(...args)),
-                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
-                        })
-                    ));
-                }
-            } else if (location === 'comments/comment/context') {
-                for (const menu of allMenus[location]) {
-                    toDispose.push(this.registerMenuAction(COMMENT_CONTEXT, menu,
-                        command => ({
-                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
-                            isEnabled: () => true,
-                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
-                        })
-                    ));
-                }
-            } else if (location === 'debug/callstack/context') {
-                for (const menu of allMenus[location]) {
-                    for (const menuPath of [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]) {
-                        toDispose.push(this.registerMenuAction(menuPath, menu, command => ({
-                            execute: (...args) => this.commands.executeCommand(command, args[0]),
-                            isEnabled: (...args) => this.commands.isEnabled(command, args[0]),
-                            isVisible: (...args) => this.commands.isVisible(command, args[0])
-                        })));
-                    }
-                }
-            } else if (allMenus.hasOwnProperty(location)) {
-                const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
-                if (!menuPaths.length) {
-                    this.logger.warn(`'${plugin.metadata.model.id}' plugin contributes items to a menu with invalid identifier: ${location}`);
-                    continue;
-                }
-                const menus = allMenus[location];
+
+        const tree = this.getMenusTree(plugin);
+        tree.forEach(rootMenu => {
+
+            const registerMenuActions = (menus: MenuTree[], group: string | undefined, submenusOrder: string | undefined = '') => {
                 menus.forEach(menu => {
-                    for (const menuPath of menuPaths) {
-                        toDispose.push(this.registerGlobalMenuAction(menuPath, menu));
+                    if (group) {
+                        // Adding previous group to the start of current menu group.
+                        menu.group = `${group}/${menu.group || '_'}`;
+                    }
+                    if (menu.isSubmenu) {
+                        let [submenuGroup, submenuOrder = ''] = (menu.group || '_').split('@');
+                        // Generating group in format: `<submenu group>/<submenu name>`
+                        submenuGroup = `${submenuGroup}/${menu.label}`;
+                        if (submenusOrder) {
+                            // Adding previous submenus order to the start of current submenu order
+                            // in format: `<submenu order>/<submenu order>.../<menu order>`.
+                            submenuOrder = `${submenusOrder}/${submenuOrder}`;
+                        }
+                        registerMenuActions(menu.children, submenuGroup, submenuOrder);
+                    } else {
+                        menu.submenusOrder = submenusOrder;
+                        toDispose.push(
+                            this.registerAction(plugin, rootMenu.id!, menu)
+                        );
                     }
                 });
-            }
-        }
+            };
+
+            registerMenuActions(rootMenu.children, undefined, undefined);
+        });
+
         return toDispose;
+    }
+
+    /**
+     * Transforms the structure of Menus & Submenus
+     * into something more tree-like.
+     */
+    protected getMenusTree(plugin: DeployedPlugin): MenuTree[] {
+        const allMenus = plugin.contributes && plugin.contributes.menus;
+        if (!allMenus) {
+            return [];
+        }
+        const allSubmenus = plugin.contributes && plugin.contributes.submenus;
+        const tree: MenuTree[] = [];
+
+        Object.keys(allMenus).forEach(location => {
+            // Don't build menus tree for a submenu declaration at root.
+            if (allSubmenus && allSubmenus.findIndex(submenu => submenu.id === location) > -1) {
+                return;
+            }
+
+            /**
+             * @param menus the menus to create a tree from.
+             * @param submenusIds contains all the previous submenus ids in the current tree.
+             * @returns {MenuTree[]} the trees for the given menus.
+             */
+            const getChildren = (menus: Menu[], submenusIds: Set<string>) => {
+                // Contains all the submenus ids of the current parent.
+                const parentSubmenusIds = new Set<string>();
+
+                return menus.reduce((children: MenuTree[], menuItem) => {
+                    if (menuItem.submenu) {
+                        if (parentSubmenusIds.has(menuItem.submenu)) {
+                            console.warn(`Submenu ${menuItem.submenu} already registered`);
+                        } else if (submenusIds.has(menuItem.submenu)) {
+                            console.warn(`Found submenu cycle: ${menuItem.submenu}`);
+                        } else {
+                            parentSubmenusIds.add(menuItem.submenu);
+                            const submenu = allSubmenus!.find(s => s.id === menuItem.submenu)!;
+                            const menuTree = new MenuTree({ ...menuItem }, menuItem.submenu, submenu.label);
+                            menuTree.children = getChildren(allMenus[submenu.id], new Set([...submenusIds, menuItem.submenu]));
+                            children.push(menuTree);
+                        }
+                    } else {
+                        children.push(new MenuTree({ ...menuItem }));
+                    }
+                    return children;
+                }, []);
+            };
+
+            const rootMenu = new MenuTree(undefined, location);
+            rootMenu.children = getChildren(allMenus[location], new Set());
+            tree.push(rootMenu);
+        });
+
+        return tree;
+    }
+
+    protected registerAction(plugin: DeployedPlugin, location: string, action: MenuTree): Disposable {
+        const allMenus = plugin.contributes && plugin.contributes.menus;
+        if (!allMenus) {
+            return Disposable.NULL;
+        }
+
+        switch (location) {
+            case 'commandPalette': return this.registerCommandPaletteAction(action);
+            case 'editor/title': return this.registerEditorTitleAction(location, action);
+            case 'view/title': return this.registerViewTitleAction(location, action);
+            case 'view/item/context': return this.registerViewItemContextAction(action);
+            case 'scm/title': return this.registerScmTitleAction(location, action);
+            case 'scm/resourceGroup/context': return this.registerScmResourceGroupAction(action);
+            case 'scm/resourceFolder/context': return this.registerScmResourceFolderAction(action);
+            case 'scm/resourceState/context': return this.registerScmResourceStateAction(action);
+            case 'timeline/item/context': return this.registerTimelineItemAction(action);
+            case 'comments/commentThread/context': return this.registerCommentThreadAction(action, plugin);
+            case 'comments/comment/title': return this.registerCommentTitleAction(action);
+            case 'comments/comment/context': return this.registerCommentContextAction(action);
+            case 'debug/callstack/context': return this.registerDebugCallstackAction(action);
+
+            default: if (allMenus.hasOwnProperty(location)) {
+                return this.registerGlobalMenuAction(action, location, plugin);
+            }
+                return Disposable.NULL;
+        }
     }
 
     protected static parseMenuPaths(value: string): MenuPath[] {
@@ -238,7 +225,117 @@ export class MenusContributionPointHandler {
         return [];
     }
 
-    protected registerTreeMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
+    protected registerCommandPaletteAction(menu: Menu): Disposable {
+        if (menu.command && menu.when) {
+            return this.quickCommandService.pushCommandContext(menu.command, menu.when);
+        }
+        return Disposable.NULL;
+    }
+
+    protected registerEditorTitleAction(location: string, action: Menu): Disposable {
+        return this.registerTitleAction(location, action, {
+            execute: widget => this.codeEditorWidgetUtil.is(widget) &&
+                this.commands.executeCommand(action.command!, this.codeEditorWidgetUtil.getResourceUri(widget)),
+            isEnabled: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isEnabled(action.command!, this.codeEditorWidgetUtil.getResourceUri(widget)),
+            isVisible: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isVisible(action.command!, this.codeEditorWidgetUtil.getResourceUri(widget))
+        });
+    }
+
+    protected registerViewTitleAction(location: string, action: Menu): Disposable {
+        return this.registerTitleAction(location, { ...action, when: undefined }, {
+            execute: widget => widget instanceof PluginViewWidget && this.commands.executeCommand(action.command!),
+            isEnabled: widget => widget instanceof PluginViewWidget &&
+                this.viewContextKeys.with({ view: widget.options.viewId }, () =>
+                    this.commands.isEnabled(action.command!) && this.viewContextKeys.match(action.when)),
+            isVisible: widget => widget instanceof PluginViewWidget &&
+                this.viewContextKeys.with({ view: widget.options.viewId }, () =>
+                    this.commands.isVisible(action.command!) && this.viewContextKeys.match(action.when))
+        });
+    }
+
+    protected registerViewItemContextAction(menu: MenuTree): Disposable {
+        const inline = menu.group && /^inline/.test(menu.group) || false;
+        const menuPath = inline ? VIEW_ITEM_INLINE_MENU : VIEW_ITEM_CONTEXT_MENU;
+        return this.registerTreeMenuAction(menuPath, menu);
+    }
+
+    protected registerScmResourceGroupAction(menu: MenuTree): Disposable {
+        const inline = menu.group && /^inline/.test(menu.group) || false;
+        const menuPath = inline ? ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU : ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU;
+        return this.registerScmMenuAction(menuPath, menu);
+    }
+
+    protected registerScmResourceFolderAction(menu: MenuTree): Disposable {
+        const inline = menu.group && /^inline/.test(menu.group) || false;
+        const menuPath = inline ? ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU : ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU;
+        return this.registerScmMenuAction(menuPath, menu);
+    }
+
+    protected registerScmResourceStateAction(menu: MenuTree): Disposable {
+        const inline = menu.group && /^inline/.test(menu.group) || false;
+        const menuPath = inline ? ScmTreeWidget.RESOURCE_INLINE_MENU : ScmTreeWidget.RESOURCE_CONTEXT_MENU;
+        return this.registerScmMenuAction(menuPath, menu);
+    }
+
+    protected registerTimelineItemAction(menu: MenuTree): Disposable {
+        return this.registerMenuAction(TIMELINE_ITEM_CONTEXT_MENU, menu,
+            command => ({
+                execute: (...args) => this.commands.executeCommand(command, ...this.toTimelineArgs(...args)),
+                isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTimelineArgs(...args)),
+                isVisible: (...args) => this.commands.isVisible(command, ...this.toTimelineArgs(...args))
+            }));
+    }
+
+    protected registerCommentThreadAction(menu: MenuTree, plugin: DeployedPlugin): Disposable {
+        return this.registerMenuAction(COMMENT_THREAD_CONTEXT, menu,
+            command => ({
+                execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                isEnabled: () => {
+                    const commandContributions = plugin.contributes?.commands;
+                    if (commandContributions) {
+                        const commandContribution = commandContributions.find(c => c.command === command);
+                        if (commandContribution && commandContribution.enablement) {
+                            return this.contextKeyService.match(commandContribution.enablement);
+                        }
+                    }
+                    return true;
+                },
+                isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
+            }));
+    }
+
+    protected registerCommentTitleAction(menu: MenuTree): Disposable {
+        return this.registerMenuAction(COMMENT_TITLE, menu,
+            command => ({
+                execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                isEnabled: (...args) => this.commands.isEnabled(command, ...this.toCommentArgs(...args)),
+                isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
+            }));
+    }
+
+    protected registerCommentContextAction(menu: MenuTree): Disposable {
+        return this.registerMenuAction(COMMENT_CONTEXT, menu,
+            command => ({
+                execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                isEnabled: () => true,
+                isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
+            }));
+    }
+
+    protected registerDebugCallstackAction(menu: MenuTree): Disposable {
+        const toDispose = new DisposableCollection();
+        [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU].forEach(menuPath => {
+            toDispose.push(
+                this.registerMenuAction(menuPath, menu, command => ({
+                    execute: (...args) => this.commands.executeCommand(command, args[0]),
+                    isEnabled: (...args) => this.commands.isEnabled(command, args[0]),
+                    isVisible: (...args) => this.commands.isVisible(command, args[0])
+                })));
+        });
+        return toDispose;
+    }
+
+    protected registerTreeMenuAction(menuPath: MenuPath, menu: MenuTree): Disposable {
         return this.registerMenuAction(menuPath, menu, command => ({
             execute: (...args) => this.commands.executeCommand(command, ...this.toTreeArgs(...args)),
             isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTreeArgs(...args)),
@@ -256,6 +353,9 @@ export class MenusContributionPointHandler {
     }
 
     protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): Disposable {
+        if (!action.command) {
+            return Disposable.NULL;
+        }
         const toDispose = new DisposableCollection();
         const id = this.createSyntheticCommandId(action.command, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
         const command: Command = { id };
@@ -301,14 +401,17 @@ export class MenusContributionPointHandler {
     }
 
     protected registerScmTitleAction(location: string, action: Menu): Disposable {
+        if (!action.command) {
+            return Disposable.NULL;
+        }
         const selectedRepository = () => this.toScmArgs(this.scmService.selectedRepository);
         return this.registerTitleAction(location, action, {
-            execute: widget => widget instanceof ScmWidget && this.commands.executeCommand(action.command, selectedRepository()),
-            isEnabled: widget => widget instanceof ScmWidget && this.commands.isEnabled(action.command, selectedRepository()),
-            isVisible: widget => widget instanceof ScmWidget && this.commands.isVisible(action.command, selectedRepository())
+            execute: widget => widget instanceof ScmWidget && this.commands.executeCommand(action.command!, selectedRepository()),
+            isEnabled: widget => widget instanceof ScmWidget && this.commands.isEnabled(action.command!, selectedRepository()),
+            isVisible: widget => widget instanceof ScmWidget && this.commands.isVisible(action.command!, selectedRepository())
         });
     }
-    protected registerScmMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
+    protected registerScmMenuAction(menuPath: MenuPath, menu: MenuTree): Disposable {
         return this.registerMenuAction(menuPath, menu, command => ({
             execute: (...args) => this.commands.executeCommand(command, ...this.toScmArgs(...args)),
             isEnabled: (...args) => this.commands.isEnabled(command, ...this.toScmArgs(...args)),
@@ -386,7 +489,13 @@ export class MenusContributionPointHandler {
         }];
     }
 
-    protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
+    protected registerGlobalMenuAction(menu: MenuTree, location: string, plugin: DeployedPlugin): Disposable {
+        const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
+        if (!menuPaths.length) {
+            this.logger.warn(`'${plugin.metadata.model.id}' plugin contributes items to a menu with invalid identifier: ${location}`);
+            return Disposable.NULL;
+        }
+
         const selectedResource = () => {
             const selection = this.selectionService.selection;
             if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
@@ -395,14 +504,22 @@ export class MenusContributionPointHandler {
             const uri = this.resourceContextKey.get();
             return uri ? uri['codeUri'] : undefined;
         };
-        return this.registerMenuAction(menuPath, menu, command => ({
-            execute: () => this.commands.executeCommand(command, selectedResource()),
-            isEnabled: () => this.commands.isEnabled(command, selectedResource()),
-            isVisible: () => this.commands.isVisible(command, selectedResource())
-        }));
+
+        const toDispose = new DisposableCollection();
+        menuPaths.forEach(menuPath => {
+            toDispose.push(this.registerMenuAction(menuPath, menu, command => ({
+                execute: () => this.commands.executeCommand(command, selectedResource()),
+                isEnabled: () => this.commands.isEnabled(command, selectedResource()),
+                isVisible: () => this.commands.isVisible(command, selectedResource())
+            })));
+        });
+        return toDispose;
     }
 
-    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: (command: string) => CommandHandler): Disposable {
+    protected registerMenuAction(menuPath: MenuPath, menu: MenuTree, handler: (command: string) => CommandHandler): Disposable {
+        if (!menu.command) {
+            return Disposable.NULL;
+        }
         const toDispose = new DisposableCollection();
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
@@ -425,10 +542,24 @@ export class MenusContributionPointHandler {
         }
 
         const { when } = menu;
-        const [group = '', order = undefined] = (menu.group || '').split('@');
+        const [group, order = undefined] = (menu.group || '_').split('@');
         const action: MenuAction = { commandId, alt: altId, order, when };
+
+        // Register a submenu if the group is in format `<submenu group>/<submenu name>/<submenu order>.../<menu group>`
+        if (group!.indexOf('/') !== -1) {
+            const groupSplit = group!.split('/');
+            const orderSplit = (menu.submenusOrder || '').split('/');
+            const paths: string[] = [];
+            for (let i = 0, j = 0; i < groupSplit.length - 1; i += 2, j += 1) {
+                const submenuGroup = groupSplit[i];
+                const submenuLabel = groupSplit[i + 1];
+                const submenuOrder = orderSplit[j];
+                paths.push(submenuGroup, submenuLabel);
+                toDispose.push(this.menuRegistry.registerSubmenu([...menuPath, ...paths], submenuLabel, { order: submenuOrder }));
+            }
+        }
         const inline = /^inline/.test(group);
-        menuPath = inline ? menuPath : [...menuPath, group];
+        menuPath = inline ? menuPath : [...menuPath, ...group.split('/')];
         toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
 
         toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
@@ -467,4 +598,46 @@ export class MenusContributionPointHandler {
         return toDispose;
     }
 
+}
+
+/**
+ * MenuTree representing a (sub)menu in the menu tree structure.
+ */
+export class MenuTree implements Menu {
+
+    protected _children: MenuTree[] = [];
+    command?: string;
+    alt?: string;
+    group?: string;
+    when?: string;
+    /** The orders of the menu items which lead to the submenus */
+    submenusOrder?: string;
+
+    constructor(menu?: Menu,
+        /** The location where the menu item will be open from. */
+        public readonly id?: string,
+        /** The label of the menu item which leads to the submenu. */
+        public label?: string) {
+        if (menu) {
+            this.command = menu.command;
+            this.alt = menu.alt;
+            this.group = menu.group;
+            this.when = menu.when;
+        }
+    }
+
+    get children(): MenuTree[] {
+        return this._children;
+    }
+    set children(items: MenuTree[]) {
+        this._children.push(...items);
+    }
+
+    public addChild(node: MenuTree): void {
+        this._children.push(node);
+    }
+
+    get isSubmenu(): boolean {
+        return this.label !== undefined;
+    }
 }

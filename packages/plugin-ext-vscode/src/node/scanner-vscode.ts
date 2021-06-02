@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2015-2018 Red Hat, Inc.
+ * Copyright (C) 2015-2021 Red Hat, Inc.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,10 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '@theia/plugin-ext';
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
 export class VsCodePluginScanner extends TheiaPluginScanner implements PluginScanner {
@@ -33,7 +32,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
         const publisher = plugin.publisher || '';
         const result: PluginModel = {
             packagePath: plugin.packagePath,
-            packageUri: FileUri.create(plugin.packagePath).toString(),
+            packageUri: this.pluginUriFactory.createUri(plugin).toString(),
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
             id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,

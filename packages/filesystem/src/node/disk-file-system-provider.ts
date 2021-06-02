@@ -22,7 +22,7 @@
 /* eslint-disable no-null/no-null */
 /* eslint-disable @typescript-eslint/no-shadow */
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { basename, dirname, normalize, join } from 'path';
 import { v4 } from 'uuid';
 import * as os from 'os';
@@ -58,7 +58,7 @@ import {
 } from '../common/files';
 import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 import trash = require('trash');
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';

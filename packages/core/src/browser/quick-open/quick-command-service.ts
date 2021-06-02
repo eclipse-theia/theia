@@ -191,7 +191,10 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         raw.forEach((command: Command) => {
             if (command.label) {
                 const contexts = this.contexts.get(command.id);
-                if (!contexts || contexts.some(when => this.contextKeyService.match(when))) {
+                if (!contexts || contexts.some(when => {
+                    when = when.trim();
+                    return when === 'true' || this.contextKeyService.match(when);
+                })) {
                     valid.push(command);
                 }
             }

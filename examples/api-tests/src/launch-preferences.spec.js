@@ -347,10 +347,14 @@ describe('Launch Preferences', function () {
     }
 
     /**
+     * @typedef {Partial<import('@theia/core/src/browser/preferences/preference-service').PreferenceInspection<any>>} PreferenceInspection
+     */
+
+    /**
      * @typedef {Object} SuiteOptions
      * @property {string} name
      * @property {any} expectation
-     * @property {any} [inspectExpectation]
+     * @property {PreferenceInspection} [inspectExpectation]
      * @property {any} [launch]
      * @property {any} [settings]
      * @property {boolean} [only]
@@ -518,6 +522,7 @@ describe('Launch Preferences', function () {
 
             testIt('inspect in undefined', () => {
                 const inspect = preferences.inspect('launch');
+                /** @type {PreferenceInspection} */
                 let expected = inspectExpectation;
                 if (!expected) {
                     expected = {
@@ -529,11 +534,13 @@ describe('Launch Preferences', function () {
                         Object.assign(expected, { workspaceValue });
                     }
                 }
-                assert.deepStrictEqual(JSON.parse(JSON.stringify(inspect)), expected);
+                const expectedValue = expected.workspaceFolderValue || expected.workspaceValue || expected.globalValue || expected.defaultValue;
+                assert.deepStrictEqual(JSON.parse(JSON.stringify(inspect)), { ...expected, value: expectedValue });
             });
 
             testIt('inspect in rootUri', () => {
                 const inspect = preferences.inspect('launch', rootUri.toString());
+                /** @type {PreferenceInspection} */
                 const expected = {
                     preferenceName: 'launch',
                     defaultValue: defaultLaunch
@@ -552,7 +559,8 @@ describe('Launch Preferences', function () {
                         });
                     }
                 }
-                assert.deepStrictEqual(JSON.parse(JSON.stringify(inspect)), expected);
+                const expectedValue = expected.workspaceFolderValue || expected.workspaceValue || expected.globalValue || expected.defaultValue;
+                assert.deepStrictEqual(JSON.parse(JSON.stringify(inspect)), { ...expected, value: expectedValue });
             });
 
             testIt('update launch', async () => {
@@ -562,15 +570,6 @@ describe('Launch Preferences', function () {
                 const actual = inspect && inspect.workspaceValue;
                 const expected = settingsLaunch && !Array.isArray(settingsLaunch) ? { ...settingsLaunch, ...validLaunch } : validLaunch;
                 assert.deepStrictEqual(actual, expected);
-            });
-
-            testIt('update launch Global', async () => {
-                try {
-                    await preferences.set('launch', validLaunch, PreferenceScope.User);
-                    assert.fail('should not be possible to update User Settings');
-                } catch (e) {
-                    assert.deepStrictEqual(e.message, 'Unable to write to User Settings because launch does not support for global scope.');
-                }
             });
 
             testIt('update launch Workspace', async () => {

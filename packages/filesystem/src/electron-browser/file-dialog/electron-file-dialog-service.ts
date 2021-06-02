@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
-import { remote, FileFilter, OpenDialogOptions, SaveDialogOptions } from 'electron';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { remote, FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/shared/electron';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
@@ -108,7 +108,10 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
         const buttonLabel = props.saveLabel;
-        const defaultPath = props.inputValue;
+        if (props.inputValue) {
+            uri = uri.resolve(props.inputValue);
+        }
+        const defaultPath = FileUri.fsPath(uri);
         return { ...this.toDialogOptions(uri, props, 'Save'), buttonLabel, defaultPath };
     }
 
@@ -150,7 +153,11 @@ export namespace electron {
          */
         export function toDialogProperties(props: OpenFileDialogProps): Array<DialogProperties> {
             if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
-                throw new Error(`Illegal props. Cannot have 'canSelectFiles' and 'canSelectFolders' at the same times. Props was: ${JSON.stringify(props)}.`);
+                console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
+
+                // Given that both props are set, fallback to using a `folder` dialog.
+                props.canSelectFiles = false;
+                props.canSelectFolders = true;
             }
             const properties: Array<DialogProperties> = [];
             if (!isOSX) {

@@ -17,7 +17,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
 import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import * as theia from '@theia/plugin';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint } from '../../../common/plugin-api-rpc-model';
 import { DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';
@@ -282,7 +282,13 @@ export class DebugExtImpl implements DebugExt {
             type: debugConfiguration.type,
             name: debugConfiguration.name,
             configuration: debugConfiguration,
-            customRequest: (command: string, args?: any) => this.proxy.$customRequest(sessionId, command, args)
+            customRequest: async (command: string, args?: any) => {
+                const response = await this.proxy.$customRequest(sessionId, command, args);
+                if (response && response.success) {
+                    return response.body;
+                }
+                return Promise.reject(new Error(response.message ?? 'custom request failed'));
+            }
         };
 
         const tracker = await this.createDebugAdapterTracker(theiaSession);

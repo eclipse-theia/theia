@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, NavigatableWidgetOptions } from '@theia/core/lib/browser';

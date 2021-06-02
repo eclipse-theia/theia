@@ -19,7 +19,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/';
 import { Process, IProcessExitEvent } from '@theia/process/lib/node';
 import { Task, TaskOptions } from '../task';

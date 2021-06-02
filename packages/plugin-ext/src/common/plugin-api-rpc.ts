@@ -79,7 +79,7 @@ import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { SymbolInformation } from 'vscode-languageserver-types';
+import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
@@ -103,6 +103,7 @@ export interface PreferenceData {
 export interface Plugin {
     pluginPath: string | undefined;
     pluginFolder: string;
+    pluginUri: string;
     model: PluginModel;
     rawModel: PluginPackage;
     lifecycle: PluginLifecycle;
@@ -177,6 +178,7 @@ export const emptyPlugin: Plugin = {
     },
     pluginPath: 'empty',
     pluginFolder: 'empty',
+    pluginUri: 'empty',
     rawModel: {
         name: 'emptyPlugin',
         publisher: 'Theia',
@@ -248,7 +250,7 @@ export interface CommandRegistryExt {
 export interface TerminalServiceExt {
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
-    $terminalOpened(id: string, processId: number, cols: number, rows: number): void;
+    $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;
     $terminalClosed(id: string): void;
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
@@ -283,7 +285,7 @@ export interface TerminalServiceMain {
 
     /**
      * Send text to the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param text - text content.
      * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
      */
@@ -291,14 +293,14 @@ export interface TerminalServiceMain {
 
     /**
      * Write data to the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param data - data.
      */
     $write(id: string, data: string): void;
 
     /**
      * Resize the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param cols - columns.
      * @param rows - rows.
      */
@@ -306,22 +308,65 @@ export interface TerminalServiceMain {
 
     /**
      * Show terminal on the UI panel.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param preserveFocus - set terminal focus in case true value, and don't set focus otherwise.
      */
     $show(id: string, preserveFocus?: boolean): void;
 
     /**
      * Hide UI panel where is located terminal widget.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      */
     $hide(id: string): void;
 
     /**
      * Destroy terminal.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      */
     $dispose(id: string): void;
+
+    /**
+     * Send text to the terminal by id.
+     * @param id - terminal id.
+     * @param text - text content.
+     * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
+     */
+    $sendTextByTerminalId(id: number, text: string, addNewLine?: boolean): void;
+
+    /**
+     * Write data to the terminal by id.
+     * @param id - terminal id.
+     * @param data - data.
+     */
+    $writeByTerminalId(id: number, data: string): void;
+
+    /**
+     * Resize the terminal by id.
+     * @param id - terminal id.
+     * @param cols - columns.
+     * @param rows - rows.
+     */
+    $resizeByTerminalId(id: number, cols: number, rows: number): void;
+
+    /**
+     * Show terminal on the UI panel.
+     * @param id - terminal id.
+     * @param preserveFocus - set terminal focus in case true value, and don't set focus otherwise.
+     */
+    $showByTerminalId(id: number, preserveFocus?: boolean): void;
+
+    /**
+     * Hide UI panel where is located terminal widget.
+     * @param id - terminal id.
+     */
+    $hideByTerminalId(id: number): void;
+
+    /**
+     * Destroy terminal.
+     * @param id - terminal id.
+     * @param waitOnExit - Whether to wait for a key press before closing the terminal.
+     */
+    $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
 }
@@ -401,6 +446,13 @@ export interface QuickOpenExt {
  * Options to configure the behaviour of a file open dialog.
  */
 export interface OpenDialogOptionsMain {
+
+    /**
+     * Dialog title.
+     * This parameter might be ignored, as not all operating systems display a title on open dialogs.
+     */
+    title?: string;
+
     /**
      * The resource the dialog shows when opened.
      */
@@ -443,6 +495,13 @@ export interface OpenDialogOptionsMain {
  * Options to configure the behaviour of a file save dialog.
  */
 export interface SaveDialogOptionsMain {
+
+    /**
+     * Dialog title.
+     * This parameter might be ignored, as not all operating systems display a title on save dialogs.
+     */
+    title?: string;
+
     /**
      * The resource the dialog shows when opened.
      */
@@ -552,10 +611,12 @@ export interface WorkspaceMain {
     $unregisterTextDocumentContentProvider(scheme: string): void;
     $onTextDocumentContentChange(uri: string, content: string): void;
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
+    $getWorkspace(): Promise<files.FileStat | undefined>;
 }
 
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
+    $onWorkspaceLocationChanged(event: files.FileStat | undefined): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
 }
@@ -688,10 +749,11 @@ export namespace ScmCommandArg {
 export interface ScmExt {
     createSourceControl(plugin: Plugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
     getLastInputBox(plugin: Plugin): theia.SourceControlInputBox | undefined;
-    $updateInputBox(sourceControlHandle: number, message: string): Promise<void>;
+    $onInputBoxValueChange(sourceControlHandle: number, message: string): Promise<void>;
     $executeResourceCommand(sourceControlHandle: number, groupHandle: number, resourceHandle: number): Promise<void>;
-    $provideOriginalResource(sourceControlHandle: number, uri: string, token: CancellationToken): Promise<UriComponents | undefined>;
-    $setSourceControlSelection(sourceControlHandle: number, selected: boolean): Promise<void>;
+    $validateInput(sourceControlHandle: number, value: string, cursorPosition: number): Promise<[string, number] | undefined>;
+    $setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void>;
+    $provideOriginalResource(sourceControlHandle: number, uri: string, token: theia.CancellationToken): Promise<UriComponents | undefined>;
 }
 
 export namespace TimelineCommandArg {
@@ -704,6 +766,14 @@ export interface TimelineCommandArg {
     source: string;
     uri: string;
 }
+
+export interface DecorationRequest {
+    readonly id: number;
+    readonly uri: UriComponents;
+}
+
+export type DecorationData = [boolean, string, string, ThemeColor];
+export interface DecorationReply { [id: number]: DecorationData; }
 
 export namespace CommentsCommandArg {
     export function is(arg: Object | undefined): arg is CommentsCommandArg {
@@ -740,38 +810,30 @@ export interface CommentsEditCommandArg {
 }
 
 export interface DecorationsExt {
-    registerDecorationProvider(provider: theia.DecorationProvider): theia.Disposable
-    $provideDecoration(id: number, uri: string): Promise<DecorationData | undefined>
+    registerFileDecorationProvider(provider: theia.FileDecorationProvider, pluginInfo: PluginInfo): theia.Disposable
+    $provideDecorations(handle: number, requests: DecorationRequest[], token: CancellationToken): Promise<DecorationReply>;
 }
 
 export interface DecorationsMain {
-    $registerDecorationProvider(id: number, provider: DecorationProvider): Promise<number>;
-    $fireDidChangeDecorations(id: number, arg: undefined | string | string[]): Promise<void>;
-    $dispose(id: number): Promise<void>;
-}
-
-export interface DecorationData {
-    letter?: string;
-    title?: string;
-    color?: ThemeColor;
-    priority?: number;
-    bubble?: boolean;
-    source?: string;
+    $registerDecorationProvider(handle: number): Promise<void>;
+    $unregisterDecorationProvider(handle: number): void;
+    $onDidChange(handle: number, resources: UriComponents[] | null): void;
 }
 
 export interface ScmMain {
-    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: string): Promise<void>
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents): Promise<void>;
     $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
     $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
 
-    $registerGroup(sourceControlHandle: number, groupHandle: number, id: string, label: string): Promise<void>;
-    $updateGroup(sourceControlHandle: number, groupHandle: number, features: SourceControlGroupFeatures): Promise<void>;
-    $updateGroupLabel(sourceControlHandle: number, groupHandle: number, label: string): Promise<void>;
-    $updateResourceState(sourceControlHandle: number, groupHandle: number, resources: SourceControlResourceState[]): Promise<void>;
-    $unregisterGroup(sourceControlHandle: number, groupHandle: number): Promise<void>;
+    $registerGroups(sourceControlHandle: number, groups: ScmRawResourceGroup[], splices: ScmRawResourceSplices[]): void;
+    $updateGroup(sourceControlHandle: number, groupHandle: number, features: SourceControlGroupFeatures): void;
+    $updateGroupLabel(sourceControlHandle: number, groupHandle: number, label: string): void;
+    $unregisterGroup(sourceControlHandle: number, groupHandle: number): void;
 
-    $setInputBoxValue(sourceControlHandle: number, value: string): Promise<void>;
-    $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): Promise<void>;
+    $spliceResourceStates(sourceControlHandle: number, splices: ScmRawResourceSplices[]): void;
+
+    $setInputBoxValue(sourceControlHandle: number, value: string): void;
+    $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -784,6 +846,35 @@ export interface SourceControlProviderFeatures {
 
 export interface SourceControlGroupFeatures {
     hideWhenEmpty: boolean | undefined;
+}
+
+export interface ScmRawResource {
+    handle: number,
+    sourceUri: UriComponents,
+    icons: UriComponents[],
+    tooltip: string,
+    strikeThrough: boolean,
+    faded: boolean,
+    contextValue: string,
+    command: Command | undefined
+}
+
+export interface ScmRawResourceGroup {
+    handle: number,
+    id: string,
+    label: string,
+    features: SourceControlGroupFeatures
+}
+
+export interface ScmRawResourceSplice {
+    start: number,
+    deleteCount: number,
+    rawResources: ScmRawResource[]
+}
+
+export interface ScmRawResourceSplices {
+    handle: number,
+    splices: ScmRawResourceSplice[]
 }
 
 export interface SourceControlResourceState {
@@ -835,10 +926,6 @@ export interface SourceControlResourceDecorations {
      * The icon path for a specific source control resource state.
      */
     readonly iconPath?: string;
-}
-
-export interface DecorationProvider {
-    provideDecoration(uri: string): Promise<DecorationData | undefined>;
 }
 
 export interface NotificationMain {
@@ -1213,16 +1300,31 @@ export interface CodeActionDto {
     disabled?: string;
 }
 
+export interface WorkspaceEditMetadataDto {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: UriComponents;
+        dark: UriComponents;
+    };
+}
+
 export interface WorkspaceFileEditDto {
     oldUri?: UriComponents;
     newUri?: UriComponents;
     options?: FileOperationOptions;
+    metadata?: WorkspaceEditMetadataDto;
 }
 
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
     edit: TextEdit;
+    metadata?: WorkspaceEditMetadataDto;
+
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
@@ -1249,15 +1351,27 @@ export interface CommandProperties {
 
 export interface TaskDto {
     type: string;
+    taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type
+    executionId?: string,
     label: string;
     source?: string;
     scope: string | number;
     // Provide a more specific type when necessary (see ProblemMatcherContribution)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     problemMatcher?: any;
+    group?: string;
     detail?: string;
+    presentation?: TaskPresentationOptionsDTO;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+export interface TaskPresentationOptionsDTO {
+    reveal?: number;
+    focus?: boolean;
+    echo?: boolean;
+    panel?: number;
+    showReuseMessage?: boolean;
 }
 
 export interface TaskExecutionDto {
@@ -1424,6 +1538,40 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface CustomEditorsExt {
+    $resolveWebviewEditor(
+        resource: UriComponents,
+        newWebviewHandle: string,
+        viewType: string,
+        title: string,
+        position: number,
+        options: theia.WebviewPanelOptions,
+        cancellation: CancellationToken): Promise<void>;
+    $createCustomDocument(resource: UriComponents, viewType: string, backupId: string | undefined, cancellation: CancellationToken): Promise<{ editable: boolean }>;
+    $disposeCustomDocument(resource: UriComponents, viewType: string): Promise<void>;
+    $undo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
+    $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
+    $revert(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $disposeEdits(resourceComponents: UriComponents, viewType: string, editIds: number[]): void;
+    $onSave(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $onSaveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
+    // $backup(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<string>;
+    $onMoveCustomEditor(handle: string, newResource: UriComponents, viewType: string): Promise<void>;
+}
+
+export interface CustomTextEditorCapabilities {
+    readonly supportsMove?: boolean;
+}
+
+export interface CustomEditorsMain {
+    $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
+    $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
+    $unregisterEditorProvider(viewType: string): void;
+    $createCustomEditorPanel(handle: string, title: string, viewColumn: theia.ViewColumn | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
+    $onContentChange(resource: UriComponents, viewType: string): void;
+}
+
 export interface StorageMain {
     $set(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
     $get(key: string, isGlobal: boolean): Promise<KeysToAnyValues>;
@@ -1562,6 +1710,7 @@ export const PLUGIN_RPC_CONTEXT = {
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
+    CUSTOM_EDITORS_MAIN: createProxyIdentifier<CustomEditorsMain>('CustomEditorsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
@@ -1594,6 +1743,7 @@ export const MAIN_RPC_CONTEXT = {
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
+    CUSTOM_EDITORS_EXT: createProxyIdentifier<CustomEditorsExt>('CustomEditorsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
@@ -1604,12 +1754,13 @@ export const MAIN_RPC_CONTEXT = {
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
-    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt')};
+    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt')
+};
 
 export interface TasksExt {
     $provideTasks(handle: number, token?: CancellationToken): Promise<TaskDto[] | undefined>;
     $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
-    $onDidStartTask(execution: TaskExecutionDto): void;
+    $onDidStartTask(execution: TaskExecutionDto, terminalId: number): void;
     $onDidEndTask(id: number): void;
     $onDidStartTaskProcess(processId: number | undefined, execution: TaskExecutionDto): void;
     $onDidEndTaskProcess(exitCode: number | undefined, taskId: number): void;
@@ -1622,6 +1773,7 @@ export interface TasksMain {
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+    $customExecutionComplete(id: number, exitCode: number | undefined): void;
 }
 
 export interface AuthenticationExt {

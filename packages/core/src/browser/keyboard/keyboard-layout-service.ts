@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from 'inversify';
-import { IWindowsKeyMapping } from 'native-keymap';
+import type { IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
@@ -99,7 +99,7 @@ export class KeyboardLayoutService {
         const layout = this.currentLayout;
         if (layout) {
             const value = layout.code2Character[key.code];
-            if (value) {
+            if (value && value.replace(/[\n\r\t]/g, '')) {
                 return value;
             }
         }

@@ -14,24 +14,46 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+:root {
+    --theia-search-box-padding: 3px;
+    --theia-search-box-radius: 2px;
+    --theia-search-box-spacing: 4px;
+    --theia-search-box-max-width: 500px;
+}
+
 .theia-search-box {
     position: absolute;
-    top: 0px;
-    right: 0px;
     display: flex;
-    align-items: baseline;
+    top: var(--theia-search-box-spacing);
+    right: var(--theia-search-box-spacing);
     box-shadow: var(--theia-border-width) var(--theia-border-width) var(--theia-widget-shadow);
-    line-height: var(--theia-private-horizontal-tab-height);
-    background-color: var(--theia-editor-background);
+    background-color: var(--theia-listFilterWidget-background);
     z-index: calc(var(--theia-tabbar-toolbar-z-index) + 1);
-    border: var(--theia-border-width) solid var(--theia-editor-background);
+    border-radius: var(--theia-search-box-radius);
+    padding: var(--theia-search-box-padding);
+    border: var(--theia-border-width) solid rgba(0, 0, 0, 0)
+}
+
+.theia-search-box.no-match {
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder)
 }
 
 .theia-search-input {
     flex-grow: 1;
-    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
-    max-width: 6rem;
-    background-color: var(--theia-input-background);
+    user-select: none;
+}
+
+.theia-search-box > .theia-search-buttons-wrapper {
+    max-width: 0px;
+    transition: max-width .2s ease-out;
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+}
+
+.theia-search-box:hover > .theia-search-buttons-wrapper {  
+    max-width: var(--theia-search-box-max-width);
+    transition: max-width .2s ease-in;
 }
 
 .theia-search-button {
@@ -44,9 +66,9 @@
 }
 
 .theia-search-button.codicon.codicon-filter {
-    line-height: var(--theia-private-horizontal-tab-height);
     color: var(--theia-editorWidget-foreground);
     align-self: flex-end;
+    margin-left: var(--theia-search-box-spacing);
 }
 
 .theia-search-button.codicon-filter:not(.filter-active):before {
@@ -66,7 +88,6 @@
 .theia-search-button-close:hover,
 .theia-search-button.codicon-filter:hover {
     cursor: pointer;
-    background-color: var(--theia-editorHoverWidget-background);
 }
 
 .theia-search-button-next:hover:before {

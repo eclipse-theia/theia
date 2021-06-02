@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 
 export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -46,6 +46,11 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             description: 'Search the active editor when modified.',
             default: true,
             type: 'boolean',
+        },
+        'search.smartCase': {
+            description: 'Search case-insensitively if the pattern is all lowercase, otherwise, search case-sensitively.',
+            default: false,
+            type: 'boolean',
         }
     }
 };
@@ -56,6 +61,7 @@ export class SearchInWorkspaceConfiguration {
     'search.searchOnType': boolean;
     'search.searchOnTypeDebouncePeriod': number;
     'search.searchOnEditorModification': boolean;
+    'search.smartCase': boolean;
 }
 
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');

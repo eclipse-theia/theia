@@ -26,11 +26,10 @@ FrontendApplicationConfigProvider.set({
 });
 
 import { expect } from 'chai';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { CompositeTreeNode, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { Preference } from './preference-types';
 
 disableJSDOM();
 
@@ -40,7 +39,7 @@ describe('preference-tree-generator', () => {
 
     beforeEach(() => {
         const container = new Container();
-        container.bind<any>(PreferenceSchemaProvider).toConstantValue(undefined);
+        container.bind<any>(PreferenceSchemaProvider).toConstantValue({ onDidPreferenceSchemaChanged: () => { } });
         container.bind<any>(PreferenceConfigurations).toConstantValue(undefined);
         preferenceTreeGenerator = container.resolve(PreferenceTreeGenerator);
     });
@@ -54,7 +53,37 @@ describe('preference-tree-generator', () => {
 
     it('PreferenceTreeGenerator.format', () => {
         const testString = 'aaaBbbCcc Dddd eee';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd Eee');
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
+    });
+
+    it('PreferenceTreeGenerator.format.chinese', () => {
+        const testString = '某個設定/某个设定';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('某個設定/某个设定');
+    });
+
+    it('PreferenceTreeGenerator.format.Danish', () => {
+        const testString = 'indstillingPåEnØ';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Indstilling På En Ø');
+    });
+
+    it('PreferenceTreeGenerator.format.Greek', () => {
+        const testString = 'κάποιαΡύθμιση';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Κάποια Ρύθμιση');
+    });
+
+    it('PreferenceTreeGenerator.format.Russian', () => {
+        const testString = 'некоторыеНастройки';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Некоторые Настройки');
+    });
+
+    it('PreferenceTreeGenerator.format.Armenian', () => {
+        const testString = 'ինչ-որՊարամետր';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Ինչ-որ Պարամետր');
+    });
+
+    it('PreferenceTreeGenerator.format.specialCharacters', () => {
+        const testString = 'hyphenated-wordC++Setting';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Hyphenated-word C++ Setting');
     });
 
     describe('PreferenceTreeGenerator.createLeafNode', () => {
@@ -71,7 +100,7 @@ describe('preference-tree-generator', () => {
         });
 
         function testLeafName(property: string, expectedName: string): void {
-            const preferencesGroups: Preference.Branch[] = [];
+            const preferencesGroups: CompositeTreeNode[] = [];
             const root = preferenceTreeGenerator['createRootNode'](preferencesGroups);
             const preferencesGroup = preferenceTreeGenerator['createPreferencesGroup']('group', root);
 

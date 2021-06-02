@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskProviderRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope } from '../common';
+import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope, TaskScope } from '../common';
 
 @injectable()
 export class ProvidedTaskConfigurations {
@@ -61,6 +61,8 @@ export class ProvidedTaskConfigurations {
             const providers = await this.taskProviderRegistry.getProviders();
             const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
                 .reduce((acc, taskArray) => acc.concat(taskArray), [])
+                // Global/User tasks from providers are not supported.
+                .filter(task => task.scope !== TaskScope.Global)
                 .map(providedTask => {
                     const originalPresentation = providedTask.presentation || {};
                     return {
@@ -116,12 +118,15 @@ export class ProvidedTaskConfigurations {
             }
         }
 
+        // Tasks with scope set to 'Workspace' can be customized in a workspace root, and will not match
+        // providers scope 'TaskScope.Workspace' unless specifically included as below.
+        const scopes = [scope, TaskScope.Workspace];
         // find the task that matches the `customization`.
         // The scenario where more than one match is found should not happen unless users manually enter multiple customizations for one type of task
         // If this does happen, return the first match
-        const matchedTask = matchedTasks.filter(t =>
-            scope === t._scope && definition.properties.all.every(p => t[p] === customization[p])
-        )[0];
+        const matchedTask = matchedTasks.find(t =>
+            scopes.some(scp => scp === t._scope) && definition.properties.all.every(p => t[p] === customization[p])
+        );
         return matchedTask;
     }
 

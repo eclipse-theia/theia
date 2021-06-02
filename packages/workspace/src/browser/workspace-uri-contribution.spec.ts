@@ -19,8 +19,8 @@ const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Container } from 'inversify';
-import { Signal } from '@phosphor/signaling';
+import { Container } from '@theia/core/shared/inversify';
+import { Signal } from '@theia/core/shared/@phosphor/signaling';
 import { Event } from '@theia/core/lib/common/event';
 import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
@@ -79,7 +79,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
     describe('canHandle()', () => {
         it('should return 0 if the passed in argument is not a FileStat or URI with the "file" scheme', () => {
-            expect(labelProvider.canHandle(new URI('user_storage:settings.json'))).eq(0);
+            expect(labelProvider.canHandle(new URI('user-storage:settings.json'))).eq(0);
             expect(labelProvider.canHandle({ uri: 'file:///home/settings.json' })).eq(0);
         });
 

@@ -187,11 +187,19 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected init(): void {
         if (this.props.search) {
             this.searchBox = this.searchBoxFactory({ ...SearchBoxProps.DEFAULT, showButtons: true, showFilter: true });
+            this.searchBox.node.addEventListener('focus', () => {
+                this.node.focus();
+            });
             this.toDispose.pushAll([
                 this.searchBox,
                 this.searchBox.onTextChange(async data => {
                     await this.treeSearch.filter(data);
                     this.searchHighlights = this.treeSearch.getHighlights();
+                    this.searchBox.updateHighlightInfo({
+                        filterText: data,
+                        total: this.rows.size,
+                        matched: this.searchHighlights.size
+                    });
                     this.update();
                 }),
                 this.searchBox.onClose(data => this.treeSearch.filter(undefined)),
@@ -608,10 +616,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 backgroundColor: highlight.backgroundColor
             };
         }
-        const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
+        const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment, index: number) => {
             const { data } = fragment;
             if (fragment.highlight) {
-                return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
+                return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style} key={index}>{data}</mark>;
             } else {
                 return data;
             }

@@ -14,12 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceService, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { PreferenceService, FrontendApplicationContribution, PreferenceLanguageOverrideService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 
 type FormattingEditProvider = monaco.languages.DocumentFormattingEditProvider | monaco.languages.DocumentRangeFormattingEditProvider;
@@ -35,8 +34,8 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchema: PreferenceSchemaProvider;
+    @inject(PreferenceLanguageOverrideService)
+    protected readonly preferenceSchema: PreferenceLanguageOverrideService;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;

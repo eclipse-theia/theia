@@ -16,8 +16,8 @@
 
 import { Endpoint } from '@theia/core/lib/browser';
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
-import { remote } from 'electron';
-import { inject, injectable } from 'inversify';
+import { remote } from '@theia/core/shared/electron';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
 
 @injectable()

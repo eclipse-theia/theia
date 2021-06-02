@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import debounce = require('lodash.debounce');
-import { injectable, inject } from 'inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -218,7 +218,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const marker = selection.marker as ProblemMarker;
         const serializedProblem = JSON.stringify({
             resource: marker.uri,
-            owner: marker.uri,
+            owner: marker.owner,
             code: marker.data.code,
             severity: marker.data.severity,
             message: marker.data.message,

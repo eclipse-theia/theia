@@ -28,16 +28,19 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         super(editor);
         this.addClass('theia-editor');
         this.toDispose.push(this.editor);
-        this.toDispose.push(this.editor.onSelectionChanged(() => {
-            if (this.editor.isFocused()) {
-                this.selectionService.selection = this.editor;
-            }
-        }));
+        this.toDispose.push(this.editor.onSelectionChanged(() => this.setSelection()));
+        this.toDispose.push(this.editor.onFocusChanged(() => this.setSelection()));
         this.toDispose.push(Disposable.create(() => {
             if (this.selectionService.selection === this.editor) {
                 this.selectionService.selection = undefined;
             }
         }));
+    }
+
+    setSelection(): void {
+        if (this.editor.isFocused() && this.selectionService.selection !== this.editor) {
+            this.selectionService.selection = this.editor;
+        }
     }
 
     get saveable(): Saveable {

@@ -15,15 +15,15 @@
  ********************************************************************************/
 
 import * as cp from 'child_process';
-import * as fuzzy from 'fuzzy';
+import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
 import { rgPath } from 'vscode-ripgrep';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
 import { RawProcessFactory } from '@theia/process/lib/node';
-import { FileSearchService } from '../common/file-search-service';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import * as path from 'path';
 
 @injectable()
@@ -80,24 +80,38 @@ export class FileSearchServiceImpl implements FileSearchService {
             searchPattern = searchPattern.replace(/\//g, '\\');
         }
 
-        const stringPattern = searchPattern.toLocaleLowerCase();
+        const patterns = searchPattern.toLocaleLowerCase().trim().split(WHITESPACE_QUERY_SEPARATOR);
+
         await Promise.all(Object.keys(roots).map(async root => {
             try {
                 const rootUri = new URI(root);
                 const rootPath = FileUri.fsPath(rootUri);
                 const rootOptions = roots[root];
+
                 await this.doFind(rootUri, rootOptions, candidate => {
+
                     // Convert OS-native candidate path to a file URI string
                     const fileUri = FileUri.create(path.resolve(rootPath, candidate)).toString();
+
                     // Skip results that have already been matched.
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
                     }
-                    if (!searchPattern || searchPattern === '*' || candidate.toLocaleLowerCase().indexOf(stringPattern) !== -1) {
+
+                    // Determine if the candidate matches any of the patterns exactly or fuzzy
+                    const candidatePattern = candidate.toLocaleLowerCase();
+                    const patternExists = patterns.every(pattern => candidatePattern.indexOf(pattern) !== -1);
+                    if (patternExists) {
                         exactMatches.add(fileUri);
-                    } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
-                        fuzzyMatches.add(fileUri);
+                    } else if (!searchPattern || searchPattern === '*') {
+                        exactMatches.add(fileUri);
+                    } else {
+                        const fuzzyPatternExists = patterns.every(pattern => fuzzy.test(pattern, candidate));
+                        if (opts.fuzzyMatch && fuzzyPatternExists) {
+                            fuzzyMatches.add(fileUri);
+                        }
                     }
+
                     // Preemptively terminate the search when the list of exact matches reaches the limit.
                     if (exactMatches.size === opts.limit) {
                         cancellationSource.cancel();
@@ -107,6 +121,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 console.error('Failed to search:', root, e);
             }
         }));
+
         if (clientToken && clientToken.isCancellationRequested) {
             return [];
         }

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShellLayoutMigration, WidgetDescription, ApplicationShellLayoutMigrationContext } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { SCM_VIEW_CONTAINER_TITLE_OPTIONS, SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID } from './scm-contribution';
 

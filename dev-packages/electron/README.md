@@ -29,6 +29,11 @@ The post-install scripts can be skipped by setting an environment variable:
 - Windows (cmd): `set THEIA_ELECTRON_SKIP_REPLACE_FFMPEG=1`
 - Windows (ps): `$env:THEIA_ELECTRON_SKIP_REPLACE_FFMPEG=1`
 
+## Re-exports
+
+- `electron` through `@theia/electron`
+- `native-keymap` through `@theia/electron/native-keymap`
+
 ## Additional Information
 
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)

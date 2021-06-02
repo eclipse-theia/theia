@@ -41,6 +41,10 @@ html, body {
     padding: 20px;
 }
 
+.gs-container a {
+    cursor: pointer;
+}
+
 .gs-header h1 {
     flex: 1;
     font-weight: 600;

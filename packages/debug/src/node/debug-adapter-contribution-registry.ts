@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebuggerDescription, DebugError } from '../common/debug-service';
@@ -83,7 +83,7 @@ export class DebugAdapterContributionRegistry {
                     const result = await contribution.provideDebugConfigurations(workspaceFolderUri);
                     configurations.push(...result);
                 } catch (e) {
-                    console.error(e);
+                    console.error('provideDebugConfigurations failed:', e);
                 }
             }
         }
@@ -108,7 +108,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('resolveDebugConfiguration failed:', e);
                 }
             }
         }
@@ -133,7 +133,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('resolveDebugConfigurationWithSubstitutedVariables failed:', e);
                 }
             }
         }
@@ -152,7 +152,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getSchemaAttributes());
                 } catch (e) {
-                    console.error(e);
+                    console.error('getSchemaAttributes failed:', e);
                 }
             }
         }
@@ -165,7 +165,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getConfigurationSnippets());
                 } catch (e) {
-                    console.error(e);
+                    console.error('getConfigurationSnippets failed:', e);
                 }
             }
         }

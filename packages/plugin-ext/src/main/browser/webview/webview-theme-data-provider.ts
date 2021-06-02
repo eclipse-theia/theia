@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/common/themeing.ts
 
-import { inject, postConstruct, injectable } from 'inversify';
+import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { EditorPreferences, EditorConfiguration } from '@theia/editor/lib/browser/editor-preferences';
 import { ThemeService } from '@theia/core/lib/browser/theming';

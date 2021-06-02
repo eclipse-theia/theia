@@ -295,9 +295,7 @@ export class CommandRegistry implements CommandService {
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
             return result;
         }
-        const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        // eslint-disable-next-line max-len
-        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
+        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.`), { code: 'NO_ACTIVE_HANDLER' });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container, interfaces } from 'inversify';
+import { ContainerModule, Container, interfaces } from '@theia/core/shared/inversify';
 import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
 import { DugiteGit, OutputParser, NameStatusParser, CommitDetailsParser, GitBlameParser } from './dugite-git';

@@ -13,9 +13,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { find } from '@phosphor/algorithm';
+import { find } from '@theia/core/shared/@phosphor/algorithm';
 import {
     AbstractViewContribution,
     FrontendApplicationContribution, LabelProvider,
@@ -37,6 +37,7 @@ import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { ScmCommand } from './scm-provider';
+import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -93,6 +94,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(CommandService) protected readonly commands: CommandService;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
+    @inject(ScmDecorationsService) protected readonly scmDecorationsService: ScmDecorationsService;
 
     protected scmFocus: ContextKey<boolean>;
 
@@ -231,7 +233,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         if (!repository) {
             return undefined;
         }
-        return  repository.provider.acceptInputCommand;
+        return repository.provider.acceptInputCommand;
     }
 
     protected readonly statusBarDisposable = new DisposableCollection();

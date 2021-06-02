@@ -38,3 +38,9 @@ export function isNonEmptyArray<T>(obj: T[] | readonly T[] | undefined | null): 
 export function flatten<T>(arr: T[][]): T[] {
     return (<T[]>[]).concat(...arr);
 }
+
+export interface Splice<T> {
+    readonly start: number;
+    readonly deleteCount: number;
+    readonly toInsert: T[];
+}

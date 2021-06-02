@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
@@ -121,19 +121,14 @@ export class KeymapsService {
             let oldRemoved = false;
             const keybindings = [];
             for (let keybinding of this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER)) {
-                if (keybinding.command === newKeybinding.command &&
-                    (keybinding.context || '') === (newKeybinding.context || '') &&
-                    (keybinding.when || '') === (newKeybinding.when || '')) {
+                if (Keybinding.equals(keybinding, newKeybinding, true, true)) {
                     newAdded = true;
                     keybinding = {
                         ...keybinding,
                         keybinding: newKeybinding.keybinding
                     };
                 }
-                if (oldKeybinding && keybinding.keybinding === oldKeybinding &&
-                    keybinding.command === '-' + newKeybinding.command &&
-                    (keybinding.context || '') === (newKeybinding.context || '') &&
-                    (keybinding.when || '') === (newKeybinding.when || '')) {
+                if (oldKeybinding && Keybinding.equals(keybinding, { ...newKeybinding, keybinding: oldKeybinding, command: '-' + newKeybinding.command }, false, true)) {
                     oldRemoved = true;
                 }
                 keybindings.push(keybinding);
@@ -149,14 +144,18 @@ export class KeymapsService {
                 newAdded = true;
             }
             if (!oldRemoved && oldKeybinding) {
-                keybindings.push({
+                const disabledBinding = {
                     command: '-' + newKeybinding.command,
                     // TODO key: oldKeybinding, see https://github.com/eclipse-theia/theia/issues/6879
                     keybinding: oldKeybinding,
                     context: newKeybinding.context,
                     when: newKeybinding.when,
                     args: newKeybinding.args
-                });
+                };
+                // Add disablement of the old keybinding if it isn't already disabled in the list to avoid duplicate disabled entries
+                if (!keybindings.some(binding => Keybinding.equals(binding, disabledBinding, true, true))) {
+                    keybindings.push(disabledBinding);
+                }
                 oldRemoved = true;
             }
             if (newAdded || oldRemoved) {
@@ -189,7 +188,7 @@ export class KeymapsService {
                 const textModel = model.textEditorModel;
                 const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                for (const edit of jsoncparser.modify(content, [], keybindings, {
+                for (const edit of jsoncparser.modify(content, [], keybindings.map(binding => Keybinding.apiObjectify(binding)), {
                     formattingOptions: {
                         insertSpaces,
                         tabSize,

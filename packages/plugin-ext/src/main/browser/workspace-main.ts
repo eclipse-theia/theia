@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { interfaces, injectable } from 'inversify';
+import { interfaces, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
@@ -31,6 +31,7 @@ import { Emitter, Event, ResourceResolver, CancellationToken } from '@theia/core
 import { PluginServer } from '../../common/plugin-protocol';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -73,6 +74,9 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots.map(root => root.resource.toString()));
         }));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(stat => {
+            this.proxy.$onWorkspaceLocationChanged(stat);
+        }));
     }
 
     dispose(): void {
@@ -100,6 +104,10 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }
 
         return this.roots.some((root, index) => root !== roots[index]);
+    }
+
+    async $getWorkspace(): Promise<FileStat | undefined> {
+        return this.workspaceService.workspace;
     }
 
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined> {

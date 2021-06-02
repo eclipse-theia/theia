@@ -18,11 +18,11 @@ import * as http from 'http';
 import * as path from 'path';
 import * as url from 'url';
 const vhost = require('vhost');
-import * as express from 'express';
+import * as express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { injectable, postConstruct } from 'inversify';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { WebviewExternalEndpoint } from '../common/webview-protocol';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 

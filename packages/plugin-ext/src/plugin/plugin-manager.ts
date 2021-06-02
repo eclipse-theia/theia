@@ -38,6 +38,7 @@ import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
+import { URI as Uri } from './types-impl';
 
 export interface PluginHost {
 
@@ -82,7 +83,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onView',
         'onUri',
         'onWebviewPanel',
-        'onFileSystem'
+        'onFileSystem',
+        'onCustomEditor',
+        'onStartupFinished'
     ]);
 
     private configStorage: ConfigStorage | undefined;
@@ -344,13 +347,16 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
+            extensionUri: Uri.file(plugin.pluginFolder),
             globalState: new Memento(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
             asAbsolutePath: asAbsolutePath,
             logPath: logPath,
             storagePath: storagePath,
+            storageUri: storagePath ? Uri.file(storagePath) : undefined,
             globalStoragePath: globalStoragePath,
+            globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);

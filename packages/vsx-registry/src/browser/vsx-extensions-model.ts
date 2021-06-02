@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
 import * as showdown from 'showdown';
 import * as sanitize from 'sanitize-html';
@@ -128,7 +128,7 @@ export class VSXExtensionsModel {
         this.searchCancellationTokenSource.cancel();
         this.searchCancellationTokenSource = new CancellationTokenSource();
         const query = this.search.query;
-        return this.doUpdateSearchResult({ query }, this.searchCancellationTokenSource.token);
+        return this.doUpdateSearchResult({ query, includeAllVersions: true }, this.searchCancellationTokenSource.token);
     }, 150);
     protected doUpdateSearchResult(param: VSXSearchParam, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
@@ -139,12 +139,17 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                const extension = this.api.getLatestCompatibleVersion(data);
+                if (!extension) {
+                    continue;
+                }
                 this.setExtension(id).update(Object.assign(data, {
                     publisher: data.namespace,
                     downloadUrl: data.files.download,
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
+                    version: extension.version
                 }));
                 searchResult.add(id);
             }
@@ -153,16 +158,17 @@ export class VSXExtensionsModel {
     }
 
     protected async updateInstalled(): Promise<void> {
+        const prevInstalled = this._installed;
         return this.doChange(async () => {
             const plugins = this.pluginSupport.plugins;
-            const installed = new Set<string>();
+            const currInstalled = new Set<string>();
             const refreshing = [];
             for (const plugin of plugins) {
                 if (plugin.model.engine.type === 'vscode') {
                     const id = plugin.model.id;
                     this._installed.delete(id);
                     const extension = this.setExtension(id);
-                    installed.add(extension.id);
+                    currInstalled.add(extension.id);
                     refreshing.push(this.refresh(id));
                 }
             }
@@ -170,6 +176,7 @@ export class VSXExtensionsModel {
                 refreshing.push(this.refresh(id));
             }
             Promise.all(refreshing);
+            const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
         });
@@ -212,22 +219,41 @@ export class VSXExtensionsModel {
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
         try {
-            const data = await this.api.getExtension(id);
+            let extension = this.getExtension(id);
+            if (!this.shouldRefresh(extension)) {
+                return extension;
+            }
+            const data = await this.api.getLatestCompatibleExtensionVersion(id);
+            if (!data) {
+                return;
+            }
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
-            const extension = this.setExtension(id);
+            extension = this.setExtension(id);
             extension.update(Object.assign(data, {
                 publisher: data.namespace,
                 downloadUrl: data.files.download,
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
                 licenseUrl: data.files.license,
+                version: data.version
             }));
             return extension;
         } catch (e) {
             return this.onDidFailRefresh(id, e);
         }
+    }
+
+    /**
+     * Determines if the given extension should be refreshed.
+     * @param extension the extension to refresh.
+     */
+    protected shouldRefresh(extension?: VSXExtension): boolean {
+        if (extension === undefined) {
+            return true;
+        }
+        return !extension.builtin;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

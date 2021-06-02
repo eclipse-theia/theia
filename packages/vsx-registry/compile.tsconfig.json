@@ -14,6 +14,12 @@
     },
     {
       "path": "../plugin-ext-vscode/compile.tsconfig.json"
+    },
+    {
+      "path": "../plugin-ext/compile.tsconfig.json"
+    },
+    {
+      "path": "../filesystem/compile.tsconfig.json"
     }
   ]
 }

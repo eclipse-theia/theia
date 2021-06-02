@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -28,7 +28,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorCommands } from '@theia/editor/lib/browser';
 import {
     CodeEditorWidgetUtil
 } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
@@ -45,14 +45,14 @@ import {
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { isUriComponents, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
@@ -65,6 +65,7 @@ import {
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -77,6 +78,10 @@ export namespace VscodeCommands {
 
     export const DIFF: Command = {
         id: 'vscode.diff'
+    };
+
+    export const INSTALL_FROM_VSIX: Command = {
+        id: 'workbench.extensions.installExtension'
     };
 }
 
@@ -110,6 +115,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -194,6 +201,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.files.newUntitledFile' }, {
             execute: () => open(this.openerService, createUntitledURI())
         });
+
+        if (!environment.electron.is() || isOSX) {
+            commands.registerCommand({ id: 'workbench.action.files.openFileFolder' }, {
+                execute: () => commands.executeCommand(WorkspaceCommands.OPEN.id)
+            });
+        }
+
         commands.registerCommand({ id: 'workbench.action.files.openFile' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FILE.id)
         });
@@ -212,12 +226,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
         });
-        commands.registerCommand({ id: 'workbench.extensions.installExtension' }, {
-            execute: async (vsixUriOrExtensionId: UriComponents | string) => {
+        commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
+            execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
+                    await this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
                 } else {
-                    this.pluginServer.deploy(`local-file:${URI.revive(vsixUriOrExtensionId).fsPath}`);
+                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
+                    await this.pluginServer.deploy(`local-file:${uriPath}`);
                 }
             }
         });
@@ -363,6 +378,15 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
             execute: () => this.shell.activatePreviousTab()
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_BACK.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateForward' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_FORWARD.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateToLastEditLocation' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_LAST_EDIT.id)
         });
 
         commands.registerCommand({ id: 'openInTerminal' }, {

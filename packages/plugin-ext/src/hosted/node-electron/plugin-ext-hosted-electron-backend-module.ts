@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
 import { PluginScanner } from '../../common/plugin-protocol';
 import { TheiaPluginScannerElectron } from './scanner-theia-electron';

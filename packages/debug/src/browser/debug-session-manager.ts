@@ -24,7 +24,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/browser/task-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-common';
 import { DebugError, DebugService } from '../common/debug-service';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
@@ -166,10 +166,29 @@ export class DebugSessionManager {
         return this.state > DebugState.Inactive;
     }
 
+    isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
+        return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri)).toString();
+    }
+
+    protected async saveAll(): Promise<boolean> {
+        if (!this.shell.canSaveAll()) {
+            return true; // Nothing to save.
+        }
+        try {
+            await this.shell.saveAll();
+            return true;
+        } catch (error) {
+            console.error('saveAll failed:', error);
+            return false;
+        }
+    }
+
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress('Start...', 'debug', async () => {
             try {
-                await this.shell.saveAll();
+                if (!await this.saveAll()) {
+                    return undefined;
+                }
                 await this.fireWillStartDebugSession();
                 const resolved = await this.resolveConfiguration(options);
 

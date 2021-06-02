@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, ContainerModule } from 'inversify';
+import { injectable, ContainerModule } from '@theia/core/shared/inversify';
 import { CompositeMenuNode } from '@theia/core/lib/common/menu';
 import { ElectronMainMenuFactory, ElectronMenuOptions } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { PlaceholderMenuNode } from '../../browser/menu/sample-menu-contribution';

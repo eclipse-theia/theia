@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, interfaces } from 'inversify';
-import { Event as ElectronEvent, ipcRenderer } from 'electron';
+import { Event as ElectronEvent, ipcRenderer } from '../../../shared/electron';
 import { JsonRpcProxy } from '../../common/messaging';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';

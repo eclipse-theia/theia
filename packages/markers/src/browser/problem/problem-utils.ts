@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Marker } from '../../common/marker';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 
 export namespace ProblemUtils {
 
@@ -44,5 +44,13 @@ export namespace ProblemUtils {
      * @param b the second marker for comparison.
      */
     export const columnNumberCompare = (a: Marker<Diagnostic>, b: Marker<Diagnostic>): number => a.data.range.start.character - b.data.range.start.character;
+
+    /**
+     * Comparator for marker owner (source).
+     * - The order is alphabetical.
+     * @param a the first marker for comparison.
+     * @param b the second marker for comparison.
+     */
+     export const ownerCompare = (a: Marker<Diagnostic>, b: Marker<Diagnostic>): number => a.owner.localeCompare(b.owner);
 
 }

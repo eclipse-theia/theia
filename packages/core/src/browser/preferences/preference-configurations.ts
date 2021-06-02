@@ -55,6 +55,10 @@ export class PreferenceConfigurations {
         return this.getSectionNames().indexOf(name) !== -1;
     }
 
+    isAnyConfig(name: string): boolean {
+        return [...this.getSectionNames(), this.getConfigName()].includes(name);
+    }
+
     isSectionUri(configUri: URI | undefined): boolean {
         return !!configUri && this.isSectionName(this.getName(configUri));
     }

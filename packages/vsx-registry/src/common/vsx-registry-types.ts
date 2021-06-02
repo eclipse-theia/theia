@@ -61,6 +61,14 @@ export interface VSXSearchResult {
     readonly extensions: VSXSearchEntry[];
 }
 
+export interface VSXAllVersions {
+    url: string,
+    version: string,
+    engines?: {
+        [version: string]: string
+    }
+}
+
 /**
  * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/SearchEntryJson.java
  */
@@ -80,6 +88,7 @@ export interface VSXSearchEntry {
     readonly downloadCount: number;
     readonly displayName?: string;
     readonly description?: string;
+    readonly allVersions: VSXAllVersions[];
 }
 
 export type VSXExtensionNamespaceAccess = 'public' | 'restricted';
@@ -90,6 +99,13 @@ export type VSXExtensionNamespaceAccess = 'public' | 'restricted';
 export interface VSXUser {
     loginName: string
     homepage?: string
+}
+
+export interface VSXExtensionRawFiles {
+    download: string
+    readme?: string
+    license?: string
+    icon?: string
 }
 
 /**
@@ -103,12 +119,7 @@ export interface VSXExtensionRaw {
     readonly namespace: string;
     readonly publishedBy: VSXUser
     readonly namespaceAccess: VSXExtensionNamespaceAccess;
-    readonly files: {
-        download: string
-        readme?: string
-        license?: string
-        icon?: string
-    }
+    readonly files: VSXExtensionRawFiles,
     readonly allVersions: {
         [version: string]: string
     }
@@ -130,4 +141,20 @@ export interface VSXExtensionRaw {
     readonly galleryColor?: string;
     readonly galleryTheme?: string;
     readonly qna?: string;
+    readonly engines?: { [engine: string]: string };
+}
+
+/**
+ * Builtin namespaces maintained by the framework.
+ */
+export namespace VSXBuiltinNamespaces {
+    /**
+     * Namespace for individual vscode builtin extensions.
+     */
+    export const VSCODE = 'vscode';
+    /**
+     * Namespace for vscode builtin extension packs.
+     * - corresponds to: https://github.com/eclipse-theia/vscode-builtin-extensions/blob/af9cfeb2ea23e1668a8340c1c2fb5afd56be07d7/src/create-extension-pack.js#L45
+     */
+    export const THEIA = 'eclipse-theia';
 }

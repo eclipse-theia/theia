@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
 import { PreferenceRegistryMainImpl } from './preference-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
@@ -54,6 +54,7 @@ import { TimelineMainImpl } from './timeline-main';
 import { AuthenticationMainImpl } from './authentication-main';
 import { ThemingMainImpl } from './theming-main';
 import { CommentsMainImp } from './comments/comments-main';
+import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -121,6 +122,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const webviewsMain = new WebviewsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN, webviewsMain);
+
+    const customEditorsMain = new CustomEditorsMainImpl(rpc, container, webviewsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain);
 
     const storageMain = new StorageMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);

@@ -21,6 +21,7 @@ import * as types from './types-impl';
 import * as model from '../common/plugin-api-rpc-model';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { TaskDto } from '../common/plugin-api-rpc';
+import { TaskGroup } from './types-impl';
 
 describe('Type converters:', () => {
 
@@ -181,20 +182,29 @@ describe('Type converters:', () => {
         const args = ['run', 'build'];
         const cwd = '/projects/theia';
         const additionalProperty = 'some property';
+        const groupDto = 'build';
+        const group = TaskGroup.Build;
 
         const shellTaskDto: TaskDto = {
             type: shellType,
+            taskType: shellType,
             label,
             source,
             scope: 1,
             command,
             args,
             options: { cwd },
-            additionalProperty
+            additionalProperty,
+            presentation: {
+                reveal: 3,
+                focus: true
+            },
+            group: groupDto
         };
 
         const shellTaskDtoWithCommandLine: TaskDto = {
             type: shellType,
+            taskType: shellType,
             label,
             source,
             scope: 2,
@@ -211,6 +221,11 @@ describe('Type converters:', () => {
                 type: shellType,
                 additionalProperty
             },
+            presentationOptions: {
+                reveal: types.TaskRevealKind.Never,
+                focus: true
+            },
+            group,
             execution: {
                 command,
                 args,

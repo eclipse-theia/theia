@@ -18,11 +18,17 @@
 
 import * as debounce from 'p-debounce';
 import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
-import { JSONExt, JSONObject } from '@phosphor/coreutils/lib/json';
+import { JSONExt, JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
 export interface ScmInputIssue {
     message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
+    type: ScmInputIssueType;
+}
+
+export enum ScmInputIssueType {
+    Error = 0,
+    Warning = 1,
+    Information = 2
 }
 
 export interface ScmInputValidator {

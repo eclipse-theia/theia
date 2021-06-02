@@ -22,7 +22,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJsDom = enableJSDOM();
 
 import URI from '@theia/core/lib/common/uri';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { EditorPreviewManager } from './editor-preview-manager';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { EditorPreviewWidgetFactory } from './editor-preview-factory';
@@ -62,6 +62,7 @@ before(() => {
     // Mock out injected dependencies.
     testContainer.bind(EditorManager).toDynamicValue(ctx => mockEditorManager);
     testContainer.bind(WidgetManager).toDynamicValue(ctx => mockWidgetManager);
+    (<any>mockShell)['tracker'] = { activeWidget: undefined };
     testContainer.bind(ApplicationShell).toConstantValue(mockShell);
     testContainer.bind(PreferenceService).toDynamicValue(ctx => mockPreference);
 

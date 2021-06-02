@@ -16,7 +16,7 @@
 
 import { ElectronMainApplication, ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { ElectronSecurityTokenService } from '@theia/core/lib/electron-main/electron-security-token-service';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
 
 /**

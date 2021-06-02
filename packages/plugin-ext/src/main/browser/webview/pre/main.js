@@ -34,13 +34,13 @@
 (function () {
     'use strict';
 
-	/**
-	 * Use polling to track focus of main webview and iframes within the webview
-	 *
-	 * @param {Object} handlers
-	 * @param {() => void} handlers.onFocus
-	 * @param {() => void} handlers.onBlur
-	 */
+    /**
+     * Use polling to track focus of main webview and iframes within the webview
+     *
+     * @param {Object} handlers
+     * @param {() => void} handlers.onFocus
+     * @param {() => void} handlers.onBlur
+     */
     const trackFocus = ({ onFocus, onBlur }) => {
         const interval = 50;
         let isFocused = document.hasFocus();
@@ -140,10 +140,10 @@
 		background-color: var(--vscode-scrollbarSlider-activeBackground);
 	}`;
 
-	/**
-	 * @param {*} [state]
-	 * @return {string}
-	 */
+    /**
+     * @param {*} [state]
+     * @return {string}
+     */
     function getVsCodeApiScript(state) {
         return `
 			const acquireVsCodeApi = (function() {
@@ -180,9 +180,9 @@
 		`;
     }
 
-	/**
-	 * @param {WebviewHost} host
-	 */
+    /**
+     * @param {WebviewHost} host
+     */
     function createWebviewManager(host) {
         // state
         let firstLoad = true;
@@ -194,10 +194,10 @@
         };
 
 
-		/**
-		 * @param {HTMLDocument?} document
-		 * @param {HTMLElement?} body
-		 */
+        /**
+         * @param {HTMLDocument?} document
+         * @param {HTMLElement?} body
+         */
         const applyStyles = (document, body) => {
             if (!document) {
                 return;
@@ -215,9 +215,9 @@
             }
         };
 
-		/**
-		 * @param {MouseEvent} event
-		 */
+        /**
+         * @param {MouseEvent} event
+         */
         const handleInnerClick = (event) => {
             if (!event || !event.view || !event.view.document) {
                 return;
@@ -245,9 +245,9 @@
             }
         };
 
-		/**
-		 * @param {MouseEvent} event
-		 */
+        /**
+         * @param {MouseEvent} event
+         */
         const handleAuxClick =
             (event) => {
                 // Prevent middle clicks opening a broken link in the browser
@@ -267,9 +267,9 @@
                 }
             };
 
-		/**
-		 * @param {KeyboardEvent} e
-		 */
+        /**
+         * @param {KeyboardEvent} e
+         */
         const handleInnerKeydown = (e) => {
             preventDefaultBrowserHotkeys(e);
 
@@ -318,10 +318,10 @@
         };
 
         function preventDefaultBrowserHotkeys(e) {
-            var isOSX = navigator.platform.toUpperCase().indexOf('MAC')>=0;
+            var isOSX = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
-            // F1 or CtrlCmd+P
-            if (e.keyCode === 112 || (((e.ctrlKey && !isOSX) || (e.metaKey && isOSX)) && e.keyCode === 80)) {
+            // F1 or CtrlCmd+P or CtrlCmd+S
+            if (e.keyCode === 112 || (((e.ctrlKey && !isOSX) || (e.metaKey && isOSX)) && (e.keyCode === 80 || e.keyCode === 83))) {
                 e.preventDefault();
             }
         }
@@ -351,9 +351,9 @@
             });
         };
 
-		/**
-		 * @return {string}
-		 */
+        /**
+         * @return {string}
+         */
         function toContentHtml(data) {
             const options = data.options;
             const text = data.contents;
@@ -539,9 +539,9 @@
                     }
                 };
 
-				/**
-				 * @param {HTMLIFrameElement} newFrame
-				 */
+                /**
+                 * @param {HTMLIFrameElement} newFrame
+                 */
                 function hookupOnLoadHandlers(newFrame) {
                     const timeoutDelay = 5000;
                     clearTimeout(loadTimeout);

@@ -19,10 +19,9 @@ import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, W
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { Disposable, WebviewPanelTargetArea } from './types-impl';
+import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
 
@@ -104,13 +103,26 @@ export class WebviewsExtImpl implements WebviewsExt {
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         plugin: Plugin
     ): theia.WebviewPanel {
+        const viewId = v4();
+        const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
+        const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, plugin);
+        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, webviewOptions);
+        const panel = this.createWebviewPanel(viewType, title, showOptions, options, plugin, viewId);
+        return panel;
+    }
+
+    createWebviewPanel(
+        viewType: string,
+        title: string,
+        showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
+        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        plugin: Plugin,
+        viewId: string
+    ): WebviewPanelImpl {
         if (!this.initData) {
             throw new Error('Webviews are not initialized');
         }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
-        const viewId = v4();
-        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, WebviewImpl.toWebviewOptions(options, this.workspace, plugin));
-
         const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
@@ -135,7 +147,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         });
     }
 
-    private getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
+    getWebviewPanel(viewId: string): WebviewPanelImpl | undefined {
         if (this.webviewPanels.has(viewId)) {
             return this.webviewPanels.get(viewId);
         }

@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { inject, injectable, postConstruct } from 'inversify';
+import * as React from '@theia/core/shared/react';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { OutputWidget } from './output-widget';
@@ -51,7 +51,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         this.outputChannelManager.onChannelWasHidden(fireChannelsChanged);
     }
 
-    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
         toolbarRegistry.registerItem({
             id: 'channels',
             render: () => this.renderChannelSelector(),

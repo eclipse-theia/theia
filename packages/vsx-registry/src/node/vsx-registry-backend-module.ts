@@ -14,11 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXRegistryAPI } from '../common/vsx-registry-api';
 import { VSXEnvironment } from '../common/vsx-environment';
+import { VSXApiVersionProviderImpl } from './vsx-api-version-provider-backend-impl';
+import { VSXApiVersionProvider } from '../common/vsx-api-version-provider';
 
 export default new ContainerModule(bind => {
     bind(VSXEnvironment).toSelf().inRequestScope();
@@ -26,4 +28,7 @@ export default new ContainerModule(bind => {
 
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
+
+    bind(VSXApiVersionProviderImpl).toSelf().inSingletonScope();
+    bind(VSXApiVersionProvider).toService(VSXApiVersionProviderImpl);
 });

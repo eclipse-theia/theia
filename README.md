@@ -1,7 +1,7 @@
 <br/>
 <div id="theia-logo" align="center">
     <br />
-    <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia-logo.svg?sanitize=true" alt="Theia Logo" width="300"/>
+    <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia-logo-gray.svg?sanitize=true" alt="Theia Logo" width="300"/>
     <h3>Cloud & Desktop IDE Framework</h3>
 </div>
 
@@ -29,6 +29,7 @@
 
 - [**Website**](#website)
 - [**Scope**](#scope)
+- [**Roadmap**](#roadmap)
 - [**Getting Started**](#getting-started)
 - [**Contributing**](#contributing)
 - [**Feedback**](#feedback)
@@ -45,6 +46,10 @@
 - Provide a highly flexible architecture for adopters
 - Support VS Code Extension protocol
 - Develop under vendor-neutral open-source governance
+
+## Roadmap
+
+See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) for an overview about the current project goals and the upcoming releases.
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
@@ -64,14 +69,14 @@ Read below to learn how to take part in improving Theia:
 - Find an issue to work on and submit a pull request
   - First time contributing to open source? Pick a [good first issue](https://github.com/eclipse-theia/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/eclipse-theia/theia/labels/beginners) to get you familiar with codebase and our contributing process.
-  - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/eclipse-theia/theia/labels/help%20wanted) is a good list to start.
+  - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/eclipse-theia/theia/labels/help%20wanted) is a good list to start. Further, have a look at our [roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) to align your contributions with the current project goals.
 - Could not find an issue? Look for bugs, typos, and missing features.
 
 ## Feedback
 
 Read below how to engage with Theia community:
 - Join the discussion on [Discourse](https://community.theia-ide.org/).
-- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new).
+- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new/choose).
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
 

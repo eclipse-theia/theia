@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';

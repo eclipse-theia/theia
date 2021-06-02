@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 
@@ -23,7 +23,7 @@ export class PluginWorker {
     private worker: Worker;
     public readonly rpc: RPCProtocol;
     constructor() {
-        const emitter = new Emitter();
+        const emitter = new Emitter<string>();
         this.worker = new (require('../../hosted/browser/worker/worker-main'));
         this.worker.onmessage = message => {
             emitter.fire(message.data);
@@ -32,7 +32,7 @@ export class PluginWorker {
 
         this.rpc = new RPCProtocolImpl({
             onMessage: emitter.event,
-            send: (m: {}) => {
+            send: (m: string) => {
                 this.worker.postMessage(m);
             }
         });

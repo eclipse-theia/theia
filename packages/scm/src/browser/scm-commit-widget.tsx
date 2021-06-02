@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core';
-import { Message } from '@phosphor/messaging';
-import * as React from 'react';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import * as React from '@theia/core/shared/react';
 import TextareaAutosize from 'react-autosize-textarea';
-import { ScmInput } from './scm-input';
+import { ScmInput, ScmInputIssueType } from './scm-input';
 import {
     ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget
 } from '@theia/core/lib/browser';
@@ -100,7 +100,20 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderInput(input: ScmInput): React.ReactNode {
-        const validationStatus = input.issue ? input.issue.type : 'idle';
+        let validationStatus = 'idle';
+        if (input.issue) {
+            switch (input.issue.type) {
+                case ScmInputIssueType.Error:
+                    validationStatus = 'error';
+                    break;
+                case ScmInputIssueType.Information:
+                    validationStatus = 'info';
+                    break;
+                case ScmInputIssueType.Warning:
+                    validationStatus = 'warning';
+                    break;
+            }
+        }
         const validationMessage = input.issue ? input.issue.message : '';
         const format = (value: string, ...args: string[]): string => {
             if (args.length !== 0) {

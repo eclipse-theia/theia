@@ -71,11 +71,13 @@ export interface PluginPackageContribution {
     configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
+    customEditors?: PluginPackageCustomEditor[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
     views?: { [location: string]: PluginPackageView[] };
     viewsWelcome?: PluginPackageViewWelcome[];
     commands?: PluginPackageCommand | PluginPackageCommand[];
     menus?: { [location: string]: PluginPackageMenu[] };
+    submenus?: PluginPackageSubmenu[];
     keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
     snippets?: PluginPackageSnippetsContribution[];
@@ -87,6 +89,23 @@ export interface PluginPackageContribution {
     problemPatterns?: PluginProblemPatternContribution[];
     jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+}
+
+export interface PluginPackageCustomEditor {
+    viewType: string;
+    displayName: string;
+    selector?: CustomEditorSelector[];
+    priority?: CustomEditorPriority;
+}
+
+export interface CustomEditorSelector {
+    readonly filenamePattern?: string;
+}
+
+export enum CustomEditorPriority {
+    default = 'default',
+    builtin = 'builtin',
+    option = 'option',
 }
 
 export interface PluginPackageViewContainer {
@@ -116,10 +135,16 @@ export interface PluginPackageCommand {
 }
 
 export interface PluginPackageMenu {
-    command: string;
+    command?: string;
+    submenu?: string;
     alt?: string;
     group?: string;
     when?: string;
+}
+
+export interface PluginPackageSubmenu {
+    id: string;
+    label: string;
 }
 
 export interface PluginPackageKeybinding {
@@ -129,6 +154,8 @@ export interface PluginPackageKeybinding {
     mac?: string;
     linux?: string;
     win?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args?: any;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -482,11 +509,13 @@ export interface PluginContribution {
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
+    customEditors?: CustomEditor[];
     viewsContainers?: { [location: string]: ViewContainer[] };
     views?: { [location: string]: View[] };
     viewsWelcome?: ViewWelcome[];
     commands?: PluginCommand[]
     menus?: { [location: string]: Menu[] };
+    submenus?: Submenu[];
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
@@ -605,6 +634,16 @@ export interface FoldingRules {
 }
 
 /**
+ * Custom Editors contribution
+ */
+export interface CustomEditor {
+    viewType: string;
+    displayName: string;
+    selector: CustomEditorSelector[];
+    priority: CustomEditorPriority;
+}
+
+/**
  * Views Containers contribution
  */
 export interface ViewContainer {
@@ -647,22 +686,16 @@ export type IconUrl = string | { light: string; dark: string; };
  * Menu contribution
  */
 export interface Menu {
-    command: string;
+    command?: string;
+    submenu?: string
     alt?: string;
     group?: string;
     when?: string;
 }
 
-/**
- * Keybinding contribution
- */
-export interface Keybinding {
-    keybinding?: string;
-    command: string;
-    when?: string;
-    mac?: string;
-    linux?: string;
-    win?: string;
+export interface Submenu {
+    id: string;
+    label: string;
 }
 
 /**
@@ -675,6 +708,8 @@ export interface Keybinding {
     mac?: string;
     linux?: string;
     win?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args?: any;
 }
 
 /**
@@ -737,7 +772,7 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
 
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
-    postMessage(message: string): Promise<void>;
+    postMessage(pluginHost: string, message: string): Promise<void>;
 
     log(logPart: LogPart): void;
 
@@ -781,9 +816,11 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
-    onMessage(message: string): Promise<void>;
+    onMessage(targetHost: string, message: string): Promise<void>;
 
 }
+
+export const PLUGIN_HOST_BACKEND = 'main';
 
 export interface WorkspaceStorageKind {
     workspace?: string | undefined;
@@ -816,9 +853,9 @@ export interface PluginServer {
 export const ServerPluginRunner = Symbol('ServerPluginRunner');
 export interface ServerPluginRunner {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    acceptMessage(jsonMessage: any): boolean;
+    acceptMessage(pluginHostId: string, jsonMessage: string): boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(jsonMessage: any): void;
+    onMessage(pluginHostId: string, jsonMessage: string): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;
     clientClosed(): void;

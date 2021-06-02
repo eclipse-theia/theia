@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
@@ -42,7 +42,8 @@ export class ProcessTaskResolver implements TaskResolver {
      * sane default values. Also, resolve all known variables, e.g. `${workspaceFolder}`.
      */
     async resolveTask(taskConfig: TaskConfiguration): Promise<TaskConfiguration> {
-        if (taskConfig.type !== 'process' && taskConfig.type !== 'shell') {
+        const type = taskConfig.taskType || taskConfig.type;
+        if (type !== 'process' && type !== 'shell') {
             throw new Error('Unsupported task configuration type.');
         }
         const context = typeof taskConfig._scope === 'string' ? new URI(taskConfig._scope) : undefined;

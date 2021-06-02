@@ -14,34 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceDataProperty, SelectableTreeNode, PreferenceItem, Title, PreferenceScope, TreeNode, CompositeTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { PreferenceDataProperty, PreferenceItem, Title, PreferenceScope, TreeNode } from '@theia/core/lib/browser';
 import { Command, MenuPath } from '@theia/core';
 
 export namespace Preference {
-    interface MaximalTree extends SelectableTreeNode, ExpandableTreeNode {
-        leaves: TreeExtension[];
-    }
-
-    export type TreeExtension = TreeNode & {
-        expanded?: MaximalTree['expanded'];
-        selected?: MaximalTree['selected'];
-        focus?: MaximalTree['focus'];
-        children?: MaximalTree['children'];
-        leaves?: MaximalTree['leaves'];
-    };
-
-    export interface Branch extends CompositeTreeNode {
-        leaves: TreeExtension[];
-    }
-
-    export namespace Branch {
-        export function is(node: TreeNode | Branch): node is Branch {
-            return 'leaves' in node && Array.isArray(node.leaves);
-        }
-    }
 
     export interface ValueInSingleScope { value?: PreferenceItem, data: PreferenceDataProperty; }
-    export interface NodeWithValueInSingleScope extends SelectableTreeNode {
+    export interface NodeWithValueInSingleScope extends TreeNode {
         preference: ValueInSingleScope;
     }
 
@@ -69,16 +48,25 @@ export namespace Preference {
         }
     }
 
-    export interface NodeWithValueInAllScopes extends SelectableTreeNode {
+    export interface NodeWithValueInAllScopes extends TreeNode {
         preference: PreferenceWithValueInAllScopes;
     }
 
-    export enum LookupKeys {
-        defaultValue,
-        globalValue,
-        workspaceValue,
-        workspaceFolderValue,
-    }
+    export const getValueInScope = (preferenceInfo: ValuesInAllScopes | undefined, scope: number): PreferenceItem | undefined => {
+        if (!preferenceInfo) {
+            return undefined;
+        }
+        switch (scope) {
+            case PreferenceScope.User:
+                return preferenceInfo.globalValue;
+            case PreferenceScope.Workspace:
+                return preferenceInfo.workspaceValue;
+            case PreferenceScope.Folder:
+                return preferenceInfo.workspaceFolderValue;
+            default:
+                return undefined;
+        }
+    };
 
     export interface SelectedScopeDetails extends Title.Dataset {
         scope: string;
@@ -91,19 +79,6 @@ export namespace Preference {
         uri: '',
         activeScopeIsFolder: 'false'
     };
-
-    export interface SearchQuery {
-        query: string;
-    };
-
-    export interface MouseScrollDetails {
-        firstVisibleChildId: string;
-        isTop: boolean;
-    };
-
-    export interface SelectedTreeNode {
-        nodeID: string;
-    }
 
     export interface ContextMenuCallbacks {
         resetCallback(): void;

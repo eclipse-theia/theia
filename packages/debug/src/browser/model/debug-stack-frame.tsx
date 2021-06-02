@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/common/debugModel.ts
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { WidgetOpenerOptions, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, Range, Position } from '@theia/editor/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';

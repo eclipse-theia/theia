@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
@@ -181,10 +181,12 @@ export class HostedPluginManagerClient {
 
     async startDebugSessionManager(): Promise<void> {
         let outFiles: string[] | undefined = undefined;
-        if (this.pluginLocation) {
+        if (this.pluginLocation && this.hostedPluginPreferences['hosted-plugin.launchOutFiles'].length > 0) {
             const fsPath = await this.fileService.fsPath(this.pluginLocation);
             if (fsPath) {
-                outFiles = [new Path(fsPath).join('**', '*.js').toString()];
+                outFiles = this.hostedPluginPreferences['hosted-plugin.launchOutFiles'].map(outFile =>
+                    outFile.replace('${pluginPath}', new Path(fsPath).toString())
+                );
             }
         }
         await this.debugSessionManager.start({

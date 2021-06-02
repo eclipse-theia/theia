@@ -17,10 +17,10 @@
 import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller } from '@theia/callhierarchy/lib/browser';
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
-import * as callhierarchy from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
+import * as callhierarchy from '@theia/core/shared/vscode-languageserver-types';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../../common/uri-components';
-import { Location } from 'vscode-languageserver-types';
+import { Location } from '@theia/core/shared/vscode-languageserver-types';
 
 export function toUriComponents(uri: string): UriComponents {
     return URI.parse(uri);

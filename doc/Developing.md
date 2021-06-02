@@ -53,7 +53,7 @@ For Windows instructions [click here](#building-on-windows).
 ## Prerequisites
 
  - Node.js `>= 12.14.1` **AND** `< 13`.
-   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/),  as it is the the recommended minimum version according to the framework's supported `electron` version.
+   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/), as it is the recommended minimum version according to the framework's supported `electron` version.
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
@@ -283,6 +283,86 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
     - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
     - If you want to debug the activation then enable `stopOnEntry` flag.
   - Open the browser page.
+
+ ---
+### Debugging Plugin Sources
+
+[click for base article](https://github.com/eclipse-theia/theia/issues/3251#issuecomment-468166533)
+
+The following launch configuration is meant to be used when the Theia project is opened as the main project in vscode, the following launch configuration is added inside .vscode/launch.json.
+- The source repository of your plugin is expected under your `${workspaceFolder}/plugins` folder
+- You can start the frontend from URL: http://localhost:3030
+- It's suggested to update your frontend launch configuration URL to open your favorite target project in a second launch
+
+Launch configuration template that will start the backend process, and then attempt to connect on port 9339 to debug the plugin-host sub-process:
+
+```jsonc
+{
+    "name": "Launch VS Code extension as Theia plugin",
+    "type": "node",
+    "request": "launch",
+    "port": 9339,
+    "timeout": 100000,
+    "args": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+        "${workspaceFolder}",
+        "--port=3030",
+        "--hosted-plugin-inspect=9339", // spawn the plugin-host in debug mode
+        "--plugins=local-dir:${workspaceFolder}/plugins"
+    ],
+    "stopOnEntry": false,
+    "sourceMaps": true,
+    "outFiles": [
+        "${workspaceFolder}/**/*.js"
+    ],
+    "internalConsoleOptions": "openOnSessionStart",
+    "outputCapture": "std"
+}
+```
+
+#### Producing typescript maps for your plugin
+
+Enable source maps in the plugin's `tsconfig.json`
+
+```jsonc
+{
+    "compilerOptions": {
+        "sourceMap": true
+    }
+}
+```
+
+If Webpack is used you should bundle in development mode in the `package.json` scripts to avoid minification:
+
+```sh
+webpack --mode development
+```
+
+As well as enabling source map output in the **webpack.config.js**
+
+```js
+module.exports = {
+    devtool: 'source-map'
+}
+```
+
+#### Compiling and blocking typescript from walking up parent directories [(see discussion)](https://github.com/Microsoft/TypeScript/issues/13992#issuecomment-386253983)
+
+If you get errors while building like:
+
+```
+(parent folders)/index.d.ts: error TS2300: Duplicate identifier
+```
+
+You can fix it by modifying your `tsconfig.json`:
+
+```jsonc
+{
+    "compilerOptions": {
+       "typeRoots": ["./node_modules/@types"]
+    }
+}
+```
 
 ## Profiling
 

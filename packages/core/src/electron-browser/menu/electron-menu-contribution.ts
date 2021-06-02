@@ -14,16 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as electron from 'electron';
+import * as electron from '../../../shared/electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
-import { KeybindingContribution, KeybindingRegistry } from '../../browser';
+import { KeybindingContribution, KeybindingRegistry, PreferenceScope, PreferenceService } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
+import { ZoomLevel } from '../window/electron-window-preferences';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
@@ -50,6 +51,11 @@ export namespace ElectronCommands {
         id: 'close.window',
         label: 'Close Window'
     };
+    export const TOGGLE_FULL_SCREEN: Command = {
+        id: 'workbench.action.toggleFullScreen',
+        category: 'View',
+        label: 'Toggle Full Screen'
+    };
 }
 
 export namespace ElectronMenus {
@@ -70,6 +76,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     constructor(
         @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
@@ -154,17 +163,34 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerCommand(ElectronCommands.ZOOM_IN, {
             execute: () => {
                 const webContents = currentWindow.webContents;
-                webContents.setZoomLevel(webContents.zoomLevel + 0.5);
+                // When starting at a level that is not a multiple of 0.5, increment by at most 0.5 to reach the next highest multiple of 0.5.
+                let zoomLevel = (Math.floor(webContents.zoomLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) + ZoomLevel.VARIATION;
+                if (zoomLevel > ZoomLevel.MAX) {
+                    zoomLevel = ZoomLevel.MAX;
+                    return;
+                };
+                this.preferenceService.set('window.zoomLevel', zoomLevel, PreferenceScope.User);
             }
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
             execute: () => {
                 const webContents = currentWindow.webContents;
-                webContents.setZoomLevel(webContents.zoomLevel - 0.5);
+                // When starting at a level that is not a multiple of 0.5, decrement by at most 0.5 to reach the next lowest multiple of 0.5.
+                let zoomLevel = (Math.ceil(webContents.zoomLevel / ZoomLevel.VARIATION) * ZoomLevel.VARIATION) - ZoomLevel.VARIATION;
+                if (zoomLevel < ZoomLevel.MIN) {
+                    zoomLevel = ZoomLevel.MIN;
+                    return;
+                };
+                this.preferenceService.set('window.zoomLevel', zoomLevel, PreferenceScope.User);
             }
         });
         registry.registerCommand(ElectronCommands.RESET_ZOOM, {
-            execute: () => currentWindow.webContents.setZoomLevel(0)
+            execute: () => this.preferenceService.set('window.zoomLevel', ZoomLevel.DEFAULT, PreferenceScope.User)
+        });
+        registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
+            isEnabled: () => currentWindow.isFullScreenable(),
+            isVisible: () => currentWindow.isFullScreenable(),
+            execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
         });
     }
 
@@ -193,6 +219,10 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             {
                 command: ElectronCommands.CLOSE_WINDOW.id,
                 keybinding: (isOSX ? 'cmd+shift+w' : (isWindows ? 'ctrl+w' : /* Linux */ 'ctrl+q'))
+            },
+            {
+                command: ElectronCommands.TOGGLE_FULL_SCREEN.id,
+                keybinding: isOSX ? 'ctrl+ctrlcmd+f' : 'f11'
             }
         );
     }
@@ -223,5 +253,4 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             commandId: ElectronCommands.CLOSE_WINDOW.id,
         });
     }
-
 }

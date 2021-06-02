@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { UriAwareCommandHandler, UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core';

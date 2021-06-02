@@ -14,14 +14,40 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { remote } from 'electron';
+import { remote } from '@theia/core/shared/electron';
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
 import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory';
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
+import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory';
+import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget';
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
     async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
+        const widget = await super.createWidget(identifier);
+        await this.attachElectronSecurityCookie(widget.externalEndpoint);
+        return widget;
+    }
+
+    /**
+     * Attach the ElectronSecurityToken to a cookie that will be sent with each webview request.
+     *
+     * @param endpoint cookie's target url
+     */
+    protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
+        await remote.session.defaultSession!.cookies.set({
+            url: endpoint,
+            name: ElectronSecurityToken,
+            value: JSON.stringify(this.container.get(ElectronSecurityToken)),
+            httpOnly: true
+        });
+    }
+
+}
+
+export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory {
+
+    async createWidget(identifier: WebviewWidgetIdentifier): Promise<CustomEditorWidget> {
         const widget = await super.createWidget(identifier);
         await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;

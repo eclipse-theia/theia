@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
@@ -129,6 +129,11 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
     };
+    export const OPEN_WORKSPACE_FILE: Command = {
+        id: 'workspace:openConfigFile',
+        category: WORKSPACE_CATEGORY,
+        label: 'Open Workspace Configuration File'
+    };
     export const SAVE_AS: Command = {
         id: 'file.saveAs',
         category: 'File',
@@ -212,16 +217,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     registerCommands(registry: CommandRegistry): void {
-        this.openerService.getOpeners().then(openers => {
-            for (const opener of openers) {
-                const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-                registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
-                    execute: uri => opener.open(uri),
-                    isEnabled: uri => opener.canHandle(uri) > 0,
-                    isVisible: uri => opener.canHandle(uri) > 0 && this.areMultipleOpenHandlersPresent(openers, uri)
-                }));
-            }
-        });
+        this.registerOpenWith(registry);
         registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
@@ -340,6 +336,24 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
         });
+    }
+
+    openers: OpenHandler[];
+    protected async registerOpenWith(registry: CommandRegistry): Promise<void> {
+        if (this.openerService.onDidChangeOpeners) {
+            this.openerService.onDidChangeOpeners(async e => {
+                this.openers = await this.openerService.getOpeners();
+            });
+        }
+        this.openers = await this.openerService.getOpeners();
+        for (const opener of this.openers) {
+            const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
+            registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
+                execute: uri => opener.open(uri),
+                isEnabled: uri => opener.canHandle(uri) > 0,
+                isVisible: uri => opener.canHandle(uri) > 0 && this.areMultipleOpenHandlersPresent(this.openers, uri)
+            }));
+        }
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {

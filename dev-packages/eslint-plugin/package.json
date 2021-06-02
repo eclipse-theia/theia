@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "name": "@theia/eslint-plugin",
+  "version": "1.14.0",
+  "description": "Custom ESLint rules for developing Theia extensions and applications",
+  "dependencies": {
+    "@theia/core": "1.14.0"
+  }
+}

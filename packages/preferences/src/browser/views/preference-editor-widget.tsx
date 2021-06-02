@@ -15,41 +15,52 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { postConstruct, injectable, inject } from 'inversify';
-import * as React from 'react';
-import { Disposable } from 'vscode-jsonrpc';
+import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { Disposable } from '@theia/core/shared/vscode-ws-jsonrpc';
 import {
     ReactWidget,
     PreferenceService,
-    PreferenceDataProperty,
-    PreferenceScope,
     CompositeTreeNode,
     SelectableTreeNode,
     PreferenceItem,
+    TreeNode,
+    ExpandableTreeNode,
+    StatefulWidget,
 } from '@theia/core/lib/browser';
 import { Message, } from '@theia/core/lib/browser/widgets/widget';
 import { SinglePreferenceDisplayFactory } from './components/single-preference-display-factory';
-import { Preference } from '../util/preference-types';
-import { PreferencesEventService } from '../util/preference-event-service';
-import { PreferencesTreeProvider } from '../preference-tree-provider';
+import { PreferenceTreeModel, PreferenceTreeNodeRow } from '../preference-tree-model';
+import { Emitter } from '@theia/core';
+
+const HEADER_CLASS = 'settings-section-category-title';
+const SUBHEADER_CLASS = 'settings-section-subcategory-title';
+
+export interface PreferencesEditorState {
+    firstVisibleChildID: string,
+}
 
 @injectable()
-export class PreferencesEditorWidget extends ReactWidget {
+export class PreferencesEditorWidget extends ReactWidget implements StatefulWidget {
     static readonly ID = 'settings.editor';
     static readonly LABEL = 'Settings Editor';
 
-    protected properties: { [key: string]: PreferenceDataProperty; };
-    protected currentDisplay: CompositeTreeNode;
-    protected activeScope: number = PreferenceScope.User;
-    protected activeURI: string = '';
-    protected activeScopeIsFolder: boolean = false;
+    protected readonly onEditorScrollEmitter = new Emitter<boolean>();
+    /**
+     * true = at top; false = not at top
+     */
+    readonly onEditorDidScroll = this.onEditorScrollEmitter.event;
+
     protected scrollContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
     protected hasRendered = false;
-    protected _preferenceScope: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
+    protected shouldScroll: boolean = true;
+    protected lastUserSelection: string = '';
+    protected isAtScrollTop: boolean = true;
+    protected firstVisibleChildID: string = '';
 
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
     @inject(PreferenceService) protected readonly preferenceValueRetrievalService: PreferenceService;
-    @inject(PreferencesTreeProvider) protected readonly preferenceTreeProvider: PreferencesTreeProvider;
+    @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(SinglePreferenceDisplayFactory) protected readonly singlePreferenceFactory: SinglePreferenceDisplayFactory;
 
     @postConstruct()
@@ -57,19 +68,12 @@ export class PreferencesEditorWidget extends ReactWidget {
         this.onRender.push(Disposable.create(() => this.hasRendered = true));
         this.id = PreferencesEditorWidget.ID;
         this.title.label = PreferencesEditorWidget.LABEL;
-        this.preferenceValueRetrievalService.onPreferenceChanged((preferenceChange): void => {
+        this.preferenceValueRetrievalService.onPreferenceChanged((): void => {
             this.update();
         });
-        this.preferencesEventService.onDisplayChanged.event(didChangeTree => this.handleChangeDisplay(didChangeTree));
-        this.preferencesEventService.onNavTreeSelection.event(e => this.scrollToEditorElement(e.nodeID));
-        this.currentDisplay = this.preferenceTreeProvider.currentTree;
-        this.properties = this.preferenceTreeProvider.propertyList;
+        this.model.onFilterChanged(({ filterCleared }) => this.handleDisplayChange(filterCleared));
+        this.model.onSelectionChanged(e => this.handleSelectionChange(e));
         this.update();
-    }
-
-    set preferenceScope(preferenceScopeDetails: Preference.SelectedScopeDetails) {
-        this._preferenceScope = preferenceScopeDetails;
-        this.handleChangeScope(this._preferenceScope);
     }
 
     protected callAfterFirstRender(callback: Function): void {
@@ -88,46 +92,80 @@ export class PreferencesEditorWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
-        const visibleCategories = this.currentDisplay.children.filter(category => category.visible);
+        const visibleNodes = Array.from(this.model.currentRows.values());
         return (
             <div className="settings-main">
                 <div ref={this.scrollContainerRef} className="settings-main-scroll-container" id="settings-main-scroll-container">
-                    {!!visibleCategories.length ? visibleCategories.map(category => this.renderCategory(category as Preference.Branch)) : this.renderNoResultMessage()}
+                    {!this.model.totalVisibleLeaves ? this.renderNoResultMessage() : visibleNodes.map(nodeRow => {
+                        if (!CompositeTreeNode.is(nodeRow.node)) {
+                            return this.renderSingleEntry(nodeRow.node);
+                        } else {
+                            return this.renderCategoryHeader(nodeRow);
+                        }
+                    })}
                 </div>
             </div>
         );
     }
 
-    protected handleChangeDisplay = (didGenerateNewTree: boolean): void => {
-        if (didGenerateNewTree) {
-            this.currentDisplay = this.preferenceTreeProvider.currentTree;
-            this.properties = this.preferenceTreeProvider.propertyList;
+    protected handleDisplayChange = (filterWasCleared: boolean = false): void => {
+        const currentVisibleChild = this.firstVisibleChildID;
+        this.update();
+        const oldVisibleNode = this.model.currentRows.get(currentVisibleChild);
+        // Scroll if the old visible node is visible in the new display. Otherwise go to top.
+        if (!filterWasCleared && oldVisibleNode && !(CompositeTreeNode.is(oldVisibleNode.node) && oldVisibleNode.visibleChildren === 0)) {
+            setTimeout(() => // set timeout to allow render to finish.
+                Array.from(this.node.getElementsByTagName('li')).find(element => element.getAttribute('data-id') === currentVisibleChild)?.scrollIntoView());
+        } else {
             this.node.scrollTop = 0;
         }
-        this.update();
     };
 
-    protected onScroll = (): void => {
+    protected doOnScroll = (): void => {
         const scrollContainer = this.node;
-        const scrollIsTop = scrollContainer.scrollTop === 0;
-        const visibleChildren: string[] = [];
-        this.addFirstVisibleChildId(scrollContainer, visibleChildren);
-        if (visibleChildren.length) {
-            this.preferencesEventService.onEditorScroll.fire({
-                firstVisibleChildId: visibleChildren[0],
-                isTop: scrollIsTop
-            });
+        const { selectionAncestorID, expansionAncestorID } = this.findFirstVisibleChildID(scrollContainer) ?? {};
+        if (selectionAncestorID !== this.lastUserSelection) {
+            this.shouldScroll = false; // prevents event feedback loop.
+            const selectionAncestor = this.model.getNode(selectionAncestorID) as SelectableTreeNode;
+            const expansionAncestor = this.model.getNode(expansionAncestorID) as ExpandableTreeNode;
+            if (expansionAncestor) {
+                this.model.collapseAllExcept(expansionAncestor);
+            }
+            if (selectionAncestor) {
+                this.model.selectNode(selectionAncestor);
+            }
+            this.shouldScroll = true;
         }
+        if (this.isAtScrollTop && scrollContainer.scrollTop !== 0) {
+            this.isAtScrollTop = false;
+            this.onEditorScrollEmitter.fire(false); // no longer at top
+        } else if (!this.isAtScrollTop && scrollContainer.scrollTop === 0) {
+            this.isAtScrollTop = true;
+            this.onEditorScrollEmitter.fire(true); // now at top
+        }
+        this.lastUserSelection = '';
     };
 
-    protected addFirstVisibleChildId(container: Element, array: string[]): void {
-        const children = container.children;
-        for (let i = 0; i < children.length && !array.length; i++) {
-            const id = children[i].getAttribute('data-id');
-            if (id && this.isInView(children[i] as HTMLElement, container as HTMLElement)) {
-                array.push(id);
-            } else if (!array.length) {
-                this.addFirstVisibleChildId(children[i], array);
+    onScroll = debounce(this.doOnScroll, 10);
+
+    protected findFirstVisibleChildID(container: Element): { selectionAncestorID: string, expansionAncestorID: string; } | undefined {
+        const children = container.getElementsByTagName('li');
+        let selectionAncestorID: string = '';
+        let expansionAncestorID: string = '';
+        for (let i = 0; i < children.length; i++) {
+            const currentChild = children[i];
+            const id = currentChild.getAttribute('data-id');
+            if (id) {
+                if (currentChild.classList.contains(HEADER_CLASS)) {
+                    selectionAncestorID = id;
+                    expansionAncestorID = id;
+                } else if (currentChild.classList.contains(SUBHEADER_CLASS)) {
+                    selectionAncestorID = id;
+                }
+                if (this.isInView(currentChild as HTMLElement, container as HTMLElement)) {
+                    this.firstVisibleChildID = id;
+                    return { selectionAncestorID, expansionAncestorID };
+                }
             }
         }
     }
@@ -145,32 +183,29 @@ export class PreferencesEditorWidget extends ReactWidget {
         )
     });
 
-    protected handleChangeScope = ({ scope, uri, activeScopeIsFolder }: Preference.SelectedScopeDetails): void => {
-        this.activeScope = Number(scope);
-        this.activeURI = uri;
-        this.activeScopeIsFolder = activeScopeIsFolder === 'true';
-        this.update();
-    };
+    protected renderSingleEntry(node: TreeNode): React.ReactNode {
+        const values = this.preferenceValueRetrievalService.inspect<PreferenceItem>(node.id, this.model.currentScope.uri);
+        const data = this.model.propertyList[node.id];
+        if (data && values) {
+            const preferenceNodeWithValueInAllScopes = { ...node, preference: { data, values } };
+            return this.singlePreferenceFactory.render(preferenceNodeWithValueInAllScopes);
+        }
+        return undefined;
+    }
 
-    protected renderCategory(category: Preference.Branch): React.ReactNode {
-        const children = category.children.concat(category.leaves).sort((a, b) => this.sort(a.id, b.id));
-        const isCategory = category.parent?.parent === undefined;
-        const categoryLevelClass = isCategory ? 'settings-section-category-title' : 'settings-section-subcategory-title';
-        return category.visible && (
+    protected renderCategoryHeader({ node, visibleChildren }: PreferenceTreeNodeRow): React.ReactNode {
+        if (visibleChildren === 0) {
+            return undefined;
+        }
+        const isCategory = ExpandableTreeNode.is(node);
+        const className = isCategory ? HEADER_CLASS : SUBHEADER_CLASS;
+        return node.visible && (
             <ul
-                className="settings-section"
-                key={`${category.id}-editor`}
-                id={`${category.id}-editor`}
+                className='settings-section'
+                key={`${node.id}-editor`}
+                id={`${node.id}-editor`}
             >
-                <li className={categoryLevelClass} data-id={category.id}>{category.name}</li>
-                {children.map((preferenceNode: SelectableTreeNode | Preference.Branch) => {
-                    if (Preference.Branch.is(preferenceNode)) {
-                        return this.renderCategory(preferenceNode);
-                    }
-                    const values = this.preferenceValueRetrievalService.inspect<PreferenceItem>(preferenceNode.id, this.activeURI);
-                    const preferenceNodeWithValueInAllScopes = { ...preferenceNode, preference: { data: this.properties[preferenceNode.id], values } };
-                    return this.singlePreferenceFactory.render(preferenceNodeWithValueInAllScopes);
-                })}
+                <li className={`settings-section-title ${className}`} data-id={node.id}>{node.name}</li>
             </ul>
         );
     }
@@ -179,23 +214,29 @@ export class PreferencesEditorWidget extends ReactWidget {
         return <div className="settings-no-results-announcement">That search query has returned no results.</div>;
     }
 
-    protected scrollToEditorElement(nodeID: string): void {
-        if (nodeID) {
-            const el = document.getElementById(`${nodeID}-editor`);
-            if (el) {
-                // Timeout to allow render cycle to finish.
-                setTimeout(() => el.scrollIntoView());
+    protected handleSelectionChange(selectionEvent: readonly Readonly<SelectableTreeNode>[]): void {
+        if (this.shouldScroll) {
+            const nodeID = selectionEvent[0]?.id;
+            if (nodeID) {
+                this.lastUserSelection = nodeID;
+                const el = document.getElementById(`${nodeID}-editor`);
+                if (el) {
+                    // Timeout to allow render cycle to finish.
+                    setTimeout(() => el.scrollIntoView());
+                }
             }
         }
     }
 
-    /**
-     * Sort two strings.
-     *
-     * @param a the first string.
-     * @param b the second string.
-     */
-    protected sort(a: string, b: string): number {
-        return a.localeCompare(b, undefined, { ignorePunctuation: true });
+    storeState(): PreferencesEditorState {
+        return {
+            firstVisibleChildID: this.firstVisibleChildID,
+        };
     }
+
+    restoreState(oldState: PreferencesEditorState): void {
+        this.firstVisibleChildID = oldState.firstVisibleChildID;
+        this.handleDisplayChange();
+    }
+
 }

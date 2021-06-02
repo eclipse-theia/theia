@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { loadVsRequire, loadMonaco } from '../browser/monaco-loader';
 
 export { ContainerModule };

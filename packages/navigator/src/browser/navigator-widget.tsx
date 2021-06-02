@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CorePreferences, ViewContainerTitleOptions, Key, TreeModel } from '@theia/core/lib/browser';
+import { CorePreferences, Key, TreeModel, SelectableTreeNode } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeNode
@@ -29,18 +29,11 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { isOSX, environment } from '@theia/core';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { FileNavigatorCommands } from './navigator-contribution';
 
 export const FILE_NAVIGATOR_ID = 'files';
-export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
-export const EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: 'Explorer',
-    iconClass: 'navigator-tab-icon',
-    closeable: true
-};
-
 export const LABEL = 'No folder opened';
 export const CLASS = 'theia-Files';
 
@@ -109,7 +102,14 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
             const treeNodes = dataTransfer && this.getSelectedTreeNodesFromData(dataTransfer) || [];
-            treeNodes.filter(FileNode.is).forEach(treeNode => this.commandService.executeCommand(FileNavigatorCommands.OPEN.id, treeNode.uri));
+            treeNodes.filter(FileNode.is).forEach(treeNode => {
+                if (!SelectableTreeNode.isSelected(treeNode)) {
+                    this.model.toggleNode(treeNode);
+                }
+            });
+            if (treeNodes.length > 0) {
+                this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
+            }
         });
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {

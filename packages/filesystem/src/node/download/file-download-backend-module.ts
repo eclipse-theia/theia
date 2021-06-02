@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { FileDownloadEndpoint } from './file-download-endpoint';
 import { FileDownloadHandler, SingleFileDownloadHandler, MultiFileDownloadHandler, DownloadLinkHandler } from './file-download-handler';

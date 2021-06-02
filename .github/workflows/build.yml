@@ -14,19 +14,13 @@ on:
 jobs:
 
   build:
-    name: ${{ matrix.os }}, Node.js v${{ matrix.node }}, Python ${{ matrix.python }}
+    name: ${{ matrix.os }}, Node.js v${{ matrix.node }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-18.04, macos-10.15]
         node: ['12.x']
-        python: ['2.x']
-        include:
-          - os: ubuntu-18.04
-            node: '12.x'
-            python: '3.x'
-            tests: 'skip'
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -43,10 +37,10 @@ jobs:
           node-version: ${{ matrix.node }}
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Use Python ${{ matrix.python }}
+      - name: Use Python 3.x
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.x'
 
       - name: Build
         shell: bash
@@ -98,10 +92,10 @@ jobs:
           node-version: '12.x'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Use Python 2.x
+      - name: Use Python 3.x
         uses: actions/setup-python@v2
         with:
-          python-version: '2.x'
+          python-version: '3.x'
 
       - name: Pre-Publish
         run: |

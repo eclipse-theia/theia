@@ -14,11 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Range as R, Position as P, Location as L } from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
+import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-types';
 import * as theia from '@theia/plugin';
 import { cloneAndChange } from '../common/objects';
-import { Position, Range, Location, CallHierarchyItem } from './types-impl';
+import { Position, Range, Location, CallHierarchyItem, URI } from './types-impl';
 import {
     fromPosition, fromRange, fromLocation,
     isModelLocation, toLocation,

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common/';
 import {
     TaskClient,
@@ -31,6 +31,7 @@ import { TaskRunnerRegistry } from './task-runner';
 import { Task } from './task';
 import { ProcessTask } from './process/process-task';
 import { ProblemCollector } from './task-problem-collector';
+import { CustomTask } from './custom/custom-task';
 
 @injectable()
 export class TaskServerImpl implements TaskServer, Disposable {
@@ -89,7 +90,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
     }
 
     async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
-        const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
+        const runner = this.runnerRegistry.getRunner(taskConfiguration.type, taskConfiguration.taskType);
         const task = await runner.run(taskConfiguration, ctx);
 
         if (!this.toDispose.has(task.id)) {
@@ -166,6 +167,11 @@ export class TaskServerImpl implements TaskServer, Disposable {
 
     async getRegisteredTaskTypes(): Promise<string[]> {
         return this.runnerRegistry.getRunnerTypes();
+    }
+
+    async customExecutionComplete(id: number, exitCode: number | undefined): Promise<void> {
+        const task = this.taskManager.get(id) as CustomTask;
+        await task.callbackTaskComplete(exitCode);
     }
 
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {

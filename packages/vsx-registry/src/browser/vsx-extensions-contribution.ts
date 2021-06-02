@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
@@ -22,15 +22,36 @@ import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
-import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarContribution, TabBarToolbarItem, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
+import { MenuModelRegistry, MessageService, Mutable } from '@theia/core/lib/common';
+import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
+import { LabelProvider } from '@theia/core/lib/browser';
+import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
+import { VSXExtensionsContextMenu, VSXExtension } from './vsx-extension';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export namespace VSXExtensionsCommands {
+
+    const EXTENSIONS_CATEGORY = 'Extensions';
+
     export const CLEAR_ALL: Command = {
         id: 'vsxExtensions.clearAll',
-        category: 'Extensions',
+        category: EXTENSIONS_CATEGORY,
         label: 'Clear Search Results',
         iconClass: 'clear-all'
+    };
+    export const INSTALL_FROM_VSIX: Command & { dialogLabel: string } = {
+        id: 'vsxExtensions.installFromVSIX',
+        category: EXTENSIONS_CATEGORY,
+        label: 'Install from VSIX...',
+        dialogLabel: 'Install from VSIX'
+    };
+    export const COPY: Command = {
+        id: 'vsxExtensions.copy'
+    };
+    export const COPY_EXTENSION_ID: Command = {
+        id: 'vsxExtensions.copyExtensionId'
     };
 }
 
@@ -38,8 +59,13 @@ export namespace VSXExtensionsCommands {
 export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer>
     implements ColorContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
-    @inject(VSXExtensionsModel)
-    protected readonly model: VSXExtensionsModel;
+    @inject(VSXExtensionsModel) protected readonly model: VSXExtensionsModel;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(TabBarToolbarRegistry) protected readonly tabbarToolbarRegistry: TabBarToolbarRegistry;
+    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
+    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     constructor() {
         super({
@@ -65,6 +91,18 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             isEnabled: w => this.withWidget(w, () => !!this.model.search.query),
             isVisible: w => this.withWidget(w, () => true)
         });
+
+        commands.registerCommand(VSXExtensionsCommands.INSTALL_FROM_VSIX, {
+            execute: () => this.installFromVSIX()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.COPY, {
+            execute: (extension: VSXExtension) => this.copy(extension)
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.COPY_EXTENSION_ID, {
+            execute: (extension: VSXExtension) => this.copyExtensionId(extension)
+        });
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
@@ -74,6 +112,48 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             tooltip: VSXExtensionsCommands.CLEAR_ALL.label,
             priority: 1,
             onDidChange: this.model.onDidChange
+        });
+
+        this.registerMoreToolbarItem({
+            id: VSXExtensionsCommands.INSTALL_FROM_VSIX.id,
+            command: VSXExtensionsCommands.INSTALL_FROM_VSIX.id,
+            tooltip: VSXExtensionsCommands.INSTALL_FROM_VSIX.label,
+            group: 'other_1'
+        });
+    }
+
+    /**
+     * Register commands to the `More Actions...` extensions toolbar item.
+     */
+    registerMoreToolbarItem = (item: Mutable<TabBarToolbarItem>) => {
+        const commandId = item.command;
+        const id = 'vsxExtensions.tabbar.toolbar.' + commandId;
+        const command = this.commandRegistry.getCommand(commandId);
+        this.commandRegistry.registerCommand({ id, iconClass: command && command.iconClass }, {
+            execute: (w, ...args) => w instanceof VSXExtensionsViewContainer
+                && this.commandRegistry.executeCommand(commandId, ...args),
+            isEnabled: (w, ...args) => w instanceof VSXExtensionsViewContainer
+                && this.commandRegistry.isEnabled(commandId, ...args),
+            isVisible: (w, ...args) => w instanceof VSXExtensionsViewContainer
+                && this.commandRegistry.isVisible(commandId, ...args),
+            isToggled: (w, ...args) => w instanceof VSXExtensionsViewContainer
+                && this.commandRegistry.isToggled(commandId, ...args),
+        });
+        item.command = id;
+        this.tabbarToolbarRegistry.registerItem(item);
+    };
+
+    registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
+        menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
+            commandId: VSXExtensionsCommands.COPY.id,
+            label: 'Copy',
+            order: '0'
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
+            commandId: VSXExtensionsCommands.COPY_EXTENSION_ID.id,
+            label: 'Copy Extension Id',
+            order: '1'
         });
     }
 
@@ -106,5 +186,40 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             return fn(widget);
         }
         return false;
+    }
+
+    /**
+     * Installs a local .vsix file after prompting the `Open File` dialog. Resolves to the URI of the file.
+     */
+    protected async installFromVSIX(): Promise<void> {
+        const props: OpenFileDialogProps = {
+            title: VSXExtensionsCommands.INSTALL_FROM_VSIX.dialogLabel,
+            openLabel: 'Install',
+            filters: { 'VSIX Extensions (*.vsix)': ['vsix'] },
+            canSelectMany: false
+        };
+        const extensionUri = await this.fileDialogService.showOpenDialog(props);
+        if (extensionUri) {
+            if (extensionUri.path.ext === '.vsix') {
+                const extensionName = this.labelProvider.getName(extensionUri);
+                try {
+                    await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, extensionUri);
+                    this.messageService.info(`Completed installing ${extensionName} from VSIX.`);
+                } catch (e) {
+                    this.messageService.error(`Failed to install ${extensionName} from VSIX.`);
+                    console.warn(e);
+                }
+            } else {
+                this.messageService.error('The selected file is not a valid "*.vsix" plugin.');
+            }
+        }
+    }
+
+    protected async copy(extension: VSXExtension): Promise<void> {
+        this.clipboardService.writeText(await extension.serialize());
+    }
+
+    protected copyExtensionId(extension: VSXExtension): void {
+        this.clipboardService.writeText(extension.id);
     }
 }

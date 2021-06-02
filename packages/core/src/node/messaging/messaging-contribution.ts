@@ -20,7 +20,7 @@ import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
@@ -32,6 +32,7 @@ import { ConsoleLogger } from './logger';
 import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
+import { MessagingListener } from './messaging-listeners';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -49,6 +50,9 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
     @inject(WsRequestValidator)
     protected readonly wsRequestValidator: WsRequestValidator;
+
+    @inject(MessagingListener)
+    protected readonly messagingListener: MessagingListener;
 
     protected webSocketServer: ws.Server | undefined;
     protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
@@ -122,6 +126,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             if (allowed) {
                 this.webSocketServer!.handleUpgrade(request, socket, head, client => {
                     this.webSocketServer!.emit('connection', client, request);
+                    this.messagingListener.onDidWebSocketUpgrade(request, client);
                 });
             } else {
                 console.error(`refused a websocket connection: ${request.connection.remoteAddress}`);

@@ -37,6 +37,9 @@
       "@theia/ext-scripts/*": [
         "dev-packages/ext-scripts/*"
       ],
+      "@theia/bulk-edit/lib/*": [
+        "packages/bulk-edit/src/*"
+      ],
       "@theia/callhierarchy/lib/*": [
         "packages/callhierarchy/src/*"
       ],
@@ -54,6 +57,9 @@
       ],
       "@theia/editor/lib/*": [
         "packages/editor/src/*"
+      ],
+      "@theia/external-terminal/lib/*": [
+        "packages/external-terminal/src/*"
       ],
       "@theia/file-search/lib/*": [
         "packages/file-search/src/*"
@@ -168,6 +174,12 @@
       ],
       "@theia/timeline/*": [
         "packages/timeline/*"
+      ],
+      "@theia/property-view/lib/*": [
+        "packages/property-view/src/*"
+      ],
+      "@theia/eslint-plugin/*": [
+        "dev-packages/eslint-plugin/*"
       ]
     }
   }

@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { ScmInputIssueType } from '@theia/scm/lib/browser/scm-input';
 
 @injectable()
 export class GitCommitMessageValidator {
@@ -42,14 +43,14 @@ export class GitCommitMessageValidator {
     protected isLineValid(line: string, index: number): GitCommitMessageValidator.Result | undefined {
         if (index === 1 && line.length !== 0) {
             return {
-                status: 'warning',
+                status: ScmInputIssueType.Warning,
                 message: 'The second line should be empty to separate the commit message from the body'
             };
         }
         const diff = line.length - this.maxCharsPerLine();
         if (diff > 0) {
             return {
-                status: 'warning',
+                status: ScmInputIssueType.Warning,
                 message: `${diff} characters over ${this.maxCharsPerLine()} in current line`
             };
         }
@@ -67,7 +68,7 @@ export namespace GitCommitMessageValidator {
     /**
      * Type for the validation result with a status and a corresponding message.
      */
-    export type Result = Readonly<{ message: string, status: 'info' | 'success' | 'warning' | 'error' }>;
+    export type Result = Readonly<{ message: string, status: ScmInputIssueType }>;
 
     export namespace Result {
 

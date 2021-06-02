@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { DebugSessionContributionRegistry, DebugSessionContribution } from '@theia/debug/lib/browser/debug-session-contribution';
-import { injectable, inject, named, postConstruct } from 'inversify';
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { Disposable } from '@theia/core/lib/common/disposable';
 

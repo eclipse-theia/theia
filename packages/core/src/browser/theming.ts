@@ -40,20 +40,21 @@ export interface ThemeChangeEvent {
 
 export class ThemeService {
 
-    private themes: { [id: string]: Theme } = {};
-    private activeTheme: Theme | undefined;
-    private readonly themeChange = new Emitter<ThemeChangeEvent>();
+    protected themes: { [id: string]: Theme } = {};
+    protected activeTheme: Theme | undefined;
+    protected readonly themeChange = new Emitter<ThemeChangeEvent>();
 
     readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
     static get(): ThemeService {
         const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        return global[ThemeServiceSymbol] || new ThemeService();
-    }
-
-    protected constructor() {
-        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        global[ThemeServiceSymbol] = this;
+        if (!global[ThemeServiceSymbol]) {
+            const themeService = new ThemeService();
+            themeService.register(...BuiltinThemeProvider.themes);
+            themeService.startupTheme();
+            global[ThemeServiceSymbol] = themeService;
+        }
+        return global[ThemeServiceSymbol];
     }
 
     register(...themes: Theme[]): Disposable {

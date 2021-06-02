@@ -16,11 +16,11 @@
 
 import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { FrontendApplicationContribution, DiffUris } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, DiffUris, DockLayout } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DisposableCollection } from '@theia/core';
+import { CommandHandler, DisposableCollection } from '@theia/core';
 import { EditorCommands } from './editor-command';
 import { EditorQuickOpenService } from './editor-quick-open-service';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
@@ -133,12 +133,39 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
             execute: () => this.editorQuickOpenService.open()
         });
+        const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => ({
+            isEnabled: () => !!this.editorManager.currentEditor,
+            isVisible: () => !!this.editorManager.currentEditor,
+            execute: async () => {
+                const { currentEditor } = this.editorManager;
+                if (currentEditor) {
+                    const selection = currentEditor.editor.selection;
+                    const newEditor = await this.editorManager.openToSide(currentEditor.editor.uri, { selection, widgetOptions: { mode: splitMode } });
+                    const oldEditorState = currentEditor.editor.storeViewState();
+                    newEditor.editor.restoreViewState(oldEditorState);
+                }
+            }
+        });
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_HORIZONTAL, splitHandlerFactory('split-right'));
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_VERTICAL, splitHandlerFactory('split-bottom'));
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_RIGHT, splitHandlerFactory('split-right'));
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_DOWN, splitHandlerFactory('split-bottom'));
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_UP, splitHandlerFactory('split-top'));
+        commands.registerCommand(EditorCommands.SPLIT_EDITOR_LEFT, splitHandlerFactory('split-left'));
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: EditorCommands.SHOW_ALL_OPENED_EDITORS.id,
             keybinding: 'ctrlcmd+k ctrlcmd+p'
+        });
+        keybindings.registerKeybinding({
+            command: EditorCommands.SPLIT_EDITOR_HORIZONTAL.id,
+            keybinding: 'ctrlcmd+\\',
+        });
+        keybindings.registerKeybinding({
+            command: EditorCommands.SPLIT_EDITOR_VERTICAL.id,
+            keybinding: 'ctrlcmd+k ctrlcmd+\\',
         });
     }
 

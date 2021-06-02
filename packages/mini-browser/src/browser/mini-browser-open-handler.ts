@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget } from '@phosphor/widgets';
-import { injectable, inject } from 'inversify';
+import { Widget } from '@theia/core/shared/@phosphor/widgets';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickInputService } from '@theia/core/lib/browser';

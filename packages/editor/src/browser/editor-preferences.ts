@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -805,6 +805,11 @@ const codeEditorPreferenceProperties = {
         'minimum': 0,
         'maximum': 1073741824
     },
+    'editor.rename.enablePreview': {
+        'description': 'Controls whether the editor should display refactor preview pane for rename.',
+        'type': 'boolean',
+        'default': true
+    },
     'editor.renderControlCharacters': {
         'description': 'Controls whether the editor should render control characters.',
         'type': 'boolean',
@@ -1263,6 +1268,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'default': 750,
             'description': 'Timeout in milliseconds after which the formatting that is run on file save is cancelled.'
         },
+        'editor.history.persistClosedEditors': {
+            'type': 'boolean',
+            'default': false,
+            'description': 'Controls whether to persist closed editor history for the workspace across window reloads.'
+        },
         'files.eol': {
             'type': 'string',
             'enum': [
@@ -1294,6 +1304,7 @@ export interface EditorConfiguration extends CodeEditorConfiguration {
     'editor.autoSaveDelay': number
     'editor.formatOnSave': boolean
     'editor.formatOnSaveTimeout': number
+    'editor.history.persistClosedEditors': boolean
     'files.eol': EndOfLinePreference
 }
 export type EndOfLinePreference = '\n' | '\r\n' | 'auto';

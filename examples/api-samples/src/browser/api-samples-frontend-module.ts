@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindDynamicLabelProvider } from './label/sample-dynamic-label-provider-command-contribution';
 import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribution';
 import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 import { bindSampleMenu } from './menu/sample-menu-contribution';
 import { bindSampleFileWatching } from './file-watching/sample-file-watching-contribution';
+import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
 
 import '../../src/browser/style/branding.css';
 
@@ -29,4 +30,5 @@ export default new ContainerModule(bind => {
     bindSampleOutputChannelWithSeverity(bind);
     bindSampleMenu(bind);
     bindSampleFileWatching(bind);
+    bindVSXCommand(bind);
 });

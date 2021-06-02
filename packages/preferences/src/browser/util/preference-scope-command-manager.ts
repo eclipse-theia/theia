@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceScope, LabelProvider } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { CommandRegistry, MenuModelRegistry, Command } from '@theia/core/lib/common';

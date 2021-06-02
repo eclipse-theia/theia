@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoWorkspace } from './monaco-workspace';
 
 @injectable()
@@ -25,8 +25,13 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
 
     private _previewHandler?: monaco.editor.IBulkEditPreviewHandler;
 
-    apply(edit: monaco.languages.WorkspaceEdit): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
-        return this.workspace.applyBulkEdit(edit);
+    async apply(workspaceEdit: monaco.languages.WorkspaceEdit, options?: monaco.editor.IBulkEditOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+        if (this._previewHandler && (options?.showPreview || workspaceEdit.edits.some(value => value.metadata?.needsConfirmation))) {
+            workspaceEdit = await this._previewHandler(workspaceEdit, options);
+            return { ariaSummary: '', success: true };
+        } else {
+            return this.workspace.applyBulkEdit(workspaceEdit);
+        }
     }
 
     hasPreviewHandler(): boolean {

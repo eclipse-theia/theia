@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
@@ -30,6 +30,14 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
             description: 'Using inspect or inspect-brk for Node.js debug',
             default: 'inspect',
             enum: ['inspect', 'inspect-brk']
+        },
+        'hosted-plugin.launchOutFiles': {
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            description: 'Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).',
+            default: ['${pluginPath}/out/**/*.js']
         }
     }
 };
@@ -37,6 +45,7 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
 export interface HostedPluginConfiguration {
     'hosted-plugin.watchMode': boolean;
     'hosted-plugin.debugMode': string;
+    'hosted-plugin.launchOutFiles': string[];
 }
 
 export const HostedPluginPreferences = Symbol('HostedPluginPreferences');

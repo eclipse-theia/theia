@@ -15,6 +15,9 @@
       "path": "../api-samples/compile.tsconfig.json"
     },
     {
+      "path": "../../packages/bulk-edit/compile.tsconfig.json"
+    },
+    {
       "path": "../../packages/callhierarchy/compile.tsconfig.json"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../../packages/editor-preview/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/external-terminal/compile.tsconfig.json"
     },
     {
       "path": "../../packages/file-search/compile.tsconfig.json"
@@ -121,6 +127,9 @@
     },
     {
       "path": "../../packages/timeline/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/property-view/compile.tsconfig.json"
     }
   ]
 }

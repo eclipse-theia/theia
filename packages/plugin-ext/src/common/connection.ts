@@ -16,8 +16,8 @@
 import { Disposable } from './disposable-util';
 import { PluginMessageReader } from './plugin-message-reader';
 import { PluginMessageWriter } from './plugin-message-writer';
-import { MessageReader, MessageWriter, Message } from 'vscode-jsonrpc';
-import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
+import { MessageReader, MessageWriter, Message } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
 
 /**
  * The interface for describing the connection between plugins and main side.

@@ -161,7 +161,7 @@ blockquote {
 
 button.theia-button, .theia-button {
     border: none;
-    color: var(--theia-button-foreground) !important;
+    color: var(--theia-button-foreground);
     background-color: var(--theia-button-background);
     min-width: 65px;
     outline: none;

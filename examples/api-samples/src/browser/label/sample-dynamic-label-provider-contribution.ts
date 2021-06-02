@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { DefaultUriLabelProviderContribution, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core';
@@ -37,7 +37,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
     }
 
     canHandle(element: object): number {
-        if (element.toString().includes('test')) {
+        if (this.isActive && element.toString().includes('test')) {
             return 30;
         }
         return 0;

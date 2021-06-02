@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import * as crypto from 'crypto';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import { Buffer } from 'buffer';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { FileUri } from '@theia/core/lib/node/file-uri';

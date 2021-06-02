@@ -21,6 +21,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import './theia-proposed';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-len */
+
 declare module '@theia/plugin' {
 
     /**
@@ -76,6 +80,11 @@ declare module '@theia/plugin' {
          * The absolute file path of the directory containing this plug-in.
          */
         readonly pluginPath: string;
+
+        /**
+         * The uri of the directory containing this plug-in.
+         */
+        readonly pluginUri: Uri;
 
         /**
          * `true` if the plug-in has been activated.
@@ -164,10 +173,10 @@ declare module '@theia/plugin' {
     }
 
     /**
- * A command is a unique identifier of a function
- * which can be executed by a user via a keyboard shortcut,
- * a menu action or directly.
- */
+     * A command is a unique identifier of a function
+     * which can be executed by a user via a keyboard shortcut,
+     * a menu action or directly.
+     */
     export interface CommandDescription {
         /**
          * A unique identifier of this command.
@@ -178,8 +187,8 @@ declare module '@theia/plugin' {
          */
         label?: string;
         /**
-          * A tooltip for for command, when represented in the UI.
-          */
+         * A tooltip for for command, when represented in the UI.
+         */
         tooltip?: string;
         /**
          * An icon class of this command.
@@ -195,12 +204,12 @@ declare module '@theia/plugin' {
          */
         command?: string;
         /**
-        * Title of the command invocation, like "Add local varible 'foo'".
-        */
+         * Title of the command invocation, like "Add local variable 'foo'".
+         */
         title?: string;
         /**
-          * A tooltip for for command, when represented in the UI.
-          */
+         * A tooltip for for command, when represented in the UI.
+         */
         tooltip?: string;
         /**
          * Arguments that the command handler should be
@@ -478,7 +487,7 @@ declare module '@theia/plugin' {
          * Builder-function that appends a tabstop (`$1`, `$2` etc) to
          * the [`value`](#SnippetString.value) of this snippet string.
          *
-         * @param number The number of this tabstop, defaults to an auto-incremet
+         * @param number The number of this tabstop, defaults to an auto-increment
          * value starting at 1.
          * @return This snippet string.
          */
@@ -490,7 +499,7 @@ declare module '@theia/plugin' {
          *
          * @param value The value of this placeholder - either a string or a function
          * with which a nested snippet can be created.
-         * @param number The number of this tabstop, defaults to an auto-incremet
+         * @param number The number of this tabstop, defaults to an auto-increment
          * value starting at 1.
          * @return This snippet string.
          */
@@ -852,7 +861,7 @@ declare module '@theia/plugin' {
 
         /**
          * Render options applied to the current decoration. For performance reasons, keep the
-         * number of decoration specific options small, and use decoration types whereever possible.
+         * number of decoration specific options small, and use decoration types wherever possible.
          */
         renderOptions?: DecorationInstanceRenderOptions;
     }
@@ -1128,7 +1137,7 @@ declare module '@theia/plugin' {
 
         /**
          * Insert a [snippet](#SnippetString) and put the editor into snippet mode. "Snippet mode"
-         * means the editor adds placeholders and additionals cursors so that the user can complete
+         * means the editor adds placeholders and additional cursors so that the user can complete
          * or accept the snippet.
          *
          * @param snippet The snippet to insert in this edit.
@@ -1265,6 +1274,27 @@ declare module '@theia/plugin' {
          * @return A new Uri instance.
          */
         static file(path: string): Uri;
+        /**
+         * Create a new uri which path is the result of joining
+         * the path of the base uri with the provided path segments.
+         *
+         * - Note 1: `joinPath` only affects the path component
+         * and all other components (scheme, authority, query, and fragment) are
+         * left as they are.
+         * - Note 2: The base uri must have a path; an error is thrown otherwise.
+         *
+         * The path segments are normalized in the following ways:
+         * - sequences of path separators (`/` or `\`) are replaced with a single separator
+         * - for `file`-uris on windows, the backslash-character (`\`) is considered a path-separator
+         * - the `..`-segment denotes the parent segment, the `.` denotes the current segment
+         * - paths have a root which always remains, for instance on windows drive-letters are roots
+         * so that is true: `joinPath(Uri.file('file:///c:/root'), '../../other').fsPath === 'c:/other'`
+         *
+         * @param base An uri. Must have a path.
+         * @param pathSegments One more more path fragments
+         * @returns A new uri which path is joined with the given fragments
+         */
+        static joinPath(uri: URI, ...pathSegments: string[]): URI;
 
         /**
          * Create an URI from a string. Will throw if the given value is not
@@ -1338,7 +1368,7 @@ declare module '@theia/plugin' {
          * [Uri.parse](#Uri.parse).
          *
          * @param skipEncoding Do not percentage-encode the result, defaults to `false`. Note that
-         *  the `#` and `?` characters occuring in the path will always be encoded.
+         *  the `#` and `?` characters occurring in the path will always be encoded.
          * @returns A string representation of this Uri.
          */
         toString(skipEncoding?: boolean): string;
@@ -1474,7 +1504,7 @@ declare module '@theia/plugin' {
 
         /**
          * Get a word-range at the given position. By default words are defined by
-         * common separators, like space, -, _, etc. In addition, per languge custom
+         * common separators, like space, -, _, etc. In addition, per language custom
          * [word definitions](#LanguageConfiguration.wordPattern) can be defined. It
          * is also possible to provide a custom regular expression.
          *
@@ -1604,11 +1634,11 @@ declare module '@theia/plugin' {
          *
          * ```ts
          * workspace.onWillCreateFiles(event => {
-         * 	// async, will *throw* an error
-         * 	setTimeout(() => event.waitUntil(promise));
+         *  // async, will *throw* an error
+         *  setTimeout(() => event.waitUntil(promise));
          *
-         * 	// sync, OK
-         * 	event.waitUntil(promise);
+         *  // sync, OK
+         *  event.waitUntil(promise);
          * })
          * ```
          *
@@ -1659,11 +1689,11 @@ declare module '@theia/plugin' {
          *
          * ```ts
          * workspace.onWillCreateFiles(event => {
-         * 	// async, will *throw* an error
-         * 	setTimeout(() => event.waitUntil(promise));
+         *  // async, will *throw* an error
+         *  setTimeout(() => event.waitUntil(promise));
          *
-         * 	// sync, OK
-         * 	event.waitUntil(promise);
+         *  // sync, OK
+         *  event.waitUntil(promise);
          * })
          * ```
          *
@@ -1714,11 +1744,11 @@ declare module '@theia/plugin' {
          *
          * ```ts
          * workspace.onWillCreateFiles(event => {
-         * 	// async, will *throw* an error
-         * 	setTimeout(() => event.waitUntil(promise));
+         *  // async, will *throw* an error
+         *  setTimeout(() => event.waitUntil(promise));
          *
-         * 	// sync, OK
-         * 	event.waitUntil(promise);
+         *  // sync, OK
+         *  event.waitUntil(promise);
          * })
          * ```
          *
@@ -2645,6 +2675,13 @@ declare module '@theia/plugin' {
      * and the editor then silently adjusts the options to select files.
      */
     export interface OpenDialogOptions {
+
+        /**
+         * Dialog title.
+         * This parameter might be ignored, as not all operating systems display a title on open dialogs.
+         */
+        title?: string;
+
         /**
          * The resource the dialog shows when opened.
          */
@@ -2687,6 +2724,13 @@ declare module '@theia/plugin' {
      * Options to configure the behaviour of a file save dialog.
      */
     export interface SaveDialogOptions {
+
+        /**
+         * Dialog title.
+         * This parameter might be ignored, as not all operating systems display a title on save dialogs.
+         */
+        title?: string;
+
         /**
          * The resource the dialog shows when opened.
          */
@@ -2781,7 +2825,7 @@ declare module '@theia/plugin' {
         /**
          * Current working directory.
          */
-        cwd?: string;
+        cwd?: string | URI;
 
         /**
          * Environment variables for terminal in format key - value.
@@ -2857,9 +2901,9 @@ declare module '@theia/plugin' {
         close(): void;
 
         /**
-         * Implement to handle inputing data in the terminal.
+         * Implement to handle inputting data in the terminal.
          *
-         * @param data The inputing data.
+         * @param data The inputting data.
          */
         handleInput?(data: string): void;
 
@@ -2869,6 +2913,131 @@ declare module '@theia/plugin' {
          * @param dimensions The new dimensions.
          */
         setDimensions?(dimensions: TerminalDimensions): void;
+    }
+
+    /**
+     * Provides information on a line in a terminal in order to provide links for it.
+     */
+    export interface TerminalLinkContext {
+        /**
+         * This is the text from the unwrapped line in the terminal.
+         */
+        line: string;
+
+        /**
+         * The terminal the link belongs to.
+         */
+        terminal: Terminal;
+    }
+
+    /**
+     * A provider that enables detection and handling of links within terminals.
+     */
+    export interface TerminalLinkProvider<T extends TerminalLink = TerminalLink> {
+        /**
+         * Provide terminal links for the given context. Note that this can be called multiple times
+         * even before previous calls resolve, make sure to not share global objects (eg. `RegExp`)
+         * that could have problems when asynchronous usage may overlap.
+         * @param context Information about what links are being provided for.
+         * @param token A cancellation token.
+         * @return A list of terminal links for the given line.
+         */
+        provideTerminalLinks(context: TerminalLinkContext, token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * Handle an activated terminal link.
+         * @param link The link to handle.
+         */
+        handleTerminalLink(link: T): ProviderResult<void>;
+    }
+
+    /**
+     * A link on a terminal line.
+     */
+    export interface TerminalLink {
+        /**
+         * The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         */
+        startIndex: number;
+
+        /**
+         * The length of the link on [TerminalLinkContext.line](#TerminalLinkContext.line]
+         */
+        length: number;
+
+        /**
+         * The tooltip text when you hover over this link.
+         *
+         * If a tooltip is provided, is will be displayed in a string that includes instructions on
+         * how to trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary
+         * depending on OS, user settings, and localization.
+         */
+        tooltip?: string;
+    }
+
+    /**
+     * A file decoration represents metadata that can be rendered with a file.
+     */
+    export class FileDecoration {
+
+        /**
+         * A very short string that represents this decoration.
+         */
+        badge?: string;
+
+        /**
+         * A human-readable tooltip for this decoration.
+         */
+        tooltip?: string;
+
+        /**
+         * The color of this decoration.
+         */
+        color?: ThemeColor;
+
+        /**
+         * A flag expressing that this decoration should be
+         * propagated to its parents.
+         */
+        propagate?: boolean;
+
+        /**
+         * Creates a new decoration.
+         *
+         * @param badge A letter that represents the decoration.
+         * @param tooltip The tooltip of the decoration.
+         * @param color The color of the decoration.
+         */
+        constructor(badge?: string, tooltip?: string, color?: ThemeColor);
+    }
+
+    /**
+     * The decoration provider interfaces defines the contract between extensions and
+     * file decorations.
+     */
+    export interface FileDecorationProvider {
+
+        /**
+         * An optional event to signal that decorations for one or many files have changed.
+         *
+         * *Note* that this event should be used to propagate information about children.
+         *
+         * @see [EventEmitter](#EventEmitter)
+         */
+        onDidChangeFileDecorations?: Event<undefined | Uri | Uri[]>;
+
+        /**
+         * Provide decorations for a given uri.
+         *
+         * *Note* that this function is only called when a file gets rendered in the UI.
+         * This means a decoration from a descendent that propagates upwards must be signaled
+         * to the editor via the [onDidChangeFileDecorations](#FileDecorationProvider.onDidChangeFileDecorations)-event.
+         *
+         * @param uri The uri of the file to provide a decoration for.
+         * @param token A cancellation token.
+         * @returns A decoration or a thenable that resolves to such.
+         */
+        provideFileDecoration(uri: Uri, token: CancellationToken): ProviderResult<FileDecoration>;
     }
 
     /**
@@ -3011,6 +3180,11 @@ declare module '@theia/plugin' {
         extensionPath: string;
 
         /**
+         * The uri of the directory containing the extension.
+         */
+        readonly extensionUri: Uri;
+
+        /**
          * Gets the extension's environment variable collection for this workspace, enabling changes
          * to be applied to terminal environment variables.
          */
@@ -3025,23 +3199,53 @@ declare module '@theia/plugin' {
         asAbsolutePath(relativePath: string): string;
 
         /**
-        * An absolute file path of a workspace specific directory in which the extension
-        * can store private state. The directory might not exist on disk and creation is
-        * up to the extension. However, the parent directory is guaranteed to be existent.
-        *
-        * Use [`workspaceState`](#ExtensionContext.workspaceState) or
-        * [`globalState`](#ExtensionContext.globalState) to store key value data.
-        */
+         * An absolute file path of a workspace specific directory in which the extension
+         * can store private state. The directory might not exist on disk and creation is
+         * up to the extension. However, the parent directory is guaranteed to be existent.
+         *
+         * Use [`workspaceState`](#PluginContext.workspaceState) or
+         * [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @deprecated Use [storageUri](#PluginContext.storageUri) instead.
+         */
         storagePath: string | undefined;
+
+        /**
+         * The uri of a workspace specific directory in which the extension
+         * can store private state. The directory might not exist and creation is
+         * up to the extension. However, the parent directory is guaranteed to be existent.
+         * The value is `undefined` when no workspace nor folder has been opened.
+         *
+         * Use [`workspaceState`](#PluginContext.workspaceState) or
+         * [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @see [`workspace.fs`](#FileSystem) for how to read and write files and folders from
+         *  an uri.
+         */
+        readonly storageUri: Uri | undefined;
 
         /**
          * An absolute file path in which the extension can store global state.
          * The directory might not exist on disk and creation is
          * up to the extension. However, the parent directory is guaranteed to be existent.
          *
-         * Use [`globalState`](#ExtensionContext.globalState) to store key value data.
+         * Use [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @deprecated Use [globalStorageUri](#PluginContext.globalStorageUri) instead.
          */
         readonly globalStoragePath: string;
+
+        /**
+         * The uri of a directory in which the extension can store global state.
+         * The directory might not exist on disk and creation is
+         * up to the extension. However, the parent directory is guaranteed to be existent.
+         *
+         * Use [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @see [`workspace.fs`](#FileSystem) for how to read and write files and folders from
+         *  an uri.
+         */
+        readonly globalStorageUri: Uri;
 
         /**
          * An absolute file path of a directory in which the extension can create log files.
@@ -3397,7 +3601,7 @@ declare module '@theia/plugin' {
      */
     interface WebviewPanelSerializer<T = unknown> {
         /**
-         * Restore a webview panel from its seriailzed `state`.
+         * Restore a webview panel from its serialized `state`.
          *
          * Called when a serialized webview first becomes visible.
          *
@@ -3457,6 +3661,317 @@ declare module '@theia/plugin' {
          * @see [window.registerUriHandler](#window.registerUriHandler).
          */
         handleUri(uri: Uri): ProviderResult<void>;
+    }
+
+    /**
+     * Provider for text based custom editors.
+     *
+     * Text based custom editors use a [`TextDocument`](#TextDocument) as their data model. This considerably simplifies
+     * implementing a custom editor as it allows Theia to handle many common operations such as
+     * undo and backup. The provider is responsible for synchronizing text changes between the webview and the `TextDocument`.
+     */
+    export interface CustomTextEditorProvider {
+
+        /**
+         * Resolve a custom editor for a given text resource.
+         *
+         * This is called when a user first opens a resource for a `CustomTextEditorProvider`, or if they reopen an
+         * existing editor using this `CustomTextEditorProvider`.
+         *
+         *
+         * @param document Document for the resource to resolve.
+         *
+         * @param webviewPanel The webview panel used to display the editor UI for this resource.
+         *
+         * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
+         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
+         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         *
+         * @param token A cancellation token that indicates the result is no longer needed.
+         *
+         * @return Thenable indicating that the custom editor has been resolved.
+         */
+        resolveCustomTextEditor(document: TextDocument, webviewPanel: WebviewPanel, token: CancellationToken): Thenable<void> | void;
+    }
+
+    /**
+     * Represents a custom document used by a [`CustomEditorProvider`](#CustomEditorProvider).
+     *
+     * Custom documents are only used within a given `CustomEditorProvider`. The lifecycle of a `CustomDocument` is
+     * managed by Theia. When no more references remain to a `CustomDocument`, it is disposed of.
+     */
+    interface CustomDocument {
+        /**
+         * The associated uri for this document.
+         */
+        readonly uri: Uri;
+
+        /**
+         * Dispose of the custom document.
+         *
+         * This is invoked by Theia when there are no more references to a given `CustomDocument` (for example when
+         * all editors associated with the document have been closed.)
+         */
+        dispose(): void;
+    }
+
+    /**
+     * Event triggered by extensions to signal that an edit has occurred on an [`CustomDocument`](#CustomDocument).
+     *
+     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     */
+    interface CustomDocumentEditEvent<T extends CustomDocument = CustomDocument> {
+
+        /**
+         * The document that the edit is for.
+         */
+        readonly document: T;
+
+        /**
+         * Undo the edit operation.
+         *
+         * This is invoked by Theia when the user undoes this edit. To implement `undo`, your
+         * extension should restore the document and editor to the state they were in just before this
+         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         */
+        undo(): Thenable<void> | void;
+
+        /**
+         * Redo the edit operation.
+         *
+         * This is invoked by Theia when the user redoes this edit. To implement `redo`, your
+         * extension should restore the document and editor to the state they were in just after this
+         * edit was added to Theia's internal edit stack by `onDidChangeCustomDocument`.
+         */
+        redo(): Thenable<void> | void;
+
+        /**
+         * Display name describing the edit.
+         *
+         * This will be shown to users in the UI for undo/redo operations.
+         */
+        readonly label?: string;
+    }
+
+    /**
+     * Event triggered by extensions to signal to Theia that the content of a [`CustomDocument`](#CustomDocument)
+     * has changed.
+     *
+     * @see [`CustomDocumentProvider.onDidChangeCustomDocument`](#CustomDocumentProvider.onDidChangeCustomDocument).
+     */
+    interface CustomDocumentContentChangeEvent<T extends CustomDocument = CustomDocument> {
+        /**
+         * The document that the change is for.
+         */
+        readonly document: T;
+    }
+
+    /**
+     * Additional information about the opening custom document.
+     */
+    interface CustomDocumentOpenContext {
+        /**
+         * The id of the backup to restore the document from or `undefined` if there is no backup.
+         *
+         * If this is provided, your extension should restore the editor from the backup instead of reading the file
+         * from the user's workspace.
+         */
+        readonly backupId?: string;
+    }
+
+    /**
+     * Provider for readonly custom editors that use a custom document model.
+     *
+     * Custom editors use [`CustomDocument`](#CustomDocument) as their document model instead of a [`TextDocument`](#TextDocument).
+     *
+     * You should use this type of custom editor when dealing with binary files or more complex scenarios. For simple
+     * text based documents, use [`CustomTextEditorProvider`](#CustomTextEditorProvider) instead.
+     *
+     * @param T Type of the custom document returned by this provider.
+     */
+    export interface CustomReadonlyEditorProvider<T extends CustomDocument = CustomDocument> {
+
+        /**
+         * Create a new document for a given resource.
+         *
+         * `openCustomDocument` is called when the first time an editor for a given resource is opened. The opened
+         * document is then passed to `resolveCustomEditor` so that the editor can be shown to the user.
+         *
+         * Already opened `CustomDocument` are re-used if the user opened additional editors. When all editors for a
+         * given resource are closed, the `CustomDocument` is disposed of. Opening an editor at this point will
+         * trigger another call to `openCustomDocument`.
+         *
+         * @param uri Uri of the document to open.
+         * @param openContext Additional information about the opening custom document.
+         * @param token A cancellation token that indicates the result is no longer needed.
+         *
+         * @return The custom document.
+         */
+        openCustomDocument(uri: Uri, openContext: CustomDocumentOpenContext, token: CancellationToken): Thenable<T> | T;
+
+        /**
+         * Resolve a custom editor for a given resource.
+         *
+         * This is called whenever the user opens a new editor for this `CustomEditorProvider`.
+         *
+         * @param document Document for the resource being resolved.
+         *
+         * @param webviewPanel The webview panel used to display the editor UI for this resource.
+         *
+         * During resolve, the provider must fill in the initial html for the content webview panel and hook up all
+         * the event listeners on it that it is interested in. The provider can also hold onto the `WebviewPanel` to
+         * use later for example in a command. See [`WebviewPanel`](#WebviewPanel) for additional details.
+         *
+         * @param token A cancellation token that indicates the result is no longer needed.
+         *
+         * @return Optional thenable indicating that the custom editor has been resolved.
+         */
+        resolveCustomEditor(document: T, webviewPanel: WebviewPanel, token: CancellationToken): Thenable<void> | void;
+    }
+
+    /**
+     * A backup for an [`CustomDocument`](#CustomDocument).
+     */
+    interface CustomDocumentBackup {
+        /**
+         * Unique identifier for the backup.
+         *
+         * This id is passed back to your extension in `openCustomDocument` when opening a custom editor from a backup.
+         */
+        readonly id: string;
+
+        /**
+         * Delete the current backup.
+         *
+         * This is called by VS Code when it is clear the current backup is no longer needed, such as when a new backup
+         * is made or when the file is saved.
+         */
+        delete(): void;
+    }
+
+    /**
+     * Additional information used to implement [`CustomEditableDocument.backup`](#CustomEditableDocument.backup).
+     */
+    interface CustomDocumentBackupContext {
+        /**
+         * Suggested file location to write the new backup.
+         *
+         * Note that your extension is free to ignore this and use its own strategy for backup.
+         *
+         * If the editor is for a resource from the current workspace, `destination` will point to a file inside
+         * `ExtensionContext.storagePath`. The parent folder of `destination` may not exist, so make sure to created it
+         * before writing the backup to this location.
+         */
+        readonly destination: Uri;
+    }
+
+    /**
+     * Provider for editable custom editors that use a custom document model.
+     *
+     * Custom editors use [`CustomDocument`](#CustomDocument) as their document model instead of a [`TextDocument`](#TextDocument).
+     * This gives extensions full control over actions such as edit, save, and backup.
+     *
+     * You should use this type of custom editor when dealing with binary files or more complex scenarios. For simple
+     * text based documents, use [`CustomTextEditorProvider`](#CustomTextEditorProvider) instead.
+     *
+     * @param T Type of the custom document returned by this provider.
+     */
+    export interface CustomEditorProvider<T extends CustomDocument = CustomDocument> extends CustomReadonlyEditorProvider<T> {
+        /**
+         * Signal that an edit has occurred inside a custom editor.
+         *
+         * This event must be fired by your extension whenever an edit happens in a custom editor. An edit can be
+         * anything from changing some text, to cropping an image, to reordering a list. Your extension is free to
+         * define what an edit is and what data is stored on each edit.
+         *
+         * Firing `onDidChange` causes Theia to mark the editors as being dirty. This is cleared when the user either
+         * saves or reverts the file.
+         *
+         * Editors that support undo/redo must fire a `CustomDocumentEditEvent` whenever an edit happens. This allows
+         * users to undo and redo the edit using Theia's standard Theia keyboard shortcuts. Theia will also mark
+         * the editor as no longer being dirty if the user undoes all edits to the last saved state.
+         *
+         * Editors that support editing but cannot use Theia's standard undo/redo mechanism must fire a `CustomDocumentContentChangeEvent`.
+         * The only way for a user to clear the dirty state of an editor that does not support undo/redo is to either
+         * `save` or `revert` the file.
+         *
+         * An editor should only ever fire `CustomDocumentEditEvent` events, or only ever fire `CustomDocumentContentChangeEvent` events.
+         */
+        readonly onDidChangeCustomDocument: Event<CustomDocumentContentChangeEvent<T>> | Event<CustomDocumentEditEvent<T>>;
+
+        /**
+         * Save a custom document.
+         *
+         * This method is invoked by Theia when the user saves a custom editor. This can happen when the user
+         * triggers save while the custom editor is active, by commands such as `save all`, or by auto save if enabled.
+         *
+         * To implement `save`, the implementer must persist the custom editor. This usually means writing the
+         * file data for the custom document to disk. After `save` completes, any associated editor instances will
+         * no longer be marked as dirty.
+         *
+         * @param document Document to save.
+         * @param cancellation Token that signals the save is no longer required (for example, if another save was triggered).
+         *
+         * @return Thenable signaling that saving has completed.
+         */
+        saveCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
+
+        /**
+         * Save a custom document to a different location.
+         *
+         * This method is invoked by Theia when the user triggers 'save as' on a custom editor. The implementer must
+         * persist the custom editor to `destination`.
+         *
+         * When the user accepts save as, the current editor is be replaced by an non-dirty editor for the newly saved file.
+         *
+         * @param document Document to save.
+         * @param destination Location to save to.
+         * @param cancellation Token that signals the save is no longer required.
+         *
+         * @return Thenable signaling that saving has completed.
+         */
+        saveCustomDocumentAs(document: T, destination: Uri, cancellation: CancellationToken): Thenable<void>;
+
+        /**
+         * Revert a custom document to its last saved state.
+         *
+         * This method is invoked by Theia when the user triggers `File: Revert File` in a custom editor. (Note that
+         * this is only used using Theia's `File: Revert File` command and not on a `git revert` of the file).
+         *
+         * To implement `revert`, the implementer must make sure all editor instances (webviews) for `document`
+         * are displaying the document in the same state is saved in. This usually means reloading the file from the
+         * workspace.
+         *
+         * @param document Document to revert.
+         * @param cancellation Token that signals the revert is no longer required.
+         *
+         * @return Thenable signaling that the change has completed.
+         */
+        revertCustomDocument(document: T, cancellation: CancellationToken): Thenable<void>;
+
+        /**
+         * Back up a dirty custom document.
+         *
+         * Backups are used for hot exit and to prevent data loss. Your `backup` method should persist the resource in
+         * its current state, i.e. with the edits applied. Most commonly this means saving the resource to disk in
+         * the `ExtensionContext.storagePath`. When VS Code reloads and your custom editor is opened for a resource,
+         * your extension should first check to see if any backups exist for the resource. If there is a backup, your
+         * extension should load the file contents from there instead of from the resource in the workspace.
+         *
+         * `backup` is triggered approximately one second after the user stops editing the document. If the user
+         * rapidly edits the document, `backup` will not be invoked until the editing stops.
+         *
+         * `backup` is not invoked when `auto save` is enabled (since auto save already persists the resource).
+         *
+         * @param document Document to backup.
+         * @param context Information that can be used to backup the document.
+         * @param cancellation Token that signals the current backup since a new backup is coming in. It is up to your
+         * extension to decided how to respond to cancellation. If for example your extension is backing up a large file
+         * in an operation that takes time to complete, your extension may decide to finish the ongoing backup rather
+         * than cancelling it to ensure that VS Code has some valid backup.
+         */
+        backupCustomDocument(document: T, context: CustomDocumentBackupContext, cancellation: CancellationToken): Thenable<CustomDocumentBackup>;
+
     }
 
     /**
@@ -3778,7 +4293,8 @@ declare module '@theia/plugin' {
          *
          * @return New webview panel.
          */
-        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions, options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
+        export function createWebviewPanel(viewType: string, title: string, showOptions: ViewColumn | WebviewPanelShowOptions,
+            options?: WebviewPanelOptions & WebviewOptions): WebviewPanel;
 
         /**
          * Registers a webview panel serializer.
@@ -3792,6 +4308,43 @@ declare module '@theia/plugin' {
          * @param serializer Webview serializer.
          */
         export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
+
+        /**
+         * Register a provider for custom editors for the `viewType` contributed by the `customEditors` extension point.
+         *
+         * When a custom editor is opened, Theia fires an `onCustomEditor:viewType` activation event. Your extension
+         * must register a [`CustomTextEditorProvider`](#CustomTextEditorProvider), [`CustomReadonlyEditorProvider`](#CustomReadonlyEditorProvider),
+         * [`CustomEditorProvider`](#CustomEditorProvider)for `viewType` as part of activation.
+         *
+         * @param viewType Unique identifier for the custom editor provider. This should match the `viewType` from the
+         *   `customEditors` contribution point.
+         * @param provider Provider that resolves custom editors.
+         * @param options Options for the provider.
+         *
+         * @return Disposable that unregisters the provider.
+         */
+        export function registerCustomEditorProvider(viewType: string, provider: CustomTextEditorProvider | CustomReadonlyEditorProvider | CustomEditorProvider, options?: {
+            /**
+             * Content settings for the webview panels created for this custom editor.
+             */
+            readonly webviewOptions?: WebviewPanelOptions;
+
+            /**
+             * Only applies to `CustomReadonlyEditorProvider | CustomEditorProvider`.
+             *
+             * Indicates that the provider allows multiple editor instances to be open at the same time for
+             * the same resource.
+             *
+             * By default, Theia only allows one editor instance to be open at a time for each resource. If the
+             * user tries to open a second editor instance for the resource, the first one is instead moved to where
+             * the second one was to be opened.
+             *
+             * When `supportsMultipleEditorsPerDocument` is enabled, users can split and create copies of the custom
+             * editor. In this case, the custom editor must make sure it can properly synchronize the states of all
+             * editor instances for a resource so that they are consistent.
+             */
+            readonly supportsMultipleEditorsPerDocument?: boolean;
+        }): Disposable;
 
         /**
          * Represents the current window's state.
@@ -3889,7 +4442,6 @@ declare module '@theia/plugin' {
          */
         export function createTerminal(options: PseudoTerminalOptions): Terminal;
 
-
         /**
          * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
          * This will allow you to contribute data to the [TreeView](#TreeView) and update if the data changes.
@@ -3963,6 +4515,21 @@ declare module '@theia/plugin' {
          * @return A new [InputBox](#InputBox).
          */
         export function createInputBox(): InputBox;
+
+        /**
+         * Register provider that enables the detection and handling of links within the terminal.
+         * @param provider The provider that provides the terminal links.
+         * @return Disposable that unregisters the provider.
+         */
+        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): void;
+
+        /**
+         * Register a file decoration provider.
+         *
+         * @param provider A [FileDecorationProvider](#FileDecorationProvider).
+         * @return A [disposable](#Disposable) that unregisters the provider.
+         */
+        export function registerFileDecorationProvider(provider: FileDecorationProvider): Disposable;
 
         /**
          * The currently active color theme as configured in the settings. The active
@@ -4537,7 +5104,7 @@ declare module '@theia/plugin' {
          * The *effective* value (returned by [`get`](#WorkspaceConfiguration.get))
          * is computed like this: `defaultValue` overwritten by `globalValue`,
          * `globalValue` overwritten by `workspaceValue`. `workspaceValue` overwritten by `workspaceFolderValue`.
-         * Refer to [Settings Inheritence](https://code.visualstudio.com/docs/getstarted/settings)
+         * Refer to [Settings Inheritance](https://code.visualstudio.com/docs/getstarted/settings)
          * for more information.
          *
          * *Note:* The configuration name must denote a leaf in the configuration tree
@@ -4958,16 +5525,6 @@ declare module '@theia/plugin' {
      *
      * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
      */
-
-
-    /**
-     * The file system interface exposes the editor's built-in and contributed
-     * [file system providers](#FileSystemProvider). It allows extensions to work
-     * with files from the local disk as well as files from remote places, like the
-     * remote extension host or ftp-servers.
-     *
-     * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
-     */
     export interface FileSystem {
 
         /**
@@ -5077,6 +5634,22 @@ declare module '@theia/plugin' {
         export let workspaceFolders: WorkspaceFolder[] | undefined;
 
         /**
+         * The location of the workspace file, for example:
+         *
+         * `file:///Users/name/Development/myProject.code-workspace`
+         *
+         * Depending on the workspace that is opened, the value will be:
+         *  * `undefined` when no workspace or a single folder is opened
+         *  * the path of the workspace file as `Uri` otherwise.
+         *
+         * **Note:** it is not advised to use `workspace.workspaceFile` to write
+         * configuration data into the file.
+         *
+         * @readonly
+         */
+        export const workspaceFile: Uri | undefined;
+
+        /**
          * The name of the workspace. `undefined` when no folder
          * has been opened.
          *
@@ -5164,7 +5737,7 @@ declare module '@theia/plugin' {
          * files change on disk, e.g triggered by another application, or when using the
          * [`workspace.fs`](#FileSystem)-api.
          *
-         * *Note 2:* When this event is fired, edits to files thare are being created cannot be applied.
+         * *Note 2:* When this event is fired, edits to files that are being created cannot be applied.
          */
         export const onWillCreateFiles: Event<FileWillCreateEvent>;
 
@@ -5325,13 +5898,13 @@ declare module '@theia/plugin' {
 
         /**
          * Find text in files across all [workspace folders] in the workspace
-         * @param query What to search 
-         * @param optionsOrCallback 
-         * @param callbackOrToken 
-         * @param token 
+         * @param query What to search
+         * @param optionsOrCallback
+         * @param callbackOrToken
+         * @param token
          */
         export function findTextInFiles(query: TextSearchQuery, optionsOrCallback: FindTextInFilesOptions | ((result: TextSearchResult) => void),
-            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>
+            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>;
 
         /**
          * Save all dirty files.
@@ -5351,7 +5924,7 @@ declare module '@theia/plugin' {
          * cause failure of the operation.
          *
          * When applying a workspace edit that consists only of text edits an 'all-or-nothing'-strategy is used.
-         * A workspace edit with resource creations or deletions aborts the operation, e.g. consective edits will
+         * A workspace edit with resource creations or deletions aborts the operation, e.g. consecutive edits will
          * not be attempted, when a single edit fails.
          *
          * @param edit A workspace edit.
@@ -5439,14 +6012,14 @@ declare module '@theia/plugin' {
         export function updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { uri: Uri, name?: string }[]): boolean;
 
         /**
-        * ~~Register a task provider.~~
-        *
-        * @deprecated Use the corresponding function on the `tasks` namespace instead
-        *
-        * @param type The task kind type this provider is registered for.
-        * @param provider A task provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * ~~Register a task provider.~~
+         *
+         * @deprecated Use the corresponding function on the `tasks` namespace instead
+         *
+         * @param type The task kind type this provider is registered for.
+         * @param provider A task provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
     }
 
@@ -5498,10 +6071,10 @@ declare module '@theia/plugin' {
         export const shell: string;
 
         /**
-        * The UI kind property indicates from which UI extensions
-        * are accessed from. For example, extensions could be accessed
-        * from a desktop application or a web browser.
-        */
+         * The UI kind property indicates from which UI extensions
+         * are accessed from. For example, extensions could be accessed
+         * from a desktop application or a web browser.
+         */
         export const uiKind: UIKind;
 
         /**
@@ -5541,10 +6114,10 @@ declare module '@theia/plugin' {
          *
          * If the extension is running remotely, this function automatically establishes a port forwarding tunnel
          * from the local machine to `target` on the remote and returns a local uri to the tunnel. The lifetime of
-         * the port fowarding tunnel is managed by VS Code and the tunnel can be closed by the user.
+         * the port forwarding tunnel is managed by VS Code and the tunnel can be closed by the user.
          *
          * Extensions should not cache the result of `asExternalUri` as the resolved uri may become invalid due to
-         * a system or user action — for example, in remote cases, a user may close a port forwardng tunnel
+         * a system or user action — for example, in remote cases, a user may close a port forwarding tunnel
          * that was opened by `asExternalUri`.
          *
          * *Note* that uris passed through `openExternal` are automatically resolved and you should not call `asExternalUri`
@@ -6161,207 +6734,207 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * Represents a color in RGBA space.
-    */
+     * Represents a color in RGBA space.
+     */
     export class Color {
 
         /**
-        * The red component of this color in the range [0-1].
-        */
+         * The red component of this color in the range [0-1].
+         */
         readonly red: number;
 
         /**
-        * The green component of this color in the range [0-1].
-        */
+         * The green component of this color in the range [0-1].
+         */
         readonly green: number;
 
         /**
-        * The blue component of this color in the range [0-1].
-        */
+         * The blue component of this color in the range [0-1].
+         */
         readonly blue: number;
 
         /**
-        * The alpha component of this color in the range [0-1].
-        */
+         * The alpha component of this color in the range [0-1].
+         */
         readonly alpha: number;
 
         /**
-        * Creates a new color instance.
-        *
-        * @param red The red component.
-        * @param green The green component.
-        * @param blue The blue component.
-        * @param alpha The alpha component.
-        */
+         * Creates a new color instance.
+         *
+         * @param red The red component.
+         * @param green The green component.
+         * @param blue The blue component.
+         * @param alpha The alpha component.
+         */
         constructor(red: number, green: number, blue: number, alpha: number);
     }
 
     /**
-    * Represents a color range from a document.
-    */
+     * Represents a color range from a document.
+     */
     export class ColorInformation {
 
         /**
-        * The range in the document where this color appears.
-        */
+         * The range in the document where this color appears.
+         */
         range: Range;
 
         /**
-        * The actual color value for this color range.
-        */
+         * The actual color value for this color range.
+         */
         color: Color;
 
         /**
-        * Creates a new color range.
-        *
-        * @param range The range the color appears in. Must not be empty.
-        * @param color The value of the color.
-        */
+         * Creates a new color range.
+         *
+         * @param range The range the color appears in. Must not be empty.
+         * @param color The value of the color.
+         */
         constructor(range: Range, color: Color);
     }
 
     /**
-    * A color presentation object describes how a [`color`](#Color) should be represented as text and what
-    * edits are required to refer to it from source code.
-    *
-    * For some languages one color can have multiple presentations, e.g. css can represent the color red with
-    * the constant `Red`, the hex-value `#ff0000`, or in rgba and hsla forms. In csharp other representations
-    * apply, e.g `System.Drawing.Color.Red`.
-    */
+     * A color presentation object describes how a [`color`](#Color) should be represented as text and what
+     * edits are required to refer to it from source code.
+     *
+     * For some languages one color can have multiple presentations, e.g. css can represent the color red with
+     * the constant `Red`, the hex-value `#ff0000`, or in rgba and hsla forms. In csharp other representations
+     * apply, e.g `System.Drawing.Color.Red`.
+     */
     export class ColorPresentation {
 
         /**
-        * The label of this color presentation. It will be shown on the color
-        * picker header. By default this is also the text that is inserted when selecting
-        * this color presentation.
-        */
+         * The label of this color presentation. It will be shown on the color
+         * picker header. By default this is also the text that is inserted when selecting
+         * this color presentation.
+         */
         label: string;
 
         /**
-        * An [edit](#TextEdit) which is applied to a document when selecting
-        * this presentation for the color.  When `falsy` the [label](#ColorPresentation.label)
-        * is used.
-        */
+         * An [edit](#TextEdit) which is applied to a document when selecting
+         * this presentation for the color.  When `falsy` the [label](#ColorPresentation.label)
+         * is used.
+         */
         textEdit?: TextEdit;
 
         /**
-        * An optional array of additional [text edits](#TextEdit) that are applied when
-        * selecting this color presentation. Edits must not overlap with the main [edit](#ColorPresentation.textEdit) nor with themselves.
-        */
+         * An optional array of additional [text edits](#TextEdit) that are applied when
+         * selecting this color presentation. Edits must not overlap with the main [edit](#ColorPresentation.textEdit) nor with themselves.
+         */
         additionalTextEdits?: TextEdit[];
 
         /**
-        * Creates a new color presentation.
-        *
-        * @param label The label of this color presentation.
-        */
+         * Creates a new color presentation.
+         *
+         * @param label The label of this color presentation.
+         */
         constructor(label: string);
     }
 
     /**
-    * The document color provider defines the contract between extensions and feature of
-    * picking and modifying colors in the editor.
-    */
+     * The document color provider defines the contract between extensions and feature of
+     * picking and modifying colors in the editor.
+     */
     export interface DocumentColorProvider {
 
         /**
-        * Provide colors for the given document.
-        *
-        * @param document The document in which the command was invoked.
-        * @param token A cancellation token.
-        * @return An array of [color information](#ColorInformation) or a thenable that resolves to such. The lack of a result
-        * can be signaled by returning `undefined`, `null`, or an empty array.
-        */
+         * Provide colors for the given document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param token A cancellation token.
+         * @return An array of [color information](#ColorInformation) or a thenable that resolves to such. The lack of a result
+         * can be signaled by returning `undefined`, `null`, or an empty array.
+         */
         provideDocumentColors(document: TextDocument, token: CancellationToken): ProviderResult<ColorInformation[]>;
 
         /**
-        * Provide [representations](#ColorPresentation) for a color.
-        *
-        * @param color The color to show and insert.
-        * @param context A context object with additional information
-        * @param token A cancellation token.
-        * @return An array of color presentations or a thenable that resolves to such. The lack of a result
-        * can be signaled by returning `undefined`, `null`, or an empty array.
-        */
+         * Provide [representations](#ColorPresentation) for a color.
+         *
+         * @param color The color to show and insert.
+         * @param context A context object with additional information
+         * @param token A cancellation token.
+         * @return An array of color presentations or a thenable that resolves to such. The lack of a result
+         * can be signaled by returning `undefined`, `null`, or an empty array.
+         */
         provideColorPresentations(color: Color, context: { document: TextDocument, range: Range }, token: CancellationToken): ProviderResult<ColorPresentation[]>;
     }
 
     /**
-    * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
-    * Invalid ranges will be ignored.
-    */
+     * A line based folding range. To be valid, start and end line must a zero or larger and smaller than the number of lines in the document.
+     * Invalid ranges will be ignored.
+     */
     export class FoldingRange {
 
         /**
-        * The zero-based start line of the range to fold. The folded area starts after the line's last character.
-        * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
-        */
+         * The zero-based start line of the range to fold. The folded area starts after the line's last character.
+         * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
+         */
         start: number;
 
         /**
-        * The zero-based end line of the range to fold. The folded area ends with the line's last character.
-        * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
-        */
+         * The zero-based end line of the range to fold. The folded area ends with the line's last character.
+         * To be valid, the end must be zero or larger and smaller than the number of lines in the document.
+         */
         end: number;
 
         /**
-        * Describes the [Kind](#FoldingRangeKind) of the folding range such as [Comment](#FoldingRangeKind.Comment) or
-        * [Region](#FoldingRangeKind.Region). The kind is used to categorize folding ranges and used by commands
-        * like 'Fold all comments'. See
-        * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of all kinds.
-        * If not set, the range is originated from a syntax element.
-        */
+         * Describes the [Kind](#FoldingRangeKind) of the folding range such as [Comment](#FoldingRangeKind.Comment) or
+         * [Region](#FoldingRangeKind.Region). The kind is used to categorize folding ranges and used by commands
+         * like 'Fold all comments'. See
+         * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of all kinds.
+         * If not set, the range is originated from a syntax element.
+         */
         kind?: FoldingRangeKind;
 
         /**
-        * Creates a new folding range.
-        *
-        * @param start The start line of the folded range.
-        * @param end The end line of the folded range.
-        * @param kind The kind of the folding range.
-        */
+         * Creates a new folding range.
+         *
+         * @param start The start line of the folded range.
+         * @param end The end line of the folded range.
+         * @param kind The kind of the folding range.
+         */
         constructor(start: number, end: number, kind?: FoldingRangeKind);
     }
 
     /**
-    * An enumeration of specific folding range kinds. The kind is an optional field of a [FoldingRange](#FoldingRange)
-    * and is used to distinguish specific folding ranges such as ranges originated from comments. The kind is used by commands like
-    * `Fold all comments` or `Fold all regions`.
-    * If the kind is not set on the range, the range originated from a syntax element other than comments, imports or region markers.
-    */
+     * An enumeration of specific folding range kinds. The kind is an optional field of a [FoldingRange](#FoldingRange)
+     * and is used to distinguish specific folding ranges such as ranges originated from comments. The kind is used by commands like
+     * `Fold all comments` or `Fold all regions`.
+     * If the kind is not set on the range, the range originated from a syntax element other than comments, imports or region markers.
+     */
     export enum FoldingRangeKind {
         /**
-        * Kind for folding range representing a comment.
-        */
+         * Kind for folding range representing a comment.
+         */
         Comment = 1,
         /**
-        * Kind for folding range representing a import.
-        */
+         * Kind for folding range representing a import.
+         */
         Imports = 2,
         /**
-        * Kind for folding range representing regions originating from folding markers like `#region` and `#endregion`.
-        */
+         * Kind for folding range representing regions originating from folding markers like `#region` and `#endregion`.
+         */
         Region = 3
     }
 
     /**
-    * Folding context (for future use)
-    */
+     * Folding context (for future use)
+     */
     export interface FoldingContext {
     }
 
     /**
-    * The folding range provider interface defines the contract between extensions and
-    * [Folding](https://code.visualstudio.com/docs/editor/codebasics#_folding) in the editor.
-    */
+     * The folding range provider interface defines the contract between extensions and
+     * [Folding](https://code.visualstudio.com/docs/editor/codebasics#_folding) in the editor.
+     */
     export interface FoldingRangeProvider {
         /**
-        * Returns a list of folding ranges or null and undefined if the provider
-        * does not want to participate or was cancelled.
-        * @param document The document in which the command was invoked.
-        * @param context Additional context information (for future use)
-        * @param token A cancellation token.
-        */
+         * Returns a list of folding ranges or null and undefined if the provider
+         * does not want to participate or was cancelled.
+         * @param document The document in which the command was invoked.
+         * @param context Additional context information (for future use)
+         * @param token A cancellation token.
+         */
         provideFoldingRanges(document: TextDocument, context: FoldingContext, token: CancellationToken): ProviderResult<FoldingRange[]>;
     }
 
@@ -6482,6 +7055,7 @@ declare module '@theia/plugin' {
         Enum = 12,
         Keyword = 13,
         Snippet = 14,
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         Color = 15,
         Reference = 17,
         File = 16,
@@ -7243,6 +7817,34 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Additional data for entries of a workspace edit. Supports to label entries and marks entries
+     * as needing confirmation by the user. The editor groups edits with equal labels into tree nodes,
+     * for instance all edits labelled with "Changes in Strings" would be a tree node.
+     */
+    export interface WorkspaceEditEntryMetadata {
+
+        /**
+         * A flag which indicates that user confirmation is needed.
+         */
+        needsConfirmation: boolean;
+
+        /**
+         * A human-readable string which is rendered prominent.
+         */
+        label: string;
+
+        /**
+         * A human-readable string which is rendered less prominent on the same line.
+         */
+        description?: string;
+
+        /**
+         * The icon path or [ThemeIcon](#ThemeIcon) for the edit.
+         */
+        iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
+    }
+
+    /**
      * A workspace edit is a collection of textual and files changes for
      * multiple resources and documents.
      *
@@ -7261,8 +7863,9 @@ declare module '@theia/plugin' {
          * @param uri A resource identifier.
          * @param range A range.
          * @param newText A string.
+         * @param metadata Optional metadata for the entry.
          */
-        replace(uri: Uri, range: Range, newText: string): void;
+        replace(uri: Uri, range: Range, newText: string, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Insert the given text at the given position.
@@ -7270,16 +7873,18 @@ declare module '@theia/plugin' {
          * @param uri A resource identifier.
          * @param position A position.
          * @param newText A string.
+         * @param metadata Optional metadata for the entry.
          */
-        insert(uri: Uri, position: Position, newText: string): void;
+        insert(uri: Uri, position: Position, newText: string, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Delete the text at the given range.
          *
          * @param uri A resource identifier.
          * @param range A range.
+         * @param metadata Optional metadata for the entry.
          */
-        delete(uri: Uri, range: Range): void;
+        delete(uri: Uri, range: Range, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Check if a text edit for a resource exists.
@@ -7311,15 +7916,17 @@ declare module '@theia/plugin' {
          * @param uri Uri of the new file..
          * @param options Defines if an existing file should be overwritten or be
          * ignored. When overwrite and ignoreIfExists are both set overwrite wins.
+         * @param metadata Optional metadata for the entry.
          */
-        createFile(uri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void;
+        createFile(uri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Delete a file or folder.
          *
          * @param uri The uri of the file that is to be deleted.
+         * @param metadata Optional metadata for the entry.
          */
-        deleteFile(uri: Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }): void;
+        deleteFile(uri: Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Rename a file or folder.
@@ -7328,8 +7935,9 @@ declare module '@theia/plugin' {
          * @param newUri The new location.
          * @param options Defines if existing files should be overwritten or be
          * ignored. When overwrite and ignoreIfExists are both set overwrite wins.
+         * @param metadata Optional metadata for the entry.
          */
-        renameFile(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void;
+        renameFile(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditEntryMetadata): void;
 
         /**
          * Get all text edits grouped by resource.
@@ -7503,34 +8111,34 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * The rename provider interface defines the contract between extensions and
-    * the [rename](https://code.visualstudio.com/docs/editor/editingevolved#_rename-symbol)-feature.
-    */
+     * The rename provider interface defines the contract between extensions and
+     * the [rename](https://code.visualstudio.com/docs/editor/editingevolved#_rename-symbol)-feature.
+     */
     export interface RenameProvider {
 
         /**
-        * Provide an edit that describes changes that have to be made to one
-        * or many resources to rename a symbol to a different name.
-        *
-        * @param document The document in which the command was invoked.
-        * @param position The position at which the command was invoked.
-        * @param newName The new name of the symbol. If the given name is not valid, the provider must return a rejected promise.
-        * @param token A cancellation token.
-        * @return A workspace edit or a thenable that resolves to such. The lack of a result can be
-        * signaled by returning `undefined` or `null`.
-        */
+         * Provide an edit that describes changes that have to be made to one
+         * or many resources to rename a symbol to a different name.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param newName The new name of the symbol. If the given name is not valid, the provider must return a rejected promise.
+         * @param token A cancellation token.
+         * @return A workspace edit or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
         provideRenameEdits(document: TextDocument, position: Position, newName: string, token: CancellationToken): ProviderResult<WorkspaceEdit>;
 
         /**
-        * Optional function for resolving and validating a position *before* running rename. The result can
-        * be a range or a range and a placeholder text. The placeholder text should be the identifier of the symbol
-        * which is being renamed - when omitted the text in the returned range is used.
-        *
-        * @param document The document in which rename will be invoked.
-        * @param position The position at which rename will be invoked.
-        * @param token A cancellation token.
-        * @return The range or range and placeholder text of the identifier that is to be renamed. The lack of a result can signaled by returning `undefined` or `null`.
-        */
+         * Optional function for resolving and validating a position *before* running rename. The result can
+         * be a range or a range and a placeholder text. The placeholder text should be the identifier of the symbol
+         * which is being renamed - when omitted the text in the returned range is used.
+         *
+         * @param document The document in which rename will be invoked.
+         * @param position The position at which rename will be invoked.
+         * @param token A cancellation token.
+         * @return The range or range and placeholder text of the identifier that is to be renamed. The lack of a result can signaled by returning `undefined` or `null`.
+         */
         prepareRename?(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Range | { range: Range, placeholder: string }>;
     }
 
@@ -8099,33 +8707,33 @@ declare module '@theia/plugin' {
         export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
 
         /**
-        * Register a color provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged. A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A color provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a color provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged. A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A color provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerColorProvider(selector: DocumentSelector, provider: DocumentColorProvider): Disposable;
 
         /**
-        * Register a folding range provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are asked in
-        * parallel and the results are merged.
-        * If multiple folding ranges start at the same position, only the range of the first registered provider is used.
-        * If a folding range overlaps with an other range that has a smaller position, it is also ignored.
-        *
-        * A failing provider (rejected promise or exception) will
-        * not cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A folding range provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a folding range provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are asked in
+         * parallel and the results are merged.
+         * If multiple folding ranges start at the same position, only the range of the first registered provider is used.
+         * If a folding range overlaps with an other range that has a smaller position, it is also ignored.
+         *
+         * A failing provider (rejected promise or exception) will
+         * not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A folding range provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerFoldingRangeProvider(selector: DocumentSelector, provider: FoldingRangeProvider): Disposable;
 
         /**
@@ -8142,16 +8750,16 @@ declare module '@theia/plugin' {
         export function registerSelectionRangeProvider(selector: DocumentSelector, provider: SelectionRangeProvider): Disposable;
 
         /**
-        * Register a reference provider.
-        *
-        * Multiple providers can be registered for a language. In that case providers are sorted
-        * by their [score](#languages.match) and the best-matching provider is used. Failure
-        * of the selected provider will cause a failure of the whole operation.
-        *
-        * @param selector A selector that defines the documents this provider is applicable to.
-        * @param provider A rename provider.
-        * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-        */
+         * Register a reference provider.
+         *
+         * Multiple providers can be registered for a language. In that case providers are sorted
+         * by their [score](#languages.match) and the best-matching provider is used. Failure
+         * of the selected provider will cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A rename provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerRenameProvider(selector: DocumentSelector, provider: RenameProvider): Disposable;
 
         /**
@@ -8411,6 +9019,26 @@ declare module '@theia/plugin' {
          * resource state.
          */
         readonly decorations?: SourceControlResourceDecorations;
+
+        /**
+         * Context value of the resource state. This can be used to contribute resource specific actions.
+         * For example, if a resource is given a context value as `diffable`. When contributing actions to `scm/resourceState/context`
+         * using `menus` extension point, you can specify context value for key `scmResourceState` in `when` expressions, like `scmResourceState == diffable`.
+         * ```
+         *  "contributes": {
+         *    "menus": {
+         *      "scm/resourceState/context": [
+         *        {
+         *          "command": "extension.diff",
+         *          "when": "scmResourceState == diffable"
+         *        }
+         *      ]
+         *    }
+         *  }
+         * ```
+         * This will show action `extension.diff` only for resources with `contextValue` is `diffable`.
+         */
+        readonly contextValue?: string;
     }
 
     /**
@@ -8568,8 +9196,8 @@ declare module '@theia/plugin' {
     }
 
     /**
- * A debug session.
- */
+     * A debug session.
+     */
     export interface DebugSession {
 
         /**
@@ -8992,13 +9620,15 @@ declare module '@theia/plugin' {
         /**
          * Add breakpoints.
          * @param breakpoints The breakpoints to add.
-        */
+         */
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         export function addBreakpoints(breakpoints: Breakpoint[]): void;
 
         /**
          * Remove breakpoints.
          * @param breakpoints The breakpoints to remove.
          */
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         export function removeBreakpoints(breakpoints: Breakpoint[]): void;
     }
 
@@ -9232,8 +9862,26 @@ declare module '@theia/plugin' {
         [name: string]: any;
     }
 
+    /**
+     * Class used to execute an extension callback as a task.
+     */
+    export class CustomExecution {
+        /**
+         * Constructs a CustomExecution task object. The callback will be executed when the task is run, at which point the
+         * extension should return the Pseudoterminal it will "run in". The task should wait to do further execution until
+         * [Pseudoterminal.open](#Pseudoterminal.open) is called. Task cancellation should be handled using
+         * [Pseudoterminal.close](#Pseudoterminal.close). When the task is complete fire
+         * [Pseudoterminal.onDidClose](#Pseudoterminal.onDidClose).
+         * @param callback The callback that will be called when the task is started by a user. Any ${} style variables that
+         * were in the task definition will be resolved and passed into the callback as `resolvedDefinition`.
+         */
+        constructor(callback: (resolvedDefinition: TaskDefinition) => Thenable<Pseudoterminal>);
+
+        readonly callback;
+    }
+
     export enum TaskScope {
-        /** The task is a global task */
+        /** The task is a global task. Global tasks are currently not supported. */
         Global = 1,
 
         /** The task is a workspace task */
@@ -9324,7 +9972,7 @@ declare module '@theia/plugin' {
          * @param scope Specifies the task's scope.
          * @param name The task's name. Is presented in the user interface.
          * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
-         * @param execution The process or shell execution.
+         * @param execution The process, shell or custom execution.
          * @param problemMatchers the names of problem matchers to use, like '$tsc'
          *  or '$eslint'. Problem matchers can be contributed by an extension using
          *  the `problemMatchers` extension point.
@@ -9334,7 +9982,7 @@ declare module '@theia/plugin' {
             scope: WorkspaceFolder | TaskScope.Global | TaskScope.Workspace,
             name: string,
             source?: string,
-            execution?: ProcessExecution | ShellExecution,
+            execution?: ProcessExecution | ShellExecution | CustomExecution,
             problemMatchers?: string | string[]);
 
         /**
@@ -9345,7 +9993,7 @@ declare module '@theia/plugin' {
          * @param definition The task definition as defined in the taskDefinitions extension point.
          * @param name The task's name. Is presented in the user interface.
          * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
-         * @param execution The process or shell execution.
+         * @param execution The process, shell or custom execution.
          * @param problemMatchers the names of problem matchers to use, like '$tsc'
          *  or '$eslint'. Problem matchers can be contributed by an extension using
          *  the `problemMatchers` extension point.
@@ -9354,7 +10002,7 @@ declare module '@theia/plugin' {
             taskDefinition: TaskDefinition,
             name: string,
             source: string,
-            execution?: ProcessExecution | ShellExecution,
+            execution?: ProcessExecution | ShellExecution | CustomExecution,
             problemMatchers?: string | string[]);
 
         /** The task's name */
@@ -9367,7 +10015,7 @@ declare module '@theia/plugin' {
         scope?: TaskScope.Global | TaskScope.Workspace | WorkspaceFolder;
 
         /** The task's execution engine */
-        execution?: ProcessExecution | ShellExecution;
+        execution?: ProcessExecution | ShellExecution | CustomExecution;
 
         /** Whether the task is a background task or not. */
         isBackground?: boolean;
@@ -9636,7 +10284,7 @@ declare module '@theia/plugin' {
         resolveWorkspaceSymbol?(symbol: T, token: CancellationToken): ProviderResult<T>;
     }
 
-    //#region Comments
+    // #region Comments
 
     /**
      * Collapsible state of a [comment thread](#CommentThread)
@@ -9699,16 +10347,16 @@ declare module '@theia/plugin' {
          * For example, a comment thread is given a context value as `editable`. When contributing actions to `comments/commentThread/title`
          * using `menus` extension point, you can specify context value for key `commentThread` in `when` expression like `commentThread == editable`.
          * ```
-         *	"contributes": {
-         *		"menus": {
-         *			"comments/commentThread/title": [
-         *				{
-         *					"command": "extension.deleteCommentThread",
-         *					"when": "commentThread == editable"
-         *				}
-         *			]
-         *		}
-         *	}
+         *  "contributes": {
+         *    "menus": {
+         *      "comments/commentThread/title": [
+         *       {
+         *         "command": "extension.deleteCommentThread",
+         *         "when": "commentThread == editable"
+         *       }
+         *      ]
+         *    }
+         *  }
          * ```
          * This will show action `extension.deleteCommentThread` only for comment threads with `contextValue` is `editable`.
          */
@@ -9791,16 +10439,16 @@ declare module '@theia/plugin' {
          * For example, a comment is given a context value as `editable`. When contributing actions to `comments/comment/title`
          * using `menus` extension point, you can specify context value for key `comment` in `when` expression like `comment == editable`.
          * ```json
-         *	"contributes": {
-         *		"menus": {
-         *			"comments/comment/title": [
-         *				{
-         *					"command": "extension.deleteComment",
-         *					"when": "comment == editable"
-         *				}
-         *			]
-         *		}
-         *	}
+         *  "contributes": {
+         *    "menus": {
+         *      "comments/comment/title": [
+         *        {
+         *          "command": "extension.deleteComment",
+         *          "when": "comment == editable"
+         *        }
+         *      ]
+         *    }
+         *  }
          * ```
          * This will show action `extension.deleteComment` only for comments with `contextValue` is `editable`.
          */
@@ -9920,7 +10568,7 @@ declare module '@theia/plugin' {
         export function createCommentController(id: string, label: string): CommentController;
     }
 
-    //#endregion
+    // #endregion
 
     /**
      * A selection range represents a part of a selection hierarchy. A selection range
@@ -10058,7 +10706,7 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * The call hierarchy provider interface describes the constract between extensions
+     * The call hierarchy provider interface describes the contract between extensions
      * and the call hierarchy feature which allows to browse calls and caller of function,
      * methods, constructor etc.
      */
@@ -10142,7 +10790,6 @@ declare module '@theia/plugin' {
          */
         readonly label: string;
     }
-
 
     /**
      * Options to be used when getting an [AuthenticationSession](#AuthenticationSession) from an [AuthenticationProvider](#AuthenticationProvider).

@@ -14,27 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import { injectable, inject, postConstruct } from 'inversify';
+import * as React from '@theia/core/shared/react';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceService, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { CommandService } from '@theia/core';
 import { Preference, PreferencesCommands } from '../../util/preference-types';
-import { PreferencesEventService } from '../../util/preference-event-service';
-import { PreferenceScopeCommandManager } from '../../util/preference-scope-command-manager';
 import { SinglePreferenceWrapper } from './single-preference-wrapper';
+import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
 
 @injectable()
 export class SinglePreferenceDisplayFactory {
-    protected currentScope: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
     @inject(PreferenceService) protected readonly preferenceValueRetrievalService: PreferenceService;
-    @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory: PreferenceScopeCommandManager;
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @postConstruct()
-    init(): void {
-        this.preferencesEventService.onTabScopeSelected.event(e => this.currentScope = e);
-    }
+    @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
 
     protected openJSON = (preferenceNode: Preference.NodeWithValueInAllScopes): void => {
         this.commandService.executeCommand(PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR.id, preferenceNode);
@@ -44,8 +37,8 @@ export class SinglePreferenceDisplayFactory {
         return <SinglePreferenceWrapper
             contextMenuRenderer={this.contextMenuRenderer}
             preferenceDisplayNode={preferenceNode}
-            currentScope={Number(this.currentScope.scope)}
-            currentScopeURI={this.currentScope.uri}
+            currentScope={Number(this.scopeTracker.currentScope.scope)}
+            currentScopeURI={this.scopeTracker.currentScope.uri}
             key={`${preferenceNode.id}-editor`}
             preferencesService={this.preferenceValueRetrievalService}
             openJSON={this.openJSON}

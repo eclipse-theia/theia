@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { MessageConnection, ResponseError } from 'vscode-jsonrpc';
+import { MessageConnection, ResponseError } from 'vscode-ws-jsonrpc';
 import { ApplicationError } from '../application-error';
 import { Event, Emitter } from '../event';
 import { Disposable } from '../disposable';

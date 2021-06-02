@@ -18,10 +18,10 @@ import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
 import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker-tree';
 import { MarkerTreeModel } from '../marker-tree-model';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Marker } from '../../common/marker';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 import { ProblemUtils } from './problem-utils';
 
 @injectable()
@@ -42,7 +42,8 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
      * Sort markers based on the following rules:
      * - Markers are fist sorted by `severity`.
      * - Markers are sorted by `line number` if applicable.
-     * - Markers are sorted by `column number` if
+     * - Markers are sorted by `column number` if applicable.
+     * - Markers are then finally sorted by `owner` if applicable.
      * @param a the first marker for comparison.
      * @param b the second marker for comparison.
      */
@@ -64,6 +65,11 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
         const columnNumber = ProblemUtils.columnNumberCompare(markerA, markerB);
         if (columnNumber !== 0) {
             return columnNumber;
+        }
+        // Sort by owner in alphabetical order.
+        const owner = ProblemUtils.ownerCompare(markerA, markerB);
+        if (owner !== 0) {
+            return owner;
         }
         return 0;
     }

@@ -14,10 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableContribution, VariableRegistry } from './variable';
+import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { CommandService } from '@theia/core/lib/common/command';
+import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { VariableInput } from './variable-input';
@@ -46,11 +48,21 @@ export class CommonVariableContribution implements VariableContribution {
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
 
+    @inject(ApplicationServer)
+    protected readonly appServer: ApplicationServer;
+
     async registerVariables(variables: VariableRegistry): Promise<void> {
-        const execPath = await this.env.getExecPath();
+        const [execPath, backendOS] = await Promise.all([
+            this.env.getExecPath(),
+            this.appServer.getBackendOS()
+        ]);
         variables.registerVariable({
             name: 'execPath',
             resolve: () => execPath
+        });
+        variables.registerVariable({
+            name: 'pathSeparator',
+            resolve: () => backendOS === OS.Type.Windows ? '\\' : '/'
         });
         variables.registerVariable({
             name: 'env',

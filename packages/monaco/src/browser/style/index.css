@@ -1,6 +1,6 @@
 .monaco-editor {
     padding-bottom: 5.6px;
-    font-family: var(--theia-ui-font-family);
+    font-family: var(--theia-code-font-family);
     font-size: inherit !important;
 }
 
@@ -104,4 +104,14 @@
     outline: var(--theia-border-width) solid;
     outline-offset: calc(-1*var(--theia-border-width));
     outline-color: var(--theia-focusBorder);
+}
+
+.monaco-editor .rename-box input {
+    color: var(--theia-editor-foreground);
+}
+
+.monaco-editor .rename-box .rename-label {
+    opacity: .8;
+    padding: 3px;
+    font-family: sans-serif;
 }

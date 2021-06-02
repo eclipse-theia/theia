@@ -30,10 +30,19 @@
       "path": "../plugin-ext/compile.tsconfig.json"
     },
     {
+      "path": "../userstorage/compile.tsconfig.json"
+    },
+    {
       "path": "../workspace/compile.tsconfig.json"
     },
     {
-      "path": "../userstorage/compile.tsconfig.json"
+      "path": "../filesystem/compile.tsconfig.json"
+    },
+    {
+      "path": "../navigator/compile.tsconfig.json"
+    },
+    {
+      "path": "../terminal/compile.tsconfig.json"
     }
   ]
 }

@@ -19,15 +19,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
     RawProcessFactory,
-    TerminalProcessFactory,
     ProcessErrorEvent,
     Process,
     TerminalProcessOptions,
+    TaskTerminalProcessFactory,
 } from '@theia/process/lib/node';
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
@@ -53,8 +53,8 @@ export class ProcessTaskRunner implements TaskRunner {
     @inject(RawProcessFactory)
     protected readonly rawProcessFactory: RawProcessFactory;
 
-    @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    @inject(TaskTerminalProcessFactory)
+    protected readonly taskTerminalProcessFactory: TaskTerminalProcessFactory;
 
     @inject(TaskFactory)
     protected readonly taskFactory: TaskFactory;
@@ -73,7 +73,7 @@ export class ProcessTaskRunner implements TaskRunner {
             // - process: directly look for an executable and pass a specific set of arguments/options.
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
-            const terminal: Process = this.terminalProcessFactory(terminalProcessOptions);
+            const terminal: Process = this.taskTerminalProcessFactory(terminalProcessOptions);
 
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
@@ -83,7 +83,7 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             });
 
-            const processType = taskConfig.type as 'process' | 'shell';
+            const processType = (taskConfig.taskType || taskConfig.type) as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
                 process: terminal,
@@ -116,11 +116,6 @@ export class ProcessTaskRunner implements TaskRunner {
         }
 
         const options = systemSpecificCommand.options;
-        // sanity checks:
-        // - we expect the cwd to be set by the client.
-        if (!options || !options.cwd) {
-            throw new Error("Can't run a task when 'cwd' is not provided by the client");
-        }
 
         // Use task's cwd with spawned process and pass node env object to
         // new process, so e.g. we can re-use the system path
@@ -146,7 +141,7 @@ export class ProcessTaskRunner implements TaskRunner {
          */
         let commandLine: string | undefined;
 
-        if (taskConfig.type === 'shell') {
+        if ((taskConfig.taskType || taskConfig.type) === 'shell') {
             // When running a shell task, we have to spawn a shell process somehow,
             // and tell it to run the command the user wants to run inside of it.
             //

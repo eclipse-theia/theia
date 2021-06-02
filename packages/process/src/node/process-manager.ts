@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -42,7 +42,6 @@ export class ProcessManager implements BackendApplicationContribution {
     register(process: Process): number {
         const id = this.id;
         this.processes.set(id, process);
-        process.onExit(() => this.unregister(process));
         process.onError(() => this.unregister(process));
         this.id++;
         return id;
@@ -54,7 +53,7 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to unregister from this process manager.
      */
-    protected unregister(process: Process): void {
+    unregister(process: Process): void {
         const processLabel = this.getProcessLabel(process);
         this.logger.debug(`Unregistering process. ${processLabel}`);
         if (!process.killed) {

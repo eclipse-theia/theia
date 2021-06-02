@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -25,8 +25,7 @@ import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
-import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { ProblemPreferences } from './problem-preferences';
 import { ProblemUtils } from './problem-utils';
 
 @injectable()
@@ -46,10 +45,9 @@ export class ProblemDecorator implements TreeDecorator {
 
     @postConstruct()
     protected init(): void {
-        this.problemPreferences.onPreferenceChanged((event: PreferenceChangeEvent<ProblemConfiguration>) => {
-            const { preferenceName } = event;
-            if (preferenceName === 'problems.decorations.enabled') {
-                this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
+        this.problemPreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === 'problems.decorations.enabled') {
+                this.fireDidChangeDecorations(tree => this.collectDecorators(tree));
             }
         });
     }

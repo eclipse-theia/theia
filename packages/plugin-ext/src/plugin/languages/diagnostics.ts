@@ -21,7 +21,7 @@ import { DiagnosticSeverity, MarkerSeverity } from '../types-impl';
 import { MarkerData } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { v4 } from 'uuid';
 
 export class DiagnosticCollection implements theia.DiagnosticCollection {

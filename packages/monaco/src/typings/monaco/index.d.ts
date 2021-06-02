@@ -102,6 +102,14 @@ declare module monaco.editor {
         removeDecorations(decorationTypeKey: string): void;
     }
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/browser/services/bulkEditService.ts#L14
+    export interface IBulkEditOptions {
+        editor?: ICodeEditor;
+        progress?: IProgress<IProgressStep>;
+        showPreview?: boolean;
+        label?: string;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/browser/services/bulkEditService.ts#L21
     export interface IBulkEditResult {
         ariaSummary: string;
@@ -441,6 +449,14 @@ declare module monaco.editor {
 
         // https://github.com/microsoft/vscode/blob/e683ace9e5acadba0e8bde72d793cb2cb83e58a7/src/vs/editor/common/model.ts#L623
         createSnapshot(): ITextSnapshot | null;
+
+        /**
+         * Get the language associated with this model.
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model.ts#L833-L837
+        getLanguageIdentifier(): monaco.services.LanguageIdentifier;
+
     }
 
 }
@@ -979,7 +995,8 @@ declare module monaco.referenceSearch {
         focusOnReferenceTree(): void;
         focusOnPreviewEditor(): void;
         isPreviewEditorFocused(): boolean;
-        _tree: ReferenceTree
+        _tree: ReferenceTree;
+        _preview: ICodeEditor;
     }
 
     // it's used as return value for referenceWidget._tree

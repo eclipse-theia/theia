@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { BlameDecorator } from './blame-decorator';
@@ -23,7 +23,7 @@ import { BlameManager } from './blame-manager';
 import URI from '@theia/core/lib/common/uri';
 import { EDITOR_CONTEXT_MENU_SCM } from '@theia/scm-extra/lib/browser/scm-extra-contribution';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace BlameCommands {
     export const TOGGLE_GIT_ANNOTATIONS: Command = {

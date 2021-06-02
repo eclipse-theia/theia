@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { ProcessTaskResolver } from './process-task-resolver';
 import { TaskContribution, TaskResolverRegistry } from '../task-contribution';
 
@@ -25,7 +25,7 @@ export class ProcessTaskContribution implements TaskContribution {
     protected readonly processTaskResolver: ProcessTaskResolver;
 
     registerResolvers(resolvers: TaskResolverRegistry): void {
-        resolvers.register('process', this.processTaskResolver);
-        resolvers.register('shell', this.processTaskResolver);
+        resolvers.registerExecutionResolver('process', this.processTaskResolver);
+        resolvers.registerExecutionResolver('shell', this.processTaskResolver);
     }
 }

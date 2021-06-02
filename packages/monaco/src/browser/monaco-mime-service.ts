@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import debounce = require('lodash.debounce');
-import { injectable } from 'inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
 
 @injectable()

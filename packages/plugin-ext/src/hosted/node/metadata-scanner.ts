@@ -14,9 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, multiInject } from 'inversify';
-import { PluginPackage, PluginScanner, PluginMetadata } from '../../common/plugin-protocol';
-
+import { injectable, multiInject } from '@theia/core/shared/inversify';
+import { PluginPackage, PluginScanner, PluginMetadata, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
 @injectable()
 export class MetadataScanner {
     private scanners: Map<string, PluginScanner> = new Map();
@@ -32,7 +31,7 @@ export class MetadataScanner {
     getPluginMetadata(plugin: PluginPackage): PluginMetadata {
         const scanner = this.getScanner(plugin);
         return {
-            host: 'main',
+            host: PLUGIN_HOST_BACKEND,
             model: scanner.getModel(plugin),
             lifecycle: scanner.getLifecycle(plugin)
         };

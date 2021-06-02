@@ -14,10 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { WebviewWidgetFactory } from '../browser/webview/webview-widget-factory';
-import { ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory';
+import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
+import { ElectronCustomEditorWidgetFactory, ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(WebviewWidgetFactory).toDynamicValue(ctx => new ElectronWebviewWidgetFactory(ctx.container)).inSingletonScope();
+    rebind(CustomEditorWidgetFactory).toDynamicValue(ctx => new ElectronCustomEditorWidgetFactory(ctx.container)).inSingletonScope();
 });

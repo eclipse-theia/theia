@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     TaskConfiguration,
     TaskCustomization,
@@ -146,7 +146,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     getRawTaskConfigurations(scope?: TaskConfigurationScope): (TaskCustomization | TaskConfiguration)[] {
-        if (!scope) {
+        if (scope === undefined) {
             const tasks: (TaskCustomization | TaskConfiguration)[] = [];
             for (const configs of this.rawTaskConfigurations.values()) {
                 tasks.push(...configs);
@@ -244,7 +244,7 @@ export class TaskConfigurations implements Disposable {
             return undefined;
         }
 
-        const customizationByType = this.getTaskCustomizations(taskConfig.taskType || taskConfig.type, taskConfig._scope) || [];
+        const customizationByType = this.getTaskCustomizations(taskConfig.type, taskConfig._scope) || [];
         const hasCustomization = customizationByType.length > 0;
         if (hasCustomization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfig);
@@ -304,10 +304,6 @@ export class TaskConfigurations implements Disposable {
         const scope = task._scope;
         if (scope === TaskScope.Global) {
             return this.openUserTasks();
-        } else if (typeof scope !== 'string') {
-            console.error('Global task cannot be customized');
-            // TODO detected tasks of scope workspace or user could be customized in those preferences.
-            return;
         }
 
         const workspace = this.workspaceService.workspace;
@@ -317,7 +313,7 @@ export class TaskConfigurations implements Disposable {
 
         const configuredAndCustomizedTasks = await this.getTasks(token);
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
-            await this.saveTask(scope, { ...task, problemMatcher: [] });
+            await this.saveTask(scope, task);
         }
 
         try {
@@ -333,7 +329,7 @@ export class TaskConfigurations implements Disposable {
             console.error('Detected / Contributed tasks should have a task definition.');
             return;
         }
-        const customization: TaskCustomization = { type: task.taskType || task.type };
+        const customization: TaskCustomization = { type: task.type };
         definition.properties.all.forEach(p => {
             if (task[p] !== undefined) {
                 customization[p] = task[p];
@@ -359,6 +355,9 @@ export class TaskConfigurations implements Disposable {
         if (task.group) {
             customization.group = task.group;
         }
+
+        customization.label = task.label;
+
         return { ...customization };
     }
 
@@ -458,7 +457,7 @@ export class TaskConfigurations implements Disposable {
             const jsonTasks = this.taskConfigurationManager.getTasks(scope);
             if (jsonTasks) {
                 const ind = jsonTasks.findIndex((t: TaskCustomization | TaskConfiguration) => {
-                    if (t.type !== (task.taskType || task.type)) {
+                    if (t.type !== (task.type)) {
                         return false;
                     }
                     const def = this.taskDefinitionRegistry.getDefinition(t);
@@ -504,9 +503,6 @@ export class TaskConfigurations implements Disposable {
     }
 
     private getTaskDefinition(task: TaskCustomization): TaskDefinition | undefined {
-        return this.taskDefinitionRegistry.getDefinition({
-            ...task,
-            type: typeof task.taskType === 'string' ? task.taskType : task.type
-        });
+        return this.taskDefinitionRegistry.getDefinition(task);
     }
 }

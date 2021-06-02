@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
@@ -59,10 +59,10 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
         }
     }
 
-    getConfigUri(resourceUri?: string): URI | undefined {
+    getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.providers.values()) {
             const configUri = provider.getConfigUri(resourceUri);
-            if (this.configurations.isConfigUri(configUri)) {
+            if (configUri && this.configurations.getName(configUri) === sectionName) {
                 return configUri;
             }
         }

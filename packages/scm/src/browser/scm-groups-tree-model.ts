@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ScmService } from './scm-service';
 import { ScmTreeModel } from './scm-tree-model';
@@ -47,11 +47,10 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
 
     protected changeRepository(provider: ScmProvider | undefined): void {
         this.toDisposeOnRepositoryChange.dispose();
+        this.contextKeys.scmProvider.set(provider ? provider.id : undefined);
         this.provider = provider;
         if (provider) {
-            this.toDisposeOnRepositoryChange.push(provider.onDidChange(() => {
-                this.root = this.createTree();
-            }));
+            this.toDisposeOnRepositoryChange.push(provider.onDidChange(() => this.root = this.createTree()));
             this.root = this.createTree();
         }
     }

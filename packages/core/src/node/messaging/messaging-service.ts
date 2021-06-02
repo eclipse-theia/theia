@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as ws from 'ws';
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 

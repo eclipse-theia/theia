@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommentingRangeDecorator } from './comments-decorator';
 import { EditorManager, EditorMouseEvent, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
@@ -22,7 +22,7 @@ import { CommentThreadWidget } from './comment-thread-widget';
 import { CommentsService, CommentInfoMain } from './comments-service';
 import { CommentThread } from '../../../common/plugin-api-rpc-model';
 import { CommandRegistry, DisposableCollection, MenuModelRegistry } from '@theia/core/lib/common';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CommentsContextKeyService } from './comments-context-key-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
@@ -46,8 +46,8 @@ export class CommentsContribution {
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
 
     constructor(@inject(CommentingRangeDecorator) protected readonly rangeDecorator: CommentingRangeDecorator,
-                @inject(CommentsService) protected readonly commentService: CommentsService,
-                @inject(EditorManager) protected readonly editorManager: EditorManager) {
+        @inject(CommentsService) protected readonly commentService: CommentsService,
+        @inject(EditorManager) protected readonly editorManager: EditorManager) {
         this.commentWidgets = [];
         this.commentInfos = [];
         this.commentService.onDidSetResourceCommentInfos(e => {
@@ -77,40 +77,40 @@ export class CommentsContribution {
                 }
                 disposables.push(editor.onMouseDown(e => this.onEditorMouseDown(e)));
                 disposables.push(this.commentService.onDidUpdateCommentThreads(async e => {
-                        const editorURI = editor.document.uri;
-                        const commentInfo = this.commentInfos.filter(info => info.owner === e.owner);
-                        if (!commentInfo || !commentInfo.length) {
-                            return;
+                    const editorURI = editor.document.uri;
+                    const commentInfo = this.commentInfos.filter(info => info.owner === e.owner);
+                    if (!commentInfo || !commentInfo.length) {
+                        return;
+                    }
+
+                    const added = e.added.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
+                    const removed = e.removed.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
+                    const changed = e.changed.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
+
+                    removed.forEach(thread => {
+                        const matchedZones = this.commentWidgets.filter(zoneWidget => zoneWidget.owner === e.owner
+                            && zoneWidget.commentThread.threadId === thread.threadId && zoneWidget.commentThread.threadId !== '');
+                        if (matchedZones.length) {
+                            const matchedZone = matchedZones[0];
+                            const index = this.commentWidgets.indexOf(matchedZone);
+                            this.commentWidgets.splice(index, 1);
+                            matchedZone.dispose();
                         }
+                    });
 
-                        const added = e.added.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
-                        const removed = e.removed.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
-                        const changed = e.changed.filter(thread => thread.resource && thread.resource.toString() === editorURI.toString());
-
-                        removed.forEach(thread => {
-                            const matchedZones = this.commentWidgets.filter(zoneWidget => zoneWidget.owner === e.owner
-                                && zoneWidget.commentThread.threadId === thread.threadId && zoneWidget.commentThread.threadId !== '');
-                            if (matchedZones.length) {
-                                const matchedZone = matchedZones[0];
-                                const index = this.commentWidgets.indexOf(matchedZone);
-                                this.commentWidgets.splice(index, 1);
-                                matchedZone.dispose();
-                            }
-                        });
-
-                        changed.forEach(thread => {
-                            const matchedZones = this.commentWidgets.filter(zoneWidget => zoneWidget.owner === e.owner
-                                && zoneWidget.commentThread.threadId === thread.threadId);
-                            if (matchedZones.length) {
-                                const matchedZone = matchedZones[0];
-                                matchedZone.update();
-                            }
-                        });
-                        added.forEach(thread => {
-                            this.displayCommentThread(e.owner, thread);
-                            this.commentInfos.filter(info => info.owner === e.owner)[0].threads.push(thread);
-                        });
-                    })
+                    changed.forEach(thread => {
+                        const matchedZones = this.commentWidgets.filter(zoneWidget => zoneWidget.owner === e.owner
+                            && zoneWidget.commentThread.threadId === thread.threadId);
+                        if (matchedZones.length) {
+                            const matchedZone = matchedZones[0];
+                            matchedZone.update();
+                        }
+                    });
+                    added.forEach(thread => {
+                        this.displayCommentThread(e.owner, thread);
+                        this.commentInfos.filter(info => info.owner === e.owner)[0].threads.push(thread);
+                    });
+                })
                 );
                 editor.onDispose(() => {
                     disposables.dispose();
@@ -179,7 +179,7 @@ export class CommentsContribution {
     get editor(): monaco.editor.IStandaloneCodeEditor | undefined {
         const editor = this.getCurrentEditor();
         if (editor && editor.editor instanceof MonacoDiffEditor) {
-            return  editor.editor.diffEditor.getModifiedEditor();
+            return editor.editor.diffEditor.getModifiedEditor();
         }
     }
 
@@ -228,7 +228,7 @@ export class CommentsContribution {
     }
 
     private getCurrentEditor(): EditorWidget | undefined {
-        return  this.editorManager.currentEditor;
+        return this.editorManager.currentEditor;
     }
 
     public addCommentAtLine(lineNumber: number, e: EditorMouseEvent | undefined): Promise<void> {

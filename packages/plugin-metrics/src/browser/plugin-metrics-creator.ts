@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { PluginMetrics, METRICS_TIMEOUT } from '../common/metrics-protocol';
 import { AnalyticsFromRequests, DataFromRequest, createRequestData, createDefaultAnalytics, MetricsMap } from '../common/plugin-metrics-types';
 

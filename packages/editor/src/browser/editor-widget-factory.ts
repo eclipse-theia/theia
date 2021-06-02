@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, } from 'inversify';
+import { injectable, inject, } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
@@ -39,10 +39,10 @@ export class EditorWidgetFactory implements WidgetFactory {
 
     createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
         const uri = new URI(options.uri);
-        return this.createEditor(uri);
+        return this.createEditor(uri, options);
     }
 
-    protected async createEditor(uri: URI): Promise<EditorWidget> {
+    protected async createEditor(uri: URI, options?: NavigatableWidgetOptions): Promise<EditorWidget> {
         const textEditor = await this.editorProvider(uri);
         const newEditor = new EditorWidget(textEditor, this.selectionService);
 
@@ -55,6 +55,9 @@ export class EditorWidgetFactory implements WidgetFactory {
         newEditor.onDispose(() => labelListener.dispose());
 
         newEditor.id = this.id + ':' + uri.toString();
+        if (options?.counter !== undefined) {
+            newEditor.id += `:${options.counter}`;
+        }
         newEditor.title.closable = true;
         return newEditor;
     }

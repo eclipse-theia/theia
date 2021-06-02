@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as Path from 'path';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { git } from 'dugite-extra/lib/core/git';
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
@@ -877,7 +877,14 @@ export class DugiteGit implements Git {
     }
 
     private async mapFileChanges(toMap: DugiteStatus, repositoryPath: string): Promise<GitFileChange[]> {
-        return Promise.all(toMap.files.map(file => this.mapFileChange(file, repositoryPath)));
+        return Promise.all(toMap.files
+            .filter(file => !this.isNestedGitRepository(file))
+            .map(file => this.mapFileChange(file, repositoryPath))
+        );
+    }
+
+    private isNestedGitRepository(fileChange: DugiteFileChange): boolean {
+        return fileChange.path.endsWith('/');
     }
 
     private async mapFileChange(toMap: DugiteFileChange, repositoryPath: string): Promise<GitFileChange> {

@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { HostedPluginClient } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
 
 @injectable()
 export class HostedPluginWatcher {
-    private onPostMessage = new Emitter<string[]>();
+    private onPostMessage = new Emitter<{ pluginHostId: string, message: string }>();
     private onLogMessage = new Emitter<LogPart>();
 
     private readonly onDidDeployEmitter = new Emitter<void>();
@@ -31,8 +31,8 @@ export class HostedPluginWatcher {
         const messageEmitter = this.onPostMessage;
         const logEmitter = this.onLogMessage;
         return {
-            postMessage(message: string): Promise<void> {
-                messageEmitter.fire(JSON.parse(message));
+            postMessage(pluginHostId, message: string): Promise<void> {
+                messageEmitter.fire({ pluginHostId, message });
                 return Promise.resolve();
             },
             log(logPart: LogPart): Promise<void> {
@@ -43,7 +43,7 @@ export class HostedPluginWatcher {
         };
     }
 
-    get onPostMessageEvent(): Event<string[]> {
+    get onPostMessageEvent(): Event<{ pluginHostId: string, message: string }> {
         return this.onPostMessage.event;
     }
 

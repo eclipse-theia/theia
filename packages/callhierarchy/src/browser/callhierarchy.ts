@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Range, SymbolKind, Location } from 'vscode-languageserver-types';
+import { Range, SymbolKind, Location } from '@theia/core/shared/vscode-languageserver-types';
 
 export const CALLHIERARCHY_ID = 'callhierarchy';
 

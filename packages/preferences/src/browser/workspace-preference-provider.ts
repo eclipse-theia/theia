@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct, named } from 'inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser/preferences';
@@ -42,9 +42,9 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
     }
 
-    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri()): URI | undefined {
+    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
         const delegate = this.delegate;
-        return delegate && delegate.getConfigUri(resourceUri);
+        return delegate && delegate.getConfigUri(resourceUri, sectionName);
     }
 
     protected _delegate: PreferenceProvider | undefined;

@@ -16,7 +16,7 @@
 
 import { DefaultUriLabelProviderContribution, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 

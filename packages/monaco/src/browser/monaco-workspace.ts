@@ -16,8 +16,8 @@
 
 /* eslint-disable no-null/no-null */
 
-import { URI as Uri } from 'vscode-uri';
-import { injectable, inject, postConstruct } from 'inversify';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
@@ -159,7 +159,7 @@ export class MonacoWorkspace {
     protected readonly suppressedOpenIfDirty: MonacoEditorModel[] = [];
 
     protected openEditorIfDirty(model: MonacoEditorModel): void {
-        if (this.suppressedOpenIfDirty.indexOf(model) !== -1) {
+        if (model.suppressOpenEditorWhenDirty || this.suppressedOpenIfDirty.indexOf(model) !== -1) {
             return;
         }
         if (model.dirty && MonacoEditor.findByDocument(this.editorManager, model).length === 0) {

@@ -229,6 +229,56 @@ declare module '@theia/plugin' {
         source?: string;
     }
 
+    // #region SCM validation
+
+    /**
+     * Represents the validation type of the Source Control input.
+     */
+    export enum SourceControlInputBoxValidationType {
+
+        /**
+         * Something not allowed by the rules of a language or other means.
+         */
+        Error = 0,
+
+        /**
+         * Something suspicious but allowed.
+         */
+        Warning = 1,
+
+        /**
+         * Something to inform about but not a problem.
+         */
+        Information = 2
+    }
+
+    export interface SourceControlInputBoxValidation {
+
+        /**
+         * The validation message to display.
+         */
+        readonly message: string;
+
+        /**
+         * The validation type.
+         */
+        readonly type: SourceControlInputBoxValidationType;
+    }
+
+    /**
+     * Represents the input box in the Source Control viewlet.
+     */
+    export interface SourceControlInputBox {
+
+        /**
+         * A validation function for the input box. It's possible to change
+         * the validation provider simply by setting this property to a different function.
+         */
+        validateInput?(value: string, cursorPosition: number): ProviderResult<SourceControlInputBoxValidation | undefined | null>;
+    }
+
+    // #endregion
+
     export interface SourceControl {
 
         /**
@@ -246,11 +296,6 @@ declare module '@theia/plugin' {
         source?: string;
         letter?: string;
         color?: ThemeColor;
-    }
-
-    export interface DecorationProvider {
-        onDidChangeDecorations: Event<undefined | Uri | Uri[]>;
-        provideDecoration(uri: Uri, token: CancellationToken): ProviderResult<DecorationData>;
     }
 
     // #region LogLevel: https://github.com/microsoft/vscode/issues/85992
@@ -281,10 +326,6 @@ declare module '@theia/plugin' {
     }
 
     // #endregion
-
-    export namespace window {
-        export function registerDecorationProvider(provider: DecorationProvider): Disposable;
-    }
 
     // #region Tree View
     // copied from https://github.com/microsoft/vscode/blob/3ea5c9ddbebd8ec68e3b821f9c39c3ec785fde97/src/vs/vscode.proposed.d.ts#L1447-L1476
@@ -501,6 +542,30 @@ declare module '@theia/plugin' {
         close?(fd: number): void | Thenable<void>;
         read?(fd: number, pos: number, data: Uint8Array, offset: number, length: number): number | Thenable<number>;
         write?(fd: number, pos: number, data: Uint8Array, offset: number, length: number): number | Thenable<number>;
+    }
+
+    // #endregion
+
+    // #region Custom editor move https://github.com/microsoft/vscode/issues/86146
+    // copied from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/vscode.proposed.d.ts#L986-L1007
+
+    // TODO: Also for custom editor
+
+    export interface CustomTextEditorProvider {
+
+        /**
+         * Handle when the underlying resource for a custom editor is renamed.
+         *
+         * This allows the webview for the editor be preserved throughout the rename. If this method is not implemented,
+         * Theia will destory the previous custom editor and create a replacement one.
+         *
+         * @param newDocument New text document to use for the custom editor.
+         * @param existingWebviewPanel Webview panel for the custom editor.
+         * @param token A cancellation token that indicates the result is no longer needed.
+         *
+         * @return Thenable indicating that the webview editor has been moved.
+         */
+        moveCustomTextEditor?(newDocument: TextDocument, existingWebviewPanel: WebviewPanel, token: CancellationToken): Thenable<void>;
     }
 
     // #endregion

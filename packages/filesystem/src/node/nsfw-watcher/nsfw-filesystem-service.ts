@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as nsfw from 'nsfw';
+import * as nsfw from '@theia/core/shared/nsfw';
 import { join } from 'path';
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
@@ -29,6 +29,7 @@ export interface NsfwWatcherOptions {
     ignored: IMinimatch[]
 }
 
+export const NsfwFileSystemWatcherServerOptions = Symbol('NsfwFileSystemWatcherServerOptions');
 export interface NsfwFileSystemWatcherServerOptions {
     verbose: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,7 +242,7 @@ export class NsfwWatcher {
         });
     }
 
-    protected handleNsfwEvents(events: nsfw.ChangeEvent[]): void {
+    protected handleNsfwEvents(events: nsfw.FileChangeEvent[]): void {
         // Only process events if someone is listening.
         if (this.isInUse()) {
             // This callback is async, but nsfw won't wait for it to finish before firing the next one.
@@ -422,11 +423,7 @@ export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
         let watcher = this.watchers.get(watcherKey);
         if (watcher === undefined) {
             const fsPath = FileUri.fsPath(uri);
-            const watcherOptions: NsfwWatcherOptions = {
-                ignored: resolvedOptions.ignored
-                    .map(pattern => new Minimatch(pattern, { dot: true })),
-            };
-            watcher = new NsfwWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
+            watcher = this.createWatcher(clientId, fsPath, resolvedOptions);
             watcher.whenDisposed.then(() => this.watchers.delete(watcherKey));
             this.watchers.set(watcherKey, watcher);
         } else {
@@ -436,6 +433,14 @@ export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
         this.watcherHandles.set(watcherId, { clientId, watcher });
         watcher.whenDisposed.then(() => this.watcherHandles.delete(watcherId));
         return watcherId;
+    }
+
+    protected createWatcher(clientId: number, fsPath: string, options: WatchOptions): NsfwWatcher {
+        const watcherOptions: NsfwWatcherOptions = {
+            ignored: options.ignored
+                .map(pattern => new Minimatch(pattern, { dot: true })),
+        };
+        return new NsfwWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
     }
 
     async unwatchFileChanges(watcherId: number): Promise<void> {

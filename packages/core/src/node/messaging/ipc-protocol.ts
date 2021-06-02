@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection } from 'vscode-ws-jsonrpc';
 
 const THEIA_PARENT_PID = 'THEIA_PARENT_PID';
 const THEIA_ENTRY_POINT = 'THEIA_ENTRY_POINT';

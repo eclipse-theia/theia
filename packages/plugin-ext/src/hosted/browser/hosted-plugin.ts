@@ -21,9 +21,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import debounce = require('lodash.debounce');
-import { UUID } from '@phosphor/coreutils';
-import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
@@ -59,9 +59,11 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
+import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
+import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -151,6 +153,9 @@ export class HostedPluginSupport {
     @inject(JsonSchemaStore)
     protected readonly jsonSchemaStore: JsonSchemaStore;
 
+    @inject(PluginCustomEditorRegistry)
+    protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
@@ -197,9 +202,10 @@ export class HostedPluginSupport {
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
+        this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
+            if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
 
@@ -483,22 +489,25 @@ export class HostedPluginSupport {
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(pluginId, host);
+        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 
-    private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
-        return new RPCProtocolImpl({
-            onMessage: this.watcher.onPostMessageEvent,
-            send: message => {
-                const wrappedMessage: any = {};
-                wrappedMessage['pluginID'] = pluginID;
-                wrappedMessage['content'] = message;
-                this.server.onMessage(JSON.stringify(wrappedMessage));
+    private createServerRpc(pluginHostId: string): RPCProtocol {
+        const emitter = new Emitter<string>();
+        this.watcher.onPostMessageEvent(received => {
+            if (pluginHostId === received.pluginHostId) {
+                emitter.fire(received.message);
             }
-        }, hostID);
+        });
+        return new RPCProtocolImpl({
+            onMessage: emitter.event,
+            send: message => {
+                this.server.onMessage(pluginHostId, message);
+            }
+        });
     }
 
     private async updateStoragePath(): Promise<void> {
@@ -554,6 +563,10 @@ export class HostedPluginSupport {
 
     async activateByCommand(commandId: string): Promise<void> {
         await this.activateByEvent(`onCommand:${commandId}`);
+    }
+
+    async activateByCustomEditor(viewType: string): Promise<void> {
+        await this.activateByEvent(`onCustomEditor:${viewType}`);
     }
 
     activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {
@@ -713,9 +726,16 @@ export class HostedPluginSupport {
         this.webviewRevivers.delete(viewType);
     }
 
-    protected preserveWebviews(): void {
+    protected async preserveWebviews(): Promise<void> {
         for (const webview of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
             this.preserveWebview(webview as WebviewWidget);
+        }
+        for (const webview of this.widgets.getWidgets(CustomEditorWidget.FACTORY_ID)) {
+            (webview as CustomEditorWidget).modelRef.dispose();
+            if ((webview as any)['closeWithoutSaving']) {
+                delete (webview as any)['closeWithoutSaving'];
+            }
+            this.customEditorRegistry.resolveWidget(webview as CustomEditorWidget);
         }
     }
 

@@ -18,9 +18,9 @@
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DisposableCollection, deepClone, Disposable, } from '@theia/core/lib/common';
-import { TextDocumentSaveReason } from 'vscode-languageserver-protocol';
+import { TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
@@ -41,6 +41,7 @@ import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -66,6 +67,9 @@ export class MonacoEditorProvider {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(FileSystemPreferences)
+    protected readonly filePreferences: FileSystemPreferences;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -283,6 +287,7 @@ export class MonacoEditorProvider {
         const options = this.createOptions(this.preferencePrefixes, model.uri, model.languageId);
         options.model = model.textEditorModel;
         options.readOnly = model.readOnly;
+        options.lineNumbersMinChars = model.lineNumbersMinChars;
         return options;
     }
     protected updateMonacoEditorOptions(editor: MonacoEditor, event?: EditorPreferenceChange): void {
@@ -319,14 +324,17 @@ export class MonacoEditorProvider {
         const overrideIdentifier = editor.document.languageId;
         const uri = editor.uri.toString();
         const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!;
-        if (!formatOnSave) {
-            return [];
+        if (formatOnSave) {
+            const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
+            await Promise.race([
+                new Promise((_, reject) => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
+                editor.runAction('editor.action.formatDocument')
+            ]);
         }
-        const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
-        await Promise.race([
-            new Promise((_, reject) => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
-            editor.runAction('editor.action.formatDocument')
-        ]);
+        const shouldRemoveWhiteSpace = this.filePreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier }, undefined, uri);
+        if (shouldRemoveWhiteSpace) {
+            await editor.runAction('editor.action.trimTrailingWhitespace');
+        }
         return [];
     }
 

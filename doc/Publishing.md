@@ -22,6 +22,24 @@ It's good to give a heads-up to the Theia developers some hours before a release
 Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
 
 
+## Pre-Release Steps
+
+- Ensure that the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) is updated and merged for the release.
+  - The `changelog` should reflect updates included in the release:
+    - Notable features, improvements and bug fixes.
+    - Any possible breaking changes.
+  - The `changelog` should follow the format of previous releases:
+    - Include the version, and date.
+    - Include a link to the appropriate milestone.
+    - Include all breaking changes in a separate section.
+    - Prefix entries by their most appropriate extension name (ex: `[core]`).
+    - Entries should include a link to their corresponding pull-request.
+    - Entries should be in alphabetical order.
+    - Entries should be in the past tense (ex: 'Added support...').
+- Ensure that merged pull-requests for the given release are added to the corresponding release [milestone](https://github.com/eclipse-theia/theia/milestones):
+  - Generally, milestones are automatically added on merge however not for forks. It is therefore important to manually add such contributions to the milestone for the time being.
+
+
 ## Pre-Publishing Steps
 
 Before publishing it's important to make sure that a functional Theia application can be made from the latest `next` version of the platform. Else we will have problems with "latest" after publishing.
@@ -142,3 +160,13 @@ Updating the `yarn.lock` helps identify potential problems with our dependency v
 To successfully complete a `yarn upgrade`, one must:
 - perform `yarn upgrade` at the root of the repository.
 - fix any compilation errors, typing issues, and failing tests that may be introduced.
+
+### Update Milestones
+
+* Close current release [milestone](https://github.com/eclipse-theia/theia/milestones).
+* Create the next two milestones in the case they do not already exist. Generally, the release is performed on the last Thursday of the month, but there may be exceptions (bug fix release, holidays, etc.)
+
+### Update Roadmap
+
+* If the current release is the last in a quarter, ask the team to update the [roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) of the past quarter (close, remove or move items)
+* If the current release is the second in a quarter, create [roadmap template](https://github.com/eclipse-theia/theia/wiki/Roadmap) for the next quarter, ask the team to contribute to it and add it to the agenda of the Theia dev meeting

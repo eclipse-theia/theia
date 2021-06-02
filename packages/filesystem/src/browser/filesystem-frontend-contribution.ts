@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { MaybePromise, SelectionService, isCancelled } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import {

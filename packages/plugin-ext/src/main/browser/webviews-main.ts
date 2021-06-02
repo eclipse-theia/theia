@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import debounce = require('lodash.debounce');
-import { URI } from 'vscode-uri';
-import { interfaces } from 'inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { URI } from '@theia/core/shared/vscode-uri';
+import { interfaces } from '@theia/core/shared/inversify';
 import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
@@ -25,10 +25,11 @@ import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { JSONExt } from '@phosphor/coreutils/lib/json';
+import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
 import { Mutable } from '@theia/core/lib/common/types';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { IconUrl } from '../../common/plugin-protocol';
+import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
@@ -75,7 +76,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.addOrReattachWidget(view, showOptions);
     }
 
-    protected hookWebview(view: WebviewWidget): void {
+    hookWebview(view: WebviewWidget): void {
         const handle = view.identifier.id;
         this.toDispose.push(view.onDidChangeVisibility(() => this.updateViewState(view)));
         this.toDispose.push(view.onMessage(data => this.proxy.$onMessage(handle, data)));
@@ -87,7 +88,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         });
     }
 
-    private addOrReattachWidget(widget: WebviewWidget, showOptions: WebviewPanelShowOptions): void {
+    addOrReattachWidget(widget: WebviewWidget, showOptions: WebviewPanelShowOptions): void {
         const widgetOptions: ApplicationShell.WidgetOptions = { area: showOptions.area ? showOptions.area : 'main' };
 
         let mode = 'open-to-right';
@@ -217,7 +218,10 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     protected readonly updateViewStates = debounce(() => {
-        for (const widget of this.widgetManager.getWidgets(WebviewWidget.FACTORY_ID)) {
+        const widgets = this.widgetManager.getWidgets(WebviewWidget.FACTORY_ID);
+        const customEditors = this.widgetManager.getWidgets(CustomEditorWidget.FACTORY_ID);
+
+        for (const widget of widgets.concat(customEditors)) {
             if (widget instanceof WebviewWidget) {
                 this.updateViewState(widget);
             }
@@ -251,7 +255,9 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     private async tryGetWebview(id: string): Promise<WebviewWidget | undefined> {
-        return this.widgetManager.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
+        const webview = await this.widgetManager.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id })
+            || await this.widgetManager.getWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
+        return webview;
     }
 
 }

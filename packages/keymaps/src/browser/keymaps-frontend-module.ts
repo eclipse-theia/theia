@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { KeymapsService } from './keymaps-service';
 import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';

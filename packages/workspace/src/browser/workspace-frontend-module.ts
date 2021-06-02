@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import {
@@ -44,6 +44,8 @@ import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { DiffService } from './diff-service';
+import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -91,4 +93,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(QuickOpenWorkspace).toSelf().inSingletonScope();
 
     bind(WorkspaceUtils).toSelf().inSingletonScope();
+
+    bind(WorkspaceSchemaUpdater).toSelf().inSingletonScope();
+    bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
 });

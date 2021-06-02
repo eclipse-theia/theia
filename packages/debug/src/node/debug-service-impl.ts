@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugService, DebuggerDescription } from '../common/debug-service';
 
@@ -83,7 +83,7 @@ export class DebugServiceImpl implements DebugService {
                     try {
                         await this.doStop(session);
                     } catch (e) {
-                        console.error(e);
+                        console.error('terminateDebugSession failed:', e);
                     }
                 })());
             }

@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { UUID } from '@phosphor/coreutils/lib/uuid';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { Terminal, TerminalOptions, PseudoTerminalOptions } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -79,6 +79,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return this.obtainTerminal(id, options.name || 'Terminal');
     }
 
+    attachPtyToTerminal(terminalId: number, pty: theia.Pseudoterminal): void {
+        this._pseudoTerminals.set(terminalId.toString(), new PseudoTerminal(terminalId, this.proxy, pty, true));
+    }
+
     protected obtainTerminal(id: string, name: string): TerminalExtImpl {
         let terminal = this._terminals.get(id);
         if (!terminal) {
@@ -118,7 +122,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
     }
 
-    $terminalOpened(id: string, processId: number, cols: number, rows: number): void {
+    $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void {
         const terminal = this._terminals.get(id);
         if (terminal) {
             // resolve for existing clients
@@ -127,7 +131,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             terminal.deferredProcessId = new Deferred<number>();
             terminal.deferredProcessId.resolve(processId);
         }
-        const pseudoTerminal = this._pseudoTerminals.get(id);
+        const pseudoTerminal = this._pseudoTerminals.get(terminalId.toString());
         if (pseudoTerminal) {
             pseudoTerminal.emitOnOpen(cols, rows);
         }
@@ -292,22 +296,36 @@ export class TerminalExtImpl implements Terminal {
 
 export class PseudoTerminal {
     constructor(
-        id: string,
+        id: string | number,
         private readonly proxy: TerminalServiceMain,
-        private readonly pseudoTerminal: theia.Pseudoterminal
+        private readonly pseudoTerminal: theia.Pseudoterminal,
+        waitOnExit?: boolean | string
     ) {
+
         pseudoTerminal.onDidWrite(data => {
-            this.proxy.$write(id, data);
+            if (typeof id === 'string') {
+                this.proxy.$write(id, data);
+            } else {
+                this.proxy.$writeByTerminalId(id, data);
+            }
         });
         if (pseudoTerminal.onDidClose) {
-            pseudoTerminal.onDidClose(() => {
-                this.proxy.$dispose(id);
+            pseudoTerminal.onDidClose((e: number | void = undefined) => {
+                if (typeof id === 'string') {
+                    this.proxy.$dispose(id);
+                } else {
+                    this.proxy.$disposeByTerminalId(id, waitOnExit);
+                }
             });
         }
         if (pseudoTerminal.onDidOverrideDimensions) {
             pseudoTerminal.onDidOverrideDimensions(e => {
                 if (e) {
-                    this.proxy.$resize(id, e.columns, e.rows);
+                    if (typeof id === 'string') {
+                        this.proxy.$resize(id, e.columns, e.rows);
+                    } else {
+                        this.proxy.$resizeByTerminalId(id, e.columns, e.rows);
+                    }
                 }
             });
         }
