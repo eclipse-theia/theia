@@ -17,20 +17,25 @@
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalSpawnOptions } from '@theia/process/lib/node';
-import { RemoteTerminalProxy, RemoteTerminal, RemoteTerminalServer, REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE } from '../common/terminal-protocol';
+import { v4 as uuid4 } from 'uuid';
+// eslint-disable-next-line max-len
+import { RemoteTerminalAttachOptions, RemoteTerminalConnectionId, RemoteTerminalOptions, RemoteTerminalProxy, RemoteTerminalServer, REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE } from '../common/terminal-protocol';
+import { RemoteTerminal, RemoteTerminalHandle } from './remote-terminal';
 
 export const RemoteTerminalService = Symbol('RemoteTerminalService');
 export interface RemoteTerminalService {
 
-    create(): Promise<RemoteTerminal>
+    create(): Promise<RemoteTerminalHandle>;
 
-    attach(terminalId: number): Promise<RemoteTerminal>
+    spawn(handle: RemoteTerminalHandle, options: RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminal>
+
+    // fork(handle: RemoteTerminalHandle, options: RemoteTerminalOptions & TerminalForkOptions): Promise<RemoteTerminal>
+
+    attach(handle: RemoteTerminalHandle, options: RemoteTerminalAttachOptions): Promise<RemoteTerminal>
 }
 
 @injectable()
-export class DefaultRemoteTerminalService implements RemoteTerminalService {
-
-    protected sequence = 0;
+export class RemoteTerminalServiceImpl implements RemoteTerminalService {
 
     @inject(RemoteTerminalServer)
     protected remoteTerminalServer: RemoteTerminalServer;
@@ -38,50 +43,43 @@ export class DefaultRemoteTerminalService implements RemoteTerminalService {
     @inject(WebSocketConnectionProvider)
     protected connectionProvider: WebSocketConnectionProvider;
 
-    async create(options?: TerminalSpawnOptions): Promise<RemoteTerminal> {
-        const id = this.getNextId();
-        const remote = await this.createRemoteTerminalProxy(id);
-        options = options ?? { executable: 'echo', arguments: ['hello', 'world'] };
-        const { terminalId, info } = await this.remoteTerminalServer.create(id, options);
+    async create(): Promise<RemoteTerminalHandle> {
+        const uuid = this.getRemoteTerminalConnectionId();
+        const path = this.getRemoteTerminalPath(uuid);
+        const remote = this.connectionProvider.createProxy<RemoteTerminalProxy>(path);
         return {
-            _id: id,
-            terminalId,
-            info,
+            uuid,
             remote,
-            dispose(this: RemoteTerminal): void {
-                this.remote.dispose();
+            dispose(): void {
+                remote.dispose();
             }
         };
     }
 
-    async attach(terminalId: number): Promise<RemoteTerminal> {
-        const id = this.getNextId();
-        const remote = await this.createRemoteTerminalProxy(id);
-        const { info } = await this.remoteTerminalServer.attach(id, terminalId);
+    async spawn(handle: RemoteTerminalHandle, options: RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminal> {
+        const { terminalId, info } = await this.remoteTerminalServer.spawn(handle.uuid, options);
         return {
-            _id: id,
             terminalId,
+            handle,
             info,
-            remote,
-            dispose(this: RemoteTerminal): void {
-                this.remote.dispose();
-            }
         };
     }
 
-    protected getNextId(): number {
-        return this.sequence++;
+    async attach(handle: RemoteTerminalHandle, options: RemoteTerminalAttachOptions): Promise<RemoteTerminal> {
+        const { info } = await this.remoteTerminalServer.attach(handle.uuid, options);
+        return {
+            terminalId: options.terminalId,
+            handle,
+            info,
+        };
     }
 
-    protected async createRemoteTerminalProxy(id: number): Promise<RemoteTerminalProxy> {
-        const path = this.getRemoteTerminalPath(id);
-        const terminal = this.connectionProvider.createProxy<RemoteTerminalProxy>(path);
-        await new Promise(resolve => terminal.onDidOpenConnection(resolve));
-        return terminal;
+    protected getRemoteTerminalConnectionId(): RemoteTerminalConnectionId {
+        return uuid4();
     }
 
-    protected getRemoteTerminalPath(id: number): string {
+    protected getRemoteTerminalPath(uuid: RemoteTerminalConnectionId): string {
         return REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE
-            .replace(':id', id.toString());
+            .replace(':uuid', uuid.toString());
     }
 }

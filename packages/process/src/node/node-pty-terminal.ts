@@ -30,7 +30,6 @@ export class NodePtyTerminal implements Terminal {
     protected onCloseEmitter = new Emitter<TerminalExitEvent>();
 
     constructor(
-        public _id: number,
         public info: TerminalProcessInfo,
         /** Successfuly spawned node-pty pseudo-terminal. */
         protected pty: IPty,

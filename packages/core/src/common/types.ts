@@ -67,3 +67,10 @@ export namespace Prioritizeable {
         return p2.priority - p.priority;
     }
 }
+
+/**
+ * Objects implementing this interface can be sent over the wire using `JSON.stringify`.
+ */
+export interface ISerializable {
+    [key: string]: MaybeArray<number | string | null | undefined | ISerializable>
+}

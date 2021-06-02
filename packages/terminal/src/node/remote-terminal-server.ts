@@ -15,126 +15,77 @@
  ********************************************************************************/
 
 import { Disposable } from '@theia/core';
-import { MessagingService } from '@theia/core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
-import { Terminal, TerminalFactory, TerminalProcessInfo, TerminalSpawnOptions } from '@theia/process/lib/node';
-import { TerminalManager } from '@theia/process/lib/node';
-import { Readable } from 'stream';
-import { RemoteTerminalServer, REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE } from '../common/terminal-protocol';
+import { Terminal, TerminalFactory, TerminalSpawnOptions } from '@theia/process/lib/node';
+// eslint-disable-next-line max-len
+import { RemoteTerminalAttachOptions, RemoteTerminalAttachResponse, RemoteTerminalGetProcessInfoResponse, RemoteTerminalGetResponse, RemoteTerminalOptions, RemoteTerminalServer, RemoteTerminalSpawnResponse } from '../common/terminal-protocol';
+import { RemoteTerminalConnectionHandler } from './remote-terminal-connection-handler';
+import { GlobalTerminalRegistry, TerminalRegistry } from './terminal-registry';
 
 @injectable()
-export class RemoteTerminalServerImpl implements RemoteTerminalServer, MessagingService.Contribution, Disposable {
+export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposable {
 
-    protected connections = new Map<number, RemoteTerminalConnection>();
+    @inject(RemoteTerminalConnectionHandler)
+    protected remoteTerminalConnectionHandler: RemoteTerminalConnectionHandler;
 
-    @inject(TerminalManager)
-    protected terminalManager: TerminalManager;
+    @inject(GlobalTerminalRegistry)
+    protected globalTerminalRegistry: TerminalRegistry;
+
+    @inject(TerminalRegistry)
+    protected localTerminalRegistry: TerminalRegistry;
 
     @inject(TerminalFactory)
     protected terminalFactory: TerminalFactory;
 
-    async create(id: number, options: TerminalSpawnOptions): Promise<{ terminalId: number, info: TerminalProcessInfo }> {
-        const rtc = this.getRemoteTerminalConnection(id);
+    async spawn(uuid: string, options: RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminalSpawnResponse> {
+        const rtc = this.remoteTerminalConnectionHandler.get(uuid);
         const terminal = await this.terminalFactory.spawn(options);
+        const terminalId = options.persist
+            ? this.globalTerminalRegistry.register(terminal) // persist globally
+            : this.localTerminalRegistry.register(terminal); // only keep for the current client
         rtc.attach(terminal);
         return {
-            terminalId: terminal._id,
+            terminalId,
             info: terminal.info
         };
     }
 
-    async attach(id: number, terminalId: number): Promise<{ info: TerminalProcessInfo }> {
-        const rtc = this.getRemoteTerminalConnection(id);
-        const terminal = this.getTerminal(terminalId);
+    async attach(uuid: string, options: RemoteTerminalAttachOptions): Promise<RemoteTerminalAttachResponse> {
+        const rtc = this.remoteTerminalConnectionHandler.get(uuid);
+        const terminal = this.getTerminal(options.terminalId);
         rtc.attach(terminal);
         return {
             info: terminal.info
         };
     }
 
-    configure(service: MessagingService): void {
-        service.listen(REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE, (params, connection) => {
-            const id = parseInt(params.id, 10);
-            this.createRemoteTerminalConnection(id, connection);
-        });
+    async getTerminals(): Promise<RemoteTerminalGetResponse[]> {
+        const terminals: RemoteTerminalGetResponse[] = [];
+        for (const terminalId of this.globalTerminalRegistry.ids()) {
+            terminals.push({ terminalId, persistent: true });
+        }
+        for (const terminalId of this.localTerminalRegistry.ids()) {
+            terminals.push({ terminalId, persistent: false });
+        }
+        return terminals;
+    }
+
+    async getTerminalProcessInfo(terminalId: number): Promise<RemoteTerminalGetProcessInfoResponse> {
+        const { info } = this.getTerminal(terminalId);
+        return { info };
     }
 
     dispose(): void {
-        for (const rtc of this.connections.values()) {
-            this.disposeRemoteTerminalConnection(rtc);
+        for (const terminal of this.localTerminalRegistry.terminals()) {
+            terminal.kill();
         }
-    }
-
-    protected createRemoteTerminalConnection(id: number, connection: MessageConnection): RemoteTerminalConnection {
-        if (this.connections.has(id)) {
-            throw new Error(`remote terminal already exists id: ${id}`);
-        }
-        const rtc = new RemoteTerminalConnection(id, connection);
-        this.connections.set(id, rtc);
-        connection.onDispose(() => this.disposeRemoteTerminalConnection(rtc));
-        connection.onClose(() => this.disposeRemoteTerminalConnection(rtc));
-        return rtc;
     }
 
     protected getTerminal(terminalId: number): Terminal {
-        const terminal = this.terminalManager.get(terminalId);
+        const terminal = this.localTerminalRegistry.get(terminalId) ?? this.globalTerminalRegistry.get(terminalId);
         if (terminal === undefined) {
             throw new Error(`terminal not found terminalId: ${terminalId}`);
         }
         return terminal;
-    }
-
-    protected getRemoteTerminalConnection(id: number): RemoteTerminalConnection {
-        const rtc = this.connections.get(id);
-        if (rtc === undefined) {
-            throw new Error(`unknown remote terminal connection id: ${id}`);
-        }
-        if (rtc.isAttached) {
-            throw new Error(`remote terminal connection is already attached id: ${id}`);
-        }
-        return rtc;
-    }
-
-    protected disposeRemoteTerminalConnection(rtc: RemoteTerminalConnection): void {
-        if (this.connections.delete(rtc.id)) {
-            rtc.dispose();
-        }
-    }
-}
-
-/**
- * Represents the connection opened from the client.
- *
- * Instances
- */
-export class RemoteTerminalConnection implements Disposable {
-
-    protected terminal?: Terminal;
-    protected output?: Readable & Disposable;
-
-    constructor(
-        readonly id: number,
-        readonly connection: MessageConnection
-    ) { }
-
-    get isAttached(): boolean {
-        return this.terminal !== undefined;
-    }
-
-    attach(terminal: Terminal): void {
-        this.terminal = terminal;
-        this.output = terminal.getOutputStream();
-        this.output.on('data', data => this.connection.sendNotification('onData', data));
-        this.terminal.onExit(event => this.connection.sendNotification('onExit', event));
-        this.terminal.onClose(event => this.connection.sendNotification('onClose', event));
-        this.connection.onRequest('getExitStatus', () => terminal.exitStatus);
-        this.connection.onRequest('write', data => { terminal.write(data); });
-        this.connection.onRequest('kill', () => { terminal.kill(); });
-    }
-
-    dispose(): void {
-        this.output?.dispose();
-        this.connection.dispose();
     }
 }

@@ -67,11 +67,6 @@ export interface TerminalProcessInfo {
 export interface Terminal {
 
     /**
-     * Internal tracking id, this is not the OS PID.
-     */
-    readonly _id: number
-
-    /**
      * Info about the running underlying process.
      */
     readonly info: TerminalProcessInfo
@@ -107,8 +102,6 @@ export interface Terminal {
 
     /**
      * Get a `Readable` stream that replays the output from the beginning.
-     *
-     * Terminal output is usually buffered/stored in order to read it back later.
      */
     getOutputStream(): Readable & Disposable
 

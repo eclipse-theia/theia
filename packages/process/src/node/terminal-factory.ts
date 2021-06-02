@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// import { Serializable } from '@theia/core';
 import type { Terminal } from './terminal';
 
-export interface TerminalCommonOptions {
+export interface TerminalOptions /* extends Serializable */ {
 
     /**
      * Working directory to spawn the process in.
@@ -45,7 +46,7 @@ export interface TerminalCommonOptions {
 /**
  * Options used to spawn processes within `Terminal` instances.
  */
-export interface TerminalSpawnOptions extends TerminalCommonOptions {
+export interface TerminalSpawnOptions extends TerminalOptions {
 
     /**
      * The executable to run within the terminal.
@@ -60,63 +61,43 @@ export interface TerminalSpawnOptions extends TerminalCommonOptions {
     arguments?: string[]
 }
 
-// /**
-//  * Options used to fork scripts within `Terminal` instances.
-//  */
-// export interface TerminalForkOptions extends TerminalCommonOptions {
+/**
+ * Options used to fork processes within `Terminal` instances.
+ */
+export interface TerminalForkOptions extends TerminalOptions {
 
-//     /**
-//      * Path of the JavaScript module to re-execute using `execPath`.
-//      */
-//     modulePath: string
+    /**
+     * The JavaScript script to run within the terminal.
+     *
+     * By default it will re-use the current Node runtime to fork the script as well as
+     * copy over `process.execArgv` excluding any `--inspect[-brk]=...` arg.
+     */
+    modulePath: string
 
-//     /**
-//      * Defaults to `[]`.
-//      */
-//     arguments?: string[]
+    /**
+     * Defaults to `[]`.
+     */
+    arguments?: string[]
 
-//     /**
-//      * Path of the JavaScript runtime to use to run `modulePath`.
-//      *
-//      * Defaults to the current `execPath`.
-//      */
-//     execPath?: string
+    /**
+     * Path to the Node runtime to use.
+     *
+     * Defaults to `process.execPath`.
+     */
+    execPath?: string
 
-//     /**
-//      * Arguments to pass to `execPath` when running `modulePath`.
-//      *
-//      * Defaults to `[]`.
-//      */
-//     execArgv?: string[]
-// }
-
-// /**
-//  * Options used to spawn a command through a shell.
-//  */
-// export interface TerminalShellOptions extends TerminalCommonOptions {
-
-//     /**
-//      * Path or name of the shell to use.
-//      */
-//     shellPath: string
-
-//     /**
-//      * Arguments to pass to the shell in order to invoke `commandLine`.
-//      */
-//     shellArgv: string[]
-
-//     /**
-//      * Command line to run through the shell.
-//      */
-//     commandLine: string
-// }
+    /**
+     * Arguments to pass to the `execPath` executable.
+     *
+     * Defaults to `process.execArgv` without `--inspect[-brk]=...` arguments.
+     */
+    execArgv?: string[]
+}
 
 export const TerminalFactory = Symbol('TerminalFactory');
 export interface TerminalFactory {
 
     spawn(options: TerminalSpawnOptions): Promise<Terminal>
 
-    // fork(options: TerminalForkOptions): Promise<Terminal>
-
-    // shell(options: TerminalShellOptions): Promise<Terminal>
+    fork(options: TerminalForkOptions): Promise<Terminal>
 }

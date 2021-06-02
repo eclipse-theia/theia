@@ -14,46 +14,69 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Event, Disposable } from '@theia/core';
-import { TerminalExitEvent, TerminalDataEvent, TerminalSpawnOptions } from '@theia/process/lib/node';
-import { TerminalProcessInfo } from './base-terminal-protocol';
+import { Disposable, Event } from '@theia/core';
+import { TerminalDataEvent, TerminalExitEvent, TerminalProcessInfo, TerminalSpawnOptions } from '@theia/process/lib/node';
 
 export const REMOTE_TERMINAL_PATH = '/services/terminals';
-export const REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE = `${REMOTE_TERMINAL_PATH}/connection/new/:id`;
+export const REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE = `${REMOTE_TERMINAL_PATH}/connection/new/:uuid`;
+
+export type RemoteTerminalConnectionId = string;
+
+export interface RemoteTerminalOptions /* extends Serializable */ {
+
+    /**
+     * Keep this process running even if the associate frontend disconnects.
+     *
+     * This is useful for things like persisting opened shells in the UI after reloading a browser tab.
+     *
+     * Defaults to `false`.
+     */
+    persist?: boolean
+}
+
+export interface RemoteTerminalAttachOptions /* extends Serializable */ {
+
+    /**
+     * TODO
+     */
+    terminalId: number
+}
 
 export const RemoteTerminalServer = Symbol('RemoteTerminalServer');
 /**
  * In order to create or attach, you first need to initialize a connection using
- * `REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE` and specify an arbitrary `id`.
+ * `REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE` and specify an arbitrary but unique `uuid`.
  *
  * `Terminal` events will be passed through this connection after you call
- * `create(id, ...)` or `attach(id, ...)`.
+ * `create(uuid, ...)` or `attach(uuid, ...)`.
  */
 export interface RemoteTerminalServer {
 
-    create(id: number, options: TerminalSpawnOptions): Promise<{ terminalId: number, info: TerminalProcessInfo }>
+    spawn(uuid: RemoteTerminalConnectionId, options: RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminalSpawnResponse>
 
-    attach(id: number, terminalId: number): Promise<{ info: TerminalProcessInfo }>
+    attach(uuid: RemoteTerminalConnectionId, options: RemoteTerminalAttachOptions): Promise<RemoteTerminalAttachResponse>
+
+    getTerminals(): Promise<RemoteTerminalGetResponse[]>
+
+    getTerminalProcessInfo(terminalId: number): Promise<RemoteTerminalGetProcessInfoResponse>
 }
 
-/**
- * Handle to a `Terminal` running remotely.
- */
-export interface RemoteTerminal extends Disposable {
+export interface RemoteTerminalSpawnResponse {
+    terminalId: number
+    info: TerminalProcessInfo
+}
 
-    /**
-     * Internal tracking id.
-     */
-    readonly _id: number
+export interface RemoteTerminalAttachResponse {
+    info: TerminalProcessInfo
+}
 
-    /**
-     * Id of the underlying `Terminal` as registered in the `TerminalManager`.
-     */
-    readonly terminalId: number
+export interface RemoteTerminalGetResponse {
+    terminalId: number
+    persistent: boolean
+}
 
-    readonly info: TerminalProcessInfo
-
-    readonly remote: RemoteTerminalProxy;
+export interface RemoteTerminalGetProcessInfoResponse {
+    info: TerminalProcessInfo
 }
 
 export interface RemoteTerminalProxy extends Disposable {
@@ -64,7 +87,7 @@ export interface RemoteTerminalProxy extends Disposable {
 
     readonly onClose: Event<TerminalExitEvent>
 
-    getExitStatus(): Promise<TerminalExitEvent | undefined>;
+    getExitStatus(): Promise<TerminalExitEvent | undefined>
 
     write(data: string): Promise<void>
 

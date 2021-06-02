@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { IPty, spawn } from '@theia/node-pty';
+import { IPty, spawn as spawnNodePty } from '@theia/node-pty';
 import { NodePtyTerminal } from './node-pty-terminal';
 import { Terminal, TerminalProcessInfo } from './terminal';
 import { TerminalBufferFactory } from './terminal-buffer';
-import { TerminalCommonOptions, TerminalFactory, /* TerminalForkOptions, TerminalShellOptions, */ TerminalSpawnOptions } from './terminal-factory';
+import { TerminalOptions, TerminalFactory, TerminalForkOptions, /* TerminalShellOptions, */ TerminalSpawnOptions } from './terminal-factory';
 import { TerminalManager } from './terminal-manager';
 
 @injectable()
@@ -33,7 +33,7 @@ export class NodePtyTerminalFactory implements TerminalFactory {
 
     async spawn(options: TerminalSpawnOptions): Promise<Terminal> {
         const resolved = this.resolveSpawnOptions(options);
-        const pty = spawn(resolved.executable, resolved.arguments, {
+        const pty = spawnNodePty(resolved.executable, resolved.arguments, {
             cwd: resolved.cwd,
             env: resolved.env,
             cols: resolved.size.cols,
@@ -41,21 +41,18 @@ export class NodePtyTerminalFactory implements TerminalFactory {
         });
         const info = this.getTerminalProcessInfo(pty, resolved);
         const buffer = this.terminalBufferFactory();
-        const terminal = this.terminalManager.register(
-            id => new NodePtyTerminal(id, info, pty, buffer)
-        );
-        return terminal;
+        return new NodePtyTerminal(info, pty, buffer);
     }
 
-    // async fork(options: TerminalForkOptions): Promise<Terminal> {
-    //     const resolved = this.resolveForkOptions(options);
-    //     return this.spawn({
-    //         executable: resolved.execPath,
-    //         arguments: [...resolved.execArgv, resolved.modulePath, ...resolved.arguments],
-    //         cwd: resolved.cwd,
-    //         env: resolved.env,
-    //     });
-    // }
+    async fork(options: TerminalForkOptions): Promise<Terminal> {
+        const resolved = this.resolveForkOptions(options);
+        return this.spawn({
+            executable: resolved.execPath,
+            arguments: [...resolved.execArgv, resolved.modulePath, ...resolved.arguments],
+            cwd: resolved.cwd,
+            env: resolved.env,
+        });
+    }
 
     // async shell(options: TerminalShellOptions): Promise<Terminal> {
     //     const resolved = this.resolveShellOptions(options);
@@ -75,15 +72,15 @@ export class NodePtyTerminalFactory implements TerminalFactory {
         };
     }
 
-    // protected resolveForkOptions(options: TerminalForkOptions): Required<TerminalForkOptions> {
-    //     return {
-    //         modulePath: options.modulePath,
-    //         arguments: options.arguments ?? [],
-    //         execPath: options.execPath ?? process.execPath,
-    //         execArgv: options.execArgv ?? this.getCurrentExecArgv(),
-    //         ...this.resolveCommonOptions(options),
-    //     };
-    // }
+    protected resolveForkOptions(options: TerminalForkOptions): Required<TerminalForkOptions> {
+        return {
+            modulePath: options.modulePath,
+            arguments: options.arguments ?? [],
+            execPath: options.execPath ?? process.execPath,
+            execArgv: options.execArgv ?? this.getCurrentExecArgv(),
+            ...this.resolveCommonOptions(options),
+        };
+    }
 
     // protected resolveShellOptions(options: TerminalShellOptions): Required<TerminalShellOptions> {
     //     return {
@@ -94,7 +91,7 @@ export class NodePtyTerminalFactory implements TerminalFactory {
     //     };
     // }
 
-    protected resolveCommonOptions(options: TerminalCommonOptions): Required<TerminalCommonOptions> {
+    protected resolveCommonOptions(options: TerminalOptions): Required<TerminalOptions> {
         return {
             cwd: options.cwd ?? process.cwd(),
             env: options.env ?? this.getCurrentEnv(),
@@ -102,12 +99,24 @@ export class NodePtyTerminalFactory implements TerminalFactory {
         };
     }
 
-    // /**
-    //  * Remove any --inspect(-brk) parameter.
-    //  */
-    // protected getCurrentExecArgv(): string[] {
-    //     return process.execArgv.filter(argv => !/^--inspect(-brk?)(=|$)/.test(argv));
-    // }
+    /**
+     * Remove any `--inspect[-brk][=...]` parameter.
+     */
+    protected getCurrentExecArgv(): string[] {
+        const execArgv: string[] = [];
+        for (let i = 0; i < process.execArgv.length; i += 1) {
+            const argv = process.execArgv[i];
+            const match = argv.match(/^--inspect(-brk?)(=|$)/);
+            if (match) {
+                if (match[2] === '') {
+                    i += 1; // offset to skip next argv
+                }
+                continue;
+            }
+            execArgv.push(argv);
+        }
+        return execArgv;
+    }
 
     /**
      * Sanitizes the current environment by removing any empty or undefined value.
