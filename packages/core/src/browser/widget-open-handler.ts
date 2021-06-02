@@ -38,7 +38,16 @@ export interface WidgetOpenerOptions extends OpenerOptions {
      */
     widgetOptions?: ApplicationShell.WidgetOptions;
 }
-
+/**
+ * `WidgetDoOpenerOptions` define serializable generic options used by the {@link WidgetOpenHandler}.
+ */
+export interface WidgetDoOpenerOptions extends WidgetOpenerOptions {
+    /**
+     * Specify whether the widget has been already created or not.
+     * By default is false.
+     */
+    widgetAlreadyCreated?: boolean;
+}
 /**
  * Generic base class for {@link OpenHandler}s that are opening a widget for a given {@link URI}.
  */
@@ -86,17 +95,17 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
      * @returns promise of the widget that resolves when the widget has been opened.
      */
     async open(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
-        const widgetExists = this.widgetExists(uri, options);
-        const widget = widgetExists ? (await this.getWidget(uri, options))! : await this.createWidget(uri, options);
-        await this.doOpen(widget, widgetExists, options);
+        const widgetAlreadyCreated = this.widgetExists(uri, options);
+        const widget = widgetAlreadyCreated ? (await this.getWidget(uri, options))! : await this.createWidget(uri, options);
+        await this.doOpen(widget, { ...options, widgetAlreadyCreated });
         return widget;
     }
-    protected async doOpen(widget: W, widgetExists: boolean, options?: WidgetOpenerOptions): Promise<void> {
+    protected async doOpen(widget: W, options?: WidgetDoOpenerOptions): Promise<void> {
         const op: WidgetOpenerOptions = {
             mode: 'activate',
             ...options
         };
-        if (!widget.isAttached && !widgetExists) {
+        if (!widget.isAttached && !options?.widgetAlreadyCreated) {
             this.shell.addWidget(widget, op.widgetOptions || { area: 'main' });
         }
         if (op.mode === 'activate') {
