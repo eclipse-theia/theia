@@ -54,9 +54,10 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     doUpdateRows(): void {
         this.rows = new Map();
+        let index = 0;
         for (const [id, nodeRow] of this.model.currentRows.entries()) {
             if (nodeRow.visibleChildren > 0 && (ExpandableTreeNode.is(nodeRow.node) || ExpandableTreeNode.isExpanded(nodeRow.node.parent))) {
-                this.rows.set(id, nodeRow);
+                this.rows.set(id, { ...nodeRow, index: index++ });
             }
         }
         this.updateScrollToRow();
