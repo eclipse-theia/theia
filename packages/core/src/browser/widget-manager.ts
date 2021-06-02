@@ -243,7 +243,7 @@ export class WidgetManager {
      */
     widgetExists(factoryId: string, options?: any): boolean {
         const key = this.toKey({ factoryId, options });
-        return this.widgetPromises.has(key) || this.pendingWidgetPromises.has(key);
+        return !!this.doGetWidget(key);
     }
 
     /**
