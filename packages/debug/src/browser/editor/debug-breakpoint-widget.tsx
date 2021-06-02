@@ -28,7 +28,7 @@ import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
-import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
+import { provideSuggestionItems, CompletionOptions, CompletionItemModel } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
@@ -107,50 +107,76 @@ export class DebugBreakpointWidget implements Disposable {
         inputNode.classList.add('theia-debug-breakpoint-input');
         this.zone.containerNode.appendChild(inputNode);
 
-        const input = this._input = await this.createInput(inputNode);
+        const breakpointInput = this._input = await this.createInput(inputNode);
+        const breakpointInputEditor = breakpointInput.getControl();
+        breakpointInputEditor.updateOptions({ suggest: { showWords: false } });
         if (this.toDispose.disposed) {
-            input.dispose();
+            breakpointInput.dispose();
             return;
         }
-        this.toDispose.push(input);
+        this.toDispose.push(breakpointInput);
         this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
-            ({ scheme: input.uri.scheme }, {
+            ({ scheme: breakpointInput.uri.scheme }, {
                 provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
                     const suggestions: monaco.languages.CompletionItem[] = [];
-                    if ((this.context === 'condition' || this.context === 'logMessage')
-                        && input.uri.toString() === model.uri.toString()) {
-                        const editor = this.editor.getControl();
-                        const completions = await provideSuggestionItems(
-                            StandaloneServices.get(ILanguageFeaturesService).completionProvider,
-                            editor.getModel()! as unknown as TextModel,
-                            new monaco.Position(editor.getPosition()!.lineNumber, 1),
-                            new CompletionOptions(undefined, new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)),
-                            context as unknown as CompletionContext, token);
+                    const shouldProvideAutoCompleteInContext = (this.context === 'condition') ||
+                        (this.context === 'logMessage' && breakpointInputEditor instanceof StandaloneCodeEditor && DebugBreakpointWidget.isCurlyBracketOpen(breakpointInputEditor));
+                    const doesInputEditorMatchModel = breakpointInput.uri.toString() === model.uri.toString();
+                    if (shouldProvideAutoCompleteInContext && doesInputEditorMatchModel) {
+                        const completionItemModel = await this.creationCompletionItemModel(context, token);
                         let overwriteBefore = 0;
                         if (this.context === 'condition') {
                             overwriteBefore = position.column - 1;
                         } else {
                             // Inside the curly brackets, need to count how many useful characters are behind the position so they would all be taken into account
-                            const value = editor.getModel()!.getValue();
+                            const value = breakpointInputEditor.getValue();
                             while ((position.column - 2 - overwriteBefore >= 0)
                                 && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {
                                 overwriteBefore++;
                             }
                         }
-                        for (const { completion } of completions.items) {
-                            completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
-                            suggestions.push(completion as unknown as monaco.languages.CompletionItem);
+                        if (completionItemModel) {
+                            const { items } = completionItemModel;
+                            for (const { completion } of items) {
+                                completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
+                                suggestions.push(completion as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+                            }
                         }
                     }
                     return { suggestions };
                 }
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
-        this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()!.getLineCount() + 1;
+        this.toDispose.push(breakpointInput.getControl().onDidChangeModelContent(() => {
+            const model = breakpointInput.getControl().getModel();
+            if (model) {
+                const heightInLines = model.getLineCount() + 1;
+                this.zone.layout(heightInLines);
+                this.updatePlaceholder();
+            }
+        }));
+        this.toDispose.push(breakpointInput.getControl().onDidChangeModelContent(() => {
+            const heightInLines = breakpointInput.getControl().getModel()!.getLineCount() + 1;
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
+    }
+
+    protected async creationCompletionItemModel(context: monaco.languages.CompletionContext, token: monaco.CancellationToken): Promise<CompletionItemModel | null> {
+        const sourceCodeEditor = this.editor.getControl();
+        const sourceCodeEditorModel = sourceCodeEditor.getModel();
+        const sourceCodeEditorPosition = sourceCodeEditor.getPosition();
+        return sourceCodeEditorModel && sourceCodeEditorPosition && provideSuggestionItems(
+            StandaloneServices.get(ILanguageFeaturesService).completionProvider,
+            sourceCodeEditorModel as unknown as TextModel,
+            new monaco.Position(sourceCodeEditorPosition.lineNumber, 1),
+            new CompletionOptions(
+                undefined,
+                new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)
+            ),
+            context as unknown as CompletionContext,
+            token,
+        );
     }
 
     dispose(): void {
@@ -271,4 +297,16 @@ export class DebugBreakpointWidget implements Disposable {
 }
 export namespace DebugBreakpointWidget {
     export type Context = keyof Pick<DebugProtocol.SourceBreakpoint, 'condition' | 'hitCondition' | 'logMessage'>;
+
+    export function isCurlyBracketOpen(editor: StandaloneCodeEditor): boolean {
+        const model = editor.getModel();
+        const position = editor.getPosition();
+        if (model && position) {
+            const prevBracket = model.bracketPairs.findPrevBracket(position);
+            if (prevBracket?.isOpen) {
+                return true;
+            }
+        }
+        return false;
+    };
 }
