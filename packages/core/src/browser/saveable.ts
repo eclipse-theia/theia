@@ -101,40 +101,46 @@ export namespace Saveable {
         if (!saveable) {
             return undefined;
         }
-        setDirty(widget, saveable.dirty);
-        saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
-        const closeWidget = widget.close.bind(widget);
-        const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = async () => {
-            if (saveable.dirty && saveable.revert) {
+        const saveableWidget = widget as Widget & Partial<SaveableWidget>;
+        setDirty(saveableWidget, saveable.dirty);
+        saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
+        const closeWidget = saveableWidget.close.bind(saveableWidget);
+        const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = saveableWidget.closeWithoutSaving?.bind(saveableWidget) ?? (async (skipRevert?: boolean) => {
+            if (!skipRevert && saveable.dirty && saveable.revert) {
                 await saveable.revert();
             }
             closeWidget();
-            return waitForClosed(widget);
-        };
+            return waitForClosed(saveableWidget);
+        });
         let closing = false;
-        const closeWithSaving: SaveableWidget['closeWithSaving'] = async options => {
+        const closeWithSaving: SaveableWidget['closeWithSaving'] = saveableWidget.closeWithSaving?.bind(saveableWidget) ?? (async options => {
             if (closing) {
                 return;
             }
             closing = true;
             try {
-                const result = await shouldSave(saveable, () => {
+                let safeToCloseWithoutReversion = false;
+                const result = await shouldSave(saveable, async () => {
                     if (options && options.shouldSave) {
                         return options.shouldSave();
                     }
-                    return new ShouldSaveDialog(widget).open();
+                    if (saveableWidget.isSafeToClose && await saveableWidget.isSafeToClose()) {
+                        safeToCloseWithoutReversion = true;
+                        return false;
+                    }
+                    return new ShouldSaveDialog(saveableWidget).open();
                 });
                 if (typeof result === 'boolean') {
                     if (result) {
-                        await Saveable.save(widget);
+                        await Saveable.save(saveableWidget);
                     }
-                    await closeWithoutSaving();
+                    await closeWithoutSaving(safeToCloseWithoutReversion);
                 }
             } finally {
                 closing = false;
             }
-        };
-        return Object.assign(widget, {
+        });
+        return Object.assign(saveableWidget, {
             closeWithoutSaving,
             closeWithSaving,
             close: () => closeWithSaving()
@@ -154,8 +160,9 @@ export namespace Saveable {
 }
 
 export interface SaveableWidget extends Widget {
-    closeWithoutSaving(): Promise<void>;
+    closeWithoutSaving(skipRevert?: boolean): Promise<void>;
     closeWithSaving(options?: SaveableWidget.CloseOptions): Promise<void>;
+    isSafeToClose?(): MaybePromise<boolean>;
 }
 export namespace SaveableWidget {
     export function is(widget: Widget | undefined): widget is SaveableWidget {

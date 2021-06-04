@@ -18,7 +18,7 @@ import '../../src/browser/style/output.css';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 import { IDragEvent } from '@theia/core/shared/@phosphor/dragdrop';
-import { EditorWidget } from '@theia/editor/lib/browser';
+import { EditorWidget, EditorWidgetFactoryFunction } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
@@ -38,6 +38,9 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
+
+    @inject(EditorWidgetFactoryFunction)
+    protected readonly editorFactory: EditorWidgetFactoryFunction;
 
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
@@ -211,7 +214,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
         const { name } = this.selectedChannel;
         const editor = await this.editorProvider.get(OutputUri.create(name));
-        return new EditorWidget(editor, this.selectionService);
+        return this.editorFactory(editor);
     }
 
     private get editorWidget(): EditorWidget | undefined {

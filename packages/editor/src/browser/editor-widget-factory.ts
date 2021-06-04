@@ -18,7 +18,7 @@ import { injectable, inject, } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
-import { EditorWidget } from './editor-widget';
+import { EditorWidget, EditorWidgetFactoryFunction } from './editor-widget';
 import { TextEditorProvider } from './editor';
 
 @injectable()
@@ -43,6 +43,9 @@ export class EditorWidgetFactory implements WidgetFactory {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
+    @inject(EditorWidgetFactoryFunction)
+    protected readonly editorFactory: EditorWidgetFactoryFunction;
+
     createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
         const uri = new URI(options.uri);
         return this.createEditor(uri, options);
@@ -50,7 +53,7 @@ export class EditorWidgetFactory implements WidgetFactory {
 
     protected async createEditor(uri: URI, options?: NavigatableWidgetOptions): Promise<EditorWidget> {
         const textEditor = await this.editorProvider(uri);
-        const newEditor = new EditorWidget(textEditor, this.selectionService);
+        const newEditor = this.editorFactory(textEditor);
 
         this.setLabels(newEditor, uri);
         const labelListener = this.labelProvider.onDidChange(event => {

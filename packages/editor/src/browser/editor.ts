@@ -195,6 +195,7 @@ export interface FindMatch {
     readonly range: Range;
 }
 
+export const TextEditor = Symbol('TextEditor');
 export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
     readonly node: HTMLElement;
 

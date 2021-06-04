@@ -34,6 +34,8 @@ import { NavigationLocationService } from './navigation/navigation-location-serv
 import { NavigationLocationSimilarity } from './navigation/navigation-location-similarity';
 import { EditorVariableContribution } from './editor-variable-contribution';
 import { EditorQuickOpenService } from './editor-quick-open-service';
+import { EditorWidgetFactoryFunction, EditorWidget } from './editor-widget';
+import { TextEditor } from './editor';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -77,4 +79,10 @@ export default new ContainerModule(bind => {
     bind(ActiveEditorAccess).toSelf().inSingletonScope();
     bind(EditorAccess).to(CurrentEditorAccess).inSingletonScope().whenTargetNamed(EditorAccess.CURRENT);
     bind(EditorAccess).to(ActiveEditorAccess).inSingletonScope().whenTargetNamed(EditorAccess.ACTIVE);
+
+    bind(EditorWidgetFactoryFunction).toFactory(({ container }) => editor => {
+        const child = container.createChild();
+        child.bind(TextEditor).toConstantValue(editor);
+        return child.resolve(EditorWidget);
+    });
 });

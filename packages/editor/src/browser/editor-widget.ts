@@ -15,15 +15,22 @@
  ********************************************************************************/
 
 import { Disposable, SelectionService, Event } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, ApplicationShell } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 
+export const EditorWidgetFactoryFunction = Symbol('EditorWidgetFactoryFunction');
+export interface EditorWidgetFactoryFunction {
+    (editor: TextEditor): EditorWidget;
+}
+
+@injectable()
 export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget {
-
     constructor(
-        readonly editor: TextEditor,
-        protected readonly selectionService: SelectionService
+        @inject(TextEditor) readonly editor: TextEditor,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(ApplicationShell) @optional() protected readonly shell?: ApplicationShell,
     ) {
         super(editor);
         this.addClass('theia-editor');
@@ -92,4 +99,7 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         return this.toDispose.onDispose;
     }
 
+    isSafeToClose(): boolean {
+        return !!this.shell?.widgets.find(widget => widget !== this && widget instanceof EditorWidget && widget.editor.uri.isEqual(this.editor.uri));
+    }
 }
