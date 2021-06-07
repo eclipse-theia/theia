@@ -93,9 +93,11 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
         const title = props.title || dialogTitle;
         const defaultPath = FileUri.fsPath(uri);
-        const filters: FileFilter[] = [{ name: 'All Files', extensions: ['*'] }];
+        const filters: FileFilter[] = [];
         if (props.filters) {
             filters.push(...Object.keys(props.filters).map(key => ({ name: key, extensions: props.filters![key] })));
+        } else {
+            filters.push({ name: 'All Files', extensions: ['*'] });
         }
         return { title, defaultPath, filters };
     }
