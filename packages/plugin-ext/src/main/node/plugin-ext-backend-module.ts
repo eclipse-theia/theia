@@ -38,6 +38,7 @@ import { PluginServerHandler } from './plugin-server-handler';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
 import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant';
+import { WebviewBackendSecurityWarnings } from './webview-backend-security-warnings';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -81,4 +82,6 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(PluginCliContribution);
 
+    bind(WebviewBackendSecurityWarnings).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(WebviewBackendSecurityWarnings);
 }

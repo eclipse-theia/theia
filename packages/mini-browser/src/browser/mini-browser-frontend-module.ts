@@ -39,9 +39,9 @@ import {
     LocationMapper,
     LocationWithoutSchemeMapper,
 } from './location-mapper-service';
+import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings';
 
 export default new ContainerModule(bind => {
-
     bind(MiniBrowserContent).toSelf();
     bind(MiniBrowserContentFactory).toFactory(context => (props: MiniBrowserProps) => {
         const { container } = context;
@@ -77,5 +77,10 @@ export default new ContainerModule(bind => {
     bind(LocationMapper).toService(LocationWithoutSchemeMapper);
     bind(LocationMapperService).toSelf().inSingletonScope();
 
-    bind(MiniBrowserService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, MiniBrowserServicePath)).inSingletonScope();
+    bind(MiniBrowserService).toDynamicValue(
+        ctx => WebSocketConnectionProvider.createProxy(ctx.container, MiniBrowserServicePath)
+    ).inSingletonScope();
+
+    bind(MiniBrowserFrontendSecurityWarnings).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MiniBrowserFrontendSecurityWarnings);
 });

@@ -75,6 +75,7 @@ import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-edit
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
+import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -226,4 +227,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CommentingRangeDecorator).toSelf().inSingletonScope();
     bind(CommentsContribution).toSelf().inSingletonScope();
     bind(CommentsContextKeyService).toSelf().inSingletonScope();
+
+    bind(WebviewFrontendSecurityWarnings).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WebviewFrontendSecurityWarnings);
 });
