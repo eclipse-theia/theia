@@ -169,7 +169,10 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
             };
         });
     } else {
-        return ranges.map(r => ({ range: fromRange(r) }));
+        return ranges.map((r): DecorationOptions =>
+        ({
+            range: fromRange(r)!
+        }));
     }
 }
 
@@ -821,10 +824,10 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.execution = getShellExecution(taskDto);
     }
 
-    if (taskType === 'customExecution' || types.CustomExecution.is(execution)) {
-        result.execution = getCustomExecution(taskDto);
+    if (taskType === 'customExecution') {
         // if taskType is customExecution, we need to put all the information into taskDefinition,
         // because some parameters may be in taskDefinition.
+        // we cannot assign a custom execution because these have assigned ids which we don't have in this stateless converter
         taskDefinition.label = label;
         taskDefinition.command = command;
         taskDefinition.args = args;
@@ -892,14 +895,9 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 }
 
 export function fromCustomExecution(execution: theia.CustomExecution, taskDto: TaskDto): TaskDto {
+    // handling of the execution id is must be done independently
     taskDto.taskType = 'customExecution';
-    const callback = execution.callback;
-    if (callback) {
-        taskDto.callback = callback;
-        return taskDto;
-    } else {
-        throw new Error('Converting CustomExecution callback is not implemented');
-    }
+    return taskDto;
 }
 
 export function getProcessExecution(taskDto: TaskDto): theia.ProcessExecution {
@@ -919,10 +917,6 @@ export function getShellExecution(taskDto: TaskDto): theia.ShellExecution {
     return new types.ShellExecution(
         taskDto.command || taskDto.commandLine,
         taskDto.options || {});
-}
-
-export function getCustomExecution(taskDto: TaskDto): theia.CustomExecution {
-    return new types.CustomExecution(taskDto.callback);
 }
 
 export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {
