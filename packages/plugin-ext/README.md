@@ -14,6 +14,24 @@
 
 The `@theia/plugin-ext` extension contributes functionality for the `plugin` API.
 
+## Implementation
+
+The implementation is inspired from: https://blog.mattbierner.com/vscode-webview-web-learnings/.
+
+## Environment Variables
+
+- `THEIA_WEBVIEW_ENDPOINT_PATTERN`
+
+  A string pattern possibly containing `{{uuid}}` and `{{hostname}}` which will be replaced. This is the host for which the `webviews` will be served on.
+  It is a good practice to host the `webview` handlers on a sub-domain as it is more secure.
+  Defaults to `{{uuid}}.webview.{{hostname}}`.
+
+## Security Warnings
+
+- Potentially Insecure Host Pattern
+
+  When you change the host pattern via the `THEIA_WEBVIEW_ENDPOINT_PATTERN` environment variable warning will be emitted both from the frontend and from the backend.
+  You can disable those warnings by setting `warnOnPotentiallyInsecureHostPattern: false` in the appropriate application configurations in your application's `package.json`.
 
 ## Additional Information
 

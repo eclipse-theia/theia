@@ -14,35 +14,51 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { Endpoint, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
 import { v4 } from 'uuid';
+import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
 
 /**
- * Fetch values from the backend's environment.
+ * Fetch values from the backend's environment and caches them locally.
+ * Helps with deploying various mini-browser endpoints.
  */
 @injectable()
 export class MiniBrowserEnvironment implements FrontendApplicationContribution {
 
     protected _hostPatternPromise: Promise<string>;
-    protected _hostPattern: string;
+    protected _hostPattern?: string;
 
     @inject(EnvVariablesServer)
-    protected readonly environment: EnvVariablesServer;
+    protected environment: EnvVariablesServer;
 
     @postConstruct()
     protected postConstruct(): void {
-        this._hostPatternPromise = this.environment.getValue(MiniBrowserEndpoint.HOST_PATTERN_ENV)
-            .then(envVar => envVar?.value || MiniBrowserEndpoint.HOST_PATTERN_DEFAULT);
+        this._hostPatternPromise = this.getHostPattern()
+            .then(pattern => this._hostPattern = pattern);
+    }
+
+    get hostPatternPromise(): Promise<string> {
+        return this._hostPatternPromise;
+    }
+
+    get hostPattern(): string | undefined {
+        return this._hostPattern;
     }
 
     async onStart(): Promise<void> {
-        this._hostPattern = await this._hostPatternPromise;
+        await this._hostPatternPromise;
     }
 
+    /**
+     * Throws if `hostPatternPromise` is not yet resolved.
+     */
     getEndpoint(uuid: string, hostname?: string): Endpoint {
+        if (this._hostPattern === undefined) {
+            throw new Error('MiniBrowserEnvironment is not finished initializing');
+        }
         return new Endpoint({
             path: MiniBrowserEndpoint.PATH,
             host: this._hostPattern
@@ -51,8 +67,18 @@ export class MiniBrowserEnvironment implements FrontendApplicationContribution {
         });
     }
 
+    /**
+     * Throws if `hostPatternPromise` is not yet resolved.
+     */
     getRandomEndpoint(): Endpoint {
         return this.getEndpoint(v4());
+    }
+
+    protected async getHostPattern(): Promise<string> {
+        return environment.electron.is()
+            ? MiniBrowserEndpoint.HOST_PATTERN_DEFAULT
+            : this.environment.getValue(MiniBrowserEndpoint.HOST_PATTERN_ENV)
+                .then(envVar => envVar?.value || MiniBrowserEndpoint.HOST_PATTERN_DEFAULT);
     }
 
     protected getDefaultHostname(): string {

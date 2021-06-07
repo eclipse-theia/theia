@@ -22,6 +22,7 @@ import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-brows
 import { MiniBrowserEndpoint, MiniBrowserEndpointHandler, HtmlHandler, ImageHandler, PdfHandler, SvgHandler } from './mini-browser-endpoint';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MiniBrowserWsRequestValidator } from './mini-browser-ws-validator';
+import { MiniBrowserBackendSecurityWarnings } from './mini-browser-backend-security-warnings';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserEndpoint).toSelf().inSingletonScope();
@@ -35,4 +36,6 @@ export default new ContainerModule(bind => {
     bind(MiniBrowserEndpointHandler).to(ImageHandler).inSingletonScope();
     bind(MiniBrowserEndpointHandler).to(PdfHandler).inSingletonScope();
     bind(MiniBrowserEndpointHandler).to(SvgHandler).inSingletonScope();
+    bind(MiniBrowserBackendSecurityWarnings).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(MiniBrowserBackendSecurityWarnings);
 });

@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from '@theia/core/shared/inversify';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import {
     createPreferenceProxy,
     PreferenceProxy,
@@ -23,20 +24,32 @@ import {
     PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 
+const frontendConfig = FrontendApplicationConfigProvider.get();
+
 export const WebviewConfigSchema: PreferenceSchema = {
-    'type': 'object',
-    'properties': {
+    type: 'object',
+    properties: {
         'webview.trace': {
-            'type': 'string',
-            'enum': ['off', 'on', 'verbose'],
-            'description': 'Controls communication tracing with webviews.',
-            'default': 'off'
+            type: 'string',
+            enum: ['off', 'on', 'verbose'],
+            description: 'Controls communication tracing with webviews.',
+            default: 'off'
         }
     }
 };
 
+if (frontendConfig.securityWarnings) {
+    WebviewConfigSchema.properties['webview.warnIfUnsecure'] = {
+        scope: 'application',
+        type: 'boolean',
+        description: 'Warns users that webviews are currently deployed unsecurely.',
+        default: true,
+    };
+}
+
 export interface WebviewConfiguration {
     'webview.trace': 'off' | 'on' | 'verbose'
+    'webview.warnIfUnsecure'?: boolean
 }
 
 export const WebviewPreferences = Symbol('WebviewPreferences');
@@ -51,6 +64,5 @@ export function bindWebviewPreferences(bind: interfaces.Bind): void {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createWebviewPreferences(preferences);
     });
-
     bind(PreferenceContribution).toConstantValue({ schema: WebviewConfigSchema });
 }
