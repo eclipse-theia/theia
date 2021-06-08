@@ -34,6 +34,7 @@ import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
+import { SecretsExtImpl } from '../../../plugin/secrets-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -68,6 +69,7 @@ const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 const clipboardExt = new ClipboardExt(rpc);
 const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
+const secretsExt = new SecretsExtImpl(rpc);
 const terminalService: TerminalServiceExt = new TerminalServiceExtImpl(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
@@ -155,7 +157,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, rpc);
+}, envExt, terminalService, storageProxy, secretsExt, preferenceRegistryExt, webviewExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,
