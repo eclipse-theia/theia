@@ -221,7 +221,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand('editor.action.gotoLine')
         });
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
-            execute: () => this.quickOpen.open('')
+            execute: (prefix?: unknown) => this.quickOpen.open(typeof prefix === 'string' ? prefix : '')
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
