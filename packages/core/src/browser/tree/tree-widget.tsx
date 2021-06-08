@@ -891,7 +891,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             event => this.handleClickEvent(node, event),
             event => this.handleDblClickEvent(node, event),
             // This component can't use invokeSingle because running the handler causes the tree to refresh, replacing the listener and its closure
-            { timeout: 250, invokeSingle: false }
+            { timeout: 250, invokeImmediately: false }
         );
         return {
             className,

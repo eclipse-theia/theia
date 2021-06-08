@@ -26,9 +26,16 @@ export interface ClickHandlerOptions {
      */
     timeout: number;
     /**
-     * If true, the single-click handler will be invoked immediately on the first click.
+     * If `true`, the single-click handler will be invoked immediately on the first click. If true, `invokeSingleOnDouble` is ignored.
+     * Use this option with caution: if the single-click handler triggers a rerender, it may invalidate or ignore the state of the handlers
+     * created here.
      */
-    invokeSingle?: boolean;
+    invokeImmediately?: boolean;
+    /**
+     * If `true`, the single click handler will be invoked and awaited before the double-click handler is invoked.
+     * Ignored if `invokeImmediately` is `true`.
+     */
+    invokeSingleOnDouble?: boolean;
 }
 
 /**
@@ -41,28 +48,35 @@ export function createClickEventHandler<T extends MinimalEvent>(
     doubleClickHandler: Handler<T>,
     options: ClickHandlerOptions,
 ): Handler<T> {
-    const { timeout, invokeSingle } = options;
+    const { timeout, invokeImmediately, invokeSingleOnDouble } = options;
+    const shouldInvokeSingleOnDouble = invokeSingleOnDouble && !invokeImmediately;
     let deferredEvent: T | undefined;
     return async (event: T): Promise<void> => {
+        if (isReactEvent(event)) {
+            event.persist();
+        }
         if (!deferredEvent && event.type === 'click') {
             deferredEvent = event;
-            if (isReactEvent(event)) {
-                event.persist();
-            }
-            if (invokeSingle) {
+            if (invokeImmediately) {
                 singleClickHandler(event);
             }
             await new Promise(resolve => setTimeout(resolve, timeout));
-            if (!event.__superseded) { // No double click has cleaned up the old deferred event.
+            if (!event.__superseded) { // No double click has occurred.
                 deferredEvent = undefined;
-                if (!invokeSingle) { // We haven't run it yet.
+                if (!invokeImmediately) { // We haven't run it yet.
                     singleClickHandler(event);
                 }
             }
         } else if (event.type === 'dblclick') {
             if (deferredEvent) {
                 deferredEvent.__superseded = true;
-                deferredEvent = undefined;
+                if (shouldInvokeSingleOnDouble) {
+                    const eventToHandle = deferredEvent;
+                    deferredEvent = undefined; // Clear state immediately in case of triple click.
+                    try {
+                        await singleClickHandler(eventToHandle);
+                    } catch { }
+                }
             }
             doubleClickHandler(event);
         }
