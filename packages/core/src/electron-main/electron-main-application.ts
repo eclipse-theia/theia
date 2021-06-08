@@ -225,7 +225,7 @@ export class ElectronMainApplication {
     }
 
     protected async getDefaultBrowserWindowOptions(): Promise<TheiaBrowserWindowOptions> {
-        const windowOptionsFromConfig = this.config.electron?.windowOptions || {};
+        const windowOptionsFromConfig = this.config.electron.windowOptions;
         let windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate', undefined);
         if (!windowState) {
             windowState = this.getDefaultWindowState();

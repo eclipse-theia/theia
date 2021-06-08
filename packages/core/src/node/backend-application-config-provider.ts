@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { BackendApplicationConfig } from '@theia/application-package/lib/application-props';
+import { BackendApplicationConfig, merge } from '@theia/application-package/lib/application-props';
 
 export class BackendApplicationConfigProvider {
 
@@ -28,14 +28,14 @@ export class BackendApplicationConfigProvider {
         return config;
     }
 
-    static set(config: BackendApplicationConfig): void {
+    static set(config: BackendApplicationConfig.Partial): void {
         if (BackendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = global as any;
         const key = BackendApplicationConfigProvider.KEY;
-        globalObject[key] = config;
+        globalObject[key] = merge(BackendApplicationConfig.DEFAULT, config);
     }
 
     private static doGet(): BackendApplicationConfig | undefined {
