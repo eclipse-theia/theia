@@ -55,6 +55,7 @@ import { AuthenticationMainImpl } from './authentication-main';
 import { ThemingMainImpl } from './theming-main';
 import { CommentsMainImp } from './comments/comments-main';
 import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
+import { SecretsMainImpl } from './secrets-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -150,6 +151,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const scmMain = new ScmMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.SCM_MAIN, scmMain);
+
+    const secretsMain = new SecretsMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.SECRETS_MAIN, secretsMain);
 
     const decorationsMain = new DecorationsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN, decorationsMain);

@@ -1716,6 +1716,7 @@ export const PLUGIN_RPC_CONTEXT = {
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
+    SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
     CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
@@ -1750,6 +1751,7 @@ export const MAIN_RPC_CONTEXT = {
     FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
     ExtHostFileSystemEventService: createProxyIdentifier<ExtHostFileSystemEventServiceShape>('ExtHostFileSystemEventService'),
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
+    SECRETS_EXT: createProxyIdentifier<SecretsExt>('SecretsExt'),
     DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt'),
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
@@ -1806,4 +1808,14 @@ export interface LabelServiceExt {
 export interface LabelServiceMain {
     $registerResourceLabelFormatter(handle: number, formatter: ResourceLabelFormatter): void;
     $unregisterResourceLabelFormatter(handle: number): void;
+}
+
+export interface SecretsExt {
+    $onDidChangePassword(e: { extensionId: string, key: string }): Promise<void>;
+}
+
+export interface SecretsMain {
+    $getPassword(extensionId: string, key: string): Promise<string | undefined>;
+    $setPassword(extensionId: string, key: string, value: string): Promise<void>;
+    $deletePassword(extensionId: string, key: string): Promise<void>;
 }

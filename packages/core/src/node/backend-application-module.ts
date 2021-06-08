@@ -30,6 +30,8 @@ import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
+import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
+import { KeytarServiceImpl } from './keytar-server';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -95,4 +97,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
+    bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
+    ).inSingletonScope();
 });
