@@ -17,13 +17,12 @@
 import { Disposable } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Terminal, TerminalFactory, TerminalSpawnOptions } from '@theia/process/lib/node';
-// eslint-disable-next-line max-len
-import { RemoteTerminalAttachOptions, RemoteTerminalAttachResponse, RemoteTerminalGetProcessInfoResponse, RemoteTerminalGetResponse, RemoteTerminalOptions, RemoteTerminalServer, RemoteTerminalSpawnResponse } from '../common/terminal-protocol';
+import * as rt from '../common/remote-terminal-protocol';
 import { RemoteTerminalConnectionHandler } from './remote-terminal-connection-handler';
 import { GlobalTerminalRegistry, TerminalRegistry } from './terminal-registry';
 
 @injectable()
-export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposable {
+export class RemoteTerminalServerImpl implements rt.RemoteTerminalServer, Disposable {
 
     @inject(RemoteTerminalConnectionHandler)
     protected remoteTerminalConnectionHandler: RemoteTerminalConnectionHandler;
@@ -37,7 +36,7 @@ export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposabl
     @inject(TerminalFactory)
     protected terminalFactory: TerminalFactory;
 
-    async spawn(uuid: string, options: RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminalSpawnResponse> {
+    async spawn(uuid: string, options: rt.RemoteTerminalOptions & TerminalSpawnOptions): Promise<rt.RemoteTerminalSpawnResponse> {
         const rtc = this.remoteTerminalConnectionHandler.get(uuid);
         const terminal = await this.terminalFactory.spawn(options);
         const terminalId = options.persist
@@ -50,7 +49,7 @@ export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposabl
         };
     }
 
-    async attach(uuid: string, options: RemoteTerminalAttachOptions): Promise<RemoteTerminalAttachResponse> {
+    async attach(uuid: string, options: rt.RemoteTerminalAttachOptions): Promise<rt.RemoteTerminalAttachResponse> {
         const rtc = this.remoteTerminalConnectionHandler.get(uuid);
         const terminal = this.getTerminal(options.terminalId);
         rtc.attach(terminal);
@@ -59,8 +58,8 @@ export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposabl
         };
     }
 
-    async getTerminals(): Promise<RemoteTerminalGetResponse[]> {
-        const terminals: RemoteTerminalGetResponse[] = [];
+    async getTerminals(): Promise<rt.RemoteTerminalGetTerminalsResponse[]> {
+        const terminals: rt.RemoteTerminalGetTerminalsResponse[] = [];
         for (const terminalId of this.globalTerminalRegistry.ids()) {
             terminals.push({ terminalId, persistent: true });
         }
@@ -70,15 +69,14 @@ export class RemoteTerminalServerImpl implements RemoteTerminalServer, Disposabl
         return terminals;
     }
 
-    async getTerminalProcessInfo(terminalId: number): Promise<RemoteTerminalGetProcessInfoResponse> {
+    async getTerminalProcessInfo(terminalId: number): Promise<rt.RemoteTerminalGetTerminalProcessInfoResponse> {
         const { info } = this.getTerminal(terminalId);
         return { info };
     }
 
     dispose(): void {
-        for (const terminal of this.localTerminalRegistry.terminals()) {
-            terminal.kill();
-        }
+        // Kill all non-persistent `Terminal` instances
+        this.localTerminalRegistry.dispose();
     }
 
     protected getTerminal(terminalId: number): Terminal {

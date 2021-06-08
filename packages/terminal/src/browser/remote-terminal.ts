@@ -15,38 +15,89 @@
  ********************************************************************************/
 
 import { Disposable } from '@theia/core';
-import { TerminalProcessInfo } from '@theia/process/lib/node';
-import { RemoteTerminalProxy, RemoteTerminalConnectionId } from '../common/terminal-protocol';
+import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { TerminalExitEvent, TerminalProcessInfo } from '@theia/process/lib/node';
+import * as rt from '../common/remote-terminal-protocol';
 
 /**
- * Handle to a `RemoteTerminal`, you can use it to attach events on `remote`.
+ * Handle to an un-initialized `RemoteTerminal`, you can use it to attach events on `proxy`.
  *
- * You still need to spawn/attach a process to this `RemoteTerminalHandle`.
+ * You still need to spawn/attach a process to this `RemoteTerminal`.
  */
-export interface RemoteTerminalHandle extends Disposable {
+export interface RemoteTerminal extends Disposable {
 
     /**
      * Handle internal tracking id.
      */
-    readonly uuid: RemoteTerminalConnectionId
+    readonly uuid: rt.RemoteTerminalConnectionId
 
     /**
-     * Proxy to the remote terminal.
+     * Proxy to the remote `Terminal`.
      */
-    readonly remote: RemoteTerminalProxy
+    readonly proxy: rt.RemoteTerminalProxy
+
+    /**
+     * Undefined until the remote side notifies us that the process exited.
+     */
+    readonly exitStatus?: TerminalExitEvent
+
+    /**
+     * Throws if already connected or disposed.
+     */
+    connect(connection: MessageConnection): void
+
+    /**
+     * Throws if already attached or disposed.
+     */
+    attach(terminalId: number, info: TerminalProcessInfo): AttachedRemoteTerminal
+
+    isConnected(): boolean
+
+    isAttached(): this is AttachedRemoteTerminal
+
+    isDisposed(): boolean
 }
 
-/**
- * Handle to a `Terminal` running remotely.
- */
-export interface RemoteTerminal {
-
-    readonly handle: RemoteTerminalHandle
+export interface AttachedRemoteTerminal extends RemoteTerminal {
 
     /**
-     * Id of the underlying `Terminal` as registered in the `TerminalManager`.
+     * Id of the remote `Terminal`.
      */
     readonly terminalId: number
 
+    /**
+     * Information about the remotely running `Terminal`.
+     */
     readonly info: TerminalProcessInfo
+}
+
+export namespace RemoteTerminal {
+
+    export function ensureAttached(terminal: RemoteTerminal): AttachedRemoteTerminal {
+        if (!terminal.isAttached()) {
+            throw new Error(`terminal is not attached, uuid ${terminal.uuid}`);
+        }
+        return terminal;
+    }
+
+    export function ensureNotConnected(terminal: RemoteTerminal): RemoteTerminal {
+        if (terminal.isConnected()) {
+            throw new Error(`terminal is already connected, uuid ${terminal.uuid}`);
+        }
+        return terminal;
+    }
+
+    export function ensureNotAttached(terminal: RemoteTerminal): RemoteTerminal {
+        if (terminal.isAttached()) {
+            throw new Error(`terminal is already attached, uuid ${terminal.uuid} terminalId ${terminal.terminalId}`);
+        }
+        return terminal;
+    }
+
+    export function ensureNotDisposed(terminal: RemoteTerminal): RemoteTerminal {
+        if (terminal.isDisposed()) {
+            throw new Error('terminal is disposed');
+        }
+        return terminal;
+    }
 }

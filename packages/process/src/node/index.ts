@@ -16,5 +16,4 @@
 
 export * from './terminal';
 export * from './terminal-factory';
-export * from './terminal-manager';
 export * from './terminal-buffer';

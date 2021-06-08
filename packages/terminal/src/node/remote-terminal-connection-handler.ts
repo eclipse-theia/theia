@@ -19,7 +19,7 @@ import { MessagingService } from '@theia/core/lib/node';
 import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { Terminal } from '@theia/process/lib/node';
 import { Readable } from 'stream';
-import { RemoteTerminalConnectionId, REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE } from '../common/terminal-protocol';
+import * as rt from '../common/remote-terminal-protocol';
 
 export const RemoteTerminalConnectionHandler = Symbol('RemoteTerminalConnectionHandler');
 export interface RemoteTerminalConnectionHandler {
@@ -28,10 +28,10 @@ export interface RemoteTerminalConnectionHandler {
 
 export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnectionHandler, MessagingService.Contribution {
 
-    readonly connections = new Map<RemoteTerminalConnectionId, RemoteTerminalConnection>();
+    readonly connections = new Map<rt.RemoteTerminalConnectionId, RemoteTerminalConnection>();
 
     configure(service: MessagingService): void {
-        service.listen(REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE, (params, connection) => {
+        service.listen(rt.REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE, (params, connection) => {
             this.createRemoteTerminalConnection(params.uuid, connection);
         });
     }
@@ -40,7 +40,7 @@ export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnec
      * Clients should create `RemoteTerminalConnection` instances
      * before trying to create or attach to terminals.
      */
-    get(uuid: RemoteTerminalConnectionId): RemoteTerminalConnection {
+    get(uuid: rt.RemoteTerminalConnectionId): RemoteTerminalConnection {
         const rtc = this.connections.get(uuid);
         if (rtc === undefined) {
             throw new Error(`unknown remote terminal connection uuid: ${uuid}`);
@@ -54,7 +54,7 @@ export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnec
         return rtc;
     }
 
-    protected createRemoteTerminalConnection(uuid: RemoteTerminalConnectionId, connection: MessageConnection): RemoteTerminalConnection {
+    protected createRemoteTerminalConnection(uuid: rt.RemoteTerminalConnectionId, connection: MessageConnection): RemoteTerminalConnection {
         if (this.connections.has(uuid)) {
             throw new Error(`RemoteTerminalConnection already exists uuid: ${uuid}`);
         }
@@ -75,10 +75,10 @@ export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnec
 /**
  * Backend object that represents the connection opened from the client.
  *
- * A RemoteTerminalConnection is not attached when constructed,
+ * A `RemoteTerminalConnection` is not attached when constructed,
  * it has to be done as a second step.
  *
- * Disposing a RemoteTerminalConnection only disposes the underlying
+ * Disposing a `RemoteTerminalConnection` only disposes the underlying
  * RPC connection and buffered streams. It does not kill the actual
  * remote terminal attached to it.
  */
@@ -89,7 +89,7 @@ export class RemoteTerminalConnection implements Disposable {
     protected toDispose = new DisposableCollection();
 
     constructor(
-        readonly uuid: RemoteTerminalConnectionId,
+        readonly uuid: rt.RemoteTerminalConnectionId,
         readonly connection: MessageConnection
     ) {
         this.toDispose.push(this.connection);

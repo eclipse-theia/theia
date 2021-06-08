@@ -31,17 +31,19 @@ export interface TerminalRegistry extends Disposable {
      */
     register(terminal: Terminal): number
 
+    unregister(id: number): boolean
+
     has(id: number): boolean
 
     get(id: number): Terminal | undefined
 
     /**
-     * Return terminalId of registered `Terminal` instances.
+     * Return `terminalId` of registered `Terminal` instances.
      */
     ids(): IterableIterator<number>
 
     /**
-     * `Terminal` instances registered to this registry (doesn't look up parents).
+     * `Terminal` instances registered to this registry.
      */
     terminals(): IterableIterator<Terminal>
 
@@ -54,7 +56,7 @@ export interface TerminalRegistry extends Disposable {
  * A process-global sequence of unique ids.
  */
 @injectable()
-export class GlobalTerminalIdSequence {
+export class TerminalIdSequence {
     protected sequence: number = 0;
     next(): number {
         return this.sequence++;
@@ -66,13 +68,22 @@ export class TerminalRegistryImpl implements TerminalRegistry {
 
     protected registry = new Map<number, Terminal>();
 
-    @inject(GlobalTerminalIdSequence)
-    protected terminalIdSequence: GlobalTerminalIdSequence;
+    @inject(TerminalIdSequence)
+    protected terminalIdSequence: TerminalIdSequence;
 
     register(terminal: Terminal): number {
         const id = this.terminalIdSequence.next();
+        if (terminal.exitStatus !== undefined) {
+            // Terminal is already killed...
+            return id;
+        }
+        terminal.onClose(() => { this.unregister(id); });
         this.registry.set(id, terminal);
         return id;
+    }
+
+    unregister(id: number): boolean {
+        return this.registry.delete(id);
     }
 
     has(id: number): boolean {
@@ -96,7 +107,7 @@ export class TerminalRegistryImpl implements TerminalRegistry {
     }
 
     dispose(): void {
-        for (const terminal of this.registry.values()) {
+        for (const terminal of this.terminals()) {
             terminal.kill();
         }
         this.registry.clear();

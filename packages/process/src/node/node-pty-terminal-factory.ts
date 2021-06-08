@@ -20,13 +20,9 @@ import { NodePtyTerminal } from './node-pty-terminal';
 import { Terminal, TerminalProcessInfo } from './terminal';
 import { TerminalBufferFactory } from './terminal-buffer';
 import { TerminalOptions, TerminalFactory, TerminalForkOptions, /* TerminalShellOptions, */ TerminalSpawnOptions } from './terminal-factory';
-import { TerminalManager } from './terminal-manager';
 
 @injectable()
 export class NodePtyTerminalFactory implements TerminalFactory {
-
-    @inject(TerminalManager)
-    protected terminalManager: TerminalManager;
 
     @inject(TerminalBufferFactory)
     protected terminalBufferFactory: TerminalBufferFactory;

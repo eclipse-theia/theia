@@ -14,21 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
-import { TerminalManager } from './terminal-manager';
+import { NodePtyTerminalFactory } from './node-pty-terminal-factory';
 import { TerminalBufferFactory } from './terminal-buffer';
+import { TerminalFactory } from './terminal-factory';
 import { TerminalMultiRingBuffer } from './terminal-multi-ring-buffer';
 
 export default new ContainerModule(bind => {
-
     bind(MultiRingBuffer).toSelf().inTransientScope();
     // 1MB size, TODO should be a user preference.
     bind(MultiRingBufferOptions).toConstantValue({ size: 1048576 });
     bind(TerminalMultiRingBuffer).toSelf().inTransientScope();
     bind(TerminalBufferFactory).toFactory(ctx => () => ctx.container.get(TerminalMultiRingBuffer));
-
-    bind(TerminalManager).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(TerminalManager);
+    bind(TerminalFactory).to(NodePtyTerminalFactory).inSingletonScope();
 });

@@ -41,6 +41,7 @@ import { createTerminalSearchFactory } from './search/terminal-search-container'
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TerminalThemeService } from './terminal-theme-service';
+import { RemoteTerminalService, RemoteTerminalServiceImpl } from './remote-terminal-service';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -108,6 +109,7 @@ export default new ContainerModule(bind => {
     bind(TerminalLinkmatcherDiffPost).toSelf().inSingletonScope();
     bind(TerminalContribution).toService(TerminalLinkmatcherDiffPost);
 
+    bind(RemoteTerminalService).to(RemoteTerminalServiceImpl).inSingletonScope();
     bind(RemoteTerminalServer).toDynamicValue(
         ctx => ctx.container.get(WebSocketConnectionProvider).createProxy(REMOTE_TERMINAL_PATH)
     ).inSingletonScope();

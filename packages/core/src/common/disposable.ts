@@ -99,9 +99,7 @@ export class DisposableCollection implements Disposable {
     }
 
     pushAll(disposables: Disposable[]): Disposable[] {
-        return disposables.map(disposable =>
-            this.push(disposable)
-        );
+        return disposables.map(disposable => this.push(disposable));
     }
 
 }

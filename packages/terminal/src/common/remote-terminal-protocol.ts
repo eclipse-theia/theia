@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, Event } from '@theia/core';
+import { Disposable, Event, JsonRpcProxy } from '@theia/core';
 import { TerminalDataEvent, TerminalExitEvent, TerminalProcessInfo, TerminalSpawnOptions } from '@theia/process/lib/node';
 
 export const REMOTE_TERMINAL_PATH = '/services/terminals';
@@ -25,7 +25,7 @@ export type RemoteTerminalConnectionId = string;
 export interface RemoteTerminalOptions /* extends Serializable */ {
 
     /**
-     * Keep this process running even if the associate frontend disconnects.
+     * Keep this process running even if the associated frontend disconnects.
      *
      * This is useful for things like persisting opened shells in the UI after reloading a browser tab.
      *
@@ -56,9 +56,9 @@ export interface RemoteTerminalServer {
 
     attach(uuid: RemoteTerminalConnectionId, options: RemoteTerminalAttachOptions): Promise<RemoteTerminalAttachResponse>
 
-    getTerminals(): Promise<RemoteTerminalGetResponse[]>
+    getTerminals(): Promise<RemoteTerminalGetTerminalsResponse[]>
 
-    getTerminalProcessInfo(terminalId: number): Promise<RemoteTerminalGetProcessInfoResponse>
+    getTerminalProcessInfo(terminalId: number): Promise<RemoteTerminalGetTerminalProcessInfoResponse>
 }
 
 export interface RemoteTerminalSpawnResponse {
@@ -70,16 +70,19 @@ export interface RemoteTerminalAttachResponse {
     info: TerminalProcessInfo
 }
 
-export interface RemoteTerminalGetResponse {
+export interface RemoteTerminalGetTerminalsResponse {
     terminalId: number
     persistent: boolean
 }
 
-export interface RemoteTerminalGetProcessInfoResponse {
+export interface RemoteTerminalGetTerminalProcessInfoResponse {
     info: TerminalProcessInfo
 }
 
-export interface RemoteTerminalProxy extends Disposable {
+/**
+ * Disposing a proxy means closing its connection to a remote.
+ */
+export interface RemoteTerminalProxy extends JsonRpcProxy<{}>, Disposable {
 
     readonly onData: Event<TerminalDataEvent>
 
@@ -88,6 +91,8 @@ export interface RemoteTerminalProxy extends Disposable {
     readonly onClose: Event<TerminalExitEvent>
 
     getExitStatus(): Promise<TerminalExitEvent | undefined>
+
+    resize(cols: number, rows: number): Promise<void>
 
     write(data: string): Promise<void>
 
