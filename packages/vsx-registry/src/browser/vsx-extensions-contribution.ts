@@ -31,7 +31,7 @@ import { LabelProvider, PreferenceService } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { VSXExtensionsContextMenu, VSXExtension } from './vsx-extension';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { RECOMMENDED_QUERY } from './vsx-extensions-search-model';
+import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 
 export namespace VSXExtensionsCommands {
@@ -55,6 +55,16 @@ export namespace VSXExtensionsCommands {
     };
     export const COPY_EXTENSION_ID: Command = {
         id: 'vsxExtensions.copyExtensionId'
+    };
+    export const SHOW_BUILTINS: Command = {
+        id: 'vsxExtension.showBuiltins',
+        label: 'Show Built-in Extensions',
+        category: EXTENSIONS_CATEGORY,
+    };
+    export const SHOW_INSTALLED: Command = {
+        id: 'vsxExtension.showInstalled',
+        label: 'Show Installed Extensions',
+        category: EXTENSIONS_CATEGORY,
     };
     export const SHOW_RECOMMENDATIONS: Command = {
         id: 'vsxExtension.showRecommendations',
@@ -119,6 +129,14 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         commands.registerCommand(VSXExtensionsCommands.COPY_EXTENSION_ID, {
             execute: (extension: VSXExtension) => this.copyExtensionId(extension)
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.SHOW_BUILTINS, {
+            execute: () => this.showBuiltinExtensions()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.SHOW_INSTALLED, {
+            execute: () => this.showInstalledExtensions()
         });
 
         commands.registerCommand(VSXExtensionsCommands.SHOW_RECOMMENDATIONS, {
@@ -261,6 +279,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 }
             }
         }
+    }
+
+    protected async showBuiltinExtensions(): Promise<void> {
+        await this.openView({ activate: true });
+        this.model.search.query = BUILTIN_QUERY;
+    }
+
+    protected async showInstalledExtensions(): Promise<void> {
+        await this.openView({ activate: true });
+        this.model.search.query = INSTALLED_QUERY;
     }
 
     protected async showRecommendedExtensions(): Promise<void> {
