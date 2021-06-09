@@ -117,6 +117,10 @@ export class VSXExtensionsViewContainer extends ViewContainer {
 
     protected getWidgetsForMode(): string[] {
         switch (this.currentMode) {
+            case VSXSearchMode.Builtin:
+                return [generateExtensionWidgetId(VSXExtensionsSourceOptions.BUILT_IN)];
+            case VSXSearchMode.Installed:
+                return [generateExtensionWidgetId(VSXExtensionsSourceOptions.INSTALLED)];
             case VSXSearchMode.Recommended:
                 return [generateExtensionWidgetId(VSXExtensionsSourceOptions.RECOMMENDED)];
             case VSXSearchMode.Search:
