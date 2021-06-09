@@ -80,6 +80,7 @@ export class SomeClass {
  - [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets)
  - [`@theia/application-package@1.14.0`](https://www.npmjs.com/package/@theia/application-package)
  - [`@theia/application-package/lib/environment@1.14.0`](https://www.npmjs.com/package/@theia/application-package)
+ - [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify)
  - [`electron@^9.0.2`](https://www.npmjs.com/package/electron)
  - [`express@^4.16.3`](https://www.npmjs.com/package/express)
  - [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra)
