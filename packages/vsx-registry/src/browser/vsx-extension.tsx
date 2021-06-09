@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
