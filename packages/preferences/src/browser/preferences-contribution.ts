@@ -64,8 +64,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR, {
             isEnabled: () => true,
             isVisible: w => this.withWidget(w, () => true),
-            execute: (preferenceNode: Preference.NodeWithValueInAllScopes) => {
-                this.openPreferencesJSON(preferenceNode);
+            execute: (preferenceId: string) => {
+                this.openPreferencesJSON(preferenceId);
             }
         });
         commands.registerCommand(PreferencesCommands.COPY_JSON_NAME, {
@@ -136,15 +136,14 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
-    protected async openPreferencesJSON(preferenceNode: Preference.NodeWithValueInAllScopes): Promise<void> {
-        const wasOpenedFromEditor = preferenceNode.constructor !== PreferencesWidget;
+    protected async openPreferencesJSON(opener: string | PreferencesWidget): Promise<void> {
         const { scope, activeScopeIsFolder, uri } = this.scopeTracker.currentScope;
         const scopeID = Number(scope);
-        const preferenceId = wasOpenedFromEditor ? preferenceNode.id : '';
-        // when opening from toolbar, widget is passed as arg by default (we don't need this info)
-        if (wasOpenedFromEditor && preferenceNode.preference.values) {
-            const currentPreferenceValue = preferenceNode.preference.values;
-            const valueInCurrentScope = Preference.getValueInScope(currentPreferenceValue, scopeID) ?? currentPreferenceValue.defaultValue;
+        let preferenceId = '';
+        if (typeof opener === 'string') {
+            preferenceId = opener;
+            const currentPreferenceValue = this.preferenceService.inspect(preferenceId, uri);
+            const valueInCurrentScope = Preference.getValueInScope(currentPreferenceValue, scopeID) ?? currentPreferenceValue?.defaultValue;
             this.preferenceService.set(preferenceId, valueInCurrentScope, scopeID, uri);
         }
 
@@ -153,7 +152,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         if (jsonUriToOpen) {
             jsonEditorWidget = await this.editorManager.open(jsonUriToOpen);
 
-            if (wasOpenedFromEditor) {
+            if (preferenceId) {
                 const text = jsonEditorWidget.editor.document.getText();
                 if (preferenceId) {
                     const { index } = text.match(preferenceId)!;
@@ -164,9 +163,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         }
     }
 
-    private async obtainConfigUri(serializedScope: number, activeScopeIsFolder: string, resource: string): Promise<URI | undefined> {
+    private async obtainConfigUri(serializedScope: number, activeScopeIsFolder: boolean, resource?: string): Promise<URI | undefined> {
         let scope: PreferenceScope = serializedScope;
-        if (activeScopeIsFolder === 'true') {
+        if (activeScopeIsFolder) {
             scope = PreferenceScope.Folder;
         }
         const resourceUri = !!resource ? resource : undefined;
