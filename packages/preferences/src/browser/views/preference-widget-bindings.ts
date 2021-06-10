@@ -41,6 +41,13 @@ export function bindPreferencesWidgets(bind: interfaces.Bind): void {
         id: PreferencesWidget.ID,
         createWidget: () => container.get(PreferencesWidget)
     })).inSingletonScope();
+    bind(PreferenceSelectInputRenderer).toSelf();
+    bind(PreferenceArrayInputRenderer).toSelf();
+    bind(PreferenceStringInputRenderer).toSelf();
+    bind(PreferenceBooleanInputRenderer).toSelf();
+    bind(PreferenceNumberInputRenderer).toSelf();
+    bind(PreferenceJSONLinkRenderer).toSelf();
+    bind(PreferenceHeaderRenderer).toSelf();
 }
 
 function createPreferencesWidgetContainer(parent: interfaces.Container): Container {
@@ -57,29 +64,29 @@ function createPreferencesWidgetContainer(parent: interfaces.Container): Contain
     child.bind(PreferencesWidget).toSelf();
 
     child.bind(PreferenceNodeRendererFactory).toFactory(({ container }) => (node: Preference.TreeNode) => {
-        const grandChild = container.createChild();
-        grandChild.bind(Preference.Node).toConstantValue(node);
+        const grandchild = container.createChild();
+        grandchild.bind(Preference.Node).toConstantValue(node);
         if (Preference.LeafNode.is(node)) {
             if (node.preference.data.enum) {
-                return grandChild.resolve(PreferenceSelectInputRenderer);
+                return grandchild.get(PreferenceSelectInputRenderer);
             }
             const type = Array.isArray(node.preference.data.type) ? node.preference.data.type[0] : node.preference.data.type;
             if (type === 'array' && node.preference.data.items?.type === 'string') {
-                return grandChild.resolve(PreferenceArrayInputRenderer);
+                return grandchild.get(PreferenceArrayInputRenderer);
             }
             switch (type) {
                 case 'string':
-                    return grandChild.resolve(PreferenceStringInputRenderer);
+                    return grandchild.get(PreferenceStringInputRenderer);
                 case 'boolean':
-                    return grandChild.resolve(PreferenceBooleanInputRenderer);
+                    return grandchild.get(PreferenceBooleanInputRenderer);
                 case 'number':
                 case 'integer':
-                    return grandChild.resolve(PreferenceNumberInputRenderer);
+                    return grandchild.get(PreferenceNumberInputRenderer);
                 default:
-                    return grandChild.resolve(PreferenceJSONLinkRenderer);
+                    return grandchild.get(PreferenceJSONLinkRenderer);
             }
         } else {
-            return grandChild.resolve(PreferenceHeaderRenderer);
+            return grandchild.get(PreferenceHeaderRenderer);
         }
     });
 

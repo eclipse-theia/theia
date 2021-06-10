@@ -26,6 +26,7 @@ import {
     PreferenceChanges,
     ExpandableTreeNode,
 } from '@theia/core/lib/browser';
+import { unreachable } from '@theia/core/lib/common';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS, } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
@@ -99,7 +100,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         } else if (e.source === PreferenceFilterChangeSource.Schema) {
             this.handleSchemaChange(isFiltered);
         } else {
-            ((otherSource: never) => { throw new Error('You should handle all possible sources of change!'); })(e.source);
+            unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
         this.resetScroll(currentFirstVisible, e.source === PreferenceFilterChangeSource.Search && !isFiltered);
     }

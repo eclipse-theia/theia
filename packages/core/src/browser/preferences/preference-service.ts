@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
+import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
 import { PreferenceSchemaProvider } from './preference-contribution';
@@ -504,7 +504,7 @@ export class PreferenceServiceImpl implements PreferenceService {
             case PreferenceScope.Folder:
                 return inspection.workspaceFolderValue;
         }
-        return ((unhandledScope: never): never => { throw new Error('Must handle all enum values!'); })(scope);
+        unreachable(scope, 'Not all PreferenceScope enum variants handled.');
     }
 
     async updateValue(preferenceName: string, value: any, resourceUri?: string): Promise<void> {
