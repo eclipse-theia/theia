@@ -100,6 +100,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
         this.toDispose.pushAll([
             this.treeGenerator.onSchemaChanged(newTree => {
                 this.root = newTree;
+                if (this.isFiltered) {
+                    this.expandAll();
+                }
                 this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
             }),
             this.scopeTracker.onScopeChanged(scopeDetails => {
@@ -110,10 +113,12 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this.lastSearchedLiteral = newSearchTerm;
                 this.lastSearchedFuzzy = newSearchTerm.replace(/\s/g, '');
                 this._isFiltered = newSearchTerm.length > 2;
-                this.updateFilteredRows(PreferenceFilterChangeSource.Search);
                 if (this.isFiltered) {
                     this.expandAll();
+                } else if (CompositeTreeNode.is(this.root)) {
+                    this.collapseAll(this.root);
                 }
+                this.updateFilteredRows(PreferenceFilterChangeSource.Search);
             }),
             this.onFilterChanged(() => {
                 this.filterInput.updateResultsCount(this._totalVisibleLeaves);
