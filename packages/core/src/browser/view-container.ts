@@ -207,6 +207,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 } else {
                     this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.registerItem({
                         ...partItem,
+                        id,
                         isVisible: widget => widget.id === this.id && (!partItem.isVisible || partItem.isVisible(part.wrapped))
                     }));
                 }
