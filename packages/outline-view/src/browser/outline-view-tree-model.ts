@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CompositeTreeNode, TreeModelImpl, TreeExpansionService, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { CompositeTreeNode, TreeModelImpl, TreeExpansionService, ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
 
 @injectable()
 export class OutlineViewTreeModel extends TreeModelImpl {
@@ -38,5 +38,15 @@ export class OutlineViewTreeModel extends TreeModelImpl {
             return this.expansionService.collapseAll(node);
         }
         return false;
+    }
+
+    /**
+     * The default behavior of `doOpenNode` is to toggle the expansion of the node.
+     * Override this behavior in order to prevent expansion, but allow for the
+     * `onOpenNode` event to still fire on a double-click event.
+     * @param node the expandable tree node.
+     */
+    protected doOpenNode(node: TreeNode): void {
+        // no-op
     }
 }

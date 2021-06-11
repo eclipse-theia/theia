@@ -25,7 +25,7 @@ import {
     TreeModel,
     ExpandableTreeNode
 } from '@theia/core/lib/browser';
-import { OutlineViewTreeModel } from './outline-view-tree';
+import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';

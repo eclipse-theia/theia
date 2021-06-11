@@ -99,6 +99,12 @@ export interface TreeProps {
      * `true` if a tree widget contributes to the global selection. Defaults to `false`.
      */
     readonly globalSelection?: boolean;
+
+    /**
+     *  `true` if the tree widget supports expansion only when clicking the expansion toggle. Defaults to `false`.
+     */
+    readonly expandOnlyOnExpansionToggleClick?: boolean;
+
 }
 
 /**
@@ -531,7 +537,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const nodeId = event.currentTarget.getAttribute('data-node-id');
         if (nodeId) {
             const node = this.model.getNode(nodeId);
-            this.handleClickEvent(node, event);
+            if (this.props.expandOnlyOnExpansionToggleClick) {
+                this.handleExpansionToggleClickEvent(node, event);
+            } else {
+                this.handleClickEvent(node, event);
+            }
         }
         event.stopPropagation();
     }
@@ -557,7 +567,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return <div
             data-node-id={node.id}
             className={className}
-            onClick={this.toggle}>
+            onClick={this.toggle}
+            onDoubleClick={this.handleExpansionToggleDblClickEvent}>
         </div>;
     }
 
@@ -1135,15 +1146,19 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                         this.model.selectNode(node);
                     }
                 }
-                if (this.isExpandable(node) && !shiftMask && !ctrlCmdMask) {
-                    this.model.toggleNodeExpansion(node);
+                if (!this.props.expandOnlyOnExpansionToggleClick) {
+                    if (this.isExpandable(node) && !shiftMask && !ctrlCmdMask) {
+                        this.model.toggleNodeExpansion(node);
+                    }
                 }
             } else {
                 if (SelectableTreeNode.is(node)) {
                     this.model.selectNode(node);
                 }
-                if (this.isExpandable(node) && !this.hasCtrlCmdMask(event) && !this.hasShiftMask(event)) {
-                    this.model.toggleNodeExpansion(node);
+                if (!this.props.expandOnlyOnExpansionToggleClick) {
+                    if (this.isExpandable(node) && !this.hasCtrlCmdMask(event) && !this.hasShiftMask(event)) {
+                        this.model.toggleNodeExpansion(node);
+                    }
                 }
             }
             event.stopPropagation();
@@ -1189,6 +1204,39 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         event.stopPropagation();
         event.preventDefault();
+    }
+
+    /**
+     * Handle the single-click mouse event on the expansion toggle.
+     * @param node the tree node if available.
+     * @param event the mouse single-click event.
+     */
+    protected handleExpansionToggleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        if (node) {
+            if (!!this.props.multiSelect) {
+                const shiftMask = this.hasShiftMask(event);
+                const ctrlCmdMask = this.hasCtrlCmdMask(event);
+                if (this.isExpandable(node) && !shiftMask && !ctrlCmdMask) {
+                    this.model.toggleNodeExpansion(node);
+                }
+            } else {
+                if (this.isExpandable(node) && !this.hasCtrlCmdMask(event) && !this.hasShiftMask(event)) {
+                    this.model.toggleNodeExpansion(node);
+                }
+            }
+            event.stopPropagation();
+        }
+    }
+
+    /**
+     * Handle the double-click mouse event on the expansion toggle.
+     * @param event the double-click mouse event.
+     */
+    protected handleExpansionToggleDblClickEvent(event: React.MouseEvent<HTMLElement>): void {
+        if (this.props.expandOnlyOnExpansionToggleClick) {
+            // Ignore the double-click event.
+            event.stopPropagation();
+        }
     }
 
     /**
