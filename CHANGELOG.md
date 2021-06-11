@@ -9,6 +9,7 @@
 <a name="breaking_changes_1.15.0">[Breaking Changes:](#breaking_changes_1.15.0)</a>
 
 - [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
+- [core] `outline-view-tree.ts` has been renamed to `outline-view-tree-model.ts` to match class name. [#9583](https://github.com/eclipse-theia/theia/pull/9583)
 
 ## v1.14.0 - 5/27/2021
 
