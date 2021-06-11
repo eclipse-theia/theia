@@ -93,8 +93,9 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected handleFilterChange(e: PreferenceFilterChangeEvent): void {
         const { isFiltered } = this.model;
         const currentFirstVisible = this.firstVisibleChildID;
+        const leavesAreVisible = this.areLeavesVisible();
         if (e.source === PreferenceFilterChangeSource.Search) {
-            this.handleSearchChange(isFiltered);
+            this.handleSearchChange(isFiltered, leavesAreVisible);
         } else if (e.source === PreferenceFilterChangeSource.Scope) {
             this.handleScopeChange(isFiltered);
         } else if (e.source === PreferenceFilterChangeSource.Schema) {
@@ -146,11 +147,8 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected handleSearchChange(isFiltered: boolean): void {
-        const noLeavesVisible = this.model.totalVisibleLeaves === 0;
-        this.node.classList.toggle('no-results', noLeavesVisible);
-        this.scrollContainer.classList.toggle('hidden', noLeavesVisible);
-        if (!noLeavesVisible) {
+    protected handleSearchChange(isFiltered: boolean, leavesAreVisible: boolean): void {
+        if (leavesAreVisible) {
             for (const [, renderer] of this.allRenderers()) {
                 const isHidden = this.hideIfFailsFilters(renderer, isFiltered);
                 if (!isHidden) {
@@ -158,6 +156,13 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                 }
             }
         }
+    }
+
+    protected areLeavesVisible(): boolean {
+        const leavesAreVisible = this.model.totalVisibleLeaves > 0;
+        this.node.classList.toggle('no-results', !leavesAreVisible);
+        this.scrollContainer.classList.toggle('hidden', !leavesAreVisible);
+        return leavesAreVisible;
     }
 
     protected *allRenderers(): IterableIterator<[string, GeneralPreferenceNodeRenderer, Map<string, GeneralPreferenceNodeRenderer>]> {
