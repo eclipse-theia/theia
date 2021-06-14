@@ -383,14 +383,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.doBlurSearchFieldContainer();
     }
 
-    private _searchTimeout: NodeJS.Timeout;
+    private _searchTimeout: number;
     protected readonly search = (e: React.KeyboardEvent) => {
         e.persist();
         const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];
         if (searchOnType) {
             const delay = this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] || 0;
-            clearTimeout(this._searchTimeout);
-            this._searchTimeout = setTimeout(() => this.doSearch(e), delay);
+            window.clearTimeout(this._searchTimeout);
+            this._searchTimeout = window.setTimeout(() => this.doSearch(e), delay);
         }
     };
 
