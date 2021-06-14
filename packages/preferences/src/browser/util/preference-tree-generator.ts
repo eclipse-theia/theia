@@ -28,6 +28,8 @@ export class PreferenceTreeGenerator {
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
 
+    protected _root: CompositeTreeNode;
+
     protected readonly onSchemaChangedEmitter = new Emitter<CompositeTreeNode>();
     readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
     protected readonly commonlyUsedPreferences = [
@@ -64,6 +66,10 @@ export class PreferenceTreeGenerator {
         ['workspace', 'application'],
     ]);
     protected readonly defaultTopLevelCategory = 'extensions';
+
+    get root(): CompositeTreeNode {
+        return this._root ?? this.generateTree();
+    }
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -115,6 +121,7 @@ export class PreferenceTreeGenerator {
             }
         }
 
+        this._root = root;
         return root;
     };
 

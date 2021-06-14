@@ -26,6 +26,7 @@ import {
     NodeProps,
     ExpandableTreeNode,
     SelectableTreeNode,
+    PreferenceService,
 } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core';
 import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
@@ -59,6 +60,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
     @inject(PreferencesSearchbarWidget) protected readonly filterInput: PreferencesSearchbarWidget;
     @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     protected readonly onTreeFilterChangedEmitter = new Emitter<PreferenceFilterChangeEvent>();
     readonly onFilterChanged = this.onTreeFilterChangedEmitter.event;
@@ -95,16 +97,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
         super.init();
         this.toDispose.pushAll([
-            this.treeGenerator.onSchemaChanged(newTree => {
-                this.root = newTree;
-                if (this.isFiltered) {
-                    this.expandAll();
-                }
-                this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
-            }),
+            this.treeGenerator.onSchemaChanged(newTree => this.handleNewSchema(newTree)),
             this.scopeTracker.onScopeChanged(scopeDetails => {
                 this._currentScope = scopeDetails.scope;
                 this.updateFilteredRows(PreferenceFilterChangeSource.Scope);
@@ -125,6 +121,16 @@ export class PreferenceTreeModel extends TreeModelImpl {
             }),
             this.onTreeFilterChangedEmitter,
         ]);
+        await this.preferenceService.ready;
+        this.handleNewSchema(this.treeGenerator.root);
+    }
+
+    private handleNewSchema(newRoot: CompositeTreeNode): void {
+        this.root = newRoot;
+        if (this.isFiltered) {
+            this.expandAll();
+        }
+        this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
     }
 
     protected updateRows(): void {
