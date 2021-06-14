@@ -66,16 +66,18 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
         this.id = PreferencesEditorWidget.ID;
         this.title.label = PreferencesEditorWidget.LABEL;
         this.addClass('settings-main');
         this.toDispose.pushAll([
             this.preferenceService.onPreferencesChanged(e => this.handlePreferenceChanges(e)),
-            this.model.onFilterChanged(e => this.handleFilterChange(e)),
+            this.model.onFilterChanged(e => this.handleDisplayChange(e)),
             this.model.onSelectionChanged(e => this.handleSelectionChange(e)),
         ]);
         this.createContainers();
+        await this.preferenceService.ready;
+        this.handleDisplayChange({ source: PreferenceFilterChangeSource.Schema });
     }
 
     protected createContainers(): void {
@@ -90,7 +92,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.node.appendChild(noLeavesMessage);
     }
 
-    protected handleFilterChange(e: PreferenceFilterChangeEvent): void {
+    protected handleDisplayChange(e: PreferenceFilterChangeEvent): void {
         const { isFiltered } = this.model;
         const currentFirstVisible = this.firstVisibleChildID;
         const leavesAreVisible = this.areLeavesVisible();
