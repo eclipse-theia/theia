@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
-import { OVSXClient } from './ovsx-client';
-import { VSXSearchParam } from './ovsx-types';
+import { VSCODE_EXTERNAL_BUILTINS, OVSXClient } from './ovsx-client';
+import { VSXBuiltinNamespaces, VSXSearchParam } from './ovsx-types';
 
 const expect = chai.expect;
 
@@ -105,6 +105,33 @@ describe('OVSX Client', () => {
             expect(client['isVersionLTE']('1.40.0', '1.50.0')).equal(true, 'should be satisfied since v1 is less than v2');
             expect(client['isVersionLTE']('1.50.0', '1.50.0')).equal(true, 'should be satisfied since v1 and v2 are equal');
             expect(client['isVersionLTE']('2.0.2', '2.0.1')).equal(false, 'should not be satisfied since v1 is greater than v2');
+        });
+
+    });
+
+    describe('#isReservedBuiltin', () => {
+
+        it('should be `true` for the `eclipse-theia` namespace', () => {
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.THEIA}.java`)).equal(true);
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.THEIA}.python`)).equal(true);
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.THEIA}.typescript`)).equal(true);
+        });
+
+        it('should be `true` for the `vscode` namespace', () => {
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.VSCODE}.java`)).equal(true);
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.VSCODE}.python`)).equal(true);
+            expect(client['isBuiltinExtension'](`${VSXBuiltinNamespaces.VSCODE}.typescript`)).equal(true);
+        });
+
+        it('should be `true` for external builtin extensions', () => {
+            for (const id of VSCODE_EXTERNAL_BUILTINS) {
+                expect(client['isBuiltinExtension'](id)).equal(true);
+            }
+        });
+
+        it('should return `false` for non-builtin extensions', () => {
+            expect(client['isBuiltinExtension']('foo.bar')).equal(false);
+            expect(client['isBuiltinExtension']('bar.foo')).equal(false);
         });
 
     });

@@ -34,6 +34,14 @@ const postJson = bent('POST', {
     'Accept': 'application/json'
 }, 'json', 200);
 
+/**
+ * The list of external builtins included with vscode at build time.
+ * // https://github.com/microsoft/vscode/blob/1.57.0/product.json#L34-L126
+ */
+export const VSCODE_EXTERNAL_BUILTINS = [
+    'ms-vscode.node-debug', 'ms-vscode.node-debug2', 'ms-vscode.references-view', 'ms-vscode.js-debug-companion', 'ms-vscode.js-debug', 'ms-vscode.vscode-js-profile-table'
+];
+
 export interface OVSXClientOptions {
     apiVersion: string
     apiUrl: string
@@ -134,8 +142,7 @@ export class OVSXClient {
             return undefined;
         }
 
-        const namespace = extensions[0].namespace.toLowerCase();
-        if (this.isBuiltinNamespace(namespace)) {
+        if (this.isBuiltinExtension(id)) {
             const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
@@ -160,7 +167,7 @@ export class OVSXClient {
      */
     getLatestCompatibleVersion(entry: VSXSearchEntry): VSXAllVersions | undefined {
         const extensions = entry.allVersions;
-        if (this.isBuiltinNamespace(entry.namespace)) {
+        if (this.isBuiltinExtension(`${entry.namespace}.${entry.name}`)) {
             const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
@@ -192,6 +199,25 @@ export class OVSXClient {
             return true;
         } else {
             return semver.satisfies(this.options!.apiVersion, engine);
+        }
+    }
+
+    /**
+     * Determines if the extension is a vscode builtin.
+     * A vscode builtin can be:
+     * - the reserved `vscode` namespace.
+     * - the reserved `eclipse-theia` namespace for builtin extension packs.
+     * - the list of external builtins referenced by vscode at build time.
+     * @param id the extension id.
+     * @returns `true` if the extension is a vscode builtin, else `false`.
+     */
+    protected isBuiltinExtension(id: string): boolean {
+        const isMsBuiltin = VSCODE_EXTERNAL_BUILTINS.includes(id);
+        if (isMsBuiltin) {
+            return true;
+        } else {
+            const namespace = id.substring(0, id.indexOf('.'));
+            return this.isBuiltinNamespace(namespace);
         }
     }
 
