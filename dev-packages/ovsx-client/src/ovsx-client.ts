@@ -34,6 +34,15 @@ const postJson = bent('POST', {
     'Accept': 'application/json'
 }, 'json', 200);
 
+/**
+ * The following are ms-vscode builtin extension-identities known to be available in the 'Open VSX Registry'
+ * The source code of these ms-vscode extensions is not included in the vscode repository but are however
+ * fetched by vscode at build time.
+ * https://github.com/microsoft/vscode/blob/1.57.0/product.json#L34-L126
+ */
+const msVscodeBuiltins = ['ms-vscode.node-debug', 'ms-vscode.node-debug2', 'ms-vscode.references-view',
+    'ms-vscode.js-debug-companion', 'ms-vscode.js-debug'];
+
 export interface OVSXClientOptions {
     apiVersion: string
     apiUrl: string
@@ -135,7 +144,9 @@ export class OVSXClient {
         }
 
         const namespace = extensions[0].namespace.toLowerCase();
-        if (this.isBuiltinNamespace(namespace)) {
+        const name = extensions[0].name.toLowerCase();
+
+        if (this.isKnownBuiltin(namespace, name)) {
             const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
@@ -160,7 +171,7 @@ export class OVSXClient {
      */
     getLatestCompatibleVersion(entry: VSXSearchEntry): VSXAllVersions | undefined {
         const extensions = entry.allVersions;
-        if (this.isBuiltinNamespace(entry.namespace)) {
+        if (this.isKnownBuiltin(entry.namespace, entry.name)) {
             const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
@@ -202,6 +213,18 @@ export class OVSXClient {
     protected isBuiltinNamespace(namespace: string): boolean {
         return namespace === VSXBuiltinNamespaces.VSCODE
             || namespace === VSXBuiltinNamespaces.THEIA;
+    }
+
+    /**
+     * Determines if the given extension identified by namespace and name is a known builtin of
+     * vscode or theia.
+     * Note that the `ms-code` namespace is not exclusive to builtin extensions.
+     * @param namespace the extension's namespace.
+     * @param name the extension's name.
+     */
+    protected isKnownBuiltin(namespace: string, name: string): boolean {
+        return this.isBuiltinNamespace(namespace) ||
+            msVscodeBuiltins.includes(namespace + '.' + name);
     }
 
     /**
