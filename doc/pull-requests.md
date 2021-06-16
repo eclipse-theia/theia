@@ -81,6 +81,7 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
 <a name="checklist-commit-history"></a>
 - [10.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
+  - When addressing change requests on a PR, the PR author should provide those changes in separate commits while the review process is not finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history. 
 
 ## Reviewing
 
