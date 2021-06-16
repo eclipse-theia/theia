@@ -40,10 +40,10 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 @injectable()
 export class WorkspaceService implements FrontendApplicationContribution {
 
-    private _workspace: FileStat | undefined;
+    protected _workspace: FileStat | undefined;
 
-    private _roots: FileStat[] = [];
-    private deferredRoots = new Deferred<FileStat[]>();
+    protected _roots: FileStat[] = [];
+    protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
     protected readonly fileService: FileService;
@@ -423,7 +423,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return getTemporaryWorkspaceFileUri(this.envVariableServer);
     }
 
-    private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
+    protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
         if (workspaceFile) {
             const data = JSON.stringify(WorkspaceData.transformToRelative(workspaceData, workspaceFile));
             const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
