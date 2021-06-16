@@ -83,9 +83,10 @@ export class IPCConnectionProvider {
             info: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
             log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`)
         });
-        connection.trace(Trace.Off, {
+        const traceVerbosity = this.logger.isDebug() ? Trace.Verbose : Trace.Off;
+        connection.trace(traceVerbosity, {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            log: (message: any, data?: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}` + (typeof data === 'string' ? ' ' + data : ''))
+            log: (message: any, data?: string) => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] ${message}` + (typeof data === 'string' ? ' ' + data : ''))
         });
         return connection;
     }

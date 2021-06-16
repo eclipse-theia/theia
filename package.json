@@ -74,6 +74,8 @@
     "publish:check": "node scripts/check-publish.js",
     "start:browser": "yarn rebuild:browser && yarn --cwd examples/browser start",
     "start:electron": "yarn rebuild:electron && yarn --cwd examples/electron start",
+    "debug:browser": "yarn rebuild:browser && yarn --cwd examples/browser start:debug",
+    "debug:electron": "yarn rebuild:electron && yarn --cwd examples/electron start:debug",
     "download:plugins": "theia download:plugins"
   },
   "workspaces": [
