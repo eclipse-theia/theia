@@ -91,8 +91,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
     }
 
     protected async initBeforeQuickOpen(): Promise<void> {
-        const token: number = this.taskService.startUserAction();
-        await this.doInit(token);
+        await this.init();
         if (!this.items.length) {
             this.items.push(({
                 label: 'No task to run found. Configure Tasks...',
@@ -117,7 +116,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
                 }
             }
         };
-        this.quickInputService.showQuickPick(this.items, options);
+        this.quickInputService?.showQuickPick(this.items, options);
     }
 
     attach(): void {
@@ -145,7 +144,12 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
                     }
                 });
             }
-            this.quickInputService?.open(this.prefix);
+            if (this.items.length === 0) {
+                this.items.push(({
+                    label: 'No tasks found'
+                }));
+            }
+            this.quickInputService?.showQuickPick(this.items, { placeholder: 'Choose task to open' });
         });
     }
 
