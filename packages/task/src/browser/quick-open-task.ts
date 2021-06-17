@@ -90,7 +90,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
         );
     }
 
-    async open(): Promise<void> {
+    protected async initBeforeQuickOpen(): Promise<void> {
         const token: number = this.taskService.startUserAction();
         await this.doInit(token);
         if (!this.items.length) {
@@ -99,13 +99,15 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
                 execute: () => this.configure()
             }));
         }
+    }
+
+    async open(): Promise<void> {
+        await this.initBeforeQuickOpen();
         this.quickInputService?.open(this.prefix);
     }
 
     async showRunTask(): Promise<void> {
-        if (this.items.length === 0) {
-            await this.init();
-        }
+        await this.initBeforeQuickOpen();
         const options: QuickPickOptions<QuickPickItem> = {
             placeholder: 'Select the task to run',
             onDidTriggerItemButton: ({ item }) => {
