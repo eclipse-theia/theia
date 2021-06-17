@@ -383,12 +383,16 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             const iconClass = `webview-${this.identifier.id}-file-icon`;
             this.toDisposeOnIcon.push(this.sharedStyle.insertRule(
                 `.theia-webview-icon.${iconClass}::before`,
-                theme => `background-image: url(${theme.type === 'light' ? lightIconUrl : darkIconUrl});`
+                theme => `background-image: url(${this.toEndpoint(theme.type === 'light' ? lightIconUrl : darkIconUrl)});`
             ));
             this.title.iconClass = `theia-webview-icon ${iconClass}`;
         } else {
             this.title.iconClass = '';
         }
+    }
+
+    protected toEndpoint(pathname: string): string {
+        return new Endpoint({ path: pathname }).getRestUrl().toString();
     }
 
     setHTML(value: string): void {
