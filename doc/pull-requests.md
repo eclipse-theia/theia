@@ -45,6 +45,9 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
   - A request on the design review should be an explicit comment.
   - Such PR should be marked as a draft or with the WIP prefix.
 
+<a name="fixups"></a>
+- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits while the review process is not finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history. 
+
 ## Requesting a Review
 
 <a name="review-reqs"></a>
