@@ -30,6 +30,7 @@ import { Mutable } from '@theia/core/lib/common/types';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { IconUrl } from '../../common/plugin-protocol';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
+import { WebviewPanelTargetArea } from '../../plugin/types-impl';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
@@ -89,12 +90,19 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     addOrReattachWidget(widget: WebviewWidget, showOptions: WebviewPanelShowOptions): void {
-        const widgetOptions: ApplicationShell.WidgetOptions = { area: showOptions.area ? showOptions.area : 'main' };
-
+        const area = showOptions.area ? showOptions.area : WebviewPanelTargetArea.Main;
+        const widgetOptions: ApplicationShell.WidgetOptions = { area };
         let mode = 'open-to-right';
-        if (showOptions.viewColumn === -2) {
-            const ref = this.shell.currentWidget;
-            if (ref && this.shell.getAreaFor(ref) === widgetOptions.area) {
+        // -2 corresponds to vscode.ViewColumn.Beside opening option
+        const canOpenBeside = showOptions.viewColumn === -2 && (area === WebviewPanelTargetArea.Main || area === WebviewPanelTargetArea.Bottom);
+        if (canOpenBeside) {
+            let activeOrRightmostTabbar = this.shell.getTabBarFor(area);
+            if (!activeOrRightmostTabbar) {
+                const areaTabBars = area === WebviewPanelTargetArea.Main ? this.shell.mainAreaTabBars : this.shell.bottomAreaTabBars;
+                activeOrRightmostTabbar = areaTabBars[areaTabBars.length - 1];
+            }
+            const ref = activeOrRightmostTabbar?.currentTitle?.owner;
+            if (ref) {
                 Object.assign(widgetOptions, { ref, mode });
             }
         } else if (widgetOptions.area === 'main' && showOptions.viewColumn !== undefined) {
