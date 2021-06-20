@@ -34,7 +34,7 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexPreload(frontendModules: Map<string, string>): string {
         const template = this.pck.props.generator.config.preloadTemplate;
         if (!template) {
-            return '';
+            return '<div class="theia-loader"></div>';
         }
 
         // Support path to html file
@@ -54,7 +54,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
-  <div class="theia-preload theia-loader">${this.compileIndexPreload(frontendModules)}</div>
+  <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
 </body>
 
 </html>`;
