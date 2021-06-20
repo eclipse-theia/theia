@@ -27,11 +27,11 @@ import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
+import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
-import { ContextKeyService } from './context-key-service';
+import { ContextKey, ContextKeyService } from './context-key-service';
 import { OS, isOSX, isWindows } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
@@ -59,6 +59,7 @@ import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
+import { Title, Widget } from './widgets';
 
 export namespace CommonMenus {
 
@@ -241,6 +242,16 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Status Bar Visibility'
     });
+    export const PIN_TAB = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.pinEditor',
+        category: VIEW_CATEGORY,
+        label: 'Pin Tab'
+    });
+    export const UNPIN_TAB = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.unpinEditor',
+        category: VIEW_CATEGORY,
+        label: 'Unpin Tab'
+    });
     export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
@@ -316,6 +327,8 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
+export const PINNED_CLASS = 'theia-mod-pinned';
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
@@ -372,6 +385,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    protected pinnedKey: ContextKey<boolean>;
+
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
@@ -384,6 +399,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
+
+        this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
+        this.updatePinnedKey();
+        this.shell.onDidChangeActiveWidget(() => this.updatePinnedKey());
 
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
@@ -425,6 +444,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
         }
+    }
+
+    protected updatePinnedKey(): void {
+        const value = this.shell.activeWidget && this.shell.activeWidget.title.className.indexOf(PINNED_CLASS) >= 0;
+        this.pinnedKey.set(value);
     }
 
     protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
@@ -635,6 +659,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SHOW_MENU_BAR.id,
             label: nls.localizeByDefault('Toggle Menu Bar'),
             order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
+            commandId: CommonCommands.PIN_TAB.id,
+            label: 'Pin',
+            order: '7'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
+            commandId: CommonCommands.UNPIN_TAB.id,
+            label: 'Unpin',
+            order: '8'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
@@ -877,14 +911,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
-
+        commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => !!title && title.closable && title.className.indexOf(PINNED_CLASS) === -1,
+            execute: title => this.togglePinned(title),
+        }));
+        commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => !!title && title.className.indexOf(PINNED_CLASS) >= 0,
+            execute: title => this.togglePinned(title),
+        }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
         });
     }
 
-    private isElectron(): boolean {
+    protected isElectron(): boolean {
         return environment.electron.is();
+    }
+
+    protected togglePinned(title?: Title<Widget>): void {
+        if (title) {
+            title.closable = title.className.indexOf(PINNED_CLASS) >= 0;
+
+            title.className = title.className.replace(` ${PINNED_CLASS}`, '');
+            if (!title.closable) {
+                title.className += ` ${PINNED_CLASS}`;
+            }
+
+            this.updatePinnedKey();
+        }
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -996,6 +1050,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.SELECT_COLOR_THEME.id,
                 keybinding: 'ctrlcmd+k ctrlcmd+t'
+            },
+            {
+                command: CommonCommands.PIN_TAB.id,
+                keybinding: 'ctrlcmd+k shift+enter',
+                when: '!activeWidgetIsPinned'
+            },
+            {
+                command: CommonCommands.UNPIN_TAB.id,
+                keybinding: 'ctrlcmd+k shift+enter',
+                when: 'activeWidgetIsPinned'
             }
         );
     }

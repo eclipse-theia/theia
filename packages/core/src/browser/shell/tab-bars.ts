@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -87,6 +87,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         protected readonly decoratorService?: TabBarDecoratorService,
         protected readonly iconThemeService?: IconThemeService,
         protected readonly selectionService?: SelectionService,
+        protected readonly commandService?: CommandService
     ) {
         super();
         if (this.decoratorService) {
@@ -162,7 +163,10 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.renderLabel(data, isInSidePanel),
                 this.renderBadge(data, isInSidePanel)
             ),
-            this.renderCloseIcon(data)
+            h.div({
+                className: 'p-TabBar-tabCloseIcon',
+                onclick: this.handleCloseClickEvent
+            })
         );
     }
 
@@ -464,6 +468,16 @@ export class TabBarRenderer extends TabBar.Renderer {
                 // We'd like to wait until the command triggered by the context menu has been run, but this should let it get through the preamble, at least.
                 onHide: () => setTimeout(() => { if (this.selectionService) { this.selectionService.selection = oldSelection; } })
             });
+        }
+    };
+
+    protected handleCloseClickEvent = (event: MouseEvent) => {
+        if (this.tabBar && event.currentTarget instanceof HTMLElement) {
+            const id = event.currentTarget.parentElement!.id;
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
+            if (title && title.className.indexOf('theia-mod-pinned') >= 0 && this.commandService) {
+                this.commandService.executeCommand('workbench.action.unpinEditor', event);
+            }
         }
     };
 
