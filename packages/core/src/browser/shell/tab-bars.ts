@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, CommandService } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message } from '@phosphor/messaging';
@@ -28,6 +28,7 @@ import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel
 import { WidgetDecoration } from '../widget-decoration';
 import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
+import { TheiaTitle } from '../widgets';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -77,7 +78,8 @@ export class TabBarRenderer extends TabBar.Renderer {
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
         protected readonly decoratorService?: TabBarDecoratorService,
-        protected readonly iconThemeService?: IconThemeService
+        protected readonly iconThemeService?: IconThemeService,
+        protected readonly commandService?: CommandService
     ) {
         super();
         if (this.decoratorService) {
@@ -153,7 +155,10 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.renderLabel(data, isInSidePanel),
                 this.renderBadge(data, isInSidePanel)
             ),
-            this.renderCloseIcon(data)
+            h.div({
+                className: 'p-TabBar-tabCloseIcon',
+                onclick: this.handleCloseClickEvent
+            })
         );
     }
 
@@ -436,6 +441,17 @@ export class TabBarRenderer extends TabBar.Renderer {
             event.stopPropagation();
             event.preventDefault();
             this.contextMenuRenderer.render(this.contextMenuPath, event);
+        }
+    };
+
+    protected handleCloseClickEvent = (event: MouseEvent) => {
+        if (this.tabBar && event.currentTarget instanceof HTMLElement) {
+            const id = event.currentTarget.parentElement!.id;
+            // eslint-disable-next-line no-null/no-null
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id) as TheiaTitle;
+            if (title && title.pinned && this.commandService) {
+                this.commandService.executeCommand('workbench.action.unpinEditor', event);
+            }
         }
     };
 
