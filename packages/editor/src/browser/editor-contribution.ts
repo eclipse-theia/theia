@@ -18,7 +18,7 @@ import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { FrontendApplicationContribution, DiffUris, DockLayout } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, DiffUris, DockLayout, QuickInputService } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection } from '@theia/core';
 import { EditorCommands } from './editor-command';
@@ -41,6 +41,9 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
 
     @inject(QuickEditorService) @optional()
     protected readonly quickEditorService: QuickEditorService;
+
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     onStart(): void {
         this.initEditorContextKeys();
@@ -132,7 +135,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
-            execute: () => this.quickEditorService?.open('edt ')
+            execute: () => this.quickInputService?.open('edt ')
         });
         const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => ({
             isEnabled: () => !!this.editorManager.currentEditor,

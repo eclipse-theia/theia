@@ -102,7 +102,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
 
     async open(): Promise<void> {
         await this.initBeforeQuickOpen();
-        this.quickInputService?.open(this.prefix);
+        this.quickInputService?.showQuickPick(this.items, { placeholder: 'Select the task to run' });
     }
 
     async showRunTask(): Promise<void> {
@@ -294,9 +294,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
     }
 
     async getPicks(filter: string, token: monaco.CancellationToken): Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>> {
-        if (this.items.length === 0) {
-            await this.init();
-        }
+        await this.init();
         return filterItems(this.items, filter);
     }
 
@@ -419,9 +417,7 @@ export class TaskRunQuickOpenItem implements monaco.quickInput.IAnythingQuickPic
     }
 
     trigger(): monaco.quickInput.TriggerAction {
-        if (this.task._scope) {
-            this.taskConfigurationManager.openConfiguration(this.task._scope);
-        }
+        this.taskService.configure(this.token, this.task);
         return monaco.quickInput.TriggerAction.CLOSE_PICKER;
     }
 }
