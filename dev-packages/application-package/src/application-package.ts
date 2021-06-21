@@ -20,7 +20,7 @@ import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
-const merge = require('deepmerge');
+const merge = require('deepmerge/dist/cjs');
 
 // tslint:disable:no-implicit-dependencies
 
