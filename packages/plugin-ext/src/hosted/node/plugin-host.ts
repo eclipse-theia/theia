@@ -83,9 +83,9 @@ const rpc = new RPCProtocolImpl({
         }
     }
 },
-{
-    reviver: reviver
-});
+    {
+        reviver: reviver
+    });
 
 process.on('message', async (message: string) => {
     if (terminating) {

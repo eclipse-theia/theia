@@ -22,8 +22,6 @@ import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 const merge = require('deepmerge/dist/cjs');
 
-// tslint:disable:no-implicit-dependencies
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export class ApplicationPackageOptions {
@@ -99,12 +97,13 @@ export class ApplicationPackage {
         return this._pck = readJsonFile(this.packagePath);
     }
 
-    protected _frontendModules: Map<string, string> | undefined;
-    protected _frontendElectronModules: Map<string, string> | undefined;
-    protected _backendModules: Map<string, string> | undefined;
-    protected _backendElectronModules: Map<string, string> | undefined;
-    protected _electronMainModules: Map<string, string> | undefined;
-    protected _extensionPackages: ReadonlyArray<ExtensionPackage> | undefined;
+    protected _frontendModules?: Map<string, string>;
+    protected _frontendElectronModules?: Map<string, string>;
+    protected _backendModules?: Map<string, string>;
+    protected _backendElectronModules?: Map<string, string>;
+    protected _electronMainModules?: Map<string, string>;
+    protected _extensionPackages?: ReadonlyArray<ExtensionPackage>;
+    protected _extensionEntryPoints?: Map<string, string>;
 
     /**
      * Extension packages in the topological order.
@@ -118,6 +117,27 @@ export class ApplicationPackage {
             this._extensionPackages = collector.collect(this.pck);
         }
         return this._extensionPackages;
+    }
+
+    /**
+     * All entry points defined by the installed Theia extensions.
+     *
+     * Map of entry point name to script import path.
+     */
+    get extensionEntryPoints(): ReadonlyMap<string, string> {
+        if (!this._extensionEntryPoints) {
+            this._extensionEntryPoints = new Map();
+            for (const extensionPackage of this.extensionPackages) {
+                for (const theiaExtension of extensionPackage.theiaExtensions) {
+                    if (typeof theiaExtension.entryPoints === 'object') {
+                        for (const [key, value] of Object.entries(theiaExtension.entryPoints)) {
+                            this._extensionEntryPoints.set(key, `${extensionPackage.name}/${value}`);
+                        }
+                    }
+                }
+            }
+        }
+        return this._extensionEntryPoints;
     }
 
     getExtensionPackage(extension: string): ExtensionPackage | undefined {

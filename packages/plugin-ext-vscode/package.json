@@ -23,7 +23,10 @@
   "theiaExtensions": [
     {
       "backend": "lib/node/plugin-vscode-backend-module",
-      "frontend": "lib/browser/plugin-vscode-frontend-module"
+      "frontend": "lib/browser/plugin-vscode-frontend-module",
+      "entryPoints": {
+        "plugin-vscode-init": "lib/node/plugin-vscode-init.js"
+      }
     }
   ],
   "keywords": [

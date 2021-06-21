@@ -25,6 +25,10 @@ export interface Extension {
     backend?: string;
     backendElectron?: string;
     electronMain?: string;
+    /**
+     * Map of script name to script relative path
+     */
+    entryPoints?: Record<string, string>;
 }
 
 export class ExtensionPackage {

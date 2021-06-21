@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import dynamicRequire = require('@theia/dynamic-require');
 import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
 import { PluginMetadata } from '../../common/plugin-protocol';
@@ -85,12 +86,11 @@ export class PluginHostRPC {
         await this.pluginManager.terminate();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    initContext(contextPath: string, plugin: Plugin): any {
+    initContext(contextPath: string, plugin: Plugin): void {
         const { name, version } = plugin.rawModel;
         console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
         try {
-            const backendInit = require(contextPath);
+            const backendInit = dynamicRequire(contextPath);
             backendInit.doInitialization(this.apiFactory, plugin);
         } catch (e) {
             console.error(e);
@@ -144,7 +144,7 @@ export class PluginHostRPC {
 
                 });
                 if (plugin.pluginPath) {
-                    return require(plugin.pluginPath);
+                    return dynamicRequire(plugin.pluginPath);
                 }
             },
             async init(raw: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
@@ -197,7 +197,7 @@ export class PluginHostRPC {
                 for (const api of extApi) {
                     if (api.backendInitPath) {
                         try {
-                            const extApiInit = require(api.backendInitPath);
+                            const extApiInit = dynamicRequire(api.backendInitPath);
                             extApiInit.provideApi(rpc, pluginManager);
                         } catch (e) {
                             console.error(e);
@@ -211,7 +211,7 @@ export class PluginHostRPC {
                 let testRunner: any;
                 let requireError: Error | undefined;
                 try {
-                    testRunner = require(extensionTestsPath);
+                    testRunner = dynamicRequire(extensionTestsPath);
                 } catch (error) {
                     requireError = error;
                 }

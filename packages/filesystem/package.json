@@ -23,7 +23,10 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/filesystem-frontend-module",
-      "backend": "lib/node/filesystem-backend-module"
+      "backend": "lib/node/filesystem-backend-module",
+      "entryPoints": {
+        "nsfw-watcher": "lib/node/nsfw-watcher/index.js"
+      }
     },
     {
       "frontend": "lib/browser/download/file-download-frontend-module",

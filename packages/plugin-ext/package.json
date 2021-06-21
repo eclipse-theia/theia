@@ -9,6 +9,7 @@
     "@theia/callhierarchy": "1.14.0",
     "@theia/core": "1.14.0",
     "@theia/debug": "1.14.0",
+    "@theia/dynamic-require": "1.14.0",
     "@theia/editor": "1.14.0",
     "@theia/file-search": "1.14.0",
     "@theia/filesystem": "1.14.0",
@@ -48,7 +49,11 @@
     {
       "backend": "lib/plugin-ext-backend-module",
       "backendElectron": "lib/plugin-ext-backend-electron-module",
-      "frontend": "lib/plugin-ext-frontend-module"
+      "frontend": "lib/plugin-ext-frontend-module",
+      "entryPoints": {
+        "plugin-host": "lib/hosted/node/plugin-host.js",
+        "backend-init-theia": "lib/hosted/node/scanners/backend-init-theia.js"
+      }
     },
     {
       "frontendElectron": "lib/plugin-ext-frontend-electron-module"
