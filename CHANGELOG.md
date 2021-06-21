@@ -15,6 +15,7 @@
 - [core] added support for `resourceDirName` and `resourcePath` context keys [#9499](https://github.com/eclipse-theia/theia/pull/9499)
 - [core] added support for a unique id for non-command toolbar items [#9586](https://github.com/eclipse-theia/theia/pull/9586)
 - [core] fixed incorrectly wrapped disposable [#9376](https://github.com/eclipse-theia/theia/pull/9376)
+- [core] transpile theia to es6 [#9436](https://github.com/eclipse-theia/theia/pull/9436) - Contributed on behalf of STMicroelectronics
 - [debug] fixed handling when `supportSetVariable` is disabled [#9616](https://github.com/eclipse-theia/theia/pull/9616)
 - [editor-preview] refactored `editor-preview` resolving outstanding bugs [#9518](https://github.com/eclipse-theia/theia/pull/9518)
   - rewrote `editor-preview`-package classes as extensions of `editor`-package classes
