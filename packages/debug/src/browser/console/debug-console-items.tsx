@@ -232,6 +232,9 @@ export class DebugVariable extends ExpressionContainer {
     protected setNameRef = (nameRef: HTMLSpanElement | null) => this.nameRef = nameRef || undefined;
 
     async open(): Promise<void> {
+        if (!this.supportSetVariable) {
+            return;
+        }
         const input = new SingleTextInputDialog({
             title: `Set ${this.name} Value`,
             initialValue: this.value
