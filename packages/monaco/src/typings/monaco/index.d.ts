@@ -87,19 +87,7 @@ declare module monaco.editor {
 
     export class ResourceEdit {
         protected constructor(readonly metadata?: WorkspaceEditMetadata) { }
-
-        static convert(workspaceEdit: WorkspaceEdit): ResourceEdit[] {
-
-            return workspaceEdit.edits.map(edit => {
-                if (isWorkspaceTextEdit(edit)) {
-                    return new ResourceTextEdit(edit.resource, edit.edit, edit.modelVersionId, edit.metadata);
-                }
-                if (isWorkspaceFileEdit(edit)) {
-                    return new ResourceFileEdit(edit.oldUri, edit.newUri, edit.options, edit.metadata);
-                }
-                throw new Error('Unsupported edit');
-            });
-        }
+        static convert(workspaceEdit: WorkspaceEdit): ResourceEdit[];
     }
 
     export class ResourceTextEdit extends ResourceEdit {
