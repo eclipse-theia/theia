@@ -18,7 +18,7 @@ import { LabelProvider, LabelProviderContribution, TreeNode } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ResourcePropertiesCategoryNode, ResourcePropertiesItemNode } from './resource-property-view-tree-items';
 
-const DEFAULT_INFO_ICON = 'fa fa-info-circle';
+export const DEFAULT_INFO_ICON = 'fa fa-info-circle';
 
 @injectable()
 export class ResourcePropertiesLabelProvider implements LabelProviderContribution {
