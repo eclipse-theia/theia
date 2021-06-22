@@ -11,6 +11,8 @@
 
 - [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
 - [core] `outline-view-tree.ts` has been renamed to `outline-view-tree-model.ts` to match class name. [#9583](https://github.com/eclipse-theia/theia/pull/9583)
+- [process] `ShellProcess` constructor takes a new `environmentUtils` parameter to handle environment operations.
+- [process] `@theia/process/lib/node/shell-process` no longer exports `mergeProcessEnv` as a raw function. Use `@theia/core/lib/node/environment-utils` and the injectable `EnvironmentUtils` class instead.
 
 ## v1.14.0 - 5/27/2021
 
