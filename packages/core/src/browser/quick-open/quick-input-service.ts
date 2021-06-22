@@ -152,9 +152,9 @@ export class QuickInputService {
                         if (!error && mode === QuickOpenMode.OPEN) {
                             if (validateInput && lookFor !== undefined) {
                                 Promise.resolve(validateInput(lookFor))
-                                    .then(err => {
-                                        if (err) {
-                                            label = err;
+                                    .then(errorMessage => {
+                                        if (errorMessage) {
+                                            label = errorMessage;
                                             this.quickOpenService.showDecoration(MessageType.Error);
                                         } else {
                                             this.onDidAcceptEmitter.fire(undefined);
