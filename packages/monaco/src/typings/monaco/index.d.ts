@@ -257,6 +257,7 @@ declare module monaco.editor {
         commandService?: monaco.commands.ICommandService;
         IWorkspaceEditService?: IBulkEditService;
         contextKeyService?: monaco.contextKeyService.IContextKeyService;
+        quickInputService?: monaco.quickInput.IQuickInputService;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/editor/common/editor.ts#L68
@@ -1315,6 +1316,20 @@ declare module monaco.quickInput {
         dispose(): void;
     }
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess.ts
+    export class StandaloneGotoLineQuickAccessProvider {
+        constructor(private readonly editorService: ICodeEditorService);
+        provide(picker: monaco.quickInput.IQuickPick<monaco.quickInput.IQuickPickItem>, token: CancellationToken): IDisposable;
+        protected get activeTextEditorControl(): IEditor | undefined;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.ts
+    export class StandaloneGotoSymbolQuickAccessProvider {
+        constructor(private readonly editorService: ICodeEditorService);
+        provide(picker: monaco.quickInput.IQuickPick<monaco.quickInput.IQuickPickItem>, token: CancellationToken): IDisposable;
+        protected get activeTextEditorControl(): IEditor | undefined;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/parts/quickinput/browser/quickInput.ts#L1112
     export class QuickInputController implements IDisposable {
         constructor(private options: IQuickInputOptions);
@@ -1751,7 +1766,7 @@ declare module monaco.quickInput {
          * @param buttonIndex index of the button of the item that
          * was clicked.
          *
-         * @param the state of modifier keys when the button was triggered.
+         * @param keyMods the state of modifier keys when the button was triggered.
          *
          * @returns a value that indicates what should happen after the trigger
          * which can be a `Promise` for long running operations.

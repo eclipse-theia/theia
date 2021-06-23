@@ -41,6 +41,7 @@ import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handle
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { MonacoQuickInputService } from './monaco-quick-input-service';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -69,6 +70,9 @@ export class MonacoEditorProvider {
 
     @inject(FileSystemPreferences)
     protected readonly filePreferences: FileSystemPreferences;
+
+    @inject(MonacoQuickInputService)
+    protected readonly quickInputService: MonacoQuickInputService;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -141,7 +145,8 @@ export class MonacoEditorProvider {
             commandService,
             IWorkspaceEditService,
             contextKeyService,
-            openerService
+            openerService,
+            quickInputService: this.quickInputService
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 

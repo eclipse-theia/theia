@@ -66,10 +66,6 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return editor && editor.getControl();
     }
 
-    getFocusedCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
-        return this.getActiveCodeEditor();
-    }
-
     async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
         const uri = new URI(input.resource.toString());
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);

@@ -67,6 +67,8 @@ import { MonacoQuickHelpService } from './monaco-quick-help-service';
 import { MonacoQuickViewService } from './monaco-quick-view-service';
 import { MonacoQuickEditorService } from './monaco-quick-editor-service';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
+import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access';
+import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbole-quick-access';
 
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
@@ -151,6 +153,12 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoQuickEditorService).toSelf().inSingletonScope();
     bind(QuickEditorService).toService(MonacoQuickEditorService);
+
+    bind(GotoLineQuickAccessContribution).toSelf().inSingletonScope();
+    bind(QuickAccessContribution).toService(GotoLineQuickAccessContribution);
+
+    bind(GotoSymbolQuickAccessContribution).toSelf().inSingletonScope();
+    bind(QuickAccessContribution).toService(GotoSymbolQuickAccessContribution);
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
 
