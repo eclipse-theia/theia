@@ -468,7 +468,7 @@ describe('Saveable', function () {
         }
     });
 
-    it.only(`'${closeOnFileDelete}' should close the editor when set to 'true'`, async () => {
+    it(`'${closeOnFileDelete}' should close the editor when set to 'true'`, async () => {
 
         await preferences.set(closeOnFileDelete, true);
         assert.isTrue(preferences.get(closeOnFileDelete));
