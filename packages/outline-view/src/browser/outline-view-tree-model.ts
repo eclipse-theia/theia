@@ -41,12 +41,14 @@ export class OutlineViewTreeModel extends TreeModelImpl {
     }
 
     /**
-     * The default behavior of `doOpenNode` is to toggle the expansion of the node.
-     * Override this behavior in order to prevent expansion, but allow for the
-     * `onOpenNode` event to still fire on a double-click event.
-     * @param node the expandable tree node.
+     * The default behavior of `openNode` calls `doOpenNode` which by default
+     * toggles the expansion of the node. Overriding to prevent expansion, but
+     * allow for the `onOpenNode` event to still fire on a double-click event.
      */
-    protected doOpenNode(node: TreeNode): void {
-        // no-op
+    openNode(raw?: TreeNode | undefined): void {
+        const node = raw || this.selectedNodes[0];
+        if (node) {
+            this.onOpenNodeEmitter.fire(node);
+        }
     }
 }
