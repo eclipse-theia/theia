@@ -756,9 +756,6 @@ export class ViewContainerPart extends BaseWidget {
             return;
         }
         super.setHidden(hidden);
-        if (!this.isHidden) {
-            this.collapsed = false;
-        }
     }
 
     get canHide(): boolean {
