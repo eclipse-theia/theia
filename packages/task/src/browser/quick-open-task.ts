@@ -26,7 +26,7 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
-import { filterItems, QuickInputButton, QuickPickItem, QuickPickOptions } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickInputButton, QuickPickItem } from '@theia/core/lib/browser/quick-input/quick-input-service';
 
 export namespace ConfigureTaskAction {
     export const ID = 'workbench.action.tasks.configureTaskRunner';
@@ -90,7 +90,14 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
         );
     }
 
-    protected async initBeforeQuickOpen(): Promise<void> {
+    protected onDidTriggerGearIcon(item: QuickPickItem): void {
+        if (item instanceof TaskRunQuickOpenItem) {
+            this.taskService.configure(item.token, item.task);
+            this.quickInputService.hide();
+        }
+    }
+
+    async open(): Promise<void> {
         await this.init();
         if (!this.items.length) {
             this.items.push(({
@@ -98,25 +105,10 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
                 execute: () => this.configure()
             }));
         }
-    }
-
-    async open(): Promise<void> {
-        await this.initBeforeQuickOpen();
-        this.quickInputService?.showQuickPick(this.items, { placeholder: 'Select the task to run' });
-    }
-
-    async showRunTask(): Promise<void> {
-        await this.initBeforeQuickOpen();
-        const options: QuickPickOptions<QuickPickItem> = {
+        this.quickInputService?.showQuickPick(this.items, {
             placeholder: 'Select the task to run',
-            onDidTriggerItemButton: ({ item }) => {
-                if (item instanceof TaskRunQuickOpenItem) {
-                    this.taskService.configure(item.token, item.task);
-                    this.quickInputService.hide();
-                }
-            }
-        };
-        this.quickInputService?.showQuickPick(this.items, options);
+            onDidTriggerItemButton: ({ item }) => this.onDidTriggerGearIcon(item)
+        });
     }
 
     attach(): void {
@@ -290,7 +282,10 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
             }];
         }
 
-        this.quickInputService?.showQuickPick(this.items, { placeholder: `Select the ${buildOrTestType} task to run` });
+        this.quickInputService?.showQuickPick(this.items, {
+            placeholder: `Select the ${buildOrTestType} task to run`,
+            onDidTriggerItemButton: ({ item }) => this.onDidTriggerGearIcon(item)
+        });
     }
 
     async getPicks(filter: string, token: monaco.CancellationToken): Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>> {

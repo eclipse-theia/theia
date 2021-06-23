@@ -236,7 +236,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                     if (source && label) {
                         return this.taskService.run(this.taskService.startUserAction(), source, label, scope);
                     }
-                    return this.quickOpenTask.showRunTask();
+                    return this.quickOpenTask.open();
                 }
             }
         );
