@@ -345,9 +345,11 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 // Fallback to the alphabetical order.
                 const comparison = itemB.localeCompare(itemA);
 
-                // If the alphabetical comparison is equal, call `compareItems` recursively using the `URI` member instead.
+                // Compare results by `uri` if necessary.
                 if (comparison === 0) {
-                    return this.compareItems(a, b, 'getUri');
+                    return member === 'getUri'
+                        ? 0 // Avoid infinite recursion if we have already compared by `uri`.
+                        : this.compareItems(a, b, 'getUri');
                 }
 
                 return itemB.localeCompare(itemA);
