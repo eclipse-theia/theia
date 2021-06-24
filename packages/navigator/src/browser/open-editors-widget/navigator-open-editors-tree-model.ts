@@ -16,7 +16,17 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileNode, FileStatNode, FileTreeModel } from '@theia/filesystem/lib/browser';
-import { ApplicationShell, CompositeTreeNode, open, NavigatableWidget, OpenerService, SelectableTreeNode, TreeNode, Widget } from '@theia/core/lib/browser';
+import {
+    ApplicationShell,
+    CompositeTreeNode,
+    open,
+    NavigatableWidget,
+    OpenerService,
+    SelectableTreeNode,
+    TreeNode,
+    Widget,
+    ExpandableTreeNode
+} from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { DisposableCollection } from '@theia/core/lib/common';
@@ -33,23 +43,43 @@ export namespace OpenEditorNode {
 
 @injectable()
 export class OpenEditorsModel extends FileTreeModel {
+    static GROUP_NODE_ID_PREFIX = 'group-node';
+    static AREA_NODE_ID_PREFIX = 'area-node';
+
     @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
     protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
-    protected _editorWidgets: NavigatableWidget[];
+
+    protected _editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
+
     get editorWidgets(): NavigatableWidget[] {
-        return this._editorWidgets;
+        let editorWidgets: NavigatableWidget[] = [];
+        this._editorWidgetsByArea.forEach(widgets => {
+            editorWidgets = [...editorWidgets, ...widgets];
+        });
+        return editorWidgets;
     }
+
+    getEditorWidgetsByGroup(id: ApplicationShell.Area | number): NavigatableWidget[] | undefined {
+        const idAsNum = Number(id);
+        if (!isNaN(idAsNum)) {
+            return this._editorWidgetsByGroup.get(idAsNum);
+        }
+        return this._editorWidgetsByArea.get(id as ApplicationShell.Area);
+    }
+
+    protected _editorWidgetsByGroup = new Map<number, NavigatableWidget[]>();
 
     @postConstruct()
     protected init(): void {
         super.init();
+        this.setupHandlers();
         this.initializeRoot();
     }
 
-    protected async initializeRoot(): Promise<void> {
+    protected setupHandlers(): void {
         this.toDispose.push(this.selectionService.onSelectionChanged(selection => {
             const { widget } = (selection[0] as OpenEditorNode);
             this.applicationShell.activateWidget(widget.id);
@@ -70,6 +100,11 @@ export class OpenEditorsModel extends FileTreeModel {
             this.updateOpenWidgets();
         }));
         this.toDispose.push(this.applicationShell.onDidRemoveWidget(() => this.updateOpenWidgets()));
+        this.applicationShell.mainPanel.layoutModified.connect(() => this.updateOpenWidgets());
+        this.applicationShell.bottomPanel.layoutModified.connect(() => this.updateOpenWidgets());
+    }
+
+    protected async initializeRoot(): Promise<void> {
         await this.updateOpenWidgets();
         this.fireChanged();
     }
@@ -77,37 +112,98 @@ export class OpenEditorsModel extends FileTreeModel {
     protected updateOpenWidgets = debounce(this.doUpdateOpenWidgets, 250);
 
     protected async doUpdateOpenWidgets(): Promise<void> {
-        this._editorWidgets = this.applicationShell.widgets.filter((widget): widget is NavigatableWidget => (
-            NavigatableWidget.is(widget) && !ApplicationShell.TrackableWidgetProvider.is(widget) // exclude preview widget
-        ));
-        this.root = await this.buildRootFromOpenedWidgets(this._editorWidgets);
+        this._editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
+        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right'];
+        areas.forEach(area => {
+            const editorWidgetsForArea = this.applicationShell.getWidgets(area).filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
+            if (editorWidgetsForArea.length) {
+                this._editorWidgetsByArea.set(area, editorWidgetsForArea);
+            }
+        });
+        this.root = await this.buildRootFromOpenedWidgets(this._editorWidgetsByArea);
     }
 
-    protected async buildRootFromOpenedWidgets(openWidgets: NavigatableWidget[]): Promise<CompositeTreeNode> {
-        const newRoot: CompositeTreeNode = {
+    protected tryCreateWidgetGroupMap(): Map<Widget, CompositeTreeNode> {
+        const mainTabBars = this.applicationShell.mainAreaTabBars;
+        this._editorWidgetsByGroup = new Map();
+        const widgetGroupMap = new Map<Widget, CompositeTreeNode>();
+        if (mainTabBars.length > 1) {
+            mainTabBars.forEach((tabbar, index) => {
+                const groupNumber = index + 1;
+                const newCaption = `GROUP ${groupNumber}`;
+                const groupNode = {
+                    parent: undefined,
+                    id: `${OpenEditorsModel.GROUP_NODE_ID_PREFIX}:${groupNumber}`,
+                    name: newCaption,
+                    children: []
+                };
+                const widgets: NavigatableWidget[] = [];
+                tabbar.titles.map(title => {
+                    const { owner } = title;
+                    widgetGroupMap.set(owner, groupNode);
+                    if (NavigatableWidget.is(owner)) {
+                        widgets.push(owner);
+                    }
+                });
+                this._editorWidgetsByGroup.set(groupNumber, widgets);
+            });
+        }
+        return widgetGroupMap;
+    }
+
+    protected async buildRootFromOpenedWidgets(widgetsByArea: Map<ApplicationShell.Area, NavigatableWidget[]>): Promise<CompositeTreeNode> {
+        const rootNode: CompositeTreeNode = {
             id: 'open-editors:root',
             parent: undefined,
             visible: false,
-            children: []
+            children: [],
         };
-        for (const widget of openWidgets) {
-            const uri = widget.getResourceUri();
-            if (uri) {
-                const fileStat = await this.fileService.resolve(uri);
-                const openEditorNode: OpenEditorNode = {
-                    id: widget.id,
-                    fileStat,
-                    uri,
-                    selected: false,
-                    parent: undefined,
-                    name: widget.title.label,
-                    icon: widget.title.iconClass,
-                    widget
-                };
-                CompositeTreeNode.addChild(newRoot, openEditorNode);
+
+        const mainAreaWidgetGroups = this.tryCreateWidgetGroupMap();
+
+        for (const [area, widgetsInArea] of widgetsByArea.entries()) {
+            const areaNode: CompositeTreeNode & ExpandableTreeNode = {
+                id: `${OpenEditorsModel.AREA_NODE_ID_PREFIX}:${area}`,
+                parent: rootNode,
+                name: area,
+                expanded: true,
+                children: []
+            };
+            for (const widget of widgetsInArea) {
+                const uri = widget.getResourceUri();
+                if (uri) {
+                    const fileStat = await this.fileService.resolve(uri);
+                    const openEditorNode: OpenEditorNode = {
+                        id: widget.id,
+                        fileStat,
+                        uri,
+                        selected: false,
+                        parent: undefined,
+                        name: widget.title.label,
+                        icon: widget.title.iconClass,
+                        widget
+                    };
+                    // only show groupings for main area widgets if more than one tabbar
+                    if ((area === 'main') && (mainAreaWidgetGroups.size > 1)) {
+                        const groupNode = mainAreaWidgetGroups.get(widget);
+                        if (groupNode) {
+                            CompositeTreeNode.addChild(groupNode, openEditorNode);
+                            CompositeTreeNode.addChild(areaNode, groupNode);
+                        }
+                    } else {
+                        CompositeTreeNode.addChild(areaNode, openEditorNode);
+                    }
+                }
             }
+            // If widgets are only in the main area and in a single tabbar, then don't show area node
+            if (widgetsByArea.size === 1 && widgetsByArea.has('main') && area === 'main') {
+                areaNode.children.forEach(child => CompositeTreeNode.addChild(rootNode, child));
+            } else {
+                CompositeTreeNode.addChild(rootNode, areaNode);
+            }
+
         }
-        return newRoot;
+        return rootNode;
     }
 
     protected doOpenNode(node: TreeNode): void {

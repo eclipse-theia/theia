@@ -34,14 +34,13 @@ import { OpenEditorNode, OpenEditorsModel } from './navigator-open-editors-tree-
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { OpenEditorsTreeDecoratorService } from './navigator-open-editors-decorator-service';
 import { OPEN_EDITORS_CONTEXT_MENU } from './navigator-open-editors-menus';
-
-const OPEN_EDITORS_TREE_PADDING = 18;
+import { CommandService } from '@theia/core/lib/common';
+import { OpenEditorsCommands } from './navigator-open-editors-commands';
 
 export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,
     virtualized: false,
     contextMenuPath: OPEN_EDITORS_CONTEXT_MENU,
-    expansionTogglePadding: OPEN_EDITORS_TREE_PADDING
 };
 
 export interface OpenEditorsNodeRow extends TreeWidget.NodeRow {
@@ -53,6 +52,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
     static LABEL = 'Open Editors';
 
     @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
+    @inject(CommandService) protected readonly commandService: CommandService;
 
     static createContainer(parent: interfaces.Container): Container {
         const child = createFileTreeContainer(parent);
@@ -96,6 +96,10 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return this.model.editorWidgets;
     }
 
+    getEditorWidgetsByGroup(id: ApplicationShell.Area | number): NavigatableWidget[] | undefined {
+        return this.model.getEditorWidgetsByGroup(id);
+    }
+
     // eslint-disable-next-line no-null/no-null
     protected activeTreeNodePrefixElement: string | undefined | null;
 
@@ -104,22 +108,72 @@ export class OpenEditorsWidget extends FileTreeWidget {
             return undefined;
         }
         const attributes = this.createNodeAttributes(node, props);
+        const isEditorNode = !(node.id.startsWith(OpenEditorsModel.GROUP_NODE_ID_PREFIX) || node.id.startsWith(OpenEditorsModel.AREA_NODE_ID_PREFIX));
         const content = <div className={`${TREE_NODE_CONTENT_CLASS}`}>
-            {this.renderPrefixIcon(node)}
+            {this.renderExpansionToggle(node, props)}
+            {isEditorNode && this.renderPrefixIcon(node)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
             {this.renderCaption(node, props)}
             {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
             {this.renderTailDecorations(node, props)}
+            {(this.isGroupNode(node) || this.isAreaNode(node)) && this.renderInteractables(node, props)}
         </div >;
         return React.createElement('div', attributes, content);
     }
 
+    protected isGroupNode(node: OpenEditorNode): boolean {
+        return node.id.startsWith(OpenEditorsModel.GROUP_NODE_ID_PREFIX);
+    }
+
+    protected isAreaNode(node: OpenEditorNode): boolean {
+        return node.id.startsWith(OpenEditorsModel.AREA_NODE_ID_PREFIX);
+    }
+
     protected doRenderNodeRow({ node, depth }: OpenEditorsNodeRow): React.ReactNode {
-        return <div className={`open-editors-node-row ${this.getPrefixIconClass(node)}`}>
+        let groupClass = '';
+        if (this.isGroupNode(node)) {
+            groupClass = 'group-node';
+        } else if (this.isAreaNode(node)) {
+            groupClass = 'area-node';
+        }
+        return <div className={`open-editors-node-row ${this.getPrefixIconClass(node)}${groupClass}`}>
             {this.renderIndent(node, { depth })}
             {this.renderNode(node, { depth })}
         </div>;
+    }
+
+    protected renderInteractables(node: OpenEditorNode, props: NodeProps): React.ReactNode {
+        return (<div className='open-editors-inline-actions-container'>
+            <div className='open-editors-inline-action'>
+                <a className='codicon codicon-save-all'
+                    title='Save all in Group'
+                    onClick={this.handleGroupActionIconClicked}
+                    data-id={node.id}
+                    id={OpenEditorsCommands.SAVE_ALL_IN_GROUP.id}
+                />
+            </div>
+            <div className='open-editors-inline-action' >
+                <a className='codicon codicon-close-all'
+                    title='Close Group'
+                    onClick={this.handleGroupActionIconClicked}
+                    data-id={node.id}
+                    id={OpenEditorsCommands.CLOSE_ALL_IN_GROUP.id}
+                />
+            </div>
+        </div>
+        );
+    }
+
+    protected handleGroupActionIconClicked = async (e: React.MouseEvent<HTMLAnchorElement>) => this.doHandleGroupActionIconClicked(e);
+    protected async doHandleGroupActionIconClicked(e: React.MouseEvent<HTMLAnchorElement>): Promise<void> {
+        e.stopPropagation();
+        const groupName = e.currentTarget.getAttribute('data-id');
+        const command = e.currentTarget.id;
+        if (groupName && command) {
+            const group = groupName.split(':').pop();
+            return this.commandService.executeCommand(command, group);
+        }
     }
 
     protected renderPrefixIcon(node: OpenEditorNode): React.ReactNode {

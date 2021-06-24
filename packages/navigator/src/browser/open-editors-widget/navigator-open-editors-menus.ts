@@ -24,4 +24,3 @@ export namespace OpenEditorsContextMenu {
     export const COMPARE = [...OPEN_EDITORS_CONTEXT_MENU, '4_compare'];
     export const MODIFICATION = [...OPEN_EDITORS_CONTEXT_MENU, '5_modification'];
 }
-

@@ -28,18 +28,18 @@ import {
     NavigatableWidget,
     Saveable,
     Widget,
-    WidgetManager
 } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { OpenEditorNode } from './navigator-open-editors-tree-model';
 import { Disposable } from '@theia/core/lib/common';
-import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
+import { OpenEditorNode } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-tree-model';
+import { EditorPreviewWidget } from './editor-preview-widget';
+import { EditorPreviewManager } from './editor-preview-manager';
 
 @injectable()
-export class OpenEditorsFileDecorator implements TreeDecorator, FrontendApplicationContribution {
+export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplicationContribution {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
+    @inject(EditorPreviewManager) protected readonly editorPreviewManager: EditorPreviewManager;
 
     protected shell: ApplicationShell;
     readonly id = 'theia-open-editors-file-decorator';
@@ -57,6 +57,7 @@ export class OpenEditorsFileDecorator implements TreeDecorator, FrontendApplicat
         this.workspaceService.onWorkspaceLocationChanged(() => {
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
         });
+        this.editorPreviewManager.onPreviewPinned(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
 
         this.shell.onDidAddWidget(widget => this.registerSaveableListener(widget));
         this.shell.onDidRemoveWidget(widget => this.toDisposeOnDirtyChanged.get(widget.id)?.dispose());
@@ -93,7 +94,8 @@ export class OpenEditorsFileDecorator implements TreeDecorator, FrontendApplicat
         }
         for (const node of new DepthFirstTreeIterator(tree.root)) {
             if (OpenEditorNode.is(node)) {
-                const isPreviewWidget = !(node.widget.parent instanceof TheiaDockPanel);
+                const { widget } = node;
+                const isPreviewWidget = widget instanceof EditorPreviewWidget && widget.isPreview;
                 const workspaceAndPath = await this.generateCaptionSuffix(node.uri);
                 const decorations: TreeDecoration.Data = {
                     captionSuffixes: [

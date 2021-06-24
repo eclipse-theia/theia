@@ -30,6 +30,7 @@ import {
     SHELL_TABBAR_CONTEXT_MENU,
     Widget,
     NavigatableWidget,
+    Saveable,
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -73,6 +74,7 @@ import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handl
 import URI from '@theia/core/lib/common/uri';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
+import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -161,22 +163,6 @@ export namespace NavigatorContextMenu {
 }
 
 export const FILE_NAVIGATOR_TOGGLE_COMMAND_ID = 'fileNavigator:toggle';
-
-export namespace OpenEditorsCommands {
-    export const CLOSE_ALL_TABS_FROM_TOOLBAR: Command = {
-        id: 'navigator.close.all.editors',
-        category: 'File',
-        label: 'Close All Editors',
-        iconClass: 'codicon codicon-close-all'
-    };
-
-    export const SAVE_ALL_TABS_FROM_TOOLBAR: Command = {
-        id: 'navigator.save.all.editors',
-        category: 'File',
-        label: 'Save All Editors',
-        iconClass: 'codicon codicon-save-all'
-    };
-}
 
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
@@ -390,6 +376,23 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: widget => this.withOpenEditorsWidget(widget, () => this.commandService.executeCommand(CommonCommands.SAVE_ALL.id)),
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
+        });
+        registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_IN_GROUP, {
+            execute: async (id): Promise<void> => {
+                const openEditorsWidget = await this.widgetManager.getOrCreateWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
+                const widgets = openEditorsWidget.getEditorWidgetsByGroup(id);
+                widgets?.forEach(widget => widget.close());
+            }
+        });
+        registry.registerCommand(OpenEditorsCommands.SAVE_ALL_IN_GROUP, {
+            execute: async (id): Promise<void> => {
+                const openEditorsWidget = await this.widgetManager.getOrCreateWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
+                const widgets = openEditorsWidget.getEditorWidgetsByGroup(id);
+                widgets?.forEach(widget => {
+                    const saveable = Saveable.get(widget);
+                    saveable?.save();
+                });
+            }
         });
     }
 

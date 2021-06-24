@@ -38,7 +38,6 @@ import { NavigatorTabBarDecorator } from './navigator-tab-bar-decorator';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { NavigatorWidgetFactory } from './navigator-widget-factory';
 import { bindContributionProvider } from '@theia/core/lib/common';
-import { OpenEditorsFileDecorator } from './open-editors-widget/navigator-open-editors-file-decorator';
 import { OpenEditorsTreeDecorator } from './open-editors-widget/navigator-open-editors-decorator-service';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { NavigatorTreeDecorator } from './navigator-decorator-service';
@@ -64,10 +63,6 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
     bindContributionProvider(bind, NavigatorTreeDecorator);
     bindContributionProvider(bind, OpenEditorsTreeDecorator);
-
-    bind(OpenEditorsFileDecorator).toSelf().inSingletonScope();
-    bind(OpenEditorsTreeDecorator).toService(OpenEditorsFileDecorator);
-    bind(FrontendApplicationContribution).toService(OpenEditorsFileDecorator);
 
     bind(OpenEditorsWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

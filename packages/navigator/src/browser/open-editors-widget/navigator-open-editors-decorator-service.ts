@@ -15,10 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { TreeDecorator, AbstractTreeDecoratorService, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
-import { NavigatorTreeDecorator } from '../navigator-decorator-service';
 import { Tree } from '@theia/core/lib/browser';
+import { ContributionProvider } from '@theia/core/lib/common';
 
 export const OpenEditorsTreeDecorator = Symbol('OpenEditorsTreeDecorator');
 
@@ -26,11 +25,8 @@ export const OpenEditorsTreeDecorator = Symbol('OpenEditorsTreeDecorator');
 export class OpenEditorsTreeDecoratorService extends AbstractTreeDecoratorService {
     protected problemDecorator: TreeDecorator | undefined;
 
-    protected globalColorMap = new Map<string, string>();
-
-    constructor(@inject(ContributionProvider) @named(OpenEditorsTreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>,
-        @inject(ContributionProvider) @named(NavigatorTreeDecorator) protected readonly navigatorContributions: ContributionProvider<TreeDecorator>) {
-        super([...contributions.getContributions(), ...navigatorContributions.getContributions()]);
+    constructor(@inject(ContributionProvider) @named(OpenEditorsTreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>) {
+        super(contributions.getContributions());
         this.problemDecorator = this.decorators.find(decorator => decorator.id === 'theia-problem-decorator');
     }
 
