@@ -222,13 +222,17 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
         this.quickInputService?.showQuickPick(this.items, { placeholder: 'Select a task to configure' });
     }
 
+    protected getTaskItems(): QuickPickItem[] {
+        return this.items.filter(item => item.type !== 'separator' && (item as TaskRunQuickOpenItem).task !== undefined);
+    }
+
     async runBuildOrTestTask(buildOrTestType: 'build' | 'test'): Promise<void> {
         const shouldRunBuildTask = buildOrTestType === 'build';
         const token: number = this.taskService.startUserAction();
 
         await this.doInit(token);
 
-        const taskItems = this.items.filter(item => item.type !== 'separator' && (item as TaskRunQuickOpenItem).task !== undefined);
+        const taskItems = this.getTaskItems();
 
         if (taskItems.length > 0) { // the item in `this.items` is not 'No tasks found'
             const buildOrTestTasks = taskItems.filter((t: TaskRunQuickOpenItem) =>
@@ -259,7 +263,7 @@ export class QuickOpenTask implements monaco.quickInput.IQuickAccessDataService 
                     execute: () => {
                         this.doInit(token).then(() => {
                             // update the `tasks.json` file, instead of running the task itself
-                            this.items = this.items.map((item: TaskRunQuickOpenItem) => new ConfigureBuildOrTestTaskQuickOpenItem(
+                            this.items = this.getTaskItems().map((item: TaskRunQuickOpenItem) => new ConfigureBuildOrTestTaskQuickOpenItem(
                                 token,
                                 item.task,
                                 this.taskService,
