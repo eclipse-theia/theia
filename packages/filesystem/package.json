@@ -25,7 +25,7 @@
       "frontend": "lib/browser/filesystem-frontend-module",
       "backend": "lib/node/filesystem-backend-module",
       "entryPoints": {
-        "nsfw-watcher": "lib/node/nsfw-watcher/index.js"
+        "ipc-nsfw-watcher": "lib/node/nsfw-watcher/index.js"
       }
     },
     {

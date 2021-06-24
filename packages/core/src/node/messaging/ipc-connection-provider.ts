@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import * as cp from 'child_process';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-ws-jsonrpc';
 import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
+import { EntryPointsRegistry } from '../entry-point-registry';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -37,8 +37,18 @@ export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
 @injectable()
 export class IPCConnectionProvider {
 
+    protected ipcBootstrapEntryPoint: string;
+
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    @inject(EntryPointsRegistry)
+    protected entryPointsRegistry: EntryPointsRegistry;
+
+    @postConstruct()
+    protected postConstruct(): void {
+        this.ipcBootstrapEntryPoint = this.entryPointsRegistry.getEntryPoint('@theia/core/ipc-bootstrap');
+    }
 
     listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         return this.doListen({
@@ -103,7 +113,7 @@ export class IPCConnectionProvider {
             forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
+        const childProcess = cp.fork(this.ipcBootstrapEntryPoint, options.args, forkOptions);
         childProcess.stdout!.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
         childProcess.stderr!.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 

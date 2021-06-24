@@ -57,11 +57,11 @@ describe('application-package', function (): void {
     it('should return all entry points', function (): void {
         const applicationPackage = new ApplicationPackage({ projectPath: path.resolve(__dirname, '../../../examples/browser') });
         assert.deepStrictEqual(applicationPackage.extensionEntryPoints, new Map([
-            ['ipc-bootstrap', '@theia/core/lib/node/messaging/ipc-bootstrap.js'],
-            ['nsfw-watcher', '@theia/filesystem/lib/node/nsfw-watcher/index.js'],
-            ['plugin-host', '@theia/plugin-ext/lib/hosted/node/plugin-host.js'],
-            ['backend-init-theia', '@theia/plugin-ext/lib/hosted/node/scanners/backend-init-theia.js'],
-            ['plugin-vscode-init', '@theia/plugin-ext-vscode/lib/node/plugin-vscode-init.js'],
+            ['@theia/core/ipc-bootstrap', require.resolve('@theia/core/lib/node/messaging/ipc-bootstrap.js')],
+            ['@theia/filesystem/nsfw-watcher', require.resolve('@theia/filesystem/lib/node/nsfw-watcher/index.js')],
+            ['@theia/plugin-ext/plugin-host', require.resolve('@theia/plugin-ext/lib/hosted/node/plugin-host.js')],
+            ['@theia/plugin-ext/backend-init-theia', require.resolve('@theia/plugin-ext/lib/hosted/node/scanners/backend-init-theia.js')],
+            ['@theia/plugin-ext-vscode/plugin-vscode-init', require.resolve('@theia/plugin-ext-vscode/lib/node/plugin-vscode-init.js')],
         ]));
     });
 

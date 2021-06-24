@@ -122,7 +122,7 @@ export class ApplicationPackage {
     /**
      * All entry points defined by the installed Theia extensions.
      *
-     * Map of entry point name to script import path.
+     * Map of entry point name to script absolute path.
      */
     get extensionEntryPoints(): ReadonlyMap<string, string> {
         if (!this._extensionEntryPoints) {
@@ -131,7 +131,7 @@ export class ApplicationPackage {
                 for (const theiaExtension of extensionPackage.theiaExtensions) {
                     if (typeof theiaExtension.entryPoints === 'object') {
                         for (const [key, value] of Object.entries(theiaExtension.entryPoints)) {
-                            this._extensionEntryPoints.set(key, `${extensionPackage.name}/${value}`);
+                            this._extensionEntryPoints.set(`${extensionPackage.name}/${key}`, require.resolve(`${extensionPackage.name}/${value}`));
                         }
                     }
                 }

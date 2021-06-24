@@ -28,7 +28,10 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/git-frontend-module",
-      "backend": "lib/node/git-backend-module"
+      "backend": "lib/node/git-backend-module",
+      "entryPoints": {
+        "git-locator-host": "lib/node/git-locator/git-locator-host.js"
+      }
     },
     {
       "backend": "lib/node/env/git-env-module",

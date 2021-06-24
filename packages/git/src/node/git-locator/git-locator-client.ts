@@ -14,19 +14,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as paths from 'path';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JsonRpcProxyFactory, DisposableCollection } from '@theia/core';
 import { IPCConnectionProvider } from '@theia/core/lib/node';
 import { GitLocator, GitLocateOptions } from './git-locator-protocol';
+import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
 
 @injectable()
 export class GitLocatorClient implements GitLocator {
 
+    protected ipcGitLocatorEntryPoint: string;
     protected readonly toDispose = new DisposableCollection();
+
+    @inject(EntryPointsRegistry)
+    protected entryPointRegistry: EntryPointsRegistry;
 
     @inject(IPCConnectionProvider)
     protected readonly ipcConnectionProvider: IPCConnectionProvider;
+
+    @postConstruct()
+    protected postConstruct(): void {
+        this.ipcGitLocatorEntryPoint = this.entryPointRegistry.getEntryPoint('@theia/git/git-locator-host');
+    }
 
     dispose(): void {
         this.toDispose.dispose();
@@ -36,7 +45,7 @@ export class GitLocatorClient implements GitLocator {
         return new Promise((resolve, reject) => {
             const toStop = this.ipcConnectionProvider.listen({
                 serverName: 'git-locator',
-                entryPoint: paths.resolve(__dirname, 'git-locator-host')
+                entryPoint: this.ipcGitLocatorEntryPoint,
             }, async connection => {
                 const proxyFactory = new JsonRpcProxyFactory<GitLocator>();
                 const remote = proxyFactory.createProxy();
@@ -52,5 +61,4 @@ export class GitLocatorClient implements GitLocator {
             this.toDispose.push(toStop);
         });
     }
-
 }

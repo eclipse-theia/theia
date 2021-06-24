@@ -14,14 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '@theia/plugin-ext';
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
 
 @injectable()
 export class VsCodePluginScanner extends TheiaPluginScanner implements PluginScanner {
+
+    protected pluginVscodeInitEntryPoint: string;
+
     private readonly VSCODE_TYPE: PluginEngine = 'vscode';
     private readonly VSCODE_PREFIX: string = 'vscode:extension/';
+
+    @postConstruct()
+    protected postConstruct(): void {
+        this.pluginVscodeInitEntryPoint = this.entryPointRegistry.getEntryPoint('@theia/plugin-ext-vscode/plugin-vscode-init');
+    }
 
     get apiType(): PluginEngine {
         return this.VSCODE_TYPE;
@@ -79,7 +87,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             startMethod: 'activate',
             stopMethod: 'deactivate',
 
-            backendInitPath: __dirname + '/plugin-vscode-init.js'
+            backendInitPath: this.pluginVscodeInitEntryPoint,
         };
     }
 

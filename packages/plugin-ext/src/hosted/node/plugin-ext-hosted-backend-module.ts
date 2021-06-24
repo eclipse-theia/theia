@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import { interfaces } from '@theia/core/shared/inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
@@ -33,6 +32,7 @@ import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginUriFactory } from './scanners/plugin-uri-factory';
 import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
+import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -62,7 +62,12 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
     bind(GrammarsReader).toSelf().inSingletonScope();
-    bind(HostedPluginProcessConfiguration).toConstantValue({ path: path.resolve(__dirname, 'plugin-host.js') });
+    bind(HostedPluginProcessConfiguration).toDynamicValue(ctx => {
+        const registry: EntryPointsRegistry = ctx.container.get(EntryPointsRegistry);
+        return {
+            path: registry.getEntryPoint('@theia/plugin-ext/plugin-host'),
+        };
+    }).inSingletonScope();
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
     bind(PluginUriFactory).to(FilePluginUriFactory).inSingletonScope();
