@@ -26,7 +26,7 @@ export interface Extension {
     backendElectron?: string;
     electronMain?: string;
     /**
-     * Map of script name to script relative path
+     * Map of entry point id to js script path relative to its package root.
      */
     entryPoints?: Record<string, string>;
 }
