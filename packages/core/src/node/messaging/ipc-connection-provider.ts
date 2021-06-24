@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import * as cp from 'child_process';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-ws-jsonrpc';
 import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
-import { EntryPointsRegistry } from '../entry-point-registry';
+import { EntryPoint } from '../entry-point';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -37,18 +37,11 @@ export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
 @injectable()
 export class IPCConnectionProvider {
 
+    @inject(EntryPoint) @named('@theia/core/ipc-bootstrap')
     protected ipcBootstrapEntryPoint: string;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(EntryPointsRegistry)
-    protected entryPointsRegistry: EntryPointsRegistry;
-
-    @postConstruct()
-    protected postConstruct(): void {
-        this.ipcBootstrapEntryPoint = this.entryPointsRegistry.getEntryPoint('@theia/core/ipc-bootstrap');
-    }
 
     listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         return this.doListen({

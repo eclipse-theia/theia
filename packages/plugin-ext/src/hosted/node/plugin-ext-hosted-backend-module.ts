@@ -32,7 +32,7 @@ import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginUriFactory } from './scanners/plugin-uri-factory';
 import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
-import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
+import { EntryPoint } from '@theia/core/lib/node/entry-point';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -62,12 +62,9 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
     bind(GrammarsReader).toSelf().inSingletonScope();
-    bind(HostedPluginProcessConfiguration).toDynamicValue(ctx => {
-        const registry: EntryPointsRegistry = ctx.container.get(EntryPointsRegistry);
-        return {
-            path: registry.getEntryPoint('@theia/plugin-ext/plugin-host'),
-        };
-    }).inSingletonScope();
+    bind(HostedPluginProcessConfiguration).toDynamicValue(ctx => ({
+        path: ctx.container.getNamed(EntryPoint, '@theia/plugin-ext/plugin-host'),
+    })).inSingletonScope();
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
     bind(PluginUriFactory).to(FilePluginUriFactory).inSingletonScope();

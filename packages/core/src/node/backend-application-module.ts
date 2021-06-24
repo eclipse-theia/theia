@@ -32,7 +32,7 @@ import { QuickPickService, quickPickServicePath } from '../common/quick-pick-ser
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
 import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
 import { KeytarServiceImpl } from './keytar-server';
-import { EntryPointsRegistry, EntryPointsRegistryImpl } from './entry-point-registry';
+import { EntryPointsRegistry, EntryPointsRegistryImpl, EntryPoint } from './entry-point';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -104,4 +104,12 @@ export const backendApplicationModule = new ContainerModule(bind => {
     ).inSingletonScope();
 
     bind(EntryPointsRegistry).to(EntryPointsRegistryImpl).inSingletonScope();
+    bind(EntryPoint).toDynamicValue(ctx => {
+        const namedTag = ctx.currentRequest.target.getNamedTag();
+        if (!namedTag) {
+            throw new Error('inversify requests for "EntryPoint" must be named');
+        }
+        const registry: EntryPointsRegistry = ctx.container.get(EntryPointsRegistry);
+        return registry.getEntryPoint(namedTag.value);
+    });
 });

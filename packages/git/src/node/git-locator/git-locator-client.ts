@@ -14,28 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { JsonRpcProxyFactory, DisposableCollection } from '@theia/core';
 import { IPCConnectionProvider } from '@theia/core/lib/node';
 import { GitLocator, GitLocateOptions } from './git-locator-protocol';
-import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
+import { EntryPoint } from '@theia/core/lib/node/entry-point';
 
 @injectable()
 export class GitLocatorClient implements GitLocator {
 
-    protected ipcGitLocatorEntryPoint: string;
     protected readonly toDispose = new DisposableCollection();
 
-    @inject(EntryPointsRegistry)
-    protected entryPointRegistry: EntryPointsRegistry;
+    @inject(EntryPoint) @named('@theia/git/git-locator-host')
+    protected ipcGitLocatorEntryPoint: string;
 
     @inject(IPCConnectionProvider)
     protected readonly ipcConnectionProvider: IPCConnectionProvider;
-
-    @postConstruct()
-    protected postConstruct(): void {
-        this.ipcGitLocatorEntryPoint = this.entryPointRegistry.getEntryPoint('@theia/git/git-locator-host');
-    }
 
     dispose(): void {
         this.toDispose.dispose();

@@ -17,6 +17,21 @@
 import { injectable, inject } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 
+/**
+ * You can quickly fetch the path of an entry point by doing a named injection on this symbol.
+ *
+ * Usage example:
+ *
+ * ```ts
+ * \@injectable()
+ * class {
+ *     \@inject(EntryPoint) @named('@theia/core/ipc-bootstrap')
+ *     protected ipcBootstrapPath: string;
+ * }
+ * ```
+ */
+export const EntryPoint = Symbol('EntryPoint');
+
 export const EntryPointsRegistry = Symbol('EntryPointsRegistry');
 export interface EntryPointsRegistry {
     getEntryPoint(name: string): string

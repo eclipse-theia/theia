@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     AutoClosingPair,
     AutoClosingPairConditional,
@@ -72,7 +72,7 @@ import {
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginUriFactory } from './plugin-uri-factory';
-import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
+import { EntryPoint } from '@theia/core/lib/node/entry-point';
 
 namespace nls {
     export function localize(key: string, _default: string): string {
@@ -91,7 +91,6 @@ const colorIdPattern = '^\\w+[.\\w+]*$';
 @injectable()
 export class TheiaPluginScanner implements PluginScanner {
 
-    protected backendInitTheiaEntryPoint: string;
     private readonly _apiType: PluginEngine = 'theiaPlugin';
 
     @inject(GrammarsReader)
@@ -100,13 +99,8 @@ export class TheiaPluginScanner implements PluginScanner {
     @inject(PluginUriFactory)
     protected readonly pluginUriFactory: PluginUriFactory;
 
-    @inject(EntryPointsRegistry)
-    protected entryPointRegistry: EntryPointsRegistry;
-
-    @postConstruct()
-    protected postConstruct(): void {
-        this.backendInitTheiaEntryPoint = this.entryPointRegistry.getEntryPoint('@theia/plugin-ext/backend-init-theia');
-    }
+    @inject(EntryPoint) @named('@theia/plugin-ext/backend-init-theia')
+    protected backendInitTheiaEntryPoint: string;
 
     get apiType(): PluginEngine {
         return this._apiType;

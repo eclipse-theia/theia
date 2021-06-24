@@ -31,7 +31,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { IPCConnectionProvider } from '@theia/core/lib/node';
 import { JsonRpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
-import { EntryPointsRegistry } from '@theia/core/lib/node/entry-point-registry';
+import { EntryPoint } from '@theia/core/lib/node/entry-point';
 
 export const NSFW_SINGLE_THREADED = process.argv.includes('--no-cluster');
 export const NSFW_WATCHER_VERBOSE = process.argv.includes('--nsfw-watcher-verbose');
@@ -74,12 +74,9 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
     bind(FileSystemWatcherServerClient).toSelf();
     bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
 
-    bind<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => {
-        const registry: EntryPointsRegistry = ctx.container.get(EntryPointsRegistry);
-        return {
-            entryPoint: registry.getEntryPoint('@theia/filesystem/ipc-nsfw-watcher'),
-        };
-    }).inSingletonScope();
+    bind<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => ({
+        entryPoint: ctx.container.getNamed(EntryPoint, '@theia/filesystem/ipc-nsfw-watcher'),
+    })).inSingletonScope();
     bind<NsfwFileSystemWatcherServerOptions>(NsfwFileSystemWatcherServerOptions).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
         const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);
