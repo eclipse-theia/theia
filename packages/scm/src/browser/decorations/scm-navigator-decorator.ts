@@ -25,6 +25,10 @@ import URI from '@theia/core/lib/common/uri';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 
+/**
+ * @deprecated since 1.25.0
+ * URI-based decorators should implement `DecorationsProvider` and contribute decorations via the `DecorationsService`.
+ */
 @injectable()
 export class ScmNavigatorDecorator implements TreeDecorator {
 

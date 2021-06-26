@@ -806,19 +806,31 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.renderTailDecorationsForNode(node, props, tailDecorations);
     }
 
-    protected renderTailDecorationsForNode(node: TreeNode, props: NodeProps, tailDecorations:
-        (TreeDecoration.TailDecoration | TreeDecoration.TailDecorationIcon | TreeDecoration.TailDecorationIconClass)[]): React.ReactNode {
+    protected renderTailDecorationsForNode(node: TreeNode, props: NodeProps, tailDecorations: TreeDecoration.TailDecoration.AnyPartial[]): React.ReactNode {
+        let dotDecoration: TreeDecoration.TailDecoration.AnyPartial | undefined;
+        const otherDecorations: TreeDecoration.TailDecoration.AnyPartial[] = [];
+        tailDecorations.reverse().forEach(decoration => {
+            if (TreeDecoration.TailDecoration.isDotDecoration(decoration)) {
+                dotDecoration ||= decoration;
+            } else if (decoration.data || decoration.icon || decoration.iconClass) {
+                otherDecorations.push(decoration);
+            }
+        });
+        const decorationsToRender = dotDecoration ? [dotDecoration, ...otherDecorations] : otherDecorations;
         return <React.Fragment>
-            {tailDecorations.reverse().map((decoration, index) => {
-                const { tooltip } = decoration;
-                const { data, fontData } = decoration as TreeDecoration.TailDecoration;
-                const color = (decoration as TreeDecoration.TailDecorationIcon).color;
+            {decorationsToRender.map((decoration, index) => {
+                const { tooltip, data, fontData, color, icon, iconClass } = decoration;
+                const iconToRender = icon ?? iconClass;
                 const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
                 const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
-                const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
-                const content = data ? data : icon ? <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> : '';
+                const content = data ? data : iconToRender
+                    ? <span
+                        key={node.id + 'icon' + index}
+                        className={this.getIconClass(iconToRender, iconToRender === 'circle' ? [TreeDecoration.Styles.DECORATOR_SIZE_CLASS] : [])}
+                    ></span>
+                    : '';
                 return <div key={node.id + className + index} className={className} style={style} title={tooltip}>
-                    {content}{index !== tailDecorations.length - 1 ? ',' : ''}
+                    {content}{index !== decorationsToRender.length - 1 ? ',' : ''}
                 </div>;
             })}
         </React.Fragment>;

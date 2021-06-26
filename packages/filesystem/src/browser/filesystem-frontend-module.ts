@@ -24,7 +24,7 @@ import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
 import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
 import { FileUploadService } from './file-upload-service';
-import { FileTreeLabelProvider } from './file-tree/file-tree-label-provider';
+import { FileTreeDecoratorAdapter, FileTreeLabelProvider } from './file-tree';
 import { FileService, FileServiceContribution } from './file-service';
 import { RemoteFileSystemProvider, RemoteFileSystemServer, remoteFileSystemPath, RemoteFileSystemProxyFactory } from '../common/remote-file-system-provider';
 import { FileSystem, FileStat, FileMoveOptions, FileDeleteOptions, FileSystemError } from '../common/filesystem';
@@ -229,6 +229,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(FilesystemSaveResourceService).toSelf().inSingletonScope();
     rebind(SaveResourceService).toService(FilesystemSaveResourceService);
+
+    bind(FileTreeDecoratorAdapter).toSelf().inSingletonScope();
 });
 
 export function bindFileResource(bind: interfaces.Bind): void {

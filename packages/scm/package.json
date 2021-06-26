@@ -6,7 +6,6 @@
     "@theia/core": "1.24.0",
     "@theia/editor": "1.24.0",
     "@theia/filesystem": "1.24.0",
-    "@theia/navigator": "1.24.0",
     "@types/diff": "^3.2.2",
     "diff": "^3.4.0",
     "p-debounce": "^2.1.0",

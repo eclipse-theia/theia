@@ -78,6 +78,7 @@ import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
+import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view/tree-view-decorator-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -142,6 +143,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ViewContextKeyService).toSelf().inSingletonScope();
 
+    bindTreeViewDecoratorUtilities(bind);
     bind(PluginTreeViewNodeLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(PluginTreeViewNodeLabelProvider);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -160,6 +162,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
                 tree: PluginTree,
                 model: PluginTreeModel,
                 widget: TreeViewWidget,
+                decoratorService: TreeViewDecoratorService
             });
             child.bind(TreeViewWidgetIdentifier).toConstantValue(identifier);
             return child.get(TreeWidget);
