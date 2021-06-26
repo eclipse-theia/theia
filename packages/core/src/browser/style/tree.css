@@ -116,12 +116,15 @@
 .theia-TreeNode.theia-mod-not-selectable {
     color: var(--theia-descriptionForeground);
 }
+
 .theia-TreeNode.theia-mod-not-selectable:hover {
     background: none;
     cursor: default;
 }
 
 .theia-TreeNodeSegment {
+    display: flex;
+    align-items: center;
     flex-grow: 0;
     user-select: none;
     white-space: nowrap;
@@ -137,6 +140,7 @@
 .theia-TreeNodeTail {
     min-width: 1rem;
     text-align: center;
+    justify-content: center;
 }
 
 .theia-TreeNodeSegment mark {
@@ -159,10 +163,12 @@
     height: var(--theia-content-line-height);
     border-right: var(--theia-border-width) solid transparent;
 }
+
 .theia-tree-node-indent.always,
 .theia-TreeContainer:hover .theia-tree-node-indent.hover {
     border-color: var(--theia-tree-inactiveIndentGuidesStroke);
 }
+
 .theia-tree-node-indent.active {
     border-color: var(--theia-tree-indentGuidesStroke);
 }

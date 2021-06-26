@@ -43,6 +43,7 @@ The following methods may now return `undefined | null` ([#10999](https://github
 
 - [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
 - [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
+- [markers, scm] deprecated `ProblemDecorator` and `SCMNavigatorDecorator` classes. They are no longer bound in the `inversify` container by default. [#10846](https://github.com/eclipse-theia/theia/pull/10846)
 
 ## v1.24.0 - 3/31/2022
 

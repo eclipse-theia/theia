@@ -43,6 +43,7 @@ import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-
 import { NavigatorTreeDecorator } from './navigator-decorator-service';
 import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator-deleted-editor-decorator';
 import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator';
+import { FileTreeDecoratorAdapter } from '@theia/filesystem/lib/browser';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -65,6 +66,8 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
     bindContributionProvider(bind, NavigatorTreeDecorator);
     bindContributionProvider(bind, OpenEditorsTreeDecorator);
+    bind(NavigatorTreeDecorator).toService(FileTreeDecoratorAdapter);
+    bind(OpenEditorsTreeDecorator).toService(FileTreeDecoratorAdapter);
     bind(NavigatorDeletedEditorDecorator).toSelf().inSingletonScope();
     bind(OpenEditorsTreeDecorator).toService(NavigatorDeletedEditorDecorator);
 

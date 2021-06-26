@@ -24,6 +24,7 @@ import {
     NodeProps,
     Saveable,
     TabBar,
+    TreeDecoration,
     TreeDecoratorService,
     TreeModel,
     TreeNode,
@@ -39,6 +40,7 @@ import { OPEN_EDITORS_CONTEXT_MENU } from './navigator-open-editors-menus';
 import { CommandService } from '@theia/core/lib/common';
 import { OpenEditorsCommands } from './navigator-open-editors-commands';
 import { nls } from '@theia/core/lib/common/nls';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,
@@ -56,6 +58,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
 
     @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
     @inject(CommandService) protected readonly commandService: CommandService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     static createContainer(parent: interfaces.Container): Container {
         const child = createFileTreeContainer(parent);
@@ -119,6 +122,36 @@ export class OpenEditorsWidget extends FileTreeWidget {
             {(this.isGroupNode(node) || this.isAreaNode(node)) && this.renderInteractables(node, props)}
         </div >;
         return React.createElement('div', attributes, content);
+    }
+
+    protected override getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): Required<Pick<TreeDecoration.Data, K>>[K][] {
+        const contributed = super.getDecorationData(node, key);
+        if (key === 'captionSuffixes' && OpenEditorNode.is(node)) {
+            (contributed as Array<Array<TreeDecoration.CaptionAffix>>).push(this.getWorkspaceDecoration(node));
+        }
+        return contributed;
+    }
+
+    protected getWorkspaceDecoration(node: OpenEditorNode): TreeDecoration.CaptionAffix[] {
+        const color = this.getDecorationData(node, 'fontData').find(data => data.color)?.color;
+        const workspaceRoots = this.workspaceService.tryGetRoots();
+        const parentWorkspace = this.workspaceService.getWorkspaceRootUri(node.fileStat.resource);
+        let workspacePrefixString = '';
+        let separator = '';
+        let filePathString = '';
+        const nodeURIDir = node.fileStat.resource.parent;
+        if (parentWorkspace) {
+            const relativeDirFromWorkspace = parentWorkspace.relative(nodeURIDir);
+            workspacePrefixString = workspaceRoots.length > 1 ? this.labelProvider.getName(parentWorkspace) : '';
+            filePathString = relativeDirFromWorkspace?.toString() ?? '';
+            separator = filePathString && workspacePrefixString ? ' \u2022 ' : ''; // add a bullet point between workspace and path
+        } else {
+            workspacePrefixString = nodeURIDir.path.toString();
+        }
+        return [{
+            fontData: { color },
+            data: `${workspacePrefixString}${separator}${filePathString}`,
+        }];
     }
 
     protected isGroupNode(node: OpenEditorNode): boolean {

@@ -18,11 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService } from '@theia/core/lib/common';
-import {
-    Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
-    TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode
-} from '@theia/core/lib/browser';
-import { FileTreeWidget, FileNode, DirNode, FileStatNode } from '@theia/filesystem/lib/browser';
+import { Key, TreeModel, SelectableTreeNode, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode } from '@theia/core/lib/browser';
+import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -145,36 +142,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
             return this.renderEmptyMultiRootWorkspace();
         }
         return super.renderTree(model);
-    }
-
-    protected override renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        const tailDecorations = this.getDecorationData(node, 'tailDecorations').reduce((acc, current) => acc.concat(current), []);
-
-        if (tailDecorations.length === 0) {
-            return;
-        }
-
-        // Handle rendering of directories versus file nodes.
-        if (FileStatNode.is(node) && node.fileStat.isDirectory) {
-            return this.renderTailDecorationsForDirectoryNode(node, props, tailDecorations);
-        } else {
-            return this.renderTailDecorationsForNode(node, props, tailDecorations);
-        }
-    }
-
-    protected renderTailDecorationsForDirectoryNode(node: TreeNode, props: NodeProps, tailDecorations:
-        (TreeDecoration.TailDecoration | TreeDecoration.TailDecorationIcon | TreeDecoration.TailDecorationIconClass)[]): React.ReactNode {
-        // If the node represents a directory, we just want to use the decorationData with the highest priority (last element).
-        const decoration = tailDecorations[tailDecorations.length - 1];
-        const { tooltip, fontData } = decoration as TreeDecoration.TailDecoration;
-        const color = (decoration as TreeDecoration.TailDecorationIcon).color;
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
-        const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
-        const content = <span className={this.getIconClass('circle', [TreeDecoration.Styles.DECORATOR_SIZE_CLASS])}></span>;
-
-        return <div className={className} style={style} title={tooltip}>
-            {content}
-        </div>;
     }
 
     protected override shouldShowWelcomeView(): boolean {

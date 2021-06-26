@@ -5,7 +5,6 @@
   "dependencies": {
     "@theia/core": "1.24.0",
     "@theia/filesystem": "1.24.0",
-    "@theia/navigator": "1.24.0",
     "@theia/workspace": "1.24.0"
   },
   "publishConfig": {

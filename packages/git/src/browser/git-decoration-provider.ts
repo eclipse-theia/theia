@@ -43,15 +43,15 @@ export class GitDecorationProvider implements DecorationsProvider {
         const newDecorations = new Map<string, Decoration>();
         this.collectDecorationData(event.status.changes, newDecorations);
 
-        const uris = new Set([...this.decorations.keys()].concat([...newDecorations.keys()]));
         this.decorations = newDecorations;
-        this.onDidChangeDecorationsEmitter.fire([...uris.values()].map(value => new URI(value)));
+        this.onDidChangeDecorationsEmitter.fire(Array.from(newDecorations.keys(), value => new URI(value)));
     }
 
     private collectDecorationData(changes: GitFileChange[], bucket: Map<string, Decoration>): void {
         changes.forEach(change => {
             const color = GitFileStatus.getColor(change.status, change.staged);
             bucket.set(change.uri, {
+                bubble: true,
                 colorId: color.substring(12, color.length - 1).replace(/-/g, '.'),
                 tooltip: GitFileStatus.toString(change.status),
                 letter: GitFileStatus.toAbbreviation(change.status, change.staged)

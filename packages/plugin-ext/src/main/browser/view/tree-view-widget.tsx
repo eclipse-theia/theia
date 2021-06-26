@@ -355,8 +355,11 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
             const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
             const arg = this.toTreeViewSelection(node);
+            const inlineCommands = menu.children.filter((item): item is ActionMenuNode => item instanceof ActionMenuNode);
+            const tailDecorations = super.renderTailDecorations(node, props);
             return <React.Fragment>
-                {menu.children.map((item, index) => item instanceof ActionMenuNode && this.renderInlineCommand(item, index, arg))}
+                {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS}>{inlineCommands.map((item, index) => this.renderInlineCommand(item, index, arg))}</div>}
+                {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS}>{super.renderTailDecorations(node, props)}</div>}
             </React.Fragment>;
         });
     }
