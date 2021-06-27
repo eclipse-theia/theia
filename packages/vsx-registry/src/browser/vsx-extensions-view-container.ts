@@ -29,6 +29,8 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     static ID = 'vsx-extensions-view-container';
     static LABEL = 'Extensions';
 
+    disableDNDBetweenContainers = true;
+
     @inject(VSXExtensionsSearchBar)
     protected readonly searchBar: VSXExtensionsSearchBar;
 

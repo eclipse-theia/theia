@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import {
-    Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer, codicon
+    Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer, codicon, ViewContainerTitleOptions
 } from '@theia/core/lib/browser';
 import { DebugThreadsWidget } from './debug-threads-widget';
 import { DebugStackFramesWidget } from './debug-stack-frames-widget';
@@ -28,6 +28,11 @@ import { DebugWatchWidget } from './debug-watch-widget';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
+export const DEBUG_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
+    label: 'debug',
+    iconClass: codicon('debug-alt'),
+    closeable: true
+};
 
 @injectable()
 export class DebugSessionWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
@@ -88,11 +93,12 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         this.viewContainer = this.viewContainerFactory({
             id: 'debug:view-container:' + this.model.id
         });
-        this.viewContainer.addWidget(this.threads, { weight: 30 });
-        this.viewContainer.addWidget(this.stackFrames, { weight: 20 });
-        this.viewContainer.addWidget(this.variables, { weight: 10 });
-        this.viewContainer.addWidget(this.watch, { weight: 10 });
-        this.viewContainer.addWidget(this.breakpoints, { weight: 10 });
+        this.viewContainer.setTitleOptions(DEBUG_VIEW_CONTAINER_TITLE_OPTIONS);
+        this.viewContainer.addWidget(this.threads, { weight: 30, disableDraggingToOtherContainers: true });
+        this.viewContainer.addWidget(this.stackFrames, { weight: 20, disableDraggingToOtherContainers: true });
+        this.viewContainer.addWidget(this.variables, { weight: 10, disableDraggingToOtherContainers: true });
+        this.viewContainer.addWidget(this.watch, { weight: 10, disableDraggingToOtherContainers: true });
+        this.viewContainer.addWidget(this.breakpoints, { weight: 10, disableDraggingToOtherContainers: true });
 
         this.toDispose.pushAll([
             this.toolbar,

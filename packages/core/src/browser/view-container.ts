@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
-import { IIterator, toArray, find, some, every, map } from '@phosphor/algorithm';
+import { IIterator, toArray, find, some, every, map, ArrayExt } from '@phosphor/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
-    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel
 } from './widgets';
-import { Event, Emitter } from '../common/event';
+import { Event as CommonEvent, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { CommandRegistry } from '../common/command';
 import { MenuModelRegistry, MenuPath, MenuAction } from '../common/menu';
@@ -29,10 +29,14 @@ import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
-import { WidgetManager } from './widget-manager';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, TabBarToolbarItem } from './shell/tab-bar-toolbar';
+import { isEmpty } from '../common';
+import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
+import { Drag, IDragEvent } from '@phosphor/dragdrop';
+import { MimeData } from '@phosphor/coreutils';
+import { ElementExt } from '@phosphor/domutils';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -70,6 +74,11 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected currentPart: ViewContainerPart | undefined;
 
+    /**
+     * Disable dragging parts from/to this view container.
+     */
+    disableDNDBetweenContainers = false;
+
     @inject(FrontendApplicationStateService)
     protected readonly applicationStateService: FrontendApplicationStateService;
 
@@ -102,6 +111,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     @inject(ProgressBarFactory)
     protected readonly progressBarFactory: ProgressBarFactory;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     @postConstruct()
     protected init(): void {
@@ -202,27 +214,46 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.toDisposeOnUpdateTitle.dispose();
         this.toDispose.push(this.toDisposeOnUpdateTitle);
         this.updateTabBarDelegate();
-        const title = this.titleOptions;
-        if (!title) {
+        let title = Object.assign({}, this.titleOptions);
+        if (isEmpty(title)) {
             return;
         }
         const allParts = this.getParts();
         const visibleParts = allParts.filter(part => !part.isHidden);
         this.title.label = title.label;
-        if (visibleParts.length === 1) {
+        // If there's only one visible part - inline it's title into the container title except in case the part
+        // isn't originally belongs to this container but there are other **original** hidden parts.
+        if (visibleParts.length === 1 && (visibleParts[0].originalContainerId === this.id || !this.findOriginalPart())) {
             const part = visibleParts[0];
             this.toDisposeOnUpdateTitle.push(part.onTitleChanged(() => this.updateTitle()));
             const partLabel = part.wrapped.title.label;
+            // Change the container title if it contains only one part that originally belongs to another container.
+            if (allParts.length === 1 && part.originalContainerId !== this.id && !this.isCurrentTitle(part.originalContainerTitle)) {
+                title = Object.assign({}, part.originalContainerTitle);
+                this.setTitleOptions(title);
+                return;
+            }
             if (partLabel) {
-                this.title.label += ': ' + partLabel;
+                if (this.title.label && this.title.label !== partLabel) {
+                    this.title.label += ': ' + partLabel;
+                } else {
+                    this.title.label = partLabel;
+                }
             }
             part.collapsed = false;
             part.hideTitle();
         } else {
             visibleParts.forEach(part => part.showTitle());
+            // If at least one part originally belongs to this container the title should return to its original value.
+            const originalPart = this.findOriginalPart();
+            if (originalPart && !this.isCurrentTitle(originalPart.originalContainerTitle)) {
+                title = Object.assign({}, originalPart.originalContainerTitle);
+                this.setTitleOptions(title);
+                return;
+            }
         }
         this.updateToolbarItems(allParts);
-        const caption = title.caption || title.label;
+        const caption = title?.caption || title?.label;
         if (caption) {
             this.title.caption = caption;
             if (visibleParts.length === 1) {
@@ -274,6 +305,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
     }
 
+    protected findOriginalPart(): ViewContainerPart | undefined {
+        return this.getParts().find(part => part.originalContainerId === this.id);
+    }
+
+    protected isCurrentTitle(titleOptions: ViewContainerTitleOptions | undefined): boolean {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (!!titleOptions && !!this.titleOptions && Object.keys(titleOptions).every(key => (titleOptions as any)[key] === (this.titleOptions as any)[key]))
+            || (!titleOptions && !this.titleOptions);
+    }
+
     protected findPartForAnchor(anchor: Anchor): ViewContainerPart | undefined {
         const element = document.elementFromPoint(anchor.x, anchor.y);
         if (element instanceof Element) {
@@ -287,22 +328,29 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected readonly toRemoveWidgets = new Map<string, DisposableCollection>();
 
-    addWidget(widget: Widget, options?: ViewContainer.Factory.WidgetOptions): Disposable {
+    protected createPartId(widget: Widget): string {
+        const description = this.widgetManager.getDescription(widget);
+        return widget.id || JSON.stringify(description);
+    }
+
+    addWidget(widget: Widget, options?: ViewContainer.Factory.WidgetOptions, originalContainerId?: string, originalContainerTitle?: ViewContainerTitleOptions): Disposable {
         const existing = this.toRemoveWidgets.get(widget.id);
         if (existing) {
             return existing;
         }
+        const partId = this.createPartId(widget);
+        const newPart = this.createPart(widget, partId, originalContainerId || this.id, originalContainerTitle || this.titleOptions, options);
+        return this.attachNewPart(newPart);
+    }
+
+    protected attachNewPart(newPart: ViewContainerPart, insertIndex?: number): Disposable {
         const toRemoveWidget = new DisposableCollection();
         this.toDispose.push(toRemoveWidget);
-        this.toRemoveWidgets.set(widget.id, toRemoveWidget);
-        toRemoveWidget.push(Disposable.create(() => this.toRemoveWidgets.delete(widget.id)));
-
-        const description = this.widgetManager.getDescription(widget);
-        const partId = description ? JSON.stringify(description) : widget.id;
-        const newPart = this.createPart(widget, partId, options);
+        this.toRemoveWidgets.set(newPart.wrapped.id, toRemoveWidget);
+        toRemoveWidget.push(Disposable.create(() => this.toRemoveWidgets.delete(newPart.wrapped.id)));
         this.registerPart(newPart);
-        if (newPart.options && newPart.options.order !== undefined) {
-            const index = this.getParts().findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
+        if (insertIndex !== undefined || (newPart.options && newPart.options.order !== undefined)) {
+            const index = insertIndex ?? this.getParts().findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
             if (index >= 0) {
                 this.containerLayout.insertWidget(index, newPart);
             } else {
@@ -317,10 +365,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.update();
         this.fireDidChangeTrackableWidgets();
         toRemoveWidget.pushAll([
-            newPart,
             Disposable.create(() => {
+                if (newPart.currentViewContainerId === this.id) {
+                    newPart.dispose();
+                }
                 this.unregisterPart(newPart);
-                if (!newPart.isDisposed) {
+                if (!newPart.isDisposed && this.getPartIndex(newPart.id) > -1) {
                     this.containerLayout.removeWidget(newPart);
                 }
                 if (!this.isDisposed) {
@@ -354,8 +404,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return toRemoveWidget;
     }
 
-    protected createPart(widget: Widget, partId: string, options?: ViewContainer.Factory.WidgetOptions | undefined): ViewContainerPart {
-        return new ViewContainerPart(widget, partId, this.id, this.toolbarRegistry, this.toolbarFactory, options);
+    protected createPart(widget: Widget, partId: string, originalContainerId: string, originalContainerTitle?: ViewContainerTitleOptions,
+        options?: ViewContainer.Factory.WidgetOptions): ViewContainerPart {
+
+        return new ViewContainerPart(widget, partId, this.id, originalContainerId, originalContainerTitle, this.toolbarRegistry, this.toolbarFactory, options);
     }
 
     removeWidget(widget: Widget): boolean {
@@ -369,6 +421,13 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     getParts(): ViewContainerPart[] {
         return this.containerLayout.widgets;
+    }
+
+    protected getPartIndex(partId: string | undefined): number {
+        if (partId) {
+            return this.getParts().findIndex(part => part.id === partId);
+        }
+        return -1;
     }
 
     getPartFor(widget: Widget): ViewContainerPart | undefined {
@@ -413,7 +472,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 partId: part.partId,
                 collapsed: part.collapsed,
                 hidden: part.isHidden,
-                relativeSize: size && availableSize ? size / availableSize : undefined
+                relativeSize: size && availableSize ? size / availableSize : undefined,
+                originalContainerId: part.originalContainerId,
+                originalContainerTitle: part.originalContainerTitle
             };
         });
         return { parts: partStates, title: this.titleOptions };
@@ -428,7 +489,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         // restore widgets
         for (const part of state.parts) {
             if (part.widget) {
-                this.addWidget(part.widget);
+                this.addWidget(part.widget, undefined, part.originalContainerId, part.originalContainerTitle || {} as ViewContainerTitleOptions);
             }
         }
         const partStates = state.parts.filter(partState => some(this.containerLayout.iter(), p => p.partId === partState.partId));
@@ -436,7 +497,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         // Reorder the parts according to the stored state
         for (let index = 0; index < partStates.length; index++) {
             const partState = partStates[index];
-            const currentIndex = this.getParts().findIndex(p => p.partId === partState.partId);
+            const currentIndex = this.getParts().findIndex(part => part.partId === partState.partId);
             if (currentIndex > index) {
                 this.containerLayout.moveWidget(currentIndex, index, this.getParts()[currentIndex]);
             }
@@ -600,62 +661,173 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
+        this.updateTitle();
         this.lastVisibleState = undefined;
     }
 
-    protected draggingPart: ViewContainerPart | undefined;
+    protected onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        this.node.addEventListener('p-dragenter', this, true);
+        this.node.addEventListener('p-dragover', this, true);
+        this.node.addEventListener('p-dragleave', this, true);
+        this.node.addEventListener('p-drop', this, true);
+    }
+
+    protected onAfterDetach(msg: Message): void {
+        super.onAfterDetach(msg);
+        this.node.removeEventListener('p-dragenter', this, true);
+        this.node.removeEventListener('p-dragover', this, true);
+        this.node.removeEventListener('p-dragleave', this, true);
+        this.node.removeEventListener('p-drop', this, true);
+    }
+
+    handleEvent(event: Event): void {
+        switch (event.type) {
+            case 'p-dragenter':
+                this.handleDragEnter(event as IDragEvent);
+                break;
+            case 'p-dragover':
+                this.handleDragOver(event as IDragEvent);
+                break;
+            case 'p-dragleave':
+                this.handleDragLeave(event as IDragEvent);
+                break;
+            case 'p-drop':
+                this.handleDrop(event as IDragEvent);
+                break;
+        }
+    }
+
+    handleDragEnter(event: IDragEvent): void {
+        if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    toDisposeOnDragEnd = new DisposableCollection();
+    handleDragOver(event: IDragEvent): void {
+        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const widget = factory && factory();
+        if (!(widget instanceof ViewContainerPart)) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+
+        const sameContainers = this.id === widget.currentViewContainerId;
+        const targetPart = ArrayExt.findFirstValue(this.getParts(), (p => ElementExt.hitTest(p.node, event.clientX, event.clientY)));
+        if (!targetPart && sameContainers) {
+            event.dropAction = 'none';
+            return;
+        }
+        if (targetPart) {
+            // add overlay class style to the `targetPart` node.
+            targetPart.node.classList.add('drop-target');
+            this.toDisposeOnDragEnd.push(Disposable.create(() => targetPart.node.classList.remove('drop-target')));
+        } else {
+            // show panel overlay.
+            const dockPanel = this.getDockPanel();
+            if (dockPanel) {
+                dockPanel.overlay.show({ top: 0, bottom: 0, right: 0, left: 0 });
+                this.toDisposeOnDragEnd.push(Disposable.create(() => dockPanel.overlay.hide(100)));
+            }
+        }
+
+        const draggingOutsideisDisabled = this.disableDNDBetweenContainers || widget.viewContainer?.disableDNDBetweenContainers
+            || widget.options.disableDraggingToOtherContainers;
+        if (draggingOutsideisDisabled && !sameContainers) {
+            const { target } = event;
+            if (target instanceof HTMLElement) {
+                target.classList.add('theia-cursor-no-drop');
+                this.toDisposeOnDragEnd.push(Disposable.create(() => {
+                    target.classList.remove('theia-cursor-no-drop');
+                }));
+            }
+            event.dropAction = 'none';
+            return;
+        };
+
+        event.dropAction = event.proposedAction;
+    };
+
+    handleDragLeave(event: IDragEvent): void {
+        this.toDisposeOnDragEnd.dispose();
+        if (event.mimeData.hasData('application/vnd.phosphor.view-container-factory')) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    handleDrop(event: IDragEvent): void {
+        this.toDisposeOnDragEnd.dispose();
+        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const draggedPart = factory && factory();
+        if (!(draggedPart instanceof ViewContainerPart)) {
+            event.dropAction = 'none';
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const parts = this.getParts();
+        const toIndex = ArrayExt.findFirstIndex(parts, part => ElementExt.hitTest(part.node, event.clientX, event.clientY));
+        if (draggedPart.currentViewContainerId !== this.id) {
+            this.attachNewPart(draggedPart, toIndex > -1 ? toIndex + 1 : toIndex);
+            draggedPart.onPartMoved(this);
+        } else {
+            this.moveBefore(draggedPart.id, parts[toIndex].id);
+        }
+        event.dropAction = event.proposedAction;
+    }
 
     protected registerDND(part: ViewContainerPart): Disposable {
-        part['header'].draggable = true;
-        const style = (event: DragEvent) => {
-            if (!this.draggingPart) {
-                return;
-            }
-            event.preventDefault();
-            const enclosingPartNode = ViewContainerPart.closestPart(event.target);
-            if (enclosingPartNode && enclosingPartNode !== this.draggingPart.node) {
-                enclosingPartNode.classList.add('drop-target');
-            }
-        };
-        const unstyle = (event: DragEvent) => {
-            if (!this.draggingPart) {
-                return;
-            }
-            event.preventDefault();
-            const enclosingPartNode = ViewContainerPart.closestPart(event.target);
-            if (enclosingPartNode) {
-                enclosingPartNode.classList.remove('drop-target');
-            }
-        };
+        part.headerElement.draggable = true;
+
         return new DisposableCollection(
-            addEventListener(part['header'], 'dragstart', event => {
-                const { dataTransfer } = event;
-                if (dataTransfer) {
-                    this.draggingPart = part;
-                    dataTransfer.effectAllowed = 'move';
-                    dataTransfer.setData('view-container-dnd', part.id);
-                    const dragImage = document.createElement('div');
-                    dragImage.classList.add('theia-view-container-drag-image');
-                    dragImage.innerText = part.wrapped.title.label;
-                    document.body.appendChild(dragImage);
-                    dataTransfer.setDragImage(dragImage, -10, -10);
-                    setTimeout(() => document.body.removeChild(dragImage), 0);
-                }
-            }, false),
-            addEventListener(part.node, 'dragend', () => this.draggingPart = undefined, false),
-            addEventListener(part.node, 'dragover', style, false),
-            addEventListener(part.node, 'dragleave', unstyle, false),
-            addEventListener(part.node, 'drop', event => {
-                const { dataTransfer } = event;
-                if (dataTransfer) {
-                    const moveId = dataTransfer.getData('view-container-dnd');
-                    if (moveId && moveId !== part.id) {
-                        this.moveBefore(moveId, part.id);
-                    }
-                    unstyle(event);
-                }
-            }, false)
-        );
+            addEventListener(part.headerElement, 'dragstart',
+                event => {
+                    const mimeData = new MimeData();
+                    mimeData.setData('application/vnd.phosphor.view-container-factory', () => part);
+                    const clonedHeader = part.headerElement.cloneNode(true) as HTMLElement;
+                    clonedHeader.style.width = part.node.style.width;
+                    clonedHeader.style.opacity = '0.6';
+                    const drag = new Drag({
+                        mimeData,
+                        dragImage: clonedHeader,
+                        proposedAction: 'move',
+                        supportedActions: 'move'
+                    });
+                    part.node.classList.add('p-mod-hidden');
+                    drag.start(event.clientX, event.clientY).then(dropAction => {
+                        // The promise is resolved when the drag has ended
+                        if (dropAction === 'move' && part.currentViewContainerId !== this.id) {
+                            this.removeWidget(part.wrapped);
+                            this.lastVisibleState = this.doStoreState();
+                        }
+                    });
+                    setTimeout(() => { part.node.classList.remove('p-mod-hidden'); }, 0);
+                }, false));
+    }
+
+    protected getDockPanel(): DockPanel | undefined {
+        let panel: DockPanel | undefined;
+        let parent = this.parent;
+        while (!panel && parent) {
+            if (this.isSideDockPanel(parent)) {
+                panel = parent as DockPanel;
+            } else {
+                parent = parent.parent;
+            }
+        }
+        return panel;
+    }
+
+    protected isSideDockPanel(widget: Widget): boolean {
+        const { leftPanelHandler, rightPanelHandler } = this.shell;
+        if (widget instanceof DockPanel && (widget.id === rightPanelHandler.dockPanel.id || widget.id === leftPanelHandler.dockPanel.id)) {
+            return true;
+        }
+        return false;
     }
 
 }
@@ -675,6 +847,12 @@ export namespace ViewContainer {
             readonly initiallyCollapsed?: boolean;
             readonly canHide?: boolean;
             readonly initiallyHidden?: boolean;
+            /**
+             * Disable dragging this part from its original container to other containers,
+             * But allow dropping parts from other containers on it,
+             * This option only applies to the `ViewContainerPart` and has no effect on the ViewContainer.
+             */
+            readonly disableDraggingToOtherContainers?: boolean;
         }
 
         export interface WidgetDescriptor {
@@ -715,6 +893,8 @@ export class ViewContainerPart extends BaseWidget {
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
     protected readonly onDidFocusEmitter = new Emitter<this>();
     readonly onDidFocus = this.onDidFocusEmitter.event;
+    protected readonly onPartMovedEmitter = new Emitter<ViewContainer>();
+    readonly onDidMove = this.onPartMovedEmitter.event;
     protected readonly onDidChangeDescriptionEmitter = new Emitter<void>();
     readonly onDidChangeDescription = this.onDidChangeDescriptionEmitter.event;
 
@@ -730,7 +910,9 @@ export class ViewContainerPart extends BaseWidget {
     constructor(
         readonly wrapped: Widget,
         readonly partId: string,
-        viewContainerId: string,
+        protected currentContainerId: string,
+        readonly originalContainerId: string,
+        readonly originalContainerTitle: ViewContainerTitleOptions | undefined,
         protected readonly toolbarRegistry: TabBarToolbarRegistry,
         protected readonly toolbarFactory: TabBarToolbarFactory,
         readonly options: ViewContainer.Factory.WidgetOptions = {}
@@ -738,7 +920,7 @@ export class ViewContainerPart extends BaseWidget {
         super();
         wrapped.parent = this;
         wrapped.disposed.connect(() => this.dispose());
-        this.id = `${viewContainerId}--${wrapped.id}`;
+        this.id = `${originalContainerId}--${wrapped.id}`;
         this.addClass('part');
 
         const fireTitleChanged = () => this.onTitleChangedEmitter.fire(undefined);
@@ -781,6 +963,18 @@ export class ViewContainerPart extends BaseWidget {
         }
     }
 
+    get viewContainer(): ViewContainer | undefined {
+        return this.parent ? this.parent.parent as ViewContainer : undefined;
+    }
+
+    get currentViewContainerId(): string {
+        return this.currentContainerId;
+    }
+
+    get headerElement(): HTMLElement {
+        return this.header;
+    }
+
     get collapsed(): boolean {
         return this._collapsed;
     }
@@ -809,6 +1003,11 @@ export class ViewContainerPart extends BaseWidget {
         this.collapsedEmitter.fire(collapsed);
     }
 
+    onPartMoved(newContainer: ViewContainer): void {
+        this.currentContainerId = newContainer.id;
+        this.onPartMovedEmitter.fire(newContainer);
+    }
+
     setHidden(hidden: boolean): void {
         if (!this.canHide) {
             return;
@@ -820,11 +1019,11 @@ export class ViewContainerPart extends BaseWidget {
         return this.options.canHide === undefined || this.options.canHide;
     }
 
-    get onCollapsed(): Event<boolean> {
+    get onCollapsed(): CommonEvent<boolean> {
         return this.collapsedEmitter.event;
     }
 
-    get onContextMenu(): Event<MouseEvent> {
+    get onContextMenu(): CommonEvent<MouseEvent> {
         return this.contextMenuEmitter.event;
     }
 
@@ -891,7 +1090,7 @@ export class ViewContainerPart extends BaseWidget {
         const disposable = new DisposableCollection();
         const header = document.createElement('div');
         header.tabIndex = 0;
-        header.classList.add('theia-header', 'header');
+        header.classList.add('theia-header', 'header', 'theia-view-container-part-header');
         disposable.push(addEventListener(header, 'click', event => {
             if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event)) {
                 return;
@@ -915,7 +1114,14 @@ export class ViewContainerPart extends BaseWidget {
         const description = document.createElement('span');
         description.classList.add('description');
 
-        const updateTitle = () => title.innerText = this.wrapped.title.label;
+        const updateTitle = () => {
+            if (this.currentContainerId !== this.originalContainerId && this.originalContainerTitle?.label) {
+                // Creating a title in format: <original_container_title>: <part_title>.
+                title.innerText = this.originalContainerTitle.label + ': ' + this.wrapped.title.label;
+            } else {
+                title.innerText = this.wrapped.title.label;
+            }
+        };
         const updateCaption = () => title.title = this.wrapped.title.caption || this.wrapped.title.label;
         const updateDescription = () => {
             description.innerText = DescriptionWidget.is(this.wrapped) && !this.collapsed && this.wrapped.description || '';
@@ -928,8 +1134,9 @@ export class ViewContainerPart extends BaseWidget {
         disposable.pushAll([
             this.onTitleChanged(updateTitle),
             this.onTitleChanged(updateCaption),
+            this.onDidMove(updateTitle),
             this.onDidChangeDescription(updateDescription),
-            this.onCollapsed(updateDescription),
+            this.onCollapsed(updateDescription)
         ]);
         header.appendChild(title);
         header.appendChild(description);
@@ -1032,6 +1239,9 @@ export namespace ViewContainerPart {
         hidden: boolean;
         relativeSize?: number;
         description?: string;
+        /** The original container to which this part belongs */
+        originalContainerId: string;
+        originalContainerTitle?: ViewContainerTitleOptions;
     }
 
     export function closestPart(element: Element | EventTarget | null, selector: string = 'div.part'): Element | undefined {
@@ -1064,9 +1274,24 @@ export class ViewContainerLayout extends SplitLayout {
         return toArray(this.iter());
     }
 
+    attachWidget(index: number, widget: ViewContainerPart): void {
+        super.attachWidget(index, widget);
+        if (index > -1 && this.parent && this.parent.node.contains(this.widgets[index + 1]?.node)) {
+            // Set the correct attach index to the DOM elements.
+            const ref = this.widgets[index + 1].node;
+            this.parent.node.insertBefore(widget.node, ref);
+            this.parent.node.insertBefore(this.handles[index], ref);
+            this.parent.fit();
+        }
+    }
+
     moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
         const ref = this.widgets[toIndex < fromIndex ? toIndex : toIndex + 1];
         super.moveWidget(fromIndex, toIndex, widget);
+        // Keep the order of `_widgets` array just as done before (by `super`) for the `_items` array -
+        // to prevent later bugs relying on index.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ArrayExt.move((this as any)._widgets, fromIndex, toIndex);
         if (ref) {
             this.parent!.node.insertBefore(this.handles[toIndex], ref.node);
         } else {
