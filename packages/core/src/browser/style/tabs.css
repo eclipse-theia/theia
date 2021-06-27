@@ -10,6 +10,7 @@
   --theia-tabbar-toolbar-z-index: 1001;
   --theia-toolbar-active-transform-scale: 1.272019649;
   --theia-horizontal-toolbar-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
+  --theia-dragover-tab-border-width: 2px;
 }
 
 /*-----------------------------------------------------------------------------
@@ -37,6 +38,19 @@
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   align-items: center;
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-tab {
+  border-top: var(--theia-dragover-tab-border-width) solid transparent !important;
+  border-bottom: var(--theia-dragover-tab-border-width) solid transparent !important;
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-tab.drop-target-top {
+  border-top-color: var(--theia-activityBar-activeBorder) !important;
+}
+
+.p-TabBar[data-orientation='vertical'] .p-TabBar-tab.drop-target-bottom {
+  border-bottom-color: var(--theia-activityBar-activeBorder) !important;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label,

@@ -30,6 +30,7 @@ import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
+import { IDragEvent } from '@phosphor/dragdrop';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -772,6 +773,18 @@ export class SideTabBar extends ScrollableTabBar {
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.renderTabBar();
+        this.node.addEventListener('p-dragenter', this);
+        this.node.addEventListener('p-dragover', this);
+        this.node.addEventListener('p-dragleave', this);
+        document.addEventListener('p-drop', this);
+    }
+
+    protected onAfterDetach(msg: Message): void {
+        super.onAfterDetach(msg);
+        this.node.removeEventListener('p-dragenter', this);
+        this.node.removeEventListener('p-dragover', this);
+        this.node.removeEventListener('p-dragleave', this);
+        document.removeEventListener('p-drop', this);
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -869,6 +882,15 @@ export class SideTabBar extends ScrollableTabBar {
                 this.onMouseMove(event as MouseEvent);
                 super.handleEvent(event);
                 break;
+            case 'p-dragenter':
+                this.onDragEnter(event as IDragEvent);
+                break;
+            case 'p-dragover':
+                this.onDragOver(event as IDragEvent);
+                break;
+            case 'p-dragleave': case 'p-drop':
+                this.cancelViewContainerDND();
+                break;
             default:
                 super.handleEvent(event);
         }
@@ -933,5 +955,79 @@ export class SideTabBar extends ScrollableTabBar {
             this.mouseData = undefined;
         }
     }
+
+    toCancelViewContainerDND = new DisposableCollection();
+    protected cancelViewContainerDND = () => {
+        this.toCancelViewContainerDND.dispose();
+    };
+
+    /**
+     * handles `viewContainerPart` drag enter.
+     */
+    protected onDragEnter = (event: IDragEvent) => {
+        this.cancelViewContainerDND();
+        if (event.mimeData.getData('application/vnd.phosphor.view-container-factory')) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    /**
+     * Handle `viewContainerPart` drag over,
+     * Defines the appropriate `drpAction` and opens the tab on which the mouse stands on for more than 800 ms.
+     */
+    protected onDragOver = (event: IDragEvent) => {
+        const factory = event.mimeData.getData('application/vnd.phosphor.view-container-factory');
+        const widget = factory && factory();
+        if (!widget) {
+            event.dropAction = 'none';
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        if (!this.toCancelViewContainerDND.disposed) {
+            event.dropAction = event.proposedAction;
+            return;
+        }
+
+        const { target, clientX, clientY } = event;
+        if (target instanceof HTMLElement) {
+            if (widget.options.disableDraggingToOtherContainers || widget.viewContainer.disableDNDBetweenContainers) {
+                event.dropAction = 'none';
+                target.classList.add('theia-cursor-no-drop');
+                this.toCancelViewContainerDND.push(Disposable.create(() => {
+                    target.classList.remove('theia-cursor-no-drop');
+                }));
+            } else {
+                event.dropAction = event.proposedAction;
+            }
+            const { top, bottom, left, right, height } = target.getBoundingClientRect();
+            const mouseOnTop = (clientY - top) < (height / 2);
+            const dropTargetClass = `drop-target-${mouseOnTop ? 'top' : 'bottom'}`;
+            const tabs = this.contentNode.children;
+            const targetTab = ArrayExt.findFirstValue(tabs, t => ElementExt.hitTest(t, clientX, clientY));
+            if (!targetTab) {
+                return;
+            }
+            targetTab.classList.add(dropTargetClass);
+            this.toCancelViewContainerDND.push(Disposable.create(() => {
+                if (targetTab) {
+                    targetTab.classList.remove(dropTargetClass);
+                }
+            }));
+            const openTabTimer = setTimeout(() => {
+                const title = this.titles.find(t => (this.renderer as TabBarRenderer).createTabId(t) === targetTab.id);
+                if (title) {
+                    const mouseStillOnTab = clientX >= left && clientX <= right && clientY >= top && clientY <= bottom;
+                    if (mouseStillOnTab) {
+                        this.currentTitle = title;
+                    }
+                }
+            }, 800);
+            this.toCancelViewContainerDND.push(Disposable.create(() => {
+                clearTimeout(openTabTimer);
+            }));
+        }
+    };
 
 }

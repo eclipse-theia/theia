@@ -50,7 +50,7 @@
     height: 100%;
 }
 
-.theia-view-container .part > .header {
+.theia-view-container-part-header {
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -61,26 +61,26 @@
     font-weight: 700;
 }
 
-.theia-view-container .part > .header .theia-ExpansionToggle {
+.theia-view-container-part-header .theia-ExpansionToggle {
     padding-left: 4px;
 }
 
-.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .header .theia-ExpansionToggle::before {
+.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .theia-header .theia-ExpansionToggle::before {
     display: none;
     padding-left: 0px;
 }
 
-.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .header .theia-ExpansionToggle {
+.theia-view-container > .p-SplitPanel[data-orientation='horizontal'] .part > .theia-header .theia-ExpansionToggle {
     padding-left: 0px;
 }
 
-.theia-view-container .part > .header .label {
+.theia-view-container-part-header .label {
     flex: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.theia-view-container .part > .header .description {
+.theia-view-container-part-header .description {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
@@ -107,7 +107,7 @@
 }
 
 .theia-view-container .part.drop-target {
-    background: var(--theia-sideBar-dropBackground);
+    background: var(--theia-list-dropBackground);
     border: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
     transition-property: top, left, right, bottom;
     transition-duration: 150ms;
@@ -143,7 +143,7 @@
 }
 
 .theia-view-container-part-title.menu-open,
-.p-Widget.part:not(.collapsed):hover .header .theia-view-container-part-title,
-.p-Widget.part:not(.collapsed):focus-within .header .theia-view-container-part-title {
+.p-Widget.part:not(.collapsed):hover .theia-view-container-part-header .theia-view-container-part-title,
+.p-Widget.part:not(.collapsed):focus-within .theia-view-container-part-header .theia-view-container-part-title {
     display: flex;
 }

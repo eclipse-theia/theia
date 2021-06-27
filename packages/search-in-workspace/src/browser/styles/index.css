@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+ #search-in-workspace {
+    height: 100%;
+}
+
 .t-siw-search-container {
     padding: 5px ;
     display: flex;

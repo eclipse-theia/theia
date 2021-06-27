@@ -235,6 +235,10 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
     z-index: 999;
 }
 
+.theia-cursor-no-drop, .theia-cursor-no-drop:active {
+  cursor: no-drop;
+}
+
 /*-----------------------------------------------------------------------------
 | Import children style files
 |----------------------------------------------------------------------------*/

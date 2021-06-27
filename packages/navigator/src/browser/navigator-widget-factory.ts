@@ -51,7 +51,8 @@ export class NavigatorWidgetFactory implements WidgetFactory {
         order: 1,
         canHide: false,
         initiallyCollapsed: false,
-        weight: 80
+        weight: 80,
+        disableDraggingToOtherContainers: true
     };
 
     @inject(ViewContainer.Factory)

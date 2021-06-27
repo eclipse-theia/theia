@@ -59,7 +59,9 @@ export type ApplicationShellLayoutVersion =
     /** git history view is replaced by a more generic scm history view, backward compatible to 3.0 */
     4.0 |
     /** Replace custom/font-awesome icons with codicons */
-    5.0;
+    5.0 |
+    /** added the ability to drag and drop view parts between view containers */
+    6.0;
 
 /**
  * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
