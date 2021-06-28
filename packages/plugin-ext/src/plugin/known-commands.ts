@@ -17,13 +17,13 @@
 import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-types';
 import * as theia from '@theia/plugin';
 import { cloneAndChange } from '../common/objects';
-import { Position, Range, Location, CallHierarchyItem, URI } from './types-impl';
+import { Position, Range, Location, CallHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
 import {
     fromPosition, fromRange, fromLocation,
     isModelLocation, toLocation,
     isModelCallHierarchyItem, fromCallHierarchyItem, toCallHierarchyItem,
     isModelCallHierarchyIncomingCall, toCallHierarchyIncomingCall,
-    isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall
+    isModelCallHierarchyOutgoingCall, toCallHierarchyOutgoingCall, fromTextDocumentShowOptions
 } from './type-converters';
 
 // Here is a mapping of VSCode commands to monaco commands with their conversions
@@ -294,6 +294,8 @@ export namespace KnownCommands {
     mappings['vscode.prepareCallHierarchy'] = ['vscode.prepareCallHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideIncomingCalls'] = ['vscode.provideIncomingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideOutgoingCalls'] = ['vscode.provideOutgoingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.open'] = ['vscode.open', CONVERT_VSCODE_TO_MONACO];
+    mappings['vscode.diff'] = ['vscode.diff', CONVERT_VSCODE_TO_MONACO];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined, mappedResult: ConversionFunction | undefined) => T): T {
@@ -346,6 +348,12 @@ export namespace KnownCommands {
     function vscodeToMonacoArgsConverter(args: any[]) {
         // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
+            if (CallHierarchyItem.isCallHierarchyItem(value)) {
+                return fromCallHierarchyItem(value);
+            }
+            if (TextDocumentShowOptions.isTextDocumentShowOptions(value)) {
+                return fromTextDocumentShowOptions(value);
+            }
             if (Position.isPosition(value)) {
                 return fromPosition(value);
             }
@@ -354,9 +362,6 @@ export namespace KnownCommands {
             }
             if (Location.isLocation(value)) {
                 return fromLocation(value);
-            }
-            if (CallHierarchyItem.isCallHierarchyItem(value)) {
-                return fromCallHierarchyItem(value);
             }
             if (!Array.isArray(value)) {
                 return value;
@@ -368,9 +373,6 @@ export namespace KnownCommands {
     function monacoToVscodeArgsConverter(args: any[]) {
         // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
-            if (isModelLocation(value)) {
-                return toLocation(value);
-            }
             if (isModelCallHierarchyItem(value)) {
                 return toCallHierarchyItem(value);
             }
@@ -379,6 +381,9 @@ export namespace KnownCommands {
             }
             if (isModelCallHierarchyOutgoingCall(value)) {
                 return toCallHierarchyOutgoingCall(value);
+            }
+            if (isModelLocation(value)) {
+                return toLocation(value);
             }
             if (!Array.isArray(value)) {
                 return value;
