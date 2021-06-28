@@ -17,10 +17,9 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuModelRegistry, Command, CommandRegistry } from '@theia/core/lib/common';
 import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
-import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
+import { EDITOR_CONTEXT_MENU, CurrentEditorAccess } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
 import { CALLHIERARCHY_ID } from './callhierarchy';
-import { CurrentEditorAccess } from './current-editor-access';
 import { CallHierarchyServiceProvider } from './callhierarchy-service';
 import URI from '@theia/core/lib/common/uri';
 
@@ -52,15 +51,13 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
     }
 
     protected isCallHierarchyAvailable(): boolean {
-        const selection = this.editorAccess.getSelection();
-        const languageId = this.editorAccess.getLanguageId();
+        const { selection, languageId } = this.editorAccess;
         return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId, new URI(selection.uri));
     }
 
     async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
         const widget = await super.openView(args);
-        const selection = this.editorAccess.getSelection();
-        const languageId = this.editorAccess.getLanguageId();
+        const { selection, languageId } = this.editorAccess;
         widget.initializeModel(selection, languageId);
         return widget;
     }

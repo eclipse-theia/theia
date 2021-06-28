@@ -21,7 +21,6 @@ import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { createHierarchyTreeWidget } from './callhierarchy-tree';
 import { CurrentEditorAccess } from './current-editor-access';
-
 import { ContainerModule } from '@theia/core/shared/inversify';
 
 import '../../src/browser/style/index.css';

@@ -14,13 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller } from '@theia/callhierarchy/lib/browser';
+import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller, Callee as CallHierarchyCallee } from '@theia/callhierarchy/lib/browser';
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
 import * as callhierarchy from '@theia/core/shared/vscode-languageserver-types';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../../common/uri-components';
-import { Location } from '@theia/core/shared/vscode-languageserver-types';
 
 export function toUriComponents(uri: string): UriComponents {
     return URI.parse(uri);
@@ -30,15 +29,15 @@ export function fromUriComponents(uri: UriComponents): string {
     return URI.revive(uri).toString();
 }
 
-export function fromLocation(location: Location): model.Location {
+export function fromLocation(location: callhierarchy.Location): model.Location {
     return <model.Location>{
         uri: URI.parse(location.uri),
         range: fromRange(location.range)
     };
 }
 
-export function toLocation(uri: UriComponents, range: model.Range): Location {
-    return <Location>{
+export function toLocation(uri: UriComponents, range: model.Range): callhierarchy.Location {
+    return {
         uri: URI.revive(uri).toString(),
         range: toRange(range)
     };
@@ -54,15 +53,20 @@ export function fromPosition(position: callhierarchy.Position): rpc.Position {
 export function fromRange(range: callhierarchy.Range): model.Range {
     const { start, end } = range;
     return {
-        startLineNumber: start.line,
-        startColumn: start.character,
-        endLineNumber: end.line,
-        endColumn: end.character
+        startLineNumber: start.line + 1,
+        startColumn: start.character + 1,
+        endLineNumber: end.line + 1,
+        endColumn: end.character + 1,
     };
 }
 
 export function toRange(range: model.Range): callhierarchy.Range {
-    return callhierarchy.Range.create(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+    return callhierarchy.Range.create(
+        range.startLineNumber - 1,
+        range.startColumn - 1,
+        range.endLineNumber - 1,
+        range.endColumn - 1,
+    );
 }
 
 export namespace SymbolKindConverter {
@@ -169,8 +173,29 @@ export function toCaller(caller: model.CallHierarchyReference): CallHierarchyCal
 }
 
 export function fromCaller(caller: CallHierarchyCaller): model.CallHierarchyReference {
-    return <model.CallHierarchyReference>{
+    return {
         callerDefinition: fromDefinition(caller.callerDefinition),
         references: caller.references.map(fromRange)
+    };
+}
+
+export function toCallee(callee: model.CallHierarchyReference): CallHierarchyCallee {
+    return {
+        calleeDefinition: toDefinition(callee.callerDefinition),
+        references: callee.references.map(toRange),
+    };
+}
+
+export function fromCallHierarchyCallerToModelCallHierarchyIncomingCall(caller: CallHierarchyCaller): model.CallHierarchyIncomingCall {
+    return {
+        from: fromDefinition(caller.callerDefinition),
+        fromRanges: caller.references.map(fromRange),
+    };
+}
+
+export function fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall(callee: CallHierarchyCallee): model.CallHierarchyOutgoingCall {
+    return {
+        to: fromDefinition(callee.calleeDefinition),
+        fromRanges: callee.references.map(fromRange),
     };
 }

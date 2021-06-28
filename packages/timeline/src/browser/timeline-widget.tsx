@@ -68,14 +68,14 @@ export class TimelineWidget extends BaseWidget {
 
         this.refresh();
         this.toDispose.push(this.timelineService.onDidChangeTimeline(event => {
-                const currentWidgetUri = this.getCurrentWidgetUri();
-                if (currentWidgetUri ) {
-                    this.loadTimeline(currentWidgetUri, event.reset);
-                }
-            })
+            const currentWidgetUri = this.getCurrentWidgetUri();
+            if (currentWidgetUri) {
+                this.loadTimeline(currentWidgetUri, event.reset);
+            }
+        })
         );
         this.toDispose.push(this.selectionService.onSelectionChanged(selection => {
-            if (Array.isArray(selection) && 'uri' in selection[0]) {
+            if (Array.isArray(selection) && !!selection[0] && 'uri' in selection[0]) {
                 this.refresh(selection[0].uri);
             }
         }));
@@ -155,7 +155,7 @@ export class TimelineWidget extends BaseWidget {
                 }
             });
         }
-        return  NavigatableWidget.is(current) ? current.getResourceUri() : undefined;
+        return NavigatableWidget.is(current) ? current.getResourceUri() : undefined;
     }
 
     protected get containerLayout(): PanelLayout | undefined {
