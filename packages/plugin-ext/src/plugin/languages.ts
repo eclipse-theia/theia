@@ -91,7 +91,6 @@ import { CallHierarchyAdapter } from './languages/call-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 
-/* eslint-disable @typescript-eslint/indent */
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
@@ -116,7 +115,6 @@ type Adapter = CompletionAdapter |
     CallHierarchyAdapter |
     DocumentRangeSemanticTokensAdapter |
     DocumentSemanticTokensAdapter;
-/* eslint-enable @typescript-eslint/indent */
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -200,7 +198,7 @@ export class LanguagesExtImpl implements LanguagesExt {
             return fallbackValue;
         }
         if (adapter instanceof ctor) {
-            return callback(<A>adapter);
+            return callback(adapter);
         }
         throw new Error('no adapter found');
     }
@@ -591,6 +589,10 @@ export class LanguagesExtImpl implements LanguagesExt {
     $provideCallers(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token), undefined);
     }
+
+    $provideCallees(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallees(definition, token), undefined);
+    }
     // ### Call Hierarchy Provider end
 
     // #region semantic coloring
@@ -640,11 +642,11 @@ function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule
     }
 
     return rules.map(r =>
-        ({
-            action: r.action,
-            beforeText: serializeRegExp(r.beforeText),
-            afterText: serializeRegExp(r.afterText)
-        } as SerializedOnEnterRule));
+    ({
+        action: r.action,
+        beforeText: serializeRegExp(r.beforeText),
+        afterText: serializeRegExp(r.afterText)
+    } as SerializedOnEnterRule));
 }
 
 function serializeRegExp(regexp?: RegExp): SerializedRegExp | undefined {

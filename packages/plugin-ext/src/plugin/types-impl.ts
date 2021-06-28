@@ -568,6 +568,22 @@ export class Selection extends Range {
     }
 }
 
+export namespace TextDocumentShowOptions {
+    /**
+     * @param candidate
+     * @returns `true` if `candidate` is an instance of options that includes a selection.
+     * This function should be used to determine whether TextDocumentOptions passed into commands by plugins
+     * need to be translated to TextDocumentShowOptions in the style of the RPC model. Selection is the only field that requires translation.
+     */
+    export function isTextDocumentShowOptions(candidate: unknown): candidate is theia.TextDocumentShowOptions {
+        if (!candidate) {
+            return false;
+        }
+        const options = candidate as theia.TextDocumentShowOptions;
+        return Range.isRange(options.selection);
+    }
+}
+
 export enum EndOfLine {
     LF = 1,
     CRLF = 2

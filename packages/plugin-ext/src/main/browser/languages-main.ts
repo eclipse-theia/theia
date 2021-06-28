@@ -50,8 +50,8 @@ import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
-import { CallHierarchyService, CallHierarchyServiceProvider, Caller, Definition } from '@theia/callhierarchy/lib/browser';
-import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller } from './callhierarchy/callhierarchy-type-converters';
+import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
+import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
@@ -782,15 +782,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     }
 
                     if (Array.isArray(result)) {
-                        const callers: Caller[] = [];
-                        for (const item of result) {
-                            callers.push(toCaller(item));
-                        }
-                        return callers;
+                        return result.map(toCaller);
                     }
 
                     return undefined!;
-                })
+                }),
+
+            getCallees: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
+                .then(result => {
+                    if (!result) {
+                        return undefined;
+                    }
+                    if (Array.isArray(result)) {
+                        return result.map(toCallee);
+                    }
+
+                    return undefined;
+                }),
         };
     }
 

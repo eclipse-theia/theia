@@ -77,7 +77,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
             throw new Error(`Command with id '${id}' is not registered.`);
         }
         try {
-            return await this.delegate.executeCommand(id, ...args);
+            return await this.delegate.executeCommand<T>(id, ...args);
         } catch (e) {
             // Command handler may be not active at the moment so the error must be caught. See https://github.com/eclipse-theia/theia/pull/6687#discussion_r354810079
             if ('code' in e && e['code'] === 'NO_ACTIVE_HANDLER') {
