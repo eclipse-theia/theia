@@ -388,6 +388,10 @@ export class Position {
         }
         return false;
     }
+
+    toJSON(): any {
+        return { line: this.line, character: this.character };
+    }
 }
 
 export class Range {
@@ -519,6 +523,9 @@ export class Range {
             && Position.isPosition((<Range>thing).end);
     }
 
+    toJSON(): any {
+        return [this.start, this.end];
+    }
 }
 
 export class Selection extends Range {
