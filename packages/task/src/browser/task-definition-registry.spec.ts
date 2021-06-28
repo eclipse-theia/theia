@@ -55,7 +55,7 @@ describe('TaskDefinitionRegistry', () => {
             }
         }
     };
-    const FOOBAR_TASK_META = {
+    const FAKE_TASK_META = {
         TYPE: 'foobar_type',
         SRC: 'foobar_src'
     };
@@ -67,16 +67,16 @@ describe('TaskDefinitionRegistry', () => {
         reveal: RevealKind.Always,
         showReuseMessage: true,
     };
-    const foobarTaskFixture = {
+    const fakeTaskContrib = {
         def: {
-            taskType: FOOBAR_TASK_META.TYPE,
-            source: FOOBAR_TASK_META.SRC,
+            taskType: FAKE_TASK_META.TYPE,
+            source: FAKE_TASK_META.SRC,
             required: ['strArg'],
             properties: {
                 required: ['strArg'],
                 all: ['strArg', 'arrArgs'],
                 schema: {
-                    type: FOOBAR_TASK_META.TYPE,
+                    type: FAKE_TASK_META.TYPE,
                     required: ['strArg'],
                     properties: {
                         strArg: {},
@@ -87,8 +87,8 @@ describe('TaskDefinitionRegistry', () => {
         },
         conf: (
             executionId = 'foobar',
-            type = FOOBAR_TASK_META.TYPE,
-            _source = FOOBAR_TASK_META.SRC,
+            type = FAKE_TASK_META.TYPE,
+            _source = FAKE_TASK_META.SRC,
             arrArgs: unknown[] = [],
             strArg = '',
             label = 'foobar',
@@ -155,51 +155,51 @@ describe('TaskDefinitionRegistry', () => {
 
     describe('compareTasks function', () => {
 
-        beforeEach(() => registry.register(foobarTaskFixture.def));
+        beforeEach(() => registry.register(fakeTaskContrib.def));
 
         it('should return false if given 2 task configurations with different type', () => {
-            const res = registry.compareTasks(
-                foobarTaskFixture.conf('id_1', 'type_1'),
-                foobarTaskFixture.conf('id_2', 'type_2'),
+            const areSameTasks = registry.compareTasks(
+                fakeTaskContrib.conf('id_1', 'type_1'),
+                fakeTaskContrib.conf('id_2', 'type_2'),
             );
-            expect(res).to.be.not.ok;
+            expect(areSameTasks).to.be.false;
         });
 
         it('should return true if given 2 same task configurations with empty arrays (different by reference) as custom property', () => {
-            const res = registry.compareTasks(
-                foobarTaskFixture.conf('id_1'),
-                foobarTaskFixture.conf('id_2'),
+            const areSameTasks = registry.compareTasks(
+                fakeTaskContrib.conf('id_1'),
+                fakeTaskContrib.conf('id_2'),
             );
-            expect(res).to.be.ok;
+            expect(areSameTasks).to.be.true;
         });
 
         it('should return true if given 2 same task configurations with deep properties (different by reference)', () => {
-            const res = registry.compareTasks(
-                foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
-                foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
+            const areSameTasks = registry.compareTasks(
+                fakeTaskContrib.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
+                fakeTaskContrib.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
             );
-            expect(res).to.be.ok;
+            expect(areSameTasks).to.be.true;
         });
 
         it('should return false if given 2 task configurations with different deep properties', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const inputs: [any, any][] = [
                 [
-                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'b' } }]),
-                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true } }]),
+                    fakeTaskContrib.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'b' } }]),
+                    fakeTaskContrib.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true } }]),
                 ],
                 [
-                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2']),
-                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, 2]),
+                    fakeTaskContrib.conf('id_1', undefined, undefined, [1, '2']),
+                    fakeTaskContrib.conf('id_2', undefined, undefined, [1, 2]),
                 ],
                 [
                     // eslint-disable-next-line no-null/no-null
-                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { c: null }]),
-                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { c: undefined }]),
+                    fakeTaskContrib.conf('id_1', undefined, undefined, [1, '2', { c: null }]),
+                    fakeTaskContrib.conf('id_2', undefined, undefined, [1, '2', { c: undefined }]),
                 ],
             ];
-            const allAreFalse = inputs.map(args => registry.compareTasks(...args)).every(res => res === false);
-            expect(allAreFalse).to.be.ok;
+            const allAreFalse = inputs.map(args => registry.compareTasks(...args)).every(areSameTasks => areSameTasks === false);
+            expect(allAreFalse).to.be.true;
         });
     });
 });
