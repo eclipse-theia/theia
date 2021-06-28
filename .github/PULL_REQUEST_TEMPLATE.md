@@ -5,6 +5,12 @@ the requirements below.
 Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md
 -->
 
+<!--
+Note: Security vulnerabilities should not be disclosed on GitHub, through a PR or any
+other means. See SECURITY.md at the root of this repository, to learn how to report
+vulnerabilities.
+-->
+
 #### What it does
 <!-- Include relevant issues and describe how they are addressed. -->
 
