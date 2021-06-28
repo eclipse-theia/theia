@@ -138,7 +138,6 @@ export class PreferenceTreeModel extends TreeModelImpl {
         this._currentRows = new Map();
         if (root) {
             this._totalVisibleLeaves = 0;
-            const depths = new Map<CompositeTreeNode | undefined, number>();
             let index = 0;
 
             for (const node of new TopDownTreeIterator(root, {
@@ -148,13 +147,12 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 if (TreeNode.isVisible(node) && Preference.TreeNode.is(node)) {
                     const { id } = Preference.TreeNode.getGroupAndIdFromNodeId(node.id);
                     if (CompositeTreeNode.is(node) || this.passesCurrentFilters(node, id)) {
-                        const depth = this.getDepthForNode(depths, node);
                         this.updateVisibleChildren(node);
 
                         this._currentRows.set(node.id, {
                             index: index++,
                             node,
-                            depth,
+                            depth: node.depth,
                             visibleChildren: 0,
                         });
                     }
@@ -186,13 +184,8 @@ export class PreferenceTreeModel extends TreeModelImpl {
             || (node.preference.data.description ?? '').includes(this.lastSearchedLiteral);
     }
 
-    protected getDepthForNode(depths: Map<CompositeTreeNode | undefined, number>, node: TreeNode): number {
-        const parentDepth = depths.get(node.parent);
-        const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
-        if (CompositeTreeNode.is(node)) {
-            depths.set(node, depth);
-        }
-        return depth;
+    protected isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {
+        return CompositeTreeNode.is(node) && !!this._currentRows.get(node.id)?.visibleChildren;
     }
 
     protected updateVisibleChildren(node: TreeNode): void {
