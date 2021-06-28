@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import { foobarTaskFixture } from '../node/test/test-helper';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
 /* eslint-disable no-unused-expressions */
@@ -103,6 +104,56 @@ describe('TaskDefinitionRegistry', () => {
             });
             expect(defs2).to.be.ok;
             expect(defs2!.taskType).to.be.eq(definitionContributionB.taskType);
+        });
+    });
+
+    describe('compareTasks function', () => {
+
+        beforeEach(() => registry.register(foobarTaskFixture.def));
+
+        it('should return false if given 2 task configurations with different type', () => {
+            const res = registry.compareTasks(
+                foobarTaskFixture.conf('id_1', 'type_1'),
+                foobarTaskFixture.conf('id_2', 'type_2'),
+            );
+            expect(res).to.be.not.ok;
+        });
+
+        it('should return true if given 2 same task configurations with empty arrays (different by reference) as custom property', () => {
+            const res = registry.compareTasks(
+                foobarTaskFixture.conf('id_1'),
+                foobarTaskFixture.conf('id_2'),
+            );
+            expect(res).to.be.ok;
+        });
+
+        it('should return true if given 2 same task configurations with deep properties (different by reference)', () => {
+            const res = registry.compareTasks(
+                foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
+                foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true, b: 'string' } }]),
+            );
+            expect(res).to.be.ok;
+        });
+
+        it('should return false if given 2 task configurations with different deep properties', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const inputs: [any, any][] = [
+                [
+                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { '3': { a: true, b: 'b' } }]),
+                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { '3': { a: true } }]),
+                ],
+                [
+                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2']),
+                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, 2]),
+                ],
+                [
+                    // eslint-disable-next-line no-null/no-null
+                    foobarTaskFixture.conf('id_1', undefined, undefined, [1, '2', { c: null }]),
+                    foobarTaskFixture.conf('id_2', undefined, undefined, [1, '2', { c: undefined }]),
+                ],
+            ];
+            const allAreFalse = inputs.map(args => registry.compareTasks(...args)).every(res => res === false);
+            expect(allAreFalse).to.be.ok;
         });
     });
 });
