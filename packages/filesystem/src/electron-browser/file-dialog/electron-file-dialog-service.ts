@@ -95,7 +95,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         const defaultPath = FileUri.fsPath(uri);
         const filters: FileFilter[] = [{ name: 'All Files', extensions: ['*'] }];
         if (props.filters) {
-            filters.push(...Object.keys(props.filters).map(key => ({ name: key, extensions: props.filters![key] })));
+            filters.unshift(...Object.keys(props.filters).map(key => ({ name: key, extensions: props.filters![key] })));
         }
         return { title, defaultPath, filters };
     }
