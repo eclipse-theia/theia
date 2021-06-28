@@ -169,7 +169,7 @@ export class ProblemMatcherRegistry {
         }
         const problemMatcher = {
             name: matcher.name || (baseMatcher ? baseMatcher.name : undefined),
-            label: matcher.label || (baseMatcher ? baseMatcher.label : undefined),
+            label: matcher.label || baseMatcher?.label || '',
             deprecated,
             owner: matcher.owner || (baseMatcher ? baseMatcher.owner : ''),
             source: matcher.source || (baseMatcher ? baseMatcher.source : undefined),
