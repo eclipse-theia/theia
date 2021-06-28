@@ -43,7 +43,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         readonly fileDialogTree: FileDialogTree
     ) {
         super();
-        this.appliedFilters = { 'All Files': [], ...suppliedFilters, };
+        this.appliedFilters = { ...this.suppliedFilters, 'All Files': [], };
     }
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);
