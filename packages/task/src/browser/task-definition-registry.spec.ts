@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
-import { foobarTaskFixture } from '../node/test/test-helper';
+import { PanelKind, RevealKind, TaskScope } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
 /* eslint-disable no-unused-expressions */
@@ -54,6 +54,52 @@ describe('TaskDefinitionRegistry', () => {
                 }
             }
         }
+    };
+    const FOOBAR_TASK_META = {
+        TYPE: 'foobar_type',
+        SRC: 'foobar_src'
+    };
+    const defaultPresentation = {
+        clear: false,
+        echo: true,
+        focus: false,
+        panel: PanelKind.Shared,
+        reveal: RevealKind.Always,
+        showReuseMessage: true,
+    };
+    const foobarTaskFixture = {
+        def: {
+            taskType: FOOBAR_TASK_META.TYPE,
+            source: FOOBAR_TASK_META.SRC,
+            required: ['strArg'],
+            properties: {
+                required: ['strArg'],
+                all: ['strArg', 'arrArgs'],
+                schema: {
+                    type: FOOBAR_TASK_META.TYPE,
+                    required: ['strArg'],
+                    properties: {
+                        strArg: {},
+                        arrArgs: {}
+                    }
+                }
+            }
+        },
+        conf: (
+            executionId = 'foobar',
+            type = FOOBAR_TASK_META.TYPE,
+            _source = FOOBAR_TASK_META.SRC,
+            arrArgs: unknown[] = [],
+            strArg = '',
+            label = 'foobar',
+            presentation = defaultPresentation,
+            problemMatcher = undefined,
+            taskType = 'customExecution',
+            _scope = TaskScope.Workspace,
+        ) => ({
+            executionId, arrArgs, strArg, label, presentation,
+            problemMatcher, taskType, type, _scope, _source,
+        })
     };
 
     beforeEach(() => {
