@@ -1,5 +1,15 @@
 # Change Log
 
+## v1.16.0 - 7/29/2021
+
+[1.16.0 Milestone](https://github.com/eclipse-theia/theia/milestone/22)
+
+ - [workspace] added support for multiple selections in 'Add folder to workspace' dialog. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
+
+<a name="breaking_changes_1.16.0">[Breaking Changes:](#breaking_changes_1.16.0)</a>
+
+- [workspace] `WorkspaceCommandContribution.addFolderToWorkspace` no longer accepts `undefined`. `WorkspaceService.addRoot` now accepts a URI or a URI[]. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
+
 ## v1.15.0 - 6/30/2021
 
 [1.15.0 Milestone](https://github.com/eclipse-theia/theia/milestone/21)
