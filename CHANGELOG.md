@@ -1,18 +1,59 @@
 # Change Log
 
-## v1.15.0 - 6/24/2021
+## v1.15.0 - 6/30/2021
 
 [1.15.0 Milestone](https://github.com/eclipse-theia/theia/milestone/21)
 
-- [core] add API to filter contributions at runtime [#9317](https://github.com/eclipse-theia/theia/pull/9317) Contributed on behalf of STMicroelectronics
-- [editor-preview] rewrote `editor-preview`-package classes as extensions of `editor`-package classes [#9518](https://github.com/eclipse-theia/theia/pull/9517)
+- [application-package] refined the configuration typings allowing for partial `ApplicationConfig` updates [#9568](https://github.com/eclipse-theia/theia/pull/9568)
+- [core] added API to filter contributions at runtime [#9317](https://github.com/eclipse-theia/theia/pull/9317) - Contributed on behalf of STMicroelectronics
+- [core] added `BackendApplicationServer` which controls how to serve frontend files [#9461](https://github.com/eclipse-theia/theia/pull/9461)
+- [core] added `dompurify` as a shared dependency [#9571](https://github.com/eclipse-theia/theia/pull/9571)
+- [core] added handling to gracefully kill process trees on exit [#8947](https://github.com/eclipse-theia/theia/pull/8947)
+- [core] added handling to make IPC debug tracing configurable [#9602](https://github.com/eclipse-theia/theia/pull/9602)
+- [core] added handling to normalize environment variables before merging [#9631](https://github.com/eclipse-theia/theia/pull/9631)
+- [core] added support for `expandOnlyOnExpansionToggleClick` in `TreeProps` [#9583](https://github.com/eclipse-theia/theia/pull/9583)
+- [core] added support for `resourceDirName` and `resourcePath` context keys [#9499](https://github.com/eclipse-theia/theia/pull/9499)
+- [core] added support for a unique id for non-command toolbar items [#9586](https://github.com/eclipse-theia/theia/pull/9586)
+- [core] fixed incorrectly wrapped disposable [#9376](https://github.com/eclipse-theia/theia/pull/9376)
+- [debug] fixed handling when `supportSetVariable` is disabled [#9616](https://github.com/eclipse-theia/theia/pull/9616)
+- [editor-preview] refactored `editor-preview` resolving outstanding bugs [#9518](https://github.com/eclipse-theia/theia/pull/9518)
+  - rewrote `editor-preview`-package classes as extensions of `editor`-package classes
+- [editor] updated logic to open last seen editor and not last created [#9542](https://github.com/eclipse-theia/theia/pull/9542)
+- [file-search] added handling to preserve editor state when re-opening a closed editor [#9557](https://github.com/eclipse-theia/theia/pull/9557)
+- [file-search] fixed issue with potential infinite recursion [#9635](https://github.com/eclipse-theia/theia/pull/9635)
+- [file-search] updated default goto line and column `range` to `undefined` [#9529](https://github.com/eclipse-theia/theia/pull/9629)
+- [filesystem] added logic to use a supplied filter by default [#9659](https://github.com/eclipse-theia/theia/pull/9659)
+- [mini-browser] added handling to warn if deployed in an insecure context [#9563](https://github.com/eclipse-theia/theia/pull/9563)
+- [monaco] fixed resizing of editor inputs [#9527](https://github.com/eclipse-theia/theia/pull/9527)
+- [monaco] updated fetching of `onigasm wasm` to use `fetch` instead of old `AJAX` [#9620](https://github.com/eclipse-theia/theia/pull/9620)
+- [outline] aligned expansion behavior of the `outline-view` with vscode [#9583](https://github.com/eclipse-theia/theia/pull/9583)
+- [plugin] added `toJSON` implementation for `Range` and `Position` [#9652](https://github.com/eclipse-theia/theia/pull/9652)
+- [plugin] added support for `secrets` plugin API [#9463](https://github.com/eclipse-theia/theia/pull/9463)
+- [plugin] added support for prefix arguments when executing `workbench.action.quickOpen` [#9566](https://github.com/eclipse-theia/theia/pull/9566)
+- [plugin] fixed `ELECTRON_RUN_AS_NODE` environment variable [#9283](https://github.com/eclipse-theia/theia/pull/9283)
+- [plugin] fixed issue where tree-views would re-open after reload despite being explicitly closed [#9539](https://github.com/eclipse-theia/theia/pull/9539)
+- [plugin] fixed tree-view selection [#9673](https://github.com/eclipse-theia/theia/pull/9673)
+- [plugin] updated logic to transform `iconPath` to `url` [#9608](https://github.com/eclipse-theia/theia/pull/9608)
+- [preferences] added handling to ensure that `WorkspacePreferenceProvider` waits for the `WorkspaceService` to be ready [#9531](https://github.com/eclipse-theia/theia/pull/9531)
+- [preferences] fixed tab tracking when scrolling the preferences tree [#9549](https://github.com/eclipse-theia/theia/pull/9549)
+- [preferences] refactored the `preferences-view` with major improvements to useability and performance [#9439](https://github.com/eclipse-theia/theia/pull/9439)
+- [property-view] added unit-tests [#9630](https://github.com/eclipse-theia/theia/pull/9630)
+- [repo] fixed `compile-references` script error message [#9667](https://github.com/eclipse-theia/theia/pull/9667)
+- [repo] upgraded repository `yarn.lock` [#9536](https://github.com/eclipse-theia/theia/pull/9536)
+- [search-in-workspace] fixed search debounce issue [#9579](https://github.com/eclipse-theia/theia/pull/9579)
+- [vsx-registry] added support for `@builtin` and `@installed` search queries [#9572](https://github.com/eclipse-theia/theia/pull/9572)
+- [vsx-registry] added support for `extensionPack` handling at buildtime [#9425](https://github.com/eclipse-theia/theia/pull/9425)
+- [vsx-registry] added support for `extensions.json` functionality [#9043](https://github.com/eclipse-theia/theia/pull/9043)
+- [vsx-registry] upgraded `sanitize-html` dependency [#9525](https://github.com/eclipse-theia/theia/pull/9525)
+- [workspace] improved extensibility of `workspace-service` private members and methods [#9597](https://github.com/eclipse-theia/theia/pull/9597)
 
 <a name="breaking_changes_1.15.0">[Breaking Changes:](#breaking_changes_1.15.0)</a>
 
-- [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
 - [core] `outline-view-tree.ts` has been renamed to `outline-view-tree-model.ts` to match class name. [#9583](https://github.com/eclipse-theia/theia/pull/9583)
-- [process] `ShellProcess` constructor takes a new `environmentUtils` parameter to handle environment operations.
+- [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
 - [process] `@theia/process/lib/node/shell-process` no longer exports `mergeProcessEnv` as a raw function. Use `@theia/core/lib/node/environment-utils` and the injectable `EnvironmentUtils` class instead.
+- [process] `ShellProcess` constructor takes a new `environmentUtils` parameter to handle environment operations.
+- [vsx-registry] removed support for `VSXApiVersionProvider` [#9425](https://github.com/eclipse-theia/theia/pull/9425)
 
 ## v1.14.0 - 5/27/2021
 
