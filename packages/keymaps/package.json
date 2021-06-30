@@ -1,18 +1,18 @@
 {
   "name": "@theia/keymaps",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Theia - Custom Keymaps Extension",
   "dependencies": {
-    "@theia/core": "1.14.0",
-    "@theia/monaco": "1.14.0",
-    "@theia/userstorage": "1.14.0",
-    "@theia/workspace": "1.14.0",
+    "@theia/core": "1.15.0",
+    "@theia/monaco": "1.15.0",
+    "@theia/userstorage": "1.15.0",
+    "@theia/workspace": "1.15.0",
     "@types/lodash.debounce": "4.0.3",
     "ajv": "^6.5.3",
     "jsonc-parser": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.14.0",
+    "@theia/ext-scripts": "1.15.0",
     "@types/temp": "^0.8.29",
     "temp": "^0.8.3"
   },

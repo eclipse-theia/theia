@@ -1,10 +1,10 @@
 {
   "name": "@theia/editor-preview",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Theia - Editor Preview Extension",
   "dependencies": {
-    "@theia/core": "1.14.0",
-    "@theia/editor": "1.14.0"
+    "@theia/core": "1.15.0",
+    "@theia/editor": "1.15.0"
   },
   "publishConfig": {
     "access": "public"
@@ -38,7 +38,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.14.0"
+    "@theia/ext-scripts": "1.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
