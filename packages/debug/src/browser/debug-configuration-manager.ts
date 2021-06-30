@@ -317,6 +317,9 @@ export class DebugConfigurationManager {
         }
         const { languageId } = widget.editor.document;
         const debuggers = await this.debug.getDebuggersForLanguage(languageId);
+        if (debuggers.length === 0) {
+            return undefined;
+        }
         const items: Array<QuickPickValue<string>> = debuggers.map(({ label, type }) => ({ label, value: type }));
         const selectedItem = await this.quickPickService.show(items, { placeholder: 'Select Environment' });
         return selectedItem?.value;
