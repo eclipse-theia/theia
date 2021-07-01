@@ -21,6 +21,7 @@ import { Marker } from '../common/marker';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
 import { ProblemSelection } from './problem/problem-selection';
+import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {
@@ -61,6 +62,10 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
             return;
         }
         const node = MarkerInfoNode.is(existing) ? existing : this.createMarkerInfo(id, uri);
+        this.insertNodeWithMarkers(node, markers);
+    }
+
+    protected insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<T>[]): void {
         CompositeTreeNode.addChild(node.parent, node);
         const children = this.getMarkerNodes(node, markers);
         node.numberOfMarkers = markers.length;
@@ -131,6 +136,7 @@ export namespace MarkerNode {
 export interface MarkerInfoNode extends UriSelection, SelectableTreeNode, ExpandableTreeNode {
     parent: MarkerRootNode;
     numberOfMarkers: number;
+    severity?: DiagnosticSeverity;
 }
 export namespace MarkerInfoNode {
     export function is(node: Object | undefined): node is MarkerInfoNode {

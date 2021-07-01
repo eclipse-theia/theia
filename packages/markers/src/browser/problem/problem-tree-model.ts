@@ -16,6 +16,7 @@
 
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
+import { ProblemCompositeTreeNode } from './problem-composite-tree-node';
 import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker-tree';
 import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -52,7 +53,7 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
         const markerB = b.marker as Marker<Diagnostic>;
 
         // Determine the marker with the highest severity.
-        const severity = ProblemUtils.severityCompare(markerA, markerB);
+        const severity = ProblemUtils.severityCompareMarker(markerA, markerB);
         if (severity !== 0) {
             return severity;
         }
@@ -72,6 +73,13 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
             return owner;
         }
         return 0;
+    }
+
+    protected insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
+        ProblemCompositeTreeNode.addChild(node.parent, node, markers);
+        const children = this.getMarkerNodes(node, markers);
+        node.numberOfMarkers = markers.length;
+        this.setChildren(node, children);
     }
 
 }
