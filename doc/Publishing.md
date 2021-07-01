@@ -149,7 +149,8 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 
 ### Announce Release is Completed
 
-Update the forum release post to announce that the release has completed.
+- Update the forum release post to announce that the release has completed.
+- Submit to "Theia News", so that a Tweet will be created by the Twitter managers. Use [this template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Twitter-strategy#release-announcement-no-review) for the message and post it [here](https://forms.gle/ccS6qawpS54FQZht5).
 
 
 ### Yarn Upgrade
