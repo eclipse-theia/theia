@@ -36,11 +36,6 @@ import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendAp
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
-import {
-    QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickOpenContribution,
-    QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler,
-    QuickOpenFrontendContribution, PrefixQuickOpenService, QuickInputService
-} from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
@@ -66,16 +61,13 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { bindCorePreferences } from './core-preferences';
-import { QuickPickServiceImpl } from './quick-open/quick-pick-service-impl';
-import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { ContextKeyService } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
 import { ViewContainer, ViewContainerIdentifier } from './view-container';
-import { QuickViewService } from './quick-view-service';
-import { QuickTitleBar } from './quick-open/quick-title-bar';
+import { QuickViewService } from './quick-input/quick-view-service';
 import { DialogOverlayService } from './dialogs';
 import { ProgressLocationService } from './progress-location-service';
 import { ProgressClient } from '../common/progress-service-protocol';
@@ -102,6 +94,14 @@ import { DecorationsService, DecorationsServiceImpl } from './decorations-servic
 import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
+import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution';
+import { QuickHelpFrontendContribution } from './quick-input/quick-help-frontend-contribution';
+import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
+import {
+    QuickPickServiceImpl,
+    QuickInputFrontendContribution
+} from './quick-input';
+import { QuickAccessContribution } from './quick-input/quick-access-contribution';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -203,7 +203,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     });
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
-    bind(QuickOpenContribution).to(CommandQuickOpenContribution);
 
     bind(ContextKeyService).toSelf().inSingletonScope();
 
@@ -232,28 +231,22 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
 
-    bind(QuickOpenService).toSelf().inSingletonScope();
-    bind(QuickInputService).toSelf().inSingletonScope();
-    bind(QuickTitleBar).toSelf().inSingletonScope();
-    bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
+    [CommandContribution, KeybindingContribution, MenuContribution, QuickAccessContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
+
+    bind(QuickHelpFrontendContribution).toSelf().inSingletonScope();
+    bind(QuickAccessContribution).toService(QuickHelpFrontendContribution);
 
     bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
         WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
 
-    bind(PrefixQuickOpenService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, QuickOpenContribution);
-    bind(QuickOpenHandlerRegistry).toSelf().inSingletonScope();
-    bind(QuickOpenFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(QuickOpenFrontendContribution);
-
-    bind(HelpQuickOpenHandler).toSelf().inSingletonScope();
-    bind(QuickOpenContribution).toService(HelpQuickOpenHandler);
+    bindContributionProvider(bind, QuickAccessContribution);
+    bind(QuickInputFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(QuickInputFrontendContribution);
 
     bind(LocalStorageService).toSelf().inSingletonScope();
     bind(StorageService).toService(LocalStorageService);
@@ -325,8 +318,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         return container.get(ViewContainer);
     });
 
-    bind(QuickViewService).toSelf().inSingletonScope();
-    bind(QuickOpenContribution).toService(QuickViewService);
+    bind(QuickAccessContribution).toService(QuickViewService);
 
     bind(DialogOverlayService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DialogOverlayService);

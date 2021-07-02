@@ -20,7 +20,7 @@ import { CompletionItemTag, CompletionList, Range, SnippetString } from '../type
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { Position } from '../../common/plugin-api-rpc';
-import { CompletionContext, CompletionResultDto, Completion, CompletionDto, CompletionItemInsertTextRule } from '../../common/plugin-api-rpc-model';
+import { CompletionContext, CompletionResultDto, Completion, CompletionDto, CompletionItemInsertTextRule, ChainedCacheId } from '../../common/plugin-api-rpc-model';
 import { CommandRegistryImpl } from '../command-registry';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
@@ -88,7 +88,8 @@ export class CompletionAdapter {
         });
     }
 
-    async resolveCompletionItem(parentId: number, id: number, token: theia.CancellationToken): Promise<Completion | undefined> {
+    async resolveCompletionItem(chainedId: ChainedCacheId, token: theia.CancellationToken): Promise<Completion | undefined> {
+        const [parentId, id] = chainedId;
         if (typeof this.delegate.resolveCompletionItem !== 'function') {
             return undefined;
         }

@@ -1150,10 +1150,10 @@
     serialize-javascript "^1.4.0"
     webpack-sources "^1.0.1"
 
-"@theia/monaco-editor-core@^0.20.0":
-  version "0.20.0"
-  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-0.20.0.tgz#0f3cdfd6d1278bbcc3df0224471fc967a4d901c5"
-  integrity sha512-6QDOrZRW3dE0RgyD/hXMlVla49ACNjwIX+u9+i/qY+OqaZ1u/QdgdnHy4QO6g4J0lQCyr7nXgqF1BAc+Xbxx2g==
+"@theia/monaco-editor-core@0.23.0":
+  version "0.23.0"
+  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-0.23.0.tgz#7a1cbb7a857a509ce8e75c9965abea752bd76e80"
+  integrity sha512-WyrotTd6ZfeXAX4icgFALTzlqE356tAQ5nRuwa2E0Qdp2YIO9GDcw5G2l2NJ8INO2ygujbE5pEdD5kJM5N4TOQ==
 
 "@theia/node-pty@0.9.0-theia.6":
   version "0.9.0-theia.6"

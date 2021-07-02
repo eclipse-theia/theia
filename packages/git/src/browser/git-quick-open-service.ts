@@ -14,9 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/common/quick-open-model';
-import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -24,7 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { GitErrorHandler } from './git-error-handler';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
@@ -34,7 +32,7 @@ export enum GitAction {
 }
 
 /**
- * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
+ * Service delegating into the `Quick Input Service`, so that the Git commands can be further refined.
  * For instance, the `remote` can be specified for `pull`, `push`, and `fetch`. And the branch can be
  * specified for `git merge`.
  */
@@ -47,7 +45,7 @@ export class GitQuickOpenService {
 
     @inject(Git) protected readonly git: Git;
     @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
-    @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
@@ -69,31 +67,40 @@ export class GitQuickOpenService {
                 return repo.localUri;
             }
 
-            const gitCloneLocalTargetFolder = folder;
-            const { git, buildDefaultProjectPath, gitErrorHandler, wrapWithProgress } = this;
-            const cloneRepoModel: QuickOpenModel = {
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    const dynamicItems: QuickOpenItem[] = [];
-                    const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
-                    if (lookFor === undefined || lookFor.length === 0) {
-                        dynamicItems.push(new SingleStringInputOpenItem(`Please provide a Git repository location. ${suffix}`, () => { }, () => false));
-                    } else {
-                        dynamicItems.push(new SingleStringInputOpenItem(
-                            `Clone the Git repository: ${lookFor}. ${suffix}`,
-                            wrapWithProgress(async () => {
-                                try {
-                                    await git.clone(lookFor, { localUri: await buildDefaultProjectPath(gitCloneLocalTargetFolder, lookFor) });
-                                } catch (error) {
-                                    gitErrorHandler.handleError(error);
-                                }
-                            })
-                        ));
-                    }
-                    acceptor(dynamicItems);
-                }
-            };
-            this.quickOpenService.open(cloneRepoModel, this.getOptions('Git repository location:', false));
+            this.quickInputService?.showQuickPick([new GitQuickPickItem('Please provide a Git repository location. Press \'Enter\' to confirm or \'Escape\' to cancel.')],
+                {
+                    placeholder: 'Git repository location:',
+                    onDidChangeValue: (quickPick: QuickPick<QuickPickItem>, filter: string) => this.query(quickPick, filter, folder)
+                });
         });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private query(quickPick: any, filter: string, folder: any): void {
+        quickPick.busy = true;
+        const { git, buildDefaultProjectPath, gitErrorHandler, wrapWithProgress } = this;
+
+        try {
+            const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+
+            if (filter === undefined || filter.length === 0) {
+                quickPick.items = [new GitQuickPickItem(`Please provide a Git repository location. ${suffix}`)];
+            } else {
+                quickPick.items = [new GitQuickPickItem(`Clone the Git repository: ${filter}. ${suffix}`,
+                    wrapWithProgress(async () => {
+                        try {
+                            await git.clone(filter, { localUri: await buildDefaultProjectPath(folder, filter) });
+                        } catch (error) {
+                            gitErrorHandler.handleError(error);
+                        }
+                    }))];
+            }
+        } catch (err) {
+            quickPick.items = [new GitQuickPickItem(`$(error) Error: ${err.message}`)];
+            console.error(err);
+        } finally {
+            quickPick.busy = false;
+        }
     }
 
     private buildDefaultProjectPath = this.doBuildDefaultProjectPath.bind(this);
@@ -117,25 +124,21 @@ export class GitQuickOpenService {
         }
         return this.withProgress(async () => {
             const remotes = await this.getRemotes();
-            const execute = async (item: QuickOpenItem) => {
+            const execute = async (item: GitQuickPickItem<Remote>, lookFor: string) => {
                 try {
-                    await this.git.fetch(repository, { remote: item.getLabel() });
+                    await this.git.fetch(repository, { remote: item.ref!.name });
                 } catch (error) {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const items = remotes.map(remote => {
-                const toLabel = () => remote.name;
-                const toDescription = () => remote.fetch;
-                return new GitQuickOpenItem(remote.name, this.wrapWithProgress(execute), toLabel, toDescription);
-            });
-            this.open(items, 'Pick a remote to fetch from:');
+            const items = remotes.map(remote => new GitQuickPickItem<Remote>(remote.name, execute, remote, remote.fetch));
+            this.quickInputService?.showQuickPick(items, { placeholder: 'Pick a remote to fetch from:' });
         });
     }
 
     async performDefaultGitAction(action: GitAction): Promise<void> {
         const remote = await this.getRemotes();
-        const defaultRemote = remote[0].name;
+        const defaultRemote = remote[0]?.name;
         const repository = this.getRepository();
         if (!repository) {
             return;
@@ -162,20 +165,16 @@ export class GitQuickOpenService {
         }
         return this.withProgress(async () => {
             const [remotes, currentBranch] = await Promise.all([this.getRemotes(), this.getCurrentBranch()]);
-            const execute = async (item: QuickOpenItem) => {
+            const execute = async (item: GitQuickPickItem<Remote>, lookFor: string) => {
                 try {
-                    await this.git.push(repository, { remote: item.getLabel(), setUpstream: true });
+                    await this.git.push(repository, { remote: item.label, setUpstream: true });
                 } catch (error) {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const items = remotes.map(remote => {
-                const toLabel = () => remote.name;
-                const toDescription = () => remote.push;
-                return new GitQuickOpenItem(remote.name, this.wrapWithProgress(execute), toLabel, toDescription);
-            });
+            const items = remotes.map(remote => new GitQuickPickItem<Remote>(remote.name, execute, remote, remote.push));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.open(items, `Pick a remote to push the currently active branch ${branchName}to:`);
+            this.quickInputService?.showQuickPick(items, { placeholder: `Pick a remote to push the currently active branch ${branchName}to:` });
         });
     }
 
@@ -187,38 +186,34 @@ export class GitQuickOpenService {
         return this.withProgress(async () => {
             const remotes = await this.getRemotes();
             const defaultRemote = remotes[0].name; // I wish I could use assignment destructuring here. (GH-413)
-            const executeRemote = async (remoteItem: GitQuickOpenItem<Remote>) => {
+            const executeRemote = async (remoteItem: GitQuickPickItem<Remote>, lookFor: string) => {
                 // The first remote is the default.
-                if (remoteItem.ref.name === defaultRemote) {
+                if (remoteItem.ref!.name === defaultRemote) {
                     try {
-                        await this.git.pull(repository, { remote: remoteItem.getLabel() });
+                        await this.git.pull(repository, { remote: remoteItem.label });
                     } catch (error) {
                         this.gitErrorHandler.handleError(error);
                     }
                 } else {
                     // Otherwise we need to propose the branches from
                     const branches = await this.getBranches();
-                    const executeBranch = async (branchItem: GitQuickOpenItem<Branch>) => {
+                    const executeBranch = async (branchItem: GitQuickPickItem<Branch>, lookForBranch: string) => {
                         try {
-                            await this.git.pull(repository, { remote: remoteItem.ref.name, branch: branchItem.ref.nameWithoutRemote });
+                            await this.git.pull(repository, { remote: remoteItem.ref!.name, branch: branchItem.ref!.nameWithoutRemote });
                         } catch (error) {
                             this.gitErrorHandler.handleError(error);
                         }
                     };
-                    const toLabel = (branchItem: GitQuickOpenItem<Branch>) => branchItem.ref.name;
                     const branchItems = branches
                         .filter(branch => branch.type === BranchType.Remote)
-                        .filter(branch => (branch.name || '').startsWith(`${remoteItem.ref}/`))
-                        .map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(executeBranch), toLabel));
-                    this.open(branchItems, 'Select the branch to pull the changes from:');
+                        .filter(branch => (branch.name || '').startsWith(`${remoteItem.label}/`))
+                        .map(branch => new GitQuickPickItem(branch.name, executeBranch, branch));
+
+                    this.quickInputService?.showQuickPick(branchItems, { placeholder: 'Select the branch to pull the changes from:' });
                 }
             };
-            const remoteItems = remotes.map(remote => {
-                const toLabel = () => remote.name;
-                const toDescription = () => remote.fetch;
-                return new GitQuickOpenItem(remote, this.wrapWithProgress(executeRemote), toLabel, toDescription);
-            });
-            this.open(remoteItems, 'Pick a remote to pull the branch from:');
+            const remoteItems = remotes.map(remote => new GitQuickPickItem(remote.name, executeRemote, remote, remote.fetch));
+            this.quickInputService?.showQuickPick(remoteItems, { placeholder: 'Pick a remote to pull the branch from:' });
         });
     }
 
@@ -229,17 +224,16 @@ export class GitQuickOpenService {
         }
         return this.withProgress(async () => {
             const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
-            const execute = async (item: GitQuickOpenItem<Branch>) => {
+            const execute = async (item: GitQuickPickItem<Branch>, lookFor: string) => {
                 try {
-                    await this.git.merge(repository, { branch: item.getLabel()! });
+                    await this.git.merge(repository, { branch: item.label });
                 } catch (error) {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
-            const items = branches.map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(execute), toLabel));
+            const items = branches.map(branch => new GitQuickPickItem<Branch>(branch.name, execute, branch));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.open(items, `Pick a branch to merge into the currently active ${branchName}branch:`);
+            this.quickInputService?.showQuickPick(items, { placeholder: `Pick a branch to merge into the currently active ${branchName}branch:` });
         });
     }
 
@@ -255,56 +249,51 @@ export class GitQuickOpenService {
                 const index = branches.findIndex(branch => branch && branch.name === currentBranch.name);
                 branches.splice(index, 1);
             }
-            const switchBranch = async (item: GitQuickOpenItem<Branch>) => {
+            const switchBranch = async (item: GitQuickPickItem<Branch>, lookFor: string) => {
                 try {
-                    await this.git.checkout(repository, { branch: item.ref.nameWithoutRemote });
+                    await this.git.checkout(repository, { branch: item.ref!.nameWithoutRemote });
                 } catch (error) {
                     this.gitErrorHandler.handleError(error);
                 }
             };
-            const toLabel = (item: GitQuickOpenItem<Branch>) => {
-                const branch = item.ref;
-                return branch.type === BranchType.Remote ? branch.name : branch.nameWithoutRemote;
-            };
-            const toDescription = (item: GitQuickOpenItem<Branch>) => {
-                const branch = item.ref;
-                // We have only the long SHA1, but getting the first seven characters is the same.
-                const tip = branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : '';
-                return branch.type === BranchType.Remote ? `Remote branch at${tip}` : `${tip}`;
-            };
-            const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(switchBranch), toLabel, toDescription));
-            const createBranchItem = async (item: QuickOpenItem) => {
+
+            const items = branches.map(branch => new GitQuickPickItem<Branch>(
+                branch.type === BranchType.Remote ? branch.name : branch.nameWithoutRemote, switchBranch,
+                branch,
+                branch.type === BranchType.Remote ? 'Remote branch at' : '' + `${(branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : '')}`));
+
+            const createBranchItem = async <T>() => {
                 const { git, gitErrorHandler, wrapWithProgress } = this;
-                const createBranchModel: QuickOpenModel = {
-                    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                        const dynamicItems: QuickOpenItem[] = [];
-                        const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
-                        if (lookFor === undefined || lookFor.length === 0) {
-                            dynamicItems.push(new SingleStringInputOpenItem(`Please provide a branch name. ${suffix}`, () => { }, () => false));
-                        } else {
-                            dynamicItems.push(new SingleStringInputOpenItem(
-                                `Create a new local branch with name: ${lookFor}. ${suffix}`,
-                                wrapWithProgress(async () => {
-                                    try {
-                                        await git.branch(repository, { toCreate: lookFor });
-                                        await git.checkout(repository, { branch: lookFor });
-                                    } catch (error) {
-                                        gitErrorHandler.handleError(error);
-                                    }
-                                })
-                            ));
-                        }
-                        acceptor(dynamicItems);
+                const getItems = (lookFor?: string) => {
+                    const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+                    const dynamicItems: GitQuickPickItem<T>[] = [];
+                    if (lookFor === undefined || lookFor.length === 0) {
+                        dynamicItems.push(new GitQuickPickItem(`Please provide a branch name. ${suffix}`, () => { }));
+                    } else {
+                        dynamicItems.push(new GitQuickPickItem(
+                            `Create a new local branch with name: ${lookFor}. ${suffix}`,
+                            wrapWithProgress(async () => {
+                                try {
+                                    await git.branch(repository, { toCreate: lookFor });
+                                    await git.checkout(repository, { branch: lookFor });
+                                } catch (error) {
+                                    gitErrorHandler.handleError(error);
+                                }
+                            })
+                        ));
                     }
+                    return dynamicItems;
                 };
-                this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
+                this.quickInputService?.showQuickPick(getItems(), {
+                    placeholder: 'The name of the branch:',
+                    onDidChangeValue: (quickPick: QuickPick<QuickPickItem>, filter: string) => {
+                        quickPick.items = getItems(filter);
+                    }
+                });
             };
 
-            items.unshift(new SingleStringInputOpenItem(
-                'Create new branch...',
-                this.wrapWithProgress(createBranchItem),
-                (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
-            this.open(items, 'Select a ref to checkout or create a new local branch:');
+            items.unshift(new GitQuickPickItem('Create new branch...', createBranchItem));
+            this.quickInputService?.showQuickPick(items, { placeholder: 'Select a ref to checkout or create a new local branch:' });
         });
     }
 
@@ -314,15 +303,15 @@ export class GitQuickOpenService {
         }
         return this.withProgress(async () => {
             const [branches, tags, currentBranch] = await Promise.all([this.getBranches(repository), this.getTags(repository), this.getCurrentBranch(repository)]);
-            const execute = async (item: GitQuickOpenItem<Branch | Tag>) => {
-                execFunc(item.ref.name, currentBranch ? currentBranch.name : '');
+            const execute = async (item: GitQuickPickItem<Branch | Tag>, lookFor: string) => {
+                execFunc(item.ref!.name, currentBranch ? currentBranch.name : '');
             };
-            const toLabel = (item: GitQuickOpenItem<Branch | Tag>) => item.ref.name;
-            const branchItems = branches.map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(execute), toLabel));
+            const branchItems = branches.map(branch => new GitQuickPickItem<Branch>(branch.name, execute, branch));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            const tagItems = tags.map(tag => new GitQuickOpenItem(tag, execute, toLabel));
+            const tagItems = tags.map(tag => new GitQuickPickItem<Tag>(tag.name, execute, tag));
 
-            this.open([...branchItems, ...tagItems], `Pick a branch or tag to compare with the currently active ${branchName} branch:`);
+            this.quickInputService?.showQuickPick([...branchItems, ...tagItems],
+                { placeholder: `Pick a branch or tag to compare with the currently active ${branchName} branch:` });
         });
     }
 
@@ -337,25 +326,21 @@ export class GitQuickOpenService {
                 throw new Error(`Repository ${repository.localUri} is not yet initialized.`);
             }
             const message = lastMessage.replace(/[\r\n]+/g, ' ');
-            const result = await new Promise<string>((resolve, reject) => {
-                const createEditCommitMessageModel: QuickOpenModel = {
-                    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                        const dynamicItems: QuickOpenItem[] = [];
-                        if (!lookFor) {
-                            const description = "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.";
-                            dynamicItems.push(new GitQuickOpenItem(description, () => resolve(lastMessage), () => description));
-                        } else {
-                            dynamicItems.push(new GitQuickOpenItem("Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.", item => resolve(lookFor)));
-                        }
-                        acceptor(dynamicItems);
-                    },
-                };
-                const onClose = (canceled: boolean): void => {
-                    if (canceled) {
-                        reject(new Error('User abort.'));
+            const result = await new Promise<string>(async (resolve, reject) => {
+                const getItems = (lookFor?: string) => {
+                    const items = [];
+                    if (!lookFor) {
+                        const label = "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.";
+                        items.push(new GitQuickPickItem(label, () => resolve(lastMessage), label));
+                    } else {
+                        items.push(new GitQuickPickItem("Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.", () => resolve(lookFor)));
                     }
+                    return items;
                 };
-                this.quickOpenService.open(createEditCommitMessageModel, this.getOptions(message, false, onClose));
+                const updateItems = (quickPick: QuickPick<QuickPickItem>, filter: string) => {
+                    quickPick.items = getItems(filter);
+                };
+                this.quickInputService?.showQuickPick(getItems(), { placeholder: message, onDidChangeValue: updateItems });
             });
             return result;
         });
@@ -370,26 +355,20 @@ export class GitQuickOpenService {
             const doStash = this.wrapWithProgress(async (message: string) => {
                 this.git.stash(repository, { message });
             });
-            const quickOpenModel: QuickOpenModel = {
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    const dynamicItems: QuickOpenItem[] = [];
-                    const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
-
-                    if (lookFor === undefined || lookFor.length === 0) {
-                        dynamicItems.push(new SingleStringInputOpenItem(
-                            `Stash changes. ${suffix}`,
-                            () => doStash(lookFor)
-                        ));
-                    } else {
-                        dynamicItems.push(new SingleStringInputOpenItem(
-                            `Stash changes with message: ${lookFor}. ${suffix}`,
-                            () => doStash(lookFor)
-                        ));
-                    }
-                    acceptor(dynamicItems);
+            const getItems = (lookFor?: string) => {
+                const items = [];
+                const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
+                if (lookFor === undefined || lookFor.length === 0) {
+                    items.push(new GitQuickPickItem(`Stash changes. ${suffix}`, () => doStash('')));
+                } else {
+                    items.push(new GitQuickPickItem(`Stash changes with message: ${lookFor}. ${suffix}`, () => doStash(lookFor)));
                 }
+                return items;
             };
-            this.quickOpenService.open(quickOpenModel, this.getOptions('Stash message', false));
+            const updateItems = (quickPick: QuickPick<QuickPickItem>, filter: string) => {
+                quickPick.items = getItems(filter);
+            };
+            this.quickInputService?.showQuickPick(getItems(), { placeholder: 'Stash message', onDidChangeValue: updateItems });
         });
     }
 
@@ -401,20 +380,18 @@ export class GitQuickOpenService {
         return this.withProgress(async () => {
             const list = await this.git.stash(repository, { action: 'list' });
             if (list) {
-                const quickOpenItems = list.map(stash => new GitQuickOpenItem<StashEntry>(stash, this.wrapWithProgress(async () => {
-                    try {
-                        await this.git.stash(repository, {
-                            action,
-                            id: stash.id
-                        });
-                        if (getMessage) {
-                            this.messageService.info(await getMessage());
+                const items = list.map(stash => new GitQuickPickItem<StashEntry>(stash.message,
+                    this.wrapWithProgress(async () => {
+                        try {
+                            await this.git.stash(repository, { action, id: stash.id });
+                            if (getMessage) {
+                                this.messageService.info(await getMessage());
+                            }
+                        } catch (error) {
+                            this.gitErrorHandler.handleError(error);
                         }
-                    } catch (error) {
-                        this.gitErrorHandler.handleError(error);
-                    }
-                }), () => stash.message));
-                this.open(quickOpenItems, text);
+                    })));
+                this.quickInputService?.showQuickPick(items, { placeholder: text });
             }
         });
     }
@@ -480,9 +457,8 @@ export class GitQuickOpenService {
     async initRepository(): Promise<void> {
         const wsRoots = await this.workspaceService.roots;
         if (wsRoots && wsRoots.length > 1) {
-            const placeholder = 'Choose workspace root to initialize git repo in';
-            const items = wsRoots.map<GitQuickOpenItem<URI>>(root => this.toRepositoryPathQuickOpenItem(root));
-            this.open(items, placeholder);
+            const items = wsRoots.map<GitQuickPickItem<URI>>(root => this.toRepositoryPathQuickOpenItem(root));
+            this.quickInputService?.showQuickPick(items, { placeholder: 'Choose workspace root to initialize git repo in' });
         } else {
             const rootUri = wsRoots[0].resource;
             this.doInitRepository(rootUri.toString());
@@ -493,36 +469,13 @@ export class GitQuickOpenService {
         this.withProgress(async () => this.git.exec({ localUri: uri }, ['init']));
     }
 
-    private toRepositoryPathQuickOpenItem(root: FileStat): GitQuickOpenItem<URI> {
+    private toRepositoryPathQuickOpenItem(root: FileStat): GitQuickPickItem<URI> {
         const rootUri = root.resource;
-        const toLabel = (item: GitQuickOpenItem<URI>) => this.labelProvider.getName(item.ref);
-        const toDescription = (item: GitQuickOpenItem<URI>) => this.labelProvider.getLongName(item.ref.parent);
-        const execute = async (item: GitQuickOpenItem<URI>) => {
-            const wsRoot = item.ref.toString();
+        const execute = async (item: GitQuickPickItem<URI>, lookFor: string) => {
+            const wsRoot = item.ref!.toString();
             this.doInitRepository(wsRoot);
         };
-        return new GitQuickOpenItem<URI>(rootUri, execute, toLabel, toDescription);
-    }
-
-    private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
-        this.quickOpenService.open(this.getModel(Array.isArray(items) ? items : [items]), this.getOptions(placeholder));
-    }
-
-    private getOptions(placeholder: string, fuzzyMatchLabel: boolean = true, onClose: (canceled: boolean) => void = () => { }): QuickOpenOptions {
-        return QuickOpenOptions.resolve({
-            placeholder,
-            fuzzyMatchLabel,
-            fuzzySort: false,
-            onClose
-        });
-    }
-
-    private getModel(items: QuickOpenItem | QuickOpenItem[]): QuickOpenModel {
-        return {
-            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                acceptor(Array.isArray(items) ? items : [items]);
-            }
-        };
+        return new GitQuickPickItem<URI>(this.labelProvider.getName(rootUri), execute, rootUri, this.labelProvider.getLongName(rootUri.parent));
     }
 
     private getRepository(): Repository | undefined {
@@ -594,62 +547,14 @@ export class GitQuickOpenService {
     protected doWrapWithProgress<In, Out>(fn: (...args: In[]) => Promise<Out>): (...args: In[]) => Promise<Out> {
         return (...args: In[]) => this.withProgress(() => fn(...args));
     }
-
 }
 
-/**
- * Git specific quick open item that wraps a branch a remote name or something else.
- */
-class GitQuickOpenItem<T> extends QuickOpenItem {
-
+class GitQuickPickItem<T> implements QuickPickItem {
     constructor(
-        public readonly ref: T,
-        protected readonly execute: (item: GitQuickOpenItem<T>) => void,
-        private readonly toLabel: (item: GitQuickOpenItem<T>) => string = (item: QuickOpenItem) => `${ref}`,
-        private readonly toDescription: (item: GitQuickOpenItem<T>) => string | undefined = (item: QuickOpenItem) => undefined) {
-
-        super();
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
-            return false;
-        }
-        this.execute(this);
-        return true;
-    }
-
-    getLabel(): string {
-        return this.toLabel(this);
-    }
-
-    getDescription(): string | undefined {
-        return this.toDescription(this);
-    }
-
-}
-
-class SingleStringInputOpenItem extends QuickOpenItem {
-
-    constructor(
-        private readonly label: string,
-        private readonly execute: (item: QuickOpenItem) => void = () => { },
-        private readonly canRun: (mode: QuickOpenMode) => boolean = mode => mode === QuickOpenMode.OPEN,
-        private readonly canClose: (mode: QuickOpenMode) => boolean = mode => true) {
-
-        super();
-    }
-
-    getLabel(): string {
-        return this.label;
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (!this.canRun(mode)) {
-            return false;
-        }
-        this.execute(this);
-        return this.canClose(mode);
-    }
-
+        public label: string,
+        public readonly execute?: (item: QuickPickItem, lookFor: string) => void,
+        public readonly ref?: T,
+        public description?: string,
+        public alwaysShow = true,
+        public sortByLabel = false) { }
 }

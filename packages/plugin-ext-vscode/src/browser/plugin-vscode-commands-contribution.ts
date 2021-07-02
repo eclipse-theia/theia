@@ -21,7 +21,7 @@ import {
     NavigatableWidget,
     open,
     OpenerService,
-    PrefixQuickOpenService,
+    QuickInputService,
     Saveable
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -50,7 +50,7 @@ import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -101,8 +101,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly openerService: OpenerService;
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
-    @inject(PrefixQuickOpenService)
-    protected readonly quickOpen: PrefixQuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInput: QuickInputService;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
     @inject(TerminalFrontendContribution)
@@ -221,7 +221,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand('editor.action.gotoLine')
         });
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
-            execute: (prefix?: unknown) => this.quickOpen.open(typeof prefix === 'string' ? prefix : '')
+            execute: (prefix?: unknown) => this.quickInput.open(typeof prefix === 'string' ? prefix : '')
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)

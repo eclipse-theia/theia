@@ -13,33 +13,29 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-
-import { injectable, inject } from 'inversify';
-import { Command, CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '../../common';
+import { injectable, inject, optional } from 'inversify';
+import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
-import { PrefixQuickOpenService, QuickOpenHandlerRegistry } from './prefix-quick-open-service';
 import { CommonMenus } from '../common-frontend-contribution';
-
-export const quickCommand: Command = {
-    id: 'workbench.action.showCommands'
-};
-
-export const CLEAR_COMMAND_HISTORY: Command = {
-    id: 'clear.command.history',
-    label: 'Clear Command History'
-};
+import { QuickInputService } from './quick-input-service';
+import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
+import { QuickAccessContribution } from './quick-access-contribution';
 
 @injectable()
-export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
+export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, QuickAccessContribution {
 
-    @inject(PrefixQuickOpenService)
-    protected readonly quickOpenService: PrefixQuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
-    @inject(QuickOpenHandlerRegistry) protected readonly quickOpenHandlerRegistry: QuickOpenHandlerRegistry;
+    @inject(QuickCommandService) @optional()
+    protected readonly quickCommandService: QuickCommandService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
-            execute: () => this.quickOpenService.open('>')
+            execute: () => {
+                this.quickCommandService?.reset();
+                this.quickInputService?.open('>');
+            }
         });
         commands.registerCommand(CLEAR_COMMAND_HISTORY, {
             execute: () => commands.clearCommandHistory(),
@@ -62,5 +58,9 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
             command: quickCommand.id,
             keybinding: 'ctrlcmd+shift+p'
         });
+    }
+
+    registerQuickAccessProvider(): void {
+        this.quickCommandService?.registerQuickAccessProvider();
     }
 }

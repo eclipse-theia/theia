@@ -37,7 +37,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        for (const item of MenuRegistry.getMenuItems(7)) {
+        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.EditorContext)) {
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
             }
@@ -51,7 +51,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         this.registerPeekSubmenu(registry);
 
         registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
-        for (const item of MenuRegistry.getMenuItems(25)) {
+        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.MenubarSelectionMenu)) {
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
             }
@@ -69,7 +69,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     protected registerPeekSubmenu(registry: MenuModelRegistry): void {
         registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, 'Peek');
 
-        for (const item of MenuRegistry.getMenuItems(8)) {
+        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.EditorContextPeek)) {
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
             }

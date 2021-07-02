@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './quick-open-model';
-export * from './quick-open-action-provider';
-export * from './quick-open-service';
-export * from './quick-pick-service';
-export * from './quick-input-service';
-export * from './quick-command-service';
-export * from './quick-command-contribution';
-export * from './quick-open-frontend-contribution';
-export * from './prefix-quick-open-service';
+import { injectable } from 'inversify';
+import { Disposable } from '../../common';
+import { QuickInputService } from './quick-input-service';
+
+export interface QuickViewItem {
+    readonly label: string;
+    readonly when?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly open: () => any;
+}
+
+@injectable()
+export class QuickViewService extends QuickInputService {
+    readonly prefix = 'view ';
+
+    registerItem(item: QuickViewItem): Disposable {
+        return Disposable.create(() => { });
+    }
+    hideItem(label: string): void { }
+    showItem(label: string): void { }
+}

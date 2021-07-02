@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, QuickOpenContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
-import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen, TaskActionProvider, ConfigureTaskAction } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
@@ -41,14 +41,13 @@ import { TaskSourceResolver } from './task-source-resolver';
 import { TaskTemplateSelector } from './task-templates';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
     bind(TaskService).toSelf().inSingletonScope();
-    bind(TaskActionProvider).toSelf().inSingletonScope();
-    bind(ConfigureTaskAction).toSelf().inSingletonScope();
 
-    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, QuickOpenContribution]) {
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, QuickAccessContribution]) {
         bind(identifier).toService(TaskFrontendContribution);
     }
 

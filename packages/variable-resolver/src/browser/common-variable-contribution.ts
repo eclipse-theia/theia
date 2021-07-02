@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { VariableContribution, VariableRegistry } from './variable';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -23,8 +23,7 @@ import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { VariableInput } from './variable-input';
-import { QuickInputService } from '@theia/core/lib/browser/quick-open/quick-input-service';
-import { QuickPickService, QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 
 @injectable()
@@ -42,11 +41,8 @@ export class CommonVariableContribution implements VariableContribution {
     @inject(ResourceContextKey)
     protected readonly resourceContextKey: ResourceContextKey;
 
-    @inject(QuickInputService)
+    @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
-
-    @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
 
     @inject(ApplicationServer)
     protected readonly appServer: ApplicationServer;
@@ -103,7 +99,7 @@ export class CommonVariableContribution implements VariableContribution {
                     if (typeof input.description !== 'string') {
                         return undefined;
                     }
-                    return this.quickInputService.open({
+                    return this.quickInputService?.input({
                         prompt: input.description,
                         value: input.default
                     });
@@ -112,7 +108,7 @@ export class CommonVariableContribution implements VariableContribution {
                     if (typeof input.description !== 'string' || !Array.isArray(input.options)) {
                         return undefined;
                     }
-                    const elements: QuickPickItem<string>[] = [];
+                    const elements: Array<QuickPickValue<string>> = [];
                     for (const option of input.options) {
                         if (typeof option !== 'string') {
                             return undefined;
@@ -130,7 +126,7 @@ export class CommonVariableContribution implements VariableContribution {
                             });
                         }
                     }
-                    return this.quickPickService.show(elements, { placeholder: input.description });
+                    return this.quickInputService?.showQuickPick(elements, { placeholder: input.description });
                 }
                 if (input.type === 'command') {
                     if (typeof input.command !== 'string') {
@@ -142,5 +138,4 @@ export class CommonVariableContribution implements VariableContribution {
             }
         });
     }
-
 }

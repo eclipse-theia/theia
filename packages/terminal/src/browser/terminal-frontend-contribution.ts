@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import {
     CommandContribution,
     Command,
@@ -27,10 +27,9 @@ import {
     Emitter,
     Event
 } from '@theia/core/lib/common';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -150,8 +149,8 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -298,17 +297,14 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             isEnabled: widget => !!this.getTerminalRef(widget),
             isVisible: widget => !!this.getTerminalRef(widget)
         });
-
         commands.registerCommand(TerminalCommands.TERMINAL_CLEAR);
         commands.registerHandler(TerminalCommands.TERMINAL_CLEAR.id, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
             execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
         });
-
         commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, UriAwareCommandHandler.MonoSelect(this.selectionService, {
             execute: uri => this.openInTerminal(uri)
         }));
-
         commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
         commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT.id, {
             isEnabled: () => {
@@ -337,7 +333,6 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 terminalSearchBox.hide();
             }
         });
-
         commands.registerCommand(TerminalCommands.SCROLL_LINE_UP, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
             isVisible: () => false,
@@ -422,7 +417,6 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     registerKeybindings(keybindings: KeybindingRegistry): void {
         /* Register passthrough keybindings for combinations recognized by
            xterm.js and converted to control characters.
-
              See: https://github.com/xtermjs/xterm.js/blob/v3/src/Terminal.ts#L1684 */
 
         /* Register ctrl + k (the passed Key) as a passthrough command in the
@@ -587,10 +581,24 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     protected async selectTerminalCwd(): Promise<string | undefined> {
-        const roots = this.workspaceService.tryGetRoots();
-        return this.quickPick.show(roots.map(
-            ({ resource }) => ({ label: this.labelProvider.getName(resource), description: this.labelProvider.getLongName(resource), value: resource.toString() })
-        ), { placeholder: 'Select current working directory for new terminal' });
+        return new Promise(async resolve => {
+            const roots = this.workspaceService.tryGetRoots();
+            if (roots.length === 0) {
+                resolve(undefined);
+            } else if (roots.length === 1) {
+                resolve(roots[0].resource.toString());
+            } else {
+                const items = roots.map(({ resource }) => ({
+                    label: this.labelProvider.getName(resource),
+                    description: this.labelProvider.getLongName(resource),
+                    resource
+                }));
+                const selectedItem = await this.quickInputService?.showQuickPick(items, {
+                    placeholder: 'Select current working directory for new terminal'
+                });
+                resolve(selectedItem?.resource?.toString());
+            }
+        });
     }
 
     protected async splitTerminal(widget?: Widget): Promise<void> {
@@ -677,5 +685,4 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             });
         }
     }
-
 }

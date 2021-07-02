@@ -19,12 +19,11 @@ import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from '@
 import { URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
-    DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
+    DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
 import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { isMarkdownString, MarkdownString } from './markdown-string';
-import { Item } from './quick-open';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { TaskGroup } from './types-impl';
@@ -1043,20 +1042,20 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
     };
 }
 
-export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
-    const pickItems: PickOpenItem[] = [];
+export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.TransferQuickPickItems[] {
+    const pickItems: rpc.TransferQuickPickItems[] = [];
     for (let handle = 0; handle < items.length; handle++) {
         const item = items[handle];
         let label: string;
         let description: string | undefined;
         let detail: string | undefined;
         let picked: boolean | undefined;
-        let groupLabel: string | undefined;
-        let showBorder: boolean | undefined;
+        let alwaysShow: boolean | undefined;
+
         if (typeof item === 'string') {
             label = item;
         } else {
-            ({ label, description, detail, picked, groupLabel, showBorder } = item);
+            ({ label, description, detail, picked, alwaysShow } = item);
         }
 
         pickItems.push({
@@ -1065,8 +1064,7 @@ export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
             handle,
             detail,
             picked,
-            groupLabel,
-            showBorder
+            alwaysShow
         });
     }
     return pickItems;

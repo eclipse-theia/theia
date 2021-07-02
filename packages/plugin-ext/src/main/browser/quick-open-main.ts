@@ -13,346 +13,362 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { InputBoxOptions, QuickPickItem as QuickPickItemExt } from '@theia/plugin';
 import { interfaces } from '@theia/core/shared/inversify';
-import {
-    QuickOpenModel,
-    QuickOpenItem,
-    QuickOpenMode
-} from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     QuickOpenExt,
     QuickOpenMain,
     MAIN_RPC_CONTEXT,
-    PickOptions,
-    PickOpenItem,
     TransferInputBox,
-    QuickInputTitleButtonHandle,
-    TransferQuickPick
+    TransferQuickPick,
+    TransferQuickPickItems,
+    TransferQuickInput,
+    TransferQuickInputButton
 } from '../../common/plugin-api-rpc';
-import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
-import { QuickInputService, LabelProvider } from '@theia/core/lib/browser';
-import { PluginSharedStyle } from './plugin-shared-style';
-import { URI } from '@theia/core/shared/vscode-uri';
-import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
-import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
-import { QuickTitleBar } from '@theia/core/lib/browser/quick-open/quick-title-bar';
+import { IInputOptions, IPickOptions, QuickInputButton, QuickInputService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
+import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { QuickTitleButtonSide, QuickOpenGroupItem } from '@theia/core/lib/common/quick-open-model';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
+import * as theia from '@theia/plugin';
+import { QuickInputButtons } from '../../plugin/types-impl';
+import { getIconUris } from '../../plugin/quick-open';
 
-export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposable {
+export interface QuickInputSession {
+    input: monaco.quickInput.IQuickInput;
+    handlesToItems: Map<number, TransferQuickPickItems>;
+}
 
-    private quickInput: QuickInputService;
-    private quickPick: QuickPickService;
-    private quickTitleBar: QuickTitleBar;
-    private doResolve: (value?: number | number[] | PromiseLike<number | number[]> | undefined) => void;
+export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
+
+    private quickInputService: QuickInputService;
+    private quickPickService: QuickPickService;
     private proxy: QuickOpenExt;
-    private delegate: MonacoQuickOpenService;
-    private acceptor: ((items: QuickOpenItem[]) => void) | undefined;
-    private items: QuickOpenItem[] | undefined;
-
-    private readonly sharedStyle: PluginSharedStyle;
-    private readonly labelProvider: LabelProvider;
-
-    private activeElement: HTMLElement | undefined;
+    private delegate: MonacoQuickInputService;
+    private readonly items: Record<number, {
+        resolve(items: TransferQuickPickItems[]): void;
+        reject(error: Error): void;
+    }> = {};
 
     protected readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
-        this.delegate = container.get(MonacoQuickOpenService);
-        this.quickInput = container.get(QuickInputService);
-        this.quickTitleBar = container.get(QuickTitleBar);
-        this.quickPick = container.get(QuickPickService);
-        this.sharedStyle = container.get(PluginSharedStyle);
-        this.labelProvider = container.get(LabelProvider);
+        this.delegate = container.get(MonacoQuickInputService);
+        this.quickInputService = container.get(QuickInputService);
+        this.quickPickService = container.get(QuickPickService);
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    private cleanUp(): void {
-        this.items = undefined;
-        this.acceptor = undefined;
-        if (this.activeElement) {
-            this.activeElement.focus({ preventScroll: true });
-        }
-        this.activeElement = undefined;
-    }
-
-    $show(options: PickOptions, token: CancellationToken): Promise<number | number[]> {
-        return new Promise((resolve, reject) => {
-            if (token.isCancellationRequested) {
-                resolve(undefined);
-                return;
-            }
-            this.doResolve = resolve;
-            this.activeElement = window.document.activeElement as HTMLElement;
-            const toDispose = token.onCancellationRequested(() =>
-                this.delegate.hide()
-            );
-            this.delegate.open(this, {
-                fuzzyMatchDescription: options.matchOnDescription,
-                fuzzyMatchLabel: true,
-                fuzzyMatchDetail: options.matchOnDetail,
-                placeholder: options.placeHolder,
-                ignoreFocusOut: options.ignoreFocusLost,
-                onClose: () => {
-                    this.doResolve(undefined);
-                    toDispose.dispose();
-                    this.cleanUp();
-                }
-            });
+    async $show(instance: number, options: IPickOptions<TransferQuickPickItems>, token: CancellationToken): Promise<number | number[] | undefined> {
+        const contents = new Promise<TransferQuickPickItems[]>((resolve, reject) => {
+            this.items[instance] = { resolve, reject };
         });
+
+        options = {
+            ...options,
+            onDidFocus: (el: any) => {
+                if (el) {
+                    this.proxy.$onItemSelected((<TransferQuickPickItems>el).handle);
+                }
+            }
+        };
+
+        if (options.canPickMany) {
+            return this.delegate.pick(contents, options as { canPickMany: true }, token).then(items => {
+                if (items) {
+                    return items.map(item => item.handle);
+                }
+                return undefined;
+            });
+        } else {
+            return this.delegate.pick(contents, options, token).then(item => {
+                if (item) {
+                    return item.handle;
+                }
+                return undefined;
+            });
+        }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    $setItems(items: PickOpenItem[]): Promise<any> {
-        this.items = [];
-        for (const i of items) {
-            let item: QuickOpenItem | QuickOpenGroupItem;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const options: any = {
-                label: i.label,
-                description: i.description,
-                detail: i.detail,
-                run: (mode: QuickOpenMode) => {
-                    if (mode === QuickOpenMode.OPEN) {
-                        this.proxy.$onItemSelected(i.handle);
-                        this.doResolve(i.handle);
-                        this.cleanUp();
-                        return true;
-                    }
-                    return false;
-                }
-            };
-
-            if (i.groupLabel !== undefined || i.showBorder !== undefined) {
-                options.groupLabel = i.groupLabel;
-                options.showBorder = i.showBorder;
-                item = new QuickOpenGroupItem(options);
-            } else {
-                item = new QuickOpenItem(options);
-            }
-
-            this.items.push(item);
-        }
-        if (this.acceptor) {
-            this.acceptor(this.items);
+    $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any> {
+        if (this.items[instance]) {
+            this.items[instance].resolve(items);
+            delete this.items[instance];
         }
         return Promise.resolve();
     }
 
-    private convertPickOpenItemToQuickOpenItem(items: PickOpenItem[]): QuickPickItem<number>[] {
-        const convertedItems: QuickPickValue<number>[] = [];
-        for (const i of items) {
-            convertedItems.push({
-                label: i.label,
-                description: i.description,
-                detail: i.detail,
-                value: i.handle
-            });
+    $setError(instance: number, error: Error): Promise<void> {
+        if (this.items[instance]) {
+            this.items[instance].reject(error);
+            delete this.items[instance];
         }
-        return convertedItems;
+        return Promise.resolve();
     }
 
     $input(options: InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined> {
+        const inputOptions: IInputOptions = Object.create(null);
+
+        if (options) {
+            inputOptions.password = options.password;
+            inputOptions.placeHolder = options.placeHolder;
+            inputOptions.valueSelection = options.valueSelection;
+            inputOptions.prompt = options.prompt;
+            inputOptions.value = options.value;
+            inputOptions.ignoreFocusLost = options.ignoreFocusOut;
+        }
+
         if (validateInput) {
-            options.validateInput = val => this.proxy.$validateInput(val);
+            inputOptions.validateInput = (val: string) => this.proxy.$validateInput(val);
         }
 
-        return this.quickInput.open(options, token);
+        return this.quickInputService?.input(inputOptions, token);
     }
 
-    protected convertQuickInputButton(quickInputButton: QuickInputButton, index: number, toDispose: DisposableCollection): QuickInputTitleButtonHandle {
-        const currentIconPath = quickInputButton.iconPath;
-        let newIcon = '';
-        let newIconClass: string | undefined;
-        if ('id' in currentIconPath || currentIconPath instanceof ThemeIcon) {
-            newIconClass = this.resolveIconClassFromThemeIcon(currentIconPath);
-        } else if (currentIconPath instanceof URI) {
-            newIcon = currentIconPath.toString();
-        } else {
-            const { light, dark } = currentIconPath as { light: string | URI, dark: string | URI };
-            const themedIconClasses = {
-                light: light.toString(),
-                dark: dark.toString()
-            };
-            const reference = this.sharedStyle.toIconClass(themedIconClasses);
-            toDispose.push(reference);
-            newIconClass = reference.object.iconClass;
-        }
+    async $showInputBox(options: TransferInputBox, validateInput: boolean): Promise<string | undefined> {
+        return new Promise<string | undefined>((resolve, reject) => {
+            const sessionId = options.id;
+            const toDispose = new DisposableCollection();
 
-        const isDefaultQuickInputButton = 'id' in quickInputButton.iconPath && quickInputButton.iconPath.id === 'Back' ? true : false;
-        return {
-            icon: newIcon,
-            iconClass: newIconClass,
-            tooltip: quickInputButton.tooltip,
-            side: isDefaultQuickInputButton ? QuickTitleButtonSide.LEFT : QuickTitleButtonSide.RIGHT,
-            index: isDefaultQuickInputButton ? -1 : index
-        };
-    }
+            const inputBox = this.quickInputService?.createInputBox();
+            inputBox.prompt = options.prompt;
+            inputBox.placeholder = options.placeHolder;
+            inputBox.value = options.value;
+            if (options.busy) {
+                inputBox.busy = options.busy;
+            }
+            if (options.enabled) {
+                inputBox.enabled = options.enabled;
+            }
+            inputBox.ignoreFocusOut = options.ignoreFocusOut;
+            inputBox.contextKey = options.contextKey;
+            if (options.password) {
+                inputBox.password = options.password;
+            }
+            inputBox.step = options.step;
+            inputBox.title = options.title;
+            inputBox.description = options.description;
+            inputBox.totalSteps = options.totalSteps;
+            inputBox.buttons = options.buttons ? this.convertToQuickInputButtons(options.buttons) : [];
+            inputBox.validationMessage = options.validationMessage;
+            if (validateInput) {
+                options.validateInput = (val: string) => {
+                    this.proxy.$validateInput(val);
+                };
+            }
 
-    private resolveIconClassFromThemeIcon(themeIcon: ThemeIcon): string | undefined {
-        switch (themeIcon.id) {
-            case 'folder': {
-                return this.labelProvider.folderIcon;
-            }
-            case 'file': {
-                return this.labelProvider.fileIcon;
-            }
-            case 'Back': {
-                return 'fa fa-arrow-left';
-            }
-            default: {
-                return monaco.theme.ThemeIcon.asClassName(themeIcon);
-            }
-        }
-    }
+            toDispose.push(inputBox.onDidAccept(() => {
+                this.proxy.$acceptOnDidAccept(sessionId);
+                resolve(inputBox.value);
+            }));
+            toDispose.push(inputBox.onDidChangeValue((value: string) => {
+                this.proxy.$acceptDidChangeValue(sessionId, value);
+                inputBox.validationMessage = options.validateInput(value);
+            }));
+            toDispose.push(inputBox.onDidTriggerButton((button: any) => {
+                this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+            }));
 
-    async $showInputBox(inputBox: TransferInputBox, validateInput: boolean): Promise<void> {
-        if (validateInput) {
-            inputBox.validateInput = val => this.proxy.$validateInput(val);
-        }
+            toDispose.push(inputBox.onDidHide(() => {
+                if (toDispose.disposed) {
+                    return;
+                }
+                this.proxy.$acceptOnDidHide(sessionId);
+                toDispose.dispose();
+                resolve(undefined);
+            }));
+            this.toDispose.push(toDispose);
 
-        const toDispose = new DisposableCollection();
-        const quickInput = this.quickInput.open({
-            busy: inputBox.busy,
-            enabled: inputBox.enabled,
-            ignoreFocusOut: inputBox.ignoreFocusOut,
-            password: inputBox.password,
-            step: inputBox.step,
-            title: inputBox.title,
-            totalSteps: inputBox.totalSteps,
-            buttons: inputBox.buttons.map((btn, i) => this.convertQuickInputButton(btn, i, toDispose)),
-            validationMessage: inputBox.validationMessage,
-            placeHolder: inputBox.placeholder,
-            value: inputBox.value,
-            prompt: inputBox.prompt,
-            validateInput: inputBox.validateInput
-        });
-
-        toDispose.push(this.quickInput.onDidAccept(() => this.proxy.$acceptOnDidAccept(inputBox.id)));
-        toDispose.push(this.quickInput.onDidChangeValue(changedText => this.proxy.$acceptDidChangeValue(inputBox.id, changedText)));
-        toDispose.push(this.quickTitleBar.onDidTriggerButton(button => {
-            this.proxy.$acceptOnDidTriggerButton(inputBox.id, button);
-        }));
-        this.toDispose.push(toDispose);
-        quickInput.then(() => {
-            if (toDispose.disposed) {
-                return;
-            }
-            this.proxy.$acceptOnDidHide(inputBox.id);
-            toDispose.dispose();
+            inputBox.show();
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private findChangedKey(key: string, value: any): void {
-        switch (key) {
-            case 'title': {
-                this.quickTitleBar.title = value;
-                break;
-            }
-            case 'step': {
-                this.quickTitleBar.step = value;
-                break;
-            }
-            case 'totalSteps': {
-                this.quickTitleBar.totalSteps = value;
-                break;
-            }
-            case 'buttons': {
-                this.quickTitleBar.buttons = value;
-                break;
-            }
-            case 'value': {
-                this.delegate.setValue(value);
-                break;
-            }
-            case 'enabled': {
-                this.delegate.setEnabled(value);
-                break;
-            }
-            case 'password': {
-                this.delegate.setPassword(value);
-                break;
-            }
-            case 'placeholder': {
-                this.delegate.setPlaceHolder(value);
-                break;
-            }
-            case 'items': {
-                this.quickPick.setItems(this.convertPickOpenItemToQuickOpenItem(value));
-                break;
-            }
-            // TODO selectedItems, activeItems and other properties
-            // TODO we need better type checking here
-        }
-    }
+    private sessions = new Map<number, QuickInputSession>();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    $setQuickInputChanged(changed: any): void {
-        for (const key in changed) {
-            if (changed.hasOwnProperty(key)) {
-                const value = changed[key];
-                this.findChangedKey(key, value);
+    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput<T>): Promise<void> {
+        const sessionId = params.id;
+        const session = this.sessions.get(sessionId);
+        // if (!session) {
+        //     if (params.type === 'quickPick') {
+        //         const quickPick = this.quickInputService.createQuickPick();
+        //         quickPick.onDidAccept(() => {
+        //             this.proxy.$acceptOnDidAccept(sessionId);
+        //         });
+        //         quickPick.onDidChangeActive((items: Array<monaco.quickInput.IQuickPickItem>) => {
+        //             this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+        //         });
+        //         quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
+        //             this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+        //         });
+        //         quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
+        //             this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+        //         });
+        //         quickPick.onDidChangeValue((value: string) => {
+        //             this.proxy.$acceptDidChangeValue(sessionId, value);
+        //         });
+        //         quickPick.onDidHide(() => {
+        //             this.proxy.$acceptOnDidHide(sessionId);
+        //         });
+        //         session = {
+        //             input: quickPick,
+        //             handlesToItems: new Map()
+        //         };
+        //     } else {
+        //         const inputBox = this.quickInputService.createInputBox();
+        //         inputBox.onDidAccept(() => {
+        //             this.proxy.$acceptOnDidAccept(sessionId);
+        //         });
+        //         inputBox.onDidTriggerButton((button: QuickInputButtonHandle) => {
+        //             this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+        //         });
+        //         inputBox.onDidChangeValue((value: string) => {
+        //             this.proxy.$acceptDidChangeValue(sessionId, value);
+        //         });
+        //         inputBox.onDidHide(() => {
+        //             this.proxy.$acceptOnDidHide(sessionId);
+        //         });
+        //         session = {
+        //             input: inputBox,
+        //             handlesToItems: new Map()
+        //         };
+        //     }
+        // }
+        if (session) {
+            const { input, handlesToItems } = session;
+            for (const param in params) {
+                if (param === 'id' || param === 'type') {
+                    continue;
+                }
+                if (param === 'visible') {
+                    if (params.visible) {
+                        input.show();
+                    } else {
+                        input.hide();
+                    }
+                } else if (param === 'items') {
+                    handlesToItems.clear();
+                    params[param].forEach((item: TransferQuickPickItems) => {
+                        handlesToItems.set(item.handle, item);
+                    });
+                    (input as any)[param] = params[param];
+                } else if (param === 'activeItems' || param === 'selectedItems') {
+                    (input as any)[param] = params[param]
+                        .filter((handle: number) => handlesToItems.has(handle))
+                        .map((handle: number) => handlesToItems.get(handle));
+                } else if (param === 'buttons') {
+                    (input as any)[param] = params.buttons!.map(button => {
+                        if (button.handle === -1) {
+                            return this.quickInputService.backButton;
+                        }
+                        const { iconPath, tooltip, handle } = button;
+                        if ('id' in iconPath) {
+                            return {
+                                iconClass: monaco.theme.ThemeIcon.asClassName(iconPath),
+                                tooltip,
+                                handle
+                            };
+                        } else {
+                            const monacoIconPath = (iconPath as unknown as { light: monaco.Uri, dark: monaco.Uri });
+                            return {
+                                iconPath: {
+                                    dark: monaco.Uri.revive(monacoIconPath.dark),
+                                    light: monacoIconPath.light && monaco.Uri.revive(monacoIconPath.light)
+                                },
+                                tooltip,
+                                handle
+                            };
+                        }
+                    });
+                } else {
+                    (input as any)[param] = params[param];
+                }
             }
         }
-    }
-    $refreshQuickInput(): void {
-        this.quickInput.refresh();
+
+        return Promise.resolve(undefined);
     }
 
     async $showCustomQuickPick<T extends QuickPickItemExt>(options: TransferQuickPick<T>): Promise<void> {
+        const sessionId = options.id;
         const toDispose = new DisposableCollection();
-        const quickPick = this.quickPick.show(this.convertPickOpenItemToQuickOpenItem(options.items), {
-            buttons: options.buttons.map((btn, i) => this.convertQuickInputButton(btn, i, toDispose)),
+
+        toDispose.push(this.quickPickService.onDidAccept(() => {
+            this.proxy.$acceptOnDidAccept(sessionId);
+        }));
+        toDispose.push(this.quickPickService.onDidChangeActive((e: { quickPick: any, activeItems: Array<QuickPickValue<number>> }) => {
+            this.proxy.$onDidChangeActive(sessionId, e.activeItems.map(item => item.value!));
+        }));
+        toDispose.push(this.quickPickService.onDidChangeSelection((e: { quickPick: any, selectedItems: Array<QuickPickValue<number>> }) => {
+            this.proxy.$onDidChangeSelection(sessionId, e.selectedItems.map(item => item.value!));
+        }));
+        toDispose.push(this.quickPickService.onDidChangeValue((e: { quickPick: any, filter: string }) => {
+            this.proxy.$acceptDidChangeValue(sessionId, e.filter);
+        }));
+        toDispose.push(this.quickPickService.onDidTriggerButton(button => {
+            this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+        }));
+        toDispose.push(this.quickPickService.onDidHide(() => {
+            this.proxy.$acceptOnDidHide(sessionId);
+            if (!toDispose.disposed) {
+                toDispose.dispose();
+            }
+        }));
+        this.toDispose.push(toDispose);
+
+        this.quickPickService.show(this.convertToQuickPickItem(options.items), {
+            buttons: options.buttons ? this.convertToQuickInputButtons(options.buttons) : [],
             placeholder: options.placeholder,
-            fuzzyMatchDescription: options.matchOnDescription,
-            fuzzyMatchLabel: true,
+            matchOnDescription: options.matchOnDescription,
             step: options.step,
             title: options.title,
             totalSteps: options.totalSteps,
             ignoreFocusOut: options.ignoreFocusOut,
             value: options.value,
+            matchOnLabel: true,
             runIfSingle: false,
         });
-
-        toDispose.push(this.quickPick.onDidAccept(() => this.proxy.$acceptOnDidAccept(options.id)));
-        toDispose.push(this.quickPick.onDidChangeActive((elements: QuickPickValue<number>[]) => {
-            this.proxy.$onDidChangeActive(options.id, elements.map(e => e.value));
-        }));
-        toDispose.push(this.quickPick.onDidChangeSelection((elements: QuickPickValue<number>[]) => {
-            this.proxy.$onDidChangeSelection(options.id, elements.map(e => e.value));
-        }));
-        toDispose.push(this.quickPick.onDidChangeValue(value => this.proxy.$acceptDidChangeValue(options.id, value)));
-        toDispose.push(this.quickTitleBar.onDidTriggerButton(button => {
-            this.proxy.$acceptOnDidTriggerButton(options.id, button);
-        }));
-        this.toDispose.push(toDispose);
-        quickPick.then(() => {
-            if (toDispose.disposed) {
-                return;
-            }
-            this.proxy.$acceptOnDidHide(options.id);
-            toDispose.dispose();
-        });
-    }
-
-    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-        this.acceptor = acceptor;
-        if (this.items) {
-            acceptor(this.items);
-        }
     }
 
     $hide(): void {
         this.delegate.hide();
     }
 
+    $dispose(sessionId: number): Promise<void> {
+        const session = this.sessions.get(sessionId);
+        if (session) {
+            session.input.dispose();
+            this.sessions.delete(sessionId);
+        }
+        return Promise.resolve(undefined);
+    }
+
+    private convertToQuickPickItem(items: TransferQuickPickItems[] | undefined): Array<QuickPickItem> {
+        const convertedItems: QuickPickValue<number>[] = [];
+        if (items) {
+            for (const i of items) {
+                convertedItems.push({
+                    label: i.label,
+                    description: i.description,
+                    detail: i.detail,
+                    value: i.handle
+                });
+            }
+        }
+        return convertedItems;
+    }
+
+    private convertToQuickInputButtons(buttons: Array<TransferQuickInputButton>): Array<QuickInputButton> {
+        return buttons.map((button, i) => ({
+            iconPath: getIconUris(button.iconPath),
+            tooltip: button.tooltip,
+            handle: button === QuickInputButtons.Back ? -1 : i,
+        } as QuickInputButton));
+    }
 }

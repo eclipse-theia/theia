@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
-import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickValue } from '@theia/core/lib/browser';
 
 /** The representation of a task template used in the auto-generation of `tasks.json` */
 export interface TaskTemplateEntry {
@@ -152,7 +152,7 @@ const command: TaskTemplateEntry = {
 
 @injectable()
 export class TaskTemplateSelector {
-    selectTemplates(): QuickPickItem<TaskTemplateEntry>[] {
+    selectTemplates(): QuickPickValue<TaskTemplateEntry>[] {
         const templates: TaskTemplateEntry[] = [
             dotnetBuild, msbuild, maven
         ].sort((a, b) =>

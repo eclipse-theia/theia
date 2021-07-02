@@ -1439,15 +1439,12 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
-export interface QuickInputButton {
-    readonly iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon;
-    readonly tooltip?: string | undefined;
-}
-
 export class QuickInputButtons {
-    static readonly Back: QuickInputButton = {
+    static readonly Back: theia.QuickInputButton = {
         iconPath: {
-            id: 'Back'
+            id: 'Back',
+            dark: '',
+            light: ''
         },
         tooltip: 'Back'
     };

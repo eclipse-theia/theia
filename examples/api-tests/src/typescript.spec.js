@@ -462,7 +462,7 @@ module.exports = (port, host, argv) => Promise.resolve()
 
         const suggest = editor.getControl()._contributions['editor.contrib.suggestController'];
         const getFocusedLabel = () => {
-            const focusedItem = suggest.widget.getValue().getFocusedItem();
+            const focusedItem = suggest.widget.getFocusedItem();
             return focusedItem && focusedItem.item.completion.label;
         };
 

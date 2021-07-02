@@ -19,24 +19,24 @@ import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, Tr
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { BulkEditNodeSelection } from './bulk-edit-node-selection';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceFileEdit, WorkspaceTextEdit } from '@theia/monaco/lib/browser/monaco-workspace';
+import { ResourceFileEdit, ResourceTextEdit } from '@theia/monaco/lib/browser/monaco-workspace';
 
 @injectable()
 export class BulkEditTree extends TreeImpl {
-    public async initTree(workspaceEdit: monaco.languages.WorkspaceEdit, fileContents: Map<string, string>): Promise<void> {
+    public async initTree(edits: monaco.editor.ResourceEdit[], fileContents: Map<string, string>): Promise<void> {
         this.root = <CompositeTreeNode>{
             visible: false,
             id: 'theia-bulk-edit-tree-widget',
             name: 'BulkEditTree',
-            children: this.getChildren(workspaceEdit, fileContents),
+            children: this.getChildren(edits, fileContents),
             parent: undefined
         };
     }
 
-    private getChildren(workspaceEdit: monaco.languages.WorkspaceEdit, fileContentsMap: Map<string, string>): BulkEditInfoNode[] {
+    private getChildren(edits: monaco.editor.ResourceEdit[], fileContentsMap: Map<string, string>): BulkEditInfoNode[] {
         let bulkEditInfos: BulkEditInfoNode[] = [];
-        if (workspaceEdit.edits) {
-            bulkEditInfos = workspaceEdit.edits
+        if (edits) {
+            bulkEditInfos = edits
                 .map(edit => this.getResourcePath(edit))
                 .filter((path, index, arr) => path && arr.indexOf(path) === index)
                 .map((path: string) => this.createBulkEditInfo(path, new URI(path), fileContentsMap.get(path)))
@@ -44,16 +44,18 @@ export class BulkEditTree extends TreeImpl {
 
             if (bulkEditInfos.length > 0) {
                 bulkEditInfos.forEach(editInfo => {
-                    editInfo.children = workspaceEdit.edits.filter(edit => ((('resource' in edit) && edit?.resource?.path === editInfo.id)) ||
-                        (('newUri' in edit) && edit?.newUri?.path === editInfo.id))
-                        .map((edit, index) => this.createBulkEditNode(edit, index, editInfo));
+                    editInfo.children = edits.filter(edit =>
+                        ((('resource' in edit) && (edit as monaco.editor.ResourceTextEdit)?.resource?.path === editInfo.id)) ||
+                        (('newResource' in edit) && (edit as monaco.editor.ResourceFileEdit)?.newResource?.path === editInfo.id))
+                        .map((edit, index) => this.createBulkEditNode(('resource' in edit ? edit as monaco.editor.ResourceTextEdit :
+                            edit as monaco.editor.ResourceFileEdit), index, editInfo));
                 });
             }
         }
         return bulkEditInfos;
     }
 
-    private createBulkEditNode(bulkEdit: monaco.languages.WorkspaceTextEdit | monaco.languages.WorkspaceFileEdit, index: number, parent: BulkEditInfoNode): BulkEditNode {
+    private createBulkEditNode(bulkEdit: monaco.editor.ResourceFileEdit | monaco.editor.ResourceTextEdit, index: number, parent: BulkEditInfoNode): BulkEditNode {
         const id = parent.id + '_' + index;
         const existing = this.getNode(id);
         if (BulkEditNode.is(existing)) {
@@ -82,14 +84,15 @@ export class BulkEditTree extends TreeImpl {
         };
     }
 
-    private getResourcePath(edit: monaco.languages.WorkspaceTextEdit | monaco.languages.WorkspaceFileEdit): string | undefined {
-        return WorkspaceTextEdit.is(edit) ? edit.resource.path : WorkspaceFileEdit.is(edit) && edit.newUri ? edit.newUri.path : undefined;
+    private getResourcePath(edit: monaco.editor.ResourceEdit): string | undefined {
+        return ResourceTextEdit.is(edit) ? edit.resource.path :
+            ResourceFileEdit.is(edit) && edit.newResource ? edit.newResource.path : undefined;
     }
 }
 
 export interface BulkEditNode extends UriSelection, SelectableTreeNode {
     parent: CompositeTreeNode;
-    bulkEdit: monaco.languages.WorkspaceTextEdit | monaco.languages.WorkspaceFileEdit;
+    bulkEdit: monaco.editor.ResourceFileEdit | monaco.editor.ResourceTextEdit;
 }
 export namespace BulkEditNode {
     export function is(node: TreeNode | undefined): node is BulkEditNode {

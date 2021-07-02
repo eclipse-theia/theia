@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService } from '@theia/core/lib/browser';
+import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
 import { CommandRegistry, MenuModelRegistry, CommandService } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutputWidget } from './output-widget';
@@ -27,7 +27,7 @@ import { OutputUri } from '../common/output-uri';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { OutputChannelManager, OutputChannel } from '../common/output-channel';
 import { OutputCommands } from './output-commands';
-import { QuickPickService, QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 
 @injectable()
 export class OutputContribution extends AbstractViewContribution<OutputWidget> implements OpenHandler {
@@ -255,7 +255,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     }
 
     protected async pick({ channels, placeholder }: { channels: OutputChannel[], placeholder: string }): Promise<OutputChannel | undefined> {
-        const items: QuickPickItem<OutputChannel>[] = [];
+        const items: Array<QuickPickValue<OutputChannel> | QuickPickItem> = [];
         for (let i = 0; i < channels.length; i++) {
             const channel = channels[i];
             if (i === 0) {
@@ -265,7 +265,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             }
             items.push({ label: channel.name, value: channel });
         }
-        return this.quickPickService.show(items, { placeholder });
+        const selectedItem = await this.quickPickService.show(items, { placeholder });
+        return selectedItem && ('value' in selectedItem) ? selectedItem.value : undefined;
     }
-
 }

@@ -17,12 +17,12 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { KeybindingContribution, KeybindingRegistry, LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ExternalTerminalService } from '../common/external-terminal';
 import { ExternalTerminalPreferenceService } from './external-terminal-preference';
+import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 
 export namespace ExternalTerminalCommands {
     export const OPEN_NATIVE_CONSOLE: Command = {
@@ -103,12 +103,13 @@ export class ExternalTerminalFrontendContribution implements CommandContribution
      */
     protected async selectCwd(): Promise<string | undefined> {
         const roots = this.workspaceService.tryGetRoots();
-        return this.quickPickService.show(roots.map(
+        const selectedItem = await this.quickPickService.show(roots.map(
             ({ resource }) => ({
                 label: this.labelProvider.getName(resource),
                 description: this.labelProvider.getLongName(resource),
                 value: resource.toString()
             })
         ), { placeholder: 'Select current working directory for new external terminal' });
+        return selectedItem?.value;
     }
 }

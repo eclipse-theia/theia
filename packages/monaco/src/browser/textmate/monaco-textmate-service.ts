@@ -108,7 +108,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         });
 
         this.updateTheme();
-        this.themeService.onThemeChange(() => this.updateTheme());
+        this.themeService.onDidColorThemeChange(() => this.updateTheme());
 
         for (const id of this.textmateRegistry.languages) {
             this.activateLanguage(id);

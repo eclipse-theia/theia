@@ -19,8 +19,8 @@ import { ILogger, ContributionProvider } from '@theia/core/lib/common';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task';
 import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import {
-    FrontendApplication, FrontendApplicationContribution, QuickOpenContribution,
-    QuickOpenHandlerRegistry, KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment
+    FrontendApplication, FrontendApplicationContribution, QuickAccessContribution,
+    KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
@@ -114,7 +114,7 @@ export namespace TaskCommands {
 const TASKS_STORAGE_KEY = 'tasks';
 
 @injectable()
-export class TaskFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, QuickOpenContribution {
+export class TaskFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, QuickAccessContribution {
     @inject(QuickOpenTask)
     protected readonly quickOpenTask: QuickOpenTask;
 
@@ -384,8 +384,8 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         });
     }
 
-    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
-        handlers.registerHandler(this.quickOpenTask);
+    registerQuickAccessProvider(): void {
+        this.quickOpenTask.registerQuickAccessProvider();
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -395,5 +395,4 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             when: '!textInputFocus || editorReadonly'
         });
     }
-
 }

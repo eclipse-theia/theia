@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Widget } from '@theia/core/shared/@phosphor/widgets';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickInputService } from '@theia/core/lib/browser';
@@ -81,7 +81,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(QuickInputService)
+    @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
 
     @inject(MiniBrowserService)
@@ -262,7 +262,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     protected async openUrl(arg?: string): Promise<void> {
-        const url = arg ? arg : await this.quickInputService.open({
+        const url = arg ? arg : await this.quickInputService?.input({
             prompt: 'URL to open',
             placeHolder: 'Type a URL'
         });

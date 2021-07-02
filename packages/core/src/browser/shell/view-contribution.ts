@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, interfaces } from 'inversify';
+import { injectable, inject, interfaces, optional } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
@@ -24,7 +24,7 @@ import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
-import { QuickViewService } from '../quick-view-service';
+import { QuickViewService } from '../quick-input';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
@@ -59,7 +59,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
-    @inject(QuickViewService)
+    @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
 
     readonly toggleCommand?: Command;
@@ -140,7 +140,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
                 execute: () => this.toggleView()
             });
         }
-        this.quickView.registerItem({
+        this.quickView?.registerItem({
             label: this.viewLabel,
             open: () => this.openView({ activate: true })
         });

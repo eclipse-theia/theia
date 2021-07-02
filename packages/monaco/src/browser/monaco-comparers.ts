@@ -22,7 +22,6 @@
 
 import strings = monaco.strings;
 import IdleValue = monaco.async.IdleValue;
-import QuickOpenEntry = monaco.quickOpen.QuickOpenEntry;
 
 let intlFileNameCollator: IdleValue<{ collator: Intl.Collator, collatorIsNumeric: boolean }>;
 
@@ -123,39 +122,4 @@ export function compareByPrefix(one: string, other: string, lookFor: string): nu
     }
 
     return 0;
-}
-
-/**
- * A good default sort implementation for quick open entries respecting highlight information
- * as well as associated resources.
- */
-// copied from vscode: https://github.com/microsoft/vscode/blob/standalone/0.17.x/src/vs/base/parts/quickopen/browser/quickOpenModel.ts#L584
-export function compareEntries(elementA: QuickOpenEntry, elementB: QuickOpenEntry, lookFor: string): number {
-
-    // Give matches with label highlights higher priority over
-    // those with only description highlights
-    const labelHighlightsA = elementA.getHighlights()[0] || [];
-    const labelHighlightsB = elementB.getHighlights()[0] || [];
-    if (labelHighlightsA.length && !labelHighlightsB.length) {
-        return -1;
-    }
-
-    if (!labelHighlightsA.length && labelHighlightsB.length) {
-        return 1;
-    }
-
-    // Fallback to the full path if labels are identical and we have associated resources
-    let nameA = elementA.getLabel()!;
-    let nameB = elementB.getLabel()!;
-    if (nameA === nameB) {
-        const resourceA = elementA.getResource();
-        const resourceB = elementB.getResource();
-
-        if (resourceA && resourceB) {
-            nameA = resourceA.fsPath;
-            nameB = resourceB.fsPath;
-        }
-    }
-
-    return compareAnything(nameA, nameB, lookFor);
 }

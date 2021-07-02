@@ -130,7 +130,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             triggerCharacters,
             provideCompletionItems: (model, position, context, token) => this.provideCompletionItems(handle, model, position, context, token),
             resolveCompletionItem: supportsResolveDetails
-                ? (model, position, suggestion, token) => Promise.resolve(this.resolveCompletionItem(handle, model, position, suggestion, token))
+                ? (suggestion, token) => Promise.resolve(this.resolveCompletionItem(handle, suggestion, token))
                 : undefined
         }));
     }
@@ -151,10 +151,10 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         });
     }
 
-    protected resolveCompletionItem(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
+    protected resolveCompletionItem(handle: number,
         item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionItem> {
         const { parentId, id } = item as CompletionDto;
-        return this.proxy.$resolveCompletionItem(handle, parentId, id, token).then(resolved => {
+        return this.proxy.$resolveCompletionItem(handle, [parentId, id], token).then(resolved => {
             if (resolved) {
                 mixin(item, resolved, true);
             }

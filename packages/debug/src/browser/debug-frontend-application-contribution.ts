@@ -376,7 +376,7 @@ function updateTheme(): void {
     }
 }
 updateTheme();
-ThemeService.get().onThemeChange(() => updateTheme());
+ThemeService.get().onDidColorThemeChange(() => updateTheme());
 
 @injectable()
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {

@@ -15,14 +15,12 @@
  ********************************************************************************/
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { loadMonaco, loadVsRequire } from './monaco-loader';
+import { clearMonacoQuickAccessProviders, loadMonaco, loadVsRequire } from './monaco-loader';
 
 export { ContainerModule };
 
 export default loadVsRequire(window)
     .then(vsRequire => loadMonaco(vsRequire))
-    .then(() =>
-        import('./monaco-frontend-module')
-    ).then(module =>
-        module.default
-    );
+    .then(() => clearMonacoQuickAccessProviders())
+    .then(() => import('./monaco-frontend-module'))
+    .then(module => module.default);

@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ApplicationShell, FrontendApplication, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
+import { ApplicationShell, FrontendApplication, QuickPickItem, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { CommandService, ILogger } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { QuickPickItem, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -152,7 +152,7 @@ export class TaskService implements TaskConfigurationClient {
     protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
 
     @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    protected readonly quickPickService: QuickPickService;
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
@@ -526,22 +526,22 @@ export class TaskService implements TaskConfigurationClient {
         if (!customizationObject.problemMatcher) {
             // ask the user what s/he wants to use to parse the task output
             const items = this.getCustomizeProblemMatcherItems();
-            const selected = await this.quickPick.show(items, {
+            const selected = await this.quickPickService.show(items, {
                 placeholder: 'Select for which kind of errors and warnings to scan the task output'
             });
-            if (selected) {
-                if (selected.problemMatchers) {
+            if (selected && ('value' in selected)) {
+                if (selected.value?.problemMatchers) {
                     let matcherNames: string[] = [];
-                    if (selected.problemMatchers && selected.problemMatchers.length === 0) { // never parse output for this task
+                    if (selected.value.problemMatchers && selected.value.problemMatchers.length === 0) { // never parse output for this task
                         matcherNames = [];
-                    } else if (selected.problemMatchers && selected.problemMatchers.length > 0) { // continue with user-selected parser
-                        matcherNames = selected.problemMatchers.map(matcher => matcher.name);
+                    } else if (selected.value.problemMatchers && selected.value.problemMatchers.length > 0) { // continue with user-selected parser
+                        matcherNames = selected.value.problemMatchers.map(matcher => matcher.name);
                     }
                     customizationObject.problemMatcher = matcherNames;
 
                     // write the selected matcher (or the decision of "never parse") into the `tasks.json`
                     this.updateTaskConfiguration(token, task, { problemMatcher: matcherNames });
-                } else if (selected.learnMore) { // user wants to learn more about parsing task output
+                } else if (selected.value?.learnMore) { // user wants to learn more about parsing task output
                     open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
                 // else, continue the task with no parser
@@ -982,8 +982,8 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    protected getCustomizeProblemMatcherItems(): QuickPickItem<QuickPickProblemMatcherItem>[] {
-        const items: QuickPickItem<QuickPickProblemMatcherItem>[] = [];
+    protected getCustomizeProblemMatcherItems(): Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> {
+        const items: Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> = [];
         items.push({
             label: 'Continue without scanning the task output',
             value: { problemMatchers: undefined }
