@@ -167,7 +167,8 @@ export class PluginTree extends TreeImpl {
                 visible: true,
                 selected: false,
                 expanded: TreeViewItemCollapsibleState.Expanded === item.collapsibleState,
-                children: []
+                children: [],
+                command: item.command
             }, update);
         }
         if (TreeViewNode.is(node)) {
@@ -389,17 +390,35 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
         super.handleClickEvent(node, event);
-        this.tryExecuteCommand(node);
+        // If clicked on item (not collapsable icon) - execute command or toggle expansion if item has no command
+        const commandMap = this.findCommands(node);
+        if (commandMap.size > 0) {
+            this.tryExecuteCommandMap(commandMap);
+        } else if (this.isExpandable(node) && !this.hasShiftMask(event) && !this.hasCtrlCmdMask(event)) {
+            this.model.toggleNodeExpansion(node);
+        }
     }
 
     // execute TreeItem.command if present
     protected tryExecuteCommand(node?: TreeNode): void {
+        this.tryExecuteCommandMap(this.findCommands(node));
+    }
+
+    protected tryExecuteCommandMap(commandMap: Map<string, unknown[]>): void {
+        commandMap.forEach((args, commandId) => {
+            this.commands.executeCommand(commandId, ...args);
+        });
+    }
+
+    protected findCommands(node?: TreeNode): Map<string, unknown[]> {
+        const commandMap = new Map<string, unknown[]>();
         const treeNodes = (node ? [node] : this.model.selectedNodes) as TreeViewNode[];
         for (const treeNode of treeNodes) {
             if (treeNode && treeNode.command) {
-                this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
+                commandMap.set(treeNode.command.id, treeNode.command.arguments || []);
             }
         }
+        return commandMap;
     }
 
     private _message: string | undefined;

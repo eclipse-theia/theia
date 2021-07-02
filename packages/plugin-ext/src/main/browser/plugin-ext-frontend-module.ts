@@ -21,7 +21,7 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution, TreeProps
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -149,6 +149,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
                 contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
                 globalSelection: true
             });
+            child.rebind(TreeProps).toConstantValue({ leftPadding: 8, expansionTogglePadding: 22, expandOnlyOnExpansionToggleClick: true, });
             child.bind(TreeViewWidgetIdentifier).toConstantValue(identifier);
             child.bind(PluginTree).toSelf();
             child.rebind(TreeImpl).toService(PluginTree);
