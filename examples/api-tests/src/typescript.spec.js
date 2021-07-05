@@ -462,7 +462,7 @@ module.exports = (port, host, argv) => Promise.resolve()
 
         const suggest = editor.getControl()._contributions['editor.contrib.suggestController'];
         const getFocusedLabel = () => {
-            const focusedItem = suggest.widget.getFocusedItem();
+            const focusedItem = suggest.widget.value.getFocusedItem();
             return focusedItem && focusedItem.item.completion.label;
         };
 
@@ -571,15 +571,15 @@ module.exports = (port, host, argv) => Promise.resolve()
         const hover = editor.getControl()._contributions['editor.contrib.hover'];
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isFalse(hover.contentWidget.isVisible);
+        assert.isFalse(!!hover._contentWidget && hover._contentWidget._isVisible);
 
         await commands.executeCommand('editor.action.showHover');
-        await waitForAnimation(() => hover.contentWidget.isVisible);
+        await waitForAnimation(() => !!hover._contentWidget && hover._contentWidget._isVisible);
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isTrue(hover.contentWidget.isVisible);
+        assert.isTrue(!!hover._contentWidget && hover._contentWidget._isVisible);
 
-        assert.deepEqual(nodeAsString(hover.contentWidget._domNode), `
+        assert.deepEqual(hover._contentWidget && nodeAsString(hover._contentWidget._hover.contentsDomNode), `
 DIV {
   DIV {
     DIV {
@@ -612,10 +612,10 @@ DIV {
 `);
 
         keybindings.dispatchKeyDown('Escape');
-        await waitForAnimation(() => !hover.contentWidget.isVisible);
+        await waitForAnimation(() => !hover._contentWidget || !hover._contentWidget._isVisible);
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
-        assert.isFalse(hover.contentWidget.isVisible);
+        assert.isFalse(!!hover._contentWidget && hover._contentWidget._isVisible);
     });
 
     it('highligh semantic (write) occurrences', async function () {

@@ -33,11 +33,11 @@ export function compareFileNames(one: string | null, other: string | null, caseS
     if (intlFileNameCollator) {
         const a = one || '';
         const b = other || '';
-        const result = intlFileNameCollator.getValue().collator.compare(a, b);
+        const result = intlFileNameCollator.value.collator.compare(a, b);
 
         // Using the numeric option in the collator will
         // make compare(`foo1`, `foo01`) === 0. We must disambiguate.
-        if (intlFileNameCollator.getValue().collatorIsNumeric && result === 0 && a !== b) {
+        if (intlFileNameCollator.value.collatorIsNumeric && result === 0 && a !== b) {
             return a < b ? -1 : 1;
         }
 

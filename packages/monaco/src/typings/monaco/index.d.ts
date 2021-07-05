@@ -236,13 +236,18 @@ declare module monaco.editor {
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/hover/hover.ts#L30
     export interface ModesHoverController {
-        readonly contentWidget: ModesContentHoverWidget;
+        readonly _contentWidget: ModesContentHoverWidget | null;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/browser/ui/hover/hoverWidget.ts#L13-L39
+    export class HoverWidget extends Disposable {
+        readonly contentsDomNode: HTMLElement;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/hover/modesContentHover.ts#L177
     export interface ModesContentHoverWidget {
-        readonly isVisible: boolean;
-        readonly _domNode: HTMLElement;
+        readonly _isVisible: boolean;
+        readonly _hover: HoverWidget;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/controller/cursor.ts#L122
@@ -2101,7 +2106,7 @@ declare module monaco.suggest {
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/suggest/suggestController.ts#L99
     export interface SuggestController {
-        readonly widget: SuggestWidget;
+        readonly widget: monaco.async.IdleValue<SuggestWidget>;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/suggest/suggestWidget.ts#L635
@@ -2264,10 +2269,10 @@ declare module monaco.strings {
 }
 
 declare module monaco.async {
-    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/async.ts#L721
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/common/async.ts#L842-L878
     export class IdleValue<T> {
         constructor(executor: () => T) { }
-        getValue(): T;
+        get value(): T;
     }
 }
 
