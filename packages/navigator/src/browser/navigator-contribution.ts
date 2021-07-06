@@ -382,7 +382,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 const openEditorsWidget = await this.widgetManager.getOrCreateWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
                 const widgets = openEditorsWidget.getEditorWidgetsByGroup(id);
                 widgets?.forEach(widget => widget.close());
-            }
+            },
+            isVisible: () => false
         });
         registry.registerCommand(OpenEditorsCommands.SAVE_ALL_IN_GROUP, {
             execute: async (id): Promise<void> => {
@@ -392,7 +393,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                     const saveable = Saveable.get(widget);
                     saveable?.save();
                 });
-            }
+            },
+            isVisible: () => false
         });
     }
 

@@ -30,7 +30,6 @@ import {
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { DisposableCollection } from '@theia/core/lib/common';
-
 export interface OpenEditorNode extends FileStatNode {
     widget: Widget;
 };
@@ -51,13 +50,19 @@ export class OpenEditorsModel extends FileTreeModel {
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
     protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
+    // Returns the collection of editors belonging to a tabbar group in the main area
+    protected _editorWidgetsByGroup = new Map<number, NavigatableWidget[]>();
 
+    // Returns the collection of editors belonging to an area grouping (main, left, right bottom)
     protected _editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
 
+    // Last collection of editors before a layout modification, used to detect changes in widget ordering
+    protected _lastEditorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
+
     get editorWidgets(): NavigatableWidget[] {
-        let editorWidgets: NavigatableWidget[] = [];
+        const editorWidgets: NavigatableWidget[] = [];
         this._editorWidgetsByArea.forEach(widgets => {
-            editorWidgets = [...editorWidgets, ...widgets];
+            editorWidgets.push(...widgets);
         });
         return editorWidgets;
     }
@@ -70,8 +75,6 @@ export class OpenEditorsModel extends FileTreeModel {
         return this._editorWidgetsByArea.get(id as ApplicationShell.Area);
     }
 
-    protected _editorWidgetsByGroup = new Map<number, NavigatableWidget[]>();
-
     @postConstruct()
     protected init(): void {
         super.init();
@@ -80,29 +83,19 @@ export class OpenEditorsModel extends FileTreeModel {
     }
 
     protected setupHandlers(): void {
-        this.toDispose.push(this.selectionService.onSelectionChanged(selection => {
-            const { widget } = (selection[0] as OpenEditorNode);
-            this.applicationShell.activateWidget(widget.id);
-        }));
-        this.toDispose.push(this.applicationShell.onDidChangeCurrentWidget(async ({ newValue }) => {
-            const nodeToSelect = this.tree.getNode(newValue?.id) as SelectableTreeNode;
-            if (nodeToSelect) {
+        this.toDispose.push(this.applicationShell.onDidChangeCurrentWidget(({ newValue }) => {
+            const nodeToSelect = this.tree.getNode(newValue?.id);
+            if (nodeToSelect && SelectableTreeNode.is(nodeToSelect)) {
                 this.selectNode(nodeToSelect);
             }
         }));
-        this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => this.updateOpenWidgets()));
-        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.updateOpenWidgets()));
-        this.toDispose.push(this.applicationShell.onDidAddWidget(widget => {
-            if (ApplicationShell.TrackableWidgetProvider.is(widget) && widget.onDidChangeTrackableWidgets) {
-                this.toDisposeOnPreviewWidgetReplaced.dispose();
-                this.toDisposeOnPreviewWidgetReplaced.push(widget.onDidChangeTrackableWidgets(() => this.updateOpenWidgets()));
-            }
-            this.updateOpenWidgets();
-        }));
+        this.toDispose.push(this.applicationShell.onDidAddWidget(() => this.updateOpenWidgets()));
         this.toDispose.push(this.applicationShell.onDidRemoveWidget(() => this.updateOpenWidgets()));
-        this.applicationShell.mainPanel.layoutModified.connect(() => this.updateOpenWidgets());
-        this.applicationShell.bottomPanel.layoutModified.connect(() => this.updateOpenWidgets());
+        // Check for tabs rearranged in main and bottom
+        this.applicationShell.mainPanel.layoutModified.connect(() => this.doUpdateOpenWidgets('main'));
+        this.applicationShell.bottomPanel.layoutModified.connect(() => this.doUpdateOpenWidgets('bottom'));
     }
+
 
     protected async initializeRoot(): Promise<void> {
         await this.updateOpenWidgets();
@@ -111,16 +104,44 @@ export class OpenEditorsModel extends FileTreeModel {
 
     protected updateOpenWidgets = debounce(this.doUpdateOpenWidgets, 250);
 
-    protected async doUpdateOpenWidgets(): Promise<void> {
+    protected async doUpdateOpenWidgets(layoutModifiedArea?: ApplicationShell.Area): Promise<void> {
+        this._lastEditorWidgetsByArea = this._editorWidgetsByArea;
         this._editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
-        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right'];
+        let doRebuild = true;
+        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right', 'bottom'];
         areas.forEach(area => {
             const editorWidgetsForArea = this.applicationShell.getWidgets(area).filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
             if (editorWidgetsForArea.length) {
                 this._editorWidgetsByArea.set(area, editorWidgetsForArea);
             }
         });
-        this.root = await this.buildRootFromOpenedWidgets(this._editorWidgetsByArea);
+        if (this._lastEditorWidgetsByArea.size === 0) {
+            this._lastEditorWidgetsByArea = this._editorWidgetsByArea;
+        }
+        // `layoutModified` can be triggered when tabs are clicked, even if they are not rearraged.
+        // This will check for those instances and prevent a rebuild if it is unnecessary. Rebuilding
+        // the tree if there is no change can cause the tree's selection to flicker.
+        if (layoutModifiedArea) {
+            doRebuild = this.shouldRebuildTreeOnLayoutModified(layoutModifiedArea);
+        }
+        if (doRebuild) {
+            this.root = await this.buildRootFromOpenedWidgets(this._editorWidgetsByArea);
+        }
+    }
+
+    protected shouldRebuildTreeOnLayoutModified(area: ApplicationShell.Area): boolean {
+        const currentOrdering = this._editorWidgetsByArea.get(area);
+        const previousOrdering = this._lastEditorWidgetsByArea.get(area);
+        if (currentOrdering?.length === 1) {
+            return true;
+        }
+        if (currentOrdering?.length !== previousOrdering?.length) {
+            return true;
+        }
+        if (!!currentOrdering && !!previousOrdering) {
+            return !currentOrdering.every((widget, index) => widget === previousOrdering[index]);
+        }
+        return true;
     }
 
     protected tryCreateWidgetGroupMap(): Map<Widget, CompositeTreeNode> {

@@ -64,7 +64,6 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, NavigatorTreeDecorator);
     bindContributionProvider(bind, OpenEditorsTreeDecorator);
 
-    bind(OpenEditorsWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: OpenEditorsWidget.ID,
         createWidget: () => OpenEditorsWidget.createWidget(container)

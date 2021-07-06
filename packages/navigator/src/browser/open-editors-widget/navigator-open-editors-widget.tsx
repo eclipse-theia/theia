@@ -138,7 +138,6 @@ export class OpenEditorsWidget extends FileTreeWidget {
             groupClass = 'area-node';
         }
         return <div className={`open-editors-node-row ${this.getPrefixIconClass(node)}${groupClass}`}>
-            {this.renderIndent(node, { depth })}
             {this.renderNode(node, { depth })}
         </div>;
     }
@@ -202,6 +201,23 @@ export class OpenEditorsWidget extends FileTreeWidget {
         const widgetId = e.currentTarget.getAttribute('data-id');
         if (widgetId) {
             await this.applicationShell.closeWidget(widgetId);
+        }
+    }
+
+    protected handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        if (OpenEditorNode.is(node)) {
+            const { widget } = node;
+            this.applicationShell.activateWidget(widget.id);
+        }
+        super.handleClickEvent(node, event);
+    }
+
+    protected handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        super.handleContextMenuEvent(node, event);
+        if (node) {
+            // Since the CommonCommands used in the context menu act on the shell's activeWidget, this is necessary to ensure
+            // that the EditorWidget is activated, not the Navigator itself
+            this.applicationShell.activateWidget(node.widget.id);
         }
     }
 }

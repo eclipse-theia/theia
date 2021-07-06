@@ -17,7 +17,7 @@
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
-import { DisposableCollection, Emitter, MaybePromise } from '@theia/core/lib/common';
+import { DisposableCollection, MaybePromise } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
 import { EditorPreviewWidget } from './editor-preview-widget';
@@ -29,9 +29,6 @@ export class EditorPreviewManager extends EditorManager {
 
     @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
     @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
-
-    protected previewPinnedEmitter = new Emitter<void>();
-    readonly onPreviewPinned = this.previewPinnedEmitter.event;
 
     protected currentPreview: EditorPreviewWidget | undefined;
     protected toDisposeOnPreviewChange = new DisposableCollection();
@@ -97,10 +94,7 @@ export class EditorPreviewManager extends EditorManager {
         this.toDisposeOnPreviewChange.dispose();
         this.currentPreview = widget;
         this.toDisposeOnPreviewChange.push({ dispose: () => this.currentPreview = undefined });
-        this.toDisposeOnPreviewChange.push(widget.onDidChangePreviewState(() => {
-            this.toDisposeOnPreviewChange.dispose();
-            this.previewPinnedEmitter.fire();
-        }));
+        this.toDisposeOnPreviewChange.push(widget.onDidChangePreviewState(() => this.toDisposeOnPreviewChange.dispose()));
         this.toDisposeOnPreviewChange.push(widget.onDidDispose(() => this.toDisposeOnPreviewChange.dispose()));
     }
 

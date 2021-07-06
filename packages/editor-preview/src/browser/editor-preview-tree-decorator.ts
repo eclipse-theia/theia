@@ -40,37 +40,48 @@ export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplic
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(EditorPreviewManager) protected readonly editorPreviewManager: EditorPreviewManager;
-
-    protected shell: ApplicationShell;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     readonly id = 'theia-open-editors-file-decorator';
     protected decorationsMap = new Map<string, TreeDecoration.Data>();
 
     protected readonly decorationsChangedEmitter = new Emitter();
     readonly onDidChangeDecorations = this.decorationsChangedEmitter.event;
     protected readonly toDisposeOnDirtyChanged = new Map<string, Disposable>();
+    protected readonly toDisposeOnPreviewPinned = new Map<string, Disposable>();
 
     onDidInitializeLayout(app: FrontendApplication): void {
-        this.shell = app.shell;
         this.workspaceService.onWorkspaceChanged(() => {
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
         });
         this.workspaceService.onWorkspaceLocationChanged(() => {
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
         });
-        this.editorPreviewManager.onPreviewPinned(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
 
-        this.shell.onDidAddWidget(widget => this.registerSaveableListener(widget));
-        this.shell.onDidRemoveWidget(widget => this.toDisposeOnDirtyChanged.get(widget.id)?.dispose());
-        this.editorWidgets.forEach(widget => this.registerSaveableListener(widget));
+        this.shell.onDidAddWidget(widget => this.registerEditorListeners(widget));
+        this.shell.onDidRemoveWidget(widget => this.unregisterEditorListeners(widget));
+        this.editorWidgets.forEach(widget => this.registerEditorListeners(widget));
     }
 
-    protected registerSaveableListener(widget: Widget): void {
+    protected registerEditorListeners(widget: Widget): void {
         const saveable = Saveable.get(widget);
-        const isTrackableProvider = ApplicationShell.TrackableWidgetProvider.is(widget);
-        if (saveable && !isTrackableProvider) {
+        if (saveable && widget instanceof EditorPreviewWidget) {
             this.toDisposeOnDirtyChanged.set(widget.id, saveable.onDirtyChanged(() => {
                 this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
             }));
+            this.toDisposeOnPreviewPinned.set(widget.id, widget.onDidChangePreviewState(() => {
+                this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
+                this.toDisposeOnPreviewPinned.get(widget.id)?.dispose();
+                this.toDisposeOnDirtyChanged.delete(widget.id);
+            }));
+        }
+    }
+
+    protected unregisterEditorListeners(widget: Widget): void {
+        this.toDisposeOnDirtyChanged.get(widget.id)?.dispose();
+        this.toDisposeOnDirtyChanged.delete(widget.id);
+        if (widget instanceof EditorPreviewWidget && widget.isPreview) {
+            this.toDisposeOnPreviewPinned.get(widget.id)?.dispose();
+            this.toDisposeOnDirtyChanged.delete(widget.id);
         }
     }
 
