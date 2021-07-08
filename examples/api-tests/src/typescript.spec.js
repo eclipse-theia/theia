@@ -684,7 +684,7 @@ DIV {
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
     });
 
-    it.skip('run reference code lens', async function () {
+    it('run reference code lens', async function () {
         // @ts-ignore
         const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
         toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
@@ -708,8 +708,17 @@ DIV {
             forceMoveMarkers: false,
             text: 'export '
         }]);
-        editor.getControl().revealPosition(position);
         await preferences.set('javascript.referencesCodeLens.enabled', true, PreferenceScope.User);
+
+        // Recall `applyEdits` to workaround `vscode` bug, See: https://github.com/eclipse-theia/theia/issues/9714#issuecomment-876582947.
+        // @ts-ignore
+        editor.getControl().getModel().applyEdits([{
+            range: monaco.Range.fromPositions(position, position),
+            forceMoveMarkers: false,
+            text: ' '
+        }]);
+
+        editor.getControl().revealPosition(position);
         await waitForAnimation(() => codeLensNodeVisible());
 
         assert.isTrue(codeLensNodeVisible());
@@ -724,7 +733,7 @@ SPAN {
 `);
             const link = node.getElementsByTagName('a').item(0);
             if (link) {
-                link.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
                 await assertPeekOpened(editor);
                 await closePeek(editor);
             } else {
