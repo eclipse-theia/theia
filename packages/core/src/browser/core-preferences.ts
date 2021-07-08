@@ -40,7 +40,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             'type': 'boolean',
             // eslint-disable-next-line max-len
             'description': 'Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.',
-            'default': true
+            'default': false
         },
         'application.confirmExit': {
             type: 'string',
