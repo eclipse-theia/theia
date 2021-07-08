@@ -21,10 +21,15 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 export class PluginWorker {
 
     private worker: Worker;
+
     public readonly rpc: RPCProtocol;
+
     constructor() {
         const emitter = new Emitter<string>();
-        this.worker = new (require('../../hosted/browser/worker/worker-main'));
+
+        require('./worker/worker-main');
+        this.worker = new Worker('worker-ext.js');
+
         this.worker.onmessage = message => {
             emitter.fire(message.data);
         };
