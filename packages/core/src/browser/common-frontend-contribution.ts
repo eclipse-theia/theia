@@ -810,38 +810,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, {
-            isEnabled: (event?: Event) => !!this.shell.findTargetedWidget(event)?.title.closable,
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                if (!tabBar) {
-                    return;
-                }
-                const currentTitle = this.shell.findTargetedWidget(event)?.title;
-                if (!currentTitle) {
-                    return;
-                }
-                currentTitle.closable = false;
-                this.setPinned(currentTitle, true);
-            },
+            isEnabled: (event?: Event) => !!this.shell.findTargetedWidget(event)?.title.closable || !!this.shell.currentTabBar?.currentTitle?.closable,
+            execute: (event?: Event) => this.togglePinned(event),
         });
         commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, {
             isEnabled: (event?: Event) => {
-                const currentTitle = this.shell.findTargetedWidget(event)?.title as TheiaTitle;
-                return currentTitle !== undefined && !currentTitle.closable && !!currentTitle.pinned;
+                const currentTitle = (this.shell.findTargetedWidget(event)?.title || this.shell.currentTabBar?.currentTitle) as TheiaTitle;
+                return !!currentTitle && !currentTitle.closable && !!currentTitle.pinned;
             },
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event)!;
-                if (!tabBar) {
-                    return;
-                }
-                const currentTitle = this.shell.findTargetedWidget(event)?.title;
-                if (!currentTitle) {
-                    return;
-                }
-
-                currentTitle.closable = true;
-                this.setPinned(currentTitle, false);
-            },
+            execute: (event?: Event) => this.togglePinned(event),
         });
     }
 
@@ -906,12 +883,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         return environment.electron.is();
     }
 
-    private setPinned(title: TheiaTitle, pinned: boolean): void {
-        title.pinned = pinned;
+    private togglePinned(event?: Event): void {
+        const tabBar = this.shell.findTabBar(event) || this.shell.currentTabBar;
+        if (!tabBar) {
+            return;
+        }
+        const currentTitle = (this.shell.findTargetedWidget(event)?.title || tabBar.currentTitle) as TheiaTitle;
+        if (!currentTitle) {
+            return;
+        }
+        currentTitle.closable = !currentTitle.closable;
+        currentTitle.pinned = !currentTitle.closable;
 
-        title.className = title.className.replace(` ${PINNED_CLASS}`, '');
-        if (pinned) {
-            title.className += ` ${PINNED_CLASS}`;
+        currentTitle.className = currentTitle.className.replace(` ${PINNED_CLASS}`, '');
+        if (currentTitle.pinned) {
+            currentTitle.className += ` ${PINNED_CLASS}`;
         }
 
         this.updatePinnedKey();
