@@ -61,9 +61,7 @@ export class OpenEditorsModel extends FileTreeModel {
 
     get editorWidgets(): NavigatableWidget[] {
         const editorWidgets: NavigatableWidget[] = [];
-        this._editorWidgetsByArea.forEach(widgets => {
-            editorWidgets.push(...widgets);
-        });
+        this._editorWidgetsByArea.forEach(widgets => editorWidgets.push(...widgets));
         return editorWidgets;
     }
 
@@ -96,7 +94,6 @@ export class OpenEditorsModel extends FileTreeModel {
         this.applicationShell.bottomPanel.layoutModified.connect(() => this.doUpdateOpenWidgets('bottom'));
     }
 
-
     protected async initializeRoot(): Promise<void> {
         await this.updateOpenWidgets();
         this.fireChanged();
@@ -108,7 +105,7 @@ export class OpenEditorsModel extends FileTreeModel {
         this._lastEditorWidgetsByArea = this._editorWidgetsByArea;
         this._editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
         let doRebuild = true;
-        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right', 'bottom'];
+        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right', 'top'];
         areas.forEach(area => {
             const editorWidgetsForArea = this.applicationShell.getWidgets(area).filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
             if (editorWidgetsForArea.length) {

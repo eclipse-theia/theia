@@ -64,10 +64,12 @@ export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplic
 
     protected registerEditorListeners(widget: Widget): void {
         const saveable = Saveable.get(widget);
-        if (saveable && widget instanceof EditorPreviewWidget) {
+        if (saveable) {
             this.toDisposeOnDirtyChanged.set(widget.id, saveable.onDirtyChanged(() => {
                 this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
             }));
+        }
+        if (widget instanceof EditorPreviewWidget) {
             this.toDisposeOnPreviewPinned.set(widget.id, widget.onDidChangePreviewState(() => {
                 this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
                 this.toDisposeOnPreviewPinned.get(widget.id)?.dispose();
@@ -79,10 +81,8 @@ export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplic
     protected unregisterEditorListeners(widget: Widget): void {
         this.toDisposeOnDirtyChanged.get(widget.id)?.dispose();
         this.toDisposeOnDirtyChanged.delete(widget.id);
-        if (widget instanceof EditorPreviewWidget && widget.isPreview) {
-            this.toDisposeOnPreviewPinned.get(widget.id)?.dispose();
-            this.toDisposeOnDirtyChanged.delete(widget.id);
-        }
+        this.toDisposeOnPreviewPinned.get(widget.id)?.dispose();
+        this.toDisposeOnPreviewPinned.delete(widget.id);
     }
 
     protected get editorWidgets(): NavigatableWidget[] {
