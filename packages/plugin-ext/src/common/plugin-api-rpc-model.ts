@@ -219,6 +219,7 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export interface ParameterInformation {

@@ -944,6 +944,7 @@ export class Location {
 
 export enum DiagnosticTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export enum CompletionItemTag {
@@ -975,6 +976,7 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export class ParameterInformation {

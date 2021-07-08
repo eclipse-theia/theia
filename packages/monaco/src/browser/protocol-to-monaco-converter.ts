@@ -131,7 +131,8 @@ export class ProtocolToMonacoConverter {
             startColumn: diagnostic.range.start.character + 1,
             endLineNumber: diagnostic.range.end.line + 1,
             endColumn: diagnostic.range.end.character + 1,
-            relatedInformation: this.asRelatedInformations(diagnostic.relatedInformation)
+            relatedInformation: this.asRelatedInformations(diagnostic.relatedInformation),
+            tags: diagnostic.tags
         };
     }
 

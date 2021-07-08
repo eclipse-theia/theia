@@ -57,6 +57,7 @@ import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
+import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -919,6 +920,10 @@ function reviveMarker(marker: MarkerData): vst.Diagnostic {
         monacoMarker.relatedInformation = marker.relatedInformation.map(reviveRelated);
     }
 
+    if (marker.tags) {
+        monacoMarker.tags = marker.tags.map(reviveTag);
+    }
+
     return monacoMarker;
 }
 
@@ -953,6 +958,13 @@ function reviveRelated(related: RelatedInformation): vst.DiagnosticRelatedInform
             range: reviveRange(related.startLineNumber, related.startColumn, related.endLineNumber, related.endColumn)
         }
     };
+}
+
+function reviveTag(tag: DiagnosticTag): vst.DiagnosticTag {
+    switch (tag) {
+        case 1: return DiagnosticTag.Unnecessary;
+        case 2: return DiagnosticTag.Deprecated;
+    }
 }
 
 function reviveRegExp(regExp?: SerializedRegExp): RegExp | undefined {
