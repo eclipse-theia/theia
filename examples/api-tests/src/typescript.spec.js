@@ -684,7 +684,7 @@ DIV {
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
     });
 
-    it('run reference code lens', async function () {
+    it.skip('run reference code lens', async function () {
         // @ts-ignore
         const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
         toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
