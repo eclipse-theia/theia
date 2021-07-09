@@ -138,8 +138,8 @@
     "@theia/localization-check": "error",
     "@theia/no-src-import": "error",
     "@theia/runtime-import-check": "error",
-    "@theia/shared-dependencies": "error",
-    "import/no-extraneous-dependencies": "error",
+    "@theia/shared-dependencies": "off",
+    "import/no-extraneous-dependencies": "off",
     "import/no-dynamic-require": "error",
     "no-restricted-imports": [
       "error",
