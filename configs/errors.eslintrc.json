@@ -130,8 +130,8 @@
         }
       }
     ],
-    "@theia/shared-dependencies": "error",
-    "import/no-extraneous-dependencies": "error"
+    "@theia/shared-dependencies": "off",
+    "import/no-extraneous-dependencies": "off"
   },
   "overrides": [
     {
