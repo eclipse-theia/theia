@@ -19,11 +19,11 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
-import { ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
-import { getThemes, putTheme, MonacoThemeState, stateToTheme } from './monaco-indexed-db';
+import { getThemes, putTheme, MonacoThemeState } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export interface MonacoTheme {
@@ -161,8 +161,23 @@ export class MonacoThemingService {
     }
 
     protected static doRegister(state: MonacoThemeState): Disposable {
+        const { id, label, description, uiTheme, data } = state;
+        const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
+        const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
         return new DisposableCollection(
-            ThemeService.get().register(stateToTheme(state)),
+            ThemeService.get().register({
+                type,
+                id,
+                label,
+                description: description,
+                editorTheme: data.name!,
+                activate(): void {
+                    builtInTheme.use();
+                },
+                deactivate(): void {
+                    builtInTheme.unuse();
+                }
+            }),
             putTheme(state)
         );
     }

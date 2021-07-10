@@ -54,7 +54,7 @@ import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import { PreferenceService } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
-import { ThemeService } from './theming';
+import { ThemeService, BuiltinThemeProvider } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
@@ -103,6 +103,10 @@ export { bindResourceProvider, bindMessageService, bindPreferenceService };
 ColorApplicationContribution.initBackground();
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
+    const themeService = ThemeService.get();
+    themeService.register(...BuiltinThemeProvider.themes);
+    themeService.startupTheme();
+
     bind(NoneIconTheme).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(NoneIconTheme);
     bind(IconThemeService).toSelf().inSingletonScope();
