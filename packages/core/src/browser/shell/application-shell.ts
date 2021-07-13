@@ -19,7 +19,7 @@ import { ArrayExt, find, toArray, each } from '@phosphor/algorithm';
 import { Signal } from '@phosphor/signaling';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
-    SplitPanel, TabBar, Widget
+    SplitPanel, TabBar, Widget, Title
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
@@ -35,7 +35,7 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed, TheiaTitle } from '../widgets';
+import { waitForRevealed, waitForClosed } from '../widgets';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -816,7 +816,7 @@ export class ApplicationShell extends Widget {
      * @param tabBar used for providing an array of titles.
      * @returns the selected title widget, else returns the currentTitle or undefined.
      */
-    findTitle(tabBar: TabBar<Widget>, event?: Event): TheiaTitle | undefined {
+    findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
             let tabNode: HTMLElement | null = event.target;
             while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
@@ -885,7 +885,7 @@ export class ApplicationShell extends Widget {
      * Returns the last active widget in the given shell area.
      */
     getCurrentWidget(area: ApplicationShell.Area): Widget | undefined {
-        let title: TheiaTitle | null | undefined;
+        let title: Title<Widget> | null | undefined;
         switch (area) {
             case 'main':
                 title = this.mainPanel.currentTitle;
@@ -1380,7 +1380,7 @@ export class ApplicationShell extends Widget {
      *      If undefined, all tabs are closed; otherwise only those tabs that match the filter are closed.
      */
     closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
-        filter?: (title: TheiaTitle, index: number) => boolean): void {
+        filter?: (title: Title<Widget>, index: number) => boolean): void {
         if (tabBarOrArea === 'main') {
             this.mainAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
         } else if (tabBarOrArea === 'bottom') {

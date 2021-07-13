@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { DockPanel, TabBar, Widget, TheiaTitle } from '@theia/core/lib/browser';
+import { DockPanel, TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { Disposable, DisposableCollection, Emitter, SelectionService } from '@theia/core/lib/common';
 import { find } from '@theia/core/shared/@phosphor/algorithm';
@@ -53,7 +53,7 @@ export class EditorPreviewWidget extends EditorWidget {
         });
         oneTimeListeners.push(oneTimeDirtyChangeListener);
         const oneTimeTitleChangeHandler = () => {
-            if ((this.title as TheiaTitle).pinned) {
+            if (this.title.className.indexOf(PINNED_CLASS) >= 0) {
                 this.convertToNonPreview();
                 oneTimeListeners.dispose();
             }

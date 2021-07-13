@@ -53,7 +53,6 @@ import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
-import { TheiaTitle } from './widgets';
 
 export namespace CommonMenus {
 
@@ -292,7 +291,7 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
-const PINNED_CLASS = 'theia-mod-pinned';
+export const PINNED_CLASS = 'theia-mod-pinned';
 
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
@@ -414,7 +413,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected updatePinnedKey(): void {
-        const value = this.shell.activeWidget && (this.shell.activeWidget.title as TheiaTitle).pinned;
+        const value = this.shell.activeWidget && this.shell.activeWidget.title.className.indexOf(PINNED_CLASS) >= 0;
         this.pinnedKey.set(value);
     }
 
@@ -807,13 +806,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, {
-            isEnabled: (event?: Event) => !!this.shell.findTargetedWidget(event)?.title.closable || !!this.shell.currentTabBar?.currentTitle?.closable,
+            isEnabled: (event?: Event) => {
+                const currentTitle = (this.shell.findTargetedWidget(event)?.title || this.shell.currentTabBar?.currentTitle);
+                return !!currentTitle && currentTitle.closable && currentTitle.className.indexOf(PINNED_CLASS) == -1;
+            },
             execute: (event?: Event) => this.togglePinned(event),
         });
         commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, {
             isEnabled: (event?: Event) => {
-                const currentTitle = (this.shell.findTargetedWidget(event)?.title || this.shell.currentTabBar?.currentTitle) as TheiaTitle;
-                return !!currentTitle && !currentTitle.closable && !!currentTitle.pinned;
+                const currentTitle = (this.shell.findTargetedWidget(event)?.title || this.shell.currentTabBar?.currentTitle);
+                return !!currentTitle && currentTitle.className.indexOf(PINNED_CLASS) >= 0;
             },
             execute: (event?: Event) => this.togglePinned(event),
         });
@@ -885,15 +887,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         if (!tabBar) {
             return;
         }
-        const currentTitle = (this.shell.findTargetedWidget(event)?.title || tabBar.currentTitle) as TheiaTitle;
+        const currentTitle = this.shell.findTargetedWidget(event)?.title || tabBar.currentTitle;
         if (!currentTitle) {
             return;
         }
-        currentTitle.closable = !currentTitle.closable;
-        currentTitle.pinned = !currentTitle.closable;
+        currentTitle.closable = currentTitle.className.indexOf(PINNED_CLASS) >= 0;
 
         currentTitle.className = currentTitle.className.replace(` ${PINNED_CLASS}`, '');
-        if (currentTitle.pinned) {
+        if (!currentTitle.closable) {
             currentTitle.className += ` ${PINNED_CLASS}`;
         }
 

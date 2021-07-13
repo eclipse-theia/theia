@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Widget, Title } from '@phosphor/widgets';
+import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
@@ -40,10 +40,6 @@ export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
     suppressScrollX: true,
     minScrollbarLength: 35,
 };
-
-export class TheiaTitle<T = Widget> extends Title<T> {
-    pinned?: boolean;
-}
 
 @injectable()
 export class BaseWidget extends Widget {

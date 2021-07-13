@@ -28,7 +28,6 @@ import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel
 import { WidgetDecoration } from '../widget-decoration';
 import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
-import { TheiaTitle } from '../widgets';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -447,9 +446,8 @@ export class TabBarRenderer extends TabBar.Renderer {
     protected handleCloseClickEvent = (event: MouseEvent) => {
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.parentElement!.id;
-            // eslint-disable-next-line no-null/no-null
-            const title = this.tabBar.titles.find(t => this.createTabId(t) === id) as TheiaTitle;
-            if (title && title.pinned && this.commandService) {
+            const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
+            if (title && title.className.indexOf('theia-mod-pinned') >= 0 && this.commandService) {
                 this.commandService.executeCommand('workbench.action.unpinEditor', event);
             }
         }
