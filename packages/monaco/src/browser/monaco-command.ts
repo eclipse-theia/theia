@@ -229,10 +229,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected configureEol(editor: MonacoEditor): void {
         const items = ['LF', 'CRLF'].map(lineEnding =>
-            ({
-                label: lineEnding,
-                execute: () => this.setEol(editor, lineEnding)
-            })
+        ({
+            label: lineEnding,
+            execute: () => this.setEol(editor, lineEnding)
+        })
         );
         this.quickInputService?.showQuickPick(items, { placeholder: 'Select End of Line Sequence' });
     }
@@ -259,14 +259,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             const { tabSize } = model.getOptions();
             const sizes = Array.from(Array(8), (_, x) => x + 1);
             const tabSizeOptions = sizes.map(size =>
-                ({
-                    label: size === tabSize ? `${size}   Configured Tab Size` : size.toString(),
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    execute: (quickPick: any, lookFor: string) => model.updateOptions({
-                        tabSize: size || tabSize,
-                        insertSpaces: useSpaces
-                    })
+            ({
+                label: size === tabSize ? `${size}   Configured Tab Size` : size.toString(),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                execute: () => model.updateOptions({
+                    tabSize: size || tabSize,
+                    insertSpaces: useSpaces
                 })
+            })
             );
             this.quickInputService?.showQuickPick(tabSizeOptions, { placeholder: 'Select Tab Size for Current File' });
         }
