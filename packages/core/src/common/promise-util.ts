@@ -21,12 +21,23 @@ import { CancellationToken, cancelled } from './cancellation';
  * An object that exposes a promise and functions to resolve and reject it.
  */
 export class Deferred<T> {
+    state: 'resolved' | 'rejected' | 'unresolved' = 'unresolved';
     resolve: (value?: T) => void;
     reject: (err?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     promise = new Promise<T>((resolve, reject) => {
-        this.resolve = resolve;
-        this.reject = reject;
+        this.resolve = result => {
+            resolve(result as T);
+            if (this.state === 'unresolved') {
+                this.state = 'resolved';
+            }
+        };
+        this.reject = err => {
+            reject(err);
+            if (this.state === 'unresolved') {
+                this.state = 'rejected';
+            }
+        };
     });
 }
 
