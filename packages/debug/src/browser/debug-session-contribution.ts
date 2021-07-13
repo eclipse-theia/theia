@@ -90,7 +90,7 @@ export const DebugSessionFactory = Symbol('DebugSessionFactory');
  * The [debug session](#DebugSession) factory.
  */
 export interface DebugSessionFactory {
-    get(sessionId: string, options: DebugSessionOptions): DebugSession;
+    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession;
 }
 
 @injectable()
@@ -115,7 +115,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    get(sessionId: string, options: DebugSessionOptions): DebugSession {
+    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             () => new Promise<IWebSocket>(resolve =>
@@ -127,6 +127,7 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
         return new DebugSession(
             sessionId,
             options,
+            parentSession,
             connection,
             this.terminalService,
             this.editorManager,
