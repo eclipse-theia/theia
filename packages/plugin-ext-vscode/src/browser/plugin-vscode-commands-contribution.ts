@@ -54,7 +54,6 @@ import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -396,23 +395,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
             execute: () => {
                 window.location.reload();
-            }
-        });
-
-        commands.registerCommand({ id: 'workbench.action.revertAndCloseActiveEditor' }, {
-            execute: async () => {
-                const editor = this.editorManager.currentEditor;
-                if (editor) {
-                    const monacoEditor = MonacoEditor.getCurrent(this.editorManager);
-                    if (monacoEditor) {
-                        try {
-                            await monacoEditor.document.revert();
-                            editor.close();
-                        } catch (error) {
-                            await this.shell.closeWidget(editor.id, { save: false });
-                        }
-                    }
-                }
             }
         });
 
