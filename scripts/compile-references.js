@@ -18,8 +18,7 @@
  ********************************************************************************/
 
 /**
- * This script generates tsconfig references between our workspaces, it also
- * configures our .eslintrc file to use such references.
+ * This script generates tsconfig references between our workspaces.
  *
  * `tsc` build mode relies on these references to build out of date dependencies
  * only when required, but it cannot infer workspaces by itself, it has to be
@@ -52,12 +51,15 @@ const THEIA_MONOREPO = {
     location: '.',
 };
 
-main().catch(error => {
+compileTypeScriptReferences().catch(error => {
     console.error(error);
     process.exitCode = 1;
 })
 
-async function main() {
+/**
+ * This script main entry point.
+ */
+async function compileTypeScriptReferences() {
     await Promise.all([THEIA_MONOREPO, ...Object.values(YARN_WORKSPACES)].map(async package => {
         const references = await getTypescriptReferences(package);
         await configureTypeScriptReferences(package, references);
