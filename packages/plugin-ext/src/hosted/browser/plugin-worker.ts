@@ -29,7 +29,7 @@ export class PluginWorker {
         const emitter = new Emitter<string>();
 
         if (this.isElectron()) {
-            console.log('PluginWorker : Frontend plugins are temporary not supported for Electron');
+            console.log('PluginWorker : Frontend plugins are temporarily not supported for Electron');
         } else {
             require('./worker/worker-main');
 
