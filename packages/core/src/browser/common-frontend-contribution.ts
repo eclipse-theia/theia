@@ -808,7 +808,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, {
             isEnabled: (event?: Event) => {
                 const currentTitle = (this.shell.findTargetedWidget(event)?.title || this.shell.currentTabBar?.currentTitle);
-                return !!currentTitle && currentTitle.closable && currentTitle.className.indexOf(PINNED_CLASS) == -1;
+                return !!currentTitle && currentTitle.closable && currentTitle.className.indexOf(PINNED_CLASS) === -1;
             },
             execute: (event?: Event) => this.togglePinned(event),
         });
