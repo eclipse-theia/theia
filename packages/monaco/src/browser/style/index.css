@@ -180,5 +180,13 @@
 }
 
 .monaco-list:not(.drop-target) .monaco-list-row:hover:not(.selected):not(.focused) {
-  background: var(--theia-list-hoverBackground); 
+  background: var(--theia-list-hoverBackground);
+}
+
+.monaco-editor .peekview-widget .head .peekview-title {
+  font-family: var(--theia-ui-font-family);
+}
+
+.monaco-editor .peekview-widget .referenceMatch {
+  font-family: var(--theia-ui-font-family);
 }
