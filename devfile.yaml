@@ -63,5 +63,13 @@ commands:
       - type: exec
         component: che-dev
         command: >
-          yarn watch
+          yarn browser watch
         workdir: /projects/theia/examples/browser
+  - name: >
+      theia: Watch All
+    actions:
+      - type: exec
+        component: che-dev
+        command: >
+          yarn watch
+        workdir: ${workspaceRoot}/theia
