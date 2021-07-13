@@ -23,12 +23,14 @@ import {
     NavigatableWidget,
     NodeProps,
     Saveable,
+    TabBar,
     TreeDecoratorService,
     TreeModel,
     TreeNode,
     TreeProps,
     TreeWidget,
     TREE_NODE_CONTENT_CLASS,
+    Widget,
 } from '@theia/core/lib/browser';
 import { OpenEditorNode, OpenEditorsModel } from './navigator-open-editors-tree-model';
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
@@ -96,10 +98,6 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return this.model.editorWidgets;
     }
 
-    getEditorWidgetsByGroup(id: ApplicationShell.Area | number): NavigatableWidget[] | undefined {
-        return this.model.getEditorWidgetsByGroup(id);
-    }
-
     // eslint-disable-next-line no-null/no-null
     protected activeTreeNodePrefixElement: string | undefined | null;
 
@@ -146,18 +144,18 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return (<div className='open-editors-inline-actions-container'>
             <div className='open-editors-inline-action'>
                 <a className='codicon codicon-save-all'
-                    title='Save all in Group'
+                    title={OpenEditorsCommands.SAVE_ALL_IN_GROUP_FROM_ICON.label}
                     onClick={this.handleGroupActionIconClicked}
                     data-id={node.id}
-                    id={OpenEditorsCommands.SAVE_ALL_IN_GROUP.id}
+                    id={OpenEditorsCommands.SAVE_ALL_IN_GROUP_FROM_ICON.id}
                 />
             </div>
             <div className='open-editors-inline-action' >
                 <a className='codicon codicon-close-all'
-                    title='Close Group'
+                    title={OpenEditorsCommands.CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON.label}
                     onClick={this.handleGroupActionIconClicked}
                     data-id={node.id}
-                    id={OpenEditorsCommands.CLOSE_ALL_IN_GROUP.id}
+                    id={OpenEditorsCommands.CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON.id}
                 />
             </div>
         </div>
@@ -170,9 +168,27 @@ export class OpenEditorsWidget extends FileTreeWidget {
         const groupName = e.currentTarget.getAttribute('data-id');
         const command = e.currentTarget.id;
         if (groupName && command) {
-            const group = groupName.split(':').pop();
-            return this.commandService.executeCommand(command, group);
+            const groupFromTarget: string | number | undefined = groupName.split(':').pop();
+            const areaOrTabBar = this.sanitizeInputFromClickHandler(groupFromTarget);
+            if (areaOrTabBar) {
+                return this.commandService.executeCommand(command, areaOrTabBar);
+            }
         }
+    }
+
+    protected sanitizeInputFromClickHandler(groupFromTarget?: string): ApplicationShell.Area | TabBar<Widget> | undefined {
+        let areaOrTabBar: ApplicationShell.Area | TabBar<Widget> | undefined;
+        if (groupFromTarget) {
+            if (ApplicationShell.isValidArea(groupFromTarget)) {
+                areaOrTabBar = groupFromTarget;
+            } else {
+                const groupAsNum = parseInt(groupFromTarget);
+                if (!isNaN(groupAsNum)) {
+                    areaOrTabBar = this.model.getTabBarForGroup(groupAsNum);
+                }
+            }
+        }
+        return areaOrTabBar;
     }
 
     protected renderPrefixIcon(node: OpenEditorNode): React.ReactNode {

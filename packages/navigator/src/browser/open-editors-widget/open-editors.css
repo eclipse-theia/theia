@@ -23,50 +23,50 @@
     font-size: var(--theia-ui-font-size0);
 }
 
-.open-editors-node-row .open-editors-prefix-icon-container {
+.theia-open-editors-widget .open-editors-node-row .open-editors-prefix-icon-container {
     min-width: var(--theia-open-editors-icon-width);
 }
 
-.open-editors-node-row .open-editors-prefix-icon.dirty,
-.open-editors-node-row.dirty:hover .open-editors-prefix-icon.dirty {
+.theia-open-editors-widget .open-editors-node-row .open-editors-prefix-icon.dirty,
+.theia-open-editors-widget .open-editors-node-row.dirty:hover .open-editors-prefix-icon.dirty {
     display: none;
 }
 
-.open-editors-node-row.dirty .open-editors-prefix-icon.dirty {
+.theia-open-editors-widget .open-editors-node-row.dirty .open-editors-prefix-icon.dirty {
     display: block;
 }
 
-.open-editors-node-row .open-editors-prefix-icon.close {
+.theia-open-editors-widget .open-editors-node-row .open-editors-prefix-icon.close {
     display: none;
 }
 
-.open-editors-node-row:hover .open-editors-prefix-icon.close {
+.theia-open-editors-widget .open-editors-node-row:hover .open-editors-prefix-icon.close {
     display: block;
 }
 
-.open-editors-node-row.group-node,
-.open-editors-node-row.area-node {
+.theia-open-editors-widget .open-editors-node-row.group-node,
+.theia-open-editors-widget .open-editors-node-row.area-node {
     font-weight: 700;
     text-transform: uppercase;
     font-size: var(--theia-ui-font-size0);
 }
 
-.open-editors-node-row.area-node {
+.theia-open-editors-widget .open-editors-node-row.area-node {
     font-style: italic;
 }
 
-.open-editors-inline-actions-container {
+.theia-open-editors-widget .open-editors-inline-actions-container {
     display: flex;
     justify-content: flex-end;
     margin-left: 3px;
     min-height: 16px;
 }
 
-.open-editors-inline-action a {
+.theia-open-editors-widget .open-editors-inline-action a {
     color: var(--theia-icon-foreground);
 }
 
-.open-editors-inline-action {
+.theia-open-editors-widget .open-editors-inline-action {
     padding: 0px 3px;
     font-size: var(--theia-ui-font-size1);
     margin: 0 2px;
@@ -75,10 +75,10 @@
     align-items: center;
 }
 
-.open-editors-node-row .open-editors-inline-actions-container {
+.theia-open-editors-widget .open-editors-node-row .open-editors-inline-actions-container {
     visibility: hidden;
 }
 
-.open-editors-node-row:hover .open-editors-inline-actions-container {
+.theia-open-editors-widget .open-editors-node-row:hover .open-editors-inline-actions-container {
     visibility: visible;
 }

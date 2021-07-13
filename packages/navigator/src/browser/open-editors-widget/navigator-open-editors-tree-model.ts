@@ -25,7 +25,8 @@ import {
     SelectableTreeNode,
     TreeNode,
     Widget,
-    ExpandableTreeNode
+    ExpandableTreeNode,
+    TabBar
 } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
@@ -51,7 +52,7 @@ export class OpenEditorsModel extends FileTreeModel {
 
     protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
     // Returns the collection of editors belonging to a tabbar group in the main area
-    protected _editorWidgetsByGroup = new Map<number, NavigatableWidget[]>();
+    protected _editorWidgetsByGroup = new Map<number, { widgets: NavigatableWidget[], tabbar: TabBar<Widget> }>();
 
     // Returns the collection of editors belonging to an area grouping (main, left, right bottom)
     protected _editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
@@ -65,12 +66,8 @@ export class OpenEditorsModel extends FileTreeModel {
         return editorWidgets;
     }
 
-    getEditorWidgetsByGroup(id: ApplicationShell.Area | number): NavigatableWidget[] | undefined {
-        const idAsNum = Number(id);
-        if (!isNaN(idAsNum)) {
-            return this._editorWidgetsByGroup.get(idAsNum);
-        }
-        return this._editorWidgetsByArea.get(id as ApplicationShell.Area);
+    getTabBarForGroup(id: number): TabBar<Widget> | undefined {
+        return this._editorWidgetsByGroup.get(id)?.tabbar;
     }
 
     @postConstruct()
@@ -163,7 +160,7 @@ export class OpenEditorsModel extends FileTreeModel {
                         widgets.push(owner);
                     }
                 });
-                this._editorWidgetsByGroup.set(groupNumber, widgets);
+                this._editorWidgetsByGroup.set(groupNumber, { widgets, tabbar });
             });
         }
         return widgetGroupMap;

@@ -30,7 +30,9 @@ import {
     SHELL_TABBAR_CONTEXT_MENU,
     Widget,
     NavigatableWidget,
-    Saveable,
+    ApplicationShell,
+    TabBar,
+    Title
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -377,22 +379,20 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
         });
-        registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_IN_GROUP, {
-            execute: async (id): Promise<void> => {
-                const openEditorsWidget = await this.widgetManager.getOrCreateWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
-                const widgets = openEditorsWidget.getEditorWidgetsByGroup(id);
-                widgets?.forEach(widget => widget.close());
+
+        const filterEditorWidgets = (title: Title<Widget>) => {
+            const { owner } = title;
+            return NavigatableWidget.is(owner);
+        };
+        registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON, {
+            execute: (tabBarOrArea: ApplicationShell.Area | TabBar<Widget>): void => {
+                this.shell.closeTabs(tabBarOrArea, filterEditorWidgets);
             },
             isVisible: () => false
         });
-        registry.registerCommand(OpenEditorsCommands.SAVE_ALL_IN_GROUP, {
-            execute: async (id): Promise<void> => {
-                const openEditorsWidget = await this.widgetManager.getOrCreateWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
-                const widgets = openEditorsWidget.getEditorWidgetsByGroup(id);
-                widgets?.forEach(widget => {
-                    const saveable = Saveable.get(widget);
-                    saveable?.save();
-                });
+        registry.registerCommand(OpenEditorsCommands.SAVE_ALL_IN_GROUP_FROM_ICON, {
+            execute: (tabBarOrArea: ApplicationShell.Area | TabBar<Widget>) => {
+                this.shell.saveTabs(tabBarOrArea, filterEditorWidgets);
             },
             isVisible: () => false
         });

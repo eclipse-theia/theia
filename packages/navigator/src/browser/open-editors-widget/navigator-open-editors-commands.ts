@@ -18,30 +18,30 @@ import { Command } from '@theia/core/lib/common';
 
 export namespace OpenEditorsCommands {
     export const CLOSE_ALL_TABS_FROM_TOOLBAR: Command = {
-        id: 'navigator.close.all.editors',
+        id: 'navigator.close.all.editors.toolbar',
         category: 'File',
         label: 'Close All Editors',
         iconClass: 'codicon codicon-close-all'
     };
 
     export const SAVE_ALL_TABS_FROM_TOOLBAR: Command = {
-        id: 'navigator.save.all.editors',
+        id: 'navigator.save.all.editors.toolbar',
         category: 'File',
         label: 'Save All Editors',
         iconClass: 'codicon codicon-save-all'
     };
 
-    export const SAVE_ALL_IN_GROUP: Command = {
-        id: 'navigator.save.all.in.ground',
+    export const CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON: Command = {
+        id: 'navigator.close.all.in.area.icon',
+        category: 'View',
+        label: 'Close Group',
+        iconClass: 'codicon codicon-close-all'
+    };
+
+    export const SAVE_ALL_IN_GROUP_FROM_ICON: Command = {
+        id: 'navigator.save.all.in.area.icon',
         category: 'File',
         label: 'Save All in Group',
         iconClass: 'codicon codicon-save-all'
-    };
-
-    export const CLOSE_ALL_IN_GROUP: Command = {
-        id: 'navigator.close.all.in.group',
-        category: 'File',
-        label: 'Close Group',
-        iconClass: 'codicon codicon-close-all'
     };
 }
