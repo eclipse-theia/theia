@@ -348,7 +348,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected readonly authenticationService: AuthenticationService;
 
     protected pinnedKey: ContextKey<boolean>;
-    protected pinnedKeyCompat: ContextKey<boolean>;
 
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
@@ -363,8 +362,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
 
-        this.pinnedKey = this.contextKeyService.createKey<boolean>('activeWidgetIsPinned', false);
-        this.pinnedKeyCompat = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false); // vscode compatibility
+        this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
         this.updatePinnedKey();
         this.shell.activeChanged.connect(() => this.updatePinnedKey());
 
@@ -418,7 +416,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected updatePinnedKey(): void {
         const value = this.shell.activeWidget && (this.shell.activeWidget.title as TheiaTitle).pinned;
         this.pinnedKey.set(value);
-        this.pinnedKeyCompat.set(value);
     }
 
     protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
