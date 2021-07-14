@@ -7332,6 +7332,12 @@ declare module '@theia/plugin' {
          * instead of fading it out.
          */
         Unnecessary = 1,
+        /**
+         * Deprecated or obsolete code.
+         *
+         * Diagnostics with this tag are rendered with a strike through.
+         */
+        Deprecated = 2,
     }
 
     /**

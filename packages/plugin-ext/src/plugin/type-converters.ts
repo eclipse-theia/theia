@@ -376,7 +376,12 @@ function convertTags(tags: types.DiagnosticTag[] | undefined): types.MarkerTag[]
     const markerTags: types.MarkerTag[] = [];
     for (const tag of tags) {
         switch (tag) {
-            case types.DiagnosticTag.Unnecessary: markerTags.push(types.MarkerTag.Unnecessary);
+            case types.DiagnosticTag.Unnecessary:
+                markerTags.push(types.MarkerTag.Unnecessary);
+                break;
+            case types.DiagnosticTag.Deprecated:
+                markerTags.push(types.MarkerTag.Deprecated);
+                break;
         }
     }
     return markerTags;
