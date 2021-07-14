@@ -65,7 +65,7 @@ export interface QuickAccessProviderDescriptor {
 export const QuickAccessRegistry = Symbol('QuickAccessRegistry');
 
 /**
- * A registry for quick access providers. 
+ * A registry for quick access providers.
  */
 export interface QuickAccessRegistry {
     registerQuickAccessProvider(provider: QuickAccessProviderDescriptor): Disposable;
@@ -73,4 +73,3 @@ export interface QuickAccessRegistry {
     getQuickAccessProvider(prefix: string): QuickAccessProviderDescriptor | undefined;
     clear(): void;
 }
-
