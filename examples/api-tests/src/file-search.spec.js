@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-const { QuickPickItem } = require('@theia/core/lib/browser');
-
 // @ts-check
 describe('file-search', function () {
 
@@ -34,9 +32,9 @@ describe('file-search', function () {
 
             it('should compare two quick-open-items by `label`', () => {
 
-                /** @type QuickPickItem */
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const a = { label: 'a', uri: new Uri.default('b') };
-                /** @type QuickPickItem */
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const b = { label: 'b', uri: new Uri.default('a') };
 
                 assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
@@ -46,9 +44,9 @@ describe('file-search', function () {
 
             it('should compare two quick-open-items by `uri`', () => {
 
-                /** @type QuickPickItem */
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const a = { label: 'a', uri: new Uri.default('a') };
-                /** @type QuickPickItem */
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const b = { label: 'a', uri: new Uri.default('b') };
 
                 assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');

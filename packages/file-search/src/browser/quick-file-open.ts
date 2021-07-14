@@ -41,7 +41,7 @@ export interface FilterAndRange {
 
 // Supports patterns of <path><#|:><line><#|:|,><col?>
 const LINE_COLON_PATTERN = /\s?[#:\(](?:line )?(\d*)(?:[#:,](\d*))?\)?\s*$/;
-type FileQuickPickItem = QuickPickItem & { uri: URI };
+export type FileQuickPickItem = QuickPickItem & { uri: URI };
 
 @injectable()
 export class QuickFileOpenService implements QuickAccessProvider {
