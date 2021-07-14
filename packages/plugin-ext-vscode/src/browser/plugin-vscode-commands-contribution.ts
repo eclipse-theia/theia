@@ -225,6 +225,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
         });
+        commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
+            execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
+        });
         commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
