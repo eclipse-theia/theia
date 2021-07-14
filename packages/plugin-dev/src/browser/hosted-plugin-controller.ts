@@ -229,7 +229,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
                     try {
                         await this.hostedPluginServer.stopWatchCompilation(event.pluginLocation.toString());
                     } catch (error) {
-                        this.messageService.error(this.getErrorMessage(error.message));
+                        this.messageService.error(this.getErrorMessage(error));
                     }
                 }
             }
@@ -246,8 +246,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
         }
     }
 
-    private getErrorMessage(error: Error): string {
-        return error.message.substring(error.message.indexOf(':') + 1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private getErrorMessage(error: any): string {
+        return error?.message?.substring(error.message.indexOf(':') + 1) || '';
     }
 
     /**

@@ -1,5 +1,7 @@
 # Change Log
 
+- [debug] added support for managing debug sessions for extensions from debug panel (previously only possible using `Hosted Plugin` commands) [#8706](https://github.com/eclipse-theia/theia/pull/8706)
+
 ## v1.15.0 - 6/30/2021
 
 [1.15.0 Milestone](https://github.com/eclipse-theia/theia/milestone/21)

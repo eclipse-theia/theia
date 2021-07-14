@@ -189,6 +189,10 @@ export class DebugViewModel implements Disposable {
         this.fireDidChange();
     }
 
+    async terminate(): Promise<void> {
+        this.manager.terminateSessions();
+    }
+
     get watchExpressions(): IterableIterator<DebugWatchExpression> {
         return this._watchExpressions.values();
     }
