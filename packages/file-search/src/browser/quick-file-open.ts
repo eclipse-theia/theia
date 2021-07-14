@@ -230,7 +230,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
          * @param str the string to score on.
          * @returns the score.
          */
-        function score(str: string): number {
+        function score(str: string | undefined): number {
+            if (!str) {
+                return 0;
+            }
             // Adjust for whitespaces in the query.
             const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
             const queryJoin = querySplit.join('');
@@ -269,11 +272,11 @@ export class QuickFileOpenService implements QuickAccessProvider {
         const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
         const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.localeCompare(l.label);
 
-        const compareByPathLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
+        const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
         const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
         const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().localeCompare(l.uri.path.toString());
 
-        return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathLabelScore, compareByPathIndex, compareByPathLabel);
+        return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);
     }
 
     openFile(uri: URI): void {
