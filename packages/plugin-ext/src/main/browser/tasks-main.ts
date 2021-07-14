@@ -74,7 +74,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.taskDefinitionRegistry = container.get(TaskDefinitionRegistry);
 
         this.toDispose.push(container.get(ProvidedTaskConfigurations).onStartUserInteraction((event: TaskStartUserInteractionEvent) => {
-            // we must wait with further processing until the plugin side has had time to clean up it's garbage
+            // we must wait with further processing until the plugin side has had time to clean up its garbage
             event.waitUntil(this.proxy.$onDidStartUserInteraction());
         }));
 

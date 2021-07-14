@@ -895,7 +895,7 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 }
 
 export function fromCustomExecution(execution: theia.CustomExecution, taskDto: TaskDto): TaskDto {
-    // handling of the execution id is must be done independently
+    // handling of the execution id must be done independently
     taskDto.taskType = 'customExecution';
     return taskDto;
 }

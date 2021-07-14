@@ -21,7 +21,7 @@ import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfi
 import { Event, Emitter, WaitUntilEvent } from '@theia/core/lib/common';
 
 /**
- * An even that is sent when a new user interaction is started in the tasks subsystem.
+ * An event that is emitted when a new user interaction is started in the tasks subsystem.
  * A "user interaction" is a considered a scope within which the provided tasks will not change.
  * Examples are an invocation of the "Run Task..." command.
  */
