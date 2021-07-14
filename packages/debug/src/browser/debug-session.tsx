@@ -321,7 +321,7 @@ export class DebugSession implements CompositeTreeElement {
             if (res instanceof Error) {
                 this.fireExited(res);
             }
-        }).catch(this.fireExited);
+        }).catch(() => this.fireExited());
     }
 
     protected fireExited(reason?: Error): void {
