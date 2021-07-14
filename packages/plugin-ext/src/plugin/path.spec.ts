@@ -32,7 +32,7 @@ describe('Path implementation:', () => {
         expect(result).to.be.equal('/foo/bar/baz/quux/');
     });
 
-    it('Test join(/foo, bar, baz/asdf, quux, ..)', () => {
+    it('should join(/foo, bar, baz/asdf, quux, ..)', () => {
         const result = join('/foo', 'bar', 'baz/asdf', 'quux', '..');
         expect(result).to.be.equal('/foo/bar/baz/asdf');
     });
