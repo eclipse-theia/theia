@@ -8,6 +8,7 @@
 
 <a name="breaking_changes_1.16.0">[Breaking Changes:](#breaking_changes_1.16.0)</a>
 
+- [debug] `DebugSession` and `PluginDebugSession` constructors accept a `parentSession` of type `DebugSession | undefined` as their 3rd parameter, offsetting every subsequent parameter by one. [#9613](https://github.com/eclipse-theia/theia/pull/9613)
 - [workspace] `WorkspaceCommandContribution.addFolderToWorkspace` no longer accepts `undefined`. `WorkspaceService.addRoot` now accepts a URI or a URI[]. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
 
 ## v1.15.0 - 6/30/2021
