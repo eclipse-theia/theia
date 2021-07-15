@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
+import { EditorFactoryOptions, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
 import { DisposableCollection, MaybePromise } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
+import { EditorPreviewWidgetFactory } from './editor-preview-widget-factory';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
@@ -110,8 +110,8 @@ export class EditorPreviewManager extends EditorManager {
         return this.tryGetPendingWidget(uri, options) ?? super.getOrCreateWidget(uri, options);
     }
 
-    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorPreviewOptions {
-        const navigatableOptions = super.createWidgetOptions(uri, options) as EditorPreviewOptions;
+    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorFactoryOptions {
+        const navigatableOptions = super.createWidgetOptions(uri, options) as EditorFactoryOptions;
         navigatableOptions.preview = !!(options?.preview && this.preferences['editor.enablePreview']);
         return navigatableOptions;
     }
