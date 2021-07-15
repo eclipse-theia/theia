@@ -47,7 +47,6 @@
 
 .theia-marker-container .markerFileNode .path {
     font-size: var(--theia-ui-font-size0);
-    color: var(--theia-descriptionForeground);
     align-self: flex-end;
     white-space: nowrap;
 }
@@ -70,7 +69,6 @@
 
 .theia-marker-container .markerNode .position,
 .theia-marker-container .markerNode .owner {
-    color: var(--theia-descriptionForeground);
     white-space: nowrap;
     margin-left: 5px;
 }
