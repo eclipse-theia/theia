@@ -128,6 +128,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     cancelIndicator?: CancellationTokenSource;
 
     protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceRootFolderNode>>();
+
+    protected onExpansionChangedEmitter = new Emitter();
+    readonly onExpansionChanged: Event<void> = this.onExpansionChangedEmitter.event;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected focusInputEmitter = new Emitter<any>();
 
@@ -202,6 +206,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 this.model.refresh();
             }
         }));
+
+        this.toDispose.push(this.model.onExpansionChanged(() => {
+            this.onExpansionChangedEmitter.fire(undefined);
+        }));
     }
 
     get fileNumber(): number {
@@ -235,12 +243,36 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     collapseAll(): void {
-        this.resultTree.forEach(rootFolderNode => {
-            rootFolderNode.children.forEach(fileNode => this.expansionService.collapseNode(fileNode));
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.collapseNode(fileNode);
+            }
             if (rootFolderNode.visible) {
                 this.expansionService.collapseNode(rootFolderNode);
             }
-        });
+        }
+    }
+
+    expandAll(): void {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.expandNode(fileNode);
+            }
+            if (rootFolderNode.visible) {
+                this.expansionService.expandNode(rootFolderNode);
+            }
+        }
+    }
+
+    areResultsCollapsed(): boolean {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                if (!ExpandableTreeNode.isCollapsed(fileNode)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

@@ -157,6 +157,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }));
 
         this.toDispose.push(this.resultTreeWidget);
+        this.toDispose.push(this.resultTreeWidget.onExpansionChanged(() => {
+            this.onDidUpdateEmitter.fire();
+        }));
 
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'search' }));
     }
@@ -236,6 +239,15 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     collapseAll(): void {
         this.resultTreeWidget.collapseAll();
         this.update();
+    }
+
+    expandAll(): void {
+        this.resultTreeWidget.expandAll();
+        this.update();
+    }
+
+    areResultsCollapsed(): boolean {
+        return this.resultTreeWidget.areResultsCollapsed();
     }
 
     clear(): void {
