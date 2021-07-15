@@ -49,25 +49,31 @@ export namespace SearchInWorkspaceCommands {
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
-        iconClass: 'refresh'
+        iconClass: 'codicon codicon-refresh'
     };
     export const CANCEL_SEARCH: Command = {
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
-        iconClass: 'cancel'
+        iconClass: 'codicon codicon-search-stop'
     };
     export const COLLAPSE_ALL: Command = {
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
-        iconClass: 'theia-collapse-all-icon'
+        iconClass: 'codicon codicon-collapse-all'
+    };
+    export const EXPAND_ALL: Command = {
+        id: 'search-in-workspace.expand-all',
+        category: SEARCH_CATEGORY,
+        label: 'Expand All',
+        iconClass: 'codicon codicon-expand-all'
     };
     export const CLEAR_ALL: Command = {
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
-        iconClass: 'clear-all'
+        iconClass: 'codicon codicon-clear-all'
     };
 }
 
@@ -148,7 +154,12 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         commands.registerCommand(SearchInWorkspaceCommands.COLLAPSE_ALL, {
             execute: w => this.withWidget(w, widget => widget.collapseAll()),
             isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
-            isVisible: w => this.withWidget(w, () => true)
+            isVisible: w => this.withWidget(w, widget => !widget.areResultsCollapsed())
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.EXPAND_ALL, {
+            execute: w => this.withWidget(w, widget => widget.expandAll()),
+            isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
+            isVisible: w => this.withWidget(w, widget => widget.areResultsCollapsed())
         });
         commands.registerCommand(SearchInWorkspaceCommands.CLEAR_ALL, {
             execute: w => this.withWidget(w, widget => widget.clear()),
@@ -233,6 +244,13 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             id: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
             command: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
             tooltip: SearchInWorkspaceCommands.COLLAPSE_ALL.label,
+            priority: 3,
+            onDidChange
+        });
+        toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.EXPAND_ALL.id,
+            command: SearchInWorkspaceCommands.EXPAND_ALL.id,
+            tooltip: SearchInWorkspaceCommands.EXPAND_ALL.label,
             priority: 3,
             onDidChange
         });
