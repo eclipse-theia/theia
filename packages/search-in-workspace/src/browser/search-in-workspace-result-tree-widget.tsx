@@ -235,12 +235,36 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     collapseAll(): void {
-        this.resultTree.forEach(rootFolderNode => {
-            rootFolderNode.children.forEach(fileNode => this.expansionService.collapseNode(fileNode));
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.collapseNode(fileNode);
+            }
             if (rootFolderNode.visible) {
                 this.expansionService.collapseNode(rootFolderNode);
             }
-        });
+        }
+    }
+
+    expandAll(): void {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.expandNode(fileNode);
+            }
+            if (rootFolderNode.visible) {
+                this.expansionService.expandNode(rootFolderNode);
+            }
+        }
+    }
+
+    areResultsCollapsed(): boolean {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                if (!ExpandableTreeNode.isCollapsed(fileNode)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
