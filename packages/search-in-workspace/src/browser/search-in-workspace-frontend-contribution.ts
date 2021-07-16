@@ -49,13 +49,13 @@ export namespace SearchInWorkspaceCommands {
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
-        iconClass: 'refresh'
+        iconClass: 'codicon codicon-refresh'
     };
     export const CANCEL_SEARCH: Command = {
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
-        iconClass: 'cancel'
+        iconClass: 'codicon codicon-search-stop'
     };
     export const COLLAPSE_ALL: Command = {
         id: 'search-in-workspace.collapse-all',
@@ -73,7 +73,7 @@ export namespace SearchInWorkspaceCommands {
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
-        iconClass: 'clear-all'
+        iconClass: 'codicon codicon-clear-all'
     };
 }
 
