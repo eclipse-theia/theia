@@ -48,7 +48,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
-                res.sendFile(filePath, { root: localPath }, e => {
+                res.sendFile(filePath, { root: localPath }, (e: NodeJS.ErrnoException) => {
                     if (!e) {
                         // the file was found and successfully transferred
                         return;
@@ -58,7 +58,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
                         // the request was already closed
                         return;
                     }
-                    if ('code' in e && e['code'] === 'ENOENT') {
+                    if (e.code === 'ENOENT') {
                         res.status(404).send(`No such file found in '${escape_html(pluginId)}' plugin.`);
                     } else {
                         res.status(500).send(`Failed to transfer a file from '${escape_html(pluginId)}' plugin.`);
