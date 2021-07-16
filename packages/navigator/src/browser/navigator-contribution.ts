@@ -29,6 +29,10 @@ import {
     SelectableTreeNode,
     SHELL_TABBAR_CONTEXT_MENU,
     Widget,
+    NavigatableWidget,
+    ApplicationShell,
+    TabBar,
+    Title
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -39,7 +43,8 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
-    isWindows
+    isWindows,
+    CommandService
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
@@ -69,6 +74,9 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
+import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
+import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -105,7 +113,8 @@ export namespace FileNavigatorCommands {
         label: 'Focus on Files Explorer'
     };
     export const COPY_RELATIVE_FILE_PATH: Command = {
-        id: 'navigator.copyRelativeFilePath'
+        id: 'navigator.copyRelativeFilePath',
+        label: 'Copy Relative Path'
     };
     export const OPEN: Command = {
         id: 'navigator.open',
@@ -186,6 +195,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(WorkspaceCommandContribution)
     protected readonly workspaceCommandContribution: WorkspaceCommandContribution;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -357,6 +369,38 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 });
             }
         });
+        registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
+            execute: widget => this.withOpenEditorsWidget(widget, () => this.editorWidgets.forEach(editor => editor.close())),
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
+            isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
+        });
+        registry.registerCommand(OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR, {
+            execute: widget => this.withOpenEditorsWidget(widget, () => this.commandService.executeCommand(CommonCommands.SAVE_ALL.id)),
+            isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
+            isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
+        });
+
+        const filterEditorWidgets = (title: Title<Widget>) => {
+            const { owner } = title;
+            return NavigatableWidget.is(owner);
+        };
+        registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON, {
+            execute: (tabBarOrArea: ApplicationShell.Area | TabBar<Widget>): void => {
+                this.shell.closeTabs(tabBarOrArea, filterEditorWidgets);
+            },
+            isVisible: () => false
+        });
+        registry.registerCommand(OpenEditorsCommands.SAVE_ALL_IN_GROUP_FROM_ICON, {
+            execute: (tabBarOrArea: ApplicationShell.Area | TabBar<Widget>) => {
+                this.shell.saveTabs(tabBarOrArea, filterEditorWidgets);
+            },
+            isVisible: () => false
+        });
+    }
+
+    protected get editorWidgets(): NavigatableWidget[] {
+        const openEditorsWidget = this.widgetManager.tryGetWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
+        return openEditorsWidget?.editorWidgets ?? [];
     }
 
     protected getSelectedFileNodes(): FileNode[] {
@@ -365,6 +409,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (navigator: FileNavigatorWidget) => T): T | false {
         if (widget instanceof FileNavigatorWidget && widget.id === FILE_NAVIGATOR_ID) {
+            return cb(widget);
+        }
+        return false;
+    }
+
+    protected withOpenEditorsWidget<T>(widget: Widget, cb: (navigator: OpenEditorsWidget) => T): T | false {
+        if (widget instanceof OpenEditorsWidget && widget.id === OpenEditorsWidget.ID) {
             return cb(widget);
         }
         return false;
@@ -412,7 +463,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
-            label: 'Copy Relative Path',
+            label: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.label,
             order: 'd'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
@@ -462,6 +513,48 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
             order: 'zb'
+        });
+
+        // Open Editors Widget Menu Items
+        registry.registerMenuAction(OpenEditorsContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.COPY_PATH.id,
+            label: CommonCommands.COPY_PATH.label,
+            order: 'a'
+        });
+        registry.registerMenuAction(OpenEditorsContextMenu.CLIPBOARD, {
+            commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
+            label: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.label,
+            order: 'b'
+        });
+        registry.registerMenuAction(OpenEditorsContextMenu.SAVE, {
+            commandId: CommonCommands.SAVE.id,
+            label: CommonCommands.SAVE.label,
+            order: 'a'
+        });
+
+        registry.registerMenuAction(OpenEditorsContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_FIRST.id,
+            order: 'a'
+        });
+        registry.registerMenuAction(OpenEditorsContextMenu.COMPARE, {
+            commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
+            order: 'b'
+        });
+
+        registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            label: 'Close',
+            order: 'a'
+        });
+        registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: 'Close Others',
+            order: 'b'
+        });
+        registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
+            commandId: CommonCommands.CLOSE_ALL_MAIN_TABS.id,
+            label: 'Close All',
+            order: 'c'
         });
     }
 
@@ -533,6 +626,19 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             command: WorkspaceCommands.ADD_FOLDER.id,
             tooltip: WorkspaceCommands.ADD_FOLDER.label,
             group: NavigatorMoreToolbarGroups.WORKSPACE,
+        });
+
+        toolbarRegistry.registerItem({
+            id: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.id,
+            command: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.id,
+            tooltip: OpenEditorsCommands.SAVE_ALL_TABS_FROM_TOOLBAR.label,
+            priority: 0,
+        });
+        toolbarRegistry.registerItem({
+            id: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.id,
+            command: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.id,
+            tooltip: OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.label,
+            priority: 1,
         });
     }
 
