@@ -168,7 +168,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      * The resulting paths are not validated in the file system as the pattern keeps glob information.
      *
      * @returns The resulting list may be larger than the received patterns as a relative pattern may
-     * resolve to multiple absolute patterns upto the number of search paths.
+     * resolve to multiple absolute patterns up to the number of search paths.
      */
     protected replaceRelativeToAbsolute(roots: string[], patterns: string[] = []): string[] {
         const expandedPatterns = new Set<string>();

@@ -49,7 +49,7 @@ export function reviver(key: string | undefined, value: any): any {
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
  * This is supposed to fix https://github.com/eclipse-theia/theia/issues/8752
- * We cannot simply upgrade the dependency, because the curent version 3.x
+ * We cannot simply upgrade the dependency, because the current version 3.x
  * is not compatible with our current codebase
  */
 export class URI extends CodeURI implements theia.Uri {
@@ -85,7 +85,7 @@ export class URI extends CodeURI implements theia.Uri {
     }
 
     /**
-     * Overrride to create the correct class.
+     * Override to create the correct class.
      * @param data
      */
     static revive(data: UriComponents | CodeURI): URI;
@@ -1765,16 +1765,16 @@ export class ShellExecution {
 }
 
 export class CustomExecution {
-    private _callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
-    constructor(callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    private _callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
+    constructor(callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = callback;
     }
 
-    public set callback(value: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    public set callback(value: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = value;
     }
 
-    public get callback(): ((resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    public get callback(): ((resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         return this._callback;
     }
 
