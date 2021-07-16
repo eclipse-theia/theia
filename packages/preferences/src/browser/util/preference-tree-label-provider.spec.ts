@@ -30,7 +30,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
 import { PreferenceTreeLabelProvider } from './preference-tree-label-provider';
 import { Preference } from './preference-types';
-import { SelectableTreeNode } from '@theia/core/src/browser';
+import { SelectableTreeNode } from '@theia/core/lib/browser';
 
 disableJSDOM();
 

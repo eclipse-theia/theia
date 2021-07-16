@@ -22,7 +22,7 @@
 
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 
-import { BinaryBuffer } from '@theia/core/src/common/buffer';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { SemanticTokens, SemanticTokensEdit, SemanticTokensEdits } from '../types-impl';
