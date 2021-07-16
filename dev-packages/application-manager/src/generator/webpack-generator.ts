@@ -114,7 +114,7 @@ module.exports = {
                 test: /worker-main\\.js$/,
                 loader: 'worker-loader',
                 options: {
-                    filename: 'worker-ext.[fullhash].js'
+                    filename: 'worker-ext.js'
                 }
             },
             {

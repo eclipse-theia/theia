@@ -24,7 +24,7 @@
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
-import { PluginWorker } from '../../main/browser/plugin-worker';
+import { PluginWorker } from './plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
