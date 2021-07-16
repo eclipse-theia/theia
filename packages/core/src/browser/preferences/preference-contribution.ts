@@ -406,7 +406,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     /**
-     * @deprecated since 1.13.0 use `PreferenceLanguageOverrideService.overridenPreferenceName`
+     * @deprecated since 1.13.0 use `PreferenceLanguageOverrideService.overriddenPreferenceName`
      */
     overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
         return this.preferenceOverrideService.overriddenPreferenceName(name);

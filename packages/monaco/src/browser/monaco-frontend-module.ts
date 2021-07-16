@@ -68,7 +68,7 @@ import { MonacoQuickViewService } from './monaco-quick-view-service';
 import { MonacoQuickEditorService } from './monaco-quick-editor-service';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
 import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access';
-import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbole-quick-access';
+import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 

@@ -224,8 +224,8 @@ export class MonacoQuickInputService extends QuickInputService implements monaco
             setContextKey: (id?: string) => this.setContextKey(id),
             returnFocus: () => this.container.focus(),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            createList: (user: string, containr: HTMLElement, delegate: any, renderers: any, options: any) => {
-                this.quickInputList = new monaco.list.List(user, containr, delegate, renderers, options);
+            createList: (user: string, container: HTMLElement, delegate: any, renderers: any, options: any) => {
+                this.quickInputList = new monaco.list.List(user, container, delegate, renderers, options);
                 return this.quickInputList;
             },
             styles: {

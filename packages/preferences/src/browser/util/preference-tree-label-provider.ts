@@ -48,14 +48,14 @@ export class PreferenceTreeLabelProvider implements LabelProviderContribution {
     }
 
     protected formatString(string: string): string {
-        let formatedString = string[0].toLocaleUpperCase();
+        let formattedString = string[0].toLocaleUpperCase();
         for (let i = 1; i < string.length; i++) {
             if (this.isUpperCase(string[i]) && !/\s/.test(string[i - 1]) && !this.isUpperCase(string[i - 1])) {
-                formatedString += ' ';
+                formattedString += ' ';
             }
-            formatedString += string[i];
+            formattedString += string[i];
         }
-        return formatedString.trim();
+        return formattedString.trim();
     }
 
     protected isUpperCase(char: string): boolean {
