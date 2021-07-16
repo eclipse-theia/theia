@@ -196,7 +196,8 @@ export class TaskTerminalWidgetManager {
         }
 
         // we are unable to find a terminal widget to run the task, or `taskPresentation === 'new'`
-        const lastCwd = new URI(taskConfig?.options.cwd);
+        const lastCwd = taskConfig?.options?.cwd ? new URI(taskConfig.options.cwd) : new URI();
+
         if (!reusableTerminalWidget) {
             const widget = await this.newTaskTerminal(factoryOptions);
             widget.lastCwd = lastCwd;
