@@ -36,47 +36,47 @@ disableJSDOM();
 
 describe('preference-tree-label-provider', () => {
 
-    let preferenceTreeLabelprovider: PreferenceTreeLabelProvider;
+    let preferenceTreeLabelProvider: PreferenceTreeLabelProvider;
 
     beforeEach(() => {
         const container = new Container();
         container.bind<any>(PreferenceTreeGenerator).toConstantValue({ getCustomLabelFor: () => { } });
-        preferenceTreeLabelprovider = container.resolve(PreferenceTreeLabelProvider);
+        preferenceTreeLabelProvider = container.resolve(PreferenceTreeLabelProvider);
     });
 
     it('PreferenceTreeLabelProvider.format', () => {
         const testString = 'aaaBbbCcc Dddd eee';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
     });
 
     it('PreferenceTreeLabelProvider.format.Chinese', () => {
         const testString = '某個設定/某个设定';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('某個設定/某个设定');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('某個設定/某个设定');
     });
 
     it('PreferenceTreeLabelProvider.format.Danish', () => {
         const testString = 'indstillingPåEnØ';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Indstilling På En Ø');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Indstilling På En Ø');
     });
 
     it('PreferenceTreeLabelProvider.format.Greek', () => {
         const testString = 'κάποιαΡύθμιση';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Κάποια Ρύθμιση');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Κάποια Ρύθμιση');
     });
 
     it('PreferenceTreeLabelProvider.format.Russian', () => {
         const testString = 'некоторыеНастройки';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Некоторые Настройки');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Некоторые Настройки');
     });
 
     it('PreferenceTreeLabelProvider.format.Armenian', () => {
         const testString = 'ինչ-որՊարամետր';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Ինչ-որ Պարամետր');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Ինչ-որ Պարամետր');
     });
 
     it('PreferenceTreeLabelProvider.format.specialCharacters', () => {
         const testString = 'hyphenated-wordC++Setting';
-        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Hyphenated-word C++ Setting');
+        expect(preferenceTreeLabelProvider['formatString'](testString)).eq('Hyphenated-word C++ Setting');
     });
 
     describe('PreferenceTreeLabelProvider.createLeafNode', () => {
@@ -103,7 +103,7 @@ describe('preference-tree-label-provider', () => {
                 preference: { data: {} }
             };
 
-            expect(preferenceTreeLabelprovider['getName'](expectedSelectableTreeNode)).deep.eq(expectedName);
+            expect(preferenceTreeLabelProvider['getName'](expectedSelectableTreeNode)).deep.eq(expectedName);
         }
 
     });
