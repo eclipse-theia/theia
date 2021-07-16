@@ -27,7 +27,7 @@ describe('Path implementation:', () => {
         expect(result).to.be.equal('/foo/bar/baz/asdf');
     });
 
-    it('Test normalize /foo/bar//baz/asdf/../quux/', () => {
+    it('should normalize \'/foo/bar//baz/asdf/../quux/\'', () => {
         const result = normalize('/foo/bar//baz/asdf/../quux/');
         expect(result).to.be.equal('/foo/bar/baz/quux/');
     });
