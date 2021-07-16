@@ -18,6 +18,9 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor } from '@theia/editor/lib/browser';
 import { Location } from '@theia/core/shared/vscode-languageserver-types';
 
+/**
+ * @deprecated since 1.15.0. Import from `@theia/editor` instead.
+ */
 @injectable()
 export class CurrentEditorAccess {
 

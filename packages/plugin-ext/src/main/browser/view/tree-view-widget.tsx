@@ -154,7 +154,8 @@ export class PluginTree extends TreeImpl {
             themeIconId,
             resourceUri,
             tooltip: item.tooltip,
-            contextValue: item.contextValue
+            contextValue: item.contextValue,
+            command: item.command,
         };
         const node = this.getNode(item.id);
         if (item.collapsibleState !== undefined && item.collapsibleState !== TreeViewItemCollapsibleState.None) {
@@ -179,7 +180,7 @@ export class PluginTree extends TreeImpl {
             parent,
             visible: true,
             selected: false,
-            command: item.command
+            command: item.command,
         }, update);
     }
 

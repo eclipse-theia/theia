@@ -255,10 +255,10 @@ export class DocumentsExtImpl implements DocumentsExt {
             if (options.selection) {
                 const { start, end } = options.selection;
                 selection = {
-                    startLineNumber: start.line,
-                    startColumn: start.character,
-                    endLineNumber: end.line,
-                    endColumn: end.character
+                    startLineNumber: start.line + 1,
+                    startColumn: start.character + 1,
+                    endLineNumber: end.line + 1,
+                    endColumn: end.character + 1
                 };
             }
             documentOptions = {
