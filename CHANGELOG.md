@@ -8,6 +8,7 @@
 
 <a name="breaking_changes_1.16.0">[Breaking Changes:](#breaking_changes_1.16.0)</a>
 
+- [monaco] upgraded to monaco 0.23.0 including replacement of `quickOpen` API (0.20.x) with `quickInput` API (0.23.x) [#9154](https://github.com/eclipse-theia/theia/pull/9154)
 - [workspace] `WorkspaceCommandContribution.addFolderToWorkspace` no longer accepts `undefined`. `WorkspaceService.addRoot` now accepts a URI or a URI[]. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
 
 ## v1.15.0 - 6/30/2021
