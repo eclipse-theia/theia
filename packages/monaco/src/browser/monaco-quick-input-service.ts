@@ -17,7 +17,8 @@
 
 import {
     InputBox, InputOptions, KeybindingRegistry, PickOptions,
-    QuickInputButton, QuickInputService, QuickPick, QuickPickItem, QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
+    QuickInputButton, QuickInputService, QuickPick, QuickPickItem,
+    QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
 import { CancellationToken, Event } from '@theia/core/lib/common';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -251,7 +252,23 @@ export class MonacoQuickInputService implements QuickInputService {
                 });
                 wrapped.onDidTriggerItemButton((evt: QuickPickItemButtonEvent<T>) => {
                     if (options.onDidTriggerItemButton) {
-                        options.onDidTriggerItemButton(evt);
+                        // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/parts/quickinput/browser/quickInput.ts#L1387
+                        options.onDidTriggerItemButton(
+                            {
+                                ...evt,
+                                removeItem: () => {
+                                    const index = wrapped.items.indexOf(evt.item);
+                                    if (index !== -1) {
+                                        const filteredItems = wrapped.items.slice();
+                                        const removed = filteredItems.splice(index, 1);
+                                        const activeFilteredItems = wrapped.activeItems.filter(ai => ai !== removed[0]);
+                                        wrapped.items = filteredItems;
+                                        if (activeFilteredItems) {
+                                            wrapped.activeItems = activeFilteredItems;
+                                        }
+                                    }
+                                }
+                            });
                     }
                 });
                 wrapped.onDidChangeSelection((selectedItems: Array<T>) => {

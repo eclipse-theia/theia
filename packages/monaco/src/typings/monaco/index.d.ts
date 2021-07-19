@@ -1917,6 +1917,11 @@ declare module monaco.quickInput {
         button: IQuickInputButton;
         item: T;
     }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/parts/quickinput/common/quickInput.ts#L324
+    export interface IQuickPickItemButtonContext<T extends IQuickPickItem> extends IQuickPickItemButtonEvent<T> {
+        removeItem(): void;
+    }
 }
 
 declare module monaco.quickOpen {

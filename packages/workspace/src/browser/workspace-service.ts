@@ -318,6 +318,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return this.server.getRecentWorkspaces();
     }
 
+    async removeRecentWorkspace(uri: string): Promise<void> {
+        return this.server.removeRecentWorkspace(uri);
+    }
+
     /**
      * Returns `true` if theia has an opened workspace or folder
      * @returns {boolean}

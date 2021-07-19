@@ -24,4 +24,6 @@ export class MockWorkspaceServer implements WorkspaceServer {
     getMostRecentlyUsedWorkspace(): Promise<string | undefined> { return Promise.resolve(''); }
 
     setMostRecentlyUsedWorkspace(uri: string): Promise<void> { return Promise.resolve(); }
+
+    removeRecentWorkspace(uri: string): Promise<void> { return Promise.resolve(); }
 }

@@ -34,6 +34,13 @@ export interface WorkspaceServer {
     setMostRecentlyUsedWorkspace(uri: string): Promise<void>;
 
     /**
+     * Removes a workspace from the list of recently opened workspaces.
+     *
+     * @param uri the workspace uri.
+     */
+    removeRecentWorkspace(uri: string): Promise<void>;
+
+    /**
      * Returns list of recently opened workspaces as an array.
      */
     getRecentWorkspaces(): Promise<string[]>
