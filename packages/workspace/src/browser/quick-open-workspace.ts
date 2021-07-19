@@ -20,18 +20,17 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
-import * as moment from 'moment';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { Path } from '@theia/core/lib/common';
+import { nls, Path } from '@theia/core/lib/common';
 
-interface IRecentlyOpenedPick extends QuickPickItem {
+interface RecentlyOpenedPick extends QuickPickItem {
     resource?: URI
 }
 
 @injectable()
 export class QuickOpenWorkspace {
-    protected items: Array<IRecentlyOpenedPick>;
+    protected items: Array<RecentlyOpenedPick>;
     protected opened: boolean;
 
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
@@ -41,9 +40,9 @@ export class QuickOpenWorkspace {
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
 
-    protected readonly removeFromRecentlyButton: QuickInputButton = {
-        iconClass: 'codicon-close',
-        tooltip: 'Remove from Recently Opened'
+    protected readonly removeRecentWorkspaceButton: QuickInputButton = {
+        iconClass: 'codicon-remove-close',
+        tooltip: nls.localize('vscode/windowActions/remove', 'Remove from Recently Opened')
     };
 
     async open(workspaces: string[]): Promise<void> {
@@ -56,9 +55,13 @@ export class QuickOpenWorkspace {
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push({
-                label: 'No Recent Workspaces'
+                label: nls.localize('vscode/windowActions/noRecentWorkSpaces', 'No Recent Workspaces')
             });
         }
+        this.items.push({
+            type: 'separator',
+            label: nls.localize('vscode/windowActions/workspacesAndFolders', 'folders & workspaces')
+        });
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
             let stat: FileStat | undefined;
@@ -76,12 +79,10 @@ export class QuickOpenWorkspace {
             const iconClasses = icon === '' ? undefined : [icon + ' file-icon'];
 
             this.items.push({
-                type: 'separator', label: `last modified ${moment(stat.mtime).fromNow()}`
-            }, {
                 label: uri.path.base,
                 description: Path.tildify(uri.path.toString(), home),
                 iconClasses,
-                buttons: [this.removeFromRecentlyButton],
+                buttons: [this.removeRecentWorkspaceButton],
                 resource: uri,
                 execute: () => {
                     const current = this.workspaceService.workspace;
@@ -93,12 +94,14 @@ export class QuickOpenWorkspace {
             });
         }
         this.quickInputService?.showQuickPick(this.items, {
-            placeholder: 'Type the name of the workspace you want to open',
-            onDidTriggerItemButton: context => {
+            placeholder: nls.localize(
+                'vscode/windowActions/openRecentPlaceholder',
+                'Type the name of the workspace you want to open'),
+            onDidTriggerItemButton: async context => {
                 const resource = context.item.resource;
                 if (resource) {
-                    this.workspaceService.removeRecentWorkspace(resource.toString())
-                        .then(() => context.removeItem());
+                    await this.workspaceService.removeRecentWorkspace(resource.toString());
+                    context.removeItem();
                 }
             }
         });
