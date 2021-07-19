@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { QuickPickItem, LabelProvider, QuickInputService } from '@theia/core/lib/browser';
+import { QuickPickItem, LabelProvider, QuickInputService, QuickInputButton } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -25,9 +25,13 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { Path } from '@theia/core/lib/common';
 
+interface IRecentlyOpenedPick extends QuickPickItem {
+    resource?: URI
+}
+
 @injectable()
 export class QuickOpenWorkspace {
-    protected items: Array<QuickPickItem>;
+    protected items: Array<IRecentlyOpenedPick>;
     protected opened: boolean;
 
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
@@ -36,6 +40,11 @@ export class QuickOpenWorkspace {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
+
+    protected readonly removeFromRecentlyButton: QuickInputButton = {
+        iconClass: 'codicon-close',
+        tooltip: 'Remove from Recently Opened'
+    };
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
@@ -72,6 +81,8 @@ export class QuickOpenWorkspace {
                 label: uri.path.base,
                 description: Path.tildify(uri.path.toString(), home),
                 iconClasses,
+                buttons: [this.removeFromRecentlyButton],
+                resource: uri,
                 execute: () => {
                     const current = this.workspaceService.workspace;
                     const uriToOpen = new URI(workspace);
@@ -81,7 +92,16 @@ export class QuickOpenWorkspace {
                 },
             });
         }
-        this.quickInputService?.showQuickPick(this.items, { placeholder: 'Type the name of the workspace you want to open' });
+        this.quickInputService?.showQuickPick(this.items, {
+            placeholder: 'Type the name of the workspace you want to open',
+            onDidTriggerItemButton: context => {
+                const resource = context.item.resource;
+                if (resource) {
+                    this.workspaceService.removeRecentWorkspace(resource.toString())
+                        .then(() => context.removeItem());
+                }
+            }
+        });
     }
 
     select(): void {

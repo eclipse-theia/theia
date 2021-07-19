@@ -97,6 +97,16 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         this.writeToUserHome({ recentRoots });
     }
 
+    async removeRecentWorkspace(uri: string): Promise<void> {
+        // Get the list of recent workspaces.
+        const recent = await this.getRecentWorkspaces();
+        // Filter out the given workspace by uri.
+        // Then update persistent storage to reflect changes.
+        this.writeToUserHome({
+            recentRoots: recent.filter(e => e !== uri && e.length > 0)
+        });
+    }
+
     async getRecentWorkspaces(): Promise<string[]> {
         const listUri: string[] = [];
         const data = await this.readRecentWorkspacePathsFromUserHome();

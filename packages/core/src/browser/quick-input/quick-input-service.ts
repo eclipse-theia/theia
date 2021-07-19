@@ -153,6 +153,10 @@ export interface QuickPickItemButtonEvent<T extends QuickPickItem> {
     item: T;
 }
 
+export interface QuickPickItemButtonContext<T extends QuickPickItem> extends QuickPickItemButtonEvent<T> {
+    removeItem(): void;
+}
+
 export interface QuickPickOptions<T extends QuickPickItem> {
     busy?: boolean;
     enabled?: boolean;
@@ -191,7 +195,7 @@ export interface QuickPickOptions<T extends QuickPickItem> {
     onDidCustom?: () => void,
     onDidHide?: () => void;
     onDidTriggerButton?: (button: QuickInputButton) => void,
-    onDidTriggerItemButton?: (ItemButtonEvent: QuickPickItemButtonEvent<T>) => void
+    onDidTriggerItemButton?: (ItemButtonEvent: QuickPickItemButtonContext<T>) => void
 }
 
 export const QuickInputService = Symbol('QuickInputService');
