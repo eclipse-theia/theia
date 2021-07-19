@@ -16,7 +16,6 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
-import { environment } from '@theia/core';
 
 @injectable()
 export class PluginWorker {
@@ -28,17 +27,13 @@ export class PluginWorker {
     constructor() {
         const emitter = new Emitter<string>();
 
-        if (this.isElectron()) {
-            console.log('PluginWorker : Frontend plugins are temporarily not supported for Electron');
-        } else {
-            require('./worker/worker-main');
+        require('./worker/worker-main');
 
-            const workerURI = new URL('./worker-ext.js', location.href);
-            this.worker = new Worker(workerURI);
+        const workerURI = new URL('./worker-ext.js', location.href);
+        this.worker = new Worker(workerURI);
 
-            this.worker.onmessage = m => emitter.fire(m.data);
-            this.worker.onerror = e => console.error(e);
-        }
+        this.worker.onmessage = m => emitter.fire(m.data);
+        this.worker.onerror = e => console.error(e);
 
         this.rpc = new RPCProtocolImpl({
             onMessage: emitter.event,
@@ -50,7 +45,4 @@ export class PluginWorker {
         });
     }
 
-    private isElectron(): boolean {
-        return environment.electron.is();
-    }
 }

@@ -388,20 +388,29 @@ export class HostedPluginSupport {
             this.getStoragePath(),
             this.getHostGlobalStoragePath()
         ]);
+
         if (toDisconnect.disposed) {
             return;
         }
+
         const thenable: Promise<void>[] = [];
         const configStorage: ConfigStorage = {
             hostLogPath,
             hostStoragePath,
             hostGlobalStoragePath
         };
+
         for (const [host, hostContributions] of contributionsByHost) {
+            // do not start plugins for electron browser
+            if (host === 'frontend' && environment.electron.is()) {
+                continue;
+            }
+
             const manager = await this.obtainManager(host, hostContributions, toDisconnect);
             if (!manager) {
-                return;
+                continue;
             }
+
             const plugins = hostContributions.map(contributions => contributions.plugin.metadata);
             thenable.push((async () => {
                 try {
@@ -428,11 +437,13 @@ export class HostedPluginSupport {
                 }
             })());
         }
+
         await Promise.all(thenable);
         await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
         }
+
         this.logMeasurement('Start', started, startPluginsMeasurement);
     }
 
@@ -796,6 +807,7 @@ export class PluginContributions extends DisposableCollection {
     }
     state: PluginContributions.State = PluginContributions.State.INITIALIZING;
 }
+
 export namespace PluginContributions {
     export enum State {
         INITIALIZING = 0,
