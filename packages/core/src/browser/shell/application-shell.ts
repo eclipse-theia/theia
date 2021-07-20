@@ -655,6 +655,7 @@ export class ApplicationShell extends Widget {
                 widgets.forEach((a, i) => {
                     if (mainPanelPinned[i]) {
                         a.title.className += ' theia-mod-pinned';
+                        a.title.closable = false;
                     }
                 });
             }
