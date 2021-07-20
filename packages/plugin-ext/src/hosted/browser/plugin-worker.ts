@@ -27,9 +27,7 @@ export class PluginWorker {
     constructor() {
         const emitter = new Emitter<string>();
 
-        require('./worker/worker-main');
-
-        const workerURI = new URL('./worker-ext.js', location.href);
+        const workerURI = new URL('./plugin-worker.js', location.href);
         this.worker = new Worker(workerURI);
 
         this.worker.onmessage = m => emitter.fire(m.data);
