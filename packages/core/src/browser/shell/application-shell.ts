@@ -564,7 +564,7 @@ export class ApplicationShell extends Widget {
         const pinned: boolean[] = [];
 
         toArray(this.mainPanel.widgets()).forEach((a, i) => {
-            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0
+            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
         });
 
         return {
@@ -649,7 +649,7 @@ export class ApplicationShell extends Widget {
             if (mainPanelPinned && mainPanelPinned.length === widgets.length) {
                 widgets.forEach((a, i) => {
                     if (mainPanelPinned[i]) {
-                        a.title.className += ` theia-mod-pinned`
+                        a.title.className += ' theia-mod-pinned';
                     }
                 });
             }
