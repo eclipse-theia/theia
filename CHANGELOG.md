@@ -5,6 +5,7 @@
 [1.16.0 Milestone](https://github.com/eclipse-theia/theia/milestone/22)
 
  - [workspace] added support for multiple selections in 'Add folder to workspace' dialog. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
+ - [debug] added support for managing debug sessions for extensions from debug panel (previously only possible using `Hosted Plugin` commands) [#8706](https://github.com/eclipse-theia/theia/pull/8706)
 
 <a name="breaking_changes_1.16.0">[Breaking Changes:](#breaking_changes_1.16.0)</a>
 
