@@ -308,6 +308,21 @@
     vertical-align: middle;
 }
 
+.theia-vsx-extension-editor .extension-tabs {
+    padding-top: calc(var(--theia-ui-padding) * 5);
+}
+
+.theia-vsx-extension-editor .extension-tabs .extension-tab {
+    cursor: pointer;
+    font-size: var(--theia-ui-font-size2);
+    font-weight: 600;
+    padding-right: calc(var(--theia-ui-padding) * 2);
+}
+
+.theia-vsx-extension-editor .extension-tabs .extension-tab.extension-tab-selected {
+    text-decoration: underline !important;
+}
+
 /** Theming */
 
 .theia-vsx-extension-editor .action.prominent,

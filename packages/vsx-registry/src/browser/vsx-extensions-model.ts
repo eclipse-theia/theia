@@ -183,6 +183,7 @@ export class VSXExtensionsModel {
                     downloadUrl: data.files.download,
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
+                    changelogUrl: data.files.changelog,
                     licenseUrl: data.files.license,
                     version: extension.version
                 }));
@@ -261,7 +262,7 @@ export class VSXExtensionsModel {
             if (extension.readmeUrl) {
                 try {
                     const rawReadme = await this.client.fetchText(extension.readmeUrl);
-                    const readme = this.compileReadme(rawReadme);
+                    const readme = this.compileMarkdown(rawReadme);
                     extension.update({ readme });
                 } catch (e) {
                     if (!VSXResponseError.is(e) || e.statusCode !== 404) {
@@ -269,11 +270,22 @@ export class VSXExtensionsModel {
                     }
                 }
             }
+            if (extension.changelogUrl) {
+                try {
+                    const rawChangelog = await this.client.fetchText(extension.changelogUrl);
+                    const changelog = this.compileMarkdown(rawChangelog);
+                    extension.update({ changelog });
+                } catch (e) {
+                    if (!VSXResponseError.is(e) || e.statusCode !== 404) {
+                        console.error(`[${id}]: failed to compile changelog, reason:`, e);
+                    }
+                }
+            }
             return extension;
         });
     }
 
-    protected compileReadme(readmeMarkdown: string): string {
+    protected compileMarkdown(readmeMarkdown: string): string {
         const markdownConverter = new showdown.Converter({
             noHeaderId: true,
             strikethrough: true,
@@ -305,6 +317,7 @@ export class VSXExtensionsModel {
                 downloadUrl: data.files.download,
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
+                changelogUrl: data.files.changelog,
                 licenseUrl: data.files.license,
                 version: data.version
             }));

@@ -49,10 +49,12 @@ export class VSXExtensionData {
     readonly downloadCount?: number;
     readonly downloadUrl?: string;
     readonly readmeUrl?: string;
+    readonly changelogUrl?: string;
     readonly licenseUrl?: string;
     readonly repository?: string;
     readonly license?: string;
     readonly readme?: string;
+    readonly changelog?: string;
     readonly preview?: boolean;
     readonly namespaceAccess?: VSXExtensionNamespaceAccess;
     readonly publishedBy?: VSXUser;
@@ -67,10 +69,12 @@ export class VSXExtensionData {
         'downloadCount',
         'downloadUrl',
         'readmeUrl',
+        'changelogUrl',
         'licenseUrl',
         'repository',
         'license',
         'readme',
+        'changelog',
         'preview',
         'namespaceAccess',
         'publishedBy'
@@ -207,6 +211,15 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return this.data['readmeUrl'];
     }
 
+    get changelogUrl(): string | undefined {
+        const plugin = this.plugin;
+        const changelogUrl = plugin && plugin.metadata.model.changelogUrl;
+        if (changelogUrl) {
+            return new Endpoint({ path: this.changelogUrl }).getRestUrl().toString();
+        }
+        return this.data['changelogUrl'];
+    }
+
     get licenseUrl(): string | undefined {
         let licenseUrl = this.data['licenseUrl'];
         if (licenseUrl) {
@@ -230,6 +243,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     get readme(): string | undefined {
         return this.getData('readme');
+    }
+
+    get changelog(): string | undefined {
+        return this.getData('changelog');
     }
 
     get preview(): boolean | undefined {
@@ -404,10 +421,32 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     }
 }
 
+const CONTENT_SELECTED_CLASS = 'extension-tab-selected';
+const CONTENT_IDENTIFIER = 'extension-tab';
+interface ExtensionState {
+    content: string;
+};
+enum ExtensionContentType {
+    Details,
+    Changelog
+}
 export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     protected header: HTMLElement | undefined;
     protected body: HTMLElement | undefined;
     protected _scrollContainer: HTMLElement | undefined;
+
+    constructor(props: AbstractVSXExtensionComponent.Props) {
+        super(props);
+        this.state = {
+            content: this.props.extension.readme
+                ? this.sanitizeContent(this.props.extension.readme)
+                : ''
+        };
+        const setState = this.setState.bind(this);
+        this.setState = newState => {
+            setState(newState);
+        };
+    }
 
     get scrollContainer(): HTMLElement | undefined {
         return this._scrollContainer;
@@ -416,11 +455,10 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
         const {
             builtin, preview, id, iconUrl, publisher, displayName, description, version,
-            averageRating, downloadCount, repository, license, readme
+            averageRating, downloadCount, repository, license, readme, changelog
         } = this.props.extension;
-
-        const { baseStyle, scrollStyle } = this.getSubcomponentStyles();
-        const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
+        const { baseStyle } = this.getSubcomponentStyles();
+        const { content } = this.state as ExtensionState;
 
         return <React.Fragment>
             <div className='header' style={baseStyle} ref={ref => this.header = (ref || undefined)}>
@@ -448,22 +486,27 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     </div>
                     <div className='description noWrapInfo'>{description}</div>
                     {this.renderAction()}
+                    <div className='extension-tabs'>
+                        {
+                            readme &&
+                            <span
+                                className={[CONTENT_IDENTIFIER, CONTENT_SELECTED_CLASS].join(' ')}
+                                onClick={e => this.updateContent(e, ExtensionContentType.Details)}>
+                                Details
+                            </span>
+                        }
+                        {
+                            changelog &&
+                            <span
+                                className={CONTENT_IDENTIFIER}
+                                onClick={e => this.updateContent(e, ExtensionContentType.Changelog)}>
+                                Changelog
+                            </span>
+                        }
+                    </div>
                 </div>
             </div>
-            {
-                sanitizedReadme &&
-                < div className='scroll-container'
-                    style={scrollStyle}
-                    ref={ref => this._scrollContainer = (ref || undefined)}>
-                    <div className='body'
-                        ref={ref => this.body = (ref || undefined)}
-                        onClick={this.openLink}
-                        style={baseStyle}
-                        // eslint-disable-next-line react/no-danger
-                        dangerouslySetInnerHTML={{ __html: sanitizedReadme }}
-                    />
-                </div>
-            }
+            {this.renderContent(content)}
         </React.Fragment >;
     }
 
@@ -497,12 +540,38 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         </React.Fragment>;
     }
 
+    protected renderContent(content: string): React.ReactNode {
+        const { baseStyle, scrollStyle } = this.getSubcomponentStyles();
+        if (this._scrollContainer?.scrollTop) {
+            this._scrollContainer.scrollTop = 0;
+        }
+        return (
+            <div
+                className='scroll-container'
+                style={scrollStyle}
+                ref={ref => this._scrollContainer = (ref || undefined)}>
+                <div
+                    className='body'
+                    ref={ref => this.body = (ref || undefined)}
+                    onClick={this.openLink}
+                    style={baseStyle}
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: content }}
+                />
+            </div>
+        );
+    }
+
     protected getSubcomponentStyles(): { baseStyle: React.CSSProperties, scrollStyle: React.CSSProperties; } {
         const visibility: 'unset' | 'hidden' = this.header ? 'unset' : 'hidden';
         const baseStyle = { visibility };
         const scrollStyle = this.header?.clientHeight ? { visibility, height: `calc(100% - (${this.header.clientHeight}px + 1px))` } : baseStyle;
 
         return { baseStyle, scrollStyle };
+    }
+
+    protected sanitizeContent(content: string): string {
+        return DOMPurify.sanitize(content);
     }
 
     // TODO replace with webview
@@ -530,6 +599,31 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             this.props.extension.doOpen(new URI(href));
         }
     };
+
+    readonly updateContent = async (e: React.MouseEvent, type: ExtensionContentType) => {
+        e.stopPropagation();
+        e.preventDefault();
+        this.resetContentSelection();
+
+        if (type === ExtensionContentType.Details && this.props.extension.readme) {
+            this.setState({ content: DOMPurify.sanitize(this.props.extension.readme) });
+        }
+
+        if (type === ExtensionContentType.Changelog && this.props.extension.changelog) {
+            this.setState({ content: DOMPurify.sanitize(this.props.extension.changelog) });
+        }
+
+        // Set the selection styling for the content tab.
+        ((e.target) as HTMLSpanElement).classList.add(CONTENT_SELECTED_CLASS);
+    };
+
+    /**
+     * Removes the selection styling for extension content tab.
+     */
+    protected resetContentSelection(): void {
+        const selected = document.getElementsByClassName(CONTENT_SELECTED_CLASS);
+        Array.from(selected).forEach(element => element.classList.remove(CONTENT_SELECTED_CLASS));
+    }
 
     readonly openExtension = async (e: React.MouseEvent) => {
         e.stopPropagation();
