@@ -561,16 +561,10 @@ export class ApplicationShell extends Widget {
      * to widgets; these need to be transformed before the layout can be serialized.
      */
     getLayoutData(): ApplicationShell.LayoutData {
-        const pinned: boolean[] = [];
-
-        toArray(this.mainPanel.widgets()).forEach((a, i) => {
-            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
-        });
-
         return {
             version: applicationShellLayoutVersion,
             mainPanel: this.mainPanel.saveLayout(),
-            mainPanelPinned: pinned,
+            mainPanelPinned: this.getPinnedMainWidgets(),
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
                 size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.bottomPanelState.lastPanelSize,
@@ -580,6 +574,17 @@ export class ApplicationShell extends Widget {
             rightPanel: this.rightPanelHandler.getLayoutData(),
             activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined
         };
+    }
+
+    // Get an array corresponding to main panel widgets' pinned state.
+    getPinnedMainWidgets(): boolean[] {
+        const pinned: boolean[] = [];
+
+        toArray(this.mainPanel.widgets()).forEach((a, i) => {
+            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
+        });
+
+        return pinned;
     }
 
     /**
