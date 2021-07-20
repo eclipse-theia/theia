@@ -567,6 +567,7 @@ export class ApplicationShell extends Widget {
             mainPanelPinned: this.getPinnedMainWidgets(),
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
+                pinned: this.getPinnedBottomWidgets(),
                 size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.bottomPanelState.lastPanelSize,
                 expanded: this.isExpanded('bottom')
             },
@@ -581,6 +582,17 @@ export class ApplicationShell extends Widget {
         const pinned: boolean[] = [];
 
         toArray(this.mainPanel.widgets()).forEach((a, i) => {
+            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
+        });
+
+        return pinned;
+    }
+
+    // Get an array corresponding to bottom panel widgets' pinned state.
+    getPinnedBottomWidgets(): boolean[] {
+        const pinned: boolean[] = [];
+
+        toArray(this.bottomPanel.widgets()).forEach((a, i) => {
             pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
         });
 
@@ -642,6 +654,15 @@ export class ApplicationShell extends Widget {
                 this.expandBottomPanel();
             } else {
                 this.collapseBottomPanel();
+            }
+            const widgets = toArray(this.bottomPanel.widgets());
+            if (bottomPanel.pinned && bottomPanel.pinned.length === widgets.length) {
+                widgets.forEach((a, i) => {
+                    if (bottomPanel.pinned![i]) {
+                        a.title.className += ' theia-mod-pinned';
+                        a.title.closable = false;
+                    }
+                });
             }
             this.refreshBottomPanelToggleButton();
         }
@@ -1930,6 +1951,7 @@ export namespace ApplicationShell {
         config?: DockPanel.ILayoutConfig;
         size?: number;
         expanded?: boolean;
+        pinned?: boolean[];
     }
 
     /**
