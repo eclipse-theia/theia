@@ -1248,16 +1248,30 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     registerColors(colors: ColorRegistry): void {
         colors.register(
-            // Debug colors should be aligned with https://code.visualstudio.com/api/references/theme-color#debug
+            // Debug colors should be aligned with https://code.visualstudio.com/api/references/theme-color#debug-colors
             {
                 id: 'editor.stackFrameHighlightBackground',
-                defaults: { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' },
-                description: 'Background color for the highlight of line at the top stack frame position.'
-            }, {
-            id: 'editor.focusedStackFrameHighlightBackground',
-            defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
-            description: 'Background color for the highlight of line at focused stack frame position.'
-        },
+                defaults: {
+                    dark: '#ffff0033',
+                    light: '#ffff6673',
+                    hc: '#fff600'
+                }, description: 'Background color for the highlight of line at the top stack frame position.'
+            },
+            {
+                id: 'editor.focusedStackFrameHighlightBackground',
+                defaults: {
+                    dark: '#7abd7a4d',
+                    light: '#cee7ce73',
+                    hc: '#cee7ce'
+                }, description: 'Background color for the highlight of line at focused stack frame position.'
+            },
+            {
+                id: 'debugIcon.startForeground', defaults: {
+                    dark: '#89D185',
+                    light: '#388A34',
+                    hc: '#89D185'
+                }, description: 'Debug toolbar icon for start debugging.'
+            },
             // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {
                 id: 'statusBar.debuggingBackground', defaults: {
@@ -1284,13 +1298,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             // https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/contrib/debug/browser/exceptionWidget.ts#L23
             {
                 id: 'debugExceptionWidget.border', defaults: {
-                    dark: '#a31515', light: '#a31515', hc: '#a31515'
+                    dark: '#a31515',
+                    light: '#a31515',
+                    hc: '#a31515'
                 }, description: 'Exception widget border color.',
-            }, {
-            id: 'debugExceptionWidget.background', defaults: {
-                dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
-            }, description: 'Exception widget background color.'
-        }
+            },
+            {
+                id: 'debugExceptionWidget.background', defaults: {
+                    dark: '#420b0d',
+                    light: '#f1dfde',
+                    hc: '#420b0d'
+                }, description: 'Exception widget background color.'
+            }
         );
     }
 
