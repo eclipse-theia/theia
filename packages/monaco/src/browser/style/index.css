@@ -71,6 +71,14 @@
   height: var(--theia-scrollbar-width) !important;
 }
 
+.monaco-editor .codicon.codicon-debug-start {
+  color: var(--theia-debugIcon-startForeground) !important;
+}
+
+.monaco-editor .codelens-decoration a {
+  color: inherit !important;
+}
+
 .monaco-editor .reference-zone-widget .ref-tree .referenceMatch .highlight {
   color: unset !important;
 }
