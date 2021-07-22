@@ -38,9 +38,7 @@ export class PluginWorker {
         this.rpc = new RPCProtocolImpl({
             onMessage: emitter.event,
             send: (m: string) => {
-                if (this.worker) {
-                    this.worker.postMessage(m);
-                }
+                this.worker.postMessage(m);
             }
         });
     }
