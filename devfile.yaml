@@ -21,7 +21,7 @@ components:
           protocol: http
           public: "true"
     memoryLimit: "3.5Gi"
-  - id: che-incubator/typescript/latest
+  - id: vscode/typescript-language-features/latest
     type: chePlugin
     memoryLimit: 2048M
   - type: cheEditor
