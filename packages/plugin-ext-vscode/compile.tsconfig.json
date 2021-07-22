@@ -43,6 +43,9 @@
     },
     {
       "path": "../terminal/compile.tsconfig.json"
+    },
+    {
+      "path": "../callhierarchy/compile.tsconfig.json"
     }
   ]
 }

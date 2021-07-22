@@ -61,7 +61,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
-    lastCwd: URI;
+    lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;

@@ -69,6 +69,11 @@ export namespace EditorCommands {
         category: EDITOR_CATEGORY,
         label: 'Change File Encoding'
     };
+    export const REVERT_AND_CLOSE: Command = {
+        id: 'workbench.action.revertAndCloseActiveEditor',
+        category: 'View',
+        label: 'Revert and Close Editor'
+    };
 
     /**
      * Command for going back to the last editor navigation location.
@@ -229,6 +234,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
+        registry.registerCommand(EditorCommands.REVERT_AND_CLOSE);
         registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
             isEnabled: () => this.canConfigureLanguage(),
             isVisible: () => this.canConfigureLanguage(),

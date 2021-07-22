@@ -3,6 +3,7 @@
   "version": "1.15.0",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
+    "@theia/callhierarchy": "1.15.0",
     "@theia/core": "1.15.0",
     "@theia/editor": "1.15.0",
     "@theia/filesystem": "1.15.0",

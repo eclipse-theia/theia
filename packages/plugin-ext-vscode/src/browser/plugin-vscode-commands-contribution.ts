@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -22,7 +22,10 @@ import {
     open,
     OpenerService,
     QuickInputService,
-    Saveable
+    Saveable,
+    TabBar,
+    Title,
+    Widget
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
@@ -45,7 +48,7 @@ import {
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { isUriComponents, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { isUriComponents, toDocumentSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
@@ -54,7 +57,6 @@ import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -66,6 +68,14 @@ import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/bro
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { CallHierarchyServiceProvider, CallHierarchyService } from '@theia/callhierarchy/lib/browser';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import {
+    fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall,
+    fromCallHierarchyCallerToModelCallHierarchyIncomingCall,
+    fromDefinition,
+    toDefinition
+} from '@theia/plugin-ext/lib/main/browser/callhierarchy/callhierarchy-type-converters';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -117,6 +127,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly pluginServer: PluginServer;
     @inject(FileService)
     protected readonly fileService: FileService;
+    @inject(CallHierarchyServiceProvider)
+    protected readonly callHierarchyProvider: CallHierarchyServiceProvider;
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -226,6 +240,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
         });
+        commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
+            execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
+        });
         commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
@@ -287,25 +304,41 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
             }
         });
-        commands.registerCommand({ id: 'workbench.action.closeEditorsInGroup' }, {
-            execute: (uri?: monaco.Uri) => {
-                let editor = this.editorManager.currentEditor || this.shell.currentWidget;
-                if (uri) {
-                    const uriString = uri.toString();
-                    editor = this.editorManager.all.find(e => {
-                        const resourceUri = e.getResourceUri();
-                        return (resourceUri && resourceUri.toString()) === uriString;
-                    });
-                }
-                if (editor) {
-                    const tabBar = this.shell.getTabBarFor(editor);
-                    if (tabBar) {
-                        this.shell.closeTabs(tabBar,
-                            ({ owner }) => this.codeEditorWidgetUtil.is(owner)
-                        );
-                    }
+
+        const performActionOnGroup = (
+            cb: (
+                tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+                filter?: ((title: Title<Widget>, index: number) => boolean) | undefined
+            ) => void,
+            uri?: monaco.Uri
+        ): void => {
+            let editor = this.editorManager.currentEditor || this.shell.currentWidget;
+            if (uri) {
+                const uriString = uri.toString();
+                editor = this.editorManager.all.find(e => {
+                    const resourceUri = e.getResourceUri();
+                    return (resourceUri && resourceUri.toString()) === uriString;
+                });
+            }
+            if (editor) {
+                const tabBar = this.shell.getTabBarFor(editor);
+                if (tabBar) {
+                    cb(tabBar, ({ owner }) => this.codeEditorWidgetUtil.is(owner));
                 }
             }
+        };
+
+        commands.registerCommand({
+            id: 'workbench.action.closeEditorsInGroup',
+            label: 'Close All Editors in Group'
+        }, {
+            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.closeTabs, uri)
+        });
+        commands.registerCommand({
+            id: 'workbench.files.saveAllInGroup',
+            label: 'Save All in Group'
+        }, {
+            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.saveTabs, uri)
         });
         commands.registerCommand({ id: 'workbench.action.closeEditorsInOtherGroups' }, {
             execute: () => {
@@ -396,23 +429,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
             execute: () => {
                 window.location.reload();
-            }
-        });
-
-        commands.registerCommand({ id: 'workbench.action.revertAndCloseActiveEditor' }, {
-            execute: async () => {
-                const editor = this.editorManager.currentEditor;
-                if (editor) {
-                    const monacoEditor = MonacoEditor.getCurrent(this.editorManager);
-                    if (monacoEditor) {
-                        try {
-                            await monacoEditor.document.revert();
-                            editor.close();
-                        } catch (error) {
-                            await this.shell.closeWidget(editor.id, { save: false });
-                        }
-                    }
-                }
             }
         });
 
@@ -541,8 +557,19 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.prepareCallHierarchy'
             },
             {
-                execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<CallHierarchyItem[]>('_executePrepareCallHierarchy', monaco.Uri.from(resource), position))
+                execute: async (resource: URI, position: Position): Promise<CallHierarchyItem[]> => {
+                    const provider = await this.getCallHierarchyServiceForUri(resource);
+                    const definition = await provider?.getRootDefinition(
+                        resource.fsPath,
+                        toPosition(position),
+                        new CancellationTokenSource().token
+                    );
+                    if (definition) {
+                        const item = fromDefinition(definition);
+                        return [item];
+                    };
+                    return [];
+                }
             }
         );
         commands.registerCommand(
@@ -550,17 +577,37 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.provideIncomingCalls'
             },
             {
-                execute: ((item: CallHierarchyItem) =>
-                    commands.executeCommand<CallHierarchyIncomingCall[]>('_executeProvideIncomingCalls', { item }))
-            }
+                execute: async (item: CallHierarchyItem): Promise<CallHierarchyIncomingCall[]> => {
+                    const resource = URI.from(item.uri);
+                    const provider = await this.getCallHierarchyServiceForUri(resource);
+                    const incomingCalls = await provider?.getCallers(
+                        toDefinition(item),
+                        new CancellationTokenSource().token,
+                    );
+                    if (incomingCalls) {
+                        return incomingCalls.map(fromCallHierarchyCallerToModelCallHierarchyIncomingCall);
+                    }
+                    return [];
+                },
+            },
         );
         commands.registerCommand(
             {
                 id: 'vscode.provideOutgoingCalls'
             },
             {
-                execute: ((item: CallHierarchyItem) =>
-                    commands.executeCommand<CallHierarchyOutgoingCall[]>('_executeProvideOutgoingCalls', { item }))
+                execute: async (item: CallHierarchyItem): Promise<CallHierarchyOutgoingCall[]> => {
+                    const resource = URI.from(item.uri);
+                    const provider = await this.getCallHierarchyServiceForUri(resource);
+                    const outgoingCalls = await provider?.getCallees?.(
+                        toDefinition(item),
+                        new CancellationTokenSource().token,
+                    );
+                    if (outgoingCalls) {
+                        return outgoingCalls.map(fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall);
+                    }
+                    return [];
+                }
             }
         );
 
@@ -640,5 +687,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
             }
         });
+    }
+
+    protected async getCallHierarchyServiceForUri(resource: URI): Promise<CallHierarchyService | undefined> {
+        const reference = await this.textModelService.createModelReference(resource);
+        const uri = new TheiaURI(resource);
+        const languageId = reference.object.languageId;
+        reference.dispose();
+        return this.callHierarchyProvider.get(languageId, uri);
     }
 }

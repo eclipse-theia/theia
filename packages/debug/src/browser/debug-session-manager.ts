@@ -306,6 +306,16 @@ export class DebugSessionManager {
         return this.start(options);
     }
 
+    async terminateSessions(): Promise<void> {
+        this.updateCurrentSession(undefined);
+        this.currentSession?.terminate();
+    }
+
+    async restartSessions(): Promise<void> {
+        this.updateCurrentSession(undefined);
+        this.currentSession?.restart();
+    }
+
     protected remove(sessionId: string): void {
         this._sessions.delete(sessionId);
         const { currentSession } = this;

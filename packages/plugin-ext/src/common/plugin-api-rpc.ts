@@ -1459,6 +1459,7 @@ export interface LanguagesExt {
     $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: CancellationToken): Promise<BinaryBuffer | null>;
     $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: CancellationToken): Promise<CallHierarchyDefinition | undefined>;
     $provideCallers(handle: number, definition: CallHierarchyDefinition, token: CancellationToken): Promise<CallHierarchyReference[] | undefined>;
+    $provideCallees(handle: number, definition: CallHierarchyDefinition, token: CancellationToken): Promise<CallHierarchyReference[] | undefined>;
 }
 
 export const LanguagesMainFactory = Symbol('LanguagesMainFactory');

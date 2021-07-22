@@ -18,7 +18,7 @@ import * as net from 'net';
 import * as theia from '@theia/plugin';
 import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
-import isElectron from 'is-electron';
+const isElectron = require('is-electron');
 
 /**
  * Starts debug adapter process.

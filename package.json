@@ -3,7 +3,7 @@
   "name": "@theia/monorepo",
   "version": "0.0.0",
   "engines": {
-    "yarn": "1.0.x || >=1.2.1",
+    "yarn": ">=1.7.0 <2.x.x",
     "node": ">=12.14.1 <13"
   },
   "resolutions": {

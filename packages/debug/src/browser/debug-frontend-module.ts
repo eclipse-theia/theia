@@ -60,8 +60,11 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
+import { DebugContribution } from './debug-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
+    bindContributionProvider(bind, DebugContribution);
+
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
         container.get(ContextKeyService).createKey('callStackItemType', undefined)
     ).inSingletonScope();

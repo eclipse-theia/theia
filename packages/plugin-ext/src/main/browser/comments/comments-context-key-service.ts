@@ -56,7 +56,7 @@ export class CommentsContextKeyService {
     }
 
     setExpression(expression: string): void {
-        this.contextKeyService.parseKeys(expression).forEach(key => {
+        this.contextKeyService.parseKeys(expression)?.forEach(key => {
             this.contextKeys.add(key);
         });
     }

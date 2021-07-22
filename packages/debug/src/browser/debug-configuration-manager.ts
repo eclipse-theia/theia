@@ -265,7 +265,11 @@ export class DebugConfigurationManager {
         if (!uri) { // Since we are requesting information about a known workspace folder, this should never happen.
             throw new Error('PreferenceService.getConfigUri has returned undefined when a URI was expected.');
         }
-        await this.ensureContent(uri, model);
+        const settingsUri = this.preferences.getConfigUri(PreferenceScope.Folder, model.workspaceFolderUri);
+        // Users may have placed their debug configurations in a `settings.json`, in which case we shouldn't modify the file.
+        if (settingsUri && !uri.isEqual(settingsUri)) {
+            await this.ensureContent(uri, model);
+        }
         return uri;
     }
 

@@ -28,7 +28,8 @@ import {
     TreeProps,
     TreeExpansionService,
     ApplicationShell,
-    DiffUris
+    DiffUris,
+    TREE_NODE_INFO_CLASS
 } from '@theia/core/lib/browser';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import {
@@ -128,6 +129,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     cancelIndicator?: CancellationTokenSource;
 
     protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceRootFolderNode>>();
+
+    protected onExpansionChangedEmitter = new Emitter();
+    readonly onExpansionChanged: Event<void> = this.onExpansionChangedEmitter.event;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected focusInputEmitter = new Emitter<any>();
 
@@ -202,6 +207,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 this.model.refresh();
             }
         }));
+
+        this.toDispose.push(this.model.onExpansionChanged(() => {
+            this.onExpansionChangedEmitter.fire(undefined);
+        }));
     }
 
     get fileNumber(): number {
@@ -235,12 +244,36 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     collapseAll(): void {
-        this.resultTree.forEach(rootFolderNode => {
-            rootFolderNode.children.forEach(fileNode => this.expansionService.collapseNode(fileNode));
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.collapseNode(fileNode);
+            }
             if (rootFolderNode.visible) {
                 this.expansionService.collapseNode(rootFolderNode);
             }
-        });
+        }
+    }
+
+    expandAll(): void {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                this.expansionService.expandNode(fileNode);
+            }
+            if (rootFolderNode.visible) {
+                this.expansionService.expandNode(rootFolderNode);
+            }
+        }
+    }
+
+    areResultsCollapsed(): boolean {
+        for (const rootFolderNode of this.resultTree.values()) {
+            for (const fileNode of rootFolderNode.children) {
+                if (!ExpandableTreeNode.isCollapsed(fileNode)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -876,7 +909,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                             {this.toNodeName(node)}
                         </span>
                         {node.path !== '/' + this.defaultRootName &&
-                            <span className={'file-path'}>
+                            <span className={'file-path ' + TREE_NODE_INFO_CLASS}>
                                 {node.path}
                             </span>
                         }
@@ -901,7 +934,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         <span className={'file-name'}>
                             {this.toNodeName(node)}
                         </span>
-                        <span className={'file-path'}>
+                        <span className={'file-path ' + TREE_NODE_INFO_CLASS}>
                             {node.path}
                         </span>
                     </div>

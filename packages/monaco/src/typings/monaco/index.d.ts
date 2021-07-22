@@ -236,13 +236,18 @@ declare module monaco.editor {
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/hover/hover.ts#L30
     export interface ModesHoverController {
-        readonly contentWidget: ModesContentHoverWidget;
+        readonly _contentWidget: ModesContentHoverWidget | null;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/browser/ui/hover/hoverWidget.ts#L13-L39
+    export class HoverWidget extends Disposable {
+        readonly contentsDomNode: HTMLElement;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/hover/modesContentHover.ts#L177
     export interface ModesContentHoverWidget {
-        readonly isVisible: boolean;
-        readonly _domNode: HTMLElement;
+        readonly _isVisible: boolean;
+        readonly _hover: HoverWidget;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/controller/cursor.ts#L122
@@ -533,14 +538,14 @@ declare module monaco.actions {
         title: string | ILocalizedString;
         category?: string | ILocalizedString;
         icon?: { dark?: monaco.Uri; light?: monaco.Uri; } | monaco.theme.ThemeIcon;
-        precondition?: monaco.contextkey.ContextKeyExpr;
-        toggled?: monaco.contextkey.ContextKeyExpr;
+        precondition?: monaco.contextkey.ContextKeyExpression;
+        toggled?: monaco.contextkey.ContextKeyExpression;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/actions/common/actions.ts#L53
     export interface IMenuItem {
         command: ICommandAction;
-        when?: monaco.contextkey.ContextKeyExpr;
+        when?: monaco.contextkey.ContextKeyExpression;
         group?: 'navigation' | string;
         order?: number;
         alt?: ICommandAction;
@@ -550,7 +555,7 @@ declare module monaco.actions {
     export interface ISubmenuItem {
         title: string | ILocalizedString;
         submenu: number; // enum MenuId
-        when?: monaco.contextkey.ContextKeyExpr;
+        when?: monaco.contextkey.ContextKeyExpression;
         group?: 'navigation' | string;
         order?: number;
     }
@@ -695,7 +700,7 @@ declare module monaco.keybindings {
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/keybinding/common/keybindingResolver.ts#L19
     export class KeybindingResolver {
-        static contextMatchesRules(context: monaco.contextKeyService.IContext, rules: monaco.contextkey.ContextKeyExpr | null | undefined): boolean;
+        static contextMatchesRules(context: monaco.contextKeyService.IContext, rules: monaco.contextkey.ContextKeyExpression | null | undefined): boolean;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/common/keyCodes.ts#L443
@@ -722,7 +727,7 @@ declare module monaco.keybindings {
     export interface IKeybindingItem {
         keybinding: Keybinding;
         command: string;
-        when?: monaco.contextkey.ContextKeyExpr;
+        when?: monaco.contextkey.ContextKeyExpression;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/keybinding/common/keybindingsRegistry.ts#L73
@@ -2101,7 +2106,7 @@ declare module monaco.suggest {
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/suggest/suggestController.ts#L99
     export interface SuggestController {
-        readonly widget: SuggestWidget;
+        readonly widget: monaco.async.IdleValue<SuggestWidget>;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/contrib/suggest/suggestWidget.ts#L635
@@ -2169,7 +2174,7 @@ declare module monaco.contextKeyService {
         bufferChangeEvents(callback: Function): void;
 
         createKey<T>(key: string, defaultValue: T | undefined): IContextKey<T>;
-        contextMatchesRules(rules: monaco.contextkey.ContextKeyExpr | undefined): boolean;
+        contextMatchesRules(rules: monaco.contextkey.ContextKeyExpression | undefined): boolean;
         getContextKeyValue<T>(key: string): T | undefined;
 
         createScoped(target?: HTMLElement): IContextKeyService;
@@ -2196,7 +2201,7 @@ declare module monaco.contextKeyService {
         bufferChangeEvents(callback: Function): void;
 
         createKey<T>(key: string, defaultValue: T | undefined): IContextKey<T>;
-        contextMatchesRules(rules: monaco.contextkey.ContextKeyExpr | undefined): boolean;
+        contextMatchesRules(rules: monaco.contextkey.ContextKeyExpression | undefined): boolean;
         getContextKeyValue<T>(key: string): T | undefined;
 
         createScoped(target?: HTMLElement): IContextKeyService;
@@ -2208,6 +2213,77 @@ declare module monaco.contextKeyService {
 }
 
 declare module monaco.contextkey {
+    export const enum ContextKeyExprType {
+        False = 0,
+        True = 1,
+        Defined = 2,
+        Not = 3,
+        Equals = 4,
+        NotEquals = 5,
+        And = 6,
+        Regex = 7,
+        NotRegex = 8,
+        Or = 9,
+        In = 10,
+        NotIn = 11,
+        Greater = 12,
+        GreaterEquals = 13,
+        Smaller = 14,
+        SmallerEquals = 15,
+    }
+
+    export class ContextKeyFalseExpr extends ContextKeyExpr { }
+    export class ContextKeyTrueExpr extends ContextKeyExpr { }
+    export class ContextKeyDefinedExpr extends ContextKeyExpr {
+        static create(key: string): ContextKeyExpression;
+    }
+    export class ContextKeyNotExpr extends ContextKeyExpr {
+        static create(key: string): ContextKeyExpression;
+    }
+    export class ContextKeyEqualsExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression;
+    }
+    export class ContextKeyNotEqualsExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression
+    }
+    export class ContextKeyRegexExpr extends ContextKeyExpr {
+        static create(key: string, regexp: RegExp | null): ContextKeyRegexExpr;
+    }
+    export class ContextKeyNotRegexExpr extends ContextKeyExpr {
+        static create(actual: ContextKeyRegexExpr): ContextKeyExpression;
+    }
+    export class ContextKeyAndExpr extends ContextKeyExpr {
+        static create(_expr: ReadonlyArray<ContextKeyExpression | null | undefined>): ContextKeyExpression | undefined;
+    }
+    export class ContextKeyOrExpr extends ContextKeyExpr {
+        static create(_expr: ReadonlyArray<ContextKeyExpression | null | undefined>): ContextKeyExpression | undefined;
+    }
+    export class ContextKeyInExpr extends ContextKeyExpr {
+        static create(key: string, valueKey: string): ContextKeyInExpr
+    }
+    export class ContextKeyNotInExpr extends ContextKeyExpr {
+        static create(actual: ContextKeyInExpr): ContextKeyNotInExpr;
+    }
+    export class ContextKeyGreaterExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression;
+    }
+    export class ContextKeyGreaterEqualsExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression
+    }
+    export class ContextKeySmallerExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression
+    }
+    export class ContextKeySmallerEqualsExpr extends ContextKeyExpr {
+        static create(key: string, value: any): ContextKeyExpression
+    }
+
+    export type ContextKeyExpression = (
+        ContextKeyFalseExpr | ContextKeyTrueExpr | ContextKeyDefinedExpr | ContextKeyNotExpr
+        | ContextKeyEqualsExpr | ContextKeyNotEqualsExpr | ContextKeyRegexExpr
+        | ContextKeyNotRegexExpr | ContextKeyAndExpr | ContextKeyOrExpr | ContextKeyInExpr
+        | ContextKeyNotInExpr | ContextKeyGreaterExpr | ContextKeyGreaterEqualsExpr
+        | ContextKeySmallerExpr | ContextKeySmallerEqualsExpr
+    );
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/contextkey/common/contextkey.ts#L1327
     export const IContextKeyService: any;
@@ -2215,7 +2291,7 @@ declare module monaco.contextkey {
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/platform/contextkey/common/contextkey.ts#L79
     export class ContextKeyExpr {
         keys(): string[];
-        static deserialize(when: string): ContextKeyExpr;
+        static deserialize(serialized: string | null | undefined, strict: boolean = false): ContextKeyExpression | undefined;
         serialize(): string;
     }
 }
@@ -2264,10 +2340,10 @@ declare module monaco.strings {
 }
 
 declare module monaco.async {
-    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/async.ts#L721
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/common/async.ts#L842-L878
     export class IdleValue<T> {
         constructor(executor: () => T) { }
-        getValue(): T;
+        get value(): T;
     }
 }
 

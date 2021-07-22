@@ -307,16 +307,18 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 isVisible: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 execute: async () => {
-                    const uri = await this.fileDialogService.showOpenDialog({
+                    const selection = await this.fileDialogService.showOpenDialog({
                         title: WorkspaceCommands.ADD_FOLDER.label!,
                         canSelectFiles: false,
-                        canSelectFolders: true
+                        canSelectFolders: true,
+                        canSelectMany: true,
                     });
-                    if (!uri) {
+                    if (!selection) {
                         return;
                     }
+                    const uris = Array.isArray(selection) ? selection : [selection];
                     const workspaceSavedBeforeAdding = this.workspaceService.saved;
-                    await this.addFolderToWorkspace(uri);
+                    await this.addFolderToWorkspace(...uris);
                     if (!workspaceSavedBeforeAdding) {
                         const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
                         if (saveCommand && await new ConfirmDialog({
@@ -426,13 +428,17 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
     }
 
-    protected async addFolderToWorkspace(uri: URI | undefined): Promise<void> {
-        if (uri) {
+    protected async addFolderToWorkspace(...uris: URI[]): Promise<void> {
+        if (uris.length) {
+            const foldersToAdd = [];
             try {
-                const stat = await this.fileService.resolve(uri);
-                if (stat.isDirectory) {
-                    await this.workspaceService.addRoot(uri);
+                for (const uri of uris) {
+                    const stat = await this.fileService.resolve(uri);
+                    if (stat.isDirectory) {
+                        foldersToAdd.push(uri);
+                    }
                 }
+                await this.workspaceService.addRoot(foldersToAdd);
             } catch { }
         }
     }
