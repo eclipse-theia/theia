@@ -21,7 +21,7 @@ import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/co
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
+import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { DebugPluginConfiguration, LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
@@ -107,8 +107,6 @@ export class HostedPluginManagerClient {
     protected readonly hostedPluginServer: HostedPluginServer;
     @inject(MessageService)
     protected readonly messageService: MessageService;
-    @inject(OpenFileDialogFactory)
-    protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
     @inject(WindowService)
@@ -123,6 +121,8 @@ export class HostedPluginManagerClient {
     protected readonly debugSessionManager: DebugSessionManager;
     @inject(HostedPluginPreferences)
     protected readonly hostedPluginPreferences: HostedPluginPreferences;
+    @inject(FileDialogService)
+    protected readonly fileDialogService: FileDialogService;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -272,17 +272,13 @@ export class HostedPluginManagerClient {
             throw new Error('Unable to find the root');
         }
 
-        const rootNode = DirNode.createRoot(workspaceFolder);
-
-        const dialog = this.openFileDialogFactory({
+        const result = await this.fileDialogService.showOpenDialog({
             title: HostedPluginCommands.SELECT_PATH.label!,
             openLabel: 'Select',
             canSelectFiles: false,
             canSelectFolders: true,
             canSelectMany: false
-        });
-        dialog.model.navigateTo(rootNode);
-        const result = await dialog.open();
+        }, workspaceFolder);
 
         if (UriSelection.is(result)) {
             if (await this.hostedPluginServer.isPluginValid(result.uri.toString())) {
