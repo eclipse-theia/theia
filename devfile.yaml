@@ -3,7 +3,7 @@
 
 apiVersion: 1.0.0
 metadata:
-  name: theia-dev
+  generateName: theia-dev-
 projects:
   - name: theia
     source:
@@ -37,7 +37,7 @@ commands:
         command: >
           killall node;
           yarn
-        workdir: ${workspaceRoot}/theia
+        workdir: /projects/theia
   - name: >
       theia: Launch Browser Backend
     actions:
@@ -47,8 +47,8 @@ commands:
           test -f /tmp/node_theiadev.pid && kill `cat /tmp/node_theiadev.pid`;
           mkdir -p /tmp/theiadev_projects &&
           export NODE_ENV=development &&
-          node src-gen/backend/main.js /tmp/theiadev_projects --hostname=0.0.0.0 --port=3000 --no-cluster --plugins=${workspaceRoot}/theia/plugins --hosted-plugin-inspect=9339 & echo $!> /tmp/node_theiadev.pid ; wait `cat /tmp/node_theiadev.pid`
-        workdir: ${workspaceRoot}/theia/examples/browser
+          node src-gen/backend/main.js /tmp/theiadev_projects --hostname=0.0.0.0 --port=3000 --no-cluster --plugins=/projects/theia/plugins --hosted-plugin-inspect=9339 & echo $!> /tmp/node_theiadev.pid ; wait `cat /tmp/node_theiadev.pid`
+        workdir: /projects/theia/examples/browser
   - name: >
       theia: Watch Core Packages
     actions:
@@ -56,7 +56,7 @@ commands:
         component: che-dev
         command: >
           yarn watch
-        workdir: ${workspaceRoot}/theia
+        workdir: /projects/theia
   - name: >
       theia: Watch Browser Example
     actions:
@@ -64,4 +64,4 @@ commands:
         component: che-dev
         command: >
           yarn watch
-        workdir: ${workspaceRoot}/theia/examples/browser
+        workdir: /projects/theia/examples/browser
