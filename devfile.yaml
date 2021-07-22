@@ -20,7 +20,7 @@ components:
         attributes:
           protocol: http
           public: "true"
-    memoryLimit: "3Gi"
+    memoryLimit: "3.5Gi"
   - id: che-incubator/typescript/latest
     type: chePlugin
     memoryLimit: 2048M
