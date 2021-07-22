@@ -27,8 +27,10 @@ export class PluginWorker {
     constructor() {
         const emitter = new Emitter<string>();
 
-        const workerURI = new URL('./plugin-worker.js', location.href);
-        this.worker = new Worker(workerURI);
+        this.worker = new Worker(new URL('./worker/worker-main',
+            // @ts-expect-error (TS1343)
+            // We compile to CommonJS but `import.meta` is still available in the browser
+            import.meta.url));
 
         this.worker.onmessage = m => emitter.fire(m.data);
         this.worker.onerror = e => console.error(e);
