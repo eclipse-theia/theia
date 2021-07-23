@@ -17,8 +17,8 @@
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { IIterator, toArray, find, some, every, map } from '@phosphor/algorithm';
 import {
-    Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, MessageLoop, Message, SplitPanel, BaseWidget,
-    addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed
+    Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed
 } from './widgets';
 import { Event, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
@@ -845,7 +845,7 @@ export class ViewContainerPart extends BaseWidget {
         disposable.push(addKeyListener(header, Key.ENTER, () => this.collapsed = !this.collapsed));
 
         const toggleIcon = document.createElement('span');
-        toggleIcon.classList.add(EXPANSION_TOGGLE_CLASS);
+        toggleIcon.classList.add(EXPANSION_TOGGLE_CLASS, ...CODICON_TREE_ITEM_CLASSES);
         if (this.collapsed) {
             toggleIcon.classList.add(COLLAPSED_CLASS);
         }
