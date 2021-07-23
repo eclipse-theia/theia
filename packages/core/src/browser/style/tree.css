@@ -70,8 +70,6 @@
     padding-right: calc(var(--theia-ui-padding)/2);
     min-width: var(--theia-icon-size);
     min-height: var(--theia-icon-size);
-    background-size: var(--theia-icon-size);
-    background: var(--theia-icon-chevron-right) center center no-repeat;
 }
 
 .theia-ExpansionToggle.theia-mod-busy {
@@ -83,8 +81,8 @@
     cursor: pointer;
 }
 
-.theia-ExpansionToggle:not(.theia-mod-busy):not(.theia-mod-collapsed) {
-    transform: rotate(90deg);
+.theia-ExpansionToggle.theia-mod-collapsed:not(.theia-mod-busy) {
+    transform: rotate(-90deg);
 }
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
