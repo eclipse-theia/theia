@@ -29,7 +29,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     protected init(): void {
         this.id = 'vsx-extensions-search-bar';
         this.addClass('theia-vsx-extensions-search-bar');
-        this.model.onDidChangeQuery(() => this.update());
+        this.model.onDidChangeQuery((query: string) => this.updateSearchTerm(query));
     }
 
     protected input: HTMLInputElement | undefined;
@@ -37,7 +37,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     protected render(): React.ReactNode {
         return <input type='text'
             ref={input => this.input = input || undefined}
-            value={this.model.query}
+            defaultValue={this.model.query}
             className='theia-input'
             placeholder='Search Extensions in Open VSX Registry'
             onChange={this.updateQuery}>
@@ -45,6 +45,12 @@ export class VSXExtensionsSearchBar extends ReactWidget {
     }
 
     protected updateQuery = (e: React.ChangeEvent<HTMLInputElement>) => this.model.query = e.target.value;
+
+    protected updateSearchTerm(term: string): void {
+        if (this.input) {
+            this.input.value = term;
+        }
+    }
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
