@@ -111,13 +111,6 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /worker-main\\.js$/,
-                loader: 'worker-loader',
-                options: {
-                    filename: 'worker-ext.[fullhash].js'
-                }
-            },
-            {
                 test: /\\.css$/,
                 exclude: /materialcolors\\.css$|\\.useable\\.css$/,
                 use: ['style-loader', 'css-loader']

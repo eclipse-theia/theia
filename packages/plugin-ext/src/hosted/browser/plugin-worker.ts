@@ -21,13 +21,18 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 export class PluginWorker {
 
     private worker: Worker;
+
     public readonly rpc: RPCProtocol;
+
     constructor() {
         const emitter = new Emitter<string>();
-        this.worker = new (require('../../hosted/browser/worker/worker-main'));
-        this.worker.onmessage = message => {
-            emitter.fire(message.data);
-        };
+
+        this.worker = new Worker(new URL('./worker/worker-main',
+            // @ts-expect-error (TS1343)
+            // We compile to CommonJS but `import.meta` is still available in the browser
+            import.meta.url));
+
+        this.worker.onmessage = m => emitter.fire(m.data);
         this.worker.onerror = e => console.error(e);
 
         this.rpc = new RPCProtocolImpl({
@@ -36,6 +41,6 @@ export class PluginWorker {
                 this.worker.postMessage(m);
             }
         });
-
     }
+
 }
