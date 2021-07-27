@@ -36,6 +36,7 @@ import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
@@ -46,6 +47,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -59,7 +61,12 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
-            execute: () => this.openView({ activate: true }),
+            execute: async (query?: string) => {
+                const widget = await this.openView({ activate: true });
+                if (query) {
+                    widget.setSearchTerm(query);
+                }
+            },
         });
         commands.registerCommand(PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR, {
             isEnabled: () => true,
@@ -88,6 +95,20 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isVisible: Preference.EditorCommandArgs.is,
             execute: ({ id }: Preference.EditorCommandArgs) => {
                 this.preferenceService.set(id, undefined, Number(this.scopeTracker.currentScope.scope), this.scopeTracker.currentScope.uri);
+            }
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES, {
+            execute: async () => {
+                const widget = await this.openView({ activate: true });
+                widget.setScope(PreferenceScope.User);
+            }
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_WORKSPACE_PREFERENCES, {
+            isEnabled: () => !!this.workspaceService.workspace,
+            isVisible: () => !!this.workspaceService.workspace,
+            execute: async () => {
+                const widget = await this.openView({ activate: true });
+                widget.setScope(PreferenceScope.Workspace);
             }
         });
     }

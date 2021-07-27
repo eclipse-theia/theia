@@ -238,7 +238,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: (prefix?: unknown) => this.quickInput.open(typeof prefix === 'string' ? prefix : '')
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
-            execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
+            execute: (query?: string) => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id, query)
         });
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
