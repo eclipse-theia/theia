@@ -47,6 +47,9 @@ export class MessagingListener {
      * Notify all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
      */
     async onDidWebSocketUpgrade(request: http.IncomingMessage, socket: ws): Promise<void> {
-        await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.onDidWebSocketUpgrade(request, socket)));
+        await Promise.all(Array.from(
+            this.messagingListenerContributions.getContributions(),
+            async messagingListener => messagingListener.onDidWebSocketUpgrade(request, socket)
+        ));
     }
 }

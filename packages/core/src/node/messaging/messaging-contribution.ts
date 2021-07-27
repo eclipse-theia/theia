@@ -39,24 +39,25 @@ export const MessagingContainer = Symbol('MessagingContainer');
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {
 
+    protected webSocketServer?: ws.Server;
+    protected checkAliveTimeout = 30000;
+    protected wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
+    protected channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
+
     @inject(MessagingContainer)
-    protected readonly container: interfaces.Container;
+    protected container: interfaces.Container;
 
     @inject(ContributionProvider) @named(ConnectionContainerModule)
-    protected readonly connectionModules: ContributionProvider<interfaces.ContainerModule>;
+    protected connectionModules: ContributionProvider<interfaces.ContainerModule>;
 
     @inject(ContributionProvider) @named(MessagingService.Contribution)
-    protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
+    protected contributions: ContributionProvider<MessagingService.Contribution>;
 
     @inject(WsRequestValidator)
-    protected readonly wsRequestValidator: WsRequestValidator;
+    protected wsRequestValidator: WsRequestValidator;
 
     @inject(MessagingListener)
-    protected readonly messagingListener: MessagingListener;
-
-    protected webSocketServer: ws.Server | undefined;
-    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
-    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
+    protected messagingListener: MessagingListener;
 
     @postConstruct()
     protected init(): void {
@@ -88,7 +89,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         this.wsHandlers.push(spec, callback);
     }
 
-    protected checkAliveTimeout = 30000;
     onStart(server: http.Server | https.Server): void {
         this.webSocketServer = new ws.Server({
             noServer: true,

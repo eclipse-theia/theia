@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2021 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './messaging-service';
-export * from './connection-server';
-export * from './http-long-polling-handler';
-export * from './ipc-connection-provider';
+/** */
+export const HTTP_LONG_POLLING_PATH = '/http-long-polling';
+export const CONNECTION_ID_KEY = 'theia-connection-id';
+
+export type ConnectionId = string;
