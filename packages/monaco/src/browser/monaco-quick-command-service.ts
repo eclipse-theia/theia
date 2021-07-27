@@ -58,7 +58,10 @@ export class MonacoQuickCommandService extends QuickCommandService implements mo
         }
 
         if (otherItems.length > 0) {
-            items.push({ type: 'separator', label: 'other commands' }, ...otherItems);
+            if (recentItems.length > 0) {
+                items.push({ type: 'separator', label: 'other commands' });
+            }
+            items.push(...otherItems);
         }
         return items;
     }
