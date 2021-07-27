@@ -81,10 +81,11 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
         const [left, right] = DiffUris.decode(uri);
 
         if (left.path.toString() === right.path.toString() && left.query && right.query) {
-            return `${left.displayName}: ${left.query} ⟷ ${right.query}`;
+            const prefix = left.displayName ? `${left.displayName}: ` : '';
+            return `${prefix}${left.query} ⟷ ${right.query}`;
         } else {
             let title;
-            if (left.path.toString() !== right.path.toString() && left.displayName !== uri.displayName) {
+            if (uri.displayName && left.path.toString() !== right.path.toString() && left.displayName !== uri.displayName) {
                 title = `${uri.displayName}: `;
             } else {
                 title = '';
