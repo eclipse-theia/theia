@@ -44,18 +44,18 @@ export class ProvidedTaskConfigurations {
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
-    readonly onStartUserInteractionEmitter: Emitter<TaskStartUserInteractionEvent> = new Emitter<TaskStartUserInteractionEvent>();
+    readonly onDidStartUserInteractionEmitter: Emitter<TaskStartUserInteractionEvent> = new Emitter<TaskStartUserInteractionEvent>();
 
     private currentToken: number = 0;
     private nextToken = 1;
 
-    get onStartUserInteraction(): Event<TaskStartUserInteractionEvent> {
-        return this.onStartUserInteractionEmitter.event;
+    get onDidStartUserInteraction(): Event<TaskStartUserInteractionEvent> {
+        return this.onDidStartUserInteractionEmitter.event;
     }
 
     startUserAction(): Promise<number> {
         const token = this.nextToken++;
-        return WaitUntilEvent.fire(this.onStartUserInteractionEmitter, { token: token }).then(() => token);
+        return WaitUntilEvent.fire(this.onDidStartUserInteractionEmitter, { token: token }).then(() => token);
     }
 
     /** returns a list of provided tasks */
