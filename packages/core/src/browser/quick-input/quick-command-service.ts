@@ -48,8 +48,8 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;
 
-    constructor(@inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry) {
-    }
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
 
     // The list of exempted commands not to be displayed in the recently used list.
     readonly exemptedCommands: Command[] = [

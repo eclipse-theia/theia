@@ -24,132 +24,13 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 
 @injectable()
-export class MonacoQuickInputService implements QuickInputService {
-    private monacoService: MonacoQuickInputImplementation;
-
-    @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
-
-    @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
-
-    constructor() {
-        this.monacoService = new MonacoQuickInputImplementation(this.contextKeyService);
-    }
-
-    get backButton(): QuickInputButton {
-        return this.monacoService.backButton;
-    }
-
-    get onShow(): Event<void> { return this.monacoService.onShow; }
-    get onHide(): Event<void> { return this.monacoService.onHide; }
-
-    open(filter: string): void {
-        this.monacoService.open(filter);
-    }
-
-    createInputBox(): InputBox {
-        return this.monacoService.createInputBox();
-    }
-
-    input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined> {
-        return this.monacoService.input();
-    }
-    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: T[] | Promise<T[]>, options?: O, token?: CancellationToken):
-        Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
-        return this.monacoService.pick(picks, options, token);
-    }
-
-    showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
-            const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
-            const wrapped = this.wrapQuickPick(quickPick);
-
-            if (options) {
-                wrapped.canSelectMany = !!options.canSelectMany;
-                wrapped.contextKey = options.contextKey;
-                wrapped.description = options.description;
-                wrapped.enabled = options.enabled ?? true;
-                wrapped.ignoreFocusOut = !!options.ignoreFocusOut;
-                wrapped.matchOnDescription = options.matchOnDescription ?? true;
-                wrapped.matchOnDetail = options.matchOnDetail ?? true;
-                wrapped.placeholder = options.placeholder;
-                wrapped.step = options.step;
-                wrapped.title = options.title;
-                wrapped.totalSteps = options.totalSteps;
-
-                if (options.activeItem) {
-                    wrapped.activeItems = [options.activeItem];
-                }
-
-                wrapped.onDidAccept(() => {
-                    if (options?.onDidAccept) {
-                        options.onDidAccept();
-                    }
-                    wrapped.hide();
-                    resolve(wrapped.selectedItems[0]);
-                });
-
-                wrapped.onDidHide(() => {
-                    if (options.onDidHide) {
-                        options.onDidHide();
-                    };
-                    wrapped.dispose();
-                });
-                wrapped.onDidChangeValue((filter: string) => {
-                    if (options.onDidChangeValue) {
-                        options.onDidChangeValue(wrapped, filter);
-                    }
-                });
-                wrapped.onDidChangeActive((activeItems: Array<T>) => {
-                    if (options.onDidChangeActive) {
-                        options.onDidChangeActive(wrapped, activeItems);
-                    }
-                });
-                wrapped.onDidTriggerButton((button: monaco.quickInput.IQuickInputButton) => {
-                    if (options.onDidTriggerButton) {
-                        options.onDidTriggerButton(button);
-                    }
-                });
-                wrapped.onDidTriggerItemButton((evt: QuickPickItemButtonEvent<T>) => {
-                    if (options.onDidTriggerItemButton) {
-                        options.onDidTriggerItemButton(evt);
-                    }
-                });
-                wrapped.onDidChangeSelection((selectedItems: Array<T>) => {
-                    if (options.onDidChangeSelection) {
-                        options.onDidChangeSelection(wrapped, selectedItems);
-                    }
-                });
-            }
-
-            wrapped.items = items;
-            wrapped.show();
-        }).then(item => {
-            if (item?.execute) {
-                item.execute();
-            }
-            return item;
-        });
-    }
-    wrapQuickPick<T extends QuickPickItem>(wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>): QuickPick<T> {
-        return new MonacoQuickPick(wrapped, this.keybindingRegistry);
-    }
-
-    protected convertItems<T extends QuickPickItem>(item: T): MonacoQuickPickItem<T> {
-        return new MonacoQuickPickItem(item, this.keybindingRegistry);
-    }
-
-    hide(): void {
-        return this.monacoService.hide();
-    }
-}
-
-@injectable()
 export class MonacoQuickInputImplementation implements monaco.quickInput.IQuickInputService {
 
     controller: monaco.quickInput.QuickInputController;
     quickAccess: monaco.quickInput.IQuickAccessController;
+
+    @inject(monaco.contextKeyService.ContextKeyService)
+    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
 
     protected container: HTMLElement;
     private quickInputList: monaco.list.List<monaco.list.IListElement>;
@@ -158,7 +39,7 @@ export class MonacoQuickInputImplementation implements monaco.quickInput.IQuickI
     get onShow(): Event<void> { return this.controller.onShow; }
     get onHide(): Event<void> { return this.controller.onHide; }
 
-    constructor(protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService) {
+    constructor() {
         this.initContainer();
         this.initController();
         this.quickAccess = new monaco.quickInput.QuickAccessController(this, monaco.services.StaticServices.instantiationService.get());
@@ -274,6 +155,122 @@ export class MonacoQuickInputImplementation implements monaco.quickInput.IQuickI
                 progressBar: {}
             }
         };
+    }
+}
+
+@injectable()
+export class MonacoQuickInputService implements QuickInputService {
+    @inject(MonacoQuickInputImplementation)
+    private monacoService: MonacoQuickInputImplementation;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
+    get backButton(): QuickInputButton {
+        return this.monacoService.backButton;
+    }
+
+    get onShow(): Event<void> { return this.monacoService.onShow; }
+    get onHide(): Event<void> { return this.monacoService.onHide; }
+
+    open(filter: string): void {
+        this.monacoService.open(filter);
+    }
+
+    createInputBox(): InputBox {
+        return this.monacoService.createInputBox();
+    }
+
+    input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined> {
+        return this.monacoService.input();
+    }
+    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: T[] | Promise<T[]>, options?: O, token?: CancellationToken):
+        Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
+        return this.monacoService.pick(picks, options, token);
+    }
+
+    showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
+            const wrapped = this.wrapQuickPick(quickPick);
+
+            if (options) {
+                wrapped.canSelectMany = !!options.canSelectMany;
+                wrapped.contextKey = options.contextKey;
+                wrapped.description = options.description;
+                wrapped.enabled = options.enabled ?? true;
+                wrapped.ignoreFocusOut = !!options.ignoreFocusOut;
+                wrapped.matchOnDescription = options.matchOnDescription ?? true;
+                wrapped.matchOnDetail = options.matchOnDetail ?? true;
+                wrapped.placeholder = options.placeholder;
+                wrapped.step = options.step;
+                wrapped.title = options.title;
+                wrapped.totalSteps = options.totalSteps;
+
+                if (options.activeItem) {
+                    wrapped.activeItems = [options.activeItem];
+                }
+
+                wrapped.onDidAccept(() => {
+                    if (options?.onDidAccept) {
+                        options.onDidAccept();
+                    }
+                    wrapped.hide();
+                    resolve(wrapped.selectedItems[0]);
+                });
+
+                wrapped.onDidHide(() => {
+                    if (options.onDidHide) {
+                        options.onDidHide();
+                    };
+                    wrapped.dispose();
+                });
+                wrapped.onDidChangeValue((filter: string) => {
+                    if (options.onDidChangeValue) {
+                        options.onDidChangeValue(wrapped, filter);
+                    }
+                });
+                wrapped.onDidChangeActive((activeItems: Array<T>) => {
+                    if (options.onDidChangeActive) {
+                        options.onDidChangeActive(wrapped, activeItems);
+                    }
+                });
+                wrapped.onDidTriggerButton((button: monaco.quickInput.IQuickInputButton) => {
+                    if (options.onDidTriggerButton) {
+                        options.onDidTriggerButton(button);
+                    }
+                });
+                wrapped.onDidTriggerItemButton((evt: QuickPickItemButtonEvent<T>) => {
+                    if (options.onDidTriggerItemButton) {
+                        options.onDidTriggerItemButton(evt);
+                    }
+                });
+                wrapped.onDidChangeSelection((selectedItems: Array<T>) => {
+                    if (options.onDidChangeSelection) {
+                        options.onDidChangeSelection(wrapped, selectedItems);
+                    }
+                });
+            }
+
+            wrapped.items = items;
+            wrapped.show();
+        }).then(item => {
+            if (item?.execute) {
+                item.execute();
+            }
+            return item;
+        });
+    }
+    wrapQuickPick<T extends QuickPickItem>(wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>): QuickPick<T> {
+        return new MonacoQuickPick(wrapped, this.keybindingRegistry);
+    }
+
+    protected convertItems<T extends QuickPickItem>(item: T): MonacoQuickPickItem<T> {
+        return new MonacoQuickPickItem(item, this.keybindingRegistry);
+    }
+
+    hide(): void {
+        return this.monacoService.hide();
     }
 }
 
