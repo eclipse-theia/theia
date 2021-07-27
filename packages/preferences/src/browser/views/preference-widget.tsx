@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
-import { Panel, Widget, Message, StatefulWidget } from '@theia/core/lib/browser';
+import { Panel, Widget, Message, StatefulWidget, PreferenceScope } from '@theia/core/lib/browser';
 import { PreferencesEditorState, PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
@@ -46,6 +46,14 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
 
     get currentScope(): Preference.SelectedScopeDetails {
         return this.tabBarWidget.currentScope;
+    }
+
+    setSearchTerm(query: string): void {
+        this.searchbarWidget.updateSearchTerm(query);
+    }
+
+    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace): void {
+        this.tabBarWidget.setScope(scope);
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
