@@ -15,7 +15,6 @@
  ********************************************************************************/
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { find } from '@theia/core/shared/@phosphor/algorithm';
 import {
     AbstractViewContribution,
     FrontendApplicationContribution, LabelProvider,
@@ -24,7 +23,6 @@ import {
     StatusBarEntry,
     KeybindingRegistry,
     ViewContainerTitleOptions,
-    ViewContainer
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
@@ -149,16 +147,6 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         const viewModeEmitter = new Emitter<void>();
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        const extractScmWidget = (widget: any) => {
-            if (widget instanceof ViewContainer) {
-                const layout = widget.containerLayout;
-                const scmWidgetPart = find(layout.iter(), part => part.wrapped instanceof ScmWidget);
-                if (scmWidgetPart && scmWidgetPart.wrapped instanceof ScmWidget) {
-                    return scmWidgetPart.wrapped;
-                }
-            }
-        };
         const registerToggleViewItem = (command: Command, mode: 'tree' | 'list') => {
             const id = command.id;
             const item: TabBarToolbarItem = {
@@ -169,17 +157,15 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             };
             this.commandRegistry.registerCommand({ id, iconClass: command && command.iconClass }, {
                 execute: widget => {
-                    const scmWidget = extractScmWidget(widget);
-                    if (scmWidget) {
-                        scmWidget.viewMode = mode;
+                    if (widget instanceof ScmWidget) {
+                        widget.viewMode = mode;
                         viewModeEmitter.fire();
                     }
                 },
                 isVisible: widget => {
-                    const scmWidget = extractScmWidget(widget);
-                    if (scmWidget) {
+                    if (widget instanceof ScmWidget) {
                         return !!this.scmService.selectedRepository
-                            && scmWidget.viewMode !== mode;
+                            && widget.viewMode !== mode;
                     }
                     return false;
                 },
@@ -191,15 +177,13 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
         this.commandRegistry.registerCommand(SCM_COMMANDS.COLLAPSE_ALL, {
             execute: widget => {
-                const scmWidget = extractScmWidget(widget);
-                if (scmWidget && scmWidget.viewMode === 'tree') {
-                    scmWidget.collapseScmTree();
+                if (widget instanceof ScmWidget && widget.viewMode === 'tree') {
+                    widget.collapseScmTree();
                 }
             },
             isVisible: widget => {
-                const scmWidget = extractScmWidget(widget);
-                if (scmWidget) {
-                    return !!this.scmService.selectedRepository && scmWidget.viewMode === 'tree';
+                if (widget instanceof ScmWidget) {
+                    return !!this.scmService.selectedRepository && widget.viewMode === 'tree';
                 }
                 return false;
             }
