@@ -34,7 +34,7 @@ import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widg
 import '../../src/browser/styles/index.css';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
-import { OutlineViewTreeModel } from './outline-view-tree';
+import { OutlineViewTreeModel } from './outline-view-tree-model';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
@@ -61,7 +61,7 @@ export default new ContainerModule(bind => {
 function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
     const child = createTreeContainer(parent);
 
-    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: true });
+    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, expandOnlyOnExpansionToggleClick: true, search: true });
 
     child.unbind(TreeWidget);
     child.bind(OutlineViewWidget).toSelf();

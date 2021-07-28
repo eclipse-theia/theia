@@ -44,7 +44,7 @@ export class ThemeService {
     protected activeTheme: Theme | undefined;
     protected readonly themeChange = new Emitter<ThemeChangeEvent>();
 
-    readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
+    readonly onDidColorThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
     static get(): ThemeService {
         const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any

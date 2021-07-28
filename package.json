@@ -3,7 +3,7 @@
   "name": "@theia/monorepo",
   "version": "0.0.0",
   "engines": {
-    "yarn": "1.0.x || >=1.2.1",
+    "yarn": ">=1.7.0 <2.x.x",
     "node": ">=12.14.1 <13"
   },
   "resolutions": {
@@ -74,6 +74,8 @@
     "publish:check": "node scripts/check-publish.js",
     "start:browser": "yarn rebuild:browser && yarn --cwd examples/browser start",
     "start:electron": "yarn rebuild:electron && yarn --cwd examples/electron start",
+    "debug:browser": "yarn rebuild:browser && yarn --cwd examples/browser start:debug",
+    "debug:electron": "yarn rebuild:electron && yarn --cwd examples/electron start:debug",
     "download:plugins": "theia download:plugins"
   },
   "workspaces": [

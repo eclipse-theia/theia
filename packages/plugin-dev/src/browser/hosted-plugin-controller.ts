@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { setTimeout } from 'timers';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common';
@@ -229,7 +228,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
                     try {
                         await this.hostedPluginServer.stopWatchCompilation(event.pluginLocation.toString());
                     } catch (error) {
-                        this.messageService.error(this.getErrorMessage(error.message));
+                        this.messageService.error(this.getErrorMessage(error));
                     }
                 }
             }
@@ -246,8 +245,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
         }
     }
 
-    private getErrorMessage(error: Error): string {
-        return error.message.substring(error.message.indexOf(':') + 1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private getErrorMessage(error: any): string {
+        return error?.message?.substring(error.message.indexOf(':') + 1) || '';
     }
 
     /**

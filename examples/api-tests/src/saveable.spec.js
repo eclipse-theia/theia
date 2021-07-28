@@ -475,10 +475,12 @@ describe('Saveable', function () {
         assert.isFalse(Saveable.isDirty(widget));
 
         const waitForDisposed = new Deferred();
+        // Must pass in 5 seconds, so check state after 4.5.
         const listener = editor.onDispose(() => waitForDisposed.resolve());
+        const fourSeconds = new Promise(resolve => setTimeout(resolve, 4500));
         try {
-            await fileService.delete(fileUri);
-            await waitForDisposed.promise;
+            const deleteThenDispose = fileService.delete(fileUri).then(() => waitForDisposed.promise);
+            await Promise.race([deleteThenDispose, fourSeconds]);
             assert.isTrue(widget.isDisposed);
         } finally {
             listener.dispose();

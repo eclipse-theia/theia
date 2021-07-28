@@ -31,6 +31,7 @@ import { loadManifest } from './plugin-manifest-loader';
 import { KeyValueStorageProxy } from '../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
+import { SecretsExtImpl } from '../../plugin/secrets-ext';
 
 /**
  * Handle the RPC calls.
@@ -56,13 +57,15 @@ export class PluginHostRPC {
         const clipboardExt = new ClipboardExt(this.rpc);
         const webviewExt = new WebviewsExtImpl(this.rpc, workspaceExt);
         const terminalService = new TerminalServiceExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, this.rpc);
+        const secretsExt = new SecretsExtImpl(this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, secretsExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
         this.rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
         this.rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
+        this.rpc.set(MAIN_RPC_CONTEXT.SECRETS_EXT, secretsExt);
 
         this.apiFactory = createAPIFactory(
             this.rpc,
@@ -95,7 +98,8 @@ export class PluginHostRPC {
     }
 
     createPluginManager(
-        envExt: EnvExtImpl, terminalService: TerminalServiceExtImpl, storageProxy: KeyValueStorageProxy, preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl,
+        envExt: EnvExtImpl, terminalService: TerminalServiceExtImpl, storageProxy: KeyValueStorageProxy,
+        preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, secretsExt: SecretsExtImpl,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;
@@ -229,7 +233,7 @@ export class PluginHostRPC {
                     `Path ${extensionTestsPath} does not point to a valid extension test runner.`
                 );
             } : undefined
-        }, envExt, terminalService, storageProxy, preferencesManager, webview, rpc);
+        }, envExt, terminalService, storageProxy, secretsExt, preferencesManager, webview, rpc);
         return pluginManager;
     }
 }

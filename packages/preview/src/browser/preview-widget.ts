@@ -99,7 +99,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.toDispose.push(this.workspace.onDidOpenTextDocument(document => updateIfAffected(document.uri)));
         this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.model.uri)));
         this.toDispose.push(this.workspace.onDidCloseTextDocument(document => updateIfAffected(document.uri)));
-        this.toDispose.push(this.themeService.onThemeChange(() => this.update()));
+        this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.update()));
         this.firstUpdate = () => {
             this.revealFragment(this.uri);
         };

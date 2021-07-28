@@ -19,7 +19,6 @@ import { find } from '@theia/core/shared/@phosphor/algorithm';
 import {
     AbstractViewContribution,
     FrontendApplicationContribution, LabelProvider,
-    QuickOpenService,
     StatusBar,
     StatusBarAlignment,
     StatusBarEntry,
@@ -88,7 +87,6 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(CommandService) protected readonly commands: CommandService;

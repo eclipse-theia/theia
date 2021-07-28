@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue, ApplicationShell } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
-import { EncodingMode } from './editor';
 import { EditorPreferences } from './editor-preferences';
 import { ResourceProvider, MessageService } from '@theia/core';
 import { LanguageService, Language } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { EncodingMode } from './editor';
 
 export namespace EditorCommands {
 
@@ -68,6 +68,11 @@ export namespace EditorCommands {
         id: 'textEditor.change.encoding',
         category: EDITOR_CATEGORY,
         label: 'Change File Encoding'
+    };
+    export const REVERT_AND_CLOSE: Command = {
+        id: 'workbench.action.revertAndCloseActiveEditor',
+        category: 'View',
+        label: 'Revert and Close Editor'
     };
 
     /**
@@ -197,8 +202,8 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
 
-    @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(MessageService) protected readonly messageService: MessageService;
 
@@ -229,6 +234,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
+        registry.registerCommand(EditorCommands.REVERT_AND_CLOSE);
         registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
             isEnabled: () => this.canConfigureLanguage(),
             isVisible: () => this.canConfigureLanguage(),
@@ -267,20 +273,18 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         const current = editor.document.languageId;
-        const items: QuickPickItem<'autoDetect' | Language>[] = [
+        const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItem> = [
             { label: 'Auto Detect', value: 'autoDetect' },
             { type: 'separator', label: 'languages (identifier)' },
-            ... (this.languages.languages.map(
-                language => this.toQuickPickLanguage(language, current)
-            )).sort((e, e2) => e.label.localeCompare(e2.label))
+            ... (this.languages.languages.map(language => this.toQuickPickLanguage(language, current))).sort((e, e2) => e.label.localeCompare(e2.label))
         ];
-        const selected = await this.quickPick.show(items, {
-            placeholder: 'Select Language Mode'
-        });
-        if (selected === 'autoDetect') {
-            editor.detectLanguage();
-        } else if (selected) {
-            editor.setLanguage(selected.id);
+        const selectedMode = await this.quickInputService?.showQuickPick(items, { placeholder: 'Select Language Mode' });
+        if (selectedMode && ('value' in selectedMode)) {
+            if (selectedMode.value === 'autoDetect') {
+                editor.detectLanguage();
+            } else if (selectedMode.value) {
+                editor.setLanguage(selectedMode.value.id);
+            }
         }
     }
 
@@ -297,17 +301,15 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const reopenWithEncodingPick = { label: 'Reopen with Encoding', value: 'reopen' };
         const saveWithEncodingPick = { label: 'Save with Encoding', value: 'save' };
-        const actionItems: QuickPickItem<string>[] = [
+        const actionItems: QuickPickValue<string>[] = [
             reopenWithEncodingPick,
             saveWithEncodingPick
         ];
-        const action = await this.quickPick.show(actionItems, {
-            placeholder: 'Select Action'
-        });
-        if (!action) {
+        const selectedEncoding = await this.quickInputService?.showQuickPick(actionItems, { placeholder: 'Select Action' });
+        if (!selectedEncoding) {
             return;
         }
-        const isReopenWithEncoding = (action === reopenWithEncodingPick.value);
+        const isReopenWithEncoding = (selectedEncoding.value === reopenWithEncodingPick.value);
 
         const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
 
@@ -315,7 +317,7 @@ export class EditorCommandContribution implements CommandContribution {
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;
         resource.dispose();
 
-        const encodingItems: QuickPickItem<{ id: string, description: string }>[] = Object.keys(SUPPORTED_ENCODINGS)
+        const encodingItems: QuickPickValue<{ id: string, description: string }>[] = Object.keys(SUPPORTED_ENCODINGS)
             .sort((k1, k2) => {
                 if (k1 === configuredEncoding) {
                     return -1;
@@ -340,29 +342,30 @@ export class EditorCommandContribution implements CommandContribution {
                 value: { id: guessedEncoding, description: guessedEncoding }
             });
         }
-        const encoding = await this.quickPick.show(encodingItems, {
+        const selectedFileEncoding = await this.quickInputService?.showQuickPick<QuickPickValue<{ id: string, description: string }>>(encodingItems, {
             placeholder: isReopenWithEncoding ? 'Select File Encoding to Reopen File' : 'Select File Encoding to Save with'
         });
-        if (!encoding) {
+
+        if (!selectedFileEncoding) {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
             this.messageService.info('The file is dirty. Please save it first before reopening it with another encoding.');
             return;
-        } else {
-            editor.setEncoding(encoding.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
+        } else if (selectedFileEncoding.value) {
+            editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
         }
     }
 
     protected toQuickPickLanguage(value: Language, current: string): QuickPickValue<Language> {
         const languageUri = this.toLanguageUri(value);
         const icon = this.labelProvider.getIcon(languageUri);
-        const iconClass = icon !== '' ? icon + ' file-icon' : undefined;
+        const iconClasses = icon !== '' ? [icon + ' file-icon'] : undefined;
         return {
             value,
             label: value.name,
             description: `(${value.id})${current === value.id ? ' - Configured Language' : ''}`,
-            iconClass
+            iconClasses
         };
     }
     protected toLanguageUri(language: Language): URI {

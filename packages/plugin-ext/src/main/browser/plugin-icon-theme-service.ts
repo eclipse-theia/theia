@@ -231,7 +231,6 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             if (themeType !== 'dark') {
                 selector = '.theia-' + themeType + ' ' + selector;
             }
-            selectors.push(selector);
             selectors.push(selector + '::before');
             definitionSelectors.set(definitionId, selectors);
         };

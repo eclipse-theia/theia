@@ -22,8 +22,6 @@ import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './prefere
 import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
 
-const SHADOW_CLASSNAME = 'with-shadow';
-
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,
     editorState: PreferencesEditorState,
@@ -85,13 +83,6 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
 
         this.editorWidget.addClass('preferences-editor-widget');
         this.addWidget(this.editorWidget);
-        this.editorWidget.onEditorDidScroll(editorIsAtTop => {
-            if (editorIsAtTop) {
-                this.tabBarWidget.removeClass(SHADOW_CLASSNAME);
-            } else {
-                this.tabBarWidget.addClass(SHADOW_CLASSNAME);
-            }
-        });
 
         this.update();
     }

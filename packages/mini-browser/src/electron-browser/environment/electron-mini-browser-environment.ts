@@ -40,7 +40,7 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     protected getDefaultHostname(): string {
         const query = self.location.search
-            .substr(1)
+            .substr(1) // remove leading `?`
             .split('&')
             .map(entry => entry
                 .split('=', 2)

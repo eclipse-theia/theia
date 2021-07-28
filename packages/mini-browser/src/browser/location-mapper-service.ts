@@ -129,13 +129,13 @@ export class LocationWithoutSchemeMapper implements LocationMapper {
 export class FileLocationMapper implements LocationMapper {
 
     @inject(MiniBrowserEnvironment)
-    protected readonly miniBrowserEnvironment: MiniBrowserEnvironment;
+    protected miniBrowserEnvironment: MiniBrowserEnvironment;
 
     canHandle(location: string): MaybePromise<number> {
         return location.startsWith('file://') ? 1 : 0;
     }
 
-    map(location: string): MaybePromise<string> {
+    async map(location: string): Promise<string> {
         const uri = new URI(location);
         if (uri.scheme !== 'file') {
             throw new Error(`Only URIs with 'file' scheme can be mapped to an URL. URI was: ${uri}.`);

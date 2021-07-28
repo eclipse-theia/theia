@@ -137,14 +137,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
         for (const tasks of [configured, provided]) {
             for (const task of tasks) {
                 if (!taskType || (!!this.taskDefinitionRegistry.getDefinition(task) ? task._source === taskType : task.type === taskType)) {
-                    const { type, label, _scope, _source, ...properties } = task;
-                    const dto: TaskDto = { type, label, scope: _scope, source: _source };
-                    for (const key in properties) {
-                        if (properties.hasOwnProperty(key)) {
-                            dto[key] = properties[key];
-                        }
-                    }
-                    result.push(dto);
+                    result.push(this.fromTaskConfiguration(task));
                 }
             }
         }
@@ -202,7 +195,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
-        const { group, presentation, scope, source, ...common } = taskDto;
+        const { group, presentation, scope, source, ...common } = taskDto ?? {};
         const partialConfig: Partial<TaskConfiguration> = {};
         if (presentation) {
             partialConfig.presentation = this.convertTaskPresentation(presentation);

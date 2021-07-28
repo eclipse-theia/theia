@@ -50,13 +50,14 @@ import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
-import { CallHierarchyService, CallHierarchyServiceProvider, Caller, Definition } from '@theia/callhierarchy/lib/browser';
-import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller } from './callhierarchy/callhierarchy-type-converters';
+import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
+import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
+import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -130,7 +131,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             triggerCharacters,
             provideCompletionItems: (model, position, context, token) => this.provideCompletionItems(handle, model, position, context, token),
             resolveCompletionItem: supportsResolveDetails
-                ? (model, position, suggestion, token) => Promise.resolve(this.resolveCompletionItem(handle, model, position, suggestion, token))
+                ? (suggestion, token) => Promise.resolve(this.resolveCompletionItem(handle, suggestion, token))
                 : undefined
         }));
     }
@@ -151,10 +152,10 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         });
     }
 
-    protected resolveCompletionItem(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
+    protected resolveCompletionItem(handle: number,
         item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionItem> {
         const { parentId, id } = item as CompletionDto;
-        return this.proxy.$resolveCompletionItem(handle, parentId, id, token).then(resolved => {
+        return this.proxy.$resolveCompletionItem(handle, [parentId, id], token).then(resolved => {
             if (resolved) {
                 mixin(item, resolved, true);
             }
@@ -781,15 +782,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     }
 
                     if (Array.isArray(result)) {
-                        const callers: Caller[] = [];
-                        for (const item of result) {
-                            callers.push(toCaller(item));
-                        }
-                        return callers;
+                        return result.map(toCaller);
                     }
 
                     return undefined!;
-                })
+                }),
+
+            getCallees: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
+                .then(result => {
+                    if (!result) {
+                        return undefined;
+                    }
+                    if (Array.isArray(result)) {
+                        return result.map(toCallee);
+                    }
+
+                    return undefined;
+                }),
         };
     }
 
@@ -919,6 +928,10 @@ function reviveMarker(marker: MarkerData): vst.Diagnostic {
         monacoMarker.relatedInformation = marker.relatedInformation.map(reviveRelated);
     }
 
+    if (marker.tags) {
+        monacoMarker.tags = marker.tags.map(reviveTag);
+    }
+
     return monacoMarker;
 }
 
@@ -953,6 +966,13 @@ function reviveRelated(related: RelatedInformation): vst.DiagnosticRelatedInform
             range: reviveRange(related.startLineNumber, related.startColumn, related.endLineNumber, related.endColumn)
         }
     };
+}
+
+function reviveTag(tag: DiagnosticTag): vst.DiagnosticTag {
+    switch (tag) {
+        case 1: return DiagnosticTag.Unnecessary;
+        case 2: return DiagnosticTag.Deprecated;
+    }
 }
 
 function reviveRegExp(regExp?: SerializedRegExp): RegExp | undefined {

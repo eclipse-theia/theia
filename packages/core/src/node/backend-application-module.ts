@@ -20,7 +20,7 @@ import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
+import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
@@ -30,6 +30,11 @@ import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
+import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
+import { KeytarServiceImpl } from './keytar-server';
+import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
+import { EnvironmentUtils } from './environment-utils';
+import { ProcessUtils } from './process-utils';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -59,6 +64,16 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
+    // Bind the BackendApplicationServer as a BackendApplicationContribution
+    // and fallback to an empty contribution if never bound.
+    bind(BackendApplicationContribution).toDynamicValue(ctx => {
+        if (ctx.container.isBound(BackendApplicationServer)) {
+            return ctx.container.get(BackendApplicationServer);
+        } else {
+            console.warn('no BackendApplicationServer is set, frontend might not be available');
+            return {};
+        }
+    }).inSingletonScope();
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();
 
@@ -85,4 +100,13 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
+    bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
+    ).inSingletonScope();
+
+    bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
+
+    bind(EnvironmentUtils).toSelf().inSingletonScope();
+    bind(ProcessUtils).toSelf().inSingletonScope();
 });

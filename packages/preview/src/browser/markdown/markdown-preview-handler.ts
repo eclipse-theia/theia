@@ -23,7 +23,7 @@ import { Path } from '@theia/core/lib/common/path';
 import * as hljs from 'highlight.js';
 import * as markdownit from 'markdown-it';
 import * as anchor from 'markdown-it-anchor';
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { PreviewUri } from '../preview-uri';
 import { PreviewHandler, RenderContentParams } from '../preview-handler';
 import { PreviewOpenerOptions } from '../preview-contribution';

@@ -231,6 +231,15 @@ export abstract class PreferenceProvider implements Disposable {
         return source;
     }
 
+    /**
+     * Handles deep equality with the possibility of `undefined`
+     */
+    static deepEqual(a: JSONValue | undefined, b: JSONValue | undefined): boolean {
+        if (a === b) { return true; }
+        if (a === undefined || b === undefined) { return false; }
+        return JSONExt.deepEqual(a, b);
+    }
+
     protected getParsedContent(jsonData: any): { [key: string]: any } {
         const preferences: { [key: string]: any } = {};
         if (typeof jsonData !== 'object') {

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
+import { FrontendApplicationConfig, merge } from '@theia/application-package/lib/application-props';
 
 export class FrontendApplicationConfigProvider {
 
@@ -28,14 +28,14 @@ export class FrontendApplicationConfigProvider {
         return config;
     }
 
-    static set(config: FrontendApplicationConfig): void {
+    static set(config: FrontendApplicationConfig.Partial): void {
         if (FrontendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = window as any;
         const key = FrontendApplicationConfigProvider.KEY;
-        globalObject[key] = config;
+        globalObject[key] = merge(FrontendApplicationConfig.DEFAULT, config);
     }
 
     private static doGet(): FrontendApplicationConfig | undefined {

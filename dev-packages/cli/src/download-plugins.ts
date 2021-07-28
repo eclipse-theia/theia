@@ -30,6 +30,7 @@ import * as temp from 'temp';
 import { green, red } from 'colors/safe';
 
 import { promisify } from 'util';
+import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
 const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
 const pipelineAsPromised = promisify(stream.pipeline);
 
@@ -50,6 +51,17 @@ export interface DownloadPluginsOptions {
      * Defaults to `false`.
      */
     ignoreErrors?: boolean;
+
+    /**
+     * The supported vscode API version.
+     * Used to determine extension compatibility.
+     */
+    apiVersion?: string;
+
+    /**
+     * The open-vsx registry API url.
+     */
+    apiUrl?: string;
 }
 
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
@@ -60,6 +72,8 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     const {
         packed = false,
         ignoreErrors = false,
+        apiVersion = '1.50.0',
+        apiUrl = 'https://open-vsx.org/api'
     } = options;
 
     console.warn('--- downloading plugins ---');
@@ -87,6 +101,20 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     if (!ignoreErrors && failures.length > 0) {
         throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
     }
+
+    // Resolve extension pack plugins.
+    const ids = await getAllExtensionPackIds(pluginsDir);
+    if (ids.length) {
+        const client = new OVSXClient({ apiVersion, apiUrl });
+        ids.forEach(async id => {
+            const extension = await client.getLatestCompatibleExtensionVersion(id);
+            const downloadUrl = extension?.files.download;
+            if (downloadUrl) {
+                await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed);
+            }
+        });
+    }
+
 }
 
 /**
@@ -188,4 +216,61 @@ export function xfetch(url: string, options?: RequestInit): Promise<Response> {
         proxiedOptions.agent = new HttpsProxyAgent(proxy);
     }
     return fetch(url, proxiedOptions);
+}
+
+/**
+ * Get the list of all available ids referenced by extension packs.
+ * @param pluginDir the plugin directory.
+ * @returns the list of all referenced extension pack ids.
+ */
+async function getAllExtensionPackIds(pluginDir: string): Promise<string[]> {
+    const extensions = await getPackageFiles(pluginDir);
+    const extensionIds: string[] = [];
+    const ids = await Promise.all(extensions.map(ext => getExtensionPackIds(ext)));
+    ids.forEach(id => {
+        extensionIds.push(...id);
+    });
+    return extensionIds;
+}
+
+/**
+ * Walk the plugin directory collecting available extension paths.
+ * @param dirPath the plugin directory
+ * @returns the list of extension paths.
+ */
+async function getPackageFiles(dirPath: string): Promise<string[]> {
+    let fileList: string[] = [];
+    const files = await fs.readdir(dirPath);
+
+    // Recursively fetch the list of extension `package.json` files.
+    for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        if ((await fs.stat(filePath)).isDirectory()) {
+            fileList = [...fileList, ...(await getPackageFiles(filePath))];
+        } else if ((path.basename(filePath) === 'package.json' && !path.dirname(filePath).includes('node_modules'))) {
+            fileList.push(filePath);
+        }
+    }
+
+    return fileList;
+}
+
+/**
+ * Get the list of extension ids referenced by the extension pack.
+ * @param extPath the individual extension path.
+ * @returns the list of individual extension ids.
+ */
+async function getExtensionPackIds(extPath: string): Promise<string[]> {
+    const ids = new Set<string>();
+    const content = await fs.readFile(extPath, 'utf-8');
+    const json = JSON.parse(content);
+
+    // The `extensionPack` object.
+    const extensionPack = json.extensionPack as string[];
+    for (const ext in extensionPack) {
+        if (ext !== undefined) {
+            ids.add(extensionPack[ext]);
+        }
+    }
+    return Array.from(ids);
 }

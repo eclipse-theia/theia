@@ -20,12 +20,16 @@ import processBackendModule from '@theia/process/lib/node/process-backend-module
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import terminalBackendModule from '../terminal-backend-module';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
+import { ProcessUtils } from '@theia/core/lib/node/process-utils';
 
 export function createTerminalTestContainer(): Container {
     const container = new Container();
 
     container.load(backendApplicationModule);
     container.rebind(ApplicationPackage).toConstantValue({} as ApplicationPackage);
+    container.rebind(ProcessUtils).toConstantValue(new class extends ProcessUtils {
+        terminateProcessTree(): void { }
+    });
 
     bindLogger(container.bind.bind(container));
     container.load(messagingBackendModule);

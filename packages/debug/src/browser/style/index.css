@@ -21,6 +21,11 @@
     height: 100%;
 }
 
+
+.theia-debug-container .theia-select {
+    margin-left: var(--theia-ui-padding);
+}
+
 .theia-side-panel .theia-debug-container .theia-ExpansionToggle {
     padding-right: 4px;
     min-width: 10px;
@@ -53,7 +58,6 @@
 
 .theia-source-breakpoint .path {
     font-size: var(--theia-ui-font-size0);
-    color: var(--theia-descriptionForeground);
 }
 
 .theia-source-breakpoint .line-info {

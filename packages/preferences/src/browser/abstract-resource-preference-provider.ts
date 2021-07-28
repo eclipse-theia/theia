@@ -18,7 +18,6 @@
 /* eslint-disable no-null/no-null */
 
 import * as jsoncparser from 'jsonc-parser';
-import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -228,9 +227,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                     continue;
                 }
             }
-            if (newValue === undefined && oldValue !== newValue
-                || oldValue === undefined && newValue !== oldValue // JSONExt.deepEqual() does not support handling `undefined`
-                || !JSONExt.deepEqual(oldValue, newValue)) {
+            if (!PreferenceProvider.deepEqual(newValue, oldValue)) {
                 prefChanges.push({
                     preferenceName: prefName, newValue, oldValue, scope: this.getScope(), domain: this.getDomain()
                 });

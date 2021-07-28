@@ -23,6 +23,7 @@ import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer,
 import { ProcessTaskInfo } from '../common/process/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import URI from '@theia/core/lib/common/uri';
 
 export interface TaskTerminalWidget extends TerminalWidget {
     readonly kind: 'task';
@@ -195,10 +196,14 @@ export class TaskTerminalWidgetManager {
         }
 
         // we are unable to find a terminal widget to run the task, or `taskPresentation === 'new'`
+        const lastCwd = taskConfig?.options?.cwd ? new URI(taskConfig.options.cwd) : new URI();
+
         if (!reusableTerminalWidget) {
             const widget = await this.newTaskTerminal(factoryOptions);
+            widget.lastCwd = lastCwd;
             return { isNew: true, widget };
         }
+        reusableTerminalWidget.lastCwd = lastCwd;
         return { isNew: false, widget: reusableTerminalWidget };
     }
 

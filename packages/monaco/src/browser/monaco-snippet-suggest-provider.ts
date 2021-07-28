@@ -101,7 +101,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return { suggestions };
     }
 
-    resolveCompletionItem(textModel: monaco.editor.ITextModel, position: monaco.Position, item: monaco.languages.CompletionItem): monaco.languages.CompletionItem {
+    resolveCompletionItem?(item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.CompletionItem {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 

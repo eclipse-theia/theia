@@ -67,3 +67,10 @@ export namespace Prioritizeable {
         return p2.priority - p.priority;
     }
 }
+
+/**
+ * Throws when called and statically make sure that all variants of a type were consumed.
+ */
+export function unreachable(_never: never, message: string = 'unhandled case'): never {
+    throw new Error(message);
+}

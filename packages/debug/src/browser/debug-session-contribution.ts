@@ -30,6 +30,7 @@ import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { DebugContribution } from './debug-contribution';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -50,7 +51,6 @@ export interface DebugSessionContribution {
      */
     debugSessionFactory(): DebugSessionFactory;
 }
-
 /**
  * DebugSessionContributionRegistry symbol for DI.
  */
@@ -90,12 +90,11 @@ export const DebugSessionFactory = Symbol('DebugSessionFactory');
  * The [debug session](#DebugSession) factory.
  */
 export interface DebugSessionFactory {
-    get(sessionId: string, options: DebugSessionOptions): DebugSession;
+    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession;
 }
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
-
     @inject(WebSocketConnectionProvider)
     protected readonly connectionProvider: WebSocketConnectionProvider;
     @inject(TerminalService)
@@ -114,8 +113,10 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly debugPreferences: DebugPreferences;
     @inject(FileService)
     protected readonly fileService: FileService;
+    @inject(ContributionProvider) @named(DebugContribution)
+    protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
 
-    get(sessionId: string, options: DebugSessionOptions): DebugSession {
+    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             () => new Promise<IWebSocket>(resolve =>
@@ -127,13 +128,15 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
         return new DebugSession(
             sessionId,
             options,
+            parentSession,
             connection,
             this.terminalService,
             this.editorManager,
             this.breakpoints,
             this.labelProvider,
             this.messages,
-            this.fileService);
+            this.fileService,
+            this.debugContributionProvider);
     }
 
     protected getTraceOutputChannel(): OutputChannel | undefined {

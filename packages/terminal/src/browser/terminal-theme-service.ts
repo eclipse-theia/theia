@@ -159,7 +159,7 @@ export class TerminalThemeService {
     @inject(ColorRegistry)
     protected readonly colorRegistry: ColorRegistry;
 
-    readonly onDidChange = ThemeService.get().onThemeChange;
+    readonly onDidChange = ThemeService.get().onDidColorThemeChange;
 
     get theme(): ITheme {
         const foregroundColor = this.colorRegistry.getCurrentColor('terminal.foreground');

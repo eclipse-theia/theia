@@ -267,7 +267,7 @@ function configureTypeScriptNavigation(targetPackage, tsconfigPath) {
         const currentFsPaths = currentPaths[originalImportPath];
 
         if (typeof currentFsPaths === 'undefined' || currentFsPaths.length !== 1 || currentFsPaths[0] !== mappedFsPath) {
-            console.error(`error: ${targetPackage.name} invalid mapped path: ${JSON.stringify({ [originalImportPath]: currentFsPaths })}`);
+            console.error(`error: ${targetPackage.name} invalid mapped path: {"${originalImportPath}": "${currentFsPaths}"}`);
             currentPaths[originalImportPath] = [mappedFsPath];
             needRewrite = true;
         }

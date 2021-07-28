@@ -27,6 +27,7 @@ import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 
 export interface SearchFieldState {
     className: string;
@@ -62,6 +63,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected searchTerm = '';
     protected replaceTerm = '';
+
+    private searchRef = React.createRef<SearchInWorkspaceInput>();
+    private replaceRef = React.createRef<SearchInWorkspaceInput>();
+    private includeRef = React.createRef<SearchInWorkspaceInput>();
+    private excludeRef = React.createRef<SearchInWorkspaceInput>();
 
     protected _showReplaceField = false;
     protected get showReplaceField(): boolean {
@@ -157,6 +163,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }));
 
         this.toDispose.push(this.resultTreeWidget);
+        this.toDispose.push(this.resultTreeWidget.onExpansionChanged(() => {
+            this.onDidUpdateEmitter.fire();
+        }));
 
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'search' }));
     }
@@ -171,7 +180,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             searchInWorkspaceOptions: this.searchInWorkspaceOptions,
             searchTerm: this.searchTerm,
             replaceTerm: this.replaceTerm,
-            showReplaceField: this.showReplaceField
+            showReplaceField: this.showReplaceField,
+            searchHistoryState: this.searchRef.current?.state,
+            replaceHistoryState: this.replaceRef.current?.state,
+            includeHistoryState: this.includeRef.current?.state,
+            excludeHistoryState: this.excludeRef.current?.state,
         };
     }
 
@@ -188,6 +201,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.showReplaceField = oldState.showReplaceField;
         this.resultTreeWidget.replaceTerm = this.replaceTerm;
         this.resultTreeWidget.showReplaceButtons = this.showReplaceField;
+        this.searchRef.current?.setState(oldState.searchHistoryState);
+        this.replaceRef.current?.setState(oldState.replaceHistoryState);
+        this.includeRef.current?.setState(oldState.includeHistoryState);
+        this.excludeRef.current?.setState(oldState.excludeHistoryState);
         this.refresh();
     }
 
@@ -236,6 +253,15 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     collapseAll(): void {
         this.resultTreeWidget.collapseAll();
         this.update();
+    }
+
+    expandAll(): void {
+        this.resultTreeWidget.expandAll();
+        this.update();
+    }
+
+    areResultsCollapsed(): boolean {
+        return this.resultTreeWidget.areResultsCollapsed();
     }
 
     clear(): void {
@@ -383,12 +409,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.doBlurSearchFieldContainer();
     }
 
+    private _searchTimeout: number;
     protected readonly search = (e: React.KeyboardEvent) => {
         e.persist();
         const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];
         if (searchOnType) {
-            const delay = searchOnType ? this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] : 0;
-            setTimeout(() => this.doSearch(e), delay);
+            const delay = this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] || 0;
+            window.clearTimeout(this._searchTimeout);
+            this._searchTimeout = window.setTimeout(() => this.doSearch(e), delay);
         }
     };
 
@@ -402,9 +430,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             const searchValue = (e.target as HTMLInputElement).value;
-            if (Key.ARROW_DOWN.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
-                this.resultTreeWidget.focusFirstResult();
-            } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+            if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
                 return;
             } else {
                 this.searchTerm = searchValue;
@@ -436,7 +462,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchField(): React.ReactNode {
-        const input = <input
+        const input = <SearchInWorkspaceInput
             id='search-input-field'
             className='theia-input'
             title='Search'
@@ -449,7 +475,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             onKeyDown={this.onKeyDownSearch}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}
-        ></input>;
+            ref={this.searchRef}
+        />;
         const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
         const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'tooManyResults' : '';
@@ -479,7 +506,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderReplaceField(): React.ReactNode {
         const replaceAllButtonContainer = this.renderReplaceAllButtonContainer();
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
-            <input
+            <SearchInWorkspaceInput
                 id='replace-input-field'
                 className='theia-input'
                 title='Replace'
@@ -489,8 +516,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 defaultValue={this.replaceTerm}
                 onKeyUp={this.updateReplaceTerm}
                 onFocus={this.handleFocusReplaceInputBox}
-                onBlur={this.handleBlurReplaceInputBox}>
-            </input>
+                onBlur={this.handleBlurReplaceInputBox}
+                ref={this.replaceRef}
+            />
             {replaceAllButtonContainer}
         </div>;
     }
@@ -573,7 +601,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const value = currentValue && currentValue.join(', ') || '';
         return <div className='glob-field'>
             <div className='label'>{'files to ' + kind}</div>
-            <input
+            <SearchInWorkspaceInput
                 className='theia-input'
                 type='text'
                 size={1}
@@ -606,7 +634,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                     }
                 }}
                 onFocus={kind === 'include' ? this.handleFocusIncludesInputBox : this.handleFocusExcludesInputBox}
-                onBlur={kind === 'include' ? this.handleBlurIncludesInputBox : this.handleBlurExcludesInputBox}></input>
+                onBlur={kind === 'include' ? this.handleBlurIncludesInputBox : this.handleBlurExcludesInputBox}
+                ref={kind === 'include' ? this.includeRef : this.excludeRef}
+            />
         </div>;
     }
 
@@ -621,25 +651,40 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchInfo(): React.ReactNode {
-        let message = '';
-        if (this.searchTerm) {
-            if (this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0 && this.resultNumber === 0) {
-                message = `No results found in '${this.searchInWorkspaceOptions.include}'`;
-            } else if (this.resultNumber === 0) {
-                message = 'No results found.';
+        const message = this.getSearchResultMessage() || '';
+        return <div className='search-info'>{message}</div>;
+    }
+
+    protected getSearchResultMessage(): string | undefined {
+
+        if (!this.searchTerm) {
+            return undefined;
+        }
+
+        if (this.resultNumber === 0) {
+            const isIncludesPresent = this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0;
+            const isExcludesPresent = this.searchInWorkspaceOptions.exclude && this.searchInWorkspaceOptions.exclude.length > 0;
+
+            if (isIncludesPresent && isExcludesPresent) {
+                return `No results found in '${this.searchInWorkspaceOptions.include}' excluding '${this.searchInWorkspaceOptions.exclude}'`;
+            } else if (isIncludesPresent) {
+                return `No results found in '${this.searchInWorkspaceOptions.include}'`;
+            } else if (isExcludesPresent) {
+                return `No results found excluding '${this.searchInWorkspaceOptions.exclude}'`;
             } else {
-                if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
-                    message = `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
-                } else if (this.resultTreeWidget.fileNumber === 1) {
-                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
-                } else if (this.resultTreeWidget.fileNumber > 0) {
-                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
-                } else {
-                    // if fileNumber === 0, return undefined so that `onUpdateRequest()` would not re-render component
-                    return undefined;
-                }
+                return 'No results found.';
+            }
+        } else {
+            if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
+                return `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
+            } else if (this.resultTreeWidget.fileNumber === 1) {
+                return `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
+            } else if (this.resultTreeWidget.fileNumber > 0) {
+                return `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+            } else {
+                // if fileNumber === 0, return undefined so that `onUpdateRequest()` would not re-render component
+                return undefined;
             }
         }
-        return <div className='search-info'>{message}</div>;
     }
 }

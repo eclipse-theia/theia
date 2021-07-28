@@ -15,3 +15,4 @@
  ********************************************************************************/
 
 export const VSCODE_DEFAULT_API_VERSION = '1.50.0';
+export const VSX_REGISTRY_URL_DEFAULT = 'https://open-vsx.org';

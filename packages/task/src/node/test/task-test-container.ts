@@ -24,6 +24,7 @@ import workspaceServer from '@theia/workspace/lib/node/workspace-backend-module'
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { TerminalProcess } from '@theia/process/lib/node';
+import { ProcessUtils } from '@theia/core/lib/node/process-utils';
 
 export function createTaskTestContainer(): Container {
     const testContainer = new Container();
@@ -41,6 +42,10 @@ export function createTaskTestContainer(): Container {
 
     // Make it easier to debug processes.
     testContainer.rebind(TerminalProcess).to(TestTerminalProcess);
+
+    testContainer.rebind(ProcessUtils).toConstantValue(new class extends ProcessUtils {
+        terminateProcessTree(): void { } // don't actually kill the tree, it breaks the tests.
+    });
 
     return testContainer;
 }

@@ -28,9 +28,25 @@ import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
+import { ProcessUtils } from './process-utils';
+
+const APP_PROJECT_PATH = 'app-project-path';
+
+const TIMER_WARNING_THRESHOLD = 50;
+
+const DEFAULT_PORT = environment.electron.is() ? 0 : 3000;
+const DEFAULT_HOST = 'localhost';
+const DEFAULT_SSL = false;
+
+export const BackendApplicationServer = Symbol('BackendApplicationServer');
+/**
+ * This service is responsible for serving the frontend files.
+ *
+ * When not bound, `@theia/cli` generators will bind it on the fly to serve files according to its own layout.
+ */
+export interface BackendApplicationServer extends BackendApplicationContribution { }
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
-
 /**
  * Contribution for hooking into the backend lifecycle.
  */
@@ -82,14 +98,6 @@ export interface BackendApplicationContribution {
     onStop?(app?: express.Application): void;
 }
 
-const defaultPort = environment.electron.is() ? 0 : 3000;
-const defaultHost = 'localhost';
-const defaultSSL = false;
-
-const appProjectPath = 'app-project-path';
-
-const TIMER_WARNING_THRESHOLD = 50;
-
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
 
@@ -101,12 +109,12 @@ export class BackendApplicationCliContribution implements CliContribution {
     projectPath: string;
 
     configure(conf: yargs.Argv): void {
-        conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
-        conf.option('hostname', { alias: 'h', description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
-        conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
+        conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: DEFAULT_PORT });
+        conf.option('hostname', { alias: 'h', description: 'The allowed hostname for connections.', type: 'string', default: DEFAULT_HOST });
+        conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: DEFAULT_SSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
-        conf.option(appProjectPath, { description: 'Sets the application project directory', default: this.appProjectPath() });
+        conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', default: this.appProjectPath() });
     }
 
     setArguments(args: yargs.Arguments): void {
@@ -115,7 +123,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.ssl = args.ssl as boolean;
         this.cert = args.cert as string;
         this.certkey = args.certkey as string;
-        this.projectPath = args[appProjectPath] as string;
+        this.projectPath = args[APP_PROJECT_PATH] as string;
     }
 
     protected appProjectPath(): string {
@@ -141,6 +149,9 @@ export class BackendApplication {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
+    @inject(ProcessUtils)
+    protected readonly processUtils: ProcessUtils;
+
     private readonly _performanceObserver: PerformanceObserver;
 
     constructor(
@@ -162,13 +173,18 @@ export class BackendApplication {
         process.on('SIGPIPE', () => {
             console.error(new Error('Unexpected SIGPIPE'));
         });
-
+        /**
+         * Kill the current process tree on exit.
+         */
+        function signalHandler(signal: NodeJS.Signals): never {
+            process.exit(1);
+        }
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.
-        process.on('SIGINT', () => process.exit(0));
+        process.on('SIGINT', signalHandler);
         // Handles `kill pid`.
-        process.on('SIGTERM', () => process.exit(0));
+        process.on('SIGTERM', signalHandler);
 
         // Create performance observer
         this._performanceObserver = new PerformanceObserver(list => {
@@ -309,6 +325,7 @@ export class BackendApplication {
         }
         console.info('<<< All backend contributions have been stopped.');
         this._performanceObserver.disconnect();
+        this.processUtils.terminateProcessTree(process.pid);
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {

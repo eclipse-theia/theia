@@ -17,14 +17,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
+import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
 import { PreferenceSchemaProvider } from './preference-contribution';
 import URI from '../../common/uri';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
-import { JSONExt } from '@phosphor/coreutils/lib/json';
+import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
 
 export { PreferenceScope };
@@ -186,7 +186,7 @@ export interface PreferenceService extends Disposable {
      *
      * @return an object containing the value of the given preference for all scopes.
      */
-    inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
     /**
      * Returns a new preference identifier based on the given OverridePreferenceName.
      *
@@ -238,7 +238,7 @@ export interface PreferenceService extends Disposable {
 /**
  * Return type of the {@link PreferenceService.inspect} call.
  */
-export interface PreferenceInspection<T> {
+export interface PreferenceInspection<T = JSONValue> {
     /**
      * The preference identifier.
      */
@@ -264,6 +264,8 @@ export interface PreferenceInspection<T> {
      */
     value: T | undefined;
 }
+
+export type PreferenceInspectionScope = keyof Omit<PreferenceInspection<unknown>, 'preferenceName'>;
 
 /**
  * We cannot load providers directly in the case if they depend on `PreferenceService` somehow.
@@ -430,7 +432,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
             return;
         }
-        throw new Error(`Unable to write to ${PreferenceScope.getScopeNames(resolvedScope)[0]} Settings.`);
+        throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
     }
 
     getBoolean(preferenceName: string): boolean | undefined;
@@ -502,7 +504,7 @@ export class PreferenceServiceImpl implements PreferenceService {
             case PreferenceScope.Folder:
                 return inspection.workspaceFolderValue;
         }
-        return ((unhandledScope: never): never => { throw new Error('Must handle all enum values!'); })(scope);
+        unreachable(scope, 'Not all PreferenceScope enum variants handled.');
     }
 
     async updateValue(preferenceName: string, value: any, resourceUri?: string): Promise<void> {

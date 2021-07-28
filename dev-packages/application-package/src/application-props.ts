@@ -16,6 +16,128 @@
 
 import type { BrowserWindowConstructorOptions } from 'electron';
 
+/** `deepmerge/dist/cjs` */
+export const merge = require('deepmerge/dist/cjs');
+
+export type RequiredRecursive<T> = {
+    [K in keyof T]-?: T[K] extends object ? RequiredRecursive<T[K]> : T[K]
+};
+
+/**
+ * Base configuration for the Theia application.
+ */
+export interface ApplicationConfig {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly [key: string]: any;
+}
+
+export type ElectronFrontendApplicationConfig = RequiredRecursive<ElectronFrontendApplicationConfig.Partial>;
+export namespace ElectronFrontendApplicationConfig {
+    export const DEFAULT: ElectronFrontendApplicationConfig = {
+        disallowReloadKeybinding: false,
+        windowOptions: {}
+    };
+    export interface Partial {
+
+        /**
+         * If set to `true`, reloading the current browser window won't be possible with the `Ctrl/Cmd + R` keybinding.
+         *
+         * Has no effect if not in an electron environment.
+         *
+         * Defaults to `false`.
+         */
+        readonly disallowReloadKeybinding?: boolean;
+
+        /**
+         * Override or add properties to the electron `windowOptions`.
+         *
+         * Defaults to `{}`.
+         */
+        readonly windowOptions?: BrowserWindowConstructorOptions;
+    }
+}
+
+/**
+ * Application configuration for the frontend. The following properties will be injected into the `index.html`.
+ */
+export type FrontendApplicationConfig = RequiredRecursive<FrontendApplicationConfig.Partial>;
+export namespace FrontendApplicationConfig {
+    export const DEFAULT: FrontendApplicationConfig = {
+        applicationName: 'Eclipse Theia',
+        defaultTheme: 'dark',
+        defaultIconTheme: 'none',
+        electron: ElectronFrontendApplicationConfig.DEFAULT
+    };
+    export interface Partial extends ApplicationConfig {
+
+        /**
+         * The default theme for the application.
+         *
+         * Defaults to `dark`.
+         */
+        readonly defaultTheme?: string;
+
+        /**
+         * The default icon theme for the application.
+         *
+         * Defaults to `none`.
+         */
+        readonly defaultIconTheme?: string;
+
+        /**
+         * The name of the application.
+         *
+         * Defaults to `Eclipse Theia`.
+         */
+        readonly applicationName?: string;
+
+        /**
+         * Electron specific configuration.
+         *
+         * Defaults to `ElectronFrontendApplicationConfig.DEFAULT`.
+         */
+        readonly electron?: ElectronFrontendApplicationConfig.Partial;
+    }
+}
+
+/**
+ * Application configuration for the backend.
+ */
+export type BackendApplicationConfig = RequiredRecursive<BackendApplicationConfig.Partial>;
+export namespace BackendApplicationConfig {
+    export const DEFAULT: BackendApplicationConfig = {
+        singleInstance: false,
+    };
+    export interface Partial extends ApplicationConfig {
+
+        /**
+         * If true and in Electron mode, only one instance of the application is allowed to run at a time.
+         *
+         * Defaults to `false`.
+         */
+        readonly singleInstance?: boolean;
+    }
+}
+
+/**
+ * Configuration for the generator.
+ */
+export type GeneratorConfig = RequiredRecursive<GeneratorConfig.Partial>;
+export namespace GeneratorConfig {
+    export const DEFAULT: GeneratorConfig = {
+        preloadTemplate: ''
+    };
+    export interface Partial {
+
+        /**
+         * Template to use for extra preload content markup (file path or HTML).
+         *
+         * Defaults to `''`.
+         */
+        readonly preloadTemplate?: string;
+    }
+}
+
 export interface NpmRegistryProps {
 
     /**
@@ -52,116 +174,42 @@ export interface ApplicationProps extends NpmRegistryProps {
     /**
      * Frontend related properties.
      */
-    readonly frontend: Readonly<{ config: FrontendApplicationConfig }>;
+    readonly frontend: {
+        readonly config: FrontendApplicationConfig
+    };
 
     /**
      * Backend specific properties.
      */
-    readonly backend: Readonly<{ config: BackendApplicationConfig }>;
+    readonly backend: {
+        readonly config: BackendApplicationConfig
+    };
 
     /**
      * Generator specific properties.
      */
-    readonly generator: Readonly<{ config: GeneratorConfig }>;
+    readonly generator: {
+        readonly config: GeneratorConfig
+    };
 }
 export namespace ApplicationProps {
+    export type Target = keyof typeof ApplicationTarget;
     export enum ApplicationTarget {
         browser = 'browser',
         electron = 'electron'
     };
-
-    export type Target = keyof typeof ApplicationTarget;
-
     export const DEFAULT: ApplicationProps = {
         ...NpmRegistryProps.DEFAULT,
         target: 'browser',
         backend: {
-            config: {}
+            config: BackendApplicationConfig.DEFAULT
         },
         frontend: {
-            config: {
-                applicationName: 'Eclipse Theia',
-                defaultTheme: 'dark',
-                defaultIconTheme: 'none'
-            }
+            config: FrontendApplicationConfig.DEFAULT
         },
         generator: {
-            config: {
-                preloadTemplate: ''
-            }
+            config: GeneratorConfig.DEFAULT
         }
     };
-
-}
-
-/**
- * Base configuration for the Theia application.
- */
-export interface ApplicationConfig {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly [key: string]: any;
-}
-
-/**
- * Application configuration for the frontend. The following properties will be injected into the `index.html`.
- */
-export interface FrontendApplicationConfig extends ApplicationConfig {
-
-    /**
-     * The default theme for the application. If not given, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
-     */
-    readonly defaultTheme: string;
-
-    /**
-     * The default icon theme for the application. If not given, defaults to `none`. If invalid theme is given, also defaults to `none`.
-     */
-    readonly defaultIconTheme: string;
-
-    /**
-     * The name of the application. `Eclipse Theia` by default.
-     */
-    readonly applicationName: string;
-
-    /**
-     * Electron specific configuration.
-     */
-    readonly electron?: Readonly<ElectronFrontendApplicationConfig>;
-}
-
-export interface ElectronFrontendApplicationConfig {
-
-    /**
-     * If set to `true`, reloading the current browser window won't be possible with the `Ctrl/Cmd + R` keybinding.
-     * It is `false` by default. Has no effect if not in an electron environment.
-     */
-    readonly disallowReloadKeybinding?: boolean;
-
-    /**
-     * Override or add properties to the electron `windowOptions`.
-     */
-    readonly windowOptions?: BrowserWindowConstructorOptions;
-}
-
-/**
- * Application configuration for the backend.
- */
-export interface BackendApplicationConfig extends ApplicationConfig {
-
-    /**
-     * If true and in Electron mode, only one instance of the application is allowed to run at a time.
-     */
-    singleInstance?: boolean;
-
-}
-
-/**
- * Configuration for the generator.
- */
-export interface GeneratorConfig {
-
-    /**
-     * Template to use for extra preload content markup (file path or HTML)
-     */
-    readonly preloadTemplate: string;
 
 }

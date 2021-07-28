@@ -70,13 +70,15 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         return {
             label: this.title.label,
             message: this.message,
-            widgets: this.widgets
+            widgets: this.widgets,
+            suppressUpdateViewVisibility: this._suppressUpdateViewVisibility
         };
     }
 
     restoreState(state: PluginViewWidget.State): void {
         this.title.label = state.label;
         this.message = state.message;
+        this.suppressUpdateViewVisibility = state.suppressUpdateViewVisibility;
         for (const widget of state.widgets) {
             this.addWidget(widget);
         }
@@ -131,8 +133,9 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
 }
 export namespace PluginViewWidget {
     export interface State {
-        label: string
-        message?: string;
-        widgets: ReadonlyArray<Widget>
+        label: string,
+        message?: string,
+        widgets: ReadonlyArray<Widget>,
+        suppressUpdateViewVisibility: boolean
     }
 }

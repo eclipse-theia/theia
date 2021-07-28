@@ -51,7 +51,7 @@ export class TaskConfigurationManager {
     protected readonly editorManager: EditorManager;
 
     @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    protected readonly quickPickService: QuickPickService;
 
     @inject(FileService)
     protected readonly fileService: FileService;
@@ -215,11 +215,11 @@ export class TaskConfigurationManager {
     }
 
     protected async getInitialConfigurationContent(): Promise<string | undefined> {
-        const selected = await this.quickPick.show(this.taskTemplateSelector.selectTemplates(), {
+        const selected = await this.quickPickService.show(this.taskTemplateSelector.selectTemplates(), {
             placeholder: 'Select a Task Template'
         });
         if (selected) {
-            return selected.content;
+            return selected.value?.content;
         }
     }
 

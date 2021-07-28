@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from '@theia/core/shared/inversify';
+import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { TaskConfiguration, TaskDefinition, TaskCustomization } from '../common';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -119,7 +120,7 @@ export class TaskDefinitionRegistry {
             // "scope" reflects the original TaskConfigurationScope as provided by plugins,
             // Matching "_scope" or "scope" are both accepted in order to correlate provided task
             // configurations (e.g. TaskScope.Workspace) against already configured tasks.
-            return def.properties.all.every(p => p === 'type' || one[p] === other[p])
+            return def.properties.all.every(p => p === 'type' || JSONExt.deepEqual(one[p], other[p]))
                 && (one._scope === other._scope || one.scope === other.scope);
         }
         return one.label === other.label && one._source === other._source;

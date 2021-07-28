@@ -49,7 +49,7 @@ export function reviver(key: string | undefined, value: any): any {
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
  * This is supposed to fix https://github.com/eclipse-theia/theia/issues/8752
- * We cannot simply upgrade the dependency, because the curent version 3.x
+ * We cannot simply upgrade the dependency, because the current version 3.x
  * is not compatible with our current codebase
  */
 export class URI extends CodeURI implements theia.Uri {
@@ -85,7 +85,7 @@ export class URI extends CodeURI implements theia.Uri {
     }
 
     /**
-     * Overrride to create the correct class.
+     * Override to create the correct class.
      * @param data
      */
     static revive(data: UriComponents | CodeURI): URI;
@@ -388,6 +388,10 @@ export class Position {
         }
         return false;
     }
+
+    toJSON(): any {
+        return { line: this.line, character: this.character };
+    }
 }
 
 export class Range {
@@ -519,6 +523,9 @@ export class Range {
             && Position.isPosition((<Range>thing).end);
     }
 
+    toJSON(): any {
+        return [this.start, this.end];
+    }
 }
 
 export class Selection extends Range {
@@ -558,6 +565,22 @@ export class Selection extends Range {
 
     get isReversed(): boolean {
         return this._anchor === this._end;
+    }
+}
+
+export namespace TextDocumentShowOptions {
+    /**
+     * @param candidate
+     * @returns `true` if `candidate` is an instance of options that includes a selection.
+     * This function should be used to determine whether TextDocumentOptions passed into commands by plugins
+     * need to be translated to TextDocumentShowOptions in the style of the RPC model. Selection is the only field that requires translation.
+     */
+    export function isTextDocumentShowOptions(candidate: unknown): candidate is theia.TextDocumentShowOptions {
+        if (!candidate) {
+            return false;
+        }
+        const options = candidate as theia.TextDocumentShowOptions;
+        return Range.isRange(options.selection);
     }
 }
 
@@ -937,6 +960,7 @@ export class Location {
 
 export enum DiagnosticTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export enum CompletionItemTag {
@@ -968,6 +992,7 @@ export enum MarkerSeverity {
 
 export enum MarkerTag {
     Unnecessary = 1,
+    Deprecated = 2,
 }
 
 export class ParameterInformation {
@@ -1432,15 +1457,12 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
-export interface QuickInputButton {
-    readonly iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon;
-    readonly tooltip?: string | undefined;
-}
-
 export class QuickInputButtons {
-    static readonly Back: QuickInputButton = {
+    static readonly Back: theia.QuickInputButton = {
         iconPath: {
-            id: 'Back'
+            id: 'Back',
+            dark: '',
+            light: ''
         },
         tooltip: 'Back'
     };
@@ -1743,16 +1765,16 @@ export class ShellExecution {
 }
 
 export class CustomExecution {
-    private _callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
-    constructor(callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    private _callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
+    constructor(callback: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = callback;
     }
 
-    public set callback(value: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    public set callback(value: (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = value;
     }
 
-    public get callback(): ((resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+    public get callback(): ((resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         return this._callback;
     }
 

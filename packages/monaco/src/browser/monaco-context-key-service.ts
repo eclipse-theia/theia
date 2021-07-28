@@ -48,18 +48,21 @@ export class MonacoContextKeyService extends ContextKeyService {
         return monaco.keybindings.KeybindingResolver.contextMatchesRules(keyContext, parsed);
     }
 
-    protected readonly expressions = new Map<string, monaco.contextkey.ContextKeyExpr>();
-    protected parse(when: string): monaco.contextkey.ContextKeyExpr {
+    protected readonly expressions = new Map<string, monaco.contextkey.ContextKeyExpression>();
+    protected parse(when: string): monaco.contextkey.ContextKeyExpression | undefined {
         let expression = this.expressions.get(when);
         if (!expression) {
             expression = monaco.contextkey.ContextKeyExpr.deserialize(when);
-            this.expressions.set(when, expression);
+            if (expression) {
+                this.expressions.set(when, expression);
+            }
         }
         return expression;
     }
 
-    parseKeys(expression: string): Set<string> {
-        return new Set<string>(monaco.contextkey.ContextKeyExpr.deserialize(expression).keys());
+    parseKeys(expression: string): Set<string> | undefined {
+        const expr = monaco.contextkey.ContextKeyExpr.deserialize(expression);
+        return expr ? new Set<string>(expr.keys()) : expr;
     }
 
 }

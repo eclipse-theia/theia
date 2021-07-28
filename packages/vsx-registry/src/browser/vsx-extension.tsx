@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
@@ -27,9 +27,9 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { VSXExtensionNamespaceAccess, VSXUser } from '../common/vsx-registry-types';
 import { MenuPath } from '@theia/core/lib/common';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
 

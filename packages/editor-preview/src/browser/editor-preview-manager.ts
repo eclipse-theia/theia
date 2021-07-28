@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Google and others.
+ * Copyright (C) 2018-2021 Google and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,151 +14,112 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { ApplicationShell, DockPanel } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
-import { EditorPreviewWidget } from './editor-preview-widget';
-import { EditorPreviewWidgetFactory, EditorPreviewWidgetOptions } from './editor-preview-factory';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
-import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { DisposableCollection, MaybePromise } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
+import { EditorPreviewWidget } from './editor-preview-widget';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
-/**
- * Opener options containing an optional preview flag.
- */
-export interface PreviewEditorOpenerOptions extends EditorOpenerOptions {
-    preview?: boolean
-}
-
-/**
- * Class for managing an editor preview widget.
- */
 @injectable()
-export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget | EditorWidget> {
-
+export class EditorPreviewManager extends EditorManager {
     readonly id = EditorPreviewWidgetFactory.ID;
 
-    readonly label = 'Code Editor Preview';
+    @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
+    @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
 
-    protected currentEditorPreview: Promise<EditorPreviewWidget | undefined>;
-
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
-
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
-    @inject(EditorPreviewPreferences)
-    protected readonly preferences: EditorPreviewPreferences;
+    protected currentPreview: EditorPreviewWidget | undefined;
+    protected toDisposeOnPreviewChange = new DisposableCollection();
+    /**
+     * Until the layout has been restored, widget state is not reliable, so we ignore creation events.
+     */
+    protected layoutIsSet = false;
 
     @postConstruct()
     protected init(): void {
         super.init();
-        this.onCreated(widget => {
-            if (widget instanceof EditorPreviewWidget) {
-                return this.handlePreviewWidgetCreated(widget);
+        // All editors are created, but not all are opened. This sets up the logic to swap previews when the editor is attached.
+        this.onCreated((widget: EditorPreviewWidget) => {
+            if (this.layoutIsSet && widget.isPreview) {
+                const oneTimeDisposable = widget.onDidChangeVisibility(() => {
+                    const { currentPreview } = this;
+                    this.handleNewPreview(widget);
+                    currentPreview?.dispose();
+                    oneTimeDisposable.dispose();
+                });
             }
         });
 
         this.preferences.onPreferenceChanged(change => {
-            if (this.currentEditorPreview) {
-                this.currentEditorPreview.then(editorPreview => {
-                    if (!change.newValue && editorPreview) {
-                        editorPreview.pinEditorWidget();
-                    }
-                });
-            }
+            if (!change.newValue) {
+                this.currentPreview?.convertToNonPreview();
+            };
         });
+
+        this.stateService.reachedState('initialized_layout').then(() => {
+            const editors = this.all as EditorPreviewWidget[];
+            const currentPreview = editors.find(editor => editor.isPreview);
+            if (currentPreview) {
+                this.handleNewPreview(currentPreview);
+            }
+            this.layoutIsSet = true;
+        });
+
+        document.addEventListener('dblclick', this.convertEditorOnDoubleClick.bind(this));
     }
 
-    protected async handlePreviewWidgetCreated(widget: EditorPreviewWidget): Promise<void> {
-        // Enforces only one preview widget exists at a given time.
-        const editorPreview = await this.currentEditorPreview;
-        if (editorPreview && editorPreview !== widget) {
-            editorPreview.pinEditorWidget();
-        }
-
-        this.currentEditorPreview = Promise.resolve(widget);
-        widget.disposed.connect(() => this.currentEditorPreview = Promise.resolve(undefined));
-
-        widget.onPinned(({ preview, editorWidget }) => {
-            const wasActive = this.shell.activeWidget === preview || this.shell.activeWidget === editorWidget;
-            // TODO(caseyflynn): I don't believe there is ever a case where the parent will not be a DockPanel.
-            if (preview.parent && preview.parent instanceof DockPanel) {
-                preview.parent.addWidget(editorWidget, { ref: preview });
+    protected async doOpen(widget: EditorPreviewWidget, options?: EditorOpenerOptions): Promise<void> {
+        const { preview, widgetOptions = { area: 'main' }, mode = 'activate' } = options ?? {};
+        if (!widget.isAttached) {
+            if (preview) {
+                const insertionOptions = this.currentPreview ? { ref: this.currentPreview } : widgetOptions;
+                await this.shell.addWidget(widget, insertionOptions);
             } else {
-                this.shell.addWidget(editorWidget, { area: 'main' });
+                this.shell.addWidget(widget, widgetOptions);
             }
-            preview.dispose();
-            if (wasActive) {
-                this.shell.activateWidget(editorWidget.id);
-            }
-            this.currentEditorPreview = Promise.resolve(undefined);
-        });
-    }
-
-    protected async isCurrentPreviewUri(uri: URI): Promise<boolean> {
-        const editorPreview = await this.currentEditorPreview;
-        const currentUri = editorPreview && editorPreview.getResourceUri();
-        return !!currentUri && currentUri.isEqualOrParent(uri);
-    }
-
-    async canHandle(uri: URI, options?: PreviewEditorOpenerOptions): Promise<number> {
-        if (this.preferences['editor.enablePreview'] && (options && options.preview || await this.isCurrentPreviewUri(uri))) {
-            return 200;
+        } else if (!preview && widget === this.currentPreview) {
+            widget.convertToNonPreview();
         }
-        return 0;
-    }
 
-    async open(uri: URI, options: PreviewEditorOpenerOptions = {}): Promise<EditorPreviewWidget | EditorWidget> {
-        let widget = await this.pinCurrentEditor(uri, options);
-        if (widget) {
-            return widget;
-        }
-        widget = await this.replaceCurrentPreview(uri, options) || await this.openNewPreview(uri, options);
-        await this.editorManager.open(uri, options);
-        return widget;
-    }
-
-    protected async pinCurrentEditor(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorWidget | EditorPreviewWidget | undefined> {
-        if (await this.editorManager.getByUri(uri)) {
-            const editorWidget = await this.editorManager.open(uri, options);
-            if (editorWidget.parent instanceof EditorPreviewWidget) {
-                if (!options.preview) {
-                    editorWidget.parent.pinEditorWidget();
-                }
-                return editorWidget.parent;
-            }
-            return editorWidget;
+        if (mode === 'activate') {
+            await this.shell.activateWidget(widget.id);
+        } else if (mode === 'reveal') {
+            await this.shell.revealWidget(widget.id);
         }
     }
 
-    protected async replaceCurrentPreview(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | undefined> {
-        const currentPreview = await this.currentEditorPreview;
-        if (currentPreview) {
-            const editorWidget = await this.editorManager.getOrCreateByUri(uri);
-            currentPreview.replaceEditorWidget(editorWidget);
-            return currentPreview;
+    protected handleNewPreview(widget: EditorPreviewWidget): void {
+        this.toDisposeOnPreviewChange.dispose();
+        this.currentPreview = widget;
+        this.toDisposeOnPreviewChange.push({ dispose: () => this.currentPreview = undefined });
+        this.toDisposeOnPreviewChange.push(widget.onDidChangePreviewState(() => this.toDisposeOnPreviewChange.dispose()));
+        this.toDisposeOnPreviewChange.push(widget.onDidDispose(() => this.toDisposeOnPreviewChange.dispose()));
+    }
+
+    protected tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
+        return super.tryGetPendingWidget(uri, { ...options, preview: true }) ?? super.tryGetPendingWidget(uri, { ...options, preview: false });
+    }
+
+    protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+        return (await super.getWidget(uri, { ...options, preview: true })) ?? super.getWidget(uri, { ...options, preview: false });
+    }
+
+    protected async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        return this.tryGetPendingWidget(uri, options) ?? super.getOrCreateWidget(uri, options);
+    }
+
+    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorPreviewOptions {
+        const navigatableOptions = super.createWidgetOptions(uri, options) as EditorPreviewOptions;
+        navigatableOptions.preview = !!(options?.preview && this.preferences['editor.enablePreview']);
+        return navigatableOptions;
+    }
+
+    protected convertEditorOnDoubleClick(event: Event): void {
+        const widget = this.shell.findTargetedWidget(event);
+        if (widget === this.currentPreview) {
+            this.currentPreview?.convertToNonPreview();
         }
-    }
-
-    protected openNewPreview(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | EditorWidget> {
-        const result = super.open(uri, options);
-        this.currentEditorPreview = result.then(widget => {
-            if (widget instanceof EditorPreviewWidget) {
-                return widget;
-            }
-            return undefined;
-        }, () => undefined);
-        return result;
-    }
-
-    protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): EditorPreviewWidgetOptions {
-        return {
-            kind: 'editor-preview-widget',
-            id: EditorPreviewWidgetFactory.generateUniqueId(),
-            initialUri: uri.withoutFragment().toString(),
-            session: EditorPreviewWidgetFactory.sessionId
-        };
     }
 }

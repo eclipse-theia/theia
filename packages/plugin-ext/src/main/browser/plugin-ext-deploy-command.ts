@@ -14,92 +14,38 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { QuickOpenService, QuickOpenItem, QuickOpenModel, QuickOpenMode } from '@theia/core/lib/browser';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { PluginServer } from '../../common';
 import { Command } from '@theia/core/lib/common/command';
+import { QuickInputService } from '@theia/core/lib/browser';
 
 @injectable()
-export class PluginExtDeployCommandService implements QuickOpenModel {
-
-    private items: QuickOpenItem[];
-
+export class PluginExtDeployCommandService /* implements QuickOpenModel */ {
     public static COMMAND: Command = {
         id: 'plugin-ext:deploy-plugin-id',
         category: 'Plugin',
         label: 'Deploy Plugin by Id',
-
     };
 
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
 
-    constructor() {
-        this.items = [];
-    }
-
-    /**
-     * Whether the dialog is currently open.
-     */
-    protected isOpen: boolean = false;
-
     deploy(): void {
-        const placeholderText = "Plugin's id to deploy.";
-
-        this.isOpen = true;
-
-        this.quickOpenService.open(this, {
-            placeholder: placeholderText,
-            fuzzyMatchLabel: true,
-            fuzzyMatchDescription: true,
-            fuzzySort: true,
-            onClose: () => {
-                this.isOpen = false;
-            },
-        });
+        this.quickInputService?.showQuickPick([],
+            {
+                placeholder: "Plugin's id to deploy.",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onDidChangeValue: (quickPick: any, filter: string) => {
+                    quickPick.items = [{
+                        label: filter,
+                        detail: 'Deploy this plugin',
+                        execute: () => this.pluginServer.deploy(filter)
+                    }];
+                }
+            }
+        );
     }
-
-    public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        this.items = [];
-        if (lookFor || lookFor.length > 0) {
-            this.items.push(this.createDeployQuickOpenItem(lookFor, 'Deploy this plugin'));
-        }
-        acceptor(this.items);
-    }
-
-    protected createDeployQuickOpenItem(name: string, description: string): DeployQuickOpenItem {
-        return new DeployQuickOpenItem(name, this.pluginServer, description);
-    }
-
-}
-
-export class DeployQuickOpenItem extends QuickOpenItem {
-
-    constructor(
-        protected readonly name: string,
-        protected readonly pluginServer: PluginServer,
-        protected readonly description?: string
-    ) {
-        super();
-    }
-
-    getLabel(): string {
-        return this.name;
-    }
-
-    getDetail(): string {
-        return this.description || '';
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
-            return false;
-        }
-        this.pluginServer.deploy(this.name);
-        return true;
-    }
-
 }

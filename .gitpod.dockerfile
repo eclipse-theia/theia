@@ -11,6 +11,8 @@ RUN sudo apt-get update \
     && sudo apt-get install -y libgtk-3-0 libnss3 libasound2 libgbm1 \
     # native-keymap
     && sudo apt-get install -y libx11-dev libxkbfile-dev \
+    # keytar
+    && sudo apt-get install -y libsecret-1-dev \
     && sudo rm -rf /var/lib/apt/lists/*
 
 ENV SHELL=/bin/bash

@@ -28,7 +28,6 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoEditorModel, WillSaveMonacoModelEvent } from './monaco-editor-model';
 import { MonacoEditorService } from './monaco-editor-service';
-import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
@@ -42,6 +41,7 @@ import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handle
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { MonacoQuickInputService } from './monaco-quick-input-service';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -71,6 +71,9 @@ export class MonacoEditorProvider {
     @inject(FileSystemPreferences)
     protected readonly filePreferences: FileSystemPreferences;
 
+    @inject(MonacoQuickInputService)
+    protected readonly quickInputService: MonacoQuickInputService;
+
     protected _current: MonacoEditor | undefined;
     /**
      * Returns the last focused MonacoEditor.
@@ -90,7 +93,6 @@ export class MonacoEditorProvider {
         @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
-        @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         /** @deprecated since 1.6.0 */
         @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
@@ -98,32 +100,6 @@ export class MonacoEditorProvider {
     ) {
         const staticServices = monaco.services.StaticServices;
         const init = staticServices.init.bind(monaco.services.StaticServices);
-
-        const themeService = staticServices.standaloneThemeService.get();
-        const originalGetTheme: (typeof themeService)['getTheme'] = themeService.getTheme.bind(themeService);
-        const patchedGetTokenStyleMetadataFlag = '__patched_getTokenStyleMetadata';
-        // based on https://github.com/microsoft/vscode/commit/4731a227e377da8cb14ed5697dd1ba8faea40538
-        // TODO remove after migrating to monaco 0.21
-        themeService.getTheme = () => {
-            const theme = originalGetTheme();
-            if (!(patchedGetTokenStyleMetadataFlag in theme)) {
-                Object.defineProperty(theme, patchedGetTokenStyleMetadataFlag, { enumerable: false, configurable: false, writable: false, value: true });
-                theme.getTokenStyleMetadata = (type, modifiers) => {
-                    // use theme rules match
-                    const style = theme.tokenTheme._match([type].concat(modifiers).join('.'));
-                    const metadata = style.metadata;
-                    const foreground = monaco.modes.TokenMetadata.getForeground(metadata);
-                    const fontStyle = monaco.modes.TokenMetadata.getFontStyle(metadata);
-                    return {
-                        foreground: foreground,
-                        italic: Boolean(fontStyle & monaco.modes.FontStyle.Italic),
-                        bold: Boolean(fontStyle & monaco.modes.FontStyle.Bold),
-                        underline: Boolean(fontStyle & monaco.modes.FontStyle.Underline)
-                    };
-                };
-            }
-            return theme;
-        };
 
         monaco.services.StaticServices.init = o => {
             const result = init(o);
@@ -153,7 +129,8 @@ export class MonacoEditorProvider {
 
     protected async doCreateEditor(uri: URI, factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
         const commandService = this.commandServiceFactory();
-        const contextKeyService = this.contextKeyService.createScoped();
+        const domNode = document.createElement('div');
+        const contextKeyService = this.contextKeyService.createScoped(domNode);
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection(commandService);
@@ -168,7 +145,8 @@ export class MonacoEditorProvider {
             commandService,
             IWorkspaceEditService,
             contextKeyService,
-            openerService
+            openerService,
+            quickInputService: this.quickInputService
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
@@ -177,7 +155,6 @@ export class MonacoEditorProvider {
 
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
-        toDispose.push(this.installQuickOpenService(editor));
         toDispose.push(this.installReferencesController(editor));
 
         toDispose.push(editor.onFocusChanged(focused => {
@@ -417,41 +394,6 @@ export class MonacoEditorProvider {
                 obj[name] = value;
             }
         }
-    }
-
-    protected installQuickOpenService(editor: MonacoEditor): Disposable {
-        const control = editor.getControl();
-        const quickOpenController = control._contributions['editor.controller.quickOpenController'];
-        const originalRun = quickOpenController.run;
-        const toDispose = new DisposableCollection();
-        quickOpenController.dispose = () => toDispose.dispose();
-        quickOpenController.run = options => {
-            const toDisposeOnClose = toDispose.push(Disposable.create(() => this.quickOpenService.hide()));
-
-            const selection = control.getSelection();
-            this.quickOpenService.internalOpen({
-                ...options,
-                onClose: canceled => {
-                    toDisposeOnClose.dispose();
-
-                    quickOpenController.clearDecorations();
-
-                    // Restore selection if canceled
-                    if (canceled && selection) {
-                        control.setSelection(selection);
-                        control.revealRangeInCenterIfOutsideViewport(selection);
-                    }
-
-                    // Return focus to the editor if
-                    // - focus is back on the <body> element because no other focusable element was clicked
-                    // - a command was picked from the picker which indicates the editor should get focused
-                    if (document.activeElement === document.body || !canceled) {
-                        editor.focus();
-                    }
-                }
-            });
-        };
-        return Disposable.create(() => quickOpenController.run = originalRun);
     }
 
     protected installReferencesController(editor: MonacoEditor): Disposable {

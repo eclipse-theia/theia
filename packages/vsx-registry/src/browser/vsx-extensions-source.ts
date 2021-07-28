@@ -23,6 +23,7 @@ export class VSXExtensionsSourceOptions {
     static INSTALLED = 'installed';
     static BUILT_IN = 'builtin';
     static SEARCH_RESULT = 'searchResult';
+    static RECOMMENDED = 'recommended';
     readonly id: string;
 }
 
@@ -47,6 +48,11 @@ export class VSXExtensionsSource extends TreeSource {
             if (!extension) {
                 continue;
             }
+            if (this.options.id === VSXExtensionsSourceOptions.RECOMMENDED) {
+                if (this.model.isInstalled(id)) {
+                    continue;
+                }
+            }
             if (this.options.id === VSXExtensionsSourceOptions.BUILT_IN) {
                 if (extension.builtin) {
                     yield extension;
@@ -60,6 +66,9 @@ export class VSXExtensionsSource extends TreeSource {
     protected doGetElements(): IterableIterator<string> {
         if (this.options.id === VSXExtensionsSourceOptions.SEARCH_RESULT) {
             return this.model.searchResult;
+        }
+        if (this.options.id === VSXExtensionsSourceOptions.RECOMMENDED) {
+            return this.model.recommended;
         }
         return this.model.installed;
     }

@@ -25,26 +25,27 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 @injectable()
 export class WebviewEnvironment {
 
-    @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected _hostPatternPromise: Promise<string>;
 
     protected readonly externalEndpointHost = new Deferred<string>();
 
+    @inject(EnvVariablesServer)
+    protected readonly environments: EnvVariablesServer;
+
     @postConstruct()
     protected async init(): Promise<void> {
+        this._hostPatternPromise = this.getHostPattern();
         try {
-            let endpointPattern;
-            if (environment.electron.is()) {
-                endpointPattern = WebviewExternalEndpoint.defaultPattern;
-            } else {
-                const variable = await this.environments.getValue(WebviewExternalEndpoint.pattern);
-                endpointPattern = variable && variable.value || WebviewExternalEndpoint.defaultPattern;
-            }
+            const endpointPattern = await this.hostPatternPromise;
             const { host } = new Endpoint();
             this.externalEndpointHost.resolve(endpointPattern.replace('{{hostname}}', host));
         } catch (e) {
             this.externalEndpointHost.reject(e);
         }
+    }
+
+    get hostPatternPromise(): Promise<string> {
+        return this._hostPatternPromise;
     }
 
     async externalEndpointUrl(): Promise<URI> {
@@ -67,4 +68,10 @@ export class WebviewEnvironment {
         return (await this.externalEndpointUrl()).withPath('').withQuery('').withFragment('').toString(true).replace('{{uuid}}', '*');
     }
 
+    protected async getHostPattern(): Promise<string> {
+        return environment.electron.is()
+            ? WebviewExternalEndpoint.defaultPattern
+            : this.environments.getValue(WebviewExternalEndpoint.pattern)
+                .then(variable => variable?.value || WebviewExternalEndpoint.defaultPattern);
+    }
 }

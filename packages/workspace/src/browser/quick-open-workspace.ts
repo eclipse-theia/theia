@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { QuickPickItem, LabelProvider, QuickInputService } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -26,12 +26,11 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { Path } from '@theia/core/lib/common';
 
 @injectable()
-export class QuickOpenWorkspace implements QuickOpenModel {
-
-    protected items: QuickOpenGroupItem[];
+export class QuickOpenWorkspace {
+    protected items: Array<QuickPickItem>;
     protected opened: boolean;
 
-    @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -47,10 +46,9 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         const home = new URI(homeDirUri).path.toString();
         await this.preferences.ready;
         if (!workspaces.length) {
-            this.items.push(new QuickOpenGroupItem({
-                label: 'No Recent Workspaces',
-                run: (mode: QuickOpenMode): boolean => false
-            }));
+            this.items.push({
+                label: 'No Recent Workspaces'
+            });
         }
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
@@ -66,35 +64,24 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                 continue; // skip the temporary workspace files
             }
             const icon = this.labelProvider.getIcon(stat);
-            const iconClass = icon === '' ? undefined : icon + ' file-icon';
-            this.items.push(new QuickOpenGroupItem({
+            const iconClasses = icon === '' ? undefined : [icon + ' file-icon'];
+
+            this.items.push({
+                type: 'separator', label: `last modified ${moment(stat.mtime).fromNow()}`
+            }, {
                 label: uri.path.base,
                 description: Path.tildify(uri.path.toString(), home),
-                groupLabel: `last modified ${moment(stat.mtime).fromNow()}`,
-                iconClass,
-                run: (mode: QuickOpenMode): boolean => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
+                iconClasses,
+                execute: () => {
                     const current = this.workspaceService.workspace;
                     const uriToOpen = new URI(workspace);
                     if ((current && current.resource.toString() !== workspace) || !current) {
                         this.workspaceService.open(uriToOpen);
                     }
-                    return true;
                 },
-            }));
+            });
         }
-
-        this.quickOpenService.open(this, {
-            placeholder: 'Type the name of the workspace you want to open',
-            fuzzyMatchLabel: true,
-            fuzzySort: false
-        });
-    }
-
-    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-        acceptor(this.items);
+        this.quickInputService?.showQuickPick(this.items, { placeholder: 'Type the name of the workspace you want to open' });
     }
 
     select(): void {

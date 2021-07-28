@@ -84,6 +84,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
     protected readonly onScrollChangedEmitter = new Emitter<void>();
     readonly onEncodingChanged = this.document.onDidChangeEncoding;
+    // eslint-disable-next-line no-null/no-null
+    protected readonly onResizeEmitter = new Emitter<Dimension | null>();
+    readonly onDidResize = this.onResizeEmitter.event;
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -340,10 +343,13 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     resizeToFit(): void {
         this.autoresize();
+        // eslint-disable-next-line no-null/no-null
+        this.onResizeEmitter.fire(null);
     }
 
     setSize(dimension: Dimension): void {
         this.resize(dimension);
+        this.onResizeEmitter.fire(dimension);
     }
 
     protected autoresize(): void {

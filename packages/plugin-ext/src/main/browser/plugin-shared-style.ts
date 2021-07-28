@@ -41,7 +41,7 @@ export class PluginSharedStyle {
 
     constructor() {
         this.update();
-        ThemeService.get().onThemeChange(() => this.update());
+        ThemeService.get().onDidColorThemeChange(() => this.update());
     }
 
     protected readonly toUpdate = new DisposableCollection();

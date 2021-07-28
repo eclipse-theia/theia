@@ -14,12 +14,20 @@
 
 The `@theia/mini-browser` extension provides a browser widget with the corresponding backend endpoints.
 
-### Environment Variables
+## Environment Variables
 
 - `THEIA_MINI_BROWSER_HOST_PATTERN`
-  - A string pattern possibly containing `{{hostname}}` which will be replaced. This is the host for which the `mini-browser` will serve.
-  - It is a good practice to host the `mini-browser` handlers on a sub-domain as it is more secure.
-  - Defaults to `{{uuid}}.mini-browser.{{hostname}}`.
+
+  A string pattern possibly containing `{{uuid}}` and `{{hostname}}` which will be replaced. This is the host for which the `mini-browser` will serve.
+  It is a good practice to host the `mini-browser` handlers on a sub-domain as it is more secure.
+  Defaults to `{{uuid}}.mini-browser.{{hostname}}`.
+
+## Security Warnings
+
+- Potentially Insecure Host Pattern
+
+  When you change the host pattern via the `THEIA_MINI_BROWSER_HOST_PATTERN` environment variable warnings will be emitted both from the frontend and from the backend.
+  You can disable those warnings by setting `warnOnPotentiallyInsecureHostPattern: false` in the appropriate application configurations in your application's `package.json`.
 
 ## Additional Information
 

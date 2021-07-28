@@ -320,8 +320,7 @@ class TreeViewExtImpl<T> implements Disposable {
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(parent);
         if (result) {
-            const treeItems: TreeViewItem[] = [];
-            const promises = result.map(async (value, index) => {
+            const treeItemPromises = result.map(async (value, index) => {
 
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
@@ -374,11 +373,10 @@ class TreeViewExtImpl<T> implements Disposable {
                     command: this.commandsConverter.toSafeCommand(treeItem.command, toDisposeElement)
                 } as TreeViewItem;
 
-                treeItems.push(treeViewItem);
+                return treeViewItem;
             });
 
-            await Promise.all(promises);
-            return treeItems;
+            return Promise.all(treeItemPromises);
         } else {
             return undefined;
         }
@@ -450,7 +448,7 @@ class TreeViewExtImpl<T> implements Disposable {
 
     setSelection(selectedItemIds: string[]): void {
         const toDelete = new Set<string>(this.selectedItemIds);
-        for (const id of this.selectedItemIds) {
+        for (const id of selectedItemIds) {
             toDelete.delete(id);
             if (!this.selectedItemIds.has(id)) {
                 this.doSetSelection(selectedItemIds);

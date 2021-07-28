@@ -25,12 +25,12 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
 
     private _previewHandler?: monaco.editor.IBulkEditPreviewHandler;
 
-    async apply(workspaceEdit: monaco.languages.WorkspaceEdit, options?: monaco.editor.IBulkEditOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
-        if (this._previewHandler && (options?.showPreview || workspaceEdit.edits.some(value => value.metadata?.needsConfirmation))) {
-            workspaceEdit = await this._previewHandler(workspaceEdit, options);
+    async apply(edits: monaco.editor.ResourceEdit[], options?: monaco.editor.IBulkEditOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+        if (this._previewHandler && (options?.showPreview || edits.some(value => value.metadata?.needsConfirmation))) {
+            edits = await this._previewHandler(edits, options);
             return { ariaSummary: '', success: true };
         } else {
-            return this.workspace.applyBulkEdit(workspaceEdit);
+            return this.workspace.applyBulkEdit(edits);
         }
     }
 

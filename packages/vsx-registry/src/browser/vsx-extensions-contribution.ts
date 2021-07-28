@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
@@ -26,10 +27,12 @@ import { TabBarToolbarContribution, TabBarToolbarItem, TabBarToolbarRegistry } f
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { MenuModelRegistry, MessageService, Mutable } from '@theia/core/lib/common';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, PreferenceService } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { VSXExtensionsContextMenu, VSXExtension } from './vsx-extension';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
+import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 
 export namespace VSXExtensionsCommands {
 
@@ -53,6 +56,21 @@ export namespace VSXExtensionsCommands {
     export const COPY_EXTENSION_ID: Command = {
         id: 'vsxExtensions.copyExtensionId'
     };
+    export const SHOW_BUILTINS: Command = {
+        id: 'vsxExtension.showBuiltins',
+        label: 'Show Built-in Extensions',
+        category: EXTENSIONS_CATEGORY,
+    };
+    export const SHOW_INSTALLED: Command = {
+        id: 'vsxExtension.showInstalled',
+        label: 'Show Installed Extensions',
+        category: EXTENSIONS_CATEGORY,
+    };
+    export const SHOW_RECOMMENDATIONS: Command = {
+        id: 'vsxExtension.showRecommendations',
+        label: 'Show Recommended Extensions',
+        category: EXTENSIONS_CATEGORY,
+    };
 }
 
 @injectable()
@@ -66,6 +84,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     constructor() {
         super({
@@ -78,6 +97,14 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             toggleCommandId: 'vsxExtensions.toggle',
             toggleKeybinding: 'ctrlcmd+shift+x'
         });
+    }
+
+    @postConstruct()
+    protected init(): void {
+        const oneShotDisposable = this.model.onDidChange(debounce(() => {
+            this.showRecommendedToast();
+            oneShotDisposable.dispose();
+        }, 5000, { trailing: true }));
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
@@ -102,6 +129,18 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         commands.registerCommand(VSXExtensionsCommands.COPY_EXTENSION_ID, {
             execute: (extension: VSXExtension) => this.copyExtensionId(extension)
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.SHOW_BUILTINS, {
+            execute: () => this.showBuiltinExtensions()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.SHOW_INSTALLED, {
+            execute: () => this.showInstalledExtensions()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.SHOW_RECOMMENDATIONS, {
+            execute: () => this.showRecommendedExtensions()
         });
     }
 
@@ -221,5 +260,39 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
     protected copyExtensionId(extension: VSXExtension): void {
         this.clipboardService.writeText(extension.id);
+    }
+
+    protected async showRecommendedToast(): Promise<void> {
+        if (!this.preferenceService.get(IGNORE_RECOMMENDATIONS_ID, false)) {
+            const recommended = new Set([...this.model.recommended]);
+            for (const installed of this.model.installed) {
+                recommended.delete(installed);
+            }
+            if (recommended.size) {
+                const userResponse = await this.messageService.info('Would you like to install the recommended extensions?', 'Install', 'Show Recommended');
+                if (userResponse === 'Install') {
+                    for (const recommendation of recommended) {
+                        this.model.getExtension(recommendation)?.install();
+                    }
+                } else if (userResponse === 'Show Recommended') {
+                    await this.showRecommendedExtensions();
+                }
+            }
+        }
+    }
+
+    protected async showBuiltinExtensions(): Promise<void> {
+        await this.openView({ activate: true });
+        this.model.search.query = BUILTIN_QUERY;
+    }
+
+    protected async showInstalledExtensions(): Promise<void> {
+        await this.openView({ activate: true });
+        this.model.search.query = INSTALLED_QUERY;
+    }
+
+    protected async showRecommendedExtensions(): Promise<void> {
+        await this.openView({ activate: true });
+        this.model.search.query = RECOMMENDED_QUERY;
     }
 }

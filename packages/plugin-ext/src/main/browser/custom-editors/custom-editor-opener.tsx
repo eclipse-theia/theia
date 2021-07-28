@@ -57,6 +57,7 @@ export class CustomEditorOpener implements OpenHandler {
         }
     }
 
+    protected readonly pendingWidgetPromises = new Map<string, Promise<CustomEditorWidget>>();
     async open(uri: URI, options?: OpenerOptions): Promise<Widget | undefined> {
         let widget: CustomEditorWidget | undefined;
         const widgets = this.widgetManager.getWidgets(CustomEditorWidget.FACTORY_ID) as CustomEditorWidget[];
@@ -69,13 +70,20 @@ export class CustomEditorOpener implements OpenHandler {
             return this.shell.activateWidget(widget.id);
         }
         if (!widget) {
-            const id = v4();
-            widget = await this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, { id });
-            widget.viewType = this.editor.viewType;
-            widget.resource = uri;
+            const uriString = uri.toString();
+            let widgetPromise = this.pendingWidgetPromises.get(uriString);
+            if (!widgetPromise) {
+                const id = v4();
+                widgetPromise = this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, { id });
+                this.pendingWidgetPromises.set(uriString, widgetPromise);
+                widget = await widgetPromise;
+                this.pendingWidgetPromises.delete(uriString);
+                widget.viewType = this.editor.viewType;
+                widget.resource = uri;
+                this.onDidOpenCustomEditorEmitter.fire(widget);
+            }
         }
-
-        this.onDidOpenCustomEditorEmitter.fire(widget);
+        return widget;
     }
 
     matches(selectors: CustomEditorSelector[], resource: URI): boolean {

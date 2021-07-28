@@ -17,14 +17,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
-import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MENU } from '../view/tree-view-widget';
 import { DeployedPlugin, Menu, ScmCommandArg, TimelineCommandArg, TreeViewSelection } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
@@ -44,6 +43,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
+import { QuickCommandService } from '@theia/core/lib/browser';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 @injectable()
@@ -72,7 +72,7 @@ export class MenusContributionPointHandler {
     @inject(ScmService)
     protected readonly scmService: ScmService;
 
-    @inject(QuickCommandService)
+    @inject(QuickCommandService) @optional()
     protected readonly quickCommandService: QuickCommandService;
 
     @inject(TabBarToolbarRegistry)
@@ -524,14 +524,14 @@ export class MenusContributionPointHandler {
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
         toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
-        toDispose.push(this.quickCommandService.pushCommandContext(commandId, 'false'));
+        toDispose.push(this.quickCommandService?.pushCommandContext(commandId, 'false'));
 
         let altId: string | undefined;
         if (menu.alt) {
             altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
             const alt: Command = { id: altId };
             toDispose.push(this.commands.registerCommand(alt, handler(menu.alt)));
-            toDispose.push(this.quickCommandService.pushCommandContext(altId, 'false'));
+            toDispose.push(this.quickCommandService?.pushCommandContext(altId, 'false'));
             toDispose.push(this.onDidRegisterCommand(menu.alt, pluginCommand => {
                 alt.category = pluginCommand.category;
                 alt.label = pluginCommand.label;

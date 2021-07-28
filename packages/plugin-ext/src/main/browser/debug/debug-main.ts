@@ -30,9 +30,8 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-source-breakpoint';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
-import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
 import { SourceBreakpoint, FunctionBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
+import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { ConnectionMainImpl } from '../connection-main';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
@@ -50,6 +49,10 @@ import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from '.
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
+import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
+import { ContributionProvider } from '@theia/core/lib/common';
+import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -58,7 +61,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly labelProvider: LabelProvider;
     private readonly editorManager: EditorManager;
     private readonly breakpointsManager: BreakpointManager;
-    private readonly debugConsoleSession: DebugConsoleSession;
+    private readonly consoleSessionManager: ConsoleSessionManager;
     private readonly configurationManager: DebugConfigurationManager;
     private readonly terminalService: TerminalService;
     private readonly messages: MessageClient;
@@ -68,6 +71,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
+    private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly toDispose = new DisposableCollection();
@@ -78,7 +82,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.labelProvider = container.get(LabelProvider);
         this.editorManager = container.get(EditorManager);
         this.breakpointsManager = container.get(BreakpointManager);
-        this.debugConsoleSession = container.get(DebugConsoleSession);
+        this.consoleSessionManager = container.get(ConsoleSessionManager);
         this.configurationManager = container.get(DebugConfigurationManager);
         this.terminalService = container.get(TerminalService);
         this.messages = container.get(MessageClient);
@@ -86,6 +90,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugPreferences = container.get(DebugPreferences);
         this.adapterContributionRegistrator = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
+        this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
 
@@ -114,11 +119,17 @@ export class DebugMainImpl implements DebugMain, Disposable {
     }
 
     async $appendToDebugConsole(value: string): Promise<void> {
-        this.debugConsoleSession.append(value);
+        const session = this.consoleSessionManager.selectedSession;
+        if (session instanceof DebugConsoleSession) {
+            session.append(value);
+        }
     }
 
     async $appendLineToDebugConsole(value: string): Promise<void> {
-        this.debugConsoleSession.appendLine(value);
+        const session = this.consoleSessionManager.selectedSession;
+        if (session instanceof DebugConsoleSession) {
+            session.appendLine(value);
+        }
     }
 
     async $registerDebuggerContribution(description: DebuggerDescription): Promise<void> {
@@ -141,7 +152,8 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 return new PluginWebSocketChannel(connection);
             },
             this.fileService,
-            terminalOptionsExt
+            terminalOptionsExt,
+            this.debugContributionProvider
         );
 
         const toDispose = new DisposableCollection(
@@ -245,13 +257,13 @@ export class DebugMainImpl implements DebugMain, Disposable {
         throw new Error(`Debug session '${sessionId}' not found`);
     }
 
-    async $startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration): Promise<boolean> {
+    async $startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, options: DebugSessionOptions): Promise<boolean> {
         let configuration: DebugConfiguration | undefined;
 
         if (typeof nameOrConfiguration === 'string') {
-            for (const options of this.configurationManager.all) {
-                if (options.configuration.name === nameOrConfiguration) {
-                    configuration = options.configuration;
+            for (const configOptions of this.configurationManager.all) {
+                if (configOptions.configuration.name === nameOrConfiguration) {
+                    configuration = configOptions.configuration;
                 }
             }
         } else {
@@ -262,6 +274,8 @@ export class DebugMainImpl implements DebugMain, Disposable {
             console.error(`There is no debug configuration for ${nameOrConfiguration}`);
             return false;
         }
+
+        Object.assign(configuration, options);
 
         const session = await this.sessionManager.start({
             configuration,

@@ -26,7 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { PreferenceService, StorageService, PreferenceScope } from '@theia/core/lib/browser';
+import { PreferenceScope, PreferenceService, QuickPickValue, StorageService } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
@@ -51,7 +51,7 @@ export class DebugConfigurationManager {
     @inject(DebugService)
     protected readonly debug: DebugService;
     @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    protected readonly quickPickService: QuickPickService;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -265,7 +265,11 @@ export class DebugConfigurationManager {
         if (!uri) { // Since we are requesting information about a known workspace folder, this should never happen.
             throw new Error('PreferenceService.getConfigUri has returned undefined when a URI was expected.');
         }
-        await this.ensureContent(uri, model);
+        const settingsUri = this.preferences.getConfigUri(PreferenceScope.Folder, model.workspaceFolderUri);
+        // Users may have placed their debug configurations in a `settings.json`, in which case we shouldn't modify the file.
+        if (settingsUri && !uri.isEqual(settingsUri)) {
+            await this.ensureContent(uri, model);
+        }
         return uri;
     }
 
@@ -317,10 +321,12 @@ export class DebugConfigurationManager {
         }
         const { languageId } = widget.editor.document;
         const debuggers = await this.debug.getDebuggersForLanguage(languageId);
-        return this.quickPick.show(debuggers.map(
-            ({ label, type }) => ({ label, value: type }),
-            { placeholder: 'Select Environment' })
-        );
+        if (debuggers.length === 0) {
+            return undefined;
+        }
+        const items: Array<QuickPickValue<string>> = debuggers.map(({ label, type }) => ({ label, value: type }));
+        const selectedItem = await this.quickPickService.show(items, { placeholder: 'Select Environment' });
+        return selectedItem?.value;
     }
 
     @inject(StorageService)

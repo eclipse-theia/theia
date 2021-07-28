@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { NotificationManager, Notification } from './notifications-manager';
 
 export interface NotificationComponentProps {

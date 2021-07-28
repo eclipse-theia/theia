@@ -26,7 +26,7 @@ export * from './tree';
 export * from './messaging';
 export * from './endpoint';
 export * from './common-frontend-contribution';
-export * from './quick-open';
+export * from './quick-input';
 export * from './widget-manager';
 export * from './saveable';
 export * from './storage-service';

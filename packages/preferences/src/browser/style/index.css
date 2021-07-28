@@ -43,6 +43,14 @@
     grid-template-rows: 45px 45px 1fr;
 }
 
+.theia-settings-container .settings-main:not(.no-results) .settings-no-results-announcement {
+    display: none;
+}
+
+.theia-settings-container .settings-main .hidden {
+    display: none;
+}
+
 .theia-settings-container .settings-no-results-announcement {
     font-weight: bold;
     font-size: var(--theia-ui-font-size3);
@@ -76,7 +84,7 @@
 
 #theia-main-content-panel .theia-settings-container .tabbar-underline {
     width: 100%;
-    position:absolute;
+    position: absolute;
     top: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2 - 1px);
     border-top: 1px solid var(--theia-tab-unfocusedInactiveForeground);
     z-index: -1;
@@ -114,7 +122,6 @@
 
 .theia-settings-container .preferences-editor-widget {
     grid-area: editor;
-    padding: 0 24px;
 }
 
 .theia-settings-container .preferences-editor-widget.full-pane {
@@ -146,7 +153,9 @@
 
 .theia-settings-container .settings-main-scroll-container {
     position: relative;
+    box-sizing: border-box;
     width: 100%;
+    padding: 0 24px;
     flex: 1 1 auto;
 }
 
@@ -193,13 +202,13 @@
     font-weight: bold;
     font-size: var(--theia-ui-font-size3);
     padding-left: calc(2 * var(--theia-ui-padding));
-  }
-  
+}
+
 .theia-settings-container .settings-section-subcategory-title {
     font-weight: bold;
     font-size: var(--theia-ui-font-size2);
     padding-left: calc(2 * var(--theia-ui-padding));
-  }
+}
 
 .theia-settings-container .settings-section>li {
     list-style-type: none;
@@ -234,12 +243,15 @@
     border-right: 2px hidden;
 }
 
-.theia-settings-container li.single-pref .pref-context-gutter .settings-context-menu-btn {
+.theia-settings-container .settings-context-menu-btn {
     opacity: 0;
     transition: opacity .5s;
 }
 
-.theia-settings-container li.single-pref .pref-context-gutter .settings-context-menu-btn.show-cog {
+.theia-settings-container .single-pref:focus-within .pref-context-gutter .settings-context-menu-btn,
+.theia-settings-container .pref-name:hover+.pref-context-gutter .settings-context-menu-btn,
+.theia-settings-container .pref-context-gutter:hover .settings-context-menu-btn,
+.theia-settings-container .pref-context-gutter.show-cog .settings-context-menu-btn {
     opacity: 1;
 }
 
@@ -274,6 +286,10 @@
     font-weight: bold;
 }
 
+.theia-settings-container .preference-leaf-headline-prefix {
+    color: var(--theia-descriptionForeground);
+}
+
 .preferences-tree-spacer {
     padding-left: calc(var(--theia-ui-padding)/2);
     padding-right: calc(var(--theia-ui-padding)/2);
@@ -299,9 +315,13 @@
     border: 1px solid var(--theia-dropdown-border);
 }
 
-.theia-settings-container .theia-input[type="checkbox"]:focus, 
+.theia-settings-container .theia-input[type="checkbox"]:focus,
 .theia-settings-container .theia-input[type="number"]:focus {
     outline-width: 2px;
+}
+
+.theia-settings-container .theia-input[type="checkbox"] {
+    margin-left: 0;
 }
 
 /* Remove the spinners from input[type = number] on Firefox. */
@@ -313,8 +333,8 @@
 /* Remove the webkit spinners from input[type = number] on all browsers except Firefox. */
 .theia-settings-container input::-webkit-outer-spin-button,
 .theia-settings-container input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .theia-settings-container .pref-content-container .pref-input .pref-input-container .pref-error-notification {
@@ -333,6 +353,7 @@
 
 .theia-settings-container .pref-content-container a.theia-json-input {
     text-decoration: underline;
+    color: var(--theia-titleBar-activeForeground)
 }
 
 .theia-settings-container .pref-content-container a.theia-json-input:hover {
@@ -351,7 +372,7 @@
 }
 
 .theia-settings-container .pref-content-container .pref-input>select,
-.theia-settings-container .pref-content-container .pref-input>input {
+.theia-settings-container .pref-content-container .pref-input>input:not([type="checkbox"]) {
     width: 100%;
 }
 
@@ -361,7 +382,7 @@
 */
 .theia-settings-container .pref-content-container.boolean {
     display: grid;
-    grid-template-columns: 30px 1fr;
+    grid-template-columns: 20px 1fr;
 }
 
 .theia-settings-container .pref-content-container.boolean .pref-description {
@@ -379,6 +400,24 @@
     margin-bottom: 20px;
 }
 
-.theia-settings-container .settings-scope-underlined {
+.theia-settings-container .preference-leaf-headline-suffix {
+    font-weight: normal;
+    color: var(--theia-descriptionForeground);
+}
+
+.theia-settings-container .preference-leaf-headline-suffix::before {
+    content: ' (';
+}
+
+.theia-settings-container .preference-leaf-headline-suffix::after {
+    content: ')';
+}
+
+.theia-settings-container .preference-scope-underlined {
     text-decoration: underline;
+    cursor: pointer;
+}
+
+.theia-settings-container .preference-modified-scope-wrapper:not(:last-child)::after {
+    content: ', ';
 }
