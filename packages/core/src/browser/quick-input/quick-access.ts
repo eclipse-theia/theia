@@ -39,7 +39,7 @@ export interface QuickAccessProviderHelp {
 
 export interface QuickAccessProviderDescriptor {
     /**
-     * return an instance of QuickAccssProvider. Implementers are free to return that same instance multiple times
+     * return an instance of QuickAccessProvider. Implementers are free to return that same instance multiple times
      */
     readonly getInstance: () => QuickAccessProvider;
     /**
