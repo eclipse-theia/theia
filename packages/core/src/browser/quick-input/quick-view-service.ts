@@ -24,8 +24,7 @@ import { QuickAccessContribution } from './quick-access';
 export interface QuickViewItem {
     readonly label: string;
     readonly when?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly open: () => any;
+    readonly open: () => void;
 }
 
 @injectable()
@@ -44,7 +43,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     registerItem(item: QuickViewItem): Disposable {
         const quickOpenItem = {
             label: item.label,
-            accept: () => item.open(),
+            execute: () => item.open(),
             when: item.when
         };
         this.items.push(quickOpenItem);
