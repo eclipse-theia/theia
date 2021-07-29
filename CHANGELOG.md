@@ -7,6 +7,10 @@
  - [workspace] added support for multiple selections in 'Add folder to workspace' dialog. [#9684](https://github.com/eclipse-theia/theia/pull/9684)
  - [debug] added support for managing debug sessions for extensions from debug panel (previously only possible using `Hosted Plugin` commands) [#8706](https://github.com/eclipse-theia/theia/pull/8706)
 
+<a name="notable_changes_1.16.0">[Notable Changes:](#notable_changes_1.16.0)</a>
+
+- [application-manager] defines a new range for `webpack` (`^5.36.2 <5.47.0`). `webpack@5.47.0` depends on `webpack-sources@^3.0.1` but this new version produces bogus bundles in Theia applications. The fix works by constraining the `webpack` version range to not pull newer versions for Theia v1.16.0 meaning clients creating Theia applications will not be affected by the bundling failures caused by the new dependency. The bogus library will most likely be fixed before next release (v1.17.0) so we'll need to update the `webpack` range back to pull newer versions again (bug/performance/security updates).
+
 <a name="breaking_changes_1.16.0">[Breaking Changes:](#breaking_changes_1.16.0)</a>
 
 - [debug] `DebugSession` and `PluginDebugSession` constructors accept a `parentSession` of type `DebugSession | undefined` as their 3rd parameter, offsetting every subsequent parameter by one. [#9613](https://github.com/eclipse-theia/theia/pull/9613)

@@ -50,7 +50,7 @@
     "source-map-support": "^0.5.19",
     "style-loader": "^2.0.0",
     "umd-compat-loader": "^2.1.2",
-    "webpack": "^5.36.2",
+    "webpack": "^5.36.2 <5.47.0",
     "webpack-cli": "4.7.0",
     "worker-loader": "^3.0.8",
     "yargs": "^15.3.1"
