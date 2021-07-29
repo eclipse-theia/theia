@@ -1,14 +1,14 @@
 {
   "name": "@theia/file-search",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "description": "Theia - File Search Extension",
   "dependencies": {
-    "@theia/core": "1.15.0",
-    "@theia/editor": "1.15.0",
-    "@theia/filesystem": "1.15.0",
-    "@theia/process": "1.15.0",
-    "@theia/workspace": "1.15.0",
-    "@theia/monaco": "1.15.0",
+    "@theia/core": "1.16.0",
+    "@theia/editor": "1.16.0",
+    "@theia/filesystem": "1.16.0",
+    "@theia/monaco": "1.16.0",
+    "@theia/process": "1.16.0",
+    "@theia/workspace": "1.16.0",
     "vscode-ripgrep": "^1.2.4"
   },
   "publishConfig": {
@@ -44,7 +44,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.15.0"
+    "@theia/ext-scripts": "1.16.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
