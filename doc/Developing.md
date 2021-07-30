@@ -64,10 +64,16 @@ Some additional tools and libraries are needed depending on your platform:
   - [gcc](https://gcc.gnu.org/) (or another compiling toolchain)
   - [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
   - build-essential: `sudo apt-get install build-essential`
-  - Dependencies for `native-keymap` node native extension:
+  <a name="prerequisite_native_keymap"></a>
+  - [`native-keymap`](#prerequisite_native_keymap) native node module dependencies:
     - Debian-based: `sudo apt-get install libx11-dev libxkbfile-dev`
     - Red Hat-based: `sudo yum install libX11-devel.x86_64 libxkbfile-devel.x86_64 # or .i686`
     - FreeBSD: `sudo pkg install libX11`
+  <a name="prerequisite_keytar"></a>
+  - [`keytar`](#prerequisite_keytar) native node module dependencies ([reference](https://github.com/atom/node-keytar#on-linux)):
+    - Debian/Ubuntu: `sudo apt-get install libsecret-1-dev`
+    - Red Hat-based: `sudo yum install libsecret-devel`
+    - Arch Linux: `sudo pacman -S libsecret`
 
 - Linux/MacOS
   - [nvm](https://github.com/nvm-sh/nvm) is recommended to easily switch between Node.js versions.

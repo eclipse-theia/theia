@@ -109,6 +109,8 @@
 
 <a name="breaking_changes_1.15.0">[Breaking Changes:](#breaking_changes_1.15.0)</a>
 
+- [core] added `keytar` (a native node dependency) which may require `libsecret` to be installed [#9463](https://github.com/eclipse-theia/theia/pull/9463)
+  - Please see [prerequisites](https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#prerequisite_keytar) for additional information.
 - [core] `outline-view-tree.ts` has been renamed to `outline-view-tree-model.ts` to match class name. [#9583](https://github.com/eclipse-theia/theia/pull/9583)
 - [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
 - [process] `@theia/process/lib/node/shell-process` no longer exports `mergeProcessEnv` as a raw function. Use `@theia/core/lib/node/environment-utils` and the injectable `EnvironmentUtils` class instead.
