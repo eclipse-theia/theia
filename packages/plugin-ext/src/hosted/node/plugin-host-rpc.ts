@@ -21,7 +21,7 @@ import { PluginMetadata } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
-import { ExtPluginApi } from '../../common/plugin-ext-api-contribution';
+import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution';
 import { DebugExtImpl } from '../../plugin/node/debug/debug';
 import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
@@ -91,7 +91,7 @@ export class PluginHostRPC {
         const { name, version } = plugin.rawModel;
         console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
         try {
-            const backendInit: { doInitialization: BackendInitializationFn } = dynamicRequire(contextPath);
+            const backendInit = dynamicRequire<{ doInitialization: BackendInitializationFn }>(contextPath);
             backendInit.doInitialization(this.apiFactory, plugin);
         } catch (e) {
             console.error(e);
@@ -200,7 +200,7 @@ export class PluginHostRPC {
                     if (api.backendInitPath) {
                         try {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const extApiInit: any = dynamicRequire(api.backendInitPath);
+                            const extApiInit = dynamicRequire<{ provideApi: ExtPluginApiBackendInitializationFn }>(api.backendInitPath);
                             extApiInit.provideApi(rpc, pluginManager);
                         } catch (e) {
                             console.error(e);

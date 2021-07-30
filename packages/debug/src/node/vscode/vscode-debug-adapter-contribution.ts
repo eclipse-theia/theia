@@ -98,7 +98,7 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
     }
 
     protected async parse(): Promise<VSCodeExtensionPackage> {
-        let text: string = await fs.readFile(this.pckPath, 'utf8');
+        let text = await fs.readFile(this.pckPath, 'utf8');
 
         const nlsPath = path.join(this.extensionPath, 'package.nls.json');
         if (await fs.pathExists(nlsPath)) {
