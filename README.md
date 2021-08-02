@@ -86,6 +86,7 @@ Read below how to engage with Theia community:
 - Useful Links:
   - [Developing](doc/Developing.md)
   - [Testing](doc/Testing.md)
+  - [Migration Guide](doc/Migration.md)
   - [API Integration Testing](doc/api-testing.md)
   - [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines)
   - [Code Organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization)
