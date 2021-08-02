@@ -651,12 +651,12 @@
 <a name="1_5_0_drop_node_10_support"></a>
 - [[repo]](#1_5_0_drop_node_10_support) support for `Node 10` is dropped. [#8290](https://github.com/eclipse-theia/theia/pull/8290)
   - From now on, Node.js `12.x` is required when building.\
-   The recommended minimum version is aligned with `electron` (Node.js `12.18.3`).
+   The recommended minimum version is aligned with `electron` (Node.js `12.14.1`).
 
 ## v1.4.0 - 30/07/2020
 
 - [core] added support for Node.js `12.x` [#7968](https://github.com/eclipse-theia/theia/pull/7968)
-  - From now on, you can use Node.js `12.x` to build Theia from sources. The recommended minimum version is aligned with `electron` (Node.js `12.18.3`).
+  - From now on, you can use Node.js `12.x` to build Theia from sources. The recommended minimum version is aligned with `electron` (Node.js `12.14.1`).
   - Support for Node.js `10.x` will be dropped in one of the forthcoming releases.
 - [core] fixed handling of environment variables on Windows [#7973](https://github.com/eclipse-theia/theia/pull/7973)
 - [core] fixed issue when selecting a tree node after performing a manual scroll [#8154](https://github.com/eclipse-theia/theia/pull/8154)
