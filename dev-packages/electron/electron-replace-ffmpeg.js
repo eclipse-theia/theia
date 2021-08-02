@@ -18,7 +18,7 @@
 
 // @ts-check
 
-const downloadElectron = require('electron-download');
+const electronGet = require('@electron/get');
 const unzipper = require('unzipper');
 const yargs = require('yargs');
 const path = require('path');
@@ -92,15 +92,9 @@ async function main() {
             }).trim();
         }
 
-        const libffmpegZipPath = await new Promise((resolve, reject) => {
-            downloadElectron({
-                // `version` usually starts with a `v`, which already gets added by `electron-download`.
-                version: electronVersion.replace(/^v/i, ''),
-                ffmpeg: true,
-            }, (error, path) => {
-                if (error) reject(error);
-                else resolve(path);
-            });
+        const libffmpegZipPath = await electronGet.downloadArtifact({
+            version: electronVersion,
+            artifactName: 'ffmpeg'
         });
 
         const libffmpegZip = await unzipper.Open.file(libffmpegZipPath);
