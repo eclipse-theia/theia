@@ -322,7 +322,7 @@ export class ElectronMainApplication {
                 } else {
                     bounds = electronWindow.getBounds();
                 }
-                const { width, height, x, y } = bounds as any;
+                const { width, height, x, y } = bounds as Record<string, number>;
 
                 this.electronStore.set('windowstate', {
                     isMaximized: electronWindow.isMaximized(),

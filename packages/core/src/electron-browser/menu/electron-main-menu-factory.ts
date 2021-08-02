@@ -75,10 +75,9 @@ export class ElectronMainMenuFactory {
             if (this._menu) {
                 for (const item of this._toggledCommands) {
                     const menu = this._menu.getMenuItemById(item);
-                    if (!menu) {
-                        continue;
+                    if (menu) {
+                        menu.checked = this.commandRegistry.isToggled(item);
                     }
-                    menu.checked = this.commandRegistry.isToggled(item);
                 }
                 electron.remote.getCurrentWindow().setMenu(this._menu);
             }
@@ -271,7 +270,6 @@ export class ElectronMainMenuFactory {
                 if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
                     const menu = this._menu.getMenuItemById(command);
                     if (menu) {
-
                         menu.checked = this.commandRegistry.isToggled(command, ...args);
                     }
                     electron.remote.getCurrentWindow().setMenu(this._menu);
