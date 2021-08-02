@@ -226,7 +226,7 @@ export class ElectronMainApplication {
 
     protected async getDefaultBrowserWindowOptions(): Promise<TheiaBrowserWindowOptions> {
         const windowOptionsFromConfig = this.config.electron.windowOptions;
-        let windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate', undefined);
+        let windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate', undefined) as TheiaBrowserWindowOptions;
         if (!windowState) {
             windowState = this.getDefaultWindowState();
         }
@@ -242,6 +242,7 @@ export class ElectronMainApplication {
                 // Setting the following option to `true` causes some features to break, somehow.
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
+                enableRemoteModule: true
             },
             ...windowOptionsFromConfig,
         };
@@ -321,12 +322,14 @@ export class ElectronMainApplication {
                 } else {
                     bounds = electronWindow.getBounds();
                 }
+                const { width, height, x, y } = bounds as any;
+
                 this.electronStore.set('windowstate', {
                     isMaximized: electronWindow.isMaximized(),
-                    width: bounds.width,
-                    height: bounds.height,
-                    x: bounds.x,
-                    y: bounds.y
+                    width,
+                    height,
+                    x,
+                    y
                 });
             } catch (e) {
                 console.error('Error while saving window state:', e);

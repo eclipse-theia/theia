@@ -17,9 +17,9 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, ProcessErrorEvent } from './process';
+import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
-import { IPty, spawn } from '@theia/node-pty';
+import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
@@ -80,19 +80,9 @@ export class TerminalProcess extends Process {
                 (isWindows && options.commandLine) || options.args || [],
                 options.options || {});
 
-            this.terminal.on('exec', (reason: string | undefined) => {
-                if (reason === undefined) {
-                    this.emitOnStarted();
-                } else {
-                    const error = new Error(reason) as ProcessErrorEvent;
-                    error.code = reason;
-                    this.emitOnError(error);
-                }
-            });
-
             // node-pty actually wait for the underlying streams to be closed before emitting exit.
             // We should emulate the `exit` and `close` sequence.
-            this.terminal.on('exit', (code, signal) => {
+            this.terminal.onExit(({ exitCode, signal }) => {
                 // Make sure to only pass either code or signal as !undefined, not
                 // both.
                 //
@@ -102,20 +92,20 @@ export class TerminalProcess extends Process {
                 // signal parameter will hold the signal number and code should
                 // be ignored.
                 if (signal === undefined || signal === 0) {
-                    this.onTerminalExit(code, undefined);
+                    this.onTerminalExit(exitCode, undefined);
                 } else {
                     this.onTerminalExit(undefined, signame(signal));
                 }
                 process.nextTick(() => {
                     if (signal === undefined || signal === 0) {
-                        this.emitOnClose(code, undefined);
+                        this.emitOnClose(exitCode, undefined);
                     } else {
                         this.emitOnClose(undefined, signame(signal));
                     }
                 });
             });
 
-            this.terminal.on('data', (data: string) => {
+            this.terminal.onData((data: string) => {
                 ringBuffer.enq(data);
             });
 
@@ -124,6 +114,8 @@ export class TerminalProcess extends Process {
                     this.write(chunk);
                 },
             });
+
+            this.emitOnStarted();
 
         } catch (error) {
             this.inputStream = new DevNullStream({ autoDestroy: true });
