@@ -18,6 +18,7 @@ import '../../src/browser/style/index.css';
 require('../../src/browser/style/materialcolors.css').use();
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
+import '@vscode/codicons/dist/codicon.css';
 
 import { ContainerModule } from 'inversify';
 import {
