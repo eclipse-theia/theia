@@ -134,6 +134,24 @@ export namespace PreferencesCommands {
         category: 'Preferences',
         label: 'Open Workspace Preferences',
     };
+
+    export const OPEN_USER_PREFERENCES_JSON: Command = {
+        id: 'workbench.action.openSettingsJson',
+        category: 'Preferences',
+        label: 'Open Preferences (JSON)'
+    };
+
+    export const OPEN_WORKSPACE_PREFERENCES_JSON: Command = {
+        id: 'workbench.action.openWorkspaceSettingsFile',
+        category: 'Preferences',
+        label: 'Open Workspace Preferences (JSON)',
+    };
+
+    export const OPEN_FOLDER_PREFERENCES_JSON: Command = {
+        id: 'workbench.action.openFolderSettingsFile',
+        category: 'Preferences',
+        label: 'Open Folder Preferences (JSON)',
+    };
 }
 
 export namespace PreferenceMenus {
