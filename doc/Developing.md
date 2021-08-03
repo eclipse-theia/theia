@@ -74,6 +74,7 @@ Some additional tools and libraries are needed depending on your platform:
     - Debian/Ubuntu: `sudo apt-get install libsecret-1-dev`
     - Red Hat-based: `sudo yum install libsecret-devel`
     - Arch Linux: `sudo pacman -S libsecret`
+    - Alpine: `apk add libsecret-dev`
 
 - Linux/MacOS
   - [nvm](https://github.com/nvm-sh/nvm) is recommended to easily switch between Node.js versions.
