@@ -14,83 +14,48 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable-next-line
-import * as ws from '@theia/core/shared/ws';
+import multer = require('multer');
+import path = require('path');
+import os = require('os');
+import express = require('@theia/core/shared/express');
+import fs = require('@theia/core/shared/fs-extra');
+import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
 import { injectable } from '@theia/core/shared/inversify';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import { NodeFileUpload } from './node-file-upload';
+import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 
 @injectable()
-export class NodeFileUploadService implements MessagingService.Contribution {
+export class NodeFileUploadService implements BackendApplicationContribution {
 
-    static wsPath = '/file-upload';
-
-    configure(service: MessagingService): void {
-        service.ws(NodeFileUploadService.wsPath, (_, socket) => this.handleFileUpload(socket));
+    async configure(app: express.Application): Promise<void> {
+        const dest = await this.getTemporaryUploadDest();
+        app.post(
+            HTTP_FILE_UPLOAD_PATH,
+            // `multer` handles `multipart/form-data` containing our file to upload.
+            multer({ dest }).single('file'),
+            (request, response, next) => this.handleFileUpload(request, response)
+        );
     }
 
-    protected handleFileUpload(socket: ws): void {
-        let done = 0;
-        let upload: NodeFileUpload | undefined;
-        const commitUpload = async () => {
-            if (!upload) {
-                return;
-            }
-            await upload.rename();
-            const { uri } = upload;
-            upload = undefined;
-            if (socket.readyState === 1) {
-                socket.send(JSON.stringify({ uri }));
-            }
-        };
-        let queue = Promise.resolve();
-        socket.on('message', data => queue = queue.then(async () => {
-            try {
-                if (upload) {
-                    await upload.append(data as ArrayBuffer);
-                    if (upload.uploadedBytes >= upload.size) {
-                        done += upload.size;
-                        await commitUpload();
-                    }
-                    if (socket.readyState === 1) {
-                        const uploadedBytes = done + (upload ? upload.uploadedBytes : 0);
-                        socket.send(JSON.stringify({
-                            done: uploadedBytes
-                        }));
-                    }
-                    return;
-                }
-                const request = JSON.parse(data.toString());
-                if (request.ok) {
-                    socket.send(JSON.stringify({ ok: true }));
-                    return;
-                }
-                if (request.uri) {
-                    upload = new NodeFileUpload(request.uri, request.size);
-                    await upload.create();
-                    if (!upload.size) {
-                        await commitUpload();
-                    }
-                    return;
-                }
-                console.error('unknown upload request', data);
-                throw new Error('unknown upload request, see backend logs');
-            } catch (e) {
-                console.error(e);
-                if (socket.readyState === 1) {
-                    socket.send(JSON.stringify({
-                        error: 'upload failed (see backend logs for details), reason: ' + e.message
-                    }));
-                    socket.close();
-                }
-            }
-        }));
-        socket.on('error', console.error);
-        socket.on('close', () => {
-            if (upload) {
-                upload.dispose();
-            }
-        });
+    /**
+     * @returns Path to a folder where to temporarily store uploads.
+     */
+    protected async getTemporaryUploadDest(): Promise<string> {
+        return path.join(os.tmpdir(), 'theia_upload');
     }
 
+    protected async handleFileUpload(request: express.Request, response: express.Response): Promise<void> {
+        const fields = request.body;
+        if (!request.file || typeof fields !== 'object' || typeof fields.uri !== 'string') {
+            response.sendStatus(400); // bad request
+            return;
+        }
+        try {
+            const target = FileUri.fsPath(fields.uri);
+            await fs.move(request.file.path, target);
+            response.status(200).send(target); // ok
+        } catch (error) {
+            console.error(error);
+            response.sendStatus(500); // internal server error
+        }
+    }
 }
