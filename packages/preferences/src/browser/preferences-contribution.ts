@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
 import { MenuModelRegistry, CommandRegistry } from '@theia/core';
 import {
     CommonMenus,
@@ -25,6 +25,8 @@ import {
     PreferenceScope,
     PreferenceProvider,
     PreferenceService,
+    QuickInputService,
+    QuickPickItem,
 } from '@theia/core/lib/browser';
 import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
@@ -48,6 +50,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
 
     constructor() {
         super({
@@ -110,6 +113,19 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
                 const widget = await this.openView({ activate: true });
                 widget.setScope(PreferenceScope.Workspace);
             }
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES_JSON, {
+            execute: async () => this.openJson(PreferenceScope.User)
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_WORKSPACE_PREFERENCES_JSON, {
+            isEnabled: () => !!this.workspaceService.workspace,
+            isVisible: () => !!this.workspaceService.workspace,
+            execute: async () => this.openJson(PreferenceScope.Workspace)
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_FOLDER_PREFERENCES_JSON, {
+            isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length >= 1,
+            isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length >= 1,
+            execute: () => this.openFolderJson()
         });
     }
 
@@ -182,6 +198,28 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
                 }
             }
         }
+    }
+
+    protected async openJson(scope: PreferenceScope, resource?: string): Promise<void> {
+        const jsonUriToOpen = await this.obtainConfigUri(scope, false, resource);
+        if (jsonUriToOpen) {
+            await this.editorManager.open(jsonUriToOpen);
+        }
+    }
+
+    /**
+     * Prompts which workspace root folder to open the JSON settings.
+     */
+    protected async openFolderJson(): Promise<void> {
+        const items: QuickPickItem[] = [];
+        for (const root of this.workspaceService.tryGetRoots()) {
+            items.push({
+                label: root.name,
+                description: root.resource.path.toString(),
+                execute: () => this.openJson(PreferenceScope.Folder, root.resource.toString())
+            });
+        }
+        this.quickInputService?.showQuickPick(items, { placeholder: 'Select workspace folder' });
     }
 
     private async obtainConfigUri(serializedScope: number, activeScopeIsFolder: boolean, resource?: string): Promise<URI | undefined> {
