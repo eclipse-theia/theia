@@ -151,7 +151,12 @@
       "type": "chrome",
       "request": "attach",
       "name": "Attach to Electron Frontend",
-      "port": 9222
+      "port": 9222,
+      "webRoot": "${workspaceRoot}",
+      "sourceMapPathOverrides": {
+        "webpack://*": "${workspaceRoot}/*",
+        "webpack://@theia/example-electron/../*": "${workspaceRoot}/*"
+      }
     },
     {
       "name": "Launch VS Code Tests",
