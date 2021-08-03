@@ -14,12 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { cancelled } from './cancellation';
 import { Disposable } from './disposable';
 import { Deferred } from './promise-util';
 import { MaybePromise } from './types';
+
+export interface AsyncQueueOptions {
+
+    /**
+     * Maximum amount of async tasks to run concurrently.
+     *
+     * Default to 1.
+     */
+    concurrency?: number
+}
 
 /**
  * Execute a set amount of async tasks concurrently.
@@ -28,15 +36,27 @@ export class AsyncQueue implements Disposable {
 
     protected concurrency: number;
     protected end = new Deferred<void>();
-    protected pending = new Array<() => Promise<any>>();
-    protected running = new Map<symbol, Promise<any>>();
+    protected pending = new Array<() => Promise<unknown>>();
+    protected running = new Map<symbol, Promise<unknown>>();
     protected _closed = false;
 
-    constructor(concurrency: number) {
-        if (Number.isNaN(concurrency) || concurrency < 1) {
-            throw new TypeError('concurreny should be a number greater than 0');
+    /**
+     * @returns an integer value greater than zero.
+     */
+    static toValidConcurrencyValue(value: number): number {
+        return Number.isNaN(value) || value < 1
+            ? 1
+            : Math.floor(value);
+    }
+
+    constructor(options: AsyncQueueOptions = {}) {
+        const {
+            concurrency = 1,
+        } = options;
+        if (Number.isNaN(concurrency) || !Number.isInteger(concurrency) || concurrency < 1) {
+            throw new Error('concurrency should be an integer greater than 0');
         }
-        this.concurrency = Math.floor(concurrency);
+        this.concurrency = concurrency;
     }
 
     get closed(): boolean {
@@ -82,7 +102,7 @@ export class AsyncQueue implements Disposable {
         this.end.reject(cancelled());
     }
 
-    protected run(task: () => Promise<any>): void {
+    protected run(task: () => Promise<unknown>): void {
         const symbol = Symbol();
         const promise = task().then(
             () => {

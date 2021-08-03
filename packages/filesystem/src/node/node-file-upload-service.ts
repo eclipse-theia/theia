@@ -27,13 +27,25 @@ import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 export class NodeFileUploadService implements BackendApplicationContribution {
 
     async configure(app: express.Application): Promise<void> {
-        const dest = await this.getTemporaryUploadDest();
+        const [dest, http_path] = await Promise.all([
+            this.getTemporaryUploadDest(),
+            this.getHttpFileUploadPath()
+        ]);
+        console.debug(`HTTP file upload URL path: ${http_path}`);
+        console.debug(`Backend file upload cache path: ${dest}`);
         app.post(
-            HTTP_FILE_UPLOAD_PATH,
+            http_path,
             // `multer` handles `multipart/form-data` containing our file to upload.
             multer({ dest }).single('file'),
             (request, response, next) => this.handleFileUpload(request, response)
         );
+    }
+
+    /**
+     * @returns URL path on which to accept file uploads.
+     */
+    protected async getHttpFileUploadPath(): Promise<string> {
+        return HTTP_FILE_UPLOAD_PATH;
     }
 
     /**

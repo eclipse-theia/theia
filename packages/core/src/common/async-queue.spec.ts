@@ -22,7 +22,7 @@ describe('AsyncQueue (10x ~100ms tasks)', () => {
     for (let i = 1; i <= 10; i++) {
         const maxConcurrency = i;
         it(`should only run ${maxConcurrency} async tasks concurrently`, async () => {
-            const queue = new AsyncQueue(maxConcurrency);
+            const queue = new AsyncQueue({ concurrency: maxConcurrency });
             let running = 0;
             for (let j = 1; j <= 10; j++) {
                 const k = j;

@@ -129,7 +129,9 @@ export class FileUploadService {
     }
 
     protected async uploadAll(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
-        const uploads: Promise<void>[] = [];
+        const uploads = new AsyncQueue({
+            concurrency: AsyncQueue.toValidConcurrencyValue(this.maxConcurrentUploads),
+        });
         const responses: Promise<void>[] = [];
         const status = new Map<File, {
             total: number
@@ -174,7 +176,6 @@ export class FileUploadService {
                 });
             }
         }, 100);
-        const queue = new AsyncQueue(this.maxConcurrentUploads);
         try {
             await this.index(targetUri, params.source, {
                 token: params.token,
@@ -184,7 +185,7 @@ export class FileUploadService {
                     status.set(item.file, { total: item.file.size, done: 0 });
                     report();
                     // Don't await here: the queue will organize the uploading tasks, not the async indexer.
-                    queue.push(async () => {
+                    uploads.push(async () => {
                         checkCancelled(params.token);
                         const { upload, response } = this.uploadFile(item.file, item.uri, params.token, (total, done) => {
                             const entry = status.get(item.file);
@@ -198,9 +199,6 @@ export class FileUploadService {
                             status.delete(item.file);
                             throw error;
                         }
-                        uploads.push(upload
-                            .catch(onError)
-                        );
                         responses.push(response
                             .then(() => {
                                 checkCancelled(params.token);
@@ -215,20 +213,19 @@ export class FileUploadService {
                             .catch(onError)
                         );
                         // Have the queue wait for the upload only.
-                        return upload;
+                        return upload
+                            .catch(onError);
                     });
                 }
             });
             checkCancelled(params.token);
-            await queue.close();
-            checkCancelled(params.token);
-            await Promise.all(uploads);
+            await uploads.close();
             checkCancelled(params.token);
             waitingForResponses = true;
             report();
             await Promise.all(responses);
         } catch (error) {
-            queue.dispose();
+            uploads.dispose();
             if (!isCancelled(error)) {
                 throw error;
             }
