@@ -32,7 +32,7 @@ export * from '@phosphor/messaging';
 
 export const DISABLED_CLASS = 'theia-mod-disabled';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
-export const CODICON_TREE_ITEM_CLASSES = ['codicon', 'codicon-tree-item-expanded'];
+export const CODICON_TREE_ITEM_CLASSES = ['codicon', 'codicon-chevron-down'];
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const BUSY_CLASS = 'theia-mod-busy';
 export const SELECTED_CLASS = 'theia-mod-selected';

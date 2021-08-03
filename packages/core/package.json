@@ -32,6 +32,7 @@
     "@types/safer-buffer": "^2.1.0",
     "@types/ws": "^5.1.2",
     "@types/yargs": "^15",
+    "@vscode/codicons": "^0.0.21",
     "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
     "cookie": "^0.4.0",
