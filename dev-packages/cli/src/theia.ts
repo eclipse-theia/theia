@@ -16,6 +16,7 @@
 
 import * as temp from 'temp';
 import * as yargs from 'yargs';
+import yargsFactory = require('yargs/yargs');
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps } from '@theia/application-package';
 import checkHoisted from './check-hoisting';
@@ -32,11 +33,12 @@ process.on('uncaughtException', error => {
             console.error(error.stack);
         }
     }
+    process.exit(1);
 });
+theiaCli();
 
-function commandArgs(arg: string): string[] {
-    const restIndex = process.argv.indexOf(arg);
-    return restIndex !== -1 ? process.argv.slice(restIndex + 1) : [];
+function getCommandArgv(argv: (string | number)[]): string[] {
+    return argv.slice(1).map(arg => typeof arg === 'string' ? arg : arg.toString(10));
 }
 
 function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, { modules: string[] }> {
@@ -49,79 +51,84 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
             },
         },
         handler: args => {
-            try {
-                rebuild(target, args.modules);
-            } catch (err) {
-                console.error(err);
-                process.exit(1);
-            }
+            rebuild(target, args.modules);
         }
     };
 }
 
-(function (): void {
-    const projectPath = process.cwd();
-    const appTarget = yargs.argv['app-target'] as ApplicationProps.Target;
-    const manager = new ApplicationPackageManager({ projectPath, appTarget });
-    const target = manager.pck.target;
+function defineCommonOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
+    'app-target'?: 'browser' | 'electron'
+}> {
+    return cli
+        .option('app-target', {
+            description: 'The target application type. Overrides `theia.target` in the application\'s package.json',
+            choices: ['browser', 'electron'] as const,
+        });
+}
 
-    yargs
+function theiaCli(): void {
+    const projectPath = process.cwd();
+    // Create a sub `yargs` parser to read `app-target` without
+    // affecting the global `yargs` instance used by the CLI.
+    const {
+        'app-target': appTarget,
+    } = defineCommonOptions(yargsFactory())
+        .help(false)
+        .parse();
+    const manager = new ApplicationPackageManager({
+        projectPath,
+        appTarget
+    });
+    const { target } = manager.pck;
+    const parsed = defineCommonOptions(yargs)
         .command({
             command: 'start',
-            describe: 'start the ' + manager.pck.target + ' backend',
-            handler: async () => {
-                try {
-                    manager.start(commandArgs('start'));
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
+            describe: `Start the ${target} backend`,
+            handler: async argv => {
+                manager.start(getCommandArgv(argv._));
             }
         })
         .command({
             command: 'clean',
-            describe: 'clean for the ' + target + ' target',
-            handler: () => {
-                try {
-                    manager.clean();
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
+            describe: `Clean for the ${target} target`,
+            handler: async () => {
+                await manager.clean();
             }
         })
         .command({
             command: 'copy',
-            handler: () => {
-                try {
-                    manager.copy();
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
-            }
-        })
-        .command({
-            command: 'generate',
-            handler: () => {
-                try {
-                    manager.generate();
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
-            }
-        })
-        .command({
-            command: 'build',
-            describe: 'webpack the ' + target + ' frontend',
+            describe: 'Copy various files from `src-gen` to `lib`',
             handler: async () => {
-                try {
-                    await manager.build(commandArgs('build'));
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
+                await manager.copy();
+            }
+        })
+        .command<{
+            'mode': 'development' | 'production',
+            'split-frontend'?: boolean
+        }>({
+            command: 'generate',
+            describe: `Generate various files for the ${target} target`,
+            builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
+            handler: async argv => {
+                await manager.generate({
+                    mode: argv.mode,
+                    splitFrontend: argv['split-frontend']
+                });
+            }
+        })
+        .command<{
+            'mode': 'development' | 'production',
+            'split-frontend'?: boolean
+        }>({
+            command: 'build',
+            describe: `Generate and bundle the ${target} frontend using webpack`,
+            builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
+            handler: async argv => {
+                console.log('AAAAAAAAAA', argv._);
+                await manager.build(getCommandArgv(argv._), {
+                    mode: argv.mode,
+                    splitFrontend: argv['split-frontend']
+                });
             }
         })
         .command(rebuildCommand('rebuild', target))
@@ -129,27 +136,22 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
         .command(rebuildCommand('rebuild:electron', 'electron'))
         .command<{ suppress: boolean }>({
             command: 'check:hoisted',
-            describe: 'check that all dependencies are hoisted',
+            describe: 'Check that all dependencies are hoisted',
             builder: {
                 'suppress': {
                     alias: 's',
-                    describe: 'suppress exiting with failure code',
+                    describe: 'Suppress exiting with failure code',
                     boolean: true,
                     default: false
                 }
             },
-            handler: args => {
-                try {
-                    checkHoisted(args);
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
+            handler: argv => {
+                checkHoisted(argv);
             }
         })
         .command<{ packed: boolean }>({
             command: 'download:plugins',
-            describe: 'Download defined external plugins.',
+            describe: 'Download defined external plugins',
             builder: {
                 'packed': {
                     alias: 'p',
@@ -174,13 +176,8 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                     default: 'https://open-vsx.org/api'
                 }
             },
-            handler: async args => {
-                try {
-                    await downloadPlugins(args);
-                } catch (err) {
-                    console.error(err);
-                    process.exit(1);
-                }
+            handler: async argv => {
+                await downloadPlugins(argv);
             },
         }).command<{
             testInspect: boolean,
@@ -235,50 +232,46 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                     default: false
                 }
             },
-            handler: async ({ testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage }) => {
-                try {
-                    if (!process.env.THEIA_CONFIG_DIR) {
-                        process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
-                    }
-                    await runTest({
-                        start: async () => new Promise((resolve, reject) => {
-                            const serverArgs = commandArgs('test').filter(a => a.indexOf('--test-') !== 0);
-                            const serverProcess = manager.start(serverArgs);
-                            serverProcess.on('message', resolve);
-                            serverProcess.on('error', reject);
-                            serverProcess.on('close', code => reject(`Server process exited unexpectedly with ${code} code`));
-                        }),
-                        launch: {
-                            args: ['--no-sandbox'],
-                            devtools: testInspect
-                        },
-                        files: {
-                            extension: testExtension,
-                            file: testFile,
-                            ignore: testIgnore,
-                            recursive: testRecursive,
-                            sort: testSort,
-                            spec: testSpec
-                        },
-                        coverage: testCoverage
-                    });
-                } catch (e) {
-                    console.error(e);
-                    process.exit(1);
+            handler: async ({ _, testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage }) => {
+                if (!process.env.THEIA_CONFIG_DIR) {
+                    process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
                 }
+                await runTest({
+                    start: () => new Promise((resolve, reject) => {
+                        const serverProcess = manager.start(getCommandArgv(_));
+                        serverProcess.on('message', resolve);
+                        serverProcess.on('error', reject);
+                        serverProcess.on('close', code => reject(`Server process exited unexpectedly with ${code} code`));
+                    }),
+                    launch: {
+                        args: ['--no-sandbox'],
+                        devtools: testInspect
+                    },
+                    files: {
+                        extension: testExtension,
+                        file: testFile,
+                        ignore: testIgnore,
+                        recursive: testRecursive,
+                        sort: testSort,
+                        spec: testSpec
+                    },
+                    coverage: testCoverage
+                });
             }
-        });
+        })
+        .parserConfiguration({
+            'unknown-options-as-args': true,
+        })
+        .demandCommand(1, 'Please run a command')
+        .parse();
 
     // see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const commands = (yargs as any).getCommandInstance().getCommands();
-    const argv = yargs.demandCommand(1).argv;
-    const command = argv._[0];
+    const command = parsed._[0];
     if (!command || commands.indexOf(command) === -1) {
-        console.log('non-existing or no command specified');
+        process.exitCode = 1;
+        console.log(`Unknown command: ${command}`);
         yargs.showHelp();
-        process.exit(1);
-    } else {
-        yargs.help(false);
     }
-})();
+}
