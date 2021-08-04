@@ -21,6 +21,7 @@ import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
+import URI from '@theia/core/lib/common/uri';
 
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,
@@ -52,7 +53,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         this.searchbarWidget.updateSearchTerm(query);
     }
 
-    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace): void {
+    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace | URI): void {
         this.tabBarWidget.setScope(scope);
     }
 

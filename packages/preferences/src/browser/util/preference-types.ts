@@ -97,6 +97,9 @@ export namespace Preference {
         activeScopeIsFolder: false
     };
 
+    /**
+     * @deprecated since 1.15.0 this type is no longer used.
+     */
     export interface ContextMenuCallbacks {
         resetCallback(): void;
         copyIDCallback(): void;
@@ -135,6 +138,12 @@ export namespace PreferencesCommands {
         label: 'Open Workspace Preferences',
     };
 
+    export const OPEN_FOLDER_PREFERENCES: Command = {
+        id: 'workbench.action.openFolderSettings',
+        category: 'Preferences',
+        label: 'Open Folder Preferences'
+    };
+
     export const OPEN_USER_PREFERENCES_JSON: Command = {
         id: 'workbench.action.openSettingsJson',
         category: 'Preferences',
@@ -157,4 +166,5 @@ export namespace PreferencesCommands {
 export namespace PreferenceMenus {
     export const PREFERENCE_EDITOR_CONTEXT_MENU: MenuPath = ['preferences:editor.contextMenu'];
     export const PREFERENCE_EDITOR_COPY_ACTIONS: MenuPath = [...PREFERENCE_EDITOR_CONTEXT_MENU, 'preferences:editor.contextMenu.copy'];
+    export const FOLDER_SCOPE_MENU_PATH = ['preferences:scope.menu'];
 }
