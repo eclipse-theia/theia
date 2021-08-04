@@ -20,9 +20,9 @@ import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider, StatefulW
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { PreferenceScopeCommandManager, FOLDER_SCOPE_MENU_PATH } from '../util/preference-scope-command-manager';
-import { Preference } from '../util/preference-types';
-import { Emitter } from '@theia/core';
+import { PreferenceScopeCommandManager } from '../util/preference-scope-command-manager';
+import { Preference, PreferenceMenus } from '../util/preference-types';
+import { CommandRegistry, DisposableCollection, Emitter, MenuModelRegistry } from '@theia/core/lib/common';
 
 const USER_TAB_LABEL = 'User';
 const USER_TAB_INDEX = PreferenceScope[USER_TAB_LABEL];
@@ -54,10 +54,13 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
     @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory: PreferenceScopeCommandManager;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
 
     protected readonly onScopeChangedEmitter = new Emitter<Preference.SelectedScopeDetails>();
     readonly onScopeChanged = this.onScopeChangedEmitter.event;
 
+    protected toDispose = new DisposableCollection();
     protected folderTitle: Title<Widget>;
     protected currentWorkspaceRoots: FileStat[] = [];
     protected currentSelection: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
@@ -84,16 +87,17 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
     protected init(): void {
         this.id = PreferencesScopeTabBar.ID;
         this.setupInitialDisplay();
+
         this.tabActivateRequested.connect((sender, args) => {
             const scopeDetails = this.toScopeDetails(args.title);
             if (scopeDetails) {
                 this.setNewScopeSelection(scopeDetails);
             }
         });
-        this.workspaceService.onWorkspaceChanged(newRoots => {
-            this.doUpdateDisplay(newRoots);
-        });
-        this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab());
+        this.toDispose.pushAll([
+            this.workspaceService.onWorkspaceChanged(newRoots => this.doUpdateDisplay(newRoots)),
+            this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab())
+        ]);
         const tabUnderline = document.createElement('div');
         tabUnderline.className = TABBAR_UNDERLINE_CLASSNAME;
         this.node.append(tabUnderline);
@@ -196,7 +200,6 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
                 }
 
                 this.setFolderTitleProperties(multipleFolderRootsAreAvailable);
-                this.getFolderContextMenu(this.currentWorkspaceRoots);
                 if (multipleFolderRootsAreAvailable || shouldShowFoldersSeparately) {
                     this.addTab(this.folderTitle);
                 }
@@ -237,11 +240,27 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
     }
 
     protected openContextMenu(tabRect: DOMRect | ClientRect, folderTabNode: HTMLElement, source: 'click' | 'keypress'): void {
+        const toDisposeOnHide = new DisposableCollection();
+        for (const root of this.workspaceService.tryGetRoots()) {
+            const id = `set-scope-to-${root.resource.toString()}`;
+            toDisposeOnHide.pushAll([
+                this.commandRegistry.registerCommand(
+                    { id },
+                    { execute: () => this.setScope(root.resource) }
+                ),
+                this.menuModelRegistry.registerMenuAction(PreferenceMenus.FOLDER_SCOPE_MENU_PATH,
+                    {
+                        commandId: id,
+                        label: this.labelProvider.getName(root),
+                    }
+                )
+            ]);
+        }
         this.contextMenuRenderer.render({
-            menuPath: FOLDER_SCOPE_MENU_PATH,
+            menuPath: PreferenceMenus.FOLDER_SCOPE_MENU_PATH,
             anchor: { x: tabRect.left, y: tabRect.bottom },
-            args: [this.folderSelectionCallback, 'from-tabbar'],
             onHide: () => {
+                setTimeout(() => toDisposeOnHide.dispose());
                 if (source === 'click') { folderTabNode.blur(); }
             }
         });
@@ -276,13 +295,28 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
         this.onScopeChangedEmitter.fire(this.currentSelection);
     }
 
-    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace): void {
-        const stringifiedSelectionScope = scope.toString();
-        const correspondingTitle = this.titles.find(title => title.dataset.scope === stringifiedSelectionScope);
-        const details = this.toScopeDetails(correspondingTitle);
+    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace | URI): void {
+        const details = scope instanceof URI ? this.getDetailsForResource(scope) : this.getDetailsForScope(scope);
         if (details) {
             this.setNewScopeSelection(details);
         }
+    }
+
+    protected getDetailsForScope(scope: PreferenceScope.User | PreferenceScope.Workspace): Preference.SelectedScopeDetails | undefined {
+        const stringifiedSelectionScope = scope.toString();
+        const correspondingTitle = this.titles.find(title => title.dataset.scope === stringifiedSelectionScope);
+        return this.toScopeDetails(correspondingTitle);
+    }
+
+    protected getDetailsForResource(resource: URI): Preference.SelectedScopeDetails | undefined {
+        const parent = this.workspaceService.getWorkspaceRootUri(resource);
+        if (!parent) {
+            return undefined;
+        }
+        if (!this.workspaceService.isMultiRootWorkspaceOpened) {
+            return this.getDetailsForScope(PreferenceScope.Workspace);
+        }
+        return ({ scope: PreferenceScope.Folder, uri: parent.toString(), activeScopeIsFolder: true });
     }
 
     storeState(): PreferencesScopeTabBarState {
@@ -300,5 +334,10 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
 
     toggleShadow(showShadow: boolean): void {
         this.toggleClass(SHADOW_CLASSNAME, showShadow);
+    }
+
+    dispose(): void {
+        super.dispose();
+        this.toDispose.dispose();
     }
 }
