@@ -96,7 +96,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
         });
         this.toDispose.pushAll([
             this.workspaceService.onWorkspaceChanged(newRoots => this.doUpdateDisplay(newRoots)),
-            this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab())
+            this.workspaceService.onWorkspaceLocationChanged(() => this.doUpdateDisplay(this.workspaceService.tryGetRoots())),
         ]);
         const tabUnderline = document.createElement('div');
         tabUnderline.className = TABBAR_UNDERLINE_CLASSNAME;
