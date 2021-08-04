@@ -7,6 +7,27 @@ Please see the latest version (`master`) for the most up-to-date information.
 
 ## Guide
 
+### v1.17.0
+
+#### ES2017
+
+- Theia was updated to ES2017
+  - es5 VS Code extensions and Theia plugins are still supported
+  - If you require an es5 codebase you should be able to transpile back to es5 using webpack
+  - The following code transpiles back to an es2015 codebase:
+    ```
+    config.module.rules.push({
+        test: /\.js$/,
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: [['@babel/preset-env', { targets: { chrome: '58', ie: '11' } }]],
+            }
+        }
+    });
+    ```  
+  - Replace the targets with the ones that are needed for your use case
+
 ### v1.16.0
 
 [Release](https://github.com/eclipse-theia/theia/releases/tag/v1.16.0)
