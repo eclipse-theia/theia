@@ -82,7 +82,7 @@ const codeEditorPreferenceProperties = {
     'editor.defaultFormatter': {
         'type': 'string',
         'default': null,
-        'description': 'Default formatter'
+        'description': 'Default formatter.'
     },
     'editor.insertSpaces': {
         'type': 'boolean',
@@ -137,7 +137,7 @@ const codeEditorPreferenceProperties = {
     'editor.maxTokenizationLineLength': {
         'type': 'integer',
         'default': 400,
-        'description': 'Lines above this length will not be tokenized for performance reasons'
+        'description': 'Lines above this length will not be tokenized for performance reasons.'
     },
     'diffEditor.maxComputationTime': {
         'type': 'number',
@@ -303,12 +303,13 @@ const codeEditorPreferenceProperties = {
     },
     'editor.ariaLabel': {
         'type': 'string',
-        'description': 'Editor content',
+        'description': 'The aria label for the editor\'s textarea when focused.',
         'default': 'ariaLabel'
     },
     'editor.automaticLayout': {
         'type': 'boolean',
-        'default': false
+        'default': false,
+        'description': 'Enable that the editor will install an interval to check if its container dom node size has changed. Enabling this might have a severe performance impact.'
     },
     'editor.codeLens': {
         'description': 'Controls whether the editor shows CodeLens.',
@@ -343,6 +344,7 @@ const codeEditorPreferenceProperties = {
         'description': 'Controls if empty lines should be ignored with toggle, add or remove actions for line comments.'
     },
     'editor.contextmenu': {
+        'description': 'Controls whether to enable the custom contextmenu.',
         'type': 'boolean',
         'default': true,
     },
@@ -409,10 +411,12 @@ const codeEditorPreferenceProperties = {
         'maximum': 1073741824
     },
     'editor.disableLayerHinting': {
+        'markdownDescription': 'Disable the use of `transform: translate3d(0px, 0px, 0px)` for the editor margin and lines layers. The usage of `transform: translate3d(0px, 0px, 0px)` acts as a hint for browsers to create an extra layer.',
         'type': 'boolean',
         'default': false
     },
     'editor.disableMonospaceOptimizations': {
+        'description': 'Controls whether to enable optimizations for monospace fonts.',
         'type': 'boolean',
         'default': false
     },
@@ -427,6 +431,7 @@ const codeEditorPreferenceProperties = {
         'default': true
     },
     'editor.extraEditorClassName': {
+        'description': 'Additional class name to be added to the editor.',
         'type': 'string',
         'default': ''
     },
@@ -477,6 +482,7 @@ const codeEditorPreferenceProperties = {
         'description': 'Controls whether the search automatically restarts from the beginning (or the end) when no further matches can be found.'
     },
     'editor.fixedOverflowWidgets': {
+        'markdownDescription': 'Controls whether to display overflow widgets as `fixed`.',
         'type': 'boolean',
         'default': false,
     },
@@ -799,6 +805,7 @@ const codeEditorPreferenceProperties = {
         'description': 'Limit the width of the minimap to render at most a certain number of columns.'
     },
     'editor.mouseStyle': {
+        'description': 'Controls the mouse pointer style.',
         'type': 'string',
         'enum': ['text', 'default', 'copy'],
         'default': 'text'
@@ -858,7 +865,8 @@ const codeEditorPreferenceProperties = {
         'type': 'integer',
         'default': 3,
         'minimum': 0,
-        'maximum': 3
+        'maximum': 3,
+        'description': 'The number of vertical lanes the overview ruler should render.'
     },
     'editor.padding.top': {
         'type': 'number',
@@ -943,6 +951,7 @@ const codeEditorPreferenceProperties = {
         'maximum': 1073741824
     },
     'editor.readOnly': {
+        'description': 'Controls whether the editor is readonly.',
         'type': 'boolean',
         'default': false
     },
@@ -989,6 +998,7 @@ const codeEditorPreferenceProperties = {
         'default': false
     },
     'editor.renderValidationDecorations': {
+        'description': 'Controls whether the editor renders validation decorations.',
         'type': 'string',
         'enum': ['editable', 'on', 'off'],
         'default': 'editable'
@@ -1011,6 +1021,7 @@ const codeEditorPreferenceProperties = {
         'default': 'none'
     },
     'editor.revealHorizontalRightPadding': {
+        'description': 'When revealing the cursor, a virtual padding (px) is added to the cursor, turning it into a rectangle. This virtual padding ensures that the cursor gets revealed before hitting the edge of the viewport.',
         'type': 'integer',
         'default': 30,
         'minimum': 0,
@@ -1058,6 +1069,7 @@ const codeEditorPreferenceProperties = {
         'default': true
     },
     'editor.selectOnLineNumbers': {
+        'description': 'Controls whether to select the corresponding line when clicking on the line number',
         'type': 'boolean',
         'default': true
     },
@@ -1128,6 +1140,7 @@ const codeEditorPreferenceProperties = {
         'default': false
     },
     'editor.stopRenderingLineAfter': {
+        'description': 'Performance guard: Stop rendering a line after x characters.',
         'type': 'integer',
         'default': 10000,
         'minimum': -1,
@@ -1418,10 +1431,12 @@ const codeEditorPreferenceProperties = {
         'default': 'off'
     },
     'editor.wordWrapBreakAfterCharacters': {
+        'description': 'Configure word wrapping characters. A break will be introduced after these characters.',
         'type': 'string',
         'default': ' \t})]?|/&.,;¢°′″‰℃、。｡､￠，．：；？！％・･ゝゞヽヾーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ々〻ｧｨｩｪｫｬｭｮｯｰ”〉》」』】〕）］｝｣',
     },
     'editor.wordWrapBreakBeforeCharacters': {
+        'description': 'Configure word wrapping characters. A break will be introduced before these characters.',
         'type': 'string',
         'default': '([{‘“〈《「『【〔（［｛｢£¥＄￡￥+＋',
     },
@@ -1433,11 +1448,13 @@ const codeEditorPreferenceProperties = {
         'maximum': 1073741824
     },
     'editor.wordWrapOverride1': {
+        'markdownDescription': 'Override the `wordWrap` setting.',
         'type': 'string',
         'enum': ['off', 'on', 'inherit'],
         'default': 'inherit'
     },
     'editor.wordWrapOverride2': {
+        'markdownDescription': 'Override the `wordWrapOverride1` setting.',
         'type': 'string',
         'enum': ['off', 'on', 'inherit'],
         'default': 'inherit'
