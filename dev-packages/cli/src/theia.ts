@@ -37,14 +37,16 @@ process.on('uncaughtException', error => {
 });
 theiaCli();
 
-function getCommandArgv(argv: (string | number)[]): string[] {
-    return argv.slice(1).map(arg => typeof arg === 'string' ? arg : arg.toString(10));
+function toStringArray(argv?: (string | number)[]): string[] | undefined {
+    return argv === undefined
+        ? undefined
+        : argv.map(arg => String(arg));
 }
 
 function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, { modules: string[] }> {
     return {
         command,
-        describe: 'rebuild native node modules for the ' + target,
+        describe: `Rebuild native node modules for the ${target}`,
         builder: {
             'modules': {
                 array: true,
@@ -57,7 +59,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
 }
 
 function defineCommonOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
-    'app-target'?: 'browser' | 'electron'
+    appTarget?: 'browser' | 'electron'
 }> {
     return cli
         .option('app-target', {
@@ -70,22 +72,18 @@ function theiaCli(): void {
     const projectPath = process.cwd();
     // Create a sub `yargs` parser to read `app-target` without
     // affecting the global `yargs` instance used by the CLI.
-    const {
-        'app-target': appTarget,
-    } = defineCommonOptions(yargsFactory())
-        .help(false)
-        .parse();
-    const manager = new ApplicationPackageManager({
-        projectPath,
-        appTarget
-    });
+    const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
+    const manager = new ApplicationPackageManager({ projectPath, appTarget });
     const { target } = manager.pck;
-    const parsed = defineCommonOptions(yargs)
-        .command({
-            command: 'start',
+    yargs.scriptName('theia');
+    const parser = defineCommonOptions(yargs)
+        .command<{
+            theiaArgs?: (string | number)[]
+        }>({
+            command: 'start [theia-args...]',
             describe: `Start the ${target} backend`,
-            handler: async argv => {
-                manager.start(getCommandArgv(argv._));
+            handler: async ({ theiaArgs }) => {
+                manager.start(toStringArray(theiaArgs));
             }
         })
         .command({
@@ -103,38 +101,34 @@ function theiaCli(): void {
             }
         })
         .command<{
-            'mode': 'development' | 'production',
-            'split-frontend'?: boolean
+            mode: 'development' | 'production',
+            splitFrontend?: boolean
         }>({
             command: 'generate',
             describe: `Generate various files for the ${target} target`,
             builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
-            handler: async argv => {
-                await manager.generate({
-                    mode: argv.mode,
-                    splitFrontend: argv['split-frontend']
-                });
+            handler: async ({ mode, splitFrontend }) => {
+                await manager.generate({ mode, splitFrontend });
             }
         })
         .command<{
-            'mode': 'development' | 'production',
-            'split-frontend'?: boolean
+            mode: 'development' | 'production',
+            splitFrontend?: boolean
+            webpackArgs?: string[]
         }>({
-            command: 'build',
+            command: 'build [webpack-args...]',
             describe: `Generate and bundle the ${target} frontend using webpack`,
             builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
-            handler: async argv => {
-                console.log('AAAAAAAAAA', argv._);
-                await manager.build(getCommandArgv(argv._), {
-                    mode: argv.mode,
-                    splitFrontend: argv['split-frontend']
-                });
+            handler: async ({ mode, splitFrontend, webpackArgs }) => {
+                await manager.build(toStringArray(webpackArgs), { mode, splitFrontend });
             }
         })
         .command(rebuildCommand('rebuild', target))
         .command(rebuildCommand('rebuild:browser', 'browser'))
         .command(rebuildCommand('rebuild:electron', 'electron'))
-        .command<{ suppress: boolean }>({
+        .command<{
+            suppress: boolean
+        }>({
             command: 'check:hoisted',
             describe: 'Check that all dependencies are hoisted',
             builder: {
@@ -145,11 +139,13 @@ function theiaCli(): void {
                     default: false
                 }
             },
-            handler: argv => {
-                checkHoisted(argv);
+            handler: ({ suppress }) => {
+                checkHoisted({ suppress });
             }
         })
-        .command<{ packed: boolean }>({
+        .command<{
+            packed: boolean
+        }>({
             command: 'download:plugins',
             describe: 'Download defined external plugins',
             builder: {
@@ -176,8 +172,8 @@ function theiaCli(): void {
                     default: 'https://open-vsx.org/api'
                 }
             },
-            handler: async argv => {
-                await downloadPlugins(argv);
+            handler: async ({ packed }) => {
+                await downloadPlugins({ packed });
             },
         }).command<{
             testInspect: boolean,
@@ -188,8 +184,9 @@ function theiaCli(): void {
             testSort: boolean,
             testSpec: string[],
             testCoverage: boolean
+            theiaArgs?: (string | number)[]
         }>({
-            command: 'test',
+            command: 'test [theia-args...]',
             builder: {
                 'test-inspect': {
                     describe: 'Whether to auto-open a DevTools panel for test page.',
@@ -232,16 +229,16 @@ function theiaCli(): void {
                     default: false
                 }
             },
-            handler: async ({ _, testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage }) => {
+            handler: async ({ testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage, theiaArgs }) => {
                 if (!process.env.THEIA_CONFIG_DIR) {
                     process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
                 }
                 await runTest({
                     start: () => new Promise((resolve, reject) => {
-                        const serverProcess = manager.start(getCommandArgv(_));
+                        const serverProcess = manager.start(toStringArray(theiaArgs));
                         serverProcess.on('message', resolve);
                         serverProcess.on('error', reject);
-                        serverProcess.on('close', code => reject(`Server process exited unexpectedly with ${code} code`));
+                        serverProcess.on('close', (code, signal) => reject(`Server process exited unexpectedly: ${code ?? signal}`));
                     }),
                     launch: {
                         args: ['--no-sandbox'],
@@ -262,16 +259,7 @@ function theiaCli(): void {
         .parserConfiguration({
             'unknown-options-as-args': true,
         })
-        .demandCommand(1, 'Please run a command')
-        .parse();
-
-    // see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const commands = (yargs as any).getCommandInstance().getCommands();
-    const command = parsed._[0];
-    if (!command || commands.indexOf(command) === -1) {
-        process.exitCode = 1;
-        console.log(`Unknown command: ${command}`);
-        yargs.showHelp();
-    }
+        .strictCommands()
+        .demandCommand(1, 'Please run a command');
+    parser.parse();
 }

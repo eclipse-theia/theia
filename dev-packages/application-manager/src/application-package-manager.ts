@@ -27,8 +27,8 @@ export class ApplicationPackageManager {
 
     // eslint-disable-next-line @typescript-eslint/tslint/config
     static defineGeneratorOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
-        'mode': 'development' | 'production'
-        'split-frontend'?: boolean
+        mode: 'development' | 'production'
+        splitFrontend?: boolean
     }> {
         return cli
             .option('mode', {
