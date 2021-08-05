@@ -231,6 +231,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    protected async toggleViewContainer(id: string): Promise<void> {
+        let widget = await this.getPluginViewContainer(id);
+        if (widget && widget.isAttached) {
+            widget.dispose();
+        } else {
+            widget = await this.openViewContainer(id);
+            if (widget) {
+                this.shell.activateWidget(widget.id);
+            }
+        }
+    }
+
     protected doRegisterViewContainer(id: string, location: string, options: ViewContainerTitleOptions): Disposable {
         const toDispose = new DisposableCollection();
         this.viewContainers.set(id, [location, options]);
@@ -240,17 +252,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             id: toggleCommandId,
             label: 'Toggle ' + options.label + ' View'
         }, {
-            execute: async () => {
-                let widget = await this.getPluginViewContainer(id);
-                if (widget) {
-                    widget.dispose();
-                } else {
-                    widget = await this.openViewContainer(id);
-                    if (widget) {
-                        this.shell.activateWidget(widget.id);
-                    }
-                }
-            }
+            execute: () => this.toggleViewContainer(id)
         }));
         toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
@@ -417,6 +419,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
+    protected getOrCreateViewContainerWidget(containerId: string): Promise<ViewContainerWidget> {
+        const identifier = this.toViewContainerIdentifier(containerId);
+        return this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+    }
+
     async openViewContainer(containerId: string): Promise<ViewContainerWidget | undefined> {
         if (containerId === 'explorer') {
             const widget = await this.explorer.openView();
@@ -441,8 +448,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             return undefined;
         }
         const [location] = data;
-        const identifier = this.toViewContainerIdentifier(containerId);
-        const containerWidget = await this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+        const containerWidget = await this.getOrCreateViewContainerWidget(containerId);
         if (!containerWidget.isAttached) {
             await this.shell.addWidget(containerWidget, {
                 area: ApplicationShell.isSideArea(location) ? location : 'left',
@@ -508,20 +514,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return this.widgetManager.getWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
     }
 
+    protected async initViewContainer(containerId: string): Promise<void> {
+        let viewContainer = await this.getPluginViewContainer(containerId);
+        if (!viewContainer) {
+            viewContainer = await this.openViewContainer(containerId);
+            if (viewContainer && !viewContainer.getParts().filter(part => !part.isHidden).length) {
+                // close view containers without any visible view parts
+                viewContainer.dispose();
+            }
+        } else {
+            await this.prepareViewContainer(this.toViewContainerId(viewContainer.options), viewContainer);
+        }
+    }
+
     async initWidgets(): Promise<void> {
         const promises: Promise<void>[] = [];
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
-                let viewContainer = await this.getPluginViewContainer(id);
-                if (!viewContainer) {
-                    viewContainer = await this.openViewContainer(id);
-                    if (viewContainer && !viewContainer.getParts().filter(part => !part.isHidden).length) {
-                        // close view containers without any visible view parts
-                        viewContainer.dispose();
-                    }
-                } else {
-                    await this.prepareViewContainer(this.toViewContainerId(viewContainer.options), viewContainer);
-                }
+                await this.initViewContainer(id);
             })().catch(console.error));
         }
         promises.push((async () => {
