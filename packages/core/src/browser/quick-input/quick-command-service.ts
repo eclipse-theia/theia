@@ -89,7 +89,10 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
         }
 
         if (otherItems.length > 0) {
-            items.push({ type: 'separator', label: 'other commands' }, ...otherItems);
+            if (recentItems.length > 0) {
+                items.push({ type: 'separator', label: 'other commands' });
+            }
+            items.push(...otherItems);
         }
         return items;
     }
