@@ -503,7 +503,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     }
                 };
 
-                const disposable = new DisposableCollection;
+                const disposable = new DisposableCollection();
                 disposable.push(this.term.onData(sendData));
                 disposable.push(this.term.onBinary(sendData));
 
