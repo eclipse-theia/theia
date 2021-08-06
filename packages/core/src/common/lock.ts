@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject } from 'inversify';
-import { ILogger } from './logger';
 import { Deferred } from './promise-util';
 
 class LockTokenImpl {
@@ -51,9 +49,6 @@ class LockTokenImpl {
  * }
  */
 export class Lock {
-    @inject(ILogger)
-    protected log: ILogger;
-
     private waiters: LockTokenImpl[] = [];
 
     /**
@@ -65,7 +60,7 @@ export class Lock {
         const token = new LockTokenImpl(deferred);
 
         this.waiters.push(token);
-        this.log.debug(`acquiring lock ${token.id}: blocking= ${this.waiters.length === 1}`);
+        console.debug(`acquiring lock ${token.id}: blocking= ${this.waiters.length === 1}`);
 
         if (this.waiters.length === 1) {
             deferred.resolve(token.id);
@@ -79,16 +74,16 @@ export class Lock {
      * @param token the token obtained from #acquire().
      */
     release(token: number): void {
-        this.log.debug(`releasing lock ${token}`);
+        console.debug(`releasing lock ${token}`);
         const tokenIndex = this.waiters.findIndex(aToken => aToken.id === token);
         if (tokenIndex < 0) {
-            this.log.info(`double release of lock token ${token}`);
+            console.info(`double release of lock token ${token}`);
             return;
         }
 
         this.waiters.splice(tokenIndex, 1);
         if (this.waiters.length > 0) {
-            this.log.debug(`unblocking lock ${this.waiters[0].id}`);
+            console.debug(`unblocking lock ${this.waiters[0].id}`);
             this.waiters[0].release();
         }
     }
