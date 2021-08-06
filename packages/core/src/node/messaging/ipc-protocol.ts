@@ -19,7 +19,6 @@ import { MessageConnection } from 'vscode-ws-jsonrpc';
 
 const THEIA_PARENT_PID = 'THEIA_PARENT_PID';
 const THEIA_ENTRY_POINT = 'THEIA_ENTRY_POINT';
-const THEIA_ENV_REGEXP_EXCLUSION = new RegExp('^THEIA_*');
 
 export const ipcEntryPoint: string | undefined = process.env[THEIA_ENTRY_POINT];
 
@@ -65,7 +64,7 @@ export function createIpcEnv(options?: {
     const childEnv = Object.assign({}, op.env);
 
     for (const key of Object.keys(childEnv)) {
-        if (THEIA_ENV_REGEXP_EXCLUSION.test(key)) {
+        if (key.startsWith('THEIA_')) {
             delete childEnv[key];
         }
     }
