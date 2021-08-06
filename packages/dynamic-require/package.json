@@ -1,6 +1,6 @@
 {
   "name": "@theia/dynamic-require",
-  "version": "1.14.0",
+  "version": "1.16.0",
   "description": "Theia internal utility to wrap and factorize dynamic require calls on Node",
   "main": "index.js",
   "typings": "index.d.ts",

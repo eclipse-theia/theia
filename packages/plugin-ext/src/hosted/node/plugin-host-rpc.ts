@@ -199,7 +199,6 @@ export class PluginHostRPC {
                 for (const api of extApi) {
                     if (api.backendInitPath) {
                         try {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const extApiInit = dynamicRequire<{ provideApi: ExtPluginApiBackendInitializationFn }>(api.backendInitPath);
                             extApiInit.provideApi(rpc, pluginManager);
                         } catch (e) {
