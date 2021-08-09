@@ -37,6 +37,8 @@ process.on('uncaughtException', error => {
 });
 theiaCli();
 
+function toStringArray(argv: (string | number)[]): string[];
+function toStringArray(argv?: (string | number)[]): string[] | undefined;
 function toStringArray(argv?: (string | number)[]): string[] | undefined {
     return argv === undefined
         ? undefined
@@ -114,13 +116,13 @@ function theiaCli(): void {
         .command<{
             mode: 'development' | 'production',
             splitFrontend?: boolean
-            webpackArgs?: string[]
+            webpackArgs?: (string | number)[]
         }>({
             command: 'build [webpack-args...]',
             describe: `Generate and bundle the ${target} frontend using webpack`,
             builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
-            handler: async ({ mode, splitFrontend, webpackArgs }) => {
-                await manager.build(toStringArray(webpackArgs), { mode, splitFrontend });
+            handler: async ({ mode, splitFrontend, webpackArgs = [] }) => {
+                await manager.build(['--mode', mode, ...toStringArray(webpackArgs)], { mode, splitFrontend });
             }
         })
         .command(rebuildCommand('rebuild', target))
@@ -230,6 +232,7 @@ function theiaCli(): void {
                 }
             },
             handler: async ({ testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage, theiaArgs }) => {
+                console.log('THEIA ARGS', theiaArgs);
                 if (!process.env.THEIA_CONFIG_DIR) {
                     process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
                 }
