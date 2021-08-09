@@ -23,23 +23,28 @@ describe('AsyncQueue (10x ~100ms tasks)', () => {
         const maxConcurrency = i;
         it(`should only run ${maxConcurrency} async tasks concurrently`, async () => {
             const queue = new AsyncQueue({ concurrency: maxConcurrency });
-            let running = 0;
             for (let j = 1; j <= 10; j++) {
+                /** Current task number */
                 const k = j;
                 queue.push(async () => {
-                    running += 1;
-                    if (k < maxConcurrency) {
-                        expect(running).eq(k);
+                    if (k <= maxConcurrency) {
+                        // Tasks are scheduled right away because we are below to or equal to `maxConcurrency`
+                        expect(queue.pendingCount).eq(0, 'incorrect pendingCount (k < maxConcurrency)');
+                        expect(queue.runningCount).eq(k, 'incorrect runningCount (k < maxConcurrency)');
                     } else {
-                        expect(running).eq(maxConcurrency);
+                        // The pending queue keeps growing because we are above `maxConcurrency`
+                        expect(queue.pendingCount).eq(k - maxConcurrency - 1, 'incorrect pendingCount (k >= maxConcurrency)');
+                        expect(queue.runningCount).eq(maxConcurrency, 'incorrect runningCount (k >= maxConcurrency)');
                     }
+                    // "pseudo-work" that takes 100ms to process
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    running -= 1;
                 });
             }
-            expect(running).eq(maxConcurrency);
+            expect(queue.pendingCount).eq(10 - maxConcurrency, 'incorrect pendingCount (pre-close)');
+            expect(queue.runningCount).eq(maxConcurrency, 'incorrect runningCount (pre-close)');
             await queue.close();
-            expect(running).eq(0);
+            expect(queue.pendingCount).eq(0, 'incorrect pendingCount (post-close)');
+            expect(queue.runningCount).eq(0, 'incorrect runningCount (post-close)');
         });
     }
 });

@@ -24,7 +24,9 @@ export interface AsyncQueueOptions {
     /**
      * Maximum amount of async tasks to run concurrently.
      *
-     * Default to 1.
+     * 0 means all tasks will be running concurrently. `Infinity` can be used too when applicable.
+     *
+     * Defaults to 1.
      */
     concurrency?: number
 }
@@ -34,17 +36,18 @@ export interface AsyncQueueOptions {
  */
 export class AsyncQueue implements Disposable {
 
-    protected concurrency: number;
+    readonly concurrency: number;
+
     protected end = new Deferred<void>();
     protected pending = new Array<() => Promise<unknown>>();
-    protected running = new Map<symbol, Promise<unknown>>();
+    protected _runningCount = 0;
     protected _closed = false;
 
     /**
      * @returns an integer value greater than zero.
      */
     static toValidConcurrencyValue(value: number): number {
-        return Number.isNaN(value) || value < 1
+        return Number.isNaN(value) || value < 0
             ? 1
             : Math.floor(value);
     }
@@ -53,10 +56,18 @@ export class AsyncQueue implements Disposable {
         const {
             concurrency = 1,
         } = options;
-        if (Number.isNaN(concurrency) || !Number.isInteger(concurrency) || concurrency < 1) {
-            throw new Error('concurrency should be an integer greater than 0');
+        if (Number.isNaN(concurrency) || !Number.isInteger(concurrency) || concurrency < 0) {
+            throw new Error('concurrency should be an integer greater than or equal to 0');
         }
         this.concurrency = concurrency;
+    }
+
+    get pendingCount(): number {
+        return this.pending.length;
+    }
+
+    get runningCount(): number {
+        return this._runningCount;
     }
 
     get closed(): boolean {
@@ -64,7 +75,7 @@ export class AsyncQueue implements Disposable {
     }
 
     /**
-     * Schedule async tasks. The task will be ran as soon as it can.
+     * Schedule async tasks. The task will run as soon as it should to satisfy the concurrency limit.
      */
     push<T>(task: () => MaybePromise<T>): Promise<T> {
         if (this._closed) {
@@ -72,7 +83,7 @@ export class AsyncQueue implements Disposable {
         }
         return new Promise((resolve, reject) => {
             const wrapper = () => Promise.resolve(task()).then(resolve, reject);
-            if (this.running.size < this.concurrency) {
+            if (this.concurrency === 0 || this.runningCount < this.concurrency) {
                 this.run(wrapper);
             } else {
                 this.pending.push(wrapper);
@@ -85,17 +96,18 @@ export class AsyncQueue implements Disposable {
      */
     close(): Promise<void> {
         if (this._closed) {
-            throw new Error('queue is closed, cannot close');
+            return this.end.promise;
         }
         this._closed = true;
-        if (this.running.size === 0 && this.pending.length === 0) {
+        if (this.runningCount === 0 && this.pendingCount === 0) {
+            // We are closing while nothing is running, so we need to manually resolve the `end` lock:
             this.end.resolve();
         }
         return this.end.promise;
     }
 
     /**
-     * Clear all pending tasks and closes this queue. Running tasks will keep going until settled.
+     * Clears all pending tasks and closes this queue. Running tasks will keep going until settled.
      */
     dispose(): void {
         this.clear();
@@ -103,14 +115,16 @@ export class AsyncQueue implements Disposable {
     }
 
     protected run(task: () => Promise<unknown>): void {
-        const symbol = Symbol();
-        const promise = task().then(
+        this._runningCount += 1;
+        task().then(
             () => {
-                this.running.delete(symbol);
+                this._runningCount -= 1;
+                // Pop the next task to run, `runningCount` will only really decrease if there's no pending task.
                 const next = this.pending.pop();
                 if (next) {
                     this.run(next);
-                } else if (this._closed && this.running.size === 0) {
+                } else if (this._closed && this.runningCount === 0) {
+                    // Queue is closed so no new tasks will be scheduled and no more tasks are running = Time to wrap up.
                     this.end.resolve();
                 }
             },
@@ -119,12 +133,11 @@ export class AsyncQueue implements Disposable {
                 this.end.reject(error);
             }
         );
-        this.running.set(symbol, promise);
     }
 
     protected clear(): void {
         this._closed = true;
-        this.running.clear();
+        this._runningCount = 0;
         this.pending.length = 0;
     }
 }

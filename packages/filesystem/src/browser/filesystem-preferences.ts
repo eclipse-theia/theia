@@ -88,7 +88,7 @@ These have precedence over the default associations of the languages installed.'
         'files.maxConcurrentUploads': {
             type: 'integer',
             default: 1,
-            description: 'Maximum number of concurrent files to upload when uploading multiple files.',
+            description: 'Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.',
         }
     }
 };
