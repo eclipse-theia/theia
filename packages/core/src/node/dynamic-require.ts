@@ -1,4 +1,3 @@
-"use strict";
 /********************************************************************************
  * Copyright (C) 2021 Ericsson and others.
  *
@@ -15,12 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-module.exports = function dynamicRequire(id) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function dynamicRequire<T = any>(id: string): T {
     if (typeof id !== 'string') {
         throw new TypeError('module id must be a string');
     }
     if (id.startsWith('.')) {
         throw new Error(`module id cannot be a relative path, id: "${id}"`);
     }
+    // eslint-disable-next-line import/no-dynamic-require
     return require(/* webpackIgnore: true */ id);
 }

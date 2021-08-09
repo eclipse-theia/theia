@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import 'reflect-metadata';
-import dynamicRequire = require('@theia/dynamic-require');
+import { dynamicRequire } from '../dynamic-require';
 import { ConsoleLogger } from 'vscode-ws-jsonrpc/lib/logger';
 import { createMessageConnection, IPCMessageReader, IPCMessageWriter, Trace } from 'vscode-ws-jsonrpc';
 import { checkParentAlive, IPCEntryPoint } from './ipc-protocol';

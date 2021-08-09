@@ -10,7 +10,6 @@
     "@theia/console": "1.16.0",
     "@theia/core": "1.16.0",
     "@theia/debug": "1.16.0",
-    "@theia/dynamic-require": "1.16.0",
     "@theia/editor": "1.16.0",
     "@theia/file-search": "1.16.0",
     "@theia/filesystem": "1.16.0",

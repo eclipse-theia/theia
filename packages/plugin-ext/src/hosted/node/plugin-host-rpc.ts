@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import dynamicRequire = require('@theia/dynamic-require');
+import { dynamicRequire } from '@theia/core/lib/node/dynamic-require';
 import { PluginManagerExtImpl } from '../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory } from '../../common/plugin-api-rpc';
 import { PluginMetadata } from '../../common/plugin-protocol';
