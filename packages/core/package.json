@@ -18,7 +18,6 @@
     "@phosphor/widgets": "1",
     "@primer/octicons-react": "^9.0.0",
     "@theia/application-package": "1.16.0",
-    "@theia/dynamic-require": "1.16.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
