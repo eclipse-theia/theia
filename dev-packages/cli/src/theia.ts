@@ -78,7 +78,7 @@ function theiaCli(): void {
     const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
     const { target } = manager.pck;
-    const parser = defineCommonOptions(yargs)
+    defineCommonOptions(yargs)
         .command<{
             theiaArgs?: (string | number)[]
         }>({
@@ -279,6 +279,6 @@ function theiaCli(): void {
             'unknown-options-as-args': true,
         })
         .strictCommands()
-        .demandCommand(1, 'Please run a command');
-    parser.parse();
+        .demandCommand(1, 'Please run a command')
+        .parse();
 }
