@@ -1208,9 +1208,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     /**
      * Handle the double-click mouse event on the expansion toggle.
+     */
+    protected readonly handleExpansionToggleDblClickEvent = (event: React.MouseEvent<HTMLElement>) => this.doHandleExpansionToggleDblClickEvent(event);
+    /**
+     * Actually handle the double-click mouse event on the expansion toggle.
      * @param event the double-click mouse event.
      */
-    protected handleExpansionToggleDblClickEvent(event: React.MouseEvent<HTMLElement>): void {
+    protected doHandleExpansionToggleDblClickEvent(event: React.MouseEvent<HTMLElement>): void {
         if (this.props.expandOnlyOnExpansionToggleClick) {
             // Ignore the double-click event.
             event.stopPropagation();
