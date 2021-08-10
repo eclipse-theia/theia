@@ -72,18 +72,20 @@ function defineCommonOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
 
 function theiaCli(): void {
     const projectPath = process.cwd();
+    yargs.scriptName('theia').version(require('../package.json').version);
     // Create a sub `yargs` parser to read `app-target` without
     // affecting the global `yargs` instance used by the CLI.
     const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
     const { target } = manager.pck;
-    yargs.scriptName('theia');
     const parser = defineCommonOptions(yargs)
         .command<{
             theiaArgs?: (string | number)[]
         }>({
             command: 'start [theia-args...]',
             describe: `Start the ${target} backend`,
+            // Disable this command's `--help` option so that it is forwarded to Theia's CLI
+            builder: cli => cli.help(false) as yargs.Argv,
             handler: async ({ theiaArgs }) => {
                 manager.start(toStringArray(theiaArgs));
             }
@@ -115,14 +117,29 @@ function theiaCli(): void {
         })
         .command<{
             mode: 'development' | 'production',
+            webpackHelp: boolean
             splitFrontend?: boolean
             webpackArgs?: (string | number)[]
         }>({
             command: 'build [webpack-args...]',
             describe: `Generate and bundle the ${target} frontend using webpack`,
-            builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli),
-            handler: async ({ mode, splitFrontend, webpackArgs = [] }) => {
-                await manager.build(['--mode', mode, ...toStringArray(webpackArgs)], { mode, splitFrontend });
+            builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli)
+                .option('webpack-help' as 'webpackHelp', {
+                    boolean: true,
+                    description: 'Display Webpack\'s help',
+                    default: false
+                }),
+            handler: async ({ mode, splitFrontend, webpackHelp, webpackArgs = [] }) => {
+                await manager.build(
+                    webpackHelp
+                        ? ['--help']
+                        : [
+                            // Forward the `mode` argument to Webpack too:
+                            '--mode', mode,
+                            ...toStringArray(webpackArgs)
+                        ],
+                    { mode, splitFrontend }
+                );
             }
         })
         .command(rebuildCommand('rebuild', target))
@@ -232,7 +249,6 @@ function theiaCli(): void {
                 }
             },
             handler: async ({ testInspect, testExtension, testFile, testIgnore, testRecursive, testSort, testSpec, testCoverage, theiaArgs }) => {
-                console.log('THEIA ARGS', theiaArgs);
                 if (!process.env.THEIA_CONFIG_DIR) {
                     process.env.THEIA_CONFIG_DIR = temp.track().mkdirSync('theia-test-config-dir');
                 }
