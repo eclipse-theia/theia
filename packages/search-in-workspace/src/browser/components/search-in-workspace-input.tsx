@@ -134,6 +134,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
                 {...this.props}
                 onKeyDown={this.onKeyDown}
                 onChange={this.onChange}
+                spellCheck={false}
                 ref={this.input}
             />
         );

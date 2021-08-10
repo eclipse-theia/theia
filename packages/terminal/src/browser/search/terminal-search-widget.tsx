@@ -54,6 +54,7 @@ export class TerminalSearchWidget extends ReactWidget {
                 <input
                     title='Find'
                     type='text'
+                    spellCheck='false'
                     placeholder='Find'
                     ref={ip => this.searchInput = ip}
                     onKeyUp={this.onInputChanged}
@@ -67,7 +68,7 @@ export class TerminalSearchWidget extends ReactWidget {
             <button title='Previous match' className='search-elem arrow-up' onClick={this.handlePreviousButtonClicked}></button>
             <button title='Next match' className='search-elem arrow-down' onClick={this.handleNextButtonClicked}></button>
             <button title='Close' className='search-elem close' onClick={this.handleHide}></button>
-       </div>;
+        </div>;
     }
 
     onSearchInputFocus = (): void => {

@@ -404,6 +404,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
 
         this.fileNameField = document.createElement('input');
         this.fileNameField.type = 'text';
+        this.fileNameField.spellcheck = false;
         this.fileNameField.classList.add('theia-input', FILENAME_TEXTFIELD_CLASS);
         this.fileNameField.value = this.props.inputValue || '';
         fileNamePanel.appendChild(this.fileNameField);
