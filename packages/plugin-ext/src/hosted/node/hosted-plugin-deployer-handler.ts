@@ -146,7 +146,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         this.deployedLocations.delete(pluginId);
         for (const location of deployedLocations) {
             try {
-                await fs.remove(location);
+                if (location !== process.env.HOSTED_PLUGIN) {
+                    await fs.remove(location);
+                }
             } catch (e) {
                 console.error(`[${pluginId}]: failed to undeploy from "${location}", reason`, e);
             }
