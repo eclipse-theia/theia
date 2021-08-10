@@ -27,15 +27,15 @@
 
 </div>
 
-- [**Website**](#website)
-- [**Scope**](#scope)
-- [**Roadmap**](#roadmap)
-- [**Getting Started**](#getting-started)
-- [**Contributing**](#contributing)
-- [**Feedback**](#feedback)
-- [**Documentation**](#documentation)
-- [**License**](#license)
-- [**Trademark**](#trademark)
+- [Website](#website)
+- [Scope](#scope)
+- [Roadmap](#roadmap)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [Feedback](#feedback)
+- [Documentation](#documentation)
+- [License](#license)
+- [Trademark](#trademark)
 
 ## Website
 
@@ -82,6 +82,7 @@ Read below how to engage with Theia community:
 
 ## Documentation
 
+- [Runtime Support Policy (Node/Electron)](./doc/runtime-policies.md)
 - [API Documentation](https://eclipse-theia.github.io/theia/docs/next/index.html)
 - Useful Links:
   - [Developing](doc/Developing.md)
@@ -100,4 +101,3 @@ Read below how to engage with Theia community:
 ## Trademark
 "Theia" is a trademark of the Eclipse Foundation
 https://www.eclipse.org/theia
-
