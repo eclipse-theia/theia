@@ -16,12 +16,12 @@
 
 /* eslint-disable @typescript-eslint/indent */
 
-import { AbstractGenerator } from './abstract-generator';
+import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
 
 export class FrontendGenerator extends AbstractGenerator {
 
-    async generate(): Promise<void> {
+    async generate(options: GeneratorOptions = {}): Promise<void> {
         const frontendModules = this.pck.targetFrontendModules;
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
