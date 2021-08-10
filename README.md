@@ -82,7 +82,7 @@ Read below how to engage with Theia community:
 
 ## Documentation
 
-- [Runtime Support Policy (Node/Electron)](./doc/runtime-policies.md)
+- [Runtime Support Policy (Node/Electron)](doc/runtime-policies.md)
 - [API Documentation](https://eclipse-theia.github.io/theia/docs/next/index.html)
 - Useful Links:
   - [Developing](doc/Developing.md)

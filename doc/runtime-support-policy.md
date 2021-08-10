@@ -10,22 +10,22 @@ We try to support two (2) Node.js versions up to the current _Active LTS_ versio
 
 See https://nodejs.org/en/about/releases/ to see the status of Node.js versions.
 
-We recommend setting up your environments to run Theia using the Node.js _Active LTS_, but any supported version should work as well. Fill an issue otherwise: https://github.com/eclipse-theia/theia/issues/new/choose.
+We recommend setting up your environment to run Theia using the Node.js _Active LTS_, but any supported version should work as well. File an issue otherwise: https://github.com/eclipse-theia/theia/issues/new/choose.
 
-Note that the Node.js version you should use depends on your own project's dependencies: packages others than Theia might have their own requirements, so we try to support a reasonable range for adopters to be able to satisfy such constraints.
+Note that the Node.js version you should use depends on your own project's dependencies: packages other than Theia might have their own requirements, so we try to support a reasonable range for adopters to be able to satisfy such constraints.
 
 ## Update Process
 
 - Follow Node.js LTS cadence and initiate the update when a new Node.js version becomes _Active LTS_.
 - Use `@types/node` for the oldest supported Node version (backward compatibility).
-- Update the CI matrix to include the new Node.js version to support.
+- Update the CI matrix to include the new Node.js versions to support.
 - Update the CHANGELOG.
 
 # Electron
 
 ## Version Support Policy
 
-We aim at using Electron's latest _Stable Release_.
+We aim to use Electron's latest _Stable Release_.
 
 See https://www.electronjs.org/releases/stable to see the latest Electron stable releases.
 
