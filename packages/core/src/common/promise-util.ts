@@ -61,11 +61,11 @@ export async function retry<T>(task: () => Promise<T>, retryDelay: number, retri
 }
 
 /**
- * A function to allow a promise resolution to be delayed by a number of milliseconds. Usage is like so:
+ * A function to allow a promise resolution to be delayed by a number of milliseconds. Usage is as follows:
  *
- * const stringValue = await myPromise.then(delay(600)).then(value => value.toString());
+ * `const stringValue = await myPromise.then(delay(600)).then(value => value.toString());`
  *
- * @param ms the number of millisecond os dealy
+ * @param ms the number of millisecond to delay
  * @returns a function that returns a promise that returns the given value, but delayed
  */
 export function delay<T>(ms: number): (value: T) => Promise<T> {

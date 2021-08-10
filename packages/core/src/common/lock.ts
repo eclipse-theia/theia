@@ -36,6 +36,7 @@ class LockTokenImpl {
  * For mutual exclusion, a lock token must be acquired at the beginning of parallel
  * promise chains:
  *
+ * ```typescript
  * const lock = new Lock();
  *
  * function parallelWork() {
@@ -47,6 +48,7 @@ class LockTokenImpl {
  *     lock.release(token);
  *   }
  * }
+ * ```
  */
 export class Lock {
     private waiters: LockTokenImpl[] = [];
