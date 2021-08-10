@@ -25,7 +25,6 @@ import yargs = require('yargs');
 
 export class ApplicationPackageManager {
 
-    // eslint-disable-next-line @typescript-eslint/tslint/config
     static defineGeneratorOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
         mode: 'development' | 'production'
         splitFrontend?: boolean
