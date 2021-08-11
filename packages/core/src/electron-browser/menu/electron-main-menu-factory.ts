@@ -155,7 +155,8 @@ export class ElectronMainMenuFactory {
 
                 // That is only a sanity check at application startup.
                 if (!this.commandRegistry.getCommand(commandId)) {
-                    throw new Error(`Unknown command with ID: ${commandId}.`);
+                    console.debug(`Skipping menu item with missing command: "${commandId}".`);
+                    continue;
                 }
 
                 if (!this.commandRegistry.isVisible(commandId, ...args)

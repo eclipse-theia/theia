@@ -70,6 +70,12 @@ export class SampleMenuContribution implements MenuContribution {
         });
         const placeholder = new PlaceholderMenuNode([...subSubMenuPath, 'placeholder'].join('-'), 'Placeholder', { order: '0' });
         menus.registerMenuNode(subSubMenuPath, placeholder);
+
+        /**
+         * Register an action menu with an invalid command (un-registered and without a label) in order
+         * to determine that menus and the layout does not break on startup.
+         */
+        menus.registerMenuAction(subMenuPath, { commandId: 'invalid-command' });
     }
 
 }
