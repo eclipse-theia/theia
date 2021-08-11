@@ -20,7 +20,7 @@ import {
     CommonCommands,
     NavigatableWidget,
     open,
-    OpenerService,
+    OpenerService, OpenHandler,
     QuickInputService,
     Saveable,
     TabBar,
@@ -82,6 +82,10 @@ export namespace VscodeCommands {
         id: 'vscode.open'
     };
 
+    export const OPEN_WITH: Command = {
+        id: 'vscode.openWith'
+    };
+
     export const OPEN_FOLDER: Command = {
         id: 'vscode.openFolder'
     };
@@ -132,29 +136,71 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
 
+    private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, viewTypeId?: string): Promise<boolean> {
+        if (!resource) {
+            throw new Error(`${commandId} command requires at least URI argument.`);
+        }
+        if (!URI.isUri(resource)) {
+            throw new Error(`Invalid argument for ${commandId} command with URI argument. Found ${resource}`);
+        }
+
+        let options: TextDocumentShowOptions | undefined;
+        if (typeof columnOrOptions === 'number') {
+            options = {
+                viewColumn: columnOrOptions
+            };
+        } else if (columnOrOptions) {
+            options = {
+                ...columnOrOptions
+            };
+        }
+
+        const uri = new TheiaURI(resource);
+        const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
+
+        let opener: OpenHandler | undefined;
+        if (viewTypeId && viewTypeId !== 'default') {
+            const lowerViewType = viewTypeId.toLowerCase();
+            // Theia set custom editor id using 'custom-editor-' prefix
+            const customViewType = `custom-editor-${lowerViewType}`;
+            const openers = await this.openerService.getOpeners();
+            for (const opnr of openers) {
+                const idLowerCase = opnr.id.toLowerCase();
+                if (lowerViewType === idLowerCase || customViewType === idLowerCase) {
+                    opener = opnr;
+                    break;
+                }
+            }
+        } else {
+            opener = await this.openerService.getOpener(uri, editorOptions);
+        }
+
+        if (opener) {
+            await opener.open(uri, editorOptions);
+            return true;
+        }
+
+        return false;
+    }
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
             isVisible: () => false,
             execute: async (resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
-                if (!resource) {
-                    throw new Error(`${VscodeCommands.OPEN.id} command requires at least URI argument.`);
+                const result = await this.openWith(VscodeCommands.OPEN.id, resource, columnOrOptions);
+                if (!result) {
+                    throw new Error(`Could not find an editor for ${resource}`);
                 }
-                if (!URI.isUri(resource)) {
-                    throw new Error(`Invalid argument for ${VscodeCommands.OPEN.id} command with URI argument. Found ${resource}`);
-                }
+            }
+        });
 
-                let options: TextDocumentShowOptions | undefined;
-                if (typeof columnOrOptions === 'number') {
-                    options = {
-                        viewColumn: columnOrOptions
-                    };
-                } else if (columnOrOptions) {
-                    options = {
-                        ...columnOrOptions
-                    };
+        commands.registerCommand(VscodeCommands.OPEN_WITH, {
+            isVisible: () => false,
+            execute: async (resource: URI, viewTypeId: string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+                const result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, viewTypeId);
+                if (!result) {
+                    throw new Error(`Could not find an editor for '${viewTypeId}'`);
                 }
-                const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
-                await open(this.openerService, new TheiaURI(resource), editorOptions);
             }
         });
 
