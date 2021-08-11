@@ -429,7 +429,8 @@ export class ActionMenuNode implements MenuNode {
         }
         const cmd = this.commands.getCommand(this.action.commandId);
         if (!cmd) {
-            throw new Error(`A command with id '${this.action.commandId}' does not exist.`);
+            console.debug(`No label for action menu node: No command "${this.action.commandId}" exists.`);
+            return '';
         }
         return cmd.label || cmd.id;
     }
