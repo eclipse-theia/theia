@@ -112,7 +112,7 @@ export class ApplicationPackage {
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
             const collector = new ExtensionPackageCollector(
-                raw => this.newExtensionPackage(raw),
+                (raw: PublishedNodePackage, alias: string) => this.newExtensionPackage(raw, alias),
                 this.resolveModule
             );
             this._extensionPackages = collector.collect(this.pck);
@@ -128,13 +128,18 @@ export class ApplicationPackage {
         return this.getExtensionPackage(extension) || this.resolveExtensionPackage(extension);
     }
 
+    /**
+     * Resolve an extension name to its associated package
+     * @param extension the name of the extension's package as defined in "dependencies" (might be aliased)
+     * @returns the extension package
+     */
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
         const raw = await RawExtensionPackage.view(this.registry, extension);
-        return raw ? this.newExtensionPackage(raw) : undefined;
+        return raw ? this.newExtensionPackage(raw, extension) : undefined;
     }
 
-    protected newExtensionPackage(raw: PublishedNodePackage): ExtensionPackage {
-        return new ExtensionPackage(raw, this.registry);
+    protected newExtensionPackage(raw: PublishedNodePackage, alias: string): ExtensionPackage {
+        return new ExtensionPackage(raw, this.registry, alias);
     }
 
     get frontendModules(): Map<string, string> {

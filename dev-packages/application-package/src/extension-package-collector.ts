@@ -24,7 +24,7 @@ export class ExtensionPackageCollector {
     protected readonly visited = new Map<string, boolean>();
 
     constructor(
-        protected readonly extensionPackageFactory: (raw: PublishedNodePackage) => ExtensionPackage,
+        protected readonly extensionPackageFactory: (raw: PublishedNodePackage, alias: string) => ExtensionPackage,
         protected readonly resolveModule: (modulePath: string) => string
     ) { }
 
@@ -76,7 +76,7 @@ export class ExtensionPackageCollector {
             const transitive = !(name in this.root.dependencies!);
             pck.installed = { packagePath, version, parent, transitive };
             pck.version = versionRange;
-            const extensionPackage = this.extensionPackageFactory(pck);
+            const extensionPackage = this.extensionPackageFactory(pck, name);
             this.collectPackagesWithParent(pck, extensionPackage);
             this.sorted.push(extensionPackage);
         }

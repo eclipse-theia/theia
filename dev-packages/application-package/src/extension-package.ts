@@ -30,11 +30,15 @@ export interface Extension {
 export class ExtensionPackage {
     constructor(
         readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
-        protected readonly registry: NpmRegistry
+        protected readonly registry: NpmRegistry,
+        protected readonly alias: string,
     ) { }
 
+    /**
+     * The name of the extension's package as defined in "dependencies" (might be aliased)
+     */
     get name(): string {
-        return this.raw.name;
+        return this.alias;
     }
 
     get version(): string {
