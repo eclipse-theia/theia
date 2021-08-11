@@ -62,18 +62,20 @@ export class DebugConfiguration {
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
 }
 
+export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');
 export const DebugPreferences = Symbol('DebugPreferences');
 export type DebugPreferences = PreferenceProxy<DebugConfiguration>;
 
-export function createDebugPreferences(preferences: PreferenceService): DebugPreferences {
-    return createPreferenceProxy(preferences, debugPreferencesSchema);
+export function createDebugPreferences(preferences: PreferenceService, schema: PreferenceSchema = debugPreferencesSchema): DebugPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindDebugPreferences(bind: interfaces.Bind): void {
     bind(DebugPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createDebugPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(DebugPreferenceContribution);
+        return createDebugPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: debugPreferencesSchema });
+    bind(DebugPreferenceContribution).toConstantValue({ schema: debugPreferencesSchema });
+    bind(PreferenceContribution).toService(DebugPreferenceContribution);
 }

@@ -1566,18 +1566,20 @@ export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
+export const EditorPreferenceContribution = Symbol('EditorPreferenceContribution');
 export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
-export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, editorPreferenceSchema);
+export function createEditorPreferences(preferences: PreferenceService, schema: PreferenceSchema = editorPreferenceSchema): EditorPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createEditorPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(EditorPreferenceContribution);
+        return createEditorPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
+    bind(EditorPreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
+    bind(PreferenceContribution).toService(EditorPreferenceContribution);
 }

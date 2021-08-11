@@ -114,17 +114,20 @@ export interface CoreConfiguration {
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
 }
 
+export const CorePreferenceContribution = Symbol('CorePreferenceContribution');
 export const CorePreferences = Symbol('CorePreferences');
 export type CorePreferences = PreferenceProxy<CoreConfiguration>;
 
-export function createCorePreferences(preferences: PreferenceService): CorePreferences {
-    return createPreferenceProxy(preferences, corePreferenceSchema);
+export function createCorePreferences(preferences: PreferenceService, schema: PreferenceSchema = corePreferenceSchema): CorePreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindCorePreferences(bind: interfaces.Bind): void {
     bind(CorePreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createCorePreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(CorePreferenceContribution);
+        return createCorePreferences(preferences, contribution.schema);
     }).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: corePreferenceSchema });
+    bind(CorePreferenceContribution).toConstantValue({ schema: corePreferenceSchema });
+    bind(PreferenceContribution).toService(CorePreferenceContribution);
 }

@@ -44,18 +44,20 @@ export interface WorkspaceConfiguration {
     'workspace.supportMultiRootWorkspace': boolean
 }
 
+export const WorkspacePreferenceContribution = Symbol('WorkspacePreferenceContribution');
 export const WorkspacePreferences = Symbol('WorkspacePreferences');
 export type WorkspacePreferences = PreferenceProxy<WorkspaceConfiguration>;
 
-export function createWorkspacePreferences(preferences: PreferenceService): WorkspacePreferences {
-    return createPreferenceProxy(preferences, workspacePreferenceSchema);
+export function createWorkspacePreferences(preferences: PreferenceService, schema: PreferenceSchema = workspacePreferenceSchema): WorkspacePreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindWorkspacePreferences(bind: interfaces.Bind): void {
     bind(WorkspacePreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createWorkspacePreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(WorkspacePreferenceContribution);
+        return createWorkspacePreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: workspacePreferenceSchema });
+    bind(WorkspacePreferenceContribution).toConstantValue({ schema: workspacePreferenceSchema });
+    bind(PreferenceContribution).toService(WorkspacePreferenceContribution);
 }

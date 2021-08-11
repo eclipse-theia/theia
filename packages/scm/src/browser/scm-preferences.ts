@@ -43,18 +43,20 @@ export interface ScmConfiguration {
     'scm.defaultViewMode': 'tree' | 'list'
 }
 
+export const ScmPreferenceContribution = Symbol('ScmPreferenceContribution');
 export const ScmPreferences = Symbol('ScmPreferences');
 export type ScmPreferences = PreferenceProxy<ScmConfiguration>;
 
-export function createScmPreferences(preferences: PreferenceService): ScmPreferences {
-    return createPreferenceProxy(preferences, scmPreferenceSchema);
+export function createScmPreferences(preferences: PreferenceService, schema: PreferenceSchema = scmPreferenceSchema): ScmPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindScmPreferences(bind: interfaces.Bind): void {
     bind(ScmPreferences).toDynamicValue((ctx: interfaces.Context) => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createScmPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(ScmPreferenceContribution);
+        return createScmPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: scmPreferenceSchema });
+    bind(ScmPreferenceContribution).toConstantValue({ schema: scmPreferenceSchema });
+    bind(PreferenceContribution).toService(ScmPreferenceContribution);
 }

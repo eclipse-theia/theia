@@ -52,17 +52,20 @@ export interface WebviewConfiguration {
     'webview.warnIfUnsecure'?: boolean
 }
 
+export const WebviewPreferenceContribution = Symbol('WebviewPreferenceContribution');
 export const WebviewPreferences = Symbol('WebviewPreferences');
 export type WebviewPreferences = PreferenceProxy<WebviewConfiguration>;
 
-export function createWebviewPreferences(preferences: PreferenceService): WebviewPreferences {
-    return createPreferenceProxy(preferences, WebviewConfigSchema);
+export function createWebviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = WebviewConfigSchema): WebviewPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindWebviewPreferences(bind: interfaces.Bind): void {
     bind(WebviewPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createWebviewPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: WebviewConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(WebviewPreferenceContribution);
+        return createWebviewPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(WebviewPreferenceContribution).toConstantValue({ schema: WebviewConfigSchema });
+    bind(PreferenceContribution).toService(WebviewPreferenceContribution);
 }

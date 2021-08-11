@@ -48,17 +48,20 @@ export interface HostedPluginConfiguration {
     'hosted-plugin.launchOutFiles': string[];
 }
 
+export const HostedPluginPreferenceContribution = Symbol('HostedPluginPreferenceContribution');
 export const HostedPluginPreferences = Symbol('HostedPluginPreferences');
 export type HostedPluginPreferences = PreferenceProxy<HostedPluginConfiguration>;
 
-export function createNavigatorPreferences(preferences: PreferenceService): HostedPluginPreferences {
-    return createPreferenceProxy(preferences, HostedPluginConfigSchema);
+export function createNavigatorPreferences(preferences: PreferenceService, schema: PreferenceSchema = HostedPluginConfigSchema): HostedPluginPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindHostedPluginPreferences(bind: interfaces.Bind): void {
     bind(HostedPluginPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createNavigatorPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: HostedPluginConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(HostedPluginPreferenceContribution);
+        return createNavigatorPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(HostedPluginPreferenceContribution).toConstantValue({ schema: HostedPluginConfigSchema });
+    bind(PreferenceContribution).toService(HostedPluginPreferenceContribution);
 }
