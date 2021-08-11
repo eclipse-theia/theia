@@ -185,17 +185,20 @@ export function isTerminalRendererType(arg: any): arg is TerminalRendererType {
     return typeof arg === 'string' && (arg === 'canvas' || arg === 'dom');
 }
 
+export const TerminalPreferenceContribution = Symbol('TerminalPreferenceContribution');
 export const TerminalPreferences = Symbol('TerminalPreferences');
 export type TerminalPreferences = PreferenceProxy<TerminalConfiguration>;
 
-export function createTerminalPreferences(preferences: PreferenceService): TerminalPreferences {
-    return createPreferenceProxy(preferences, TerminalConfigSchema);
+export function createTerminalPreferences(preferences: PreferenceService, schema: PreferenceSchema = TerminalConfigSchema): TerminalPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindTerminalPreferences(bind: interfaces.Bind): void {
     bind(TerminalPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createTerminalPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: TerminalConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(TerminalPreferenceContribution);
+        return createTerminalPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(TerminalPreferenceContribution).toConstantValue({ schema: TerminalConfigSchema });
+    bind(PreferenceContribution).toService(TerminalPreferenceContribution);
 }

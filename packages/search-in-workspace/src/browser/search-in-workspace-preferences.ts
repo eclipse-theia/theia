@@ -64,17 +64,20 @@ export class SearchInWorkspaceConfiguration {
     'search.smartCase': boolean;
 }
 
+export const SearchInWorkspacePreferenceContribution = Symbol('SearchInWorkspacePreferenceContribution');
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');
 export type SearchInWorkspacePreferences = PreferenceProxy<SearchInWorkspaceConfiguration>;
 
-export function createSearchInWorkspacePreferences(preferences: PreferenceService): SearchInWorkspacePreferences {
-    return createPreferenceProxy(preferences, searchInWorkspacePreferencesSchema);
+export function createSearchInWorkspacePreferences(preferences: PreferenceService, schema: PreferenceSchema = searchInWorkspacePreferencesSchema): SearchInWorkspacePreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindSearchInWorkspacePreferences(bind: interfaces.Bind): void {
     bind(SearchInWorkspacePreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createSearchInWorkspacePreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(SearchInWorkspacePreferenceContribution);
+        return createSearchInWorkspacePreferences(preferences, contribution.schema);
     }).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: searchInWorkspacePreferencesSchema });
+    bind(SearchInWorkspacePreferenceContribution).toConstantValue({ schema: searchInWorkspacePreferencesSchema });
+    bind(PreferenceContribution).toService(SearchInWorkspacePreferenceContribution);
 }

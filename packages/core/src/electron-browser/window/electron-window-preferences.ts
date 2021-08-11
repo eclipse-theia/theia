@@ -45,18 +45,20 @@ export class ElectronWindowConfiguration {
     'window.zoomLevel': number;
 }
 
+export const ElectronWindowPreferenceContribution = Symbol('ElectronWindowPreferenceContribution');
 export const ElectronWindowPreferences = Symbol('ElectronWindowPreferences');
 export type ElectronWindowPreferences = PreferenceProxy<ElectronWindowConfiguration>;
 
-export function createElectronWindowPreferences(preferences: PreferenceService): ElectronWindowPreferences {
-    return createPreferenceProxy(preferences, electronWindowPreferencesSchema);
+export function createElectronWindowPreferences(preferences: PreferenceService, schema: PreferenceSchema = electronWindowPreferencesSchema): ElectronWindowPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindWindowPreferences(bind: interfaces.Bind): void {
     bind(ElectronWindowPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createElectronWindowPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(ElectronWindowPreferenceContribution);
+        return createElectronWindowPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: electronWindowPreferencesSchema });
+    bind(ElectronWindowPreferenceContribution).toConstantValue({ schema: electronWindowPreferencesSchema });
+    bind(PreferenceContribution).toService(ElectronWindowPreferenceContribution);
 }

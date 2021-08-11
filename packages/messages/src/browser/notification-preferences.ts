@@ -38,18 +38,20 @@ export interface NotificationConfiguration {
     'notification.timeout': number
 }
 
+export const NotificationPreferenceContribution = Symbol('NotificationPreferenceContribution');
 export const NotificationPreferences = Symbol('NotificationPreferences');
 export type NotificationPreferences = PreferenceProxy<NotificationConfiguration>;
 
-export function createNotificationPreferences(preferences: PreferenceService): NotificationPreferences {
-    return createPreferenceProxy(preferences, NotificationConfigSchema);
+export function createNotificationPreferences(preferences: PreferenceService, schema: PreferenceSchema = NotificationConfigSchema): NotificationPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindNotificationPreferences(bind: interfaces.Bind): void {
     bind(NotificationPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createNotificationPreferences(preferences);
-    });
-
-    bind(PreferenceContribution).toConstantValue({ schema: NotificationConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(NotificationPreferenceContribution);
+        return createNotificationPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(NotificationPreferenceContribution).toConstantValue({ schema: NotificationConfigSchema });
+    bind(PreferenceContribution).toService(NotificationPreferenceContribution);
 }

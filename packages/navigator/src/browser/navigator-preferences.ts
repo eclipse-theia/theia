@@ -32,17 +32,20 @@ export interface FileNavigatorConfiguration {
     'explorer.autoReveal': boolean;
 }
 
+export const FileNavigatorPreferenceContribution = Symbol('FileNavigatorPreferenceContribution');
 export const FileNavigatorPreferences = Symbol('NavigatorPreferences');
 export type FileNavigatorPreferences = PreferenceProxy<FileNavigatorConfiguration>;
 
-export function createNavigatorPreferences(preferences: PreferenceService): FileNavigatorPreferences {
-    return createPreferenceProxy(preferences, FileNavigatorConfigSchema);
+export function createNavigatorPreferences(preferences: PreferenceService, schema: PreferenceSchema = FileNavigatorConfigSchema): FileNavigatorPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindFileNavigatorPreferences(bind: interfaces.Bind): void {
     bind(FileNavigatorPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createNavigatorPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: FileNavigatorConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(FileNavigatorPreferenceContribution);
+        return createNavigatorPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(FileNavigatorPreferenceContribution).toConstantValue({ schema: FileNavigatorConfigSchema });
+    bind(PreferenceContribution).toService(FileNavigatorPreferenceContribution);
 }

@@ -100,18 +100,20 @@ export interface FileSystemConfiguration {
     'files.trimTrailingWhitespace': boolean;
 }
 
+export const FileSystemPreferenceContribution = Symbol('FilesystemPreferenceContribution');
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
-export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, filesystemPreferenceSchema);
+export function createFileSystemPreferences(preferences: PreferenceService, schema: PreferenceSchema = filesystemPreferenceSchema): FileSystemPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createFileSystemPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(FileSystemPreferenceContribution);
+        return createFileSystemPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
+    bind(FileSystemPreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
+    bind(PreferenceContribution).toService(FileSystemPreferenceContribution);
 }

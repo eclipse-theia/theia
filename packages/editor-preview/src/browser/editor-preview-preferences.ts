@@ -32,17 +32,20 @@ export interface EditorPreviewConfiguration {
     'editor.enablePreview': boolean;
 }
 
+export const EditorPreviewPreferenceContribution = Symbol('EditorPreviewPreferenceContribution');
 export const EditorPreviewPreferences = Symbol('EditorPreviewPreferences');
 export type EditorPreviewPreferences = PreferenceProxy<EditorPreviewConfiguration>;
 
-export function createEditorPreviewPreferences(preferences: PreferenceService): EditorPreviewPreferences {
-    return createPreferenceProxy(preferences, EditorPreviewConfigSchema);
+export function createEditorPreviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = EditorPreviewConfigSchema): EditorPreviewPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindEditorPreviewPreferences(bind: interfaces.Bind): void {
     bind(EditorPreviewPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createEditorPreviewPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(EditorPreviewPreferenceContribution);
+        return createEditorPreviewPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: EditorPreviewConfigSchema });
+    bind(EditorPreviewPreferenceContribution).toConstantValue({ schema: EditorPreviewConfigSchema });
+    bind(PreferenceContribution).toService(EditorPreviewPreferenceContribution);
 }
