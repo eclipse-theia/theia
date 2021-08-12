@@ -74,10 +74,18 @@
 }
 
 .theia-view-container .part > .header .label {
+    flex: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.theia-view-container .part > .header .subheading {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    color: var(--theia-sideBarSectionSubheadingForeground);
+    padding-left: 2px;
 }
 
 .theia-view-container .part > .body {

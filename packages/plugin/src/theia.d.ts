@@ -4325,6 +4325,8 @@ declare module '@theia/plugin' {
          */
         title?: string;
 
+        description?: string;
+
         /**
          * Reveal an element. By default revealed element is selected.
          *

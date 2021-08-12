@@ -1162,6 +1162,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'sideBarSectionHeader.background', defaults: { dark: '#80808033', light: '#80808033' }, description: 'Side bar section header background color. The side bar is the container for views like explorer and search.' },
             { id: 'sideBarSectionHeader.foreground', description: 'Side bar foreground color. The side bar is the container for views like explorer and search.' },
             { id: 'sideBarSectionHeader.border', defaults: { hc: '#6FC3DF' }, description: 'Side bar section header border color. The side bar is the container for views like explorer and search.' },
+            { id: 'sideBarSectionSubheading.foreground', defaults: { hc: '#6FC3DF99' }, description: 'Side bar section subheading foreground color. The side bar is the container for views like explorer and search.' },
 
             // Lists and Trees colors should be aligned with https://code.visualstudio.com/api/references/theme-color#lists-and-trees
             // if not yet contributed by Monaco, check runtime css variables to learn.

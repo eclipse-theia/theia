@@ -22,6 +22,8 @@ import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
+import { DescriptionWidget } from '@theia/core/lib/browser/shell/description-widget';
+import { Title } from '@theia/core/lib/browser';
 
 @injectable()
 export class PluginViewWidgetIdentifier {
@@ -30,7 +32,7 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements StatefulWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget {
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -48,6 +50,8 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         super();
         this.node.tabIndex = -1;
         this.node.style.height = '100%';
+
+        this.description = new Title<Widget>({} as Title.IOptions<Widget>);
     }
 
     @postConstruct()
@@ -110,6 +114,16 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         this.updateWidgetMessage();
     }
 
+    private _description: Title<Widget>;
+    get description(): Title<Widget> {
+        return this._description;
+    }
+
+    set description(description: Title<Widget>) {
+        this._description = description;
+        this.updateWidgetDescription();
+    }
+
     private updateWidgetMessage(): void {
         const widget = this.widgets[0];
         if (widget) {
@@ -119,14 +133,25 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         }
     }
 
+    private updateWidgetDescription(): void {
+        const widget = this.widgets[0];
+        if (widget) {
+            if (DescriptionWidget.is(widget)) {
+                widget.description = this._description;
+            }
+        }
+    }
+
     addWidget(widget: Widget): void {
         super.addWidget(widget);
         this.updateWidgetMessage();
+        this.updateWidgetDescription();
     }
 
     insertWidget(index: number, widget: Widget): void {
         super.insertWidget(index, widget);
         this.updateWidgetMessage();
+        this.updateWidgetDescription();
     }
 }
 export namespace PluginViewWidget {

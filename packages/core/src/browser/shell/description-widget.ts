@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2017 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,11 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './application-shell';
-export * from './shell-layout-restorer';
-export * from './side-panel-handler';
-export * from './sidebar-bottom-menu-widget';
-export * from './split-panels';
-export * from './tab-bars';
-export * from './view-contribution';
-export * from './description-widget';
+import { Title, Widget } from '@phosphor/widgets';
+
+export interface DescriptionWidget {
+    description: Title<Widget>;
+}
+
+export namespace DescriptionWidget {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    export function is(arg: any): arg is DescriptionWidget {
+        return arg !== undefined && !!arg['description'];
+    }
+}

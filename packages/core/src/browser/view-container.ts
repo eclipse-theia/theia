@@ -24,7 +24,7 @@ import { Event, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { CommandRegistry } from '../common/command';
 import { MenuModelRegistry, MenuPath, MenuAction } from '../common/menu';
-import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU } from './shell';
+import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU, DescriptionWidget } from './shell';
 import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
@@ -672,6 +672,8 @@ export class ViewContainerPart extends BaseWidget {
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
     protected readonly onDidFocusEmitter = new Emitter<this>();
     readonly onDidFocus = this.onDidFocusEmitter.event;
+    protected readonly onSubHeadingChangedEmitter = new Emitter<void>();
+    readonly onSubHeadingChanged = this.onSubHeadingChangedEmitter.event;
 
     protected _collapsed: boolean;
 
@@ -697,6 +699,12 @@ export class ViewContainerPart extends BaseWidget {
         const fireTitleChanged = () => this.onTitleChangedEmitter.fire(undefined);
         this.wrapped.title.changed.connect(fireTitleChanged);
         this.toDispose.push(Disposable.create(() => this.wrapped.title.changed.disconnect(fireTitleChanged)));
+
+        if (DescriptionWidget.is(this.wrapped)) {
+            const fireSubHeadingChanged = () => this.onSubHeadingChangedEmitter.fire(undefined);
+            (this.wrapped as DescriptionWidget)?.description?.changed.connect(fireSubHeadingChanged);
+            this.toDispose.push(Disposable.create(() => (this.wrapped as unknown as DescriptionWidget)?.description?.changed.disconnect(fireSubHeadingChanged)));
+        }
 
         const { header, body, disposable } = this.createContent();
         this.header = header;
@@ -855,15 +863,30 @@ export class ViewContainerPart extends BaseWidget {
 
         const title = document.createElement('span');
         title.classList.add('label', 'noselect');
+
+        const subHeading = document.createElement('span');
+        subHeading.classList.add('theia-subheading');
+
         const updateTitle = () => title.innerText = this.wrapped.title.label;
         const updateCaption = () => title.title = this.wrapped.title.caption || this.wrapped.title.label;
+        const updateSubHeading = () => {
+            if (DescriptionWidget.is(this.wrapped)) {
+                subHeading.innerText = this.wrapped.description?.label;
+            }
+        };
+
         updateTitle();
         updateCaption();
+        updateSubHeading();
+
         disposable.pushAll([
             this.onTitleChanged(updateTitle),
-            this.onTitleChanged(updateCaption)
+            this.onTitleChanged(updateCaption),
+            this.onSubHeadingChanged(updateSubHeading)
         ]);
         header.appendChild(title);
+        header.appendChild(subHeading);
+
         return {
             header,
             disposable
@@ -1004,6 +1027,7 @@ export namespace ViewContainerPart {
         collapsed: boolean;
         hidden: boolean;
         relativeSize?: number;
+        description?: string;
     }
 
     export function closestPart(element: Element | EventTarget | null, selector: string = 'div.part'): Element | undefined {
