@@ -667,6 +667,7 @@ export interface TreeViewsMain {
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
+    $setDescription(treeViewId: string, description: string): void;
 }
 
 export interface TreeViewsExt {

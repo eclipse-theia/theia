@@ -4828,6 +4828,12 @@ declare module '@theia/plugin' {
         title?: string;
 
         /**
+         * An optional human-readable subheading that will be rendered next to the main title.
+         * Setting the description to null, undefined, or empty string will remove the message from the view.
+         */
+        description?: string;
+
+        /**
          * Reveal an element. By default revealed element is selected.
          *
          * In order to not to select, set the option `select` to `false`.
