@@ -22,6 +22,8 @@ import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
+import { DescriptionWidget } from '@theia/core/lib/browser/view-container';
+import { Emitter } from '@theia/core/lib/common';
 
 @injectable()
 export class PluginViewWidgetIdentifier {
@@ -30,7 +32,7 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements StatefulWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget {
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -49,6 +51,8 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         this.node.tabIndex = -1;
         this.node.style.height = '100%';
     }
+
+    public onDidChangeDescription: Emitter<void> = new Emitter<void>();
 
     @postConstruct()
     protected init(): void {
@@ -110,6 +114,16 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
     set message(message: string | undefined) {
         this._message = message;
         this.updateWidgetMessage();
+    }
+
+    private _description: string = '';
+    get description(): string {
+        return this._description;
+    }
+
+    set description(description: string) {
+        this._description = description;
+        this.onDidChangeDescription.fire();
     }
 
     private updateWidgetMessage(): void {

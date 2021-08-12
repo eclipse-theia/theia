@@ -150,6 +150,13 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         }
     }
 
+    async $setDescription(treeViewId: string, description: string): Promise<void> {
+        const viewPanel = await this.viewRegistry.getView(treeViewId);
+        if (viewPanel) {
+            viewPanel.description = description;
+        }
+    }
+
     protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {
         this.toDispose.push(treeViewWidget.model.onExpansionChanged(event => {
             this.proxy.$setExpanded(treeViewId, event.id, event.expanded);
