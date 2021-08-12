@@ -280,5 +280,16 @@ function theiaCli(): void {
         })
         .strictCommands()
         .demandCommand(1, 'Please run a command')
+        .fail((msg, err, cli) => {
+            process.exitCode = 1;
+            if (err) {
+                // One of the handlers threw an error:
+                console.error(err);
+            } else {
+                // Yargs detected a problem with commands and/or arguments while parsing:
+                cli.showHelp();
+                console.error(msg);
+            }
+        })
         .parse();
 }
