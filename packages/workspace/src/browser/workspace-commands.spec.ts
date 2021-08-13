@@ -42,7 +42,7 @@ import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 
 disableJSDOM();
 
-describe.only('workspace-commands', () => {
+describe('workspace-commands', () => {
 
     let commands: WorkspaceCommandContribution;
 
