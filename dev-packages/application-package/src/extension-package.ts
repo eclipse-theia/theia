@@ -27,18 +27,30 @@ export interface Extension {
     electronMain?: string;
 }
 
+export interface ExtensionPackageOptions {
+    /**
+     * Alias to use in place of the original package's name.
+     */
+    alias?: string
+}
+
 export class ExtensionPackage {
+
+    protected _name: string;
+
     constructor(
         readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
         protected readonly registry: NpmRegistry,
-        protected readonly alias: string,
-    ) { }
+        options: ExtensionPackageOptions = {}
+    ) {
+        this._name = options.alias ?? raw.name;
+    }
 
     /**
      * The name of the extension's package as defined in "dependencies" (might be aliased)
      */
     get name(): string {
-        return this.alias;
+        return this._name;
     }
 
     get version(): string {

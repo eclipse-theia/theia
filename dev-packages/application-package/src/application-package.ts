@@ -17,7 +17,7 @@
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
-import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
+import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 const merge = require('deepmerge/dist/cjs');
@@ -112,7 +112,7 @@ export class ApplicationPackage {
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
             const collector = new ExtensionPackageCollector(
-                (raw: PublishedNodePackage, alias: string) => this.newExtensionPackage(raw, alias),
+                (raw: PublishedNodePackage, options: ExtensionPackageOptions = {}) => this.newExtensionPackage(raw, options),
                 this.resolveModule
             );
             this._extensionPackages = collector.collect(this.pck);
@@ -135,11 +135,11 @@ export class ApplicationPackage {
      */
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
         const raw = await RawExtensionPackage.view(this.registry, extension);
-        return raw ? this.newExtensionPackage(raw, extension) : undefined;
+        return raw ? this.newExtensionPackage(raw, { alias: extension }) : undefined;
     }
 
-    protected newExtensionPackage(raw: PublishedNodePackage, alias: string): ExtensionPackage {
-        return new ExtensionPackage(raw, this.registry, alias);
+    protected newExtensionPackage(raw: PublishedNodePackage, options: ExtensionPackageOptions = {}): ExtensionPackage {
+        return new ExtensionPackage(raw, this.registry, options);
     }
 
     get frontendModules(): Map<string, string> {
