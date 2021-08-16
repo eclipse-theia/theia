@@ -11,7 +11,7 @@
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Discourse status](https://img.shields.io/discourse/status?label=Chat&server=https%3A%2F%2Fcommunity.theia-ide.org%2F)](https://community.theia-ide.org/)
   [![Build Status](https://github.com/eclipse-theia/theia/workflows/Build/badge.svg?branch=master)](https://github.com/eclipse-theia/theia/actions?query=branch%3Amaster+event%3Apush+event%3Aschedule)
-  [![Publish VS Code Built-in Extensions](https://github.com/theia-ide/vscode-builtin-extensions/workflows/publish-vscode-built-in-extensions/badge.svg)](https://github.com/theia-ide/vscode-builtin-extensions/actions)
+  [![Publish VS Code Built-in Extensions](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/publish-vsx-latest.yml/badge.svg?branch=master)](https://github.com/eclipse-theia/vscode-builtin-extensions/actions/workflows/publish-vsx-latest.yml)
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
 
