@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Container, interfaces, injectable, inject } from 'inversify';
-import { TreeProps, ContextMenuRenderer, TreeNode, OpenerService, NodeProps } from '@theia/core/lib/browser';
+import { Container, interfaces, injectable, inject } from '@theia/core/shared/inversify';
+import { TreeProps, ContextMenuRenderer, TreeNode, OpenerService, open, NodeProps, defaultTreeProps } from '@theia/core/lib/browser';
 import { createFileTreeContainer, FileTreeWidget } from '../';
 import { FileTreeModel, FileStatNode } from '../file-tree';
 
@@ -24,6 +24,7 @@ const BREADCRUMBS_FILETREE_CLASS = 'theia-FilepathBreadcrumbFileTree';
 export function createFileTreeBreadcrumbsContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);
     child.unbind(FileTreeWidget);
+    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, virtualized: false });
     child.bind(BreadcrumbsFileTreeWidget).toSelf();
     return child;
 }
@@ -57,8 +58,7 @@ export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
 
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (FileStatNode.is(node) && !node.fileStat.isDirectory) {
-            this.openerService.getOpener(node.uri)
-                .then(opener => opener.open(node.uri));
+            open(this.openerService, node.uri, { preview: true });
         } else {
             super.handleClickEvent(node, event);
         }

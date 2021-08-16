@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, LabelProviderContribution, BreadcrumbsContribution } from '@theia/core/lib/browser';
 import { FileResourceResolver } from './file-resource';
 import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
@@ -37,7 +37,6 @@ import { RemoteFileServiceContribution } from './remote-file-service-contributio
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcrumbs-contribution';
-import { BreadcrumbsContribution } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-contribution';
 import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
 
 export default new ContainerModule(bind => {

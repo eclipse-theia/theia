@@ -1921,6 +1921,51 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: '#c5c5c5',
                     hc: '#c5c5c5'
                 }, description: 'Editor gutter decoration color for commenting ranges.'
+            },
+            {
+                id: 'breadcrumb.foreground',
+                defaults: {
+                    dark: Color.transparent('foreground', 0.8),
+                    light: Color.transparent('foreground', 0.8),
+                    hc: Color.transparent('foreground', 0.8),
+                },
+                description: 'Color of breadcrumb item text'
+            },
+            {
+                id: 'breadcrumb.background',
+                defaults: {
+                    dark: 'editor.background',
+                    light: 'editor.background',
+                    hc: 'editor.background',
+                },
+                description: 'Color of breadcrumb item background'
+            },
+            {
+                id: 'breadcrumb.focusForeground',
+                defaults: {
+                    dark: Color.lighten('foreground', 0.1),
+                    light: Color.darken('foreground', 0.2),
+                    hc: Color.lighten('foreground', 0.1),
+                },
+                description: 'Color of breadcrumb item text when focused'
+            },
+            {
+                id: 'breadcrumb.activeSelectionForeground',
+                defaults: {
+                    dark: Color.lighten('foreground', 0.1),
+                    light: Color.darken('foreground', 0.2),
+                    hc: Color.lighten('foreground', 0.1),
+                },
+                description: 'Color of selected breadcrumb item'
+            },
+            {
+                id: 'breadcrumbPicker.background',
+                defaults: {
+                    dark: 'editorWidget.background',
+                    light: 'editorWidget.background',
+                    hc: 'editorWidget.background',
+                },
+                description: 'Background color of breadcrumb item picker'
             }
         );
     }

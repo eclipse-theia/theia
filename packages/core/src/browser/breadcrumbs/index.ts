@@ -16,8 +16,6 @@
 
 export * from './breadcrumb-popup-container';
 export * from './breadcrumb-renderer';
-export * from './breadcrumb';
-export * from './breadcrumbs-contribution';
 export * from './breadcrumbs-renderer';
 export * from './breadcrumbs-service';
-export * from './breadcrumbs';
+export * from './breadcrumbs-constants';

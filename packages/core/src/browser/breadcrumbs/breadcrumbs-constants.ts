@@ -14,9 +14,39 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { MaybePromise, Event } from '../../common';
+import { Disposable } from '../../../shared/vscode-languageserver-protocol';
 import URI from '../../common/uri';
-import { Breadcrumb } from './breadcrumb';
-import { Disposable } from '../../common';
+
+export namespace Styles {
+    export const BREADCRUMBS = 'theia-breadcrumbs';
+    export const BREADCRUMB_ITEM = 'theia-breadcrumb-item';
+    export const BREADCRUMB_POPUP_OVERLAY_CONTAINER = 'theia-breadcrumbs-popups-overlay';
+    export const BREADCRUMB_POPUP = 'theia-breadcrumbs-popup';
+    export const BREADCRUMB_ITEM_HAS_POPUP = 'theia-breadcrumb-item-haspopup';
+}
+
+/** A single breadcrumb in the breadcrumbs bar. */
+export interface Breadcrumb {
+
+    /** An ID of this breadcrumb that should be unique in the breadcrumbs bar. */
+    readonly id: string;
+
+    /** The breadcrumb type. Should be the same as the contribution type `BreadcrumbsContribution#type`. */
+    readonly type: symbol;
+
+    /** The text that will be rendered as label. */
+    readonly label: string;
+
+    /** A longer text that will be used as tooltip text. */
+    readonly longLabel: string;
+
+    /** A CSS class for the icon. */
+    readonly iconClass?: string;
+
+    /** CSS classes for the container. */
+    readonly containerClass?: string;
+}
 
 export const BreadcrumbsContribution = Symbol('BreadcrumbsContribution');
 export interface BreadcrumbsContribution {
@@ -27,14 +57,19 @@ export interface BreadcrumbsContribution {
     readonly type: symbol;
 
     /**
-     * The priority of this breadcrumbs contribution. Contributions with lower priority are rendered first.
+     * The priority of this breadcrumbs contribution. Contributions are rendered left to right in order of ascending priority.
      */
     readonly priority: number;
 
     /**
+     * An event emitter that should fire when breadcrumbs change for a given URI.
+     */
+    readonly onDidChangeBreadcrumbs: Event<URI>;
+
+    /**
      * Computes breadcrumbs for a given URI.
      */
-    computeBreadcrumbs(uri: URI): Promise<Breadcrumb[]>;
+    computeBreadcrumbs(uri: URI): MaybePromise<Breadcrumb[]>;
 
     /**
      * Attaches the breadcrumb popup content for the given breadcrumb as child to the given parent.

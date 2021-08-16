@@ -17,16 +17,19 @@
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ContributionProvider, Prioritizeable, Emitter, Event } from '../../common';
 import URI from '../../common/uri';
-import { Breadcrumb } from './breadcrumb';
-import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
-import { BreadcrumbsContribution } from './breadcrumbs-contribution';
-import { Breadcrumbs } from './breadcrumbs';
+import { Coordinate } from '../context-menu-renderer';
+import { BreadcrumbPopupContainer, BreadcrumbPopupContainerFactory } from './breadcrumb-popup-container';
+import { BreadcrumbsContribution, Styles, Breadcrumb } from './breadcrumbs-constants';
 
 @injectable()
 export class BreadcrumbsService {
 
     @inject(ContributionProvider) @named(BreadcrumbsContribution)
     protected readonly contributions: ContributionProvider<BreadcrumbsContribution>;
+
+    @inject(BreadcrumbPopupContainerFactory) protected readonly breadcrumbPopupContainerFactory: BreadcrumbPopupContainerFactory;
+
+    protected hasSubscribed = false;
 
     protected popupsOverlayContainer: HTMLDivElement;
 
@@ -39,26 +42,34 @@ export class BreadcrumbsService {
 
     protected createOverlayContainer(): void {
         this.popupsOverlayContainer = window.document.createElement('div');
-        this.popupsOverlayContainer.id = Breadcrumbs.Styles.BREADCRUMB_POPUP_OVERLAY_CONTAINER;
+        this.popupsOverlayContainer.id = Styles.BREADCRUMB_POPUP_OVERLAY_CONTAINER;
         if (window.document.body) {
             window.document.body.appendChild(this.popupsOverlayContainer);
         }
     }
 
     /**
-     * Subscribe to this event emitter to be notifed when the breadcrumbs have changed.
+     * Subscribe to this event emitter to be notified when the breadcrumbs have changed.
      * The URI is the URI of the editor the breadcrumbs have changed for.
      */
     get onDidChangeBreadcrumbs(): Event<URI> {
+        // This lazy subscription is to address problems in inversify's instantiation routine
+        // related to use of the IconThemeService by different components instantiated by the
+        // ContributionProvider.
+        if (!this.hasSubscribed) {
+            this.subscribeToContributions();
+        }
         return this.onDidChangeBreadcrumbsEmitter.event;
     }
 
     /**
-     * Notifies that the breadcrumbs for the given URI have changed and should be re-rendered.
-     * This fires an `onBreadcrumsChange` event.
+     * Subscribes to the onDidChangeBreadcrumbs events for all contributions.
      */
-    breadcrumbsChanges(uri: URI): void {
-        this.onDidChangeBreadcrumbsEmitter.fire(uri);
+    protected subscribeToContributions(): void {
+        this.hasSubscribed = true;
+        for (const contribution of this.contributions.getContributions()) {
+            contribution.onDidChangeBreadcrumbs(uri => this.onDidChangeBreadcrumbsEmitter.fire(uri));
+        }
     }
 
     /**
@@ -81,11 +92,16 @@ export class BreadcrumbsService {
     /**
      * Opens a popup for the given breadcrumb at the given position.
      */
-    async openPopup(breadcrumb: Breadcrumb, position: { x: number, y: number }): Promise<BreadcrumbPopupContainer | undefined> {
+    async openPopup(breadcrumb: Breadcrumb, position: Coordinate): Promise<BreadcrumbPopupContainer | undefined> {
         const contribution = this.contributions.getContributions().find(c => c.type === breadcrumb.type);
         if (contribution) {
-            const popup = new BreadcrumbPopupContainer(this.popupsOverlayContainer, breadcrumb.id, position);
-            popup.addDisposable(await contribution.attachPopupContent(breadcrumb, popup.container));
+            const popup = this.breadcrumbPopupContainerFactory(this.popupsOverlayContainer, breadcrumb.id, position);
+            const popupContent = await contribution.attachPopupContent(breadcrumb, popup.container);
+            if (popupContent && popup.isOpen) {
+                popup.onDidDispose(() => popupContent.dispose());
+            } else {
+                popupContent?.dispose();
+            }
             return popup;
         }
     }

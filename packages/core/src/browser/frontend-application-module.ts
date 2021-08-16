@@ -50,7 +50,7 @@ import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import { PreferenceService } from './preferences';
-import { ContextMenuRenderer } from './context-menu-renderer';
+import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
@@ -96,17 +96,28 @@ import { keytarServicePath, KeytarService } from '../common/keytar-protocol';
 import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution';
-import { QuickHelpService } from './quick-input/quick-help-service';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import {
     QuickPickServiceImpl,
-    QuickInputFrontendContribution
+    QuickInputFrontendContribution,
+    QuickAccessContribution,
+    QuickCommandService,
+    QuickHelpService
 } from './quick-input';
-import { QuickAccessContribution } from './quick-input/quick-access';
-import { QuickCommandService } from './quick-input/quick-command-service';
 import { SidebarBottomMenuWidget } from './shell/sidebar-bottom-menu-widget';
 import { WindowContribution } from './window-contribution';
-import { BreadcrumbsContribution, BreadcrumbsService } from './breadcrumbs';
+import {
+    BreadcrumbID,
+    BreadcrumbPopupContainer,
+    BreadcrumbPopupContainerFactory,
+    BreadcrumbRenderer,
+    BreadcrumbsContribution,
+    BreadcrumbsRenderer,
+    BreadcrumbsRendererFactory,
+    BreadcrumbsService,
+    DefaultBreadcrumbRenderer,
+} from './breadcrumbs';
+import { RendererHost } from './widgets';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -151,13 +162,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         return container.get(TabBarToolbar);
     });
 
-    bind(DockPanelRendererFactory).toFactory(context => () => {
-        const { container } = context;
-        const tabBarToolbarRegistry = container.get(TabBarToolbarRegistry);
-        const tabBarRendererFactory: () => TabBarRenderer = container.get(TabBarRendererFactory);
-        const tabBarToolbarFactory: () => TabBarToolbar = container.get(TabBarToolbarFactory);
-        return new DockPanelRenderer(tabBarRendererFactory, tabBarToolbarRegistry, tabBarToolbarFactory);
-    });
+    bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
     bind(DockPanelRenderer).toSelf();
     bind(TabBarRendererFactory).toFactory(context => () => {
         const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
@@ -364,4 +369,20 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     }
     bindContributionProvider(bind, BreadcrumbsContribution);
     bind(BreadcrumbsService).toSelf().inSingletonScope();
+    bind(BreadcrumbsRenderer).toSelf();
+    bind(BreadcrumbsRendererFactory).toFactory(ctx =>
+        () => {
+            const childContainer = ctx.container.createChild();
+            childContainer.bind(BreadcrumbRenderer).to(DefaultBreadcrumbRenderer).inSingletonScope();
+            return childContainer.get(BreadcrumbsRenderer);
+        }
+    );
+    bind(BreadcrumbPopupContainer).toSelf();
+    bind(BreadcrumbPopupContainerFactory).toFactory(({ container }) => (parent: HTMLElement, breadcrumbId: string, position: Coordinate): BreadcrumbPopupContainer => {
+        const child = container.createChild();
+        child.bind(RendererHost).toConstantValue(parent);
+        child.bind(BreadcrumbID).toConstantValue(breadcrumbId);
+        child.bind(Coordinate).toConstantValue(position);
+        return child.get(BreadcrumbPopupContainer);
+    });
 });

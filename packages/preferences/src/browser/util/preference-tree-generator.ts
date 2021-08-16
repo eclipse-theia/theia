@@ -48,6 +48,7 @@ export class PreferenceTreeGenerator {
         ['extensions', 'Extensions']
     ]);
     protected readonly sectionAssignments = new Map([
+        ['breadcrumbs', 'workbench'],
         ['comments', 'features'],
         ['debug', 'features'],
         ['diffEditor', 'editor'],
