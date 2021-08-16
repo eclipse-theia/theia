@@ -43,7 +43,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     onStart(app: FrontendApplication): void {
 
         // updateOutline and handleCurrentEditorChanged need to be called even when the outline view widget is closed
-        // in order to udpate breadcrumbs.
+        // in order to update breadcrumbs.
         DocumentSymbolProviderRegistry.onDidChange(
             debounce(() => this.updateOutline())
         );

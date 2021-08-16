@@ -15,5 +15,6 @@
  ********************************************************************************/
 
 .theia-FilepathBreadcrumbFileTree {
-    height: 200px;
+    height: auto;
+    max-height: 200px;
 }

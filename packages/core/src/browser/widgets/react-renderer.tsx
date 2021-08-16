@@ -14,17 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Disposable } from '../../common';
-import { injectable } from 'inversify';
+
+export type RendererHost = HTMLElement;
+export const RendererHost = Symbol('RendererHost');
 
 @injectable()
 export class ReactRenderer implements Disposable {
     readonly host: HTMLElement;
     constructor(
-        host?: HTMLElement
+        @inject(RendererHost) @optional() host?: RendererHost
     ) {
         this.host = host || document.createElement('div');
     }

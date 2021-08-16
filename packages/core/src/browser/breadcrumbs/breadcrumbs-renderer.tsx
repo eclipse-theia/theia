@@ -17,17 +17,20 @@
 import * as React from 'react';
 import { injectable, inject, postConstruct } from 'inversify';
 import { ReactRenderer } from '../widgets';
-import { Breadcrumb } from './breadcrumb';
-import { Breadcrumbs } from './breadcrumbs';
 import { BreadcrumbsService } from './breadcrumbs-service';
 import { BreadcrumbRenderer } from './breadcrumb-renderer';
 import PerfectScrollbar from 'perfect-scrollbar';
 import URI from '../../common/uri';
+import { Emitter, Event } from '../../common';
 import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
 import { DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
+import { Breadcrumb, Styles } from './breadcrumbs-constants';
+import { LabelProvider } from '../label-provider';
 
-export const BreadcrumbsURI = Symbol('BreadcrumbsURI');
+interface Cancelable {
+    canceled: boolean;
+}
 
 @injectable()
 export class BreadcrumbsRenderer extends ReactRenderer {
@@ -41,22 +44,44 @@ export class BreadcrumbsRenderer extends ReactRenderer {
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
 
-    private breadcrumbs: Breadcrumb[] = [];
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
-    private popup: BreadcrumbPopupContainer | undefined;
+    protected readonly onDidChangeActiveStateEmitter = new Emitter<boolean>();
+    get onDidChangeActiveState(): Event<boolean> {
+        return this.onDidChangeActiveStateEmitter.event;
+    }
 
-    private scrollbar: PerfectScrollbar | undefined;
+    protected uri: URI | undefined;
+    protected breadcrumbs: Breadcrumb[] = [];
+    protected popup: BreadcrumbPopupContainer | undefined;
+    protected scrollbar: PerfectScrollbar | undefined;
+    protected toDispose: DisposableCollection = new DisposableCollection();
 
-    private toDispose: DisposableCollection = new DisposableCollection();
+    get active(): boolean {
+        return !!this.breadcrumbs.length;
+    }
 
-    constructor(
-        @inject(BreadcrumbsURI) readonly uri: URI
-    ) { super(); }
+    protected get breadCrumbsContainer(): Element | undefined {
+        return this.host.firstElementChild ?? undefined;
+    }
+
+    protected refreshCancellationMarker: Cancelable = { canceled: true };
 
     @postConstruct()
-    init(): void {
-        this.toDispose.push(this.breadcrumbsService.onDidChangeBreadcrumbs(uri => { if (this.uri.toString() === uri.toString()) { this.refresh(); } }));
-        this.toDispose.push(this.corePreferences.onPreferenceChanged(_ => this.refresh()));
+    protected init(): void {
+        this.toDispose.push(this.onDidChangeActiveStateEmitter);
+        this.toDispose.push(this.breadcrumbsService.onDidChangeBreadcrumbs(uri => {
+            if (this.uri?.isEqual(uri)) {
+                this.refresh(this.uri);
+            }
+        }));
+        this.toDispose.push(this.corePreferences.onPreferenceChanged(change => {
+            if (change.preferenceName === 'breadcrumbs.enabled') {
+                this.refresh(this.uri);
+            }
+        }));
+        this.toDispose.push(this.labelProvider.onDidChange(() => this.refresh(this.uri)));
     }
 
     dispose(): void {
@@ -69,38 +94,63 @@ export class BreadcrumbsRenderer extends ReactRenderer {
         }
     }
 
-    async refresh(): Promise<void> {
-        if (this.corePreferences['breadcrumbs.enabled']) {
-            this.breadcrumbs = await this.breadcrumbsService.getBreadcrumbs(this.uri);
+    async refresh(uri?: URI): Promise<void> {
+        this.uri = uri;
+        this.refreshCancellationMarker.canceled = true;
+        const currentCallCanceled = { canceled: false };
+        this.refreshCancellationMarker = currentCallCanceled;
+        let breadcrumbs: Breadcrumb[];
+        if (uri && this.corePreferences['breadcrumbs.enabled']) {
+            breadcrumbs = await this.breadcrumbsService.getBreadcrumbs(uri);
         } else {
-            this.breadcrumbs = [];
+            breadcrumbs = [];
         }
+        if (currentCallCanceled.canceled) {
+            return;
+        }
+
+        const wasActive = this.active;
+        this.breadcrumbs = breadcrumbs;
+        const isActive = this.active;
+        if (wasActive !== isActive) {
+            this.onDidChangeActiveStateEmitter.fire(isActive);
+        }
+
+        this.update();
+    }
+
+    protected update(): void {
         this.render();
 
         if (!this.scrollbar) {
-            if (this.host.firstChild) {
-                this.scrollbar = new PerfectScrollbar(this.host.firstChild as HTMLElement, {
-                    handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
-                    useBothWheelAxes: true,
-                    scrollXMarginOffset: 4,
-                    suppressScrollY: true
-                });
-            }
+            this.createScrollbar();
         } else {
             this.scrollbar.update();
         }
         this.scrollToEnd();
     }
 
-    private scrollToEnd(): void {
-        if (this.host.firstChild) {
-            const breadcrumbsHtmlElement = (this.host.firstChild as HTMLElement);
-            breadcrumbsHtmlElement.scrollLeft = breadcrumbsHtmlElement.scrollWidth;
+    protected createScrollbar(): void {
+        const { breadCrumbsContainer } = this;
+        if (breadCrumbsContainer) {
+            this.scrollbar = new PerfectScrollbar(breadCrumbsContainer, {
+                handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+                useBothWheelAxes: true,
+                scrollXMarginOffset: 4,
+                suppressScrollY: true
+            });
+        }
+    }
+
+    protected scrollToEnd(): void {
+        const { breadCrumbsContainer } = this;
+        if (breadCrumbsContainer) {
+            breadCrumbsContainer.scrollLeft = breadCrumbsContainer.scrollWidth;
         }
     }
 
     protected doRender(): React.ReactNode {
-        return <ul key={'ul'} className={Breadcrumbs.Styles.BREADCRUMBS}>{this.renderBreadcrumbs()}</ul>;
+        return <ul className={Styles.BREADCRUMBS}>{this.renderBreadcrumbs()}</ul>;
     }
 
     protected renderBreadcrumbs(): React.ReactNode {
@@ -111,81 +161,27 @@ export class BreadcrumbsRenderer extends ReactRenderer {
         event.stopPropagation();
         event.preventDefault();
         let openPopup = true;
-        if (this.popup) {
-            if (this.popup.isOpen) {
-                this.popup.dispose();
+        if (this.popup?.isOpen) {
+            this.popup.dispose();
 
-                // There is a popup open. If the popup is the popup that belongs to the currently clicked breadcrumb
-                // just close the popup. When another breadcrumb was clicked open the new popup immediately.
-                openPopup = !(this.popup.breadcrumbId === breadcrumb.id);
-            }
+            // There is a popup open. If the popup is the popup that belongs to the currently clicked breadcrumb
+            // just close the popup. If another breadcrumb was clicked, open the new popup immediately.
+            openPopup = this.popup.breadcrumbId !== breadcrumb.id;
+        } else {
             this.popup = undefined;
         }
         if (openPopup) {
-            if (event.nativeEvent.target && event.nativeEvent.target instanceof HTMLElement) {
-                const breadcrumbsHtmlElement = BreadcrumbsRenderer.findParentBreadcrumbsHtmlElement(event.nativeEvent.target as HTMLElement);
-                if (breadcrumbsHtmlElement && breadcrumbsHtmlElement.parentElement && breadcrumbsHtmlElement.parentElement.lastElementChild) {
-                    const position: { x: number, y: number } = BreadcrumbsRenderer.determinePopupAnchor(event.nativeEvent) || event.nativeEvent;
-                    this.breadcrumbsService.openPopup(breadcrumb, position).then(popup => { this.popup = popup; });
-                }
+            const { currentTarget } = event;
+            const breadcrumbElement = currentTarget.closest(`.${Styles.BREADCRUMB_ITEM}`);
+            if (breadcrumbElement) {
+                const { left: x, bottom: y } = breadcrumbElement.getBoundingClientRect();
+                this.breadcrumbsService.openPopup(breadcrumb, { x, y }).then(popup => { this.popup = popup; });
             }
         }
-    }
-}
-
-export namespace BreadcrumbsRenderer {
-
-    /**
-     * Traverse upstream (starting with the HTML element `child`) to find a parent HTML element
-     * that has the CSS class `Breadcrumbs.Styles.BREADCRUMB_ITEM`.
-     */
-    export function findParentItemHtmlElement(child: HTMLElement): HTMLElement | undefined {
-        return findParentHtmlElement(child, Breadcrumbs.Styles.BREADCRUMB_ITEM);
-    }
-
-    /**
-     * Traverse upstream (starting with the HTML element `child`) to find a parent HTML element
-     * that has the CSS class `Breadcrumbs.Styles.BREADCRUMBS`.
-     */
-    export function findParentBreadcrumbsHtmlElement(child: HTMLElement): HTMLElement | undefined {
-        return findParentHtmlElement(child, Breadcrumbs.Styles.BREADCRUMBS);
-    }
-
-    /**
-     * Traverse upstream (starting with the HTML element `child`) to find a parent HTML element
-     * that has the given CSS class.
-     */
-    export function findParentHtmlElement(child: HTMLElement, cssClass: string): HTMLElement | undefined {
-        if (child.classList.contains(cssClass)) {
-            return child;
-        } else {
-            if (child.parentElement !== null) {
-                return findParentHtmlElement(child.parentElement, cssClass);
-            }
-        }
-    }
-
-    /**
-     * Determines the popup anchor for the given mouse event.
-     *
-     * It finds the parent HTML element with CSS class `Breadcrumbs.Styles.BREADCRUMB_ITEM` of event's target element
-     * and return the bottom left corner of this element.
-     */
-    export function determinePopupAnchor(event: MouseEvent): { x: number, y: number } | undefined {
-        if (event.target === null || !(event.target instanceof HTMLElement)) {
-            return undefined;
-        }
-        const itemHtmlElement = findParentItemHtmlElement(event.target);
-        if (itemHtmlElement) {
-            return {
-                x: itemHtmlElement.getBoundingClientRect().left,
-                y: itemHtmlElement.getBoundingClientRect().bottom
-            };
-        }
-    }
+    };
 }
 
 export const BreadcrumbsRendererFactory = Symbol('BreadcrumbsRendererFactory');
 export interface BreadcrumbsRendererFactory {
-    (uri: URI): BreadcrumbsRenderer;
+    (): BreadcrumbsRenderer;
 }

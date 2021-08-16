@@ -1,5 +1,13 @@
 # Change Log
 
+## v1.18.0 - 9/30/2021
+
+- [core, outline-view, file-system, workspace] added breadcrumbs contribution points and renderers to `core` and contributions to other packages. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
+
+<a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
+
+- [core] added `BreadcrumbsRendererFactory` to constructor arguments of `DockPanelRenderer` and `ToolbarAwareTabBar`. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
+
 ## v1.17.2 - 9/1/2021
 
 [1.17.2 Milestone](https://github.com/eclipse-theia/theia/milestone/27)

@@ -36,6 +36,7 @@ import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export interface PluginIconDefinition {
     iconPath: string;
@@ -106,6 +107,9 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
 
     @inject(PluginIconThemeDefinition)
     protected readonly definition: PluginIconThemeDefinition;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -508,9 +512,15 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const name = this.labelProvider.getName(element);
         const classNames = this.fileNameIcon(name);
         if (uri) {
-            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(monaco.Uri.parse(uri));
+            const parsedURI = new URI(uri);
+            const isRoot = this.workspaceService.getWorkspaceRootUri(new URI(uri))?.isEqual(parsedURI);
+            if (isRoot) {
+                classNames.unshift(this.rootFolderIcon);
+            } else {
+                classNames.unshift(this.fileIcon);
+            }
+            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(parsedURI['codeUri']);
             classNames.push(this.languageIcon(language.languageIdentifier.language));
-            classNames.unshift(this.fileIcon);
         }
         return classNames;
     }
