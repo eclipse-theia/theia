@@ -17,6 +17,7 @@
 import { CancellationToken, Event } from '../../common';
 import URI from '../../common/uri';
 import { KeySequence } from '../keyboard';
+import * as fuzzy from 'fuzzy';
 
 export interface Match {
     start: number;
@@ -207,13 +208,83 @@ export interface QuickInputService {
     hide(): void;
 }
 
+/**
+ * Filter the list of quick pick items based on the provided filter.
+ * Items are filtered based on if:
+ * - their `label` satisfies the filter using `fuzzy`.
+ * - their `description` satisfies the filter using `fuzzy`.
+ * - their `detail` satisfies the filter using `fuzzy`.
+ * Filtered items are also updated to display proper highlights based on how they were filtered.
+ * @param items the list of quick pick items.
+ * @param filter the filter to search for.
+ * @returns the list of quick pick items that satisfy the filter.
+ */
 export function filterItems(items: QuickPickItem[], filter: string): QuickPickItem[] {
-    return filter.trim().length === 0 ? items : items
-        .filter(item => item.label.toLowerCase().indexOf(filter.toLowerCase()) > -1)
-        .map(item => Object.assign(item, { highlights: { label: findMatches(item.label.toLowerCase(), filter.toLowerCase()) } }));
+    filter = filter.trim().toLowerCase();
+
+    if (filter.length === 0) {
+        for (const item of items) {
+            item.highlights = undefined; // reset highlights from previous filtering.
+        }
+        return items;
+    }
+
+    const filteredItems: QuickPickItem[] = [];
+    for (const item of items) {
+        if (
+            fuzzy.test(filter, item.label) ||
+            (item.description && fuzzy.test(filter, item.description)) ||
+            (item.detail && fuzzy.test(filter, item.detail))
+        ) {
+            item.highlights = {
+                label: findMatches(item.label, filter),
+                description: item.description ? findMatches(item.description, filter) : undefined,
+                detail: item.detail ? findMatches(item.detail, filter) : undefined
+            };
+            filteredItems.push(item);
+        }
+    }
+    return filteredItems;
 }
 
-export function findMatches(label: string, lookFor: string): Array<{ start: number, end: number }> | undefined {
-    const _label = label.toLocaleLowerCase(); const _lookFor = lookFor.toLocaleLowerCase();
-    return _label.indexOf(_lookFor) > -1 ? [{ start: _label.indexOf(_lookFor), end: _label.indexOf(_lookFor) + _lookFor.length }] : undefined;
+/**
+ * Find match highlights when testing a word against a pattern.
+ * @param word the word to test.
+ * @param pattern the word to match against.
+ * @returns the list of highlights if present.
+ */
+export function findMatches(word: string, pattern: string): Array<{ start: number, end: number }> | undefined {
+    word = word.toLocaleLowerCase();
+    pattern = pattern.toLocaleLowerCase();
+
+    if (pattern.trim().length === 0) {
+        return undefined;
+    }
+
+    const delimiter = '\u0000'; // null byte that shouldn't appear in the input and is used to denote matches.
+    const matchResult = fuzzy.match(pattern.replace(/\u0000/gu, ''), word, { pre: delimiter, post: delimiter });
+    if (!matchResult) {
+        return undefined;
+    }
+
+    const match = matchResult.rendered;
+    const highlights: { start: number, end: number }[] = [];
+
+    let lastIndex = 0;
+    /** We need to account for the extra markers by removing them from the range */
+    let offset = 0;
+
+    while (true) {
+        const start = match.indexOf(delimiter, lastIndex);
+        if (start === -1) { break; }
+        const end = match.indexOf(delimiter, start + 1);
+        if (end === -1) { break; }
+        highlights.push({
+            start: start - offset++,
+            end: end - offset++
+        });
+        lastIndex = end + 1;
+    }
+
+    return highlights.length > 0 ? highlights : undefined;
 }
