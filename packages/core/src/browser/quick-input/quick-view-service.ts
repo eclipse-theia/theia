@@ -81,7 +81,4 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
         );
         return filterItems(items, filter);
     }
-
-    readonly prefix = 'view ';
-
 }
