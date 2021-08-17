@@ -78,9 +78,9 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     getPicks(filter: string, token: CancellationToken): QuickPicks {
         const items: QuickPicks = [];
-        if (this.recentItems.length === 0 && this.otherItems.length === 0) {
-            this.reset();
-        }
+
+        // Update the list of commands by fetching them from the registry.
+        this.reset();
         const recentItems = filterItems(this.recentItems.slice(), filter);
         const otherItems = filterItems(this.otherItems.slice(), filter);
 

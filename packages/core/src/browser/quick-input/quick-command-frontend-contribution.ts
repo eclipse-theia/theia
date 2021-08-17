@@ -32,7 +32,6 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
             execute: () => {
-                this.quickCommandService?.reset();
                 this.quickInputService?.open('>');
             }
         });
