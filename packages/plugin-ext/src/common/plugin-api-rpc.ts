@@ -1595,13 +1595,26 @@ export interface StorageExt {
     $updatePluginsWorkspaceData(data: KeysToKeysToAnyValue): void;
 }
 
+export enum DebugConfigurationProviderTriggerKind {
+    /**
+     * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug
+     * configurations for a newly created launch.json.
+     */
+    Initial = 1,
+    /**
+     * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated
+     * debug configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+     */
+    Dynamic = 2
+}
+
 export interface DebugExt {
     $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
     $breakpointsDidChange(added: Breakpoint[], removed: string[], changed: Breakpoint[]): void;
     $sessionDidCreate(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
-    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined, dynamic?: boolean): Promise<theia.DebugConfiguration[]>;
     $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
     $resolveDebugConfigurationWithSubstitutedVariables(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined):
         Promise<theia.DebugConfiguration | undefined>;

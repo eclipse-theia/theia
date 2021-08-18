@@ -107,9 +107,10 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         });
     }
 
-    getPicks(filter: string, token: CancellationToken): QuickPicks {
+    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const items: QuickPickItem[] = [];
-        const configurations = this.debugConfigurationManager.all;
+        const configurationManager = this.debugConfigurationManager;
+        const configurations = configurationManager.all;
         Array.from(configurations).forEach(config => {
             items.push({
                 label: config.configuration.name,
@@ -119,6 +120,28 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
                 execute: () => this.runConfiguration(config)
             });
         });
+
+        // Resolve dynamic configurations
+        const configurationsByType = await configurationManager.provideDynamicDebugConfigurations();
+        configurationsByType.forEach(t => {
+            const type = t.type;
+            const dynamicConfigurations = t.configurations;
+            if (dynamicConfigurations.length > 0) {
+                items.push({
+                    label: type,
+                    type: 'separator'
+                });
+            }
+
+            dynamicConfigurations.forEach(config => {
+                items.push({
+                    label: config.name,
+                    description: '',
+                    execute: () => this.runConfiguration({configuration: config, dynamic: true})
+                });
+            });
+        });
+
         return filterItems(items, filter);
     }
 

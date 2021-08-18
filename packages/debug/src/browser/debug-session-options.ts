@@ -19,6 +19,7 @@ import { DebugConfiguration } from '../common/debug-common';
 export interface DebugSessionOptions {
     configuration: DebugConfiguration
     workspaceFolderUri?: string
+    dynamic?: boolean
 }
 export interface InternalDebugSessionOptions extends DebugSessionOptions {
     id: number

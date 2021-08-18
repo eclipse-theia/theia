@@ -25,6 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
 import * as theia from '@theia/plugin';
+
 /**
  * Debug adapter contribution registrator.
  */
@@ -109,6 +110,19 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         } else {
             return this.delegated.provideDebugConfigurations(debugType, workspaceFolderUri);
         }
+    }
+
+    async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
+        let result: { type: string, configurations: theia.DebugConfiguration[] }[] = [];
+
+        for (const type of this.contributors.keys()) {
+            const contributor = this.contributors.get(type);
+            if (contributor) {
+                result = result.concat({ type, configurations: await contributor.provideDebugConfigurations(undefined, true) || [] });
+            }
+        }
+
+        return result;
     }
 
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {

@@ -79,7 +79,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         '*',
         'onLanguage',
         'onCommand',
-        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
+        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker', 'onDebugDynamicConfigurations',
         'workspaceContains',
         'onView',
         'onUri',
@@ -321,6 +321,23 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $activateByEvent(activationEvent: string): Promise<void> {
+        if (activationEvent.endsWith(':*')) {
+            const baseEvent = activationEvent.substring(0, activationEvent.lastIndexOf(':'));
+            await this.activateByBaseEvent(baseEvent);
+        } else {
+            await this.activateBySingleEvent(activationEvent);
+        }
+    }
+
+    protected async activateByBaseEvent(baseEvent: string): Promise<void> {
+        for (const activation of this.activations.keys()) {
+            if (activation.startsWith(baseEvent)) {
+                await this.activateBySingleEvent(activation);
+            }
+        }
+    }
+
+    protected async activateBySingleEvent(activationEvent: string): Promise<void> {
         const activations = this.activations.get(activationEvent);
         if (!activations) {
             return;
