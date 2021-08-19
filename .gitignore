@@ -28,3 +28,4 @@ gh-pages
 dev-packages/electron/compile_commands.json
 *.tsbuildinfo
 .eslintcache
+license-check-summary.txt
