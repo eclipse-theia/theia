@@ -31,9 +31,13 @@ export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromi
 
 export interface DebugRequestTypes {
     'attach': [DebugProtocol.AttachRequestArguments, DebugProtocol.AttachResponse]
+    'breakpointLocations': [DebugProtocol.BreakpointLocationsArguments, DebugProtocol.BreakpointLocationsResponse]
+    'cancel': [DebugProtocol.CancelArguments, DebugProtocol.CancelResponse]
     'completions': [DebugProtocol.CompletionsArguments, DebugProtocol.CompletionsResponse]
     'configurationDone': [DebugProtocol.ConfigurationDoneArguments, DebugProtocol.ConfigurationDoneResponse]
     'continue': [DebugProtocol.ContinueArguments, DebugProtocol.ContinueResponse]
+    'dataBreakpointInfo': [DebugProtocol.DataBreakpointInfoArguments, DebugProtocol.DataBreakpointInfoResponse]
+    'disassemble': [DebugProtocol.DisassembleArguments, DebugProtocol.DisassembleResponse]
     'disconnect': [DebugProtocol.DisconnectArguments, DebugProtocol.DisconnectResponse]
     'evaluate': [DebugProtocol.EvaluateArguments, DebugProtocol.EvaluateResponse]
     'exceptionInfo': [DebugProtocol.ExceptionInfoArguments, DebugProtocol.ExceptionInfoResponse]
@@ -45,14 +49,17 @@ export interface DebugRequestTypes {
     'modules': [DebugProtocol.ModulesArguments, DebugProtocol.ModulesResponse]
     'next': [DebugProtocol.NextArguments, DebugProtocol.NextResponse]
     'pause': [DebugProtocol.PauseArguments, DebugProtocol.PauseResponse]
+    'readMemory': [DebugProtocol.ReadMemoryArguments, DebugProtocol.ReadMemoryResponse]
     'restart': [DebugProtocol.RestartArguments, DebugProtocol.RestartResponse]
     'restartFrame': [DebugProtocol.RestartFrameArguments, DebugProtocol.RestartFrameResponse]
     'reverseContinue': [DebugProtocol.ReverseContinueArguments, DebugProtocol.ReverseContinueResponse]
     'scopes': [DebugProtocol.ScopesArguments, DebugProtocol.ScopesResponse]
     'setBreakpoints': [DebugProtocol.SetBreakpointsArguments, DebugProtocol.SetBreakpointsResponse]
+    'setDataBreakpoints': [DebugProtocol.SetDataBreakpointsArguments, DebugProtocol.SetDataBreakpointsResponse]
     'setExceptionBreakpoints': [DebugProtocol.SetExceptionBreakpointsArguments, DebugProtocol.SetExceptionBreakpointsResponse]
     'setExpression': [DebugProtocol.SetExpressionArguments, DebugProtocol.SetExpressionResponse]
     'setFunctionBreakpoints': [DebugProtocol.SetFunctionBreakpointsArguments, DebugProtocol.SetFunctionBreakpointsResponse]
+    'setInstructionBreakpoints': [DebugProtocol.SetInstructionBreakpointsArguments, DebugProtocol.SetInstructionBreakpointsResponse]
     'setVariable': [DebugProtocol.SetVariableArguments, DebugProtocol.SetVariableResponse]
     'source': [DebugProtocol.SourceArguments, DebugProtocol.SourceResponse]
     'stackTrace': [DebugProtocol.StackTraceArguments, DebugProtocol.StackTraceResponse]
@@ -64,6 +71,7 @@ export interface DebugRequestTypes {
     'terminateThreads': [DebugProtocol.TerminateThreadsArguments, DebugProtocol.TerminateThreadsResponse]
     'threads': [{}, DebugProtocol.ThreadsResponse]
     'variables': [DebugProtocol.VariablesArguments, DebugProtocol.VariablesResponse]
+    'writeMemory': [DebugProtocol.WriteMemoryArguments, DebugProtocol.WriteMemoryResponse]
 }
 
 export interface DebugEventTypes {
@@ -72,10 +80,14 @@ export interface DebugEventTypes {
     'continued': DebugProtocol.ContinuedEvent
     'exited': DebugExitEvent
     'initialized': DebugProtocol.InitializedEvent
+    'invalidated': DebugProtocol.InvalidatedEvent
     'loadedSource': DebugProtocol.LoadedSourceEvent
     'module': DebugProtocol.ModuleEvent
     'output': DebugProtocol.OutputEvent
     'process': DebugProtocol.ProcessEvent
+    'progressEnd': DebugProtocol.ProgressEndEvent
+    'progressStart': DebugProtocol.ProgressStartEvent
+    'progressUpdate': DebugProtocol.ProgressUpdateEvent
     'stopped': DebugProtocol.StoppedEvent
     'terminated': DebugProtocol.TerminatedEvent
     'thread': DebugProtocol.ThreadEvent
@@ -86,10 +98,14 @@ const standardDebugEvents = new Set<string>([
     'continued',
     'exited',
     'initialized',
+    'invalidated',
     'loadedSource',
     'module',
     'output',
     'process',
+    'progressEnd',
+    'progressStart',
+    'progressUpdate',
     'stopped',
     'terminated',
     'thread'

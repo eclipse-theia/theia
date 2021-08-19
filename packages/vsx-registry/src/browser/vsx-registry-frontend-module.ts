@@ -24,7 +24,6 @@ import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { VSXExtensionsWidget, VSXExtensionsWidgetOptions } from './vsx-extensions-widget';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { VSXExtensionFactory, VSXExtension, VSXExtensionOptions } from './vsx-extension';
 import { VSXExtensionEditor } from './vsx-extension-editor';
 import { VSXExtensionEditorManager } from './vsx-extension-editor-manager';
@@ -105,7 +104,6 @@ export default new ContainerModule((bind, unbind) => {
     bindViewContribution(bind, VSXExtensionsContribution);
     bind(FrontendApplicationContribution).toService(VSXExtensionsContribution);
     bind(ColorContribution).toService(VSXExtensionsContribution);
-    bind(TabBarToolbarContribution).toService(VSXExtensionsContribution);
 
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);

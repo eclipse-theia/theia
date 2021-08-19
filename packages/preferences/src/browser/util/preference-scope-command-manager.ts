@@ -18,10 +18,16 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceScope, LabelProvider } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { CommandRegistry, MenuModelRegistry, Command } from '@theia/core/lib/common';
-import { Preference } from './preference-types';
+import { Preference, PreferenceMenus } from './preference-types';
 
-export const FOLDER_SCOPE_MENU_PATH = ['preferences:scope.menu'];
+/**
+ * @deprecated since 1.17.0 moved to PreferenceMenus namespace.
+ */
+export const FOLDER_SCOPE_MENU_PATH = PreferenceMenus.FOLDER_SCOPE_MENU_PATH;
 
+/**
+ * @deprecated since 1.17.0. This work is now done in the PreferenceScopeTabbarWidget.
+ */
 @injectable()
 export class PreferenceScopeCommandManager {
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;

@@ -638,10 +638,8 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         if (!this.toolbar) {
             return;
         }
-        const current = this.currentTitle;
-        const widget = current && current.owner || undefined;
-        const items = widget ? this.tabBarToolbarRegistry.visibleItems(widget) : [];
-        this.toolbar.updateItems(items, widget);
+        const widget = this.currentTitle?.owner ?? undefined;
+        this.toolbar.updateTarget(widget);
     }
 
     handleEvent(event: Event): void {

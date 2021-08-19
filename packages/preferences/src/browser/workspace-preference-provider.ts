@@ -46,14 +46,16 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
                 this._ready.resolve();
             }
         });
-        this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
         this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
         this.workspaceService.onWorkspaceChanged(() => this.ensureDelegateUpToDate());
     }
 
     getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
-        const delegate = this.delegate;
-        return delegate && delegate.getConfigUri(resourceUri, sectionName);
+        return this.delegate?.getConfigUri(resourceUri, sectionName);
+    }
+
+    getContainingConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
+        return this.delegate?.getContainingConfigUri?.(resourceUri, sectionName);
     }
 
     protected _delegate: PreferenceProvider | undefined;
@@ -65,6 +67,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         const delegate = this.createDelegate();
         if (this._delegate !== delegate) {
             this.toDisposeOnEnsureDelegateUpToDate.dispose();
+            this.toDispose.push(this.toDisposeOnEnsureDelegateUpToDate);
 
             this._delegate = delegate;
 

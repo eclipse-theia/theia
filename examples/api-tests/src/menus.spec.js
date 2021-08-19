@@ -169,4 +169,8 @@ describe('Menus', function () {
         assert.isTrue(access2.disposed);
     });
 
+    it('should not fail to register a menu with an invalid command', () => {
+        assert.doesNotThrow(() => menus.registerMenuAction(['test-menu-path'], { commandId: 'invalid-command', label: 'invalid command' }), 'should not throw.');
+    });
+
 });

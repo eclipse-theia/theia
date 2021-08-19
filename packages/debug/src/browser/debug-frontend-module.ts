@@ -59,8 +59,8 @@ import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
-import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
 import { DebugContribution } from './debug-contribution';
+import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);

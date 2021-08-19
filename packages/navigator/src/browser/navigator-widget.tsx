@@ -62,6 +62,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
     @postConstruct()
     protected init(): void {
         super.init();
+        // This ensures that the context menu command to hide this widget receives the label 'Folders'
+        // regardless of the name of workspace. See ViewContainer.updateToolbarItems.
+        const dataset = { ...this.title.dataset, visibilityCommandLabel: 'Folders' };
+        this.title.dataset = dataset;
         this.updateSelectionContextKeys();
         this.toDispose.pushAll([
             this.model.onSelectionChanged(() =>
