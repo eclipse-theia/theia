@@ -67,7 +67,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
             execute: async (query?: string) => {
                 const widget = await this.openView({ activate: true });
-                if (query) {
+                if (typeof query === 'string') {
                     widget.setSearchTerm(query);
                 }
             },
