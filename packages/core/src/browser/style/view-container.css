@@ -128,3 +128,13 @@
     background-size: var(--theia-icon-size);
     line-height: var(--theia-icon-size);
 }
+
+.theia-view-container-part-title {
+    display: none;
+}
+
+.theia-view-container-part-title.menu-open,
+.p-Widget.part:not(.collapsed):hover .header .theia-view-container-part-title,
+.p-Widget.part:not(.collapsed):focus-within .header .theia-view-container-part-title {
+    display: flex;
+}

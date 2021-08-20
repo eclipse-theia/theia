@@ -417,6 +417,8 @@ export class TabBarToolbar extends ReactWidget {
     renderMoreContextMenu(anchor: Anchor): any {
         const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
         const toDisposeOnHide = new DisposableCollection();
+        this.addClass('menu-open');
+        toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
         for (const item of this.more.values()) {
             // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
             if (item.group?.includes('/')) {

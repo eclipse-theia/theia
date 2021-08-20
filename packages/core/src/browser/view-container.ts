@@ -705,6 +705,8 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly onDidFocusEmitter = new Emitter<this>();
     readonly onDidFocus = this.onDidFocusEmitter.event;
 
+    protected readonly toolbar: TabBarToolbar;
+
     protected _collapsed: boolean;
 
     uncollapsedSize: number | undefined;
@@ -735,8 +737,13 @@ export class ViewContainerPart extends BaseWidget {
         this.body = body;
 
         this.toNoDisposeWrapped = this.toDispose.push(wrapped);
+        this.toolbar = this.toolbarFactory();
+        this.toolbar.addClass('theia-view-container-part-title');
+
         this.toDispose.pushAll([
             disposable,
+            this.toolbar,
+            this.toolbarRegistry.onDidChange(() => this.toolbar.updateTarget(this.wrapped)),
             this.collapsedEmitter,
             this.contextMenuEmitter,
             this.onTitleChangedEmitter,
@@ -766,6 +773,7 @@ export class ViewContainerPart extends BaseWidget {
             return;
         }
         this._collapsed = collapsed;
+        this.node.classList.toggle('collapsed', collapsed);
         if (collapsed && this.wrapped.node.contains(document.activeElement)) {
             this.header.focus();
         }
@@ -899,36 +907,6 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
-    protected toolbar: TabBarToolbar | undefined;
-
-    protected readonly toHideToolbar = new DisposableCollection();
-    hideToolbar(): void {
-        this.toHideToolbar.dispose();
-    }
-
-    showToolbar(): void {
-        if (this.toolbarHidden) {
-            return;
-        }
-        this.toDisposeOnDetach.push(this.toHideToolbar);
-
-        const toolbar = this.toolbarFactory();
-        toolbar.addClass('theia-view-container-part-title');
-        this.toHideToolbar.push(toolbar);
-
-        Widget.attach(toolbar, this.header);
-        this.toHideToolbar.push(Disposable.create(() => Widget.detach(toolbar)));
-
-        this.toolbar = toolbar;
-        this.toHideToolbar.push(Disposable.create(() => this.toolbar = undefined));
-
-        this.toolbar.updateTarget(this.wrapped);
-    }
-
-    get toolbarHidden(): boolean {
-        return !this.toHideToolbar.disposed || this.titleHidden;
-    }
-
     protected onResize(msg: Widget.ResizeMessage): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
@@ -937,21 +915,10 @@ export class ViewContainerPart extends BaseWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        if (this.collapsed) {
-            this.hideToolbar();
-        } else if (this.node.matches(':hover')) {
-            this.showToolbar();
-        }
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onUpdateRequest(msg);
-    }
-
-    protected onBeforeAttach(msg: Message): void {
-        super.onBeforeAttach(msg);
-        this.addEventListener(this.node, 'mouseenter', () => this.showToolbar());
-        this.addEventListener(this.node, 'mouseleave', () => this.hideToolbar());
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -961,11 +928,13 @@ export class ViewContainerPart extends BaseWidget {
             this.body.insertBefore(this.wrapped.node, null);
             MessageLoop.sendMessage(this.wrapped, Widget.Msg.AfterAttach);
         }
+        Widget.attach(this.toolbar, this.header);
         super.onAfterAttach(msg);
     }
 
     protected onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
+        Widget.detach(this.toolbar);
         if (this.wrapped.isAttached) {
             MessageLoop.sendMessage(this.wrapped, Widget.Msg.BeforeDetach);
             this.wrapped.node.parentNode!.removeChild(this.wrapped.node);
