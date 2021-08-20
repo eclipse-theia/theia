@@ -198,3 +198,8 @@
 .monaco-editor .peekview-widget .referenceMatch {
   font-family: var(--theia-ui-font-family);
 }
+
+.monaco-editor .find-widget .monaco-findInput .input,
+.monaco-editor .find-widget .matchesCount {
+  font-family: var(--theia-ui-font-family);
+}
