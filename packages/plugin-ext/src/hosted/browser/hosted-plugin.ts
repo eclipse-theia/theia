@@ -364,7 +364,7 @@ export class HostedPluginSupport {
             if (contributions.state === PluginContributions.State.LOADED) {
                 contributions.state = PluginContributions.State.STARTING;
                 const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
-                const dynamicContributions = hostContributions.get(plugin.host) || [];
+                const dynamicContributions = hostContributions.get(host) || [];
                 dynamicContributions.push(contributions);
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {
