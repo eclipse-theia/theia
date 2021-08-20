@@ -5,6 +5,7 @@
 [1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
 
 - [core] modified handling of toolbar items for `ViewContainer`s to handle `onDidChange` correctly. [#9798](https://github.com/eclipse-theia/theia/pull/9798)
+- [navigator] added support for opening external files by drag and dropping into the main panel [#9543](https://github.com/eclipse-theia/theia/issues/9543)
 
 <a name="breaking_changes_1.17.0">[Breaking Changes:](#breaking_changes_1.17.0)</a>
 
