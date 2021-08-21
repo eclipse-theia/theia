@@ -257,7 +257,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isFalse(contextKeyService.match('listFocus'));
     }
 
-    it('document formating should be visible and enabled', async function () {
+    it('document formatting should be visible and enabled', async function () {
         await openEditor(serverUri);
         const menu = menuFactory.createContextMenu(EDITOR_CONTEXT_MENU);
         const item = menu.items.find(i => i.command === 'editor.action.formatDocument');
