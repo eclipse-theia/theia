@@ -112,7 +112,7 @@ export class OpenEditorsModel extends FileTreeModel {
         if (this._lastEditorWidgetsByArea.size === 0) {
             this._lastEditorWidgetsByArea = this._editorWidgetsByArea;
         }
-        // `layoutModified` can be triggered when tabs are clicked, even if they are not rearraged.
+        // `layoutModified` can be triggered when tabs are clicked, even if they are not rearranged.
         // This will check for those instances and prevent a rebuild if it is unnecessary. Rebuilding
         // the tree if there is no change can cause the tree's selection to flicker.
         if (layoutModifiedArea) {
