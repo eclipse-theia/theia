@@ -16,7 +16,8 @@
     "@theia/workspace": "1.16.0",
     "ajv": "^6.5.3",
     "jsonc-parser": "^2.2.0",
-    "p-debounce": "^2.1.0"
+    "p-debounce": "^2.1.0",
+    "async-mutex": "^0.3.1"
   },
   "publishConfig": {
     "access": "public"

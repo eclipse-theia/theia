@@ -65,7 +65,7 @@ import { TaskNode } from './task-node';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
-import { Lock } from '@theia/core/lib/common/lock';
+import { Mutex } from 'async-mutex';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -101,7 +101,7 @@ export class TaskService implements TaskConfigurationClient {
         isBackgroundTaskEnded: Deferred<boolean | undefined>
     }>();
 
-    protected taskStartingLock: Lock = new Lock();
+    protected taskStartingLock: Mutex = new Mutex();
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -731,7 +731,7 @@ export class TaskService implements TaskConfigurationClient {
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         console.debug('entering runTask');
-        const lockToken: number = await this.taskStartingLock.acquire();
+        const releaseLock = await this.taskStartingLock.acquire();
         console.debug('got lock');
 
         try {
@@ -744,7 +744,8 @@ export class TaskService implements TaskConfigurationClient {
             console.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
 
             if (matchedRunningTaskInfo) { // the task is active
-                this.taskStartingLock.release(lockToken);
+                releaseLock();
+                console.debug('released lock');
                 const taskName = this.taskNameResolver.resolve(task);
                 const terminalId = matchedRunningTaskInfo.terminalId;
                 if (terminalId) {
@@ -766,11 +767,12 @@ export class TaskService implements TaskConfigurationClient {
             } else { // run task as the task is not active
                 console.debug('task about to start');
                 const taskInfo = await this.doRunTask(task, option);
-                this.taskStartingLock.release(lockToken);
+                releaseLock();
+                console.debug('release lock 2');
                 return taskInfo;
             }
         } catch (e) {
-            this.taskStartingLock.release(lockToken);
+            releaseLock();
             throw e;
         }
     }
