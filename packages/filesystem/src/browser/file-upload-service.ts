@@ -25,7 +25,7 @@ import { Progress } from '@theia/core/lib/common/message-service-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import throttle = require('@theia/core/shared/lodash.throttle');
 import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
-import { AsyncQueue } from '@theia/core/lib/common/async-queue';
+import { Semaphore } from 'async-mutex';
 import { FileSystemPreferences } from './filesystem-preferences';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
@@ -59,7 +59,8 @@ export class FileUploadService {
     protected fileSystemPreferences: FileSystemPreferences;
 
     get maxConcurrentUploads(): number {
-        return this.fileSystemPreferences['files.maxConcurrentUploads'];
+        const maxConcurrentUploads = this.fileSystemPreferences['files.maxConcurrentUploads'];
+        return maxConcurrentUploads > 0 ? maxConcurrentUploads : Infinity;
     }
 
     @postConstruct()
@@ -129,9 +130,6 @@ export class FileUploadService {
     }
 
     protected async uploadAll(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
-        const uploads = new AsyncQueue({
-            concurrency: AsyncQueue.toValidConcurrencyValue(this.maxConcurrentUploads),
-        });
         const responses: Promise<void>[] = [];
         const status = new Map<File, {
             total: number
@@ -176,6 +174,8 @@ export class FileUploadService {
                 });
             }
         }, 100);
+        const uploads: Promise<void>[] = [];
+        const uploadSemaphore = new Semaphore(this.maxConcurrentUploads);
         try {
             await this.index(targetUri, params.source, {
                 token: params.token,
@@ -184,8 +184,8 @@ export class FileUploadService {
                     // Track and initialize the file in the status map:
                     status.set(item.file, { total: item.file.size, done: 0 });
                     report();
-                    // Don't await here: the queue will organize the uploading tasks, not the async indexer.
-                    uploads.push(async () => {
+                    // Don't await here: the semaphore will organize the uploading tasks, not the async indexer.
+                    uploads.push(uploadSemaphore.runExclusive(async () => {
                         checkCancelled(params.token);
                         const { upload, response } = this.uploadFile(item.file, item.uri, params.token, (total, done) => {
                             const entry = status.get(item.file);
@@ -215,17 +215,17 @@ export class FileUploadService {
                         // Have the queue wait for the upload only.
                         return upload
                             .catch(onError);
-                    });
+                    }));
                 }
             });
             checkCancelled(params.token);
-            await uploads.close();
+            await Promise.all(uploads);
             checkCancelled(params.token);
             waitingForResponses = true;
             report();
             await Promise.all(responses);
         } catch (error) {
-            uploads.dispose();
+            uploadSemaphore.cancel();
             if (!isCancelled(error)) {
                 throw error;
             }
