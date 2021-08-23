@@ -29,3 +29,4 @@ dev-packages/electron/compile_commands.json
 *.tsbuildinfo
 .eslintcache
 license-check-summary.txt
+scripts/download

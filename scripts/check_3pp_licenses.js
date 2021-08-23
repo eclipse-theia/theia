@@ -15,25 +15,32 @@
  ********************************************************************************/
 // @ts-check
 
-const path = require('path');
 const cp = require('child_process');
 const fs = require('fs');
-const licenseTool = 'license.jar';
-const url = "https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST";
+const path = require('path');
 
-console.log("Fetching dash-licenses...");
-if (!fs.existsSync(path.resolve(process.cwd(), licenseTool))) {
-    try {
-        cp.execSync(`curl -L \"${url}\" -o ${licenseTool}`);
-    }
-    catch (error) {
+const licenseToolJar = path.resolve(__dirname, 'download/license.jar');
+const licenseToolSummary = path.resolve(__dirname, '../license-check-summary.txt');
+const licenseToolUrl = 'https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST';
+
+console.log('Fetching dash-licenses...');
+if (!fs.existsSync(licenseToolJar)) {
+    fs.mkdirSync(path.dirname(licenseToolJar), { recursive: true });
+    spawn('curl', ['-L', licenseToolUrl, '-o', licenseToolJar]);
+}
+console.log('Running dash-licenses...');
+spawn('java', ['-jar', licenseToolJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', licenseToolSummary]);
+
+function spawn(bin, args, opt) {
+    const exit = cp.spawnSync(bin, args, { stdio: 'inherit', ...opt });
+    if (exit.error) {
+        console.error(exit.error);
         process.exit(1);
     }
-}
-
-console.log("Running dash-licenses...");
-const out=cp.spawnSync('java', ['-jar', licenseTool, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', 'license-check-summary.txt']);
-if (out.status > 0) {
-    console.log(out.stdout.toString());
-    process.exit(out.status);
+    if (typeof exit.signal === 'string') {
+        console.error(`${bin} exited with signal: ${exit.signal}`);
+        process.exit(1);
+    } else if (exit.status !== 0) {
+        process.exit(exit.status);
+    }
 }
