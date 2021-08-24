@@ -21,6 +21,9 @@ import { Buffer } from 'buffer';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
+/**
+ * @deprecated since 1.17.0
+ */
 export class NodeFileUpload implements Disposable {
 
     readonly id: string;
