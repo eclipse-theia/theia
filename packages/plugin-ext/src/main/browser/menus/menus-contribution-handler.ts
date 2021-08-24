@@ -404,7 +404,7 @@ export class MenusContributionPointHandler {
         if (!action.command) {
             return Disposable.NULL;
         }
-        const selectedRepository = () => this.toScmArgs(this.scmService.selectedRepository);
+        const selectedRepository = () => this.toScmArg(this.scmService.selectedRepository);
         return this.registerTitleAction(location, action, {
             execute: widget => widget instanceof ScmWidget && this.commands.executeCommand(action.command!, selectedRepository()),
             isEnabled: widget => widget instanceof ScmWidget && this.commands.isEnabled(action.command!, selectedRepository()),
