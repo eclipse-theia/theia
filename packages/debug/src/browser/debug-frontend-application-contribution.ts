@@ -65,7 +65,7 @@ export namespace DebugMenus {
 
 export namespace DebugCommands {
 
-    const DEBUG_CATEGORY = 'Debug';
+    export const DEBUG_CATEGORY = 'Debug';
 
     export const START: Command = {
         id: 'workbench.action.debug.start',
@@ -482,9 +482,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
             for (const [index, command] of commands.entries()) {
+                const label = command.label;
+                const debug = `${DebugCommands.DEBUG_CATEGORY}:`;
                 menus.registerMenuAction(menuPath, {
                     commandId: command.id,
-                    label: command.label && command.label.startsWith('Debug: ') && command.label.slice('Debug: '.length) || command.label,
+                    label: label && label.startsWith(debug) && label.slice(debug.length).trimStart() || label,
                     icon: command.iconClass,
                     order: String.fromCharCode('a'.charCodeAt(0) + index)
                 });

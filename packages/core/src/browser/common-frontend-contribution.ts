@@ -53,6 +53,8 @@ import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
+import { AsyncLocalizationProvider } from '../common/i18n/localization';
+import { nls } from './nls';
 
 export namespace CommonMenus {
 
@@ -270,6 +272,11 @@ export namespace CommonCommands {
         category: 'Preferences'
     };
 
+    export const CONFIGURE_DISPLAY_LANGUAGE = Command.toLocalizedCommand({
+        id: 'workbench.action.configureLanguage',
+        label: 'Configure Display Language'
+    }, 'vscode/localizationsActions/configureLocale');
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -289,7 +296,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
+        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider
     ) { }
 
     @inject(ContextKeyService)
@@ -768,6 +776,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
+
+        commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
+            execute: () => this.configureDisplayLanguage()
+        });
     }
 
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
@@ -979,6 +991,27 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         } finally {
             this.shouldPreventClose = false;
         }
+    }
+
+    protected async configureDisplayLanguage(): Promise<void> {
+        const availableLanguages = await this.localizationProvider.getAvailableLanguages();
+        const items: QuickPickItem[] = [];
+        for (const additionalLanguage of ['en', ...availableLanguages]) {
+            items.push({
+                label: additionalLanguage,
+                execute: () => {
+                    if (additionalLanguage !== nls.locale) {
+                        window.localStorage.setItem(nls.localeId, additionalLanguage);
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+        this.quickInputService?.showQuickPick(items,
+            {
+                placeholder: CommonCommands.CONFIGURE_DISPLAY_LANGUAGE.label,
+                activeItem: items.find(item => item.label === (nls.locale || 'en'))
+            });
     }
 
     protected selectIconTheme(): void {
