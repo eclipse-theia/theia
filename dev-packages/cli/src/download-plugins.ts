@@ -19,7 +19,7 @@
 import fetch, { Response, RequestInit } from 'node-fetch';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getProxyForUrl } from 'proxy-from-env';
-import { promises as fs, createWriteStream } from 'fs';
+import { promises as fs, createWriteStream, existsSync } from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as process from 'process';
@@ -27,7 +27,7 @@ import * as stream from 'stream';
 import * as decompress from 'decompress';
 import * as temp from 'temp';
 
-import { green, red } from 'colors/safe';
+import { green, red, yellow } from 'colors/safe';
 
 import { promisify } from 'util';
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
@@ -35,6 +35,8 @@ const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
 const pipelineAsPromised = promisify(stream.pipeline);
 
 temp.track();
+
+export const extensionPackCacheName = '.packs';
 
 /**
  * Available options when downloading.
@@ -84,49 +86,76 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     // Resolve the directory for which to download the plugins.
     const pluginsDir = pck.theiaPluginsDir || 'plugins';
 
+    // Excluded extension ids.
+    const excludedIds = pck.theiaPluginsExcludeIds || [];
+
     await mkdirpAsPromised(pluginsDir);
 
     if (!pck.theiaPlugins) {
         console.log(red('error: missing mandatory \'theiaPlugins\' property.'));
         return;
     }
+
+    let extensionPacks;
     try {
-        await Promise.all(Object.keys(pck.theiaPlugins).map(
-            plugin => downloadPluginAsync(failures, plugin, pck.theiaPlugins[plugin], pluginsDir, packed)
+        // Retrieve the cached extension-packs in order to not re-download them.
+        const extensionPackCachePath = path.join(process.cwd(), pluginsDir, extensionPackCacheName);
+        let cachedExtensionPacks: string[] = [];
+        if (existsSync(extensionPackCachePath)) {
+            cachedExtensionPacks = await fs.readdir(extensionPackCachePath);
+        }
+
+        /** Download the raw plugins defined by the `theiaPlugins` property. */
+        await Promise.all(Object.entries(pck.theiaPlugins).map(
+            ([plugin, url]) => downloadPluginAsync(failures, plugin, url as string, pluginsDir, packed, cachedExtensionPacks)
+
         ));
+
+        /**
+         * Given that the plugins are downloaded on disk, resolve the extension-packs by downloading the `ids` they reference.
+         */
+        extensionPacks = await getExtensionPacks(pluginsDir, excludedIds);
+        if (extensionPacks.size > 0) {
+            console.log('--- resolving extension-packs ---');
+            const client = new OVSXClient({ apiVersion, apiUrl });
+            // De-duplicate the ids.
+            const ids = new Set<string>();
+            for (const idSet of extensionPacks.values()) {
+                for (const id of idSet) {
+                    ids.add(id);
+                }
+            }
+            await Promise.all(Array.from(ids, async id => {
+                const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const downloadUrl = extension?.files.download;
+                if (downloadUrl) {
+                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, cachedExtensionPacks);
+                }
+            }));
+        }
     } finally {
         temp.cleanupSync();
+        if (extensionPacks) {
+            cleanupExtensionPacks(pluginsDir, Array.from(extensionPacks.keys()));
+        }
     }
+
     failures.forEach(e => { console.error(e); });
     if (!ignoreErrors && failures.length > 0) {
         throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
     }
-
-    // Resolve extension pack plugins.
-    const ids = await getAllExtensionPackIds(pluginsDir);
-    if (ids.length) {
-        const client = new OVSXClient({ apiVersion, apiUrl });
-        ids.forEach(async id => {
-            const extension = await client.getLatestCompatibleExtensionVersion(id);
-            const downloadUrl = extension?.files.download;
-            if (downloadUrl) {
-                await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed);
-            }
-        });
-    }
-
 }
 
 /**
  * Downloads a plugin, will make multiple attempts before actually failing.
- *
- * @param failures reference to an array storing all failures
- * @param plugin plugin short name
- * @param pluginUrl url to download the plugin at
- * @param pluginsDir where to download the plugin in
- * @param packed whether to decompress or not
+ * @param failures reference to an array storing all failures.
+ * @param plugin plugin short name.
+ * @param pluginUrl url to download the plugin at.
+ * @param pluginsDir where to download the plugin in.
+ * @param packed whether to decompress or not.
+ * @param cachedExtensionPacks the list of cached extension packs already downloaded.
  */
-async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean): Promise<void> {
+async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean, cachedExtensionPacks: string[]): Promise<void> {
     if (!plugin) {
         return;
     }
@@ -141,7 +170,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
     }
     const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
     // Skip plugins which have previously been downloaded.
-    if (await isDownloaded(targetPath)) {
+    if (cachedExtensionPacks.includes(plugin) || await isDownloaded(targetPath)) {
         console.warn('- ' + plugin + ': already downloaded - skipping');
         return;
     }
@@ -219,58 +248,76 @@ export function xfetch(url: string, options?: RequestInit): Promise<Response> {
 }
 
 /**
- * Get the list of all available ids referenced by extension packs.
+ * Walk the plugin directory and collect available extension paths.
  * @param pluginDir the plugin directory.
- * @returns the list of all referenced extension pack ids.
+ * @returns the list of all available extension paths.
  */
-async function getAllExtensionPackIds(pluginDir: string): Promise<string[]> {
-    const extensions = await getPackageFiles(pluginDir);
-    const extensionIds: string[] = [];
-    const ids = await Promise.all(extensions.map(ext => getExtensionPackIds(ext)));
-    ids.forEach(id => {
-        extensionIds.push(...id);
-    });
-    return extensionIds;
-}
-
-/**
- * Walk the plugin directory collecting available extension paths.
- * @param dirPath the plugin directory
- * @returns the list of extension paths.
- */
-async function getPackageFiles(dirPath: string): Promise<string[]> {
-    let fileList: string[] = [];
-    const files = await fs.readdir(dirPath);
+async function getPackageJsonPaths(pluginDir: string): Promise<string[]> {
+    let packageJsonPathList: string[] = [];
+    const files = await fs.readdir(pluginDir);
 
     // Recursively fetch the list of extension `package.json` files.
     for (const file of files) {
-        const filePath = path.join(dirPath, file);
+        const filePath = path.join(pluginDir, file);
         if ((await fs.stat(filePath)).isDirectory()) {
-            fileList = [...fileList, ...(await getPackageFiles(filePath))];
+            // Exclude the `.packs` folder used to store extension-packs after being resolved.
+            if (filePath.includes(extensionPackCacheName)) {
+                continue;
+            }
+            packageJsonPathList = [...packageJsonPathList, ...(await getPackageJsonPaths(filePath))];
         } else if ((path.basename(filePath) === 'package.json' && !path.dirname(filePath).includes('node_modules'))) {
-            fileList.push(filePath);
+            packageJsonPathList.push(filePath);
         }
     }
-
-    return fileList;
+    return packageJsonPathList;
 }
 
 /**
- * Get the list of extension ids referenced by the extension pack.
- * @param extPath the individual extension path.
- * @returns the list of individual extension ids.
+ * Get the mapping of extension-pack paths and their included plugin ids.
+ * - If an extension-pack references an explicitly excluded `id` the `id` will be omitted.
+ * @param pluginDir the plugin directory.
+ * @param excludedIds the list of plugin ids to exclude.
+ * @returns the mapping of extension-pack paths and their included plugin ids.
  */
-async function getExtensionPackIds(extPath: string): Promise<string[]> {
-    const ids = new Set<string>();
-    const content = await fs.readFile(extPath, 'utf-8');
-    const json = JSON.parse(content);
-
-    // The `extensionPack` object.
-    const extensionPack = json.extensionPack as string[];
-    for (const ext in extensionPack) {
-        if (ext !== undefined) {
-            ids.add(extensionPack[ext]);
+async function getExtensionPacks(pluginDir: string, excludedIds: string[]): Promise<Map<string, Set<string>>> {
+    const extensionPackPaths: Map<string, Set<string>> = new Map();
+    const packageJsonPaths = await getPackageJsonPaths(pluginDir);
+    for (const packageJsonPath of packageJsonPaths) {
+        const content = await fs.readFile(packageJsonPath, 'utf-8');
+        const json = JSON.parse(content);
+        const extensionPack = json.extensionPack as string[];
+        if (extensionPack) {
+            const ids = new Set<string>();
+            for (const id of extensionPack) {
+                if (excludedIds.includes(id)) {
+                    console.log(yellow(`'${id}' referenced by the extension-pack is explicitly excluded`));
+                    continue;
+                }
+                ids.add(id);
+            }
+            extensionPackPaths.set(packageJsonPath, ids);
         }
     }
-    return Array.from(ids);
+    return extensionPackPaths;
+}
+
+/**
+ * Removes the extension-packs downloaded under the plugin directory.
+ * - Since the `ids` referenced in the extension-packs are resolved, we remove the extension-packs so the framework does not attempt to resolve the packs again at runtime.
+ * @param extensionPacksPaths the list of extension-pack paths.
+ */
+async function cleanupExtensionPacks(pluginsDir: string, extensionPacksPaths: string[]): Promise<void> {
+    const packsFolderPath = path.join(path.resolve(process.cwd(), pluginsDir), extensionPackCacheName);
+    try {
+        await fs.mkdir(packsFolderPath, { recursive: true });
+        for (const pack of extensionPacksPaths) {
+            const oldPath = path.join(pack, '../../'); // navigate back up from the `package.json`.
+            const newPath = path.join(packsFolderPath, path.basename(oldPath));
+            if (!existsSync(newPath)) {
+                await fs.rename(oldPath, newPath);
+            }
+        }
+    } catch (e) {
+        console.log(e);
+    }
 }
