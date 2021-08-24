@@ -18,6 +18,7 @@ import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { isOSX } from '../common/os';
 
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -97,6 +98,21 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'code',
             description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
         },
+        'window.menuBarVisibility': {
+            type: 'string',
+            enum: ['classic', 'visible', 'hidden', 'compact'],
+            markdownEnumDescriptions: [
+                'Menu is displayed at the top of the window and only hidden in full screen mode.',
+                'Menu is always visible at the top of the window even in full screen mode.',
+                'Menu is always hidden.',
+                'Menu is displayed as a compact button in the sidebar.'
+            ],
+            default: 'classic',
+            scope: 'application',
+            markdownDescription: `Control the visibility of the menu bar. 
+            A setting of 'compact' will move the menu into the sidebar.`,
+            included: !isOSX
+        },
     }
 };
 
@@ -112,6 +128,7 @@ export interface CoreConfiguration {
     'workbench.silentNotifications': boolean;
     'files.encoding': string
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
+    'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');

@@ -219,6 +219,7 @@ export class ElectronMainApplication {
         let options = await asyncOptions;
         options = this.avoidOverlap(options);
         const electronWindow = new BrowserWindow(options);
+        electronWindow.setMenuBarVisibility(false);
         this.attachReadyToShow(electronWindow);
         this.attachSaveWindowState(electronWindow);
         this.attachGlobalShortcuts(electronWindow);

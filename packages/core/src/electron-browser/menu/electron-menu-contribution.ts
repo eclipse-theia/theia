@@ -20,7 +20,7 @@ import {
     Command, CommandContribution, CommandRegistry,
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
-import { KeybindingContribution, KeybindingRegistry, PreferenceScope, PreferenceService } from '../../browser';
+import { ApplicationShell, KeybindingContribution, KeybindingRegistry, PreferenceScope, PreferenceService } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
@@ -81,12 +81,16 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     protected readonly preferenceService: PreferenceService;
 
     constructor(
-        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
+        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory,
+        @inject(ApplicationShell) protected shell: ApplicationShell
     ) { }
 
     onStart(app: FrontendApplication): void {
         this.hideTopPanel(app);
-        this.setMenu();
+        this.preferenceService.ready.then(() => {
+            this.setMenu();
+            electron.remote.getCurrentWindow().setMenuBarVisibility(true);
+        });
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
             // OSX only has one menu bar for all windows, so we need to swap
@@ -107,6 +111,19 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             }
         };
         onStateChange = this.stateService.onStateChanged(stateServiceListener);
+        this.shell.mainPanel.onDidToggleMaximized(() => {
+            this.handleToggleMaximized();
+        });
+        this.shell.bottomPanel.onDidToggleMaximized(() => {
+            this.handleToggleMaximized();
+        });
+    }
+
+    handleToggleMaximized(): void {
+        const preference = this.preferenceService.get('window.menuBarVisibility');
+        if (preference === 'classic') {
+            this.factory.setMenuBar();
+        }
     }
 
     /**
@@ -129,7 +146,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         }
     }
 
-    private setMenu(menu: electron.Menu = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
+    private setMenu(menu: electron.Menu | null = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
         if (isOSX) {
             electron.remote.Menu.setApplicationMenu(menu);
         } else {

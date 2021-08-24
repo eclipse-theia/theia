@@ -27,6 +27,7 @@ import { ContextKeyService } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
+import { CorePreferences } from '../core-preferences';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
@@ -45,6 +46,9 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
+
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
@@ -54,13 +58,29 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
-        this.fillMenuBar(menuBar);
-        const listener = this.keybindingRegistry.onKeybindingsChanged(() => {
+        const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'window.menuBarVisibility') {
+                this.showMenuBar(menuBar, preference.newValue);
+            }
+        });
+        const keybindingListener = this.keybindingRegistry.onKeybindingsChanged(() => {
+            const preference = this.corePreferences['window.menuBarVisibility'];
+            this.showMenuBar(menuBar, preference);
+        });
+        menuBar.disposed.connect(() => {
+            preferenceListener.dispose();
+            keybindingListener.dispose();
+        });
+        return menuBar;
+    }
+
+    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference: string | undefined): void {
+        if (preference && ['classic', 'visible'].includes(preference)) {
             menuBar.clearMenus();
             this.fillMenuBar(menuBar);
-        });
-        menuBar.disposed.connect(() => listener.dispose());
-        return menuBar;
+        } else {
+            menuBar.clearMenus();
+        }
     }
 
     protected fillMenuBar(menuBar: MenuBarWidget): void {
