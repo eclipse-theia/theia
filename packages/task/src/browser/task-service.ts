@@ -65,6 +65,7 @@ import { TaskNode } from './task-node';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
+import { Mutex } from 'async-mutex';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -99,6 +100,8 @@ export class TaskService implements TaskConfigurationClient {
         terminateSignal: Deferred<string | undefined>,
         isBackgroundTaskEnded: Deferred<boolean | undefined>
     }>();
+
+    protected taskStartingLock: Mutex = new Mutex();
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -727,34 +730,50 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+        console.debug('entering runTask');
+        const releaseLock = await this.taskStartingLock.acquire();
+        console.debug('got lock');
 
-        // check if the task is active
-        const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
-            const taskConfig = taskInfo.config;
-            return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
-        });
-        if (matchedRunningTaskInfo) { // the task is active
-            const taskName = this.taskNameResolver.resolve(task);
-            const terminalId = matchedRunningTaskInfo.terminalId;
-            if (terminalId) {
-                const terminal = this.terminalService.getByTerminalId(terminalId);
-                if (terminal) {
-                    if (TaskOutputPresentation.shouldSetFocusToTerminal(task)) { // assign focus to the terminal if presentation.focus is true
-                        this.terminalService.open(terminal, { mode: 'activate' });
-                    } else if (TaskOutputPresentation.shouldAlwaysRevealTerminal(task)) { // show the terminal but not assign focus
-                        this.terminalService.open(terminal, { mode: 'reveal' });
+        try {
+            const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+            // check if the task is active
+            const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
+                const taskConfig = taskInfo.config;
+                return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
+            });
+            console.debug(`running task ${JSON.stringify(task)}, already running = ${!!matchedRunningTaskInfo}`);
+
+            if (matchedRunningTaskInfo) { // the task is active
+                releaseLock();
+                console.debug('released lock');
+                const taskName = this.taskNameResolver.resolve(task);
+                const terminalId = matchedRunningTaskInfo.terminalId;
+                if (terminalId) {
+                    const terminal = this.terminalService.getByTerminalId(terminalId);
+                    if (terminal) {
+                        if (TaskOutputPresentation.shouldSetFocusToTerminal(task)) { // assign focus to the terminal if presentation.focus is true
+                            this.terminalService.open(terminal, { mode: 'activate' });
+                        } else if (TaskOutputPresentation.shouldAlwaysRevealTerminal(task)) { // show the terminal but not assign focus
+                            this.terminalService.open(terminal, { mode: 'reveal' });
+                        }
                     }
                 }
+                const selectedAction = await this.messageService.info(`The task '${taskName}' is already active`, 'Terminate Task', 'Restart Task');
+                if (selectedAction === 'Terminate Task') {
+                    await this.terminateTask(matchedRunningTaskInfo);
+                } else if (selectedAction === 'Restart Task') {
+                    return this.restartTask(matchedRunningTaskInfo, option);
+                }
+            } else { // run task as the task is not active
+                console.debug('task about to start');
+                const taskInfo = await this.doRunTask(task, option);
+                releaseLock();
+                console.debug('release lock 2');
+                return taskInfo;
             }
-            const selectedAction = await this.messageService.info(`The task '${taskName}' is already active`, 'Terminate Task', 'Restart Task');
-            if (selectedAction === 'Terminate Task') {
-                await this.terminateTask(matchedRunningTaskInfo);
-            } else if (selectedAction === 'Restart Task') {
-                return this.restartTask(matchedRunningTaskInfo, option);
-            }
-        } else { // run task as the task is not active
-            return this.doRunTask(task, option);
+        } catch (e) {
+            releaseLock();
+            throw e;
         }
     }
 

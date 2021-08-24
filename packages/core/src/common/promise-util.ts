@@ -44,7 +44,7 @@ export function timeout(ms: number, token = CancellationToken.None): Promise<voi
     return deferred.promise;
 }
 
-export async function retry<T>(task: () => Promise<T>, delay: number, retries: number): Promise<T> {
+export async function retry<T>(task: () => Promise<T>, retryDelay: number, retries: number): Promise<T> {
     let lastError: Error | undefined;
 
     for (let i = 0; i < retries; i++) {
@@ -53,9 +53,29 @@ export async function retry<T>(task: () => Promise<T>, delay: number, retries: n
         } catch (error) {
             lastError = error;
 
-            await timeout(delay);
+            await timeout(retryDelay);
         }
     }
 
     throw lastError;
+}
+
+/**
+ * A function to allow a promise resolution to be delayed by a number of milliseconds. Usage is as follows:
+ *
+ * `const stringValue = await myPromise.then(delay(600)).then(value => value.toString());`
+ *
+ * @param ms the number of millisecond to delay
+ * @returns a function that returns a promise that returns the given value, but delayed
+ */
+export function delay<T>(ms: number): (value: T) => Promise<T> {
+    return value => new Promise((resolve, reject) => { setTimeout(() => resolve(value), ms); });
+}
+
+/**
+ * Constructs a promise that will resolve after a given delay.
+ * @param ms the number of milliseconds to wait
+ */
+export async function wait(ms: number): Promise<void> {
+    await delay(ms)(undefined);
 }
