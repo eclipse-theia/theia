@@ -16,29 +16,29 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 <a name="pr-template"></a>
 - [1.](#pr-template) Each PR description has to follow the following template:
-```
-<!--
-Thank you for your Pull Request. Please provide a description and review
-the requirements below.
 
-Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md
--->
+  ```md
+  <!--
+  Thank you for your Pull Request. Please provide a description and review
+  the requirements below.
 
-#### What it does
-<!-- Include relevant issues and describe how they are addressed. -->
+  Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md
+  -->
 
-#### How to test
-<!-- Explain how a reviewer can reproduce a bug, test new functionality or verify performance improvements. -->
+  #### What it does
+  <!-- Include relevant issues and describe how they are addressed. -->
 
-#### Review checklist
+  #### How to test
+  <!-- Explain how a reviewer can reproduce a bug, test new functionality or verify performance improvements. -->
 
-- [ ] as an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#requesting-a-review)
+  #### Review checklist
 
-#### Reminder for reviewers
+  - [ ] As an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#requesting-a-review)
 
-- as a reviewer, I agree to review in accordance with [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#reviewing)
+  #### Reminder for reviewers
 
-```
+  - As a reviewer, I agree to review in accordance with [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#reviewing)
+  ```
 
 <a name="design-review"></a>
 - [2.](#design-review) A PR can be opened early for the design review before going into the detailed implementation.
@@ -46,7 +46,7 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
   - Such PR should be marked as a draft or with the WIP prefix.
 
 <a name="fixups"></a>
-- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits while the review process is not finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history. 
+- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits while the review process is not finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
 ## Requesting a Review
 
@@ -75,6 +75,8 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
 - [5.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
 <a name="checklist-copied-code"></a>
 - [6.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
+  - Look closely at the GitHub actions running for your PR: the 3pp/dash license check should be green.
+  - If red: it most likely mean you need to create a CQ.
 <a name="checklist-copyright"></a>
 - [7.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
 <a name="checklist-sign-off"></a>
