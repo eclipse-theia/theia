@@ -102,8 +102,16 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
         const iconClasses = this.getItemIconClasses(command);
         const activeElement = window.document.activeElement as HTMLElement;
 
+        const originalLabel = command.originalLabel || command.label!;
+        const originalCategory = command.originalCategory || command.category;
+        let detail: string | undefined = originalCategory ? `${originalCategory}: ${originalLabel}` : originalLabel;
+        if (label === detail) {
+            detail = undefined;
+        }
+
         return {
             label,
+            detail,
             iconClasses,
             alwaysShow: !!this.commandRegistry.getActiveHandler(command.id),
             keySequence: this.getKeybinding(command),
