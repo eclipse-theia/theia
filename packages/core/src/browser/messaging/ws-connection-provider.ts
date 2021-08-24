@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, interfaces, decorate, unmanaged, inject } from 'inversify';
+import { injectable, interfaces, decorate, unmanaged, inject, optional } from 'inversify';
 import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, MessageService, MessageServiceFactory } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { Endpoint } from '../endpoint';
@@ -71,8 +71,11 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 
-    @inject(MessageServiceFactory) protected readonly messageService: () => MessageService;
-    @inject(HttpFallbackOptions) protected readonly httpFallbackOptions: HttpFallbackOptions;
+    @inject(MessageServiceFactory)
+    protected readonly messageService: () => MessageService;
+
+    @inject(HttpFallbackOptions) @optional()
+    protected readonly httpFallbackOptions: HttpFallbackOptions | undefined;
 
     protected readonly socket: ReconnectingWebSocket;
     protected useHttpFallback = false;
@@ -105,7 +108,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     handleSocketError(event: unknown): void {
         this.websocketErrorCounter += 1;
-        if (this.httpFallbackOptions.allowed && this.websocketErrorCounter >= this.httpFallbackOptions.maxAttempts) {
+        if (this.httpFallbackOptions?.allowed && this.websocketErrorCounter >= this.httpFallbackOptions?.maxAttempts) {
             this.useHttpFallback = true;
             this.socket.close();
             const httpUrl = this.createHttpWebSocketUrl(WebSocketChannel.wsPath);
@@ -119,9 +122,9 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 
     async doLongPolling(url: string): Promise<void> {
-        let timeoutDuration = this.httpFallbackOptions.requestTimeout;
+        let timeoutDuration = this.httpFallbackOptions?.requestTimeout || 0;
         const controller = new AbortController();
-        const pollingId = window.setTimeout(() => controller.abort(), this.httpFallbackOptions.pollingTimeout);
+        const pollingId = window.setTimeout(() => controller.abort(), this.httpFallbackOptions?.pollingTimeout);
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -146,13 +149,13 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
                     throw new Error('Received invalid long polling response.');
                 }
             } else {
-                timeoutDuration = this.httpFallbackOptions.errorTimeout;
+                timeoutDuration = this.httpFallbackOptions?.errorTimeout || 0;
                 this.httpFallbackDisconnected = true;
                 this.fireSocketDidClose();
                 throw new Error('Response has error code: ' + response.status);
             }
         } catch (e) {
-            console.error('Error occured during long polling', e);
+            console.error('Error occurred during long polling', e);
         }
         setTimeout(() => this.doLongPolling(url), timeoutDuration);
     }
