@@ -34,24 +34,27 @@ async function main() {
     if (!fs.existsSync(licenseToolJar)) {
         console.warn('Fetching dash-licenses...');
         fs.mkdirSync(path.dirname(licenseToolJar), { recursive: true });
-        exitOnChildError(spawn(
+        const curlError = getErrorFromStatus(spawn(
             'curl', ['-L', licenseToolUrl, '-o', licenseToolJar],
         ));
+        if (curlError) {
+            console.error(curlError);
+            process.exit(1);
+        }
     }
     if (fs.existsSync(licenseToolSummary)) {
         console.warn('Backing up previous summary...')
         fs.renameSync(licenseToolSummary, `${licenseToolSummary}.old`);
     }
     console.warn('Running dash-licenses...');
-    const dashStatus = spawn(
+    const dashError = getErrorFromStatus(spawn(
         'java', ['-jar', licenseToolJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', licenseToolSummary],
         { stdio: ['ignore', 'ignore', 'inherit'] },
-    );
-    const error = getChildError(dashStatus);
-    if (error) {
-        console.error(error);
+    ));
+    if (dashError) {
+        console.error(dashError);
     }
-    const restricted = await readSummaryRestricted(licenseToolSummary);
+    const restricted = await getRestrictedDependenciesFromSummary(licenseToolSummary);
     if (restricted.length > 0) {
         if (fs.existsSync(licenseToolBaseline)) {
             console.warn('Checking results against the baseline...');
@@ -86,7 +89,7 @@ function logRestrictedDependencies(restricted) {
  * @param {string} summary path to the summary file.
  * @returns {Promise<DashSummaryEntry[]>} list of restriced dependencies.
  */
-async function readSummaryRestricted(summary) {
+async function getRestrictedDependenciesFromSummary(summary) {
     const restricted = [];
     await readSummary(summary, entry => {
         if (entry.status.toLocaleLowerCase() === 'restricted') {
@@ -97,7 +100,7 @@ async function readSummaryRestricted(summary) {
 }
 
 /**
- * Read each entry from dash's summary file and collect non-ignored restricted entries.
+ * Read each entry from dash's summary file and collect each entry.
  * This is essentially a cheap CSV parser.
  * @param {string} summary path to the summary file.
  * @param {(line: DashSummaryEntry) => void} callback
@@ -105,8 +108,6 @@ async function readSummaryRestricted(summary) {
  */
 async function readSummary(summary, callback) {
     return new Promise((resolve, reject) => {
-        // Read each entry from dash's summary file and collect non-ignored restricted entries.
-        // This is essentially a cheap CSV parser.
         readline.createInterface(fs.createReadStream(summary).on('error', reject))
             .on('line', line => {
                 const [entry, license, status, source] = line.split(', ');
@@ -156,9 +157,10 @@ function spawn(bin, args, opts = {}) {
 }
 
 /**
+ * @param {import('child_process').SpawnSyncReturns} status
  * @returns {string | undefined} Error message if the process errored, `undefined` otherwise.
  */
-function getChildError(status) {
+function getErrorFromStatus(status) {
     if (typeof status.signal === 'string') {
         return `Command ${prettyCommand(status)} exited with signal: ${status.signal}`;
     } else if (status.status !== 0) {
@@ -168,23 +170,11 @@ function getChildError(status) {
 
 /**
  * @param {any} status
+ * @param {number} [indent]
  * @returns {string} Pretty command with both bin and args as stringified JSON.
  */
 function prettyCommand(status, indent = 2) {
     return JSON.stringify([status.bin, ...status.args], undefined, indent);
-}
-
-/**
- * Exits with code 1 if `status` errored.
- * @returns {import('child_process').SpawnSyncReturns}
- */
-function exitOnChildError(status) {
-    const error = getChildError(status);
-    if (error) {
-        console.error(error);
-        process.exit(1);
-    }
-    return status;
 }
 
 /**
