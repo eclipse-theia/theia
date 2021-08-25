@@ -14,71 +14,98 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export interface Handler<T> { (stimulus: T): unknown; }
-export const isReactEvent = (event?: object): event is { persist(): unknown } => !!event && 'persist' in event;
-export interface MinimalEvent {
-    type: string;
-    __superseded?: boolean;
-}
-export interface ClickHandlerOptions {
-    /**
-     * Time in milliseconds to wait for a second click.
-     */
-    timeout: number;
-    /**
-     * If `true`, the single-click handler will be invoked immediately on the first click. If true, `invokeSingleOnDouble` is ignored.
-     * Use this option with caution: if the single-click handler triggers a rerender, it may invalidate or ignore the state of the handlers
-     * created here.
-     */
-    invokeImmediately?: boolean;
-    /**
-     * If `true`, the single click handler will be invoked and awaited before the double-click handler is invoked.
-     * Ignored if `invokeImmediately` is `true`.
-     */
-    invokeSingleOnDouble?: boolean;
+import { Disposable } from '../../common';
+import { inject, injectable } from 'inversify';
+import * as React from 'react';
+import { CorePreferences } from '../core-preferences';
+import { wait } from '../../common/promise-util';
+
+export const isReactEvent = (event: MouseEvent | React.MouseEvent): event is React.MouseEvent => 'nativeEvent' in event;
+
+interface MouseEventHandlerPlus<T extends MouseEvent | React.MouseEvent> {
+    (event: T, ...additionalArgs: unknown[]): unknown;
 }
 
-/**
- * @returns a single handler that should be applied to be both 'click' and 'dblclick' events for a given element.
- * If the user clicks once in the interval specified, the single-click handler will be invoked.
- * If the user clicks twice in the interval, *only* the double-click handler will be invoked.
- */
-export function createClickEventHandler<T extends MinimalEvent>(
-    singleClickHandler: Handler<T>,
-    doubleClickHandler: Handler<T>,
-    options: ClickHandlerOptions,
-): Handler<T> {
-    const { timeout, invokeImmediately, invokeSingleOnDouble } = options;
-    const shouldInvokeSingleOnDouble = invokeSingleOnDouble && !invokeImmediately;
-    let deferredEvent: T | undefined;
-    return async (event: T): Promise<void> => {
+export interface ClickEventHandlerOptions<T extends MouseEvent | React.MouseEvent = MouseEvent> {
+    /**
+     * A function to invoke on every click, regardless of other conditions.
+     */
+    immediateAction?: MouseEventHandlerPlus<T>;
+    /**
+     * Functions to invoke on a given number of clicks, and no more.
+     * E.g. the action at index 0 will be invoked on a single click if no additional click
+     * comes within a set interval.
+     */
+    actions: MouseEventHandlerPlus<T>[];
+}
+
+export const ClickEventHandlerOptions = Symbol('ClickEventHandlerOptions');
+export interface ClickEventHandlerFactory {
+    <T extends MouseEvent | React.MouseEvent>(options: ClickEventHandlerOptions<T>): ClickEventHandler<T>;
+}
+export const ClickEventHandlerFactory = Symbol('ClickEventHandlerFactory');
+
+@injectable()
+export class ClickEventHandler<T extends MouseEvent | React.MouseEvent> implements Disposable {
+
+    @inject(CorePreferences) readonly preferences: CorePreferences;
+    @inject(ClickEventHandlerOptions) protected readonly options: ClickEventHandlerOptions<T>;
+
+    protected disposed = false;
+
+    /**
+     * Setting `.canceled` to true will prevent the handler from running.
+     * Calling `.run()` will invoke the handler immediately and prevent future invocations.
+     */
+    protected queuedInvocation: { event: T, canceled: boolean, run: () => unknown } | undefined;
+
+    async invoke(event: T, ...additionalArguments: unknown[]): Promise<void> {
+        if (this.disposed) {
+            return;
+        }
         if (isReactEvent(event)) {
             event.persist();
         }
-        if (!deferredEvent && event.type === 'click') {
-            deferredEvent = event;
-            if (invokeImmediately) {
-                singleClickHandler(event);
-            }
-            await new Promise(resolve => setTimeout(resolve, timeout));
-            if (!event.__superseded) { // No double click has occurred.
-                deferredEvent = undefined;
-                if (!invokeImmediately) { // We haven't run it yet.
-                    singleClickHandler(event);
-                }
-            }
-        } else if (event.type === 'dblclick') {
-            if (deferredEvent) {
-                deferredEvent.__superseded = true;
-                if (shouldInvokeSingleOnDouble) {
-                    const eventToHandle = deferredEvent;
-                    deferredEvent = undefined; // Clear state immediately in case of triple click.
-                    try {
-                        await singleClickHandler(eventToHandle);
-                    } catch { }
-                }
-            }
-            doubleClickHandler(event);
+        const { immediateAction, actions } = this.options;
+        if (immediateAction) {
+            immediateAction(event, ...additionalArguments);
         }
-    };
+        const { detail } = event;
+        const handler = actions[detail - 1];
+        if (!!handler) {
+            if (this.queuedInvocation && detail > this.queuedInvocation.event.detail) { // Click is on same thing as before. Cancel that invocation.
+                this.queuedInvocation.canceled = true;
+            } else if (this.queuedInvocation) { // Clicking somewhere else or OS timer has run out. Run handler for last invocation immediately.
+                this.queuedInvocation.run();
+            }
+            const thisCall = {
+                event,
+                canceled: false,
+                run(): void {
+                    if (!this.canceled) {
+                        this.canceled = true;
+                        handler(event, ...additionalArguments);
+                    }
+                }
+            };
+            this.queuedInvocation = thisCall;
+            // If detail == actions.length, it's the last defined handler.
+            // In that case, we run it immediately. If >, we don't reach this code.
+            if (detail < actions.length) {
+                await wait(this.preferences.get('application.clickTime', 500));
+            }
+            thisCall.run();
+            if (this.queuedInvocation === thisCall) {
+                this.queuedInvocation = undefined;
+            }
+        }
+    }
+
+    dispose(): void {
+        this.disposed = true;
+        if (this.queuedInvocation) {
+            this.queuedInvocation.canceled = true;
+            this.queuedInvocation = undefined;
+        }
+    }
 }

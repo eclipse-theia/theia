@@ -39,7 +39,7 @@ import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
-import { createClickEventHandler } from '../widgets/event-utils';
+import { ClickEventHandler, ClickEventHandlerFactory } from '../widgets/event-utils';
 
 const debounce = require('lodash.debounce');
 
@@ -148,7 +148,6 @@ export namespace TreeWidget {
          */
         readonly shiftKey: boolean;
     }
-
 }
 
 @injectable()
@@ -156,6 +155,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected searchBox: SearchBox;
     protected searchHighlights: Map<string, TreeDecoration.CaptionHighlight>;
+    protected nodeClickEventHandler: ClickEventHandler<React.MouseEvent>;
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
@@ -174,6 +174,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
+
+    @inject(ClickEventHandlerFactory) protected readonly clickEventHandlerFactory: ClickEventHandlerFactory;
 
     protected shouldScrollToRow = true;
 
@@ -238,7 +240,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 }),
             ]);
         }
+        this.nodeClickEventHandler = this.clickEventHandlerFactory({
+            actions: [
+                (event: React.MouseEvent<HTMLElement>, node: TreeNode) => this.handleClickEvent(node, event),
+                (event: React.MouseEvent<HTMLElement>, node: TreeNode) => this.handleDblClickEvent(node, event),
+            ]
+        });
         this.toDispose.pushAll([
+            this.nodeClickEventHandler,
             this.model,
             this.model.onChanged(() => this.updateRows()),
             this.model.onSelectionChanged(() => this.updateScrollToRow({ resize: false })),
@@ -887,17 +896,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
-        const clickListener = createClickEventHandler<React.MouseEvent<HTMLElement>>(
-            event => this.handleClickEvent(node, event),
-            event => this.handleDblClickEvent(node, event),
-            // This component can't use invokeSingle because running the handler causes the tree to refresh, replacing the listener and its closure
-            { timeout: 250, invokeImmediately: false }
-        );
         return {
             className,
             style,
-            onClick: clickListener,
-            onDoubleClick: clickListener,
+            onClick: event => this.nodeClickEventHandler.invoke(event, node),
             onContextMenu: event => this.handleContextMenuEvent(node, event)
         };
     }

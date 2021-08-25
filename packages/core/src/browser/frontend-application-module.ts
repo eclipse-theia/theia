@@ -104,6 +104,7 @@ import {
 } from './quick-input';
 import { QuickAccessContribution } from './quick-input/quick-access';
 import { QuickCommandService } from './quick-input/quick-command-service';
+import { ClickEventHandler, ClickEventHandlerFactory, ClickEventHandlerOptions } from './widgets/event-utils';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -353,4 +354,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(CredentialsService).to(CredentialsServiceImpl);
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
+
+    bind(ClickEventHandler).toSelf();
+    bind(ClickEventHandlerFactory).toFactory(({ container }) => (options: ClickEventHandlerOptions) => {
+        const child = container.createChild();
+        child.bind(ClickEventHandlerOptions).toConstantValue(options);
+        return child.get(ClickEventHandler);
+    });
 });

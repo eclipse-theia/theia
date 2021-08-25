@@ -97,11 +97,19 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'code',
             description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
         },
+        'application.clickTime': {
+            type: 'number',
+            minimum: 0,
+            default: 500, // This is Windows' default.
+            description: 'The number of milliseconds within which a second click should trigger a double-click action'
+        }
     }
 };
 
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
+    'application.clickTime': number;
+    'files.encoding': string
     'keyboard.dispatch': 'code' | 'keyCode';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
@@ -110,7 +118,6 @@ export interface CoreConfiguration {
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;
     'workbench.silentNotifications': boolean;
-    'files.encoding': string
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
 }
 
