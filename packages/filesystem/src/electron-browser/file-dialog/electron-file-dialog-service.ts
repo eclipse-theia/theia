@@ -90,13 +90,13 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected async canRead(uris: MaybeArray<URI>): Promise<boolean> {
-        const filePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(async uri => {
+        const inaccessibleFilePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(async uri => {
             return !(await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '');
         }).filter(e => e));
-        if (filePaths.length) {
-            this.messageService.error(`Cannot read ${filePaths.length} resources: ${filePaths.join(', ')}`);
+        if (inaccessibleFilePaths.length) {
+            this.messageService.error(`Cannot read ${inaccessibleFilePaths.length} resources: ${inaccessibleFilePaths.join(', ')}`);
         }
-        return !!filePaths.length;
+        return !!inaccessibleFilePaths.length;
     }
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
