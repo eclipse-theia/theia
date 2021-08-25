@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
+const NO_COLOR = Boolean(process.env['NO_COLOR']);
 const dashLicensesJar = path.resolve(__dirname, 'download/dash-licenses.jar');
 const dashLicensesSummary = path.resolve(__dirname, '../license-check-summary.txt');
 const dashLicensesBaseline = path.resolve(__dirname, '../license-check-baseline.json');
@@ -32,56 +33,70 @@ main().catch(error => {
 
 async function main() {
     if (!fs.existsSync(dashLicensesJar)) {
-        console.warn('Fetching dash-licenses...');
+        info('Fetching dash-licenses...');
         fs.mkdirSync(path.dirname(dashLicensesJar), { recursive: true });
         const curlError = getErrorFromStatus(spawn(
             'curl', ['-L', dashLicensesUrl, '-o', dashLicensesJar],
         ));
         if (curlError) {
-            console.error(curlError);
+            error(curlError);
             process.exit(1);
         }
     }
     if (fs.existsSync(dashLicensesSummary)) {
-        console.warn('Backing up previous summary...')
+        info('Backing up previous summary...');
         fs.renameSync(dashLicensesSummary, `${dashLicensesSummary}.old`);
     }
-    console.warn('Running dash-licenses...');
+    info('Running dash-licenses...');
     const dashError = getErrorFromStatus(spawn(
         'java', ['-jar', dashLicensesJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', dashLicensesSummary],
         { stdio: ['ignore', 'ignore', 'inherit'] },
     ));
     if (dashError) {
-        console.error(dashError);
+        warn(dashError);
     }
     const restricted = await getRestrictedDependenciesFromSummary(dashLicensesSummary);
     if (restricted.length > 0) {
         if (fs.existsSync(dashLicensesBaseline)) {
-            console.warn('Checking results against the baseline...');
+            info('Checking results against the baseline...');
             const baseline = readBaseline(dashLicensesBaseline);
-            const unhandled = restricted.filter(entry => !baseline.has(entry.entry));
+            const unused = new Set(baseline.keys());
+            const unhandled = restricted.filter(entry => {
+                unused.delete(entry.entry);
+                return !baseline.has(entry.entry);
+            });
+            if (unused.size > 0) {
+                warn('Some entries in the baseline did not match anything from dash-licences output:');
+                for (const entry of unused) {
+                    console.log(magenta(`> ${entry}`));
+                    const data = baseline.get(entry);
+                    if (data) {
+                        console.warn(data);
+                    }
+                }
+            }
             if (unhandled.length > 0) {
-                console.error(`ERROR: Found results that aren't part of the baseline!\n`);
-                logRestrictedDependencies(unhandled);
+                error(`Found results that aren't part of the baseline!`);
+                logRestrictedDashSummaryEntries(unhandled);
                 process.exit(1);
             }
         } else {
-            console.error(`ERROR: Found unhandled restricted dependencies!\n`);
-            logRestrictedDependencies(restricted);
+            error(`Found unhandled restricted dependencies!`);
+            logRestrictedDashSummaryEntries(restricted);
             process.exit(1);
         }
     }
-    console.warn('Done.');
+    info('Done.');
     process.exit(0);
 }
 
 /**
- * @param {DashSummaryEntry[]} restricted list of restricted entries to log.
+ * @param {Iterable<DashSummaryEntry>} entries
  * @return {void}
  */
-function logRestrictedDependencies(restricted) {
-    for (const { entry, license } of restricted) {
-        console.log(`${entry}, ${license}`);
+function logRestrictedDashSummaryEntries(entries) {
+    for (const { entry, license } of entries) {
+        console.log(red(`X ${entry}, ${license}`));
     }
 }
 
@@ -120,14 +135,14 @@ async function readSummary(summary, callback) {
 /**
  * Handle both list and object format for the baseline json file.
  * @param {string} baseline path to the baseline json file.
- * @returns {Set<string>} set of ignored restricted dependencies.
+ * @returns {Map<string, any>} map of dependencies to ignore if restricted, value is an optional data field.
  */
 function readBaseline(baseline) {
     const json = JSON.parse(fs.readFileSync(baseline, 'utf8'));
     if (Array.isArray(json)) {
-        return new Set(json);
+        return new Map(json.map(element => [element, null]));
     } else if (typeof json === 'object' && json !== null) {
-        return new Set(Object.keys(json));
+        return new Map(Object.entries(json));
     }
     console.error(`ERROR: Invalid format for "${baseline}"`);
     process.exit(1);
@@ -176,6 +191,16 @@ function getErrorFromStatus(status) {
 function prettyCommand(status, indent = 2) {
     return JSON.stringify([status.bin, ...status.args], undefined, indent);
 }
+
+function info(text) { console.warn(cyan(`INFO: ${text}`)); }
+function warn(text) { console.warn(yellow(`WARN: ${text}`)); }
+function error(text) { console.error(red(`ERROR: ${text}`)); }
+
+function style(code, text) { return NO_COLOR ? text : `\x1b[${code}m${text}\x1b[0m`; }
+function cyan(text) { return style(96, text); }
+function magenta(text) { return style(95, text); }
+function yellow(text) { return style(93, text); }
+function red(text) { return style(91, text); }
 
 /**
  * @typedef {object} DashSummaryEntry
