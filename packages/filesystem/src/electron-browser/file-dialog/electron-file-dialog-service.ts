@@ -90,9 +90,9 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected async canRead(uris: MaybeArray<URI>): Promise<boolean> {
-        const inaccessibleFilePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(async uri => {
-            return !(await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '');
-        }).filter(e => e));
+        const inaccessibleFilePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(
+            async uri => !(await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '')
+        ).filter(e => e));
         if (inaccessibleFilePaths.length) {
             this.messageService.error(`Cannot read ${inaccessibleFilePaths.length} resources: ${inaccessibleFilePaths.join(', ')}`);
         }
