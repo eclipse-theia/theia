@@ -20,10 +20,10 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const licenseToolJar = path.resolve(__dirname, 'download/license.jar');
-const licenseToolSummary = path.resolve(__dirname, '../license-check-summary.txt');
-const licenseToolBaseline = path.resolve(__dirname, '../license-check-baseline.json');
-const licenseToolUrl = 'https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST';
+const dashLicensesJar = path.resolve(__dirname, 'download/dash-licenses.jar');
+const dashLicensesSummary = path.resolve(__dirname, '../license-check-summary.txt');
+const dashLicensesBaseline = path.resolve(__dirname, '../license-check-baseline.json');
+const dashLicensesUrl = 'https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST';
 
 main().catch(error => {
     console.error(error);
@@ -31,34 +31,34 @@ main().catch(error => {
 });
 
 async function main() {
-    if (!fs.existsSync(licenseToolJar)) {
+    if (!fs.existsSync(dashLicensesJar)) {
         console.warn('Fetching dash-licenses...');
-        fs.mkdirSync(path.dirname(licenseToolJar), { recursive: true });
+        fs.mkdirSync(path.dirname(dashLicensesJar), { recursive: true });
         const curlError = getErrorFromStatus(spawn(
-            'curl', ['-L', licenseToolUrl, '-o', licenseToolJar],
+            'curl', ['-L', dashLicensesUrl, '-o', dashLicensesJar],
         ));
         if (curlError) {
             console.error(curlError);
             process.exit(1);
         }
     }
-    if (fs.existsSync(licenseToolSummary)) {
+    if (fs.existsSync(dashLicensesSummary)) {
         console.warn('Backing up previous summary...')
-        fs.renameSync(licenseToolSummary, `${licenseToolSummary}.old`);
+        fs.renameSync(dashLicensesSummary, `${dashLicensesSummary}.old`);
     }
     console.warn('Running dash-licenses...');
     const dashError = getErrorFromStatus(spawn(
-        'java', ['-jar', licenseToolJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', licenseToolSummary],
+        'java', ['-jar', dashLicensesJar, 'yarn.lock', '-batch', '50', '-timeout', '240', '-summary', dashLicensesSummary],
         { stdio: ['ignore', 'ignore', 'inherit'] },
     ));
     if (dashError) {
         console.error(dashError);
     }
-    const restricted = await getRestrictedDependenciesFromSummary(licenseToolSummary);
+    const restricted = await getRestrictedDependenciesFromSummary(dashLicensesSummary);
     if (restricted.length > 0) {
-        if (fs.existsSync(licenseToolBaseline)) {
+        if (fs.existsSync(dashLicensesBaseline)) {
             console.warn('Checking results against the baseline...');
-            const baseline = readBaseline(licenseToolBaseline);
+            const baseline = readBaseline(dashLicensesBaseline);
             const unhandled = restricted.filter(entry => !baseline.has(entry.entry));
             if (unhandled.length > 0) {
                 console.error(`ERROR: Found results that aren't part of the baseline!\n`);
