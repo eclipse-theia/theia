@@ -36,7 +36,6 @@ type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'show
 // solution.
 //
 import { FileUri } from '@theia/core/lib/node/file-uri';
-
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
@@ -91,13 +90,13 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected async canRead(uris: MaybeArray<URI>): Promise<boolean> {
-        for (const uri of Array.isArray(uris) ? uris : [uris]) {
-            if (!(await this.fileService.access(uri, FileAccess.Constants.R_OK))) {
-                this.messageService.error(`Cannot read resource at ${uri.path}.`);
-                return false;
-            }
+        const filePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(async uri => {
+            return !(await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '');
+        }).filter(e => e));
+        if (filePaths.length) {
+            this.messageService.error(`Cannot read ${filePaths.length} resources: ${filePaths.join(', ')}`);
         }
-        return true;
+        return !!filePaths.length;
     }
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
