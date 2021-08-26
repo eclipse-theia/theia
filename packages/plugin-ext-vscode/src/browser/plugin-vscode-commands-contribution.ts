@@ -159,14 +159,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
 
         let opener: OpenHandler | undefined;
-        if (viewTypeId && viewTypeId !== 'default') {
+        if (typeof viewTypeId === 'string') {
             const lowerViewType = viewTypeId.toLowerCase();
-            // Theia set custom editor id using 'custom-editor-' prefix
-            const customViewType = `custom-editor-${lowerViewType}`;
             const openers = await this.openerService.getOpeners();
             for (const opnr of openers) {
                 const idLowerCase = opnr.id.toLowerCase();
-                if (lowerViewType === idLowerCase || customViewType === idLowerCase) {
+                if (lowerViewType === idLowerCase) {
                     opener = opnr;
                     break;
                 }
@@ -197,7 +195,20 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.OPEN_WITH, {
             isVisible: () => false,
             execute: async (resource: URI, viewTypeId: string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
-                const result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, viewTypeId);
+                if (!viewTypeId) {
+                    throw new Error(`Running the contributed command: ${VscodeCommands.OPEN_WITH} failed.`);
+                }
+
+                if (viewTypeId.toLowerCase() === 'default') {
+                    return commands.executeCommand(VscodeCommands.OPEN.id, resource, columnOrOptions);
+                }
+
+                let result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, viewTypeId);
+                if (!result) {
+                    // Theia set custom editor id using 'custom-editor-' prefix
+                    result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, `custom-editor-${viewTypeId}`);
+                }
+
                 if (!result) {
                     throw new Error(`Could not find an editor for '${viewTypeId}'`);
                 }
