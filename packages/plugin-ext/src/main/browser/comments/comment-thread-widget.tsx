@@ -383,6 +383,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
         return <div className={'comment-form' + (this.state.expanded || commentThread.comments && commentThread.comments.length === 0 ? ' expand' : '')}>
             <div className={'theia-comments-input-message-container'}>
                 <textarea className={'theia-comments-input-message theia-input'}
+                    spellCheck={false}
                     placeholder={hasExistingComments ? 'Reply...' : 'Type a new comment'}
                     onInput={this.onInput}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -553,6 +554,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
             <div className={'edit-textarea'}>
                 <div className={'theia-comments-input-message-container'}>
                     <textarea className={'theia-comments-input-message theia-input'}
+                        spellCheck={false}
                         defaultValue={comment.body.value}
                         ref={this.inputRef} />
                 </div>
