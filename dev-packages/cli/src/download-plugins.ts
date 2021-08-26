@@ -18,25 +18,23 @@
 
 declare global {
     interface Array<T> {
+        // Supported since Node >=11.0
         flat(depth?: number): any
     }
 }
 
-import fetch, { Response, RequestInit } from 'node-fetch';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import { getProxyForUrl } from 'proxy-from-env';
-import { promises as fs, createWriteStream, existsSync } from 'fs';
-import * as mkdirp from 'mkdirp';
-import * as path from 'path';
-import * as stream from 'stream';
-import * as decompress from 'decompress';
-import * as temp from 'temp';
-
-import { green, red, yellow } from 'colors/safe';
-
-import { promisify } from 'util';
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
-const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
+import { green, red, yellow } from 'colors/safe';
+import * as decompress from 'decompress';
+import { createWriteStream, existsSync, promises as fs } from 'fs';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import fetch, { RequestInit, Response } from 'node-fetch';
+import * as path from 'path';
+import { getProxyForUrl } from 'proxy-from-env';
+import * as stream from 'stream';
+import * as temp from 'temp';
+import { promisify } from 'util';
+
 const pipelineAsPromised = promisify(stream.pipeline);
 
 temp.track();
@@ -91,7 +89,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     // Excluded extension ids.
     const excludedIds = new Set<string>(pck.theiaPluginsExcludeIds || []);
 
-    await mkdirpAsPromised(pluginsDir);
+    await fs.mkdir(pluginsDir, { recursive: true });
 
     if (!pck.theiaPlugins) {
         console.log(red('error: missing mandatory \'theiaPlugins\' property.'));
@@ -119,8 +117,9 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         await Promise.all(downloads);
         console.warn('--- collecting extension-packs ---');
         const extensionPacks = await collectExtensionPacks(pluginsDir, excludedIds);
-        console.warn(`--- found ${extensionPacks.size} extension-packs ---`);
         if (extensionPacks.size > 0) {
+            console.warn(`--- found ${extensionPacks.size} extension-packs ---`);
+            // Move extension-packs to `.packs`
             await cacheExtensionPacks(pluginsDir, extensionPacks);
             console.warn('--- resolving extension-packs ---');
             const client = new OVSXClient({ apiVersion, apiUrl });
@@ -216,7 +215,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         const file = createWriteStream(targetPath);
         await pipelineAsPromised(response.body, file);
     } else {
-        await mkdirpAsPromised(targetPath);
+        await fs.mkdir(targetPath, { recursive: true });
         const tempFile = temp.createWriteStream('theia-plugin-download');
         await pipelineAsPromised(response.body, tempFile);
         await decompress(tempFile.path, targetPath);
@@ -311,6 +310,7 @@ async function cacheExtensionPacks(pluginsDir: string, extensionPacks: Map<strin
     await fs.mkdir(packsFolderPath, { recursive: true });
     await Promise.all(Array.from(extensionPacks.entries(), async ([extensionPackPath, value]) => {
         extensionPackPath = path.resolve(extensionPackPath);
+        // Skip entries found in `.packs`
         if (extensionPackPath.startsWith(packsFolderPath)) {
             return; // skip
         }
@@ -319,9 +319,6 @@ async function cacheExtensionPacks(pluginsDir: string, extensionPacks: Map<strin
             const newPath = path.resolve(packsFolderPath, path.basename(oldPath));
             if (!existsSync(newPath)) {
                 await fs.rename(oldPath, newPath);
-                // Update the map to reflect the changed paths:
-                extensionPacks.delete(extensionPackPath);
-                extensionPacks.set(newPath, value);
             }
         } catch (error) {
             console.error(error);
