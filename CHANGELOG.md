@@ -1,24 +1,70 @@
 # Change Log
 
-## v1.17.0 - unreleased
+## v1.17.0 - 8/26/2021
 
 [1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
 
+- [api-tests] added additional file-search tests [#9674](https://github.com/eclipse-theia/theia/pull/9674)
+- [application-manager] updated `css-loader` dependency [#9819](https://github.com/eclipse-theia/theia/pull/9819)
+- [application-manager] updated `webpack` version range [#9831](https://github.com/eclipse-theia/theia/pull/9831)
+- [application-package] added support for `yarn aliases` [#9880](https://github.com/eclipse-theia/theia/pull/9880)
+- [application-package] updated `deepmerge` dependency to `4.2.2` [#9405](https://github.com/eclipse-theia/theia/pull/9405)
+- [cli] added the ability to declare excluded plugin ids when downloading plugins [#9956](https://github.com/eclipse-theia/theia/pull/9956)
+- [cli] fixed help, argument and error handling [#9842](https://github.com/eclipse-theia/theia/pull/9842)
+- [console] fixed the `selectedSession` not being properly set when first starting a debug session [#9963](https://github.com/eclipse-theia/theia/pull/9963)
+- [core] added `@vscode/codicons` dependency [#9828](https://github.com/eclipse-theia/theia/pull/9828)
+- [core] added functionality to disable spellcheck for input and textarea fields [#9907](https://github.com/eclipse-theia/theia/pull/9907)
+- [core] added handling to prevent subsequent electron windows from overlapping [#9560](https://github.com/eclipse-theia/theia/pull/9560)
+- [core] added http fallback when websockets are unavailable [#9731](https://github.com/eclipse-theia/theia/pull/9731)
+- [core] added internationalization support [#9538](https://github.com/eclipse-theia/theia/pull/9538)
+- [core] added support for `window.menuBarVisibility` [#9830](https://github.com/eclipse-theia/theia/pull/9830)
+- [core] added support for composite tree decorations to reflect decorations from multiple providers [#9473](https://github.com/eclipse-theia/theia/pull/9473)
+- [core] fixed `handleExpansionToggleDblClickEvent` binding [#9877](https://github.com/eclipse-theia/theia/pull/9877)
+- [core] fixed the display of recently used items in the `quick-commands` menu [#9921](https://github.com/eclipse-theia/theia/pull/9921)
+- [core] implemented `fuzzy` searching and highlighting for the quick-input [#9928](https://github.com/eclipse-theia/theia/pull/9928)
 - [core] modified handling of toolbar items for `ViewContainer`s to handle `onDidChange` correctly. [#9798](https://github.com/eclipse-theia/theia/pull/9798)
+- [core] updated menus to not break the layout if a referenced command is missing [#9886](https://github.com/eclipse-theia/theia/pull/9886)
+- [debug] updated `DebugRequestTypes` to reflect `DAP` changes [#9833](https://github.com/eclipse-theia/theia/pull/9833)
+- [documentation] added `SECURITY.md` documentation [#9804](https://github.com/eclipse-theia/theia/pull/9804)
+- [documentation] introduced `migration` document to help adopters during release migrations [#9817](https://github.com/eclipse-theia/theia/pull/9817)
+- [documentation] updated prerequisite documentation for `keytar` [#9807](https://github.com/eclipse-theia/theia/pull/9807)
+- [dynamic-require] introduced the `dynamic-require` dev package to reduce dynamic requires for bundling [#9660](https://github.com/eclipse-theia/theia/pull/9660)
+- [editor] added missing descriptions to monaco editor preferences [#9852](https://github.com/eclipse-theia/theia/pull/9852)
+- [electron] added support for the `new window` command [#9519](https://github.com/eclipse-theia/theia/pull/9519)
+- [file-search] fixed the display of resource paths in the `quick-file-open` menu [#9952](https://github.com/eclipse-theia/theia/pull/9952)
+- [filesystem] added ability to open read-only files in electron [#9950](https://github.com/eclipse-theia/theia/pull/9950)
+- [filesystem] improved `MAX_FILE_SIZE_MB` definition [#9972](https://github.com/eclipse-theia/theia/pull/9972)
+- [filesystem] updated the uploading of files to use http over websockets [#9820](https://github.com/eclipse-theia/theia/pull/9820)
+- [keymaps] fixed broken 'supported keys' link in readme [#9929](https://github.com/eclipse-theia/theia/pull/9929)
+- [monaco] adjusted the `find-widget` font-family [#9937](https://github.com/eclipse-theia/theia/pull/9937)
+- [monaco] refactored monaco interfaces behind core services [#9727](https://github.com/eclipse-theia/theia/pull/9727)
+- [monaco] restored the `drop-shadow` styling for the quick-input [#9938](https://github.com/eclipse-theia/theia/pull/9938)
 - [navigator] added support for opening external files by drag and dropping into the main panel [#9543](https://github.com/eclipse-theia/theia/issues/9543)
+- [plugin-dev] fixed the starting of hosted plugins [#9874](https://github.com/eclipse-theia/theia/pull/9874)
+- [plugin-ext] added missing `CompletionItemKind` enum values [#9908](https://github.com/eclipse-theia/theia/pull/9908)
+- [plugin-ext] fixed the `selectedRepository` not being properly set in a multi-root [#9954](https://github.com/eclipse-theia/theia/pull/9954)
+- [plugin-ext] improved extensibility of `PluginViewRegistry` [#9847](https://github.com/eclipse-theia/theia/pull/9847)
+- [plugin-ext] updated to use correct host id for frontend hosted plugins [#9902](https://github.com/eclipse-theia/theia/pull/9902)
+- [preferences] added support for `json` commands to open `settings.json` at different preference scopes [#9832](https://github.com/eclipse-theia/theia/pull/9832)
+- [preferences] fixed the opening of the preferences-view [#9932](https://github.com/eclipse-theia/theia/pull/9932)
+- [preferences] improved the extensibility of rebinding schemas [#9883](https://github.com/eclipse-theia/theia/pull/9883)
+- [scm] added `onDidChangeCommitTemplate` event support [#9792](https://github.com/eclipse-theia/theia/pull/9792)
+- [scm] fixed incorrect tree state when using the `vscode-builtin-git` plugin [#9915](https://github.com/eclipse-theia/theia/pull/9915)
+- [task] introduced lock to prevent parallel task executions [#9858](https://github.com/eclipse-theia/theia/pull/9858)
+- [workspace] added ability to case-sensitively rename files and folders on Windows [#9709](https://github.com/eclipse-theia/theia/pull/9709)
+- [workspace] added support for url encoding [#9850](https://github.com/eclipse-theia/theia/pull/9850)
 
 <a name="breaking_changes_1.17.0">[Breaking Changes:](#breaking_changes_1.17.0)</a>
 
-- [core] registering toolbar items for commands that explicitly target a `ViewContainer` rather than a child widget may not behave as expected. Such registrations should be made in the `ViewContainer` by overriding the `updateToolbarItems` method and using the `registerToolbarItem` utility. See the modifications to the `scm` and `vsx-registry` packages in the PR for examples. [#9798](https://github.com/eclipse-theia/theia/pull/9798)
+- [core] `ViewContainerPart` methods and properties related to hiding and showing toolbar removed: `toHideToolbar`, `hideToolbar`, `showToolbar`, `toolbarHidden`. `ViewContainerPart` toolbars are now hidden or shown using CSS properties [#9935](https://github.com/eclipse-theia/theia/pull/9935)
+- [core] `handleExpansionToggleDblClickEvent` in `TreeWidget` can no longer be overridden. Instead, `doHandleExpansionToggleDblClickEvent` can be overridden [#9877](https://github.com/eclipse-theia/theia/pull/9877)
 - [core] moved from ES5 to ES2017 [#9436](https://github.com/eclipse-theia/theia/pull/9436) - Contributed on behalf of STMicroelectronics
-- [vsx-registry] `VSXExtensionsContribution` no longer implements `TabBarToolbarContribution` and is not bound as such. Extensions of the class that expect such behavior should reimplement it with caution. See caveats in PR. [#9798](https://github.com/eclipse-theia/theia/pull/9798)
-- [core] `handleExpansionToggleDblClickEvent` in `TreeWidget` can no longer be overridden. Instead, `doHandleExpansionToggleDblClickEvent` can be overridden. [#9877](https://github.com/eclipse-theia/theia/pull/9877)
-- [core] `ViewContainerPart` methods and properties related to hiding and showing toolbar removed: `toHideToolbar`, `hideToolbar`, `showToolbar`, `toolbarHidden`. `ViewContainerPart` toolbars are now hidden or shown using CSS properties. [#9935](https://github.com/eclipse-theia/theia/pull/9935)
-- [core] `SidePanelHandler.addMenu` and `SidePanelHandler.removeMenu` no longer exists, instead added `addBottomMenu` and `addTopMenu` for adding menu, `removeTopMenu` and `removeBottomMenu` for removing menu. 
-  - `SidebarBottomMenu` interface is renamed `SidebarMenu` and handles not only bottom menu's. 
+- [core] registering toolbar items for commands that explicitly target a `ViewContainer` rather than a child widget may not behave as expected. Such registrations should be made in the `ViewContainer` by overriding the `updateToolbarItems` method and using the `registerToolbarItem` utility. See the modifications to the `scm` and `vsx-registry` packages in the PR for examples [#9798](https://github.com/eclipse-theia/theia/pull/9798)
+  - `VSXExtensionsContribution` no longer implements `TabBarToolbarContribution` and is not bound as such. Extensions of the class that expect such behavior should reimplement it with caution. See caveats in PR.
+- [core] `SidePanelHandler.addMenu` and `SidePanelHandler.removeMenu` no longer exists, instead added `addBottomMenu` and `addTopMenu` for adding menu, `removeTopMenu` and `removeBottomMenu` for removing menu [#9830](https://github.com/eclipse-theia/theia/pull/9830)
+  - `SidebarBottomMenu` interface is renamed `SidebarMenu` and handles not only bottom menu's.
   - Changed style class name from `theia-sidebar-bottom-menu` to `theia-sidebar-menu`
-- [preferences] `TheiaDockPanel` constructor takes a new parameter `preferences`. 
-[#9830](https://github.com/eclipse-theia/theia/pull/9830)
+  - `TheiaDockPanel` constructor takes a new parameter `preferences`
 
 ## v1.16.0 - 7/29/2021
 
