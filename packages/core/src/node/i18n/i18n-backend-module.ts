@@ -18,7 +18,7 @@ import { ContainerModule } from 'inversify';
 import { localizationPath } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from '../../common';
-import { LocalizationRegistry, LocalizationContribution, TheiaLocalizationContribution } from './localization-contribution';
+import { LocalizationRegistry, LocalizationContribution } from './localization-contribution';
 import { LocalizationBackendContribution } from './localization-backend-contribution';
 import { BackendApplicationContribution } from '../backend-application';
 
@@ -29,8 +29,6 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
     bind(LocalizationRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, LocalizationContribution);
-    bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
-    bind(LocalizationContribution).toService(TheiaLocalizationContribution);
     bind(LocalizationBackendContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(LocalizationBackendContribution);
 });

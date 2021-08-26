@@ -98,10 +98,3 @@ export class LocalizationRegistry {
         return undefined;
     }
 }
-
-@injectable()
-export class TheiaLocalizationContribution implements LocalizationContribution {
-    async registerLocalizations(registry: LocalizationRegistry): Promise<void> {
-        registry.registerLocalizationFromRequire('de', require('../../../i18n/nls.de.json'));
-    }
-}
