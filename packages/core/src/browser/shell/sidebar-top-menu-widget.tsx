@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Alibaba Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,10 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './application-shell';
-export * from './shell-layout-restorer';
-export * from './side-panel-handler';
-export * from './sidebar-menu-widget';
-export * from './split-panels';
-export * from './tab-bars';
-export * from './view-contribution';
+import { SidebarMenuWidget } from './sidebar-menu-widget';
+import { injectable } from 'inversify';
+
+/**
+ * The menu widget placed on the top of the sidebar.
+ */
+@injectable()
+export class SidebarTopMenuWidget extends SidebarMenuWidget {
+
+}

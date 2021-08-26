@@ -21,7 +21,7 @@ import { MimeData } from '@phosphor/coreutils';
 import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
-import { SidebarBottomMenuWidget, SidebarBottomMenuWidgetFactory, SidebarBottomMenu } from './sidebar-bottom-menu-widget';
+import { SidebarMenuWidget, SidebarMenu, SidebarBottomMenuWidgetFactory, SidebarTopMenuWidgetFactory } from './sidebar-menu-widget';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { animationFrame } from '../browser';
 import { FrontendApplicationStateService } from '../frontend-application-state';
@@ -31,6 +31,8 @@ import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './ta
 import { DisposableCollection, Disposable } from '../../common/disposable';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuPath } from '../../common/menu';
+import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
+import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -66,11 +68,17 @@ export class SidePanelHandler {
      */
     tabBar: SideTabBar;
     /**
+     * The menu placed on the sidebar top.
+     * Displayed as icons.
+     * Open menus when on clicks.
+     */
+    topMenu: SidebarMenuWidget;
+    /**
      * The menu placed on the sidebar bottom.
      * Displayed as icons.
      * Open menus when on clicks.
      */
-    bottomMenu: SidebarBottomMenuWidget;
+    bottomMenu: SidebarMenuWidget;
     /**
      * A tool bar, which displays a title and widget specific command buttons.
      */
@@ -107,6 +115,7 @@ export class SidePanelHandler {
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
+    @inject(SidebarTopMenuWidgetFactory) protected sidebarTopWidgetFactory: () => SidebarTopMenuWidget;
     @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory: () => SidebarBottomMenuWidget;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
@@ -120,6 +129,7 @@ export class SidePanelHandler {
     create(side: 'left' | 'right', options: SidePanel.Options): void {
         this.side = side;
         this.options = options;
+        this.topMenu = this.createSidebarTopMenu();
         this.tabBar = this.createSideBar();
         this.bottomMenu = this.createSidebarBottomMenu();
         this.toolBar = this.createToolbar();
@@ -187,10 +197,18 @@ export class SidePanelHandler {
         return toolbar;
     }
 
+    protected createSidebarTopMenu(): SidebarTopMenuWidget {
+        return this.createSidebarMenu(this.sidebarTopWidgetFactory);
+    }
+
     protected createSidebarBottomMenu(): SidebarBottomMenuWidget {
-        const bottomMenu = this.sidebarBottomWidgetFactory();
-        bottomMenu.addClass('theia-sidebar-bottom-menu');
-        return bottomMenu;
+        return this.createSidebarMenu(this.sidebarBottomWidgetFactory);
+    }
+
+    protected createSidebarMenu<T extends SidebarMenuWidget>(factory: () => T): T {
+        const menu = factory();
+        menu.addClass('theia-sidebar-menu');
+        return menu;
     }
 
     protected showContextMenu(e: MouseEvent): void {
@@ -232,6 +250,7 @@ export class SidePanelHandler {
         const sidebarContainerLayout = new PanelLayout();
         const sidebarContainer = new Panel({ layout: sidebarContainerLayout });
         sidebarContainer.addClass('theia-app-sidebar-container');
+        sidebarContainerLayout.addWidget(this.topMenu);
         sidebarContainerLayout.addWidget(this.tabBar);
         sidebarContainerLayout.addWidget(this.bottomMenu);
 
@@ -386,11 +405,29 @@ export class SidePanelHandler {
     }
 
     /**
+     * Add a menu to the sidebar top.
+     *
+     * If the menu is already added, it will be ignored.
+     */
+    addTopMenu(menu: SidebarMenu): void {
+        this.topMenu.addMenu(menu);
+    }
+
+    /**
+     * Remove a menu from the sidebar top.
+     *
+     * @param menuId id of the menu to remove
+     */
+    removeTopMenu(menuId: string): void {
+        this.topMenu.removeMenu(menuId);
+    }
+
+    /**
      * Add a menu to the sidebar bottom.
      *
      * If the menu is already added, it will be ignored.
      */
-    addMenu(menu: SidebarBottomMenu): void {
+    addBottomMenu(menu: SidebarMenu): void {
         this.bottomMenu.addMenu(menu);
     }
 
@@ -399,7 +436,7 @@ export class SidePanelHandler {
      *
      * @param menuId id of the menu to remove
      */
-    removeMenu(menuId: string): void {
+    removeBottomMenu(menuId: string): void {
         this.bottomMenu.removeMenu(menuId);
     }
 

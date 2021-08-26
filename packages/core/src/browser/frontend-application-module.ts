@@ -43,8 +43,8 @@ import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
     TabBarRendererFactory, ShellLayoutRestorer,
     SidePanelHandler, SidePanelHandlerFactory,
-    SidebarBottomMenuWidget, SidebarBottomMenuWidgetFactory,
-    SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError
+    SidebarMenuWidget, SidebarTopMenuWidgetFactory,
+    SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory
 } from './shell';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
@@ -104,6 +104,7 @@ import {
 } from './quick-input';
 import { QuickAccessContribution } from './quick-input/quick-access';
 import { QuickCommandService } from './quick-input/quick-command-service';
+import { SidebarBottomMenuWidget } from './shell/sidebar-bottom-menu-widget';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -133,8 +134,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShell).toSelf().inSingletonScope();
     bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
     bind(SidePanelHandler).toSelf();
-    bind(SidebarBottomMenuWidgetFactory).toAutoFactory(SidebarBottomMenuWidget);
+    bind(SidebarTopMenuWidgetFactory).toAutoFactory(SidebarMenuWidget);
+    bind(SidebarMenuWidget).toSelf();
     bind(SidebarBottomMenuWidget).toSelf();
+    bind(SidebarBottomMenuWidgetFactory).toAutoFactory(SidebarBottomMenuWidget);
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, TabBarToolbarContribution);

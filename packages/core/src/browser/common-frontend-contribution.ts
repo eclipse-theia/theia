@@ -43,9 +43,9 @@ import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry, Color } from './color-registry';
-import { CorePreferences } from './core-preferences';
+import { CoreConfiguration, CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
-import { PreferenceService, PreferenceScope } from './preferences';
+import { PreferenceService, PreferenceScope, PreferenceChangeEvent } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
@@ -358,17 +358,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.updateStyles();
         this.updateThemeFromPreference('workbench.colorTheme');
         this.updateThemeFromPreference('workbench.iconTheme');
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'workbench.editor.highlightModifiedTabs') {
-                this.updateStyles();
-            } else if (e.preferenceName === 'workbench.colorTheme' || e.preferenceName === 'workbench.iconTheme') {
-                this.updateThemeFromPreference(e.preferenceName);
-            }
-        });
+        this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
         this.themeService.onDidColorThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
         this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
 
-        app.shell.leftPanelHandler.addMenu({
+        app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
             iconClass: 'codicon codicon-settings-gear',
             title: 'Settings',
@@ -383,11 +377,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: 1,
         };
         this.authenticationService.onDidRegisterAuthenticationProvider(() => {
-            app.shell.leftPanelHandler.addMenu(accountsMenu);
+            app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
         });
         this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
             if (this.authenticationService.getProviderIds().length === 0) {
-                app.shell.leftPanelHandler.removeMenu(accountsMenu.id);
+                app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
             }
         });
     }
@@ -421,6 +415,36 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 this.themeService.setCurrentTheme(value || this.themeService.defaultTheme.id);
             } else {
                 this.iconThemes.current = value || this.iconThemes.default.id;
+            }
+        }
+    }
+
+    protected handlePreferenceChange(e: PreferenceChangeEvent<CoreConfiguration>, app: FrontendApplication): void {
+        switch (e.preferenceName) {
+            case 'workbench.editor.highlightModifiedTabs': {
+                this.updateStyles();
+                break;
+            }
+            case 'workbench.colorTheme':
+            case 'workbench.iconTheme': {
+                this.updateThemeFromPreference(e.preferenceName);
+                break;
+            }
+            case 'window.menuBarVisibility': {
+                const { newValue } = e;
+                const mainMenuId = 'main-menu';
+                if (newValue === 'compact') {
+                    this.shell.leftPanelHandler.addTopMenu({
+                        id: mainMenuId,
+                        iconClass: 'codicon codicon-menu',
+                        title: 'Application Menu',
+                        menuPath: ['menubar'],
+                        order: 0,
+                    });
+                } else {
+                    app.shell.leftPanelHandler.removeTopMenu(mainMenuId);
+                }
+                break;
             }
         }
     }

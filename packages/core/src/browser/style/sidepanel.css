@@ -186,17 +186,17 @@
   flex-grow: 1;
 }
 
-.theia-app-sidebar-container .theia-sidebar-bottom-menu {
+.theia-app-sidebar-container .theia-sidebar-menu {
   flex-shrink: 0;
 }
 
-.p-Widget.theia-sidebar-bottom-menu {
+.p-Widget.theia-sidebar-menu {
   background-color: var(--theia-activityBar-background);
   display: flex;
   flex-direction: column-reverse;
 }
 
-.p-Widget.theia-sidebar-bottom-menu i {
+.p-Widget.theia-sidebar-menu i {
   padding: var(--theia-private-sidebar-tab-padding-top-and-bottom) var(--theia-private-sidebar-tab-padding-left-and-right);
   display: flex;
   justify-content: center;
@@ -207,8 +207,12 @@
   font-size: var(--theia-private-sidebar-icon-size);
 }
 
-.theia-sidebar-bottom-menu i:hover {
+.theia-sidebar-menu i:hover {
   color: var(--theia-activityBar-foreground);
+}
+
+.theia-sidebar-menu > i.codicon-menu {
+  font-size: calc(var(--theia-private-sidebar-icon-size)*0.7);
 }
 
 /*-----------------------------------------------------------------------------

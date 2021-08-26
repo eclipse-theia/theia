@@ -13,6 +13,11 @@
 - [vsx-registry] `VSXExtensionsContribution` no longer implements `TabBarToolbarContribution` and is not bound as such. Extensions of the class that expect such behavior should reimplement it with caution. See caveats in PR. [#9798](https://github.com/eclipse-theia/theia/pull/9798)
 - [core] `handleExpansionToggleDblClickEvent` in `TreeWidget` can no longer be overridden. Instead, `doHandleExpansionToggleDblClickEvent` can be overridden. [#9877](https://github.com/eclipse-theia/theia/pull/9877)
 - [core] `ViewContainerPart` methods and properties related to hiding and showing toolbar removed: `toHideToolbar`, `hideToolbar`, `showToolbar`, `toolbarHidden`. `ViewContainerPart` toolbars are now hidden or shown using CSS properties. [#9935](https://github.com/eclipse-theia/theia/pull/9935)
+- [core] `SidePanelHandler.addMenu` and `SidePanelHandler.removeMenu` no longer exists, instead added `addBottomMenu` and `addTopMenu` for adding menu, `removeTopMenu` and `removeBottomMenu` for removing menu. 
+  - `SidebarBottomMenu` interface is renamed `SidebarMenu` and handles not only bottom menu's. 
+  - Changed style class name from `theia-sidebar-bottom-menu` to `theia-sidebar-menu`
+- [preferences] `TheiaDockPanel` constructor takes a new parameter `preferences`. 
+[#9830](https://github.com/eclipse-theia/theia/pull/9830)
 
 ## v1.16.0 - 7/29/2021
 

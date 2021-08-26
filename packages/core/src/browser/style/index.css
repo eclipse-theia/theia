@@ -78,6 +78,10 @@ blockquote {
     background: var(--theia-editor-background);
 }
 
+.theia-visible-menu-maximized {
+  top: var(--theia-private-menubar-height) !important;
+}
+
 .theia-ApplicationShell {
   position: absolute;
   top: 0;

@@ -27,6 +27,7 @@ import { PreferenceService, KeybindingRegistry, CommonCommands } from '../../bro
 import { ContextKeyService } from '../../browser/context-key-service';
 import debounce = require('lodash.debounce');
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
+import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 
 /**
  * Representation of possible electron menu options.
@@ -71,33 +72,50 @@ export class ElectronMainMenuFactory {
         @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) {
-        preferencesService.onPreferenceChanged(debounce(() => {
-            if (this._menu) {
-                for (const item of this._toggledCommands) {
-                    this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+        preferencesService.onPreferenceChanged(
+            debounce(e => {
+                if (e.preferenceName === 'window.menuBarVisibility') {
+                    this.setMenuBar();
                 }
-                electron.remote.getCurrentWindow().setMenu(this._menu);
-            }
-        }, 10));
+                if (this._menu) {
+                    for (const item of this._toggledCommands) {
+                        this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+                    }
+                    electron.remote.getCurrentWindow().setMenu(this._menu);
+                }
+            }, 10)
+        );
         keybindingRegistry.onKeybindingsChanged(() => {
-            const createdMenuBar = this.createMenuBar();
-            if (isOSX) {
-                electron.remote.Menu.setApplicationMenu(createdMenuBar);
-            } else {
-                electron.remote.getCurrentWindow().setMenu(createdMenuBar);
-            }
+            this.setMenuBar();
         });
     }
 
-    createMenuBar(): Electron.Menu {
-        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-        const template = this.fillMenuTemplate([], menuModel);
+    async setMenuBar(): Promise<void> {
+        await this.preferencesService.ready;
+        const createdMenuBar = this.createMenuBar();
         if (isOSX) {
-            template.unshift(this.createOSXMenu());
+            electron.remote.Menu.setApplicationMenu(createdMenuBar);
+        } else {
+            electron.remote.getCurrentWindow().setMenu(createdMenuBar);
         }
-        const menu = electron.remote.Menu.buildFromTemplate(template);
-        this._menu = menu;
-        return menu;
+    }
+
+    createMenuBar(): Electron.Menu | null {
+        const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
+        const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
+        if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
+            const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
+            const template = this.fillMenuTemplate([], menuModel);
+            if (isOSX) {
+                template.unshift(this.createOSXMenu());
+            }
+            const menu = electron.remote.Menu.buildFromTemplate(template);
+            this._menu = menu;
+            return this._menu;
+        }
+        this._menu = undefined;
+        // eslint-disable-next-line no-null/no-null
+        return null;
     }
 
     createContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {

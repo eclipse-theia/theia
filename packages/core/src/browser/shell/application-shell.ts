@@ -36,6 +36,8 @@ import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './ta
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed } from '../widgets';
+import { CorePreferences } from '../core-preferences';
+import { environment } from '../../common';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -204,7 +206,8 @@ export class ApplicationShell extends Widget {
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
-        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
+        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
     ) {
         super(options as Widget.IOptions);
         this.addClass(APPLICATION_SHELL_CLASS);
@@ -250,6 +253,17 @@ export class ApplicationShell extends Widget {
     protected init(): void {
         this.initSidebarVisibleKeyContext();
         this.initFocusKeyContexts();
+
+        if (!environment.electron.is()) {
+            this.corePreferences.ready.then(() => {
+                this.setTopPanelVisibily(this.corePreferences['window.menuBarVisibility']);
+            });
+            this.corePreferences.onPreferenceChanged(preference => {
+                if (preference.preferenceName === 'window.menuBarVisibility') {
+                    this.setTopPanelVisibily(preference.newValue);
+                }
+            });
+        }
     }
 
     protected initSidebarVisibleKeyContext(): void {
@@ -277,6 +291,11 @@ export class ApplicationShell extends Widget {
         };
         updateFocusContextKeys();
         this.activeChanged.connect(updateFocusContextKeys);
+    }
+
+    protected setTopPanelVisibily(preference: string): void {
+        const hiddenPreferences = ['compact', 'hidden'];
+        this.topPanel.setHidden(hiddenPreferences.includes(preference));
     }
 
     protected onBeforeAttach(msg: Message): void {
@@ -448,7 +467,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, this.corePreferences);
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
@@ -466,7 +485,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, this.corePreferences);
         dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
@@ -493,6 +512,7 @@ export class ApplicationShell extends Widget {
     protected createTopPanel(): Panel {
         const topPanel = new Panel();
         topPanel.id = 'theia-top-panel';
+        topPanel.hide();
         return topPanel;
     }
 
