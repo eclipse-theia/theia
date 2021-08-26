@@ -278,7 +278,7 @@ export class ElectronMainApplication {
     protected async openWindowWithWorkspace(workspacePath: string): Promise<BrowserWindow> {
         const options = await this.getLastWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow(options)]);
-        electronWindow.loadURL(uri.withFragment(workspacePath).toString(true));
+        electronWindow.loadURL(uri.withFragment(encodeURI(workspacePath)).toString(true));
         return electronWindow;
     }
 
