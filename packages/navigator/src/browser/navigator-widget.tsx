@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CorePreferences, Key, TreeModel, SelectableTreeNode } from '@theia/core/lib/browser';
+import { CorePreferences, Key, TreeModel, SelectableTreeNode, OpenerService } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeNode
@@ -44,6 +44,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     @inject(NavigatorContextKeyService)
     protected readonly contextKeyService: NavigatorContextKeyService;
+
+    @inject(OpenerService) protected readonly openerService: OpenerService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -106,13 +108,20 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
             const treeNodes = dataTransfer && this.getSelectedTreeNodesFromData(dataTransfer) || [];
-            treeNodes.filter(FileNode.is).forEach(treeNode => {
-                if (!SelectableTreeNode.isSelected(treeNode)) {
-                    this.model.toggleNode(treeNode);
-                }
-            });
             if (treeNodes.length > 0) {
+                treeNodes.filter(FileNode.is).forEach(treeNode => {
+                    if (!SelectableTreeNode.isSelected(treeNode)) {
+                        this.model.toggleNode(treeNode);
+                    }
+                });
                 this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
+            } else if (dataTransfer && dataTransfer.files?.length > 0) {
+                // the files were dragged from the outside the workspace
+                Array.from(dataTransfer.files).forEach(async file => {
+                    const fileUri = new URI(file.path);
+                    const opener = await this.openerService.getOpener(fileUri);
+                    opener.open(fileUri);
+                });
             }
         });
         const handler = (e: DragEvent) => {
