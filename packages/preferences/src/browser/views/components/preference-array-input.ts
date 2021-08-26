@@ -74,6 +74,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
         input.classList.add('preference-array-input', 'theia-input');
         input.type = 'text';
         input.placeholder = 'Add Value...';
+        input.spellcheck = false;
         input.onkeydown = this.handleEnter.bind(this);
         input.setAttribute('aria-label', 'Preference String Input');
         const iconWrapper = document.createElement('span');

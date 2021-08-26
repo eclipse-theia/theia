@@ -23,6 +23,7 @@ export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<st
         const interactable = document.createElement('input');
         this.interactable = interactable;
         interactable.type = 'text';
+        interactable.spellcheck = false;
         interactable.classList.add('theia-input');
         interactable.defaultValue = this.getValue();
         interactable.oninput = this.handleUserInteraction.bind(this);

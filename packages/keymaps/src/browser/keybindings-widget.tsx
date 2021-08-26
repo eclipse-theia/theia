@@ -296,6 +296,7 @@ export class KeybindingWidget extends ReactWidget {
                     id='search-kb'
                     className={`theia-input${(this.items.length > 0) ? '' : ' no-kb'}`}
                     type='text'
+                    spellCheck={false}
                     placeholder='Search keybindings'
                     autoComplete='off'
                     onKeyUp={this.searchKeybindings}

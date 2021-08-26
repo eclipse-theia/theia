@@ -71,6 +71,7 @@ export class FileUploadService {
     protected createUploadForm(): FileUploadService.Form {
         const targetInput = document.createElement('input');
         targetInput.type = 'text';
+        targetInput.spellcheck = false;
         targetInput.name = FileUploadService.TARGET;
         targetInput.classList.add('theia-input');
 
