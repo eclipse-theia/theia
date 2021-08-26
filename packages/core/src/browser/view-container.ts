@@ -18,7 +18,7 @@ import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { IIterator, toArray, find, some, every, map } from '@phosphor/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
-    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities
 } from './widgets';
 import { Event, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
@@ -923,22 +923,19 @@ export class ViewContainerPart extends BaseWidget {
 
     protected onAfterAttach(msg: Message): void {
         if (!this.wrapped.isAttached) {
-            MessageLoop.sendMessage(this.wrapped, Widget.Msg.BeforeAttach);
-            // eslint-disable-next-line no-null/no-null
-            this.body.insertBefore(this.wrapped.node, null);
-            MessageLoop.sendMessage(this.wrapped, Widget.Msg.AfterAttach);
+            UnsafeWidgetUtilities.attach(this.wrapped, this.body);
         }
-        Widget.attach(this.toolbar, this.header);
+        UnsafeWidgetUtilities.attach(this.toolbar, this.header);
         super.onAfterAttach(msg);
     }
 
     protected onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
-        Widget.detach(this.toolbar);
+        if (this.toolbar.isAttached) {
+            Widget.detach(this.toolbar);
+        }
         if (this.wrapped.isAttached) {
-            MessageLoop.sendMessage(this.wrapped, Widget.Msg.BeforeDetach);
-            this.wrapped.node.parentNode!.removeChild(this.wrapped.node);
-            MessageLoop.sendMessage(this.wrapped, Widget.Msg.AfterDetach);
+            UnsafeWidgetUtilities.detach(this.wrapped);
         }
     }
 
@@ -1041,13 +1038,8 @@ export class ViewContainerLayout extends SplitLayout {
         } else {
             this.parent!.node.appendChild(this.handles[toIndex]);
         }
-        MessageLoop.sendMessage(widget, Widget.Msg.BeforeDetach);
-        this.parent!.node.removeChild(widget.node);
-        MessageLoop.sendMessage(widget, Widget.Msg.AfterDetach);
-
-        MessageLoop.sendMessage(widget, Widget.Msg.BeforeAttach);
-        this.parent!.node.insertBefore(widget.node, this.handles[toIndex]);
-        MessageLoop.sendMessage(widget, Widget.Msg.AfterAttach);
+        UnsafeWidgetUtilities.detach(widget);
+        UnsafeWidgetUtilities.attach(widget, this.parent!.node, this.handles[toIndex]);
     }
 
     getPartSize(part: ViewContainerPart): number | undefined {
