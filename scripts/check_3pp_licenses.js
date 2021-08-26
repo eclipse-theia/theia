@@ -71,7 +71,7 @@ async function main() {
                     console.log(magenta(`> ${entry}`));
                     const data = baseline.get(entry);
                     if (data) {
-                        console.warn(data);
+                        console.warn(`${entry}:`, data);
                     }
                 }
             }
