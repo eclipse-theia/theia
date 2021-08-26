@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "Electron runtime dependencies for Theia",
   "publishConfig": {
     "access": "public"
@@ -20,8 +20,8 @@
     "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
   "dependencies": {
-    "electron": "^9.0.2",
     "@electron/get": "^1.12.4",
+    "electron": "^9.0.2",
     "electron-store": "^5.1.1",
     "fix-path": "^3.0.0",
     "native-keymap": "^2.1.2",
