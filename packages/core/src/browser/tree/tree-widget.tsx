@@ -20,7 +20,7 @@ import { Disposable, MenuPath, SelectionService } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
-import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, Widget } from '../widgets';
+import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, Widget, UnsafeWidgetUtilities } from '../widgets';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
@@ -1051,7 +1051,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             if (this.searchBox.isAttached) {
                 Widget.detach(this.searchBox);
             }
-            Widget.attach(this.searchBox, this.node.parentElement!);
+            UnsafeWidgetUtilities.attach(this.searchBox, this.node.parentElement!);
             this.addKeyListener(this.node, this.searchBox.keyCodePredicate.bind(this.searchBox), this.searchBox.handle.bind(this.searchBox));
             this.toDisposeOnDetach.push(Disposable.create(() => {
                 Widget.detach(this.searchBox);

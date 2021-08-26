@@ -18,7 +18,7 @@
 
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { Message } from '@phosphor/messaging';
+import { Message, MessageLoop } from '@phosphor/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 
@@ -41,6 +41,39 @@ export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
     suppressScrollX: true,
     minScrollbarLength: 35,
 };
+
+/**
+ * At a number of places in the code, we have effectively reimplemented Phosphor's Widget.attach and Widget.detach,
+ * but omitted the checks that Phosphor expects to be performed for those operations. That is a bad idea, because it
+ * means that we are telling widgets that they are attached or detached when not all the conditions that should apply
+ * do apply. We should explicitly mark those locations so that we know where we should go fix them later.
+ */
+export namespace UnsafeWidgetUtilities {
+    /**
+     * Ordinarily, the following checks should be performed before detaching a widget:
+     * It should not be the child of another widget
+     * It should be attached and it should be a child of document.body
+     */
+    export function detach(widget: Widget): void {
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeDetach);
+        widget.node.remove();
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterDetach);
+    };
+    /**
+     * @param ref The child of the host element to insert the widget before.
+     * Ordinarily the following checks should be performed:
+     * The widget should have no parent
+     * The widget should not be attached, and its node should not be a child of document.body
+     * The host should be a child of document.body
+     * We often violate the last condition.
+     */
+    // eslint-disable-next-line no-null/no-null
+    export function attach(widget: Widget, host: HTMLElement, ref: HTMLElement | null = null): void {
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeAttach);
+        host.insertBefore(widget.node, ref);
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterAttach);
+    };
+}
 
 @injectable()
 export class BaseWidget extends Widget {

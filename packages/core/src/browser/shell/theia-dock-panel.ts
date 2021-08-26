@@ -18,7 +18,7 @@ import { find, toArray, ArrayExt } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { MessageLoop } from '../widgets';
+import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { inject } from 'inversify';
 import { Emitter, environment } from '../../common';
@@ -175,9 +175,7 @@ export class TheiaDockPanel extends DockPanel {
             return;
         }
         if (this.isAttached) {
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-            this.node.remove();
-            MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            UnsafeWidgetUtilities.detach(this);
         }
         maximizedElement.style.display = 'block';
         this.addClass(MAXIMIZED_CLASS);
@@ -185,9 +183,7 @@ export class TheiaDockPanel extends DockPanel {
         if (!this.isElectron() && preference === 'visible') {
             this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
         }
-        MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-        maximizedElement.appendChild(this.node);
-        MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+        UnsafeWidgetUtilities.attach(this, maximizedElement);
         this.fit();
         this.onDidToggleMaximizedEmitter.fire(this);
         this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
@@ -198,13 +194,9 @@ export class TheiaDockPanel extends DockPanel {
                 this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
             }
             if (this.isAttached) {
-                MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-                this.node.remove();
-                MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+                UnsafeWidgetUtilities.detach(this);
             }
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-            areaContainer.appendChild(this.node);
-            MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+            UnsafeWidgetUtilities.attach(this, areaContainer);
             this.fit();
         }));
 
