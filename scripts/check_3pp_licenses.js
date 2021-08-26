@@ -60,18 +60,18 @@ async function main() {
         if (fs.existsSync(dashLicensesBaseline)) {
             info('Checking results against the baseline...');
             const baseline = readBaseline(dashLicensesBaseline);
-            const unused = new Set(baseline.keys());
+            const unmatched = new Set(baseline.keys());
             const unhandled = restricted.filter(entry => {
-                unused.delete(entry.entry);
-                return !baseline.has(entry.entry);
+                unmatched.delete(entry.dependency);
+                return !baseline.has(entry.dependency);
             });
-            if (unused.size > 0) {
+            if (unmatched.size > 0) {
                 warn('Some entries in the baseline did not match anything from dash-licences output:');
-                for (const entry of unused) {
-                    console.log(magenta(`> ${entry}`));
-                    const data = baseline.get(entry);
+                for (const dependency of unmatched) {
+                    console.log(magenta(`> ${dependency}`));
+                    const data = baseline.get(dependency);
                     if (data) {
-                        console.warn(`${entry}:`, data);
+                        console.warn(`${dependency}:`, data);
                     }
                 }
             }
@@ -95,7 +95,7 @@ async function main() {
  * @return {void}
  */
 function logRestrictedDashSummaryEntries(entries) {
-    for (const { entry, license } of entries) {
+    for (const { dependency: entry, license } of entries) {
         console.log(red(`X ${entry}, ${license}`));
     }
 }
@@ -106,30 +106,27 @@ function logRestrictedDashSummaryEntries(entries) {
  */
 async function getRestrictedDependenciesFromSummary(summary) {
     const restricted = [];
-    await readSummary(summary, entry => {
+    for await (const entry of readSummaryLines(summary)) {
         if (entry.status.toLocaleLowerCase() === 'restricted') {
             restricted.push(entry);
         }
-    });
-    return restricted.sort();
+    }
+    return restricted.sort(
+        (a, b) => a.dependency.localeCompare(b.dependency)
+    );
 }
 
 /**
  * Read each entry from dash's summary file and collect each entry.
  * This is essentially a cheap CSV parser.
  * @param {string} summary path to the summary file.
- * @param {(line: DashSummaryEntry) => void} callback
- * @returns {Promise<void>} reading completed.
+ * @returns {AsyncIterableIterator<DashSummaryEntry>} reading completed.
  */
-async function readSummary(summary, callback) {
-    return new Promise((resolve, reject) => {
-        readline.createInterface(fs.createReadStream(summary).on('error', reject))
-            .on('line', line => {
-                const [entry, license, status, source] = line.split(', ');
-                callback({ entry, license, status, source });
-            })
-            .on('close', resolve);
-    });
+async function* readSummaryLines(summary) {
+    for await (const line of readline.createInterface(fs.createReadStream(summary))) {
+        const [dependency, license, status, source] = line.split(', ');
+        yield { dependency, license, status, source };
+    }
 }
 
 /**
@@ -204,7 +201,7 @@ function red(text) { return style(91, text); }
 
 /**
  * @typedef {object} DashSummaryEntry
- * @property {string} entry
+ * @property {string} dependency
  * @property {string} license
  * @property {string} status
  * @property {string} source
