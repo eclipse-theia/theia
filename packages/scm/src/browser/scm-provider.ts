@@ -33,6 +33,8 @@ export interface ScmProvider extends Disposable {
     readonly statusBarCommands?: ScmCommand[];
     readonly onDidChangeStatusBarCommands?: Event<ScmCommand[] | undefined>;
 
+    readonly onDidChangeCommitTemplate: Event<string>;
+
     readonly amendSupport?: ScmAmendSupport;
 }
 

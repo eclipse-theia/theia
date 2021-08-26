@@ -71,6 +71,9 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
             this.toDisposeOnRepositoryChange.push(repository.provider.onDidChange(async () => {
                 this.update();
             }));
+            this.toDisposeOnRepositoryChange.push(repository.provider.onDidChangeCommitTemplate(e => {
+                this.setInputValue(e);
+            }));
         }
     }
 

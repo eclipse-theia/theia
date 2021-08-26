@@ -50,11 +50,15 @@ export class GitScmProvider implements ScmProvider {
         this.onDidChangeEmitter.fire(undefined);
     }
 
+    private readonly onDidChangeCommitTemplateEmitter = new Emitter<string>();
+    readonly onDidChangeCommitTemplate = this.onDidChangeCommitTemplateEmitter.event;
+
     private readonly onDidChangeStatusBarCommandsEmitter = new Emitter<ScmCommand[] | undefined>();
     readonly onDidChangeStatusBarCommands = this.onDidChangeStatusBarCommandsEmitter.event;
 
     private readonly toDispose = new DisposableCollection(
         this.onDidChangeEmitter,
+        this.onDidChangeCommitTemplateEmitter,
         this.onDidChangeStatusBarCommandsEmitter
     );
 
