@@ -53,7 +53,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
             }
 
             const uris = filePaths.map(path => FileUri.create(path));
-            const canAccess = await this.canReadWrite(uris);
+            const canAccess = await this.canRead(uris);
             const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
             return result;
         }
@@ -74,8 +74,8 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 return uri;
             }
 
-            const canAccess = await this.canReadWrite(uri);
-            return canAccess ? uri : undefined;
+            const canWrite = await this.canReadWrite(uri);
+            return canWrite ? uri : undefined;
         }
         return undefined;
     }
@@ -88,6 +88,16 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
             }
         }
         return true;
+    }
+
+    protected async canRead(uris: MaybeArray<URI>): Promise<boolean> {
+        const inaccessibleFilePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(
+            async uri => (!await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '')
+        ).filter(e => e));
+        if (inaccessibleFilePaths.length) {
+            this.messageService.error(`Cannot read ${inaccessibleFilePaths.length} resources: ${inaccessibleFilePaths.join(', ')}`);
+        }
+        return !!inaccessibleFilePaths.length;
     }
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
