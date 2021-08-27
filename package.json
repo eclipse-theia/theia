@@ -76,7 +76,8 @@
     "start:electron": "yarn rebuild:electron && yarn --cwd examples/electron start",
     "debug:browser": "yarn rebuild:browser && yarn --cwd examples/browser start:debug",
     "debug:electron": "yarn rebuild:electron && yarn --cwd examples/electron start:debug",
-    "download:plugins": "theia download:plugins"
+    "download:plugins": "theia download:plugins",
+    "license:check": "node scripts/check_3pp_licenses.js"
   },
   "workspaces": [
     "dev-packages/*",

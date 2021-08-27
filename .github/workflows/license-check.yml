@@ -1,0 +1,51 @@
+name: 3PP License Check
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 4 * * *' # Runs every day at 4am: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule
+
+jobs:
+
+  License-check:
+    name: ${{ matrix.os }}, Node.js v${{ matrix.node }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04]
+        node: ['12.x']
+        java: ['11']
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Use Java ${{ matrix.java }}
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+
+      - name: Run dash-licenses
+        if: matrix.tests != 'skip'
+        shell: bash
+        run: |
+          yarn license:check
