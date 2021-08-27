@@ -66,7 +66,7 @@ async function main() {
                 return !baseline.has(entry.dependency);
             });
             if (unmatched.size > 0) {
-                warn('Some entries in the baseline did not match anything from dash-licences output:');
+                warn('Some entries in the baseline did not match anything from dash-licenses output:');
                 for (const dependency of unmatched) {
                     console.log(magenta(`> ${dependency}`));
                     const data = baseline.get(dependency);
@@ -102,7 +102,7 @@ function logRestrictedDashSummaryEntries(entries) {
 
 /**
  * @param {string} summary path to the summary file.
- * @returns {Promise<DashSummaryEntry[]>} list of restriced dependencies.
+ * @returns {Promise<DashSummaryEntry[]>} list of restricted dependencies.
  */
 async function getRestrictedDependenciesFromSummary(summary) {
     const restricted = [];
