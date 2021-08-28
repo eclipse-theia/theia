@@ -25,8 +25,10 @@ Please see the latest version (`master`) for the most up-to-date information.
             }
         }
     });
-    ```  
+    ```
   - Replace the targets with the ones that are needed for your use case
+  - Make sure to use `inversify@5.1.1`. Theia requires `inversify@^5.0.1` which means that `5.1.1` is compatible,
+    but your lockfile might reference an older version.
 
 ### v1.16.0
 
@@ -46,7 +48,7 @@ Please see the latest version (`master`) for the most up-to-date information.
   - Arch Linux: `sudo pacman -S libsecret`
   - Alpine: `apk add libsecret-dev`
 - It is possible that a `yarn resolution` is necessary for `keytar` to work on older distributions (the fix was added in `1.16.0` by downgrading the dependency version):
-  
+
   ```json
   "resolutions": {
     "**/keytar": "7.6.0",
@@ -73,4 +75,3 @@ Please see the latest version (`master`) for the most up-to-date information.
     "**/webpack": "5.46.0",
   }
   ```
-

@@ -85,7 +85,7 @@ export class SomeClass {
  - [`express@^4.16.3`](https://www.npmjs.com/package/express)
  - [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra)
  - [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy)
- - [`inversify@^5.0.1`](https://www.npmjs.com/package/inversify)
+ - [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify)
  - [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce)
  - [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle)
  - [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw)
