@@ -240,6 +240,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: (query?: string) => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id, query)
         });
+        commands.registerCommand({ id: 'workbench.action.openWorkspaceConfigFile' }, {
+            execute: () => commands.executeCommand(WorkspaceCommands.OPEN_WORKSPACE_FILE.id)
+        });
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
