@@ -169,5 +169,5 @@ To successfully complete a `yarn upgrade`, one must:
 
 ### Update Roadmap
 
-* If the current release is the last in a quarter, ask the team to update the [roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) of the past quarter (close, remove or move items)
-* If the current release is the second in a quarter, create [roadmap template](https://github.com/eclipse-theia/theia/wiki/Roadmap) for the next quarter, ask the team to contribute to it and add it to the agenda of the Theia dev meeting
+* If the current release is the last in a quarter, ask the team to update the [roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) of the past quarter (close, remove or move items)
+* If the current release is the second in a quarter, create [roadmap template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for the next quarter, ask the team to contribute to it and add it to the agenda of the Theia dev meeting
