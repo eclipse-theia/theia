@@ -290,7 +290,9 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(params: ElectronMainExecutionParams, options: ElectronMainCommandOptions): Promise<void> {
-        if (options.file === undefined) {
+        if (params.secondInstance === false) {
+            await this.openWindowWithWorkspace(''); // restore previous workspace.
+        } else if (options.file === undefined) {
             await this.openDefaultWindow();
         } else {
             let workspacePath: string | undefined;

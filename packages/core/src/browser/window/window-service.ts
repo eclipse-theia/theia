@@ -26,9 +26,9 @@ export interface NewWindowOptions {
 export const WindowService = Symbol('WindowService');
 
 /**
- *  The window hash value that is used to spawn a new default window.
+ * The window hash value that is used to spawn a new default window.
  */
-export const DEFAULT_WINDOW_HASH: string = '#!empty';
+export const DEFAULT_WINDOW_HASH: string = '!empty';
 
 export interface WindowService {
 
