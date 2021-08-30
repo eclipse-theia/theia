@@ -130,7 +130,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected async doGetDefaultWorkspaceUri(): Promise<string | undefined> {
 
         // If an empty window is explicitly requested do not restore a previous workspace.
-        if (window.location.hash === DEFAULT_WINDOW_HASH) {
+        // Note: `window.location.hash` includes leading "#" if non-empty.
+        if (window.location.hash === `#${DEFAULT_WINDOW_HASH}`) {
             window.location.hash = '';
             return undefined;
         }
@@ -213,6 +214,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             this.setURLFragment('');
         }
         this.updateTitle();
+        await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
         await this.updateWorkspace();
     }
 
