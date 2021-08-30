@@ -92,19 +92,10 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     async setMostRecentlyUsedWorkspace(uri: string): Promise<void> {
         this.root = new Deferred();
-        const listUri: string[] = [];
-        const oldListUri = await this.getRecentWorkspaces();
-        listUri.push(uri);
-        if (oldListUri) {
-            oldListUri.forEach(element => {
-                if (element !== uri && element.length > 0) {
-                    listUri.push(element);
-                }
-            });
-        }
         this.root.resolve(uri);
+        const recentRoots = Array.from(new Set([uri, ...await this.getRecentWorkspaces()]));
         this.writeToUserHome({
-            recentRoots: listUri
+            recentRoots
         });
     }
 
