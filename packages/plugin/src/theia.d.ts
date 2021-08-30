@@ -2018,6 +2018,10 @@ declare module '@theia/plugin' {
         onDidDelete: Event<Uri>;
     }
 
+    export class CancellationError extends Error {
+        constructor();
+    }
+
     /**
      * A cancellation token used to request cancellation on long running
      * or asynchronous task.
