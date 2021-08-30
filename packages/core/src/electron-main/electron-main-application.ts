@@ -218,7 +218,7 @@ export class ElectronMainApplication {
      */
     async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultTheiaWindowOptions()): Promise<BrowserWindow> {
         let options = await asyncOptions;
-        options = this.avoidOverlap(options);
+        options = await this.avoidOverlap(options);
         const electronWindow = new BrowserWindow(options);
         electronWindow.setMenuBarVisibility(false);
         this.attachReadyToShow(electronWindow);
@@ -236,7 +236,7 @@ export class ElectronMainApplication {
         };
     }
 
-    protected avoidOverlap(options: TheiaBrowserWindowOptions): TheiaBrowserWindowOptions {
+    protected async avoidOverlap(options: TheiaBrowserWindowOptions): Promise<TheiaBrowserWindowOptions> {
         const existingWindowsBounds = BrowserWindow.getAllWindows().map(window => window.getBounds());
         if (existingWindowsBounds.length > 0) {
             while (existingWindowsBounds.some(window => window.x === options.x || window.y === options.y)) {
@@ -248,6 +248,8 @@ export class ElectronMainApplication {
                 options.y = options.y! + 30;
 
             }
+        } else {
+            options = await this.getLastWindowOptions();
         }
         return options;
     }
