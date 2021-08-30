@@ -290,21 +290,19 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(params: ElectronMainExecutionParams, options: ElectronMainCommandOptions): Promise<void> {
-        if (options.file === undefined) {
+        const file = options.file || '';
+        let workspacePath: string | undefined;
+        try {
+            workspacePath = await fs.realpath(path.resolve(params.cwd, file));
+        } catch {
+            console.error(`Could not resolve the workspace path. "${file}" is not a valid 'file' option. Falling back to the default workspace location.`);
+        }
+        if (workspacePath === undefined) {
             await this.openDefaultWindow();
         } else {
-            let workspacePath: string | undefined;
-            try {
-                workspacePath = await fs.realpath(path.resolve(params.cwd, options.file));
-            } catch {
-                console.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
-            }
-            if (workspacePath === undefined) {
-                await this.openDefaultWindow();
-            } else {
-                await this.openWindowWithWorkspace(workspacePath);
-            }
+            await this.openWindowWithWorkspace(workspacePath);
         }
+
     }
 
     protected async createWindowUri(): Promise<URI> {
