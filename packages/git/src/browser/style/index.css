@@ -54,8 +54,3 @@
 .theia-scm .scmItem .git-status.copied {
     color: var(--theia-gitDecoration-modifiedResourceForeground);
 }
-
-.tab-git-icon {
-    width: 20px!important;
-    height: 20px;
-}

@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { codiconArray } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
 
@@ -60,7 +61,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
         iconWrapper.tabIndex = 0;
         existingValue.appendChild(iconWrapper);
         const icon = document.createElement('i');
-        icon.classList.add('preference-array-clear-item');
+        icon.classList.add(...codiconArray('close'));
         iconWrapper.appendChild(icon);
         return existingValue;
     }
@@ -79,16 +80,13 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
         input.setAttribute('aria-label', 'Preference String Input');
         const iconWrapper = document.createElement('span');
         inputWrapper.appendChild(iconWrapper);
-        iconWrapper.classList.add('preference-array-element-btn', 'add-btn');
+        iconWrapper.classList.add('preference-array-element-btn', ...codiconArray('add'));
         iconWrapper.setAttribute('role', 'button');
         const handler = this.addItem.bind(this);
         iconWrapper.onclick = handler;
         iconWrapper.onkeydown = handler;
         iconWrapper.tabIndex = 0;
         iconWrapper.setAttribute('aria-label', 'Submit Preference Input');
-        const icon = document.createElement('i');
-        icon.classList.add('fa', 'fa-plus');
-        iconWrapper.appendChild(icon);
         return inputWrapper;
     }
 

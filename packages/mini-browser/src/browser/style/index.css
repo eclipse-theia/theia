@@ -24,11 +24,6 @@
     height: 100%;
 }
 
-.theia-mini-browser-icon {
-    mask: url('mini-browser.svg');
-    -webkit-mask: url('mini-browser.svg');
-}
-
 .theia-mini-browser-toolbar {
     margin-top: 8px;
     display: flex;

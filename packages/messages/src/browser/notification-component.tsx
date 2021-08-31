@@ -17,6 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { NotificationManager, Notification } from './notifications-manager';
+import { codicon } from '@theia/core/lib/browser';
 
 export interface NotificationComponentProps {
     readonly manager: NotificationManager;
@@ -73,7 +74,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
         return (<div key={messageId} className='theia-notification-list-item'>
             <div className={`theia-notification-list-item-content ${collapsed ? 'collapsed' : ''}`}>
                 <div className='theia-notification-list-item-content-main'>
-                    <div className={`theia-notification-icon theia-notification-icon-${type}`} />
+                    <div className={`theia-notification-icon ${codicon(type)} ${type}`} />
                     <div className='theia-notification-message'>
                         <span
                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message) }} // eslint-disable-line react/no-danger
@@ -82,10 +83,10 @@ export class NotificationComponent extends React.Component<NotificationComponent
                     </div>
                     <ul className='theia-notification-actions'>
                         {expandable && (
-                            <li className={collapsed ? 'expand' : 'collapse'} title={collapsed ? 'Expand' : 'Collapse'}
+                            <li className={codicon('chevron-down') + collapsed ? ' expand' : ' collapse'} title={collapsed ? 'Expand' : 'Collapse'}
                                 data-message-id={messageId} onClick={this.onToggleExpansion} />
                         )}
-                        {!isProgress && (<li className='clear' title='Clear' data-message-id={messageId} onClick={this.onClear} />)}
+                        {!isProgress && (<li className={codicon('close', true)} title='Clear' data-message-id={messageId} onClick={this.onClear} />)}
                     </ul>
                 </div>
                 {(source || !!actions.length) && (
@@ -105,7 +106,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
                     </div>
                 )}
             </div>
-            { isProgress && (
+            {isProgress && (
                 <div className='theia-notification-item-progress'>
                     <div className='theia-notification-item-progressbar' style={{ width: `${progress}%` }} />
                 </div>

@@ -23,6 +23,7 @@ import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { codicon } from '@theia/core/lib/browser';
 
 @injectable()
 export class PluginWidget extends ReactWidget {
@@ -38,7 +39,7 @@ export class PluginWidget extends ReactWidget {
         this.id = 'plugins';
         this.title.label = 'Plugins';
         this.title.caption = 'Plugins';
-        this.title.iconClass = 'fa plugins-tab-icon';
+        this.title.iconClass = codicon('diff-added');
         this.title.closable = true;
         this.node.tabIndex = 0;
         this.addClass('theia-plugins');
@@ -86,7 +87,7 @@ export class PluginWidget extends ReactWidget {
         return <div key={plugin.model.name} className={this.createPluginClassName(plugin)}>
             <div className='column flexcontainer pluginInformationContainer'>
                 <div className='row flexcontainer'>
-                    <div className='fa fa-puzzle-piece fa-2x fa-fw'></div>
+                    <div className={codicon('list-selection')}></div>
                     <div title={plugin.model.name} className='pluginName noWrapInfo'>{plugin.model.name}</div>
                 </div>
                 <div className='row flexcontainer'>

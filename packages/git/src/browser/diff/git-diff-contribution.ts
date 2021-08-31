@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageService } from '@theia/core/lib/common';
-import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
+import { FrontendApplication, AbstractViewContribution, codicon } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -46,25 +46,25 @@ export namespace GitDiffCommands {
     export const TREE_VIEW_MODE = {
         id: 'git.viewmode.tree',
         tooltip: 'Toggle to Tree View',
-        iconClass: 'codicon codicon-list-tree',
+        iconClass: codicon('list-tree'),
         label: 'Toggle to Tree View',
     };
     export const LIST_VIEW_MODE = {
         id: 'git.viewmode.list',
         tooltip: 'Toggle to List View',
-        iconClass: 'codicon codicon-list-flat',
+        iconClass: codicon('list-flat'),
         label: 'Toggle to List View',
     };
     export const PREVIOUS_CHANGE = {
         id: 'git.navigate-changes.previous',
         tooltip: 'Toggle to List View',
-        iconClass: 'fa fa-arrow-left',
+        iconClass: codicon('arrow-left'),
         label: 'Previous Change',
     };
     export const NEXT_CHANGE = {
         id: 'git.navigate-changes.next',
         tooltip: 'Toggle to List View',
-        iconClass: 'fa fa-arrow-right',
+        iconClass: codicon('arrow-right'),
         label: 'Next Change',
     };
 }
@@ -196,6 +196,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                 tooltip: command.label,
                 onDidChange: viewModeEmitter.event
             };
+
             this.commandRegistry.registerCommand({ id, iconClass: command && command.iconClass }, {
                 execute: widget => {
                     const widgetWithChanges = extractDiffWidget(widget) || extractCommitDetailWidget(widget);

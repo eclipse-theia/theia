@@ -15,7 +15,7 @@
  *******************************************************************************‚*/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ViewContainer, PanelLayout, ViewContainerPart, Message } from '@theia/core/lib/browser';
+import { ViewContainer, PanelLayout, ViewContainerPart, Message, codicon } from '@theia/core/lib/browser';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { VSXSearchMode } from './vsx-extensions-search-model';
@@ -43,7 +43,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
 
         this.setTitleOptions({
             label: VSXExtensionsViewContainer.LABEL,
-            iconClass: 'theia-vsx-extensions-icon',
+            iconClass: codicon('extensions'),
             closeable: true
         });
     }

@@ -19,7 +19,7 @@ import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-con
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { Widget } from '@theia/core/lib/browser/widgets';
+import { codicon, Widget } from '@theia/core/lib/browser/widgets';
 import { OutlineViewWidget } from './outline-view-widget';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
 import { OS } from '@theia/core/lib/common/os';
@@ -36,7 +36,7 @@ export namespace OutlineViewCommands {
      */
     export const COLLAPSE_ALL: Command = {
         id: 'outlineView.collapse.all',
-        iconClass: 'collapse-all'
+        iconClass: codicon('collapse-all')
     };
 }
 

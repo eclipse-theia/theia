@@ -19,13 +19,13 @@
 |----------------------------------------------------------------------------*/
 
 :root {
-  --theia-private-sidebar-tab-width: 50px;
+  --theia-private-sidebar-tab-width: 48px;
   --theia-private-sidebar-tab-height: 32px;
   --theia-private-sidebar-tab-padding-top-and-bottom: 11px;
   --theia-private-sidebar-tab-padding-left-and-right: 10px;
   --theia-private-sidebar-scrollbar-rail-width: 7px;
   --theia-private-sidebar-scrollbar-width: 5px;
-  --theia-private-sidebar-icon-size: 28px;
+  --theia-private-sidebar-icon-size: 24px;
 }
 
 
@@ -40,6 +40,10 @@
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width);
   max-width: var(--theia-private-sidebar-tab-width);
+}
+
+.p-TabBar-content {
+  gap: 4px 0px;
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-content {
@@ -109,10 +113,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 23px;
+  font-size: var(--theia-private-sidebar-icon-size);
   text-align: center;
   color: inherit;
-  background-color: var(--theia-activityBar-inactiveForeground);
 
   /* svg */
   width: var(--theia-private-sidebar-tab-width);
@@ -139,6 +142,10 @@
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon:hover,
 .p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon {
   color: var(--theia-activityBar-foreground);
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon.theia-plugin-view-container:hover,
+.p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon.theia-plugin-view-container {
   background-color: var(--theia-activityBar-foreground);
 }
 

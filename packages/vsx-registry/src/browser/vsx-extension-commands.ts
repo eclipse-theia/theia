@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { codicon } from '@theia/core/lib/browser';
 import { Command } from '@theia/core/lib/common';
 
 export namespace VSXExtensionsCommands {
@@ -24,7 +25,7 @@ export namespace VSXExtensionsCommands {
         id: 'vsxExtensions.clearAll',
         category: EXTENSIONS_CATEGORY,
         label: 'Clear Search Results',
-        iconClass: 'clear-all'
+        iconClass: codicon('clear-all')
     };
     export const INSTALL_FROM_VSIX: Command & { dialogLabel: string } = {
         id: 'vsxExtensions.installFromVSIX',

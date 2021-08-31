@@ -18,7 +18,7 @@ import { Widget } from '@theia/core/shared/@phosphor/widgets';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { QuickInputService } from '@theia/core/lib/browser';
+import { codicon, QuickInputService } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
@@ -36,11 +36,11 @@ export namespace MiniBrowserCommands {
     export const PREVIEW: Command = {
         id: 'mini-browser.preview',
         label: 'Open Preview',
-        iconClass: 'theia-open-preview-icon'
+        iconClass: codicon('open-preview')
     };
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',
-        iconClass: 'theia-open-file-icon'
+        iconClass: codicon('go-to-file')
     };
     export const OPEN_URL: Command = {
         id: 'mini-browser.openUrl',
@@ -286,7 +286,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
                 area: 'right'
             },
             resetBackground,
-            iconClass: 'theia-mini-browser-icon'
+            iconClass: codicon('preview')
         };
     }
 

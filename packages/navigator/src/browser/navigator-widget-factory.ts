@@ -16,6 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
+    codicon,
     ViewContainer,
     ViewContainerTitleOptions,
     WidgetFactory,
@@ -27,7 +28,7 @@ import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 export const EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
     label: 'Explorer',
-    iconClass: 'navigator-tab-icon',
+    iconClass: codicon('files'),
     closeable: true
 };
 

@@ -152,7 +152,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         const text: string = this.debugConfigurationManager.current
             ? this.debugConfigurationManager.current.configuration.name
             : '';
-        const icon = '$(play)';
+        const icon = '$(codicon-debug-alt-small)';
         this.statusBar.setElement(this.statusBarId, {
             alignment: StatusBarAlignment.LEFT,
             text: text.length ? `${icon} ${text}` : icon,

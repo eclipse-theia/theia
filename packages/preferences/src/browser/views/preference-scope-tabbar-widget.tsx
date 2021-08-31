@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TabBar, Widget, Title } from '@theia/core/shared/@phosphor/widgets';
-import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider, StatefulWidget } from '@theia/core/lib/browser';
+import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider, StatefulWidget, codicon } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -35,7 +35,7 @@ const PREFERENCE_TAB_CLASSNAME = 'preferences-scope-tab';
 const GENERAL_FOLDER_TAB_CLASSNAME = 'preference-folder';
 const LABELED_FOLDER_TAB_CLASSNAME = 'preferences-folder-tab';
 const FOLDER_DROPDOWN_CLASSNAME = 'preferences-folder-dropdown';
-const FOLDER_DROPDOWN_ICON_CLASSNAME = 'preferences-folder-dropdown-icon';
+const FOLDER_DROPDOWN_ICON_CLASSNAME = 'preferences-folder-dropdown-icon ' + codicon('chevron-down');
 const TABBAR_UNDERLINE_CLASSNAME = 'tabbar-underline';
 const SINGLE_FOLDER_TAB_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME}`;
 const UNSELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;

@@ -23,15 +23,16 @@ import { Event, Emitter, Disposable, Path } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
 import { EnvVariablesServer } from '../common/env-variables/env-variables-protocol';
 import { ResourceLabelFormatter, ResourceLabelFormatting } from '../common/label-protocol';
+import { codicon } from './widgets';
 
 /**
  * @internal don't export it, use `LabelProvider.folderIcon` instead.
  */
-const DEFAULT_FOLDER_ICON = 'fa fa-folder';
+const DEFAULT_FOLDER_ICON = `${codicon('folder')} default-folder-icon`;
 /**
  * @internal don't export it, use `LabelProvider.fileIcon` instead.
  */
-const DEFAULT_FILE_ICON = 'fa fa-file';
+const DEFAULT_FILE_ICON = `${codicon('file')} default-file-icon`;
 
 /**
  * Internal folder icon class for the default (File Icons) theme.

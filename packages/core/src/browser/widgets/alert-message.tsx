@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import React = require('react');
+import { codicon } from './widget';
 
 export type MessageType = keyof AlertMessageIcon;
 
@@ -26,10 +27,10 @@ interface AlertMessageIcon {
 }
 
 const AlertMessageIcon = {
-    INFO: 'fa fa-info-circle',
-    SUCCESS: 'fa fa-check-circle',
-    WARNING: 'fa fa-exclamation-circle',
-    ERROR: 'fa fa-times-circle'
+    INFO: codicon('info'),
+    SUCCESS: codicon('pass'),
+    WARNING: codicon('warning'),
+    ERROR: codicon('error')
 };
 
 export interface AlertMessageProps {

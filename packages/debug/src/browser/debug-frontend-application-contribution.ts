@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider } from '@theia/core/lib/browser';
+import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
@@ -71,7 +71,7 @@ export namespace DebugCommands {
         id: 'workbench.action.debug.start',
         category: DEBUG_CATEGORY,
         label: 'Start Debugging',
-        iconClass: 'fa fa-play'
+        iconClass: codicon('debug-alt')
     };
     export const START_NO_DEBUG: Command = {
         id: 'workbench.action.debug.run',
@@ -81,7 +81,7 @@ export namespace DebugCommands {
         id: 'workbench.action.debug.stop',
         category: DEBUG_CATEGORY,
         label: 'Stop Debugging',
-        iconClass: 'fa fa-stop'
+        iconClass: codicon('debug-stop')
     };
     export const RESTART: Command = {
         id: 'workbench.action.debug.restart',
@@ -102,43 +102,43 @@ export namespace DebugCommands {
         id: 'workbench.action.debug.stepOver',
         category: DEBUG_CATEGORY,
         label: 'Step Over',
-        iconClass: 'fa fa-arrow-right'
+        iconClass: codicon('debug-step-over')
     };
     export const STEP_INTO: Command = {
         id: 'workbench.action.debug.stepInto',
         category: DEBUG_CATEGORY,
         label: 'Step Into',
-        iconClass: 'fa fa-arrow-down'
+        iconClass: codicon('debug-step-into')
     };
     export const STEP_OUT: Command = {
         id: 'workbench.action.debug.stepOut',
         category: DEBUG_CATEGORY,
         label: 'Step Out',
-        iconClass: 'fa fa-arrow-up'
+        iconClass: codicon('debug-step-out')
     };
     export const CONTINUE: Command = {
         id: 'workbench.action.debug.continue',
         category: DEBUG_CATEGORY,
         label: 'Continue',
-        iconClass: 'fa fa-play-circle'
+        iconClass: codicon('debug-continue')
     };
     export const PAUSE: Command = {
         id: 'workbench.action.debug.pause',
         category: DEBUG_CATEGORY,
         label: 'Pause',
-        iconClass: 'fa fa-pause'
+        iconClass: codicon('debug-pause')
     };
     export const CONTINUE_ALL: Command = {
         id: 'debug.thread.continue.all',
         category: DEBUG_CATEGORY,
         label: 'Continue All',
-        iconClass: 'fa fa-play-circle'
+        iconClass: codicon('debug-continue')
     };
     export const PAUSE_ALL: Command = {
         id: 'debug.thread.pause.all',
         category: DEBUG_CATEGORY,
         label: 'Pause All',
-        iconClass: 'fa fa-pause'
+        iconClass: codicon('debug-pause')
     };
 
     export const TOGGLE_BREAKPOINT: Command = {
@@ -1069,7 +1069,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const toggleBreakpointsEnabled: Mutable<TabBarToolbarItem> = {
             id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
             command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
-            icon: 'fa breakpoints-activate',
+            icon: codicon('activate-breakpoints'),
             onDidChange: onDidChangeToggleBreakpointsEnabled.event,
             priority: 1
         };
@@ -1083,7 +1083,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         toolbar.registerItem({
             id: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
             command: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
-            icon: 'theia-add-icon',
+            icon: codicon('add'),
             tooltip: 'Add Function Breakpoint'
         });
         updateToggleBreakpointsEnabled();
@@ -1092,27 +1092,27 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         toolbar.registerItem({
             id: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
             command: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
-            icon: 'theia-remove-all-icon',
+            icon: codicon('close-all'),
             priority: 2
         });
 
         toolbar.registerItem({
             id: DebugCommands.ADD_WATCH_EXPRESSION.id,
             command: DebugCommands.ADD_WATCH_EXPRESSION.id,
-            icon: 'theia-add-icon',
+            icon: codicon('add'),
             tooltip: 'Add Expression'
         });
         toolbar.registerItem({
             id: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
             command: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
-            icon: 'theia-collapse-all-icon',
+            icon: codicon('collapse-all'),
             tooltip: 'Collapse All',
             priority: 1
         });
         toolbar.registerItem({
             id: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
             command: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
-            icon: 'theia-remove-all-icon',
+            icon: codicon('close-all'),
             tooltip: 'Remove All Expressions',
             priority: 2
         });
@@ -1273,6 +1273,55 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#388A34',
                     hc: '#89D185'
                 }, description: 'Debug toolbar icon for start debugging.'
+            },
+            {
+                id: 'debugIcon.pauseForeground', defaults: {
+                    dark: '#75BEFF',
+                    light: '#007ACC',
+                    hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for pause.'
+            },
+            {
+                id: 'debugIcon.stopForeground', defaults: {
+                    dark: '#F48771',
+                    light: '#A1260D',
+                    hc: '#F48771'
+                }, description: 'Debug toolbar icon for stop.'
+            },
+            {
+                id: 'debugIcon.restartForeground', defaults: {
+                    dark: '#89D185',
+                    light: '#388A34',
+                    hc: '#89D185'
+                }, description: 'Debug toolbar icon for restart.'
+            },
+            {
+                id: 'debugIcon.stepOverForeground', defaults: {
+                    dark: '#75BEFF',
+                    light: '#007ACC',
+                    hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step over.'
+            },
+            {
+                id: 'debugIcon.stepIntoForeground', defaults: {
+                    dark: '#75BEFF',
+                    light: '#007ACC',
+                    hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step into.'
+            },
+            {
+                id: 'debugIcon.stepOutForeground', defaults: {
+                    dark: '#75BEFF',
+                    light: '#007ACC',
+                    hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step out.'
+            },
+            {
+                id: 'debugIcon.continueForeground', defaults: {
+                    dark: '#75BEFF',
+                    light: '#007ACC',
+                    hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for continue.'
             },
             // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {

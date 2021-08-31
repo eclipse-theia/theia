@@ -18,12 +18,12 @@ import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { AbstractViewContribution, bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry, MessageService } from '@theia/core/lib/common';
-import { Widget, WidgetFactory } from '@theia/core/lib/browser';
+import { codicon, Widget, WidgetFactory } from '@theia/core/lib/browser';
 import { SampleViewUnclosableView } from './sample-unclosable-view';
 
 export const SampleToolBarCommand: Command = {
     id: 'sample.toggle.toolbarCommand',
-    iconClass: 'theia-add-icon'
+    iconClass: codicon('add')
 };
 
 @injectable()

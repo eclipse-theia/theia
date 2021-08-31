@@ -26,7 +26,7 @@ import { ScmTreeModel } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
 import { CommandRegistry } from '@theia/core/lib/common/command';
-import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget } from '@theia/editor/lib/browser';
 import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
@@ -776,7 +776,7 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
             return false;
         }
         return <div className='theia-scm-inline-action'>
-            <a className={node.icon} title={node.label} onClick={this.execute} />
+            <a className={`${node.icon} ${ACTION_ITEM}`} title={node.label} onClick={this.execute} />
         </div>;
     }
 

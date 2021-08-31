@@ -17,7 +17,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
-    TreeModel, DockPanel
+    TreeModel, DockPanel, codicon
 } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { DefinitionNode, CallerNode } from './callhierarchy-tree';
@@ -47,7 +47,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.id = CALLHIERARCHY_ID;
         this.title.label = 'Call Hierarchy';
         this.title.caption = 'Call Hierarchy';
-        this.title.iconClass = 'fa call-hierarchy-tab-icon';
+        this.title.iconClass = codicon('references');
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);
         this.toDispose.push(this.model.onSelectionChanged(selection => {

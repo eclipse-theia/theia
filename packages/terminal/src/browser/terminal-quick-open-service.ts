@@ -16,6 +16,7 @@
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import {
+    codiconArray,
     QuickAccessContribution,
     QuickAccessProvider,
     QuickAccessRegistry,
@@ -60,7 +61,7 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
         // Append a quick open item to create a new terminal.
         items.push({
             label: 'Open New Terminal',
-            iconClasses: ['fa fa-plus'],
+            iconClasses: codiconArray('add'),
             execute: () => this.doCreateNewTerminal()
         });
 

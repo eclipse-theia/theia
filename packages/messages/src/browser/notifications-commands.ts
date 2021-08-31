@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { Command } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
 
 export namespace NotificationsCommands {
 
@@ -23,7 +24,7 @@ export namespace NotificationsCommands {
     export const TOGGLE: Command = {
         id: 'notifications.commands.toggle',
         category: NOTIFICATIONS_CATEGORY,
-        iconClass: 'fa fa-th-list',
+        iconClass: codicon('list-unordered'),
         label: 'Toggle Notifications'
     };
 
@@ -34,7 +35,7 @@ export namespace NotificationsCommands {
     export const CLEAR_ALL: Command = {
         id: 'notifications.commands.clearAll',
         category: NOTIFICATIONS_CATEGORY,
-        iconClass: 'fa fa-times-circle',
+        iconClass: codicon('clear-all'),
         label: 'Clear All Notifications'
     };
 }

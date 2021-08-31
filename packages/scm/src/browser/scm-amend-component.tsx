@@ -18,7 +18,7 @@ import '../../src/browser/style/scm-amend-component.css';
 
 import * as React from '@theia/core/shared/react';
 import { ScmAvatarService } from './scm-avatar-service';
-import { StorageService } from '@theia/core/lib/browser';
+import { codicon, StorageService } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection } from '@theia/core';
 
 import { ScmRepository } from './scm-repository';
@@ -355,10 +355,10 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
                 <div className='theia-scm-inline-action'>
-                    <a className='fa fa-minus' title='Unamend All Commits' onClick={this.unamendAll} />
+                    <a className={codicon('dash')} title='Unamend All Commits' onClick={this.unamendAll} />
                 </div>
                 <div className='theia-scm-inline-action' >
-                    <a className='fa fa-times' title='Clear Amending Commits' onClick={this.clearAmending} />
+                    <a className={codicon('close')} title='Clear Amending Commits' onClick={this.clearAmending} />
                 </div>
             </div>
         </div>;

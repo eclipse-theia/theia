@@ -112,8 +112,6 @@
 }
 
 .preferences-folder-dropdown-icon {
-    background: var(--theia-icon-chevron-right) center center no-repeat;
-    transform: rotate(90deg);
     width: 15px;
     height: 15px;
     position: absolute;

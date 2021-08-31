@@ -51,10 +51,6 @@
     color: var(--theia-descriptionForeground);
 }
 
-.call-hierarchy-tab-icon::before {
-    content: "\f0ab"
-}
-
 .theia-CallHierarchyTree .definitionNode-content {
     white-space: nowrap;
     overflow: hidden;

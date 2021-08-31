@@ -29,7 +29,8 @@ import {
     TreeExpansionService,
     ApplicationShell,
     DiffUris,
-    TREE_NODE_INFO_CLASS
+    TREE_NODE_INFO_CLASS,
+    codicon
 } from '@theia/core/lib/browser';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import {
@@ -854,7 +855,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderRemoveButton(node: TreeNode): React.ReactNode {
-        return <span className='remove-node' onClick={e => this.remove(node, e)} title='Dismiss'></span>;
+        return <span className={codicon('close')} onClick={e => this.remove(node, e)} title='Dismiss'></span>;
     }
 
     protected removeNode(node: TreeNode): void {
