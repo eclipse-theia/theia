@@ -249,10 +249,9 @@ export class TaskConfigurations implements Disposable {
         if (hasCustomization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfig);
             if (taskDefinition) {
-                const cus = customizationByType.filter(customization =>
-                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfig[rp])
-                )[0]; // Only support having one customization per task
-                return cus;
+                const required = taskDefinition.properties.required || [];
+                // Only support having one customization per task.
+                return customizationByType.find(customization => required.every(property => customization[property] === taskConfig[property]));
             }
         }
         return undefined;

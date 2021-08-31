@@ -168,8 +168,9 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
                 description: 'The task type to customize'
             };
             customizedDetectedTask.properties!.type = taskType;
+            const required = def.properties.required || [];
             def.properties.all.forEach(taskProp => {
-                if (!!def.properties.required.find(requiredProp => requiredProp === taskProp)) { // property is mandatory
+                if (required.find(requiredProp => requiredProp === taskProp)) { // property is mandatory
                     customizedDetectedTask.required!.push(taskProp);
                 }
                 customizedDetectedTask.properties![taskProp] = { ...def.properties.schema.properties![taskProp] };
