@@ -1,5 +1,14 @@
 # Change Log
 
+## v1.17.1 - 8/31/2021
+
+[1.17.1 Milestone](https://github.com/eclipse-theia/theia/milestone/26)
+
+- [core] upgraded `inversify` to `v5.1.1` [#9979](https://github.com/eclipse-theia/theia/pull/9979)
+- [electron] fixed the restoration (position and size) of windows on restart [#9995](https://github.com/eclipse-theia/theia/pull/9995)
+- [electron] fixed the restoration of previous workspaces on restart [#9995](https://github.com/eclipse-theia/theia/pull/9995)
+- [plugin] fixed `ThemeIcon` rendering in tree-views [#10012](https://github.com/eclipse-theia/theia/pull/10012)
+
 ## v1.17.0 - 8/26/2021
 
 [1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
