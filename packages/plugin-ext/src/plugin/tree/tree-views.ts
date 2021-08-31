@@ -369,7 +369,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 const { iconPath } = treeItem;
                 if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
                     icon = iconPath;
-                } else if (iconPath instanceof ThemeIcon) {
+                } else if (ThemeIcon.is(iconPath)) {
                     themeIconId = iconPath.id;
                 } else {
                     iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
