@@ -1,6 +1,9 @@
 # Change Log
 
 ## v1.18.0
+
+<a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
+
 - [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility`
 
 ## v1.17.0 - 8/26/2021
