@@ -68,6 +68,7 @@
     "watch:bundle": "theia build --watch --mode development",
     "start": "yarn rebuild && theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug --remote-debugging-port=9222",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\" \"yarn start\"",
     "test": "yarn rebuild && electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\""
   },
   "devDependencies": {

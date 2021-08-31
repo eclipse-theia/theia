@@ -65,6 +65,7 @@
     "watch:bundle": "theia build --watch --mode development",
     "start": "yarn rebuild && theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\" \"yarn start\"",
     "test": "yarn rebuild && theia test . --plugins=local-dir:../../plugins --test-spec=../api-tests/**/*.spec.js",
     "test:debug": "yarn test --test-inspect",
     "coverage": "yarn test --test-coverage && yarn coverage:report",
