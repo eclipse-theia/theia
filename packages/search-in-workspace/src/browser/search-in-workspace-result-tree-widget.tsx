@@ -30,7 +30,8 @@ import {
     ApplicationShell,
     DiffUris,
     TREE_NODE_INFO_CLASS,
-    codicon
+    codicon,
+    OpenerService
 } from '@theia/core/lib/browser';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import {
@@ -148,6 +149,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
     @inject(FileSystemPreferences) protected readonly filesystemPreferences: FileSystemPreferences;
     @inject(FileService) protected readonly fileService: FileService;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -1020,10 +1022,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     character: node.character - 1 + node.length
                 }
             },
-            mode: 'reveal'
+            mode: 'reveal',
+            preview
         };
 
-        const editorWidget = await this.editorManager.open(fileUri, opts);
+        const opener = await this.openerService.getOpener(fileUri, opts);
+        const editorWidget = await opener.open(fileUri, opts) as EditorWidget;
 
         if (!DiffUris.isDiffUri(fileUri)) {
             this.decorateEditor(resultNode, editorWidget);
