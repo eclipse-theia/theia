@@ -1,5 +1,13 @@
 # Change Log
 
+## v1.18.0 - Unreleased
+
+[1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
+
+<a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
+
+- [core] `setTopPanelVisibily` was renamed to `setTopPanelVisibility` in `ApplicationShell` []()
+
 ## v1.17.0 - 8/26/2021
 
 [1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
