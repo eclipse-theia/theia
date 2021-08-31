@@ -702,6 +702,12 @@ export class ThemeIcon {
 
 }
 
+export namespace ThemeIcon {
+    export function is(item: unknown): item is ThemeIcon {
+        return typeof item === 'object' && !!item && 'id' in item;
+    }
+}
+
 export enum TextEditorRevealType {
     Default = 0,
     InCenter = 1,
