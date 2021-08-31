@@ -1,6 +1,6 @@
 {
   "name": "@theia/ovsx-client",
-  "version": "1.17.0",
+  "version": "1.17.1",
   "description": "Theia Open-VSX Client",
   "publishConfig": {
     "access": "public"
