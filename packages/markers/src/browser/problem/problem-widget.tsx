@@ -21,7 +21,7 @@ import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
 import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel,
-    ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS
+    ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS, codicon
 } from '@theia/core/lib/browser';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
 import * as React from '@theia/core/shared/react';
@@ -52,7 +52,7 @@ export class ProblemWidget extends TreeWidget {
         this.id = PROBLEMS_WIDGET_ID;
         this.title.label = 'Problems';
         this.title.caption = 'Problems';
-        this.title.iconClass = 'fa problem-tab-icon';
+        this.title.iconClass = codicon('warning');
         this.title.closable = true;
         this.addClass('theia-marker-container');
 
@@ -196,10 +196,10 @@ export class ProblemWidget extends TreeWidget {
 
     protected getSeverityClass(severity: DiagnosticSeverity): string {
         switch (severity) {
-            case 1: return 'fa fa-times-circle error';
-            case 2: return 'fa fa-exclamation-circle warning';
-            case 3: return 'fa fa-info-circle information';
-            default: return 'fa fa-hand-o-up hint';
+            case 1: return `${codicon('error')} error`;
+            case 2: return `${codicon('warning')} warning`;
+            case 3: return `${codicon('info')} information`;
+            default: return `${codicon('thumbsup')} hint`;
         }
     }
 
@@ -224,7 +224,7 @@ export class ProblemWidget extends TreeWidget {
 export class ProblemMarkerRemoveButton extends React.Component<{ model: ProblemTreeModel, node: TreeNode }> {
 
     render(): React.ReactNode {
-        return <span className='remove-node' onClick={this.remove}></span>;
+        return <span className={codicon('close')} onClick={this.remove}></span>;
     }
 
     protected readonly remove = (e: React.MouseEvent<HTMLElement>) => this.doRemove(e);

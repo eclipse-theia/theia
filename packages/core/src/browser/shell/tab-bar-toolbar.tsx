@@ -17,7 +17,7 @@
 import debounce = require('lodash.debounce');
 import * as React from 'react';
 import { inject, injectable, named } from 'inversify';
-import { Widget, ReactWidget } from '../widgets';
+import { Widget, ReactWidget, codicon, ACTION_ITEM } from '../widgets';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution } from '../frontend-application';
@@ -369,8 +369,9 @@ export class TabBarToolbar extends ReactWidget {
             }
         }
         const command = this.commands.getCommand(item.command);
-        const iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon || (command && command.iconClass);
+        let iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon as string || (command && command.iconClass);
         if (iconClass) {
+            iconClass += ` ${ACTION_ITEM}`;
             classNames.push(iconClass);
         }
         const tooltip = item.tooltip || (command && command.label);
@@ -402,7 +403,7 @@ export class TabBarToolbar extends ReactWidget {
 
     protected renderMore(): React.ReactNode {
         return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
-            <div id='__more__' className='fa fa-ellipsis-h' onClick={this.showMoreContextMenu} title='More Actions...' />
+            <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu} title='More Actions...' />
         </div>;
     }
 

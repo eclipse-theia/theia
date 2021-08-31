@@ -19,11 +19,6 @@
   --theia-vsx-extension-editor-icon-size: calc(var(--theia-vsx-extension-icon-size)*3);
 }
 
-.theia-vsx-extensions-icon {
-    -webkit-mask: url('extensions.svg');
-    mask: url('extensions.svg');
-}
-
 .theia-vsx-extensions {
     height: 100%;
 }
@@ -90,6 +85,10 @@
 .theia-vsx-extension-content .title .stat {
     opacity: .85;
     font-size: 80%;
+}
+
+.theia-vsx-extension-content .title .stat .codicon {
+    font-size: 110%;
 }
 
 .theia-vsx-extension-content .title .stat .average-rating > i {

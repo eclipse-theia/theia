@@ -23,7 +23,8 @@ import {
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    ExpandableTreeNode
+    ExpandableTreeNode,
+    codicon
 } from '@theia/core/lib/browser';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
@@ -85,7 +86,7 @@ export class OutlineViewWidget extends TreeWidget {
         this.title.label = 'Outline';
         this.title.caption = 'Outline';
         this.title.closable = true;
-        this.title.iconClass = 'fa outline-view-tab-icon';
+        this.title.iconClass = codicon('symbol-class');
         this.addClass('theia-outline-view');
     }
 

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PreferenceScope, LabelProvider } from '@theia/core/lib/browser';
+import { PreferenceScope, LabelProvider, codicon } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { CommandRegistry, MenuModelRegistry, Command } from '@theia/core/lib/common';
 import { Preference, PreferenceMenus } from './preference-types';
@@ -49,7 +49,7 @@ export class PreferenceScopeCommandManager {
         folderWorkspaces.forEach(folderWorkspace => {
             const folderLabel = this.labelProvider.getName(folderWorkspace.resource);
 
-            const iconClass = currentFolderURI === folderWorkspace.resource.toString() ? 'fa fa-check' : '';
+            const iconClass = currentFolderURI === folderWorkspace.resource.toString() ? codicon('pass') : '';
             const newFolderAsCommand = {
                 id: `preferenceScopeCommand:${folderWorkspace.resource.toString()}`,
                 label: folderLabel,

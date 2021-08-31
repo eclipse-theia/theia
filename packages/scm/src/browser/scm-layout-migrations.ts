@@ -50,3 +50,15 @@ export class ScmLayoutVersion3Migration implements ApplicationShellLayoutMigrati
         return undefined;
     }
 }
+
+@injectable()
+export class ScmLayoutVersion5Migration implements ApplicationShellLayoutMigration {
+    readonly layoutVersion = 5.0;
+    onWillInflateWidget(desc: WidgetDescription): WidgetDescription | undefined {
+        if (desc.constructionOptions.factoryId === SCM_VIEW_CONTAINER_ID && typeof desc.innerWidgetState === 'string') {
+            desc.innerWidgetState = desc.innerWidgetState.replace(/scm-tab-icon/g, SCM_VIEW_CONTAINER_TITLE_OPTIONS.iconClass!);
+            return desc;
+        }
+        return undefined;
+    }
+}

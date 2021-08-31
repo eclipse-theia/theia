@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { SingleTextInputDialog, SingleTextInputDialogProps, LabelProvider } from '@theia/core/lib/browser';
+import { SingleTextInputDialog, SingleTextInputDialogProps, LabelProvider, codiconArray } from '@theia/core/lib/browser';
 
 @injectable()
 export class WorkspaceInputDialogProps extends SingleTextInputDialogProps {
@@ -47,7 +47,7 @@ export class WorkspaceInputDialog extends SingleTextInputDialog {
         const element = document.createElement('div');
         // Create the `folder` icon.
         const icon = document.createElement('i');
-        icon.classList.add('fa', 'fa-folder');
+        icon.classList.add(...codiconArray('folder'));
         icon.style.marginRight = '0.5em';
         element.appendChild(icon);
         element.appendChild(document.createTextNode(label));

@@ -159,14 +159,36 @@
     opacity: 1;
 }
 
-.debug-tab-icon {
-    -webkit-mask: url('debug-dark.svg');
-    mask: url('debug-dark.svg');
+.debug-toolbar .debug-action.codicon.codicon-debug-start {
+    color: var(--theia-debugIcon-startForeground);
 }
 
-.theia-debug-console-icon {
-    -webkit-mask: url('repl.svg');
-    mask: url('repl.svg');
+.debug-toolbar .debug-action.codicon.codicon-debug-pause {
+    color: var(--theia-debugIcon-pauseForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-stop {
+    color: var(--theia-debugIcon-stopForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-restart {
+    color: var(--theia-debugIcon-restartForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-step-over {
+    color: var(--theia-debugIcon-stepOverForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-step-into {
+    color: var(--theia-debugIcon-stepIntoForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-step-out {
+    color: var(--theia-debugIcon-stepOutForeground);
+}
+
+.debug-toolbar .debug-action.codicon.codicon-debug-continue {
+    color: var(--theia-debugIcon-continueForeground);
 }
 
 /** Console */

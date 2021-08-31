@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct, inject, interfaces, Container } from '@theia/core/shared/inversify';
 import {
-    BaseWidget, PanelLayout, Message, ApplicationShell, Widget, StatefulWidget, ViewContainer
+    BaseWidget, PanelLayout, Message, ApplicationShell, Widget, StatefulWidget, ViewContainer, codicon
 } from '@theia/core/lib/browser';
 import { DebugSessionWidget } from './debug-session-widget';
 import { DebugConfigurationWidget } from './debug-configuration-widget';
@@ -61,7 +61,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
         this.title.label = DebugWidget.LABEL;
         this.title.caption = DebugWidget.LABEL;
         this.title.closable = true;
-        this.title.iconClass = 'debug-tab-icon';
+        this.title.iconClass = codicon('debug-alt');
         this.addClass('theia-debug-container');
         this.toDispose.pushAll([
             this.toolbar,

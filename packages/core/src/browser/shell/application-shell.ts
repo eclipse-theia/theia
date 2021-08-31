@@ -57,12 +57,14 @@ export type ApplicationShellLayoutVersion =
     /** view containers are introduced, backward compatible to 2.0 */
     3.0 |
     /** git history view is replaced by a more generic scm history view, backward compatible to 3.0 */
-    4.0;
+    4.0 |
+    /** Replace custom/font-awesome icons with codicons */
+    5.0;
 
 /**
  * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
  */
-export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 4.0;
+export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
@@ -1371,7 +1373,7 @@ export class ApplicationShell extends Widget {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {
             const element: StatusBarEntry = {
-                text: '$(window-maximize)',
+                text: '$(codicon-window)',
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',
                 command: 'core.toggle.bottom.panel',

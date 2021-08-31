@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, Message, MessageLoop
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, Message, MessageLoop, codicon
 } from '@theia/core/lib/browser';
 import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { GitDiffTreeModel } from './git-diff-tree-model';
@@ -53,7 +53,7 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
         this.title.label = this.GIT_DIFF_TITLE;
         this.title.caption = this.GIT_DIFF_TITLE;
         this.title.closable = true;
-        this.title.iconClass = 'theia-git-diff-icon';
+        this.title.iconClass = codicon('git-compare');
 
         this.addClass('theia-scm');
         this.addClass('theia-git');

@@ -163,6 +163,16 @@ blockquote {
     outline: none;
 }
 
+.action-item {
+  padding: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.action-item:hover {
+    background-color: rgba(50%, 50%, 50%, 0.2);
+}
+
 button.theia-button, .theia-button {
     border: none;
     color: var(--theia-button-foreground);

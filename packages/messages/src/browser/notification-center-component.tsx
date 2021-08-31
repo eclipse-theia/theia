@@ -18,6 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { DisposableCollection } from '@theia/core';
 import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
+import { codicon } from '@theia/core/lib/browser';
 
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
@@ -62,8 +63,8 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
                     <div className='theia-notification-center-header-title'>{title}</div>
                     <div className='theia-notification-center-header-actions'>
                         <ul className='theia-notification-actions'>
-                            <li className='collapse' title='Hide Notification Center' onClick={this.onHide} />
-                            <li className='clear-all' title='Clear All' onClick={this.onClearAll} />
+                            <li className={codicon('clear-all', true)} title='Clear All' onClick={this.onClearAll} />
+                            <li className={codicon('chevron-down', true)} title='Hide Notification Center' onClick={this.onHide} />
                         </ul>
                     </div>
                 </div>

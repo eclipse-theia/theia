@@ -30,11 +30,26 @@ decorate(unmanaged(), Widget, 0);
 export * from '@phosphor/widgets';
 export * from '@phosphor/messaging';
 
+export const ACTION_ITEM = 'action-item';
+
+export function codiconArray(name: string, actionItem = false): string[] {
+    const array = ['codicon', `codicon-${name}`];
+    if (actionItem) {
+        array.push(ACTION_ITEM);
+    }
+    return array;
+}
+
+export function codicon(name: string, actionItem = false): string {
+    return `codicon codicon-${name}${actionItem ? ` ${ACTION_ITEM}` : ''}`;
+}
+
 export const DISABLED_CLASS = 'theia-mod-disabled';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
-export const CODICON_TREE_ITEM_CLASSES = ['codicon', 'codicon-chevron-down'];
+export const CODICON_TREE_ITEM_CLASSES = codiconArray('chevron-down');
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const BUSY_CLASS = 'theia-mod-busy';
+export const CODICON_LOADING_CLASSES = codiconArray('loading');
 export const SELECTED_CLASS = 'theia-mod-selected';
 export const FOCUS_CLASS = 'theia-mod-focus';
 export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {

@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LabelProvider, LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
+import { codicon, LabelProvider, LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ResourcePropertiesCategoryNode, ResourcePropertiesItemNode } from './resource-property-view-tree-items';
 
-export const DEFAULT_INFO_ICON = 'fa fa-info-circle';
+export const DEFAULT_INFO_ICON = codicon('info');
 
 @injectable()
 export class ResourcePropertiesLabelProvider implements LabelProviderContribution {

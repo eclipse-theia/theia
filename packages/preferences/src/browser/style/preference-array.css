@@ -77,17 +77,11 @@
   cursor          : pointer;
 }
 
-.theia-settings-container .preference-array .add-btn {
+.theia-settings-container .preference-array .codicon.codicon-add {
   margin-left : calc((var(--theia-icon-size) + 4px) * -1);
   margin-right: 4px;
   width       : var(--theia-icon-size);
   height      : var(--theia-icon-size);
-}
-
-.theia-settings-container .preference-array-clear-item {
-  background: var(--theia-icon-close) no-repeat;
-  width     : var(--theia-icon-size);
-  height    : var(--theia-icon-size);
 }
 
 .theia-settings-container .preference-array-input {

@@ -64,11 +64,10 @@
 /*
  * Navigation panel items
  */
- 
-.dialogContent .theia-NavigationPanel span
- {
+
+.dialogContent .theia-NavigationPanel span {
     position: absolute;
-    top: 0px;
+    top: 2px;
     line-height: var(--theia-private-navigation-panel-line-height);
     cursor: pointer;
     width: var(--theia-private-navigation-panel-icon-size);

@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
-import { ReactWidget, KeybindingRegistry } from '@theia/core/lib/browser';
+import { ReactWidget, KeybindingRegistry, codicon } from '@theia/core/lib/browser';
 import { Git } from '../../common';
 import * as React from '@theia/core/shared/react';
 
@@ -44,7 +44,7 @@ export class GitCommitDetailHeaderWidget extends ReactWidget {
             }
         };
         this.title.closable = true;
-        this.title.iconClass = 'icon-git-commit tab-git-icon';
+        this.title.iconClass = codicon('git-commit');
     }
 
     @postConstruct()

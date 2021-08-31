@@ -190,19 +190,11 @@ body.theia-editor-highlightModifiedTabs
     min-height: 14px;
     background-size: 13px;
     background-position-y: 3px;
-    background: var(--theia-icon-foreground);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: auto 13px;
     mask-repeat: no-repeat;
     mask-size: auto 13px;
-    padding-right: calc(var(--theia-ui-padding)/2);
-}
-
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.file-icon,
-.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.file-icon {
-    background: none;
-    padding-bottom: 0px;
-    min-height: 20px;
+    padding-right: 8px;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.fa,
@@ -213,32 +205,48 @@ body.theia-editor-highlightModifiedTabs
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
-  padding-left: 10px;
+  padding: 2px;
+  margin-top: 2px;
+  margin-left: 4px;
   height: var(--theia-icon-size);
   width: var(--theia-icon-size);
-  background-size: 13px;
-  background-position: center;
-  background-repeat: no-repeat;
+  font: normal normal normal 16px/1 codicon;
+  display: inline-block;
+  text-decoration: none;
+  text-rendering: auto;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon:hover {
+  border-radius: 5px;
+  background-color: rgba(50%, 50%, 50%, 0.2);
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable {
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current > .theia-tab-icon-label > .p-TabBar-tabIcon {
+  margin-top: -2px;
+}
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable:hover > .p-TabBar-tabCloseIcon,
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current > .p-TabBar-tabCloseIcon {
-  background-image: var(--theia-icon-close);
+  margin-top: 0px;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon {
-  background-size: 10px;
-  background-image: var(--theia-icon-circle);
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable:not(.theia-mod-dirty):hover > .p-TabBar-tabCloseIcon:before,
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable:not(.theia-mod-dirty).p-TabBar-tab.p-mod-current > .p-TabBar-tabCloseIcon:before,
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon:hover:before { 
+  content: "\ea76" 
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon:hover {
-  background-size: 13px;
-  background-image: var(--theia-icon-close);
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon:before { 
+  content: "\ea71" 
 }
 
 .p-TabBar-tabIcon.no-icon {
@@ -343,8 +351,8 @@ body.theia-editor-highlightModifiedTabs
 .p-TabBar-toolbar .item {
   display: flex;
   align-items: center;
-  margin-left: 8px; /* `padding` + `margin-right` from the container toolbar */
-  opacity: var(--theia-mod-disabled-opacity);;
+  margin-left: 4px; /* `padding` + `margin-right` from the container toolbar */
+  opacity: var(--theia-mod-disabled-opacity);
   cursor: default;
 }
 
@@ -353,8 +361,9 @@ body.theia-editor-highlightModifiedTabs
     cursor: pointer;
 }
 
-.p-TabBar-toolbar .item.enabled.active {
-    transform: scale(var(--theia-toolbar-active-transform-scale));
+.p-TabBar-toolbar :not(.item.enabled) .action-item {
+  background: transparent;
+  cursor: default;
 }
 
 .p-TabBar-toolbar .item.toggled {

@@ -17,6 +17,7 @@
 import { injectable, inject } from 'inversify';
 import URI from '../common/uri';
 import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from './label-provider';
+import { codicon } from './widgets';
 
 export namespace DiffUris {
 
@@ -101,7 +102,7 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
     }
 
     getIcon(uri: URI): string {
-        return 'fa fa-columns';
+        return codicon('split-horizontal');
     }
 
     affects(diffUri: URI, event: DidChangeLabelEvent): boolean {

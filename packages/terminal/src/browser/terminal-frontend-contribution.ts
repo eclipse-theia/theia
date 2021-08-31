@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';
@@ -414,7 +414,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
             command: TerminalCommands.SPLIT.id,
-            text: '$(columns)',
+            icon: codicon('split-horizontal'),
             tooltip: TerminalCommands.SPLIT.label
         });
     }

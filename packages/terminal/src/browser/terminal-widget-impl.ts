@@ -18,7 +18,7 @@ import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
@@ -95,7 +95,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @postConstruct()
     protected init(): void {
         this.setTitle(this.options.title || this.TERMINAL);
-        this.title.iconClass = 'fa fa-terminal';
+        this.title.iconClass = codicon('terminal');
 
         if (this.options.kind) {
             this.terminalKind = this.options.kind;

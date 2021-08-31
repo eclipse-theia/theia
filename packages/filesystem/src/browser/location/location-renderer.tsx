@@ -25,6 +25,7 @@ import { FileDialogModel } from '../file-dialog/file-dialog-model';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { Path } from '@theia/core/lib/common';
+import { codicon } from '@theia/core/lib/browser';
 
 interface AutoSuggestDataEvent {
     parent: string;
@@ -179,7 +180,7 @@ export class LocationListRenderer extends ReactRenderer {
                     ? LocationListRenderer.Tooltips.TOGGLE_SELECT_INPUT
                     : LocationListRenderer.Tooltips.TOGGLE_TEXT_INPUT}
             >
-                <i className={this.doShowTextInput ? 'fa fa-folder-open' : 'fa fa-edit'} />
+                <i className={codicon(this.doShowTextInput ? 'folder-opened' : 'edit')} />
             </span>
         );
     }
