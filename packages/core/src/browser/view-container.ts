@@ -47,6 +47,17 @@ export class ViewContainerIdentifier {
     progressLocationId?: string;
 }
 
+export interface DescriptionWidget {
+    description: string;
+    onDidChangeDescription: Emitter<void>;
+}
+
+export namespace DescriptionWidget {
+    export function is(arg: Object | undefined): arg is DescriptionWidget {
+        return !!arg && typeof arg === 'object' && 'onDidChangeDescription' in arg;
+    }
+}
+
 /**
  * A view container holds an arbitrary number of widgets inside a split panel.
  * Each widget is wrapped in a _part_ that displays the widget title and toolbar
@@ -704,6 +715,8 @@ export class ViewContainerPart extends BaseWidget {
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
     protected readonly onDidFocusEmitter = new Emitter<this>();
     readonly onDidFocus = this.onDidFocusEmitter.event;
+    protected readonly onDidChangeDescriptionEmitter = new Emitter<void>();
+    readonly onDidChangeDescription = this.onDidChangeDescriptionEmitter.event;
 
     protected readonly toolbar: TabBarToolbar;
 
@@ -732,6 +745,11 @@ export class ViewContainerPart extends BaseWidget {
         this.wrapped.title.changed.connect(fireTitleChanged);
         this.toDispose.push(Disposable.create(() => this.wrapped.title.changed.disconnect(fireTitleChanged)));
 
+        if (DescriptionWidget.is(this.wrapped)) {
+            const fireDescriptionChanged = () => this.onDidChangeDescriptionEmitter.fire(undefined);
+            this.toDispose.push(this.wrapped?.onDidChangeDescription.event(fireDescriptionChanged));
+        }
+
         const { header, body, disposable } = this.createContent();
         this.header = header;
         this.body = body;
@@ -747,6 +765,7 @@ export class ViewContainerPart extends BaseWidget {
             this.collapsedEmitter,
             this.contextMenuEmitter,
             this.onTitleChangedEmitter,
+            this.onDidChangeDescriptionEmitter,
             this.registerContextMenu(),
             this.onDidFocusEmitter,
             // focus event does not bubble, capture it
@@ -892,15 +911,29 @@ export class ViewContainerPart extends BaseWidget {
 
         const title = document.createElement('span');
         title.classList.add('label', 'noselect');
+
+        const description = document.createElement('span');
+        description.classList.add('description');
+
         const updateTitle = () => title.innerText = this.wrapped.title.label;
         const updateCaption = () => title.title = this.wrapped.title.caption || this.wrapped.title.label;
+        const updateDescription = () => {
+            description.innerText = DescriptionWidget.is(this.wrapped) && !this.collapsed && this.wrapped.description || '';
+        };
+
         updateTitle();
         updateCaption();
+        updateDescription();
+
         disposable.pushAll([
             this.onTitleChanged(updateTitle),
-            this.onTitleChanged(updateCaption)
+            this.onTitleChanged(updateCaption),
+            this.onDidChangeDescription(updateDescription),
+            this.onCollapsed(updateDescription),
         ]);
         header.appendChild(title);
+        header.appendChild(description);
+
         return {
             header,
             disposable
@@ -998,6 +1031,7 @@ export namespace ViewContainerPart {
         collapsed: boolean;
         hidden: boolean;
         relativeSize?: number;
+        description?: string;
     }
 
     export function closestPart(element: Element | EventTarget | null, selector: string = 'div.part'): Element | undefined {

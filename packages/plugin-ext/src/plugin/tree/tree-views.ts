@@ -100,6 +100,12 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             set title(title: string) {
                 treeView.title = title;
             },
+            get description(): string {
+                return treeView.description;
+            },
+            set description(description: string) {
+                treeView.description = description;
+            },
             reveal: (element: T, revealOptions?: Partial<TreeViewRevealOptions>): Thenable<void> =>
                 treeView.reveal(element, revealOptions),
 
@@ -225,6 +231,16 @@ class TreeViewExtImpl<T> implements Disposable {
     set title(title: string) {
         this._title = title;
         this.proxy.$setTitle(this.treeViewId, title);
+    }
+
+    private _description: string = '';
+    get description(): string {
+        return this._description;
+    }
+
+    set description(description: string) {
+        this._description = description;
+        this.proxy.$setDescription(this.treeViewId, this._description);
     }
 
     getTreeItem(treeItemId: string): T | undefined {
@@ -353,7 +369,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 const { iconPath } = treeItem;
                 if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
                     icon = iconPath;
-                } else if (iconPath instanceof ThemeIcon) {
+                } else if (ThemeIcon.is(iconPath)) {
                     themeIconId = iconPath.id;
                 } else {
                     iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
