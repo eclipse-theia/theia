@@ -1413,6 +1413,10 @@ export namespace TreeWidget {
          */
         scrollToRow?: number
         /**
+         * Controls the alignment scrolled-to-rows.
+         */
+        scrollToAlignment?: 'auto' | 'end' | 'start' | 'center';
+        /**
          * The list of node rows.
          */
         rows: NodeRow[]
@@ -1425,7 +1429,7 @@ export namespace TreeWidget {
             fixedWidth: true
         });
         render(): React.ReactNode {
-            const { rows, width, height, scrollToRow, handleScroll } = this.props;
+            const { rows, width, height, scrollToRow, handleScroll, scrollToAlignment } = this.props;
             return <List
                 ref={list => this.list = (list || undefined)}
                 width={width}
@@ -1434,6 +1438,7 @@ export namespace TreeWidget {
                 rowHeight={this.cache.rowHeight}
                 rowRenderer={this.renderTreeRow}
                 scrollToIndex={scrollToRow}
+                scrollToAlignment={scrollToAlignment}
                 onScroll={handleScroll}
                 tabIndex={-1}
             />;

@@ -17,11 +17,11 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
+import { CommandService, notEmpty, SelectionService, Disposable } from '@theia/core/lib/common';
 import {
     CorePreferences, Key, TreeModel, SelectableTreeNode,
     TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
-    TreeDecoration, NodeProps, OpenerService
+    TreeDecoration, NodeProps, OpenerService, TreeWidget
 } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
@@ -50,6 +50,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected readonly contextKeyService: NavigatorContextKeyService;
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
+
+    protected scrollAlignment: 'auto' | 'center';
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -87,6 +89,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
             })
         ]);
+        this.shell.onTabActivateInMainPanel(() => {
+            this.scrollAlignment = 'center';
+        });
     }
 
     protected doUpdateRows(): void {
@@ -153,7 +158,25 @@ export class FileNavigatorWidget extends FileTreeWidget {
         if (this.model.root && this.isEmptyMultiRootWorkspace(model)) {
             return this.renderEmptyMultiRootWorkspace();
         }
-        return super.renderTree(model);
+        if (model.root) {
+            const rows = Array.from(this.rows.values());
+            if (this.props.virtualized === false) {
+                this.onRender.push(Disposable.create(() => this.scrollToSelected()));
+                return rows.map(row => <div key={row.index}>{this.renderNodeRow(row)}</div>);
+            }
+            return <TreeWidget.View
+                ref={view => this.view = (view || undefined)}
+                width={this.node.offsetWidth}
+                height={this.node.offsetHeight}
+                rows={rows}
+                renderNodeRow={this.renderNodeRow}
+                scrollToAlignment={this.scrollAlignment}
+                scrollToRow={this.scrollToRow}
+                handleScroll={this.handleScroll}
+            />;
+        }
+        // eslint-disable-next-line no-null/no-null
+        return undefined;
     }
 
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -272,6 +295,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         if (!modifierKeyCombined && node && this.corePreferences['workbench.list.openMode'] === 'singleClick') {
             this.model.previewNode(node);
         }
+        this.scrollAlignment = 'auto';
         super.handleClickEvent(node, event);
     }
 

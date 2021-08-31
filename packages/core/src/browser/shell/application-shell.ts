@@ -80,6 +80,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     readonly tabBarClasses: string[] = [];
 
+    protected readonly onTabActivateRequestedEmitter = new Emitter<void>();
+    readonly onTabActivateRequested = this.onTabActivateRequestedEmitter.event;
+
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
@@ -106,6 +109,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
+        tabBar.tabActivateRequested.connect(() => this.onTabActivateRequestedEmitter.fire());
         return tabBar;
     }
 
@@ -204,6 +208,9 @@ export class ApplicationShell extends Widget {
 
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
+
+    protected readonly onTabActivateInMainPanelEmitter = new Emitter<void>();
+    readonly onTabActivateInMainPanel = this.onTabActivateInMainPanelEmitter.event;
 
     /**
      * Construct a new application shell.
@@ -471,6 +478,7 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
+        renderer.onTabActivateRequested(() => this.onTabActivateInMainPanelEmitter.fire());
         const dockPanel = new TheiaDockPanel({
             mode: 'multiple-document',
             renderer,
