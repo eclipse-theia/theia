@@ -1369,18 +1369,14 @@ export class ApplicationShell extends Widget {
      * and refers to the command `core.toggle.bottom.panel`.
      */
     protected refreshBottomPanelToggleButton(): void {
-        if (this.bottomPanel.isEmpty) {
-            this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
-        } else {
-            const element: StatusBarEntry = {
-                text: '$(codicon-window)',
-                alignment: StatusBarAlignment.RIGHT,
-                tooltip: 'Toggle Bottom Panel',
-                command: 'core.toggle.bottom.panel',
-                priority: -1000
-            };
-            this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
-        }
+        const element: StatusBarEntry = {
+            text: '$(codicon-window)',
+            alignment: StatusBarAlignment.RIGHT,
+            tooltip: 'Toggle Bottom Panel',
+            command: 'core.toggle.bottom.panel',
+            priority: -1000
+        };
+        this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
     }
 
     /**

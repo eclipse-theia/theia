@@ -762,9 +762,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
-            isEnabled: () => this.shell.getWidgets('bottom').length > 0,
             execute: () => {
-                if (this.shell.isExpanded('bottom')) {
+                if (this.shell.getWidgets('bottom').length === 0) {
+                    commandRegistry.executeCommand('terminal:new');
+                } else if (this.shell.isExpanded('bottom')) {
                     this.shell.collapsePanel('bottom');
                 } else {
                     this.shell.expandPanel('bottom');
