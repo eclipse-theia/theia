@@ -7,6 +7,7 @@
 <a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
 
 - [core] added `BreadcrumbsRendererFactory` to constructor arguments of `DockPanelRenderer` and `ToolbarAwareTabBar`. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
+- [task] `TaskDefinition.properties.required` is now optional to align with the specification [#10015](https://github.com/eclipse-theia/theia/pull/10015)
 
 ## v1.17.2 - 9/1/2021
 
