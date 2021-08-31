@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.18.0
+- [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility`
+
 ## v1.17.0 - 8/26/2021
 
 [1.17.0 Milestone](https://github.com/eclipse-theia/theia/milestone/23)
@@ -65,7 +68,6 @@
   - `SidebarBottomMenu` interface is renamed `SidebarMenu` and handles not only bottom menu's.
   - Changed style class name from `theia-sidebar-bottom-menu` to `theia-sidebar-menu`
   - `TheiaDockPanel` constructor takes a new parameter `preferences`
-- [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility`
 
 ## v1.16.0 - 7/29/2021
 
