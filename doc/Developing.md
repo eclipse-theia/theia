@@ -264,7 +264,7 @@ yarn build
 
 ### Watch the TypeScript packages
 
-To run `tsc` whenever you make a change to TypeScript files run from the root:
+To run TypeScript in watch-mode so that TypeScript files are compiled as you modify them:
 
 ```sh
 yarn watch:ts
