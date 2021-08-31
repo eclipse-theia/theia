@@ -41,7 +41,7 @@ export function isPromiseCanceledError(error: any): boolean {
 }
 
 export function getIconUris(iconPath: theia.QuickInputButton['iconPath']): { dark: URI, light: URI } | { id: string } {
-    if (iconPath instanceof ThemeIcon) {
+    if (ThemeIcon.is(iconPath)) {
         return { id: iconPath.id };
     }
     const dark = getDarkIconUri(iconPath as URI | { light: URI; dark: URI; });
@@ -439,7 +439,7 @@ export class QuickInputExt implements QuickInput {
             const relativePath = path.relative(packagePath, normalizedPath);
             return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
         };
-        if ('id' in iconPath || iconPath instanceof ThemeIcon) {
+        if (ThemeIcon.is(iconPath)) {
             return iconPath;
         } else if (typeof iconPath === 'string' || iconPath instanceof monaco.Uri) {
             return URI.parse(toUrl(iconPath));
