@@ -4,6 +4,11 @@
 
 <a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
 
+- [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility` [#10020](https://github.com/eclipse-theia/theia/pull/10020)
+## v1.18.0
+
+<a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
+
 - [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility`
 
 ## v1.17.1 - 8/31/2021
