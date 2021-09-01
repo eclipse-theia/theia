@@ -58,6 +58,9 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
+        this.corePreferences.ready.then(() => {
+            this.showMenuBar(menuBar, this.corePreferences.get('window.menuBarVisibility', 'classic'));
+        });
         const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
             if (preference.preferenceName === 'window.menuBarVisibility') {
                 this.showMenuBar(menuBar, preference.newValue);
