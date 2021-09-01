@@ -1,13 +1,13 @@
 {
   "name": "@theia/bulk-edit",
-  "version": "1.17.1",
+  "version": "1.17.2",
   "description": "Theia - Bulk Edit Extension",
   "dependencies": {
-    "@theia/core": "1.17.1",
-    "@theia/editor": "1.17.1",
-    "@theia/filesystem": "1.17.1",
-    "@theia/monaco": "1.17.1",
-    "@theia/workspace": "1.17.1"
+    "@theia/core": "1.17.2",
+    "@theia/editor": "1.17.2",
+    "@theia/filesystem": "1.17.2",
+    "@theia/monaco": "1.17.2",
+    "@theia/workspace": "1.17.2"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +41,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.17.1"
+    "@theia/ext-scripts": "1.17.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
