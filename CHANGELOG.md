@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.17.2 - 9/1/2021
+
+[1.17.2 Milestone](https://github.com/eclipse-theia/theia/milestone/27)
+
+- [core] fixed an issue which caused the top-level menu to fail to display on startup [#10034](https://github.com/eclipse-theia/theia/pull/10034)
+
 ## v1.17.1 - 8/31/2021
 
 [1.17.1 Milestone](https://github.com/eclipse-theia/theia/milestone/26)
