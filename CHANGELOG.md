@@ -5,11 +5,12 @@
 <a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
 
 - [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility` [#10020](https://github.com/eclipse-theia/theia/pull/10020)
-## v1.18.0
 
-<a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
+## v1.17.2 - 9/1/2021
 
-- [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility`
+[1.17.2 Milestone](https://github.com/eclipse-theia/theia/milestone/27)
+
+- [core] fixed an issue which caused the top-level menu to fail to display on startup [#10034](https://github.com/eclipse-theia/theia/pull/10034)
 
 ## v1.17.1 - 8/31/2021
 
