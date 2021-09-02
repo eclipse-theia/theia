@@ -136,7 +136,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
 
-    private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, viewTypeId?: string): Promise<boolean> {
+    private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
             throw new Error(`${commandId} command requires at least URI argument.`);
         }
@@ -159,8 +159,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
 
         let opener: OpenHandler | undefined;
-        if (typeof viewTypeId === 'string') {
-            const lowerViewType = viewTypeId.toLowerCase();
+        if (typeof openerId === 'string') {
+            const lowerViewType = openerId.toLowerCase();
             const openers = await this.openerService.getOpeners();
             for (const opnr of openers) {
                 const idLowerCase = opnr.id.toLowerCase();
@@ -194,23 +194,19 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand(VscodeCommands.OPEN_WITH, {
             isVisible: () => false,
-            execute: async (resource: URI, viewTypeId: string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
-                if (!viewTypeId) {
+            execute: async (resource: URI, viewType: string, columnOrOptions?: ViewColumn | TextDocumentShowOptions) => {
+                if (!viewType) {
                     throw new Error(`Running the contributed command: ${VscodeCommands.OPEN_WITH} failed.`);
                 }
 
-                if (viewTypeId.toLowerCase() === 'default') {
+                if (viewType.toLowerCase() === 'default') {
                     return commands.executeCommand(VscodeCommands.OPEN.id, resource, columnOrOptions);
                 }
 
-                let result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, viewTypeId);
-                if (!result) {
-                    // Theia set custom editor id using 'custom-editor-' prefix
-                    result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, `custom-editor-${viewTypeId}`);
-                }
+                const result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, `custom-editor-${viewType}`);
 
                 if (!result) {
-                    throw new Error(`Could not find an editor for '${viewTypeId}'`);
+                    throw new Error(`Could not find an editor for '${viewType}'`);
                 }
             }
         });
