@@ -1,0 +1,29 @@
+<!-- /********************************************************************************
+ * Copyright (C) 2021 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/ -->
+
+<svg width="369" height="369" viewBox="0 0 369 369" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="15" y="55" width="62" height="49" rx="13" fill="black"/>
+<rect x="293" y="55" width="62" height="49" rx="13" fill="black"/>
+<rect x="15" y="265" width="62" height="49" rx="13" fill="black"/>
+<rect x="293" y="265" width="62" height="49" rx="13" fill="black"/>
+<rect x="15" y="195" width="62" height="49" rx="13" fill="black"/>
+<rect x="293" y="195" width="62" height="49" rx="13" fill="black"/>
+<rect x="15" y="125" width="62" height="49" rx="13" fill="black"/>
+<rect x="293" y="125" width="62" height="49" rx="13" fill="black"/>
+<rect x="101" y="160" width="167" height="118" fill="black"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M239.561 199.576V126.171C239.561 95.1486 215.259 70 185.281 70C155.302 70 131 95.1486 131 126.171V199.576H239.561ZM219.699 125.887C219.699 125.954 219.698 126.02 219.698 126.086V172.801H150.315V125.887H150.316C150.316 106.06 165.848 89.9878 185.007 89.9878C204.167 89.9878 219.699 106.061 219.699 125.887Z" fill="black"/>
+<rect width="369" height="369" stroke="black"/>
+</svg>

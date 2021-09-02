@@ -1,0 +1,17 @@
+{
+  "tasks": [
+    {
+      "label": "compile example",
+      "type": "shell",
+      "command": "mkdir -p build && cd build && g++ -g3 -O0 ../memory-inspector-example.cpp -o memory-inspector-example",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

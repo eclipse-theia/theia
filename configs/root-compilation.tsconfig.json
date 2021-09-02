@@ -147,6 +147,9 @@
     },
     {
       "path": "../dev-packages/ovsx-client/compile.tsconfig.json"
+    },
+    {
+      "path": "../packages/memory-inspector/compile.tsconfig.json"
     }
   ]
 }

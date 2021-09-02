@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "Test Memory Inspector",
+            "request": "launch",
+            "type": "gdb",
+            "program": "${workspaceFolder}/build/memory-inspector-example",
+            "verbose": true,
+            "logFile": "/tmp/memory-inspector-example.out"
+        }
+    ]
+}

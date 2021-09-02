@@ -1,0 +1,21 @@
+<!-- /********************************************************************************
+ * Copyright (C) 2021 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/ -->
+
+<svg width="369" height="369" viewBox="0 0 369 369" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M35.7183 98.6009L184.5 12.7017L333.282 98.6008V270.399L184.5 356.298L35.7183 270.399V98.6009Z" stroke="black" stroke-width="22"/>
+<rect x="94" y="153" width="181" height="114" fill="black"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M184.756 61C222.756 61 253.561 91.8052 253.561 129.805L253.561 219.721H115.951V129.85L115.951 129.805C115.951 91.8052 146.756 61 184.756 61ZM228.384 129.567C228.383 129.602 228.383 129.637 228.383 129.672V186.924H140.434V129.457H140.435C140.435 105.171 160.123 85.4836 184.409 85.4836C208.696 85.4836 228.384 105.172 228.384 129.458C228.384 129.494 228.384 129.531 228.384 129.567Z" fill="black"/>
+</svg>

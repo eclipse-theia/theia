@@ -31,6 +31,7 @@
     "@theia/keymaps": "1.17.0",
     "@theia/markers": "1.17.0",
     "@theia/messages": "1.17.0",
+    "@theia/memory-inspector": "1.17.0",
     "@theia/metrics": "1.17.0",
     "@theia/mini-browser": "1.17.0",
     "@theia/monaco": "1.17.0",

@@ -130,6 +130,9 @@
     },
     {
       "path": "../../packages/property-view/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/memory-inspector/compile.tsconfig.json"
     }
   ]
 }
