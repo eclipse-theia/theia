@@ -37,6 +37,10 @@ export interface RebuildOptions {
      * Folder where the module cache will be created/read from.
      */
     cacheRoot?: string
+    /**
+     * Rebuild modules for Electron anyway.
+     */
+    force?: boolean
 }
 
 /**
@@ -112,8 +116,17 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
         process.exit(1);
     }
     // rebuild for electron
+    const todo = modules
+        .map(m => {
+            // electron-rebuild ignores the module namespace...
+            const slash = m.indexOf('/');
+            return m.startsWith('@') && slash !== -1
+                ? m.substring(slash + 1)
+                : m;
+        })
+        .join(',');
     await new Promise<void>((resolve, reject) => {
-        const electronRebuild = cp.spawn(`npx --no-install electron-rebuild --only="${modules.join(',')}"`, {
+        const electronRebuild = cp.spawn(`npx --no-install electron-rebuild -f -w="${todo}" -o="${todo}"`, {
             stdio: 'inherit',
             shell: true,
         });
