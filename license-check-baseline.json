@@ -18,6 +18,5 @@
   "npm/npmjs/-/util-promisify/2.1.0": "Found exact on ClearlyDefined util-promisify@2.1.0: MIT 81 score",
   "npm/npmjs/@octokit/plugin-paginate-rest/2.15.1": "Found exact on ClearlyDefined @octokit/plugin-paginate-rest@2.15.1: MIT 73 score",
   "npm/npmjs/@octokit/plugin-rest-endpoint-methods/5.8.0": "Found exact on ClearlyDefined @octokit/plugin-rest-endpoint-methods@5.8.0: MIT 73 score",
-  "npm/npmjs/@octokit/types/6.25.0": "Found exact on ClearlyDefined shiki@0.9.7: MIT 72 score",
-  "npm/npmjs/-/node-gyp/8.2.0": "Found exact on ClearlyDefined node-gyp@8.2.0: MIT 85 score"
+  "npm/npmjs/@octokit/types/6.25.0": "Found exact on ClearlyDefined shiki@0.9.7: MIT 72 score"
 }
