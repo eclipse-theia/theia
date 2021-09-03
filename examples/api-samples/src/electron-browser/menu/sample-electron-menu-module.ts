@@ -27,7 +27,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 class SampleElectronMainMenuFactory extends ElectronMainMenuFactory {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected handleDefault(menuNode: CompositeMenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
+    protected handleElectronDefault(menuNode: CompositeMenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
         if (menuNode instanceof PlaceholderMenuNode) {
             return [{
                 label: menuNode.label,

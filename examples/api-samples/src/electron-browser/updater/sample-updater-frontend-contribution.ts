@@ -90,7 +90,7 @@ export class ElectronMenuUpdater {
         this.setMenu();
     }
 
-    private setMenu(menu: Menu | null = this.factory.createMenuBar(), electronWindow: BrowserWindow = remote.getCurrentWindow()): void {
+    private setMenu(menu: Menu | null = this.factory.createElectronMenuBar(), electronWindow: BrowserWindow = remote.getCurrentWindow()): void {
         if (isOSX) {
             remote.Menu.setApplicationMenu(menu);
         } else {

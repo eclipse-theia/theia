@@ -20,11 +20,15 @@ import {
     Command, CommandContribution, CommandRegistry,
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
-import { ApplicationShell, KeybindingContribution, KeybindingRegistry, PreferenceScope, PreferenceService } from '../../browser';
+import { ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, PreferenceScope, Widget } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
+import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../../electron-common/messaging/electron-messages';
 import { ZoomLevel } from '../window/electron-window-preferences';
+import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
+
+import '../../../src/electron-browser/menu/electron-menu-style.css';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
@@ -72,38 +76,33 @@ export namespace ElectronMenus {
 }
 
 @injectable()
-export class ElectronMenuContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
+export class ElectronMenuContribution extends BrowserMenuBarContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected titleBarStyleChangeFlag = false;
+    protected titleBarStyle?: string;
 
     constructor(
         @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory,
         @inject(ApplicationShell) protected shell: ApplicationShell
-    ) { }
+    ) {
+        super(factory);
+    }
 
     onStart(app: FrontendApplication): void {
-        this.hideTopPanel(app);
-        this.preferenceService.ready.then(() => {
-            this.setMenu();
-            electron.remote.getCurrentWindow().setMenuBarVisibility(true);
-        });
+        this.handleTitleBarStyling(app);
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
             // OSX only has one menu bar for all windows, so we need to swap
             // between them as the user switches windows.
-            electron.remote.getCurrentWindow().on('focus', () => this.setMenu());
+            electron.remote.getCurrentWindow().on('focus', () => this.setMenu(app));
         }
         // Make sure the application menu is complete, once the frontend application is ready.
         // https://github.com/theia-ide/theia/issues/5100
         let onStateChange: Disposable | undefined = undefined;
         const stateServiceListener = (state: FrontendApplicationState) => {
-            if (state === 'ready') {
-                this.setMenu();
-            }
             if (state === 'closing_window') {
                 if (!!onStateChange) {
                     onStateChange.dispose();
@@ -119,6 +118,30 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         });
     }
 
+    handleTitleBarStyling(app: FrontendApplication): void {
+        this.hideTopPanel(app);
+        electron.ipcRenderer.on(TitleBarStyleAtStartup, (_event, style: string) => {
+            this.titleBarStyle = style;
+            this.preferenceService.ready.then(() => {
+                this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
+            });
+        });
+        electron.ipcRenderer.send(RequestTitleBarStyle);
+        this.preferenceService.ready.then(() => {
+            this.setMenu(app);
+            electron.remote.getCurrentWindow().setMenuBarVisibility(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+        });
+        this.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === 'window.titleBarStyle') {
+                if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue && electron.remote.getCurrentWindow().isFocused()) {
+                    electron.ipcRenderer.send(TitleBarStyleChanged, change.newValue);
+                    this.handleRequiredRestart();
+                }
+                this.titleBarStyleChangeFlag = true;
+            }
+        });
+    }
+
     handleToggleMaximized(): void {
         const preference = this.preferenceService.get('window.menuBarVisibility');
         if (preference === 'classic') {
@@ -127,31 +150,87 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     /**
-     * Makes the `theia-top-panel` hidden as it is unused for the electron-based application.
+     * Hides the `theia-top-panel` depending on the selected `titleBarStyle`.
      * The `theia-top-panel` is used as the container of the main, application menu-bar for the
-     * browser. Electron has it's own.
+     * browser. Native Electron has it's own.
      * By default, this method is called on application `onStart`.
      */
     protected hideTopPanel(app: FrontendApplication): void {
         const itr = app.shell.children();
         let child = itr.next();
         while (child) {
-            // Top panel for the menu contribution is not required for Electron.
+            // Top panel for the menu contribution is not required for native Electron title bar.
             if (child.id === 'theia-top-panel') {
-                child.setHidden(true);
-                child = undefined;
+                child.setHidden(this.titleBarStyle !== 'custom');
+                break;
             } else {
                 child = itr.next();
             }
         }
     }
 
-    private setMenu(menu: electron.Menu | null = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
+    protected setMenu(app: FrontendApplication, electronMenu: electron.Menu | null = this.factory.createElectronMenuBar(),
+        electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
         if (isOSX) {
-            electron.remote.Menu.setApplicationMenu(menu);
+            electron.remote.Menu.setApplicationMenu(electronMenu);
         } else {
+            this.hideTopPanel(app);
+            if (this.titleBarStyle === 'custom' && !this.menuBar) {
+                this.createCustomTitleBar(app, electronWindow);
+            }
             // Unix/Windows: Set the per-window menus
-            electronWindow.setMenu(menu);
+            electronWindow.setMenu(electronMenu);
+        }
+    }
+
+    protected createCustomTitleBar(app: FrontendApplication, electronWindow: electron.BrowserWindow): void {
+        const dragPanel = new Widget();
+        dragPanel.id = 'theia-drag-panel';
+        app.shell.addWidget(dragPanel, { area: 'top' });
+        this.appendMenu(app.shell);
+        const controls = document.createElement('div');
+        controls.id = 'window-controls';
+        controls.append(
+            this.createControlButton('minimize', () => electronWindow.minimize()),
+            this.createControlButton('maximize', () => electronWindow.maximize()),
+            this.createControlButton('restore', () => electronWindow.unmaximize()),
+            this.createControlButton('close', () => electronWindow.close())
+        );
+        app.shell.topPanel.node.append(controls);
+        this.handleWindowControls(electronWindow);
+    }
+
+    protected handleWindowControls(electronWindow: electron.BrowserWindow): void {
+        toggleControlButtons();
+        electronWindow.on('maximize', toggleControlButtons);
+        electronWindow.on('unmaximize', toggleControlButtons);
+
+        function toggleControlButtons(): void {
+            if (electronWindow.isMaximized()) {
+                document.body.classList.add('maximized');
+            } else {
+                document.body.classList.remove('maximized');
+            }
+        }
+    }
+
+    protected createControlButton(id: string, handler: () => void): HTMLElement {
+        const button = document.createElement('div');
+        button.id = `${id}-button`;
+        button.className = `control-button ${codicon(`chrome-${id}`)}`;
+        button.addEventListener('click', handler);
+        return button;
+    }
+
+    protected async handleRequiredRestart(): Promise<void> {
+        const dialog = new ConfirmDialog({
+            title: 'A setting has changed that requires a restart to take effect',
+            msg: 'Press the restart button to restart the application and enable the setting.',
+            ok: 'Restart',
+            cancel: 'Cancel'
+        });
+        if (await dialog.open()) {
+            electron.ipcRenderer.send(Restart);
         }
     }
 
