@@ -24,10 +24,9 @@ import {
 } from '../../common';
 import { Keybinding } from '../../common/keybinding';
 import { PreferenceService, KeybindingRegistry, CommonCommands } from '../../browser';
-import { ContextKeyService } from '../../browser/context-key-service';
 import debounce = require('lodash.debounce');
-import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
+import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 
 /**
  * Representation of possible electron menu options.
@@ -55,16 +54,10 @@ export type ElectronMenuItemRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' |
     'moveTabToNewWindow' | 'windowMenu');
 
 @injectable()
-export class ElectronMainMenuFactory {
+export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
     protected _menu: Electron.Menu | undefined;
     protected _toggledCommands: Set<string> = new Set();
-
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
-
-    @inject(ContextMenuContext)
-    protected readonly context: ContextMenuContext;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -72,6 +65,7 @@ export class ElectronMainMenuFactory {
         @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) {
+        super();
         preferencesService.onPreferenceChanged(
             debounce(e => {
                 if (e.preferenceName === 'window.menuBarVisibility') {
@@ -92,15 +86,16 @@ export class ElectronMainMenuFactory {
 
     async setMenuBar(): Promise<void> {
         await this.preferencesService.ready;
-        const createdMenuBar = this.createMenuBar();
         if (isOSX) {
+            const createdMenuBar = this.createElectronMenuBar();
             electron.remote.Menu.setApplicationMenu(createdMenuBar);
-        } else {
+        } else if (this.preferencesService.get('window.titleBarStyle') === 'native') {
+            const createdMenuBar = this.createElectronMenuBar();
             electron.remote.getCurrentWindow().setMenu(createdMenuBar);
         }
     }
 
-    createMenuBar(): Electron.Menu | null {
+    createElectronMenuBar(): Electron.Menu | null {
         const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
         const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
         if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
@@ -118,7 +113,7 @@ export class ElectronMainMenuFactory {
         return null;
     }
 
-    createContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
+    createElectronContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
         const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false });
         return electron.remote.Menu.buildFromTemplate(template);
@@ -221,13 +216,13 @@ export class ElectronMainMenuFactory {
                     this._toggledCommands.add(commandId);
                 }
             } else {
-                items.push(...this.handleDefault(menu, args, options));
+                items.push(...this.handleElectronDefault(menu, args, options));
             }
         }
         return items;
     }
 
-    protected handleDefault(menuNode: MenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
+    protected handleElectronDefault(menuNode: MenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
         return [];
     }
 

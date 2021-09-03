@@ -10,6 +10,10 @@
 <a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
 
 - [view-container] `ViewContainerPart` constructor takes new 2 parameters: `originalContainerId` and `originalContainerTitle`. The existing `viewContainerId` parameter has been renamed to `currentContainerId` to enable drag & drop views. [#9644](https://github.com/eclipse-theia/theia/pull/9644)
+- [electron] `ElectronMainMenuFactory` now inherits from `BrowserMainMenuFactory` and its methods have been renamed. [#10044](https://github.com/eclipse-theia/theia/pull/10044)
+  - renamed `handleDefault` to `handleElectronDefault`
+  - renamed `createContextMenu` to `createElectronContextMenu`
+  - renamed `createMenuBar` to `createElectronMenuBar`
 
 ## v1.18.0 - 9/30/2021
 

@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
-    CommandRegistry, ActionMenuNode, CompositeMenuNode,
+    CommandRegistry, ActionMenuNode, CompositeMenuNode, environment,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
@@ -28,6 +28,7 @@ import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { CorePreferences } from '../core-preferences';
+import { PreferenceService } from '../preferences/preference-service';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
@@ -371,19 +372,38 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
 
     onStart(app: FrontendApplication): void {
-        const logo = this.createLogo();
-        app.shell.addWidget(logo, { area: 'top' });
-        const menu = this.factory.createMenuBar();
-        app.shell.addWidget(menu, { area: 'top' });
+        this.appendMenu(app.shell);
     }
 
     get menuBar(): MenuBarWidget | undefined {
         return this.shell.topPanel.widgets.find(w => w instanceof MenuBarWidget) as MenuBarWidget | undefined;
+    }
+
+    protected appendMenu(shell: ApplicationShell): void {
+        const logo = this.createLogo();
+        shell.addWidget(logo, { area: 'top' });
+        const menu = this.factory.createMenuBar();
+        shell.addWidget(menu, { area: 'top' });
+        // Hiding the menu is only necessary in electron
+        // In the browser we hide the whole top panel
+        if (environment.electron.is()) {
+            this.preferenceService.ready.then(() => {
+                menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
+            });
+            this.preferenceService.onPreferenceChanged(change => {
+                if (change.preferenceName === 'window.menuBarVisibility') {
+                    menu.setHidden(['compact', 'hidden'].includes(change.newValue));
+                }
+            });
+        }
     }
 
     protected createLogo(): Widget {

@@ -36,7 +36,7 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
         super();
     }
 
-    protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): BrowserContextMenuAccess {
+    protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): ContextMenuAccess {
         const contextMenu = this.menuFactory.createContextMenu(menuPath, args);
         const { x, y } = coordinateFromAnchor(anchor);
         if (onHide) {
