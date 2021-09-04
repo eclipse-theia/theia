@@ -6266,6 +6266,14 @@ declare module '@theia/plugin' {
      */
     export interface LanguageConfiguration {
         /**
+         * @deprecated Use the autoClosingPairs property in the language configuration file instead.
+         */
+        __characterPairSupport?: { autoClosingPairs: { close: String, notIn: String[], open: String }[] }
+        /**
+         * @deprecated Do not use. Will be replaced by a better API soon.
+         */
+        __electricCharacterSupport?: { brackets: any, docComment: { close: String, lineStart: String, open: String, scope: String } }
+        /**
          * The language's comment settings.
          */
         comments?: CommentRule;
