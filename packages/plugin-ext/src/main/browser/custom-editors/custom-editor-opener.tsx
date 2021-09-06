@@ -37,8 +37,12 @@ export class CustomEditorOpener implements OpenHandler {
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) {
-        this.id = `custom-editor-${this.editor.viewType}`;
+        this.id = CustomEditorOpener.toCustomEditorId(this.editor.viewType);
         this.label = this.editor.displayName;
+    }
+
+    static toCustomEditorId(editorViewType: string): string {
+        return `custom-editor-${editorViewType}`;
     }
 
     canHandle(uri: URI): number {

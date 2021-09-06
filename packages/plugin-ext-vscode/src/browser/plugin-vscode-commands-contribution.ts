@@ -76,6 +76,7 @@ import {
     fromDefinition,
     toDefinition
 } from '@theia/plugin-ext/lib/main/browser/callhierarchy/callhierarchy-type-converters';
+import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -203,7 +204,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     return commands.executeCommand(VscodeCommands.OPEN.id, resource, columnOrOptions);
                 }
 
-                const result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, `custom-editor-${viewType}`);
+                let result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, viewType);
+                if (!result) {
+                    result = await this.openWith(VscodeCommands.OPEN_WITH.id, resource, columnOrOptions, CustomEditorOpener.toCustomEditorId(viewType));
+                }
 
                 if (!result) {
                     throw new Error(`Could not find an editor for '${viewType}'`);
