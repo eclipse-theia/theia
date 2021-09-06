@@ -16,8 +16,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-    InputBox, InputOptions, KeybindingRegistry, PickOptions,
-    QuickInputButton, QuickInputService, QuickPick, QuickPickItem, QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
+    InputBox,
+    InputOptions,
+    KeybindingRegistry,
+    PickOptions,
+    QuickInput,
+    QuickInputButton,
+    QuickInputService,
+    QuickPick,
+    QuickPickItem,
+    QuickPickItemButtonEvent,
+    QuickPickItemHighlights,
+    QuickPickOptions,
+    QuickPickSeparator
 } from '@theia/core/lib/browser';
 import { CancellationToken, Event } from '@theia/core/lib/common';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -162,6 +173,7 @@ export class MonacoQuickInputImplementation implements monaco.quickInput.IQuickI
 export class MonacoQuickInputService implements QuickInputService {
     @inject(MonacoQuickInputImplementation)
     private monacoService: MonacoQuickInputImplementation;
+    private quickInput: QuickInput;
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
@@ -190,9 +202,10 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
+        const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
+        const wrapped = this.wrapQuickPick(quickPick);
+        this.quickInput = wrapped;
         return new Promise<T>((resolve, reject) => {
-            const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
-            const wrapped = this.wrapQuickPick(quickPick);
 
             if (options) {
                 wrapped.canSelectMany = !!options.canSelectMany;
@@ -271,6 +284,10 @@ export class MonacoQuickInputService implements QuickInputService {
 
     hide(): void {
         return this.monacoService.hide();
+    }
+
+    getCurrentInput(): QuickInput | undefined {
+        return this.quickInput;
     }
 }
 

@@ -336,6 +336,10 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             matchOnLabel: true,
             runIfSingle: false,
         });
+        const input = this.quickInputService.getCurrentInput();
+        if (input) {
+            this.sessions.set(sessionId, { input, handlesToItems: new Map() });
+        }
     }
 
     $hide(): void {

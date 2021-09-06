@@ -206,6 +206,7 @@ export interface QuickInputService {
         Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
     showQuickPick<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T>;
     hide(): void;
+    getCurrentInput(): QuickInput | undefined;
 }
 
 /**
