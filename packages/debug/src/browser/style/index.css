@@ -145,10 +145,6 @@
     min-height: var(--theia-icon-size);
 }
 
-.debug-toolbar .debug-action:not(:focus) {
-    border: 1px solid transparent;
-}
-
 .debug-toolbar .debug-action.theia-mod-disabled {
     opacity: 0.5 !important;
     user-select: none;
