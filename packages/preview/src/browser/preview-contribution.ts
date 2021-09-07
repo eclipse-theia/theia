@@ -266,7 +266,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     protected async openSource(ref?: Widget): Promise<EditorWidget | undefined> {
         if (ref instanceof PreviewWidget) {
             return this.editorManager.open(ref.uri, {
-                widgetOptions: { ref, mode: 'open-to-left' }
+                widgetOptions: { ref, mode: 'tab-after' }
             });
         }
     }
