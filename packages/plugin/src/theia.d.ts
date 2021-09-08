@@ -6154,7 +6154,7 @@ declare module '@theia/plugin' {
      *
      * @sample `let sel:DocumentSelector = { scheme: 'file', language: 'typescript' }`;
      */
-    export type DocumentSelector = DocumentFilter | string | Array<DocumentFilter | string>;
+    export type DocumentSelector = DocumentFilter | string | ReadonlyArray<DocumentFilter | string>;
 
     /**
      * A tuple of two characters, like a pair of
