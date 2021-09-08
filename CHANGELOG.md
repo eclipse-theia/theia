@@ -3,6 +3,7 @@
 ## v1.18.0 - 9/30/2021
 
 - [core, outline-view, file-system, workspace] added breadcrumbs contribution points and renderers to `core` and contributions to other packages. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
+- [plugin] Avoid infinite redirect loop for webview [#5007](https://github.com/eclipse-theia/theia/issues/5007)
 
 <a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
 
