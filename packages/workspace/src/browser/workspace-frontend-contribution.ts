@@ -34,6 +34,7 @@ import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { nls } from '@theia/core/lib/common/nls';
 
 export enum WorkspaceStates {
     /**
@@ -159,7 +160,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 if (this.canBeSavedAs(currentWidget)) {
                     this.saveAs(currentWidget);
                 } else {
-                    this.messageService.error(`Cannot run "${WorkspaceCommands.SAVE_AS.label}" for the current widget.`);
+                    this.messageService.error(nls.localize('theia/workspace/failSaveAs', 'Cannot run "{0}" for the current widget.', WorkspaceCommands.SAVE_AS.label!));
                 }
             },
         });
@@ -378,7 +379,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     protected async closeWorkspace(): Promise<void> {
         const dialog = new ConfirmDialog({
             title: WorkspaceCommands.CLOSE.label!,
-            msg: 'Do you really want to close the workspace?'
+            msg: nls.localize('theia/workspace/closeWorkspace', 'Do you really want to close the workspace?')
         });
         if (await dialog.open()) {
             await this.workspaceService.close();
@@ -479,7 +480,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             // At this point `targetWidget` should be `applicationShell.currentWidget` for the save command to pick up:
             await this.commandRegistry.executeCommand(CommonCommands.SAVE.id);
         } else {
-            this.messageService.error('Could not apply changes to new file');
+            this.messageService.error(nls.localize('theia/workspace/failApply', 'Could not apply changes to new file'));
         }
     }
 
@@ -497,8 +498,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }
         // Prompt users for confirmation before overwriting.
         const confirmed = await new ConfirmDialog({
-            title: 'Overwrite',
-            msg: `Do you really want to overwrite "${uri.toString()}"?`
+            title: nls.localize('vscode/textFileSaveErrorHandler/overwrite', 'Overwrite'),
+            msg: nls.localize('vscode/simpleFileDialog/remoteFileDialog.validateExisting', 'Do you really want to overwrite "{0}"?', uri.toString())
         }).open();
         return !!confirmed;
     }

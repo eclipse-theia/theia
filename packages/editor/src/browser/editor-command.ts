@@ -24,11 +24,12 @@ import { ResourceProvider, MessageService } from '@theia/core';
 import { LanguageService, Language } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { EncodingMode } from './editor';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace EditorCommands {
 
+    const EDITOR_CATEGORY_KEY = 'vscode/textEditor/editor';
     const EDITOR_CATEGORY = 'Editor';
-    const VIEW_CATEGORY = 'View';
 
     /**
      * Show editor references
@@ -43,154 +44,154 @@ export namespace EditorCommands {
         id: 'textEditor.commands.configIndentation'
     };
 
-    export const CONFIG_EOL: Command = {
+    export const CONFIG_EOL = Command.toLocalizedCommand({
         id: 'textEditor.commands.configEol',
         category: EDITOR_CATEGORY,
         label: 'Change End of Line Sequence'
-    };
+    }, 'vscode/editorStatus/selectEOL', EDITOR_CATEGORY_KEY);
 
-    export const INDENT_USING_SPACES: Command = {
+    export const INDENT_USING_SPACES = Command.toLocalizedCommand({
         id: 'textEditor.commands.indentUsingSpaces',
         category: EDITOR_CATEGORY,
         label: 'Indent Using Spaces'
-    };
-    export const INDENT_USING_TABS: Command = {
+    }, 'vscode/indentation/indentUsingSpaces', EDITOR_CATEGORY_KEY);
+    export const INDENT_USING_TABS = Command.toLocalizedCommand({
         id: 'textEditor.commands.indentUsingTabs',
         category: EDITOR_CATEGORY,
         label: 'Indent Using Tabs'
-    };
-    export const CHANGE_LANGUAGE: Command = {
+    }, 'vscode/indentation/indentUsingTabs', EDITOR_CATEGORY_KEY);
+    export const CHANGE_LANGUAGE = Command.toLocalizedCommand({
         id: 'textEditor.change.language',
         category: EDITOR_CATEGORY,
         label: 'Change Language Mode'
-    };
-    export const CHANGE_ENCODING: Command = {
+    }, 'vscode/editorStatus/changeMode', EDITOR_CATEGORY_KEY);
+    export const CHANGE_ENCODING = Command.toLocalizedCommand({
         id: 'textEditor.change.encoding',
         category: EDITOR_CATEGORY,
         label: 'Change File Encoding'
-    };
-    export const REVERT_EDITOR: Command = {
+    }, 'vscode/editorStatus/changeEncoding', EDITOR_CATEGORY_KEY);
+    export const REVERT_EDITOR = Command.toLocalizedCommand({
         id: 'workbench.action.files.revert',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Revert File',
-    };
-    export const REVERT_AND_CLOSE: Command = {
+    }, 'vscode/fileActions.contribution/revert', CommonCommands.FILE_CATEGORY_KEY);
+    export const REVERT_AND_CLOSE = Command.toLocalizedCommand({
         id: 'workbench.action.revertAndCloseActiveEditor',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Revert and Close Editor'
-    };
+    }, 'vscode/editorActions/revertAndCloseActiveEditor', EDITOR_CATEGORY_KEY);
 
     /**
      * Command for going back to the last editor navigation location.
      */
-    export const GO_BACK: Command = {
+    export const GO_BACK = Command.toLocalizedCommand({
         id: 'textEditor.commands.go.back',
         category: EDITOR_CATEGORY,
         label: 'Go Back'
-    };
+    }, 'vscode/editorActions/navigatePrevious', EDITOR_CATEGORY_KEY);
     /**
      * Command for going to the forthcoming editor navigation location.
      */
-    export const GO_FORWARD: Command = {
+    export const GO_FORWARD = Command.toLocalizedCommand({
         id: 'textEditor.commands.go.forward',
         category: EDITOR_CATEGORY,
         label: 'Go Forward'
-    };
+    }, 'vscode/editorActions/navigateNext', EDITOR_CATEGORY_KEY);
     /**
      * Command that reveals the last text edit location, if any.
      */
-    export const GO_LAST_EDIT: Command = {
+    export const GO_LAST_EDIT = Command.toLocalizedCommand({
         id: 'textEditor.commands.go.lastEdit',
         category: EDITOR_CATEGORY,
         label: 'Go to Last Edit Location'
-    };
+    }, 'vscode/editorActions/navigateToLastEditLocation', EDITOR_CATEGORY_KEY);
     /**
      * Command that clears the editor navigation history.
      */
-    export const CLEAR_EDITOR_HISTORY: Command = {
+    export const CLEAR_EDITOR_HISTORY = Command.toLocalizedCommand({
         id: 'textEditor.commands.clear.history',
         category: EDITOR_CATEGORY,
         label: 'Clear Editor History'
-    };
+    }, 'vscode/editorActions/clearEditorHistory', EDITOR_CATEGORY_KEY);
     /**
      * Command that displays all editors that are currently opened.
      */
-    export const SHOW_ALL_OPENED_EDITORS: Command = {
+    export const SHOW_ALL_OPENED_EDITORS = Command.toLocalizedCommand({
         id: 'workbench.action.showAllEditors',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Editors'
-    };
+    }, 'theia/editor/showAllEditors', EDITOR_CATEGORY_KEY);
     /**
      * Command that toggles the minimap.
      */
-    export const TOGGLE_MINIMAP: Command = {
+    export const TOGGLE_MINIMAP = Command.toLocalizedCommand({
         id: 'editor.action.toggleMinimap',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Minimap'
-    };
+    }, 'vscode/toggleMinimap/toggleMinimap', EDITOR_CATEGORY_KEY);
     /**
      * Command that toggles the rendering of whitespace characters in the editor.
      */
-    export const TOGGLE_RENDER_WHITESPACE: Command = {
+    export const TOGGLE_RENDER_WHITESPACE = Command.toLocalizedCommand({
         id: 'editor.action.toggleRenderWhitespace',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Render Whitespace'
-    };
+    }, 'vscode/toggleRenderWhitespace/toggleRenderWhitespace', EDITOR_CATEGORY_KEY);
     /**
      * Command that toggles the word wrap.
      */
-    export const TOGGLE_WORD_WRAP: Command = {
+    export const TOGGLE_WORD_WRAP = Command.toLocalizedCommand({
         id: 'editor.action.toggleWordWrap',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Word Wrap'
-    };
+    }, 'vscode/toggleWordWrap/miToggleWordWrap', EDITOR_CATEGORY_KEY);
     /**
      * Command that re-opens the last closed editor.
      */
-    export const REOPEN_CLOSED_EDITOR: Command = {
+    export const REOPEN_CLOSED_EDITOR = Command.toLocalizedCommand({
         id: 'workbench.action.reopenClosedEditor',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Reopen Closed Editor'
-    };
+    }, 'vscode/editorActions/reopenClosedEditor', EDITOR_CATEGORY_KEY);
     /**
      * Opens a second instance of the current editor, splitting the view in the direction specified.
      */
-    export const SPLIT_EDITOR_RIGHT: Command = {
+    export const SPLIT_EDITOR_RIGHT = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditorRight',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor Right'
-    };
-    export const SPLIT_EDITOR_DOWN: Command = {
+    }, 'vscode/editorActions/splitEditorGroupRight', EDITOR_CATEGORY_KEY);
+    export const SPLIT_EDITOR_DOWN = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditorDown',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor Down'
-    };
-    export const SPLIT_EDITOR_UP: Command = {
+    }, 'vscode/editorActions/splitEditorGroupDown', EDITOR_CATEGORY_KEY);
+    export const SPLIT_EDITOR_UP = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditorUp',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor Up'
-    };
-    export const SPLIT_EDITOR_LEFT: Command = {
+    }, 'vscode/editorActions/splitEditorGroupUp', EDITOR_CATEGORY_KEY);
+    export const SPLIT_EDITOR_LEFT = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditorLeft',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor Left'
-    };
+    }, 'vscode/editorActions/splitEditorGroupLeft', EDITOR_CATEGORY_KEY);
     /**
      * Default horizontal split: right.
      */
-    export const SPLIT_EDITOR_HORIZONTAL: Command = {
+    export const SPLIT_EDITOR_HORIZONTAL = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditor',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor'
-    };
+    }, 'vscode/editorActions/splitEditor', EDITOR_CATEGORY_KEY);
     /**
      * Default vertical split: down.
      */
-    export const SPLIT_EDITOR_VERTICAL: Command = {
+    export const SPLIT_EDITOR_VERTICAL = Command.toLocalizedCommand({
         id: 'workbench.action.splitEditorOrthogonal',
-        category: VIEW_CATEGORY,
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Split Editor Orthogonal'
-    };
+    }, 'vscode/editorActions/splitEditorOrthogonal', EDITOR_CATEGORY_KEY);
 }
 
 @injectable()
@@ -280,11 +281,11 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const current = editor.document.languageId;
         const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItem> = [
-            { label: 'Auto Detect', value: 'autoDetect' },
-            { type: 'separator', label: 'languages (identifier)' },
+            { label: nls.localize('vscode/editorStatus/autoDetect', 'Auto Detect'), value: 'autoDetect' },
+            { type: 'separator', label: nls.localize('vscode/editorStatus/languagesPicks', 'languages (identifier)') },
             ... (this.languages.languages.map(language => this.toQuickPickLanguage(language, current))).sort((e, e2) => e.label.localeCompare(e2.label))
         ];
-        const selectedMode = await this.quickInputService?.showQuickPick(items, { placeholder: 'Select Language Mode' });
+        const selectedMode = await this.quickInputService?.showQuickPick(items, { placeholder: nls.localize('vscode/editorStatus/selectLanguageMode', 'Select Language Mode') });
         if (selectedMode && ('value' in selectedMode)) {
             if (selectedMode.value === 'autoDetect') {
                 editor.detectLanguage();
@@ -305,13 +306,13 @@ export class EditorCommandContribution implements CommandContribution {
         if (!editor) {
             return;
         }
-        const reopenWithEncodingPick = { label: 'Reopen with Encoding', value: 'reopen' };
-        const saveWithEncodingPick = { label: 'Save with Encoding', value: 'save' };
+        const reopenWithEncodingPick = { label: nls.localize('vscode/editorStatus/reopenWithEncoding', 'Reopen with Encoding'), value: 'reopen' };
+        const saveWithEncodingPick = { label: nls.localize('vscode/editorStatus/saveWithEncoding', 'Save with Encoding'), value: 'save' };
         const actionItems: QuickPickValue<string>[] = [
             reopenWithEncodingPick,
             saveWithEncodingPick
         ];
-        const selectedEncoding = await this.quickInputService?.showQuickPick(actionItems, { placeholder: 'Select Action' });
+        const selectedEncoding = await this.quickInputService?.showQuickPick(actionItems, { placeholder: nls.localize('vscode/editorStatus/pickAction', 'Select Action') });
         if (!selectedEncoding) {
             return;
         }
@@ -344,19 +345,21 @@ export class EditorCommandContribution implements CommandContribution {
         // Insert guessed encoding
         if (guessedEncoding && configuredEncoding !== guessedEncoding && SUPPORTED_ENCODINGS[guessedEncoding]) {
             encodingItems.unshift({
-                label: `Guessed from content: ${SUPPORTED_ENCODINGS[guessedEncoding].labelLong}`,
+                label: `${nls.localize('vscode/editorStatus/guessedEncoding', 'Guessed from content')}: ${SUPPORTED_ENCODINGS[guessedEncoding].labelLong}`,
                 value: { id: guessedEncoding, description: guessedEncoding }
             });
         }
         const selectedFileEncoding = await this.quickInputService?.showQuickPick<QuickPickValue<{ id: string, description: string }>>(encodingItems, {
-            placeholder: isReopenWithEncoding ? 'Select File Encoding to Reopen File' : 'Select File Encoding to Save with'
+            placeholder: isReopenWithEncoding ?
+                nls.localize('vscode/editorStatus/pickEncodingForReopen', 'Select File Encoding to Reopen File') :
+                nls.localize('vscode/editorStatus/pickEncodingForSave', 'Select File Encoding to Save with')
         });
 
         if (!selectedFileEncoding) {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
-            this.messageService.info('The file is dirty. Please save it first before reopening it with another encoding.');
+            this.messageService.info(nls.localize('theia/editor/reopenDirty', 'The file is dirty. Please save it first before reopening it with another encoding.'));
             return;
         } else if (selectedFileEncoding.value) {
             editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);
@@ -367,10 +370,11 @@ export class EditorCommandContribution implements CommandContribution {
         const languageUri = this.toLanguageUri(value);
         const icon = this.labelProvider.getIcon(languageUri);
         const iconClasses = icon !== '' ? [icon + ' file-icon'] : undefined;
+        const configured = current === value.id;
         return {
             value,
             label: value.name,
-            description: `(${value.id})${current === value.id ? ' - Configured Language' : ''}`,
+            description: nls.localize(`vscode/editorStatus/languageDescription${configured ? '' : 'Configured'}`, `({0})${configured ? ' - Configured Language' : ''}`),
             iconClasses
         };
     }

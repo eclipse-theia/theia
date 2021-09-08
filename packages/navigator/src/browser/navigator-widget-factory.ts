@@ -24,10 +24,11 @@ import {
 } from '@theia/core/lib/browser';
 import { FILE_NAVIGATOR_ID } from './navigator-widget';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 export const EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: 'Explorer',
+    label: nls.localize('vscode/settingsLayout/fileExplorer', 'Explorer'),
     iconClass: codicon('files'),
     closeable: true
 };

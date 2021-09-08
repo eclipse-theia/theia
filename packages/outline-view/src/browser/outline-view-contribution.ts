@@ -23,6 +23,7 @@ import { codicon, Widget } from '@theia/core/lib/browser/widgets';
 import { OutlineViewWidget } from './outline-view-widget';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
 import { OS } from '@theia/core/lib/common/os';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
@@ -46,7 +47,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
     constructor() {
         super({
             widgetId: OUTLINE_WIDGET_FACTORY_ID,
-            widgetName: 'Outline',
+            widgetName: OutlineViewWidget.LABEL,
             defaultWidgetOptions: {
                 area: 'right',
                 rank: 500
@@ -75,7 +76,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
         toolbar.registerItem({
             id: OutlineViewCommands.COLLAPSE_ALL.id,
             command: OutlineViewCommands.COLLAPSE_ALL.id,
-            tooltip: 'Collapse All',
+            tooltip: nls.localize('vscode/outlinePane/collapse', 'Collapse All'),
             priority: 0
         });
     }

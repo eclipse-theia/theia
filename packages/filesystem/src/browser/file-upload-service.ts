@@ -28,7 +28,8 @@ import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 import { Semaphore } from 'async-mutex';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { FileService } from './file-service';
-import { ConfirmDialog } from '@theia/core/lib/browser';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -162,7 +163,7 @@ export class FileUploadService {
                     }
                 }
                 params.progress.report({
-                    message: `Processed ${done} out of ${total}`,
+                    message: nls.localize('theia/filesystem/processedOutOf', 'Processed {0} out of {1}', done, total),
                     work: { total, done }
                 });
             } else {
@@ -175,7 +176,7 @@ export class FileUploadService {
                     done += item.done;
                 }
                 params.progress.report({
-                    message: `Uploaded ${result.uploaded.length} out of ${status.size}`,
+                    message: nls.localize('theia/filesystem/uploadedOutOf', 'Uploaded {0} out of {1}', result.uploaded.length, status.size),
                     work: { total, done }
                 });
             }
@@ -244,10 +245,10 @@ export class FileUploadService {
 
     protected async confirmOverwrite(fileUri: URI): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: 'Replace file',
-            msg: `File '${fileUri.path.base}' already exists in the destination folder. Do you want to replace it?`,
-            ok: 'Replace',
-            cancel: 'Cancel'
+            title: nls.localize('vscode/findWidget/label.replace', 'Replace file'),
+            msg: nls.localize('vscode/explorerViewer/confirmOverwrite', 'File "{0}" already exists in the destination folder. Do you want to replace it?', fileUri.path.base),
+            ok: nls.localize('vscode/findWidget/label.replace', 'Replace file'),
+            cancel: Dialog.CANCEL
         });
         return !!await dialog.open();
     }
@@ -360,7 +361,7 @@ export class FileUploadService {
 
     protected async withProgress<T>(
         cb: (progress: Progress, token: CancellationToken) => Promise<T>,
-        { text }: FileUploadProgressParams = { text: 'Uploading Files' }
+        { text }: FileUploadProgressParams = { text: nls.localize('theia/filesystem/uploadFiles', 'Uploading Files') }
     ): Promise<T> {
         const cancellationSource = new CancellationTokenSource();
         const { token } = cancellationSource;

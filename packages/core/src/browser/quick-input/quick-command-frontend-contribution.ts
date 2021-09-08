@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, optional } from 'inversify';
-import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '../../common';
+import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry, nls } from '../../common';
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { CommonMenus } from '../common-frontend-contribution';
 import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
@@ -43,7 +43,7 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.VIEW_PRIMARY, {
             commandId: quickCommand.id,
-            label: 'Find Command...'
+            label: nls.localize('vscode/quickAccess.contribution/commandsQuickAccess', 'Find Command...')
         });
     }
 

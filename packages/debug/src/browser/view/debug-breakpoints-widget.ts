@@ -21,6 +21,7 @@ import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { DebugBreakpointsSource } from './debug-breakpoints-source';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugViewModel } from './debug-view-model';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugBreakpointsWidget extends SourceTreeWidget {
@@ -57,7 +58,7 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:breakpoints:' + this.viewModel.id;
-        this.title.label = 'Breakpoints';
+        this.title.label = nls.localize('vscode/debug.contribution/breakpoints', 'Breakpoints');
         this.toDispose.push(this.breakpointsSource);
         this.source = this.breakpointsSource;
     }

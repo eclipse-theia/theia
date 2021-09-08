@@ -26,12 +26,6 @@ export class DebugVariablesSource extends TreeSource {
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;
 
-    constructor() {
-        super({
-            placeholder: 'Not paused'
-        });
-    }
-
     @postConstruct()
     protected init(): void {
         this.refresh();

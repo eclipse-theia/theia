@@ -21,6 +21,7 @@ import { ConsoleManager } from './console-manager';
 import { ConsoleKeybindingContexts } from './console-keybinding-contexts';
 import { ConsoleWidget } from './console-widget';
 import { ConsoleContentWidget } from './console-content-widget';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace ConsoleCommands {
     export const SELECT_ALL: Command = {
@@ -91,22 +92,22 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(ConsoleContextMenu.CLIPBOARD, {
             commandId: CommonCommands.COPY.id,
-            label: 'Copy',
+            label: CommonCommands.COPY.label,
             order: 'a1',
         });
         menus.registerMenuAction(ConsoleContextMenu.CLIPBOARD, {
             commandId: ConsoleCommands.SELECT_ALL.id,
-            label: 'Select All',
+            label: CommonCommands.SELECT_ALL.label,
             order: 'a2'
         });
         menus.registerMenuAction(ConsoleContextMenu.CLIPBOARD, {
             commandId: ConsoleCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All',
+            label: nls.localize('vscode/repl/collapse', 'Collapse All'),
             order: 'a3'
         });
         menus.registerMenuAction(ConsoleContextMenu.CLEAR, {
             commandId: ConsoleCommands.CLEAR.id,
-            label: 'Clear Console'
+            label: nls.localize('vscode/repl/clearRepl', 'Clear Console')
         });
     }
 

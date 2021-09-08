@@ -25,6 +25,7 @@ import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { MaybePromise } from '../../common/types';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
+import { CommonCommands } from '../common-frontend-contribution';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -109,11 +110,11 @@ export interface ApplicationShellLayoutMigration {
     onWillInflateWidget?(desc: WidgetDescription, context: ApplicationShellLayoutMigrationContext): MaybePromise<WidgetDescription | undefined>;
 }
 
-export const RESET_LAYOUT: Command = {
+export const RESET_LAYOUT = Command.toLocalizedCommand({
     id: 'reset.layout',
-    category: 'View',
+    category: CommonCommands.VIEW_CATEGORY,
     label: 'Reset Workbench Layout'
-};
+}, 'theia/core/resetWorkbenchLayout', CommonCommands.VIEW_CATEGORY_KEY);
 
 @injectable()
 export class ShellLayoutRestorer implements CommandContribution {

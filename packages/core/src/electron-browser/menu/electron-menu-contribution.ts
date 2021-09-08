@@ -18,14 +18,15 @@ import * as electron from '../../../shared/electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
+    isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls
 } from '../../common';
 import {
     ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
-    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus
+    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
+import { FrontendApplicationConfigProvider } from '../../browser/frontend-application-config-provider';
 import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../../electron-common/messaging/electron-messages';
 import { ZoomLevel } from '../window/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
@@ -33,35 +34,35 @@ import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plug
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
 export namespace ElectronCommands {
-    export const TOGGLE_DEVELOPER_TOOLS: Command = {
+    export const TOGGLE_DEVELOPER_TOOLS = Command.toLocalizedCommand({
         id: 'theia.toggleDevTools',
         label: 'Toggle Developer Tools'
-    };
-    export const RELOAD: Command = {
+    }, 'vscode/developerActions/toggleDevTools');
+    export const RELOAD = Command.toLocalizedCommand({
         id: 'view.reload',
         label: 'Reload Window'
-    };
-    export const ZOOM_IN: Command = {
+    }, 'vscode/windowActions/reloadWindow');
+    export const ZOOM_IN = Command.toLocalizedCommand({
         id: 'view.zoomIn',
         label: 'Zoom In'
-    };
-    export const ZOOM_OUT: Command = {
+    }, 'vscode/windowActions/zoomIn');
+    export const ZOOM_OUT = Command.toLocalizedCommand({
         id: 'view.zoomOut',
         label: 'Zoom Out'
-    };
-    export const RESET_ZOOM: Command = {
+    }, 'vscode/windowActions/zoomOut');
+    export const RESET_ZOOM = Command.toLocalizedCommand({
         id: 'view.resetZoom',
         label: 'Reset Zoom'
-    };
-    export const CLOSE_WINDOW: Command = {
+    }, 'vscode/windowActions/zoomReset');
+    export const CLOSE_WINDOW = Command.toLocalizedCommand({
         id: 'close.window',
         label: 'Close Window'
-    };
-    export const TOGGLE_FULL_SCREEN: Command = {
+    }, 'vscode/windowActions/close');
+    export const TOGGLE_FULL_SCREEN = Command.toLocalizedCommand({
         id: 'workbench.action.toggleFullScreen',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Full Screen'
-    };
+    }, 'vscode/windowActions/toggleFullScreen', CommonCommands.VIEW_CATEGORY_KEY);
 }
 
 export namespace ElectronMenus {
@@ -225,11 +226,19 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected async handleRequiredRestart(): Promise<void> {
+        const msgNode = document.createElement('div');
+        const message = document.createElement('p');
+        message.textContent = nls.localize('vscode/relauncher.contribution/relaunchSettingMessage', 'A setting has changed that requires a restart to take effect');
+        const detail = document.createElement('p');
+        detail.textContent = nls.localize('vscode/relauncher.contribution/relaunchSettingDetail',
+            'Press the restart button to restart {0} and enable the setting.', FrontendApplicationConfigProvider.get().applicationName);
+        msgNode.append(message, detail);
+        const restart = nls.localize('vscode/relauncher.contribution/restart', 'Restart');
         const dialog = new ConfirmDialog({
-            title: 'A setting has changed that requires a restart to take effect',
-            msg: 'Press the restart button to restart the application and enable the setting.',
-            ok: 'Restart',
-            cancel: 'Cancel'
+            title: restart,
+            msg: msgNode,
+            ok: restart,
+            cancel: Dialog.CANCEL
         });
         if (await dialog.open()) {
             electron.ipcRenderer.send(Restart);

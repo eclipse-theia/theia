@@ -112,6 +112,9 @@ export class NotificationManager extends MessageClient {
     hideCenter(): void {
         this.setVisibilityState('hidden');
     }
+    showCenter(): void {
+        this.setVisibilityState('center');
+    }
     toggleCenter(): void {
         this.setVisibilityState(this.centerVisible ? 'hidden' : 'center');
     }

@@ -23,12 +23,13 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ExternalTerminalService } from '../common/external-terminal';
 import { ExternalTerminalPreferenceService } from './external-terminal-preference';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace ExternalTerminalCommands {
-    export const OPEN_NATIVE_CONSOLE: Command = {
+    export const OPEN_NATIVE_CONSOLE = Command.toLocalizedCommand({
         id: 'workbench.action.terminal.openNativeConsole',
         label: 'Open New External Terminal'
-    };
+    }, 'vscode/externalTerminal.contribution/globalConsoleAction');
 }
 
 @injectable()
@@ -109,7 +110,7 @@ export class ExternalTerminalFrontendContribution implements CommandContribution
                 description: this.labelProvider.getLongName(resource),
                 value: resource.toString()
             })
-        ), { placeholder: 'Select current working directory for new external terminal' });
+        ), { placeholder: nls.localize('theia/external-terminal/cwd', 'Select current working directory for new external terminal') });
         return selectedItem?.value;
     }
 }

@@ -27,10 +27,10 @@ export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierarchy:toggle';
 export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 
 export namespace CallHierarchyCommands {
-    export const OPEN: Command = {
+    export const OPEN = Command.toLocalizedCommand({
         id: 'callhierarchy:open',
         label: 'Open Call Hierarchy'
-    };
+    }, 'theia/callhierarchy/open');
 }
 
 @injectable()

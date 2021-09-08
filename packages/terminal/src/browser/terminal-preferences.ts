@@ -14,135 +14,131 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable max-len */
+
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { EDITOR_FONT_DEFAULTS } from '@theia/editor/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const TerminalConfigSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'terminal.enableCopy': {
             type: 'boolean',
-            description: 'Enable ctrl-c (cmd-c on macOS) to copy selected text',
+            description: nls.localize('theia/terminal/enableCopy', 'Enable ctrl-c (cmd-c on macOS) to copy selected text'),
             default: true
         },
         'terminal.enablePaste': {
             type: 'boolean',
-            description: 'Enable ctrl-v (cmd-v on macOS) to paste from clipboard',
+            description: nls.localize('theia/terminal/enablePaste', 'Enable ctrl-v (cmd-v on macOS) to paste from clipboard'),
             default: true
         },
         'terminal.integrated.fontFamily': {
             type: 'string',
-            description: 'Controls the font family of the terminal.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.fontFamily', 'Controls the font family of the terminal.'),
             default: EDITOR_FONT_DEFAULTS.fontFamily
         },
         'terminal.integrated.fontSize': {
             type: 'number',
-            description: 'Controls the font size in pixels of the terminal.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.fontSize', 'Controls the font size in pixels of the terminal.'),
             minimum: 6,
             default: EDITOR_FONT_DEFAULTS.fontSize
         },
         'terminal.integrated.fontWeight': {
             type: 'string',
             enum: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-            description: 'The font weight to use within the terminal for non-bold text.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.fontWeight', 'The font weight to use within the terminal for non-bold text.'),
             default: 'normal'
         },
         'terminal.integrated.fontWeightBold': {
             type: 'string',
             enum: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-            description: 'The font weight to use within the terminal for bold text.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.fontWeightBold', 'The font weight to use within the terminal for bold text.'),
             default: 'bold'
         },
         'terminal.integrated.drawBoldTextInBrightColors': {
-            description: 'Controls whether to draw bold text in bright colors.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.drawBoldTextInBrightColors', 'Controls whether to draw bold text in bright colors.'),
             type: 'boolean',
             default: true,
         },
         'terminal.integrated.letterSpacing': {
-            description: 'Controls the letter spacing of the terminal, this is an integer value which represents the amount of additional pixels to add between characters.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.letterSpacing', 'Controls the letter spacing of the terminal, this is an integer value which represents the amount of additional pixels to add between characters.'),
             type: 'number',
             default: 1
         },
         'terminal.integrated.lineHeight': {
-            description: 'Controls the line height of the terminal, this number is multiplied by the terminal font size to get the actual line-height in pixels.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.lineHeight', 'Controls the line height of the terminal, this number is multiplied by the terminal font size to get the actual line-height in pixels.'),
             type: 'number',
             minimum: 1,
             default: 1
         },
         'terminal.integrated.scrollback': {
-            description: 'Controls the maximum amount of lines the terminal keeps in its buffer.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.scrollback', 'Controls the maximum amount of lines the terminal keeps in its buffer.'),
             type: 'number',
             default: 1000
         },
         'terminal.integrated.fastScrollSensitivity': {
-            description: 'Controls the scrolling speed when pressing \'alt\'.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.fastScrollSensitivity', 'Controls the scrolling speed when pressing \'alt\'.'),
             type: 'number',
             default: 5,
         },
         'terminal.integrated.rendererType': {
-            description: 'Controls how the terminal is rendered.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.rendererType', 'Controls how the terminal is rendered.'),
             type: 'string',
             enum: ['canvas', 'dom'],
             default: 'canvas'
         },
         'terminal.integrated.copyOnSelection': {
-            description: 'Controls whether text selected in the terminal will be copied to the clipboard.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.copyOnSelection', 'Controls whether text selected in the terminal will be copied to the clipboard.'),
             type: 'boolean',
             default: false,
         },
         'terminal.integrated.cursorBlinking': {
-            description: 'Controls whether the terminal cursor blinks.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.cursorBlinking', 'Controls whether the terminal cursor blinks.'),
             type: 'boolean',
             default: false
         },
         'terminal.integrated.cursorStyle': {
-            description: 'Controls the style of the terminal cursor.',
+            description: nls.localize('vscode/terminalConfiguration/terminal.integrated.cursorStyle', 'Controls the style of the terminal cursor.'),
             enum: ['block', 'underline', 'line'],
             default: 'block'
         },
         'terminal.integrated.cursorWidth': {
-            description: 'Controls the width of the cursor when \'terminal.integrated.cursorStyle\' is set to \'line\'.',
-            markdownDescription: 'Controls the width of the cursor when `#terminal.integrated.cursorStyle#` is set to `line`.',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.cursorWidth', 'Controls the width of the cursor when `#terminal.integrated.cursorStyle#` is set to `line`.'),
             type: 'number',
             default: 1
         },
         'terminal.integrated.shell.windows': {
             type: ['string', 'null'],
-            description: 'The path of the shell that the terminal uses on Windows. (default: C:\\Windows\\System32\\cmd.exe).',
-            markdownDescription: 'The path of the shell that the terminal uses on Windows. (default: C:\\Windows\\System32\\cmd.exe).',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shell.windows', 'The path of the shell that the terminal uses on Windows. (default: C:\\Windows\\System32\\cmd.exe).'),
             default: undefined
         },
         'terminal.integrated.shell.osx': {
             type: ['string', 'null'],
-            description: 'The path of the shell that the terminal uses on macOS (default: \'/bin/bash\'}).',
-            markdownDescription: 'The path of the shell that the terminal uses on macOS (default: \'/bin/bash\'}).',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shell.osx', 'The path of the shell that the terminal uses on macOS (default: \'/bin/bash\'}).'),
             default: undefined
         },
         'terminal.integrated.shell.linux': {
             type: ['string', 'null'],
-            description: 'The path of the shell that the terminal uses on Linux (default: \'/bin/bash\'}).',
-            markdownDescription: 'The path of the shell that the terminal uses on Linux (default: \'/bin/bash\'}).',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shell.linux', 'The path of the shell that the terminal uses on Linux (default: \'/bin/bash\'}).'),
             default: undefined
         },
         'terminal.integrated.shellArgs.windows': {
             type: 'array',
-            description: 'The command line arguments to use when on the Windows terminal.',
-            markdownDescription: 'The command line arguments to use when on the Windows terminal.',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shellArgs.windows', 'The command line arguments to use when on the Windows terminal.'),
             default: []
         },
         'terminal.integrated.shellArgs.osx': {
             type: 'array',
-            description: 'The command line arguments to use when on the macOS terminal.',
-            markdownDescription: 'The command line arguments to use when on the macOS terminal.',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shellArgs.osx', 'The command line arguments to use when on the macOS terminal.'),
             default: [
                 '-l'
             ]
         },
         'terminal.integrated.shellArgs.linux': {
             type: 'array',
-            description: 'The command line arguments to use when on the Linux terminal.',
-            markdownDescription: 'The command line arguments to use when on the Linux terminal.',
+            markdownDescription: nls.localize('vscode/terminalConfiguration/terminal.integrated.shellArgs.linux', 'The command line arguments to use when on the Linux terminal.'),
             default: []
         },
     }

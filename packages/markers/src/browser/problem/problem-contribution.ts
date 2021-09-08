@@ -27,6 +27,7 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { ProblemSelection } from './problem-selection';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const PROBLEMS_CONTEXT_MENU: MenuPath = [PROBLEM_KIND];
 
@@ -49,12 +50,12 @@ export namespace ProblemsCommands {
     export const COPY_MESSAGE: Command = {
         id: 'problems.copy.message',
     };
-    export const CLEAR_ALL: Command = {
+    export const CLEAR_ALL = Command.toLocalizedCommand({
         id: 'problems.clear.all',
         category: 'Problems',
         label: 'Clear All',
         iconClass: codicon('clear-all')
-    };
+    }, 'theia/markers/clearAll', 'vscode/markers.contribution/problems');
 }
 
 @injectable()
@@ -67,7 +68,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     constructor() {
         super({
             widgetId: PROBLEMS_WIDGET_ID,
-            widgetName: 'Problems',
+            widgetName: nls.localize('vscode/markers.contribution/problems', 'Problems'),
             defaultWidgetOptions: {
                 area: 'bottom'
             },
@@ -109,17 +110,18 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
      */
     protected getStatusBarTooltip(stat: ProblemStat): string {
         if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
-            return 'No Problems';
+            return nls.localize('vscode/markers.contribution/noProblems', 'No Problems');
         }
+        const localize = (text: string, value: number): string => nls.localize(`vscode/markers.contribution/total${text}`, `{0} ${text}`, value.toString());
         const tooltip: string[] = [];
         if (stat.errors > 0) {
-            tooltip.push(`${stat.errors} Errors`);
+            tooltip.push(localize('Errors', stat.errors));
         }
         if (stat.warnings > 0) {
-            tooltip.push(`${stat.warnings} Warnings`);
+            tooltip.push(localize('Warnings', stat.warnings));
         }
         if (stat.infos > 0) {
-            tooltip.push(`${stat.infos} Infos`);
+            tooltip.push(localize('Infos', stat.infos));
         }
         return tooltip.join(', ');
 
@@ -162,17 +164,17 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY.id,
-            label: 'Copy',
+            label: nls.localize('vscode/markers.contribution/copyMarker', 'Copy'),
             order: '0'
         });
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY_MESSAGE.id,
-            label: 'Copy Message',
+            label: nls.localize('vscode/markers.contribution/copyMessage', 'Copy Message'),
             order: '1'
         });
         menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All',
+            label: nls.localize('vscode/markers.contribution/collapseAll', 'Collapse All'),
             order: '2'
         });
     }
@@ -181,13 +183,13 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         toolbarRegistry.registerItem({
             id: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
-            tooltip: 'Collapse All',
+            tooltip: nls.localize('vscode/markers.contribution/collapseAll', 'Collapse All'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: ProblemsCommands.CLEAR_ALL.id,
             command: ProblemsCommands.CLEAR_ALL.id,
-            tooltip: 'Clear All',
+            tooltip: ProblemsCommands.CLEAR_ALL.label,
             priority: 1,
         });
     }

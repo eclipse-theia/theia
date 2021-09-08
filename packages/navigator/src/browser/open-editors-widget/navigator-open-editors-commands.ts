@@ -14,34 +14,35 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { CommonCommands } from '@theia/core/lib/browser';
 import { Command } from '@theia/core/lib/common';
 
 export namespace OpenEditorsCommands {
-    export const CLOSE_ALL_TABS_FROM_TOOLBAR: Command = {
+    export const CLOSE_ALL_TABS_FROM_TOOLBAR = Command.toLocalizedCommand({
         id: 'navigator.close.all.editors.toolbar',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Close All Editors',
         iconClass: 'codicon codicon-close-all'
-    };
+    }, 'vscode/editorActions/closeAllEditors', CommonCommands.FILE_CATEGORY_KEY);
 
-    export const SAVE_ALL_TABS_FROM_TOOLBAR: Command = {
+    export const SAVE_ALL_TABS_FROM_TOOLBAR = Command.toLocalizedCommand({
         id: 'navigator.save.all.editors.toolbar',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Save All Editors',
         iconClass: 'codicon codicon-save-all'
-    };
+    }, 'vscode/fileActions.contribution/saveFiles', CommonCommands.FILE_CATEGORY_KEY);
 
-    export const CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON: Command = {
+    export const CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON = Command.toLocalizedCommand({
         id: 'navigator.close.all.in.area.icon',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Close Group',
         iconClass: 'codicon codicon-close-all'
-    };
+    }, 'vscode/fileActions/closeGroup', CommonCommands.VIEW_CATEGORY_KEY);
 
-    export const SAVE_ALL_IN_GROUP_FROM_ICON: Command = {
+    export const SAVE_ALL_IN_GROUP_FROM_ICON = Command.toLocalizedCommand({
         id: 'navigator.save.all.in.area.icon',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Save All in Group',
         iconClass: 'codicon codicon-save-all'
-    };
+    }, 'vscode/fileActions.contribution/saveAllInGroup', CommonCommands.FILE_CATEGORY_KEY);
 }

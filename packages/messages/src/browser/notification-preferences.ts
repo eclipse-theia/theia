@@ -22,13 +22,14 @@ import {
     PreferenceContribution,
     PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const NotificationConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
         'notification.timeout': {
             'type': 'number',
-            'description': 'Informative notifications will be hidden after this timeout.',
+            'description': nls.localize('theia/messages/notificationTimeout', 'Informative notifications will be hidden after this timeout.'),
             'default': 30 * 1000 // `0` and negative values are treated as no timeout.
         }
     }

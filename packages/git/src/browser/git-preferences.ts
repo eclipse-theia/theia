@@ -16,33 +16,34 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const GitConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
         'git.decorations.enabled': {
             'type': 'boolean',
-            'description': 'Show Git file status in the navigator.',
+            'description': nls.localize('vscode.git/package/config.decorations.enabled', 'Show Git file status in the navigator.'),
             'default': true
         },
         'git.decorations.colors': {
             'type': 'boolean',
-            'description': 'Use color decoration in the navigator.',
+            'description': nls.localize('theia/git/gitDecorationsColors', 'Use color decoration in the navigator.'),
             'default': false
         },
         'git.editor.decorations.enabled': {
             'type': 'boolean',
-            'description': 'Show git decorations in the editor.',
+            'description': nls.localize('theia/git/editorDecorationsEnabled', 'Show git decorations in the editor.'),
             'default': true
         },
         'git.editor.dirtyDiff.linesLimit': {
             'type': 'number',
-            'description': 'Do not show dirty diff decorations, if editor\'s line count exceeds this limit.',
+            'description': nls.localize('theia/git/dirtyDiffLinesLimit', 'Do not show dirty diff decorations, if editor\'s line count exceeds this limit.'),
             'default': 1000
         },
         'git.alwaysSignOff': {
             'type': 'boolean',
-            'description': 'Always sign off commits.',
+            'description': nls.localize('vscode.git/package/config.alwaysSignOff', 'Always sign off commits.'),
             'default': false
         }
     }

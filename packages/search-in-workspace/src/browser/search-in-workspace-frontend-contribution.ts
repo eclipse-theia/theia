@@ -31,51 +31,51 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SEARCH_VIEW_CONTAINER_ID } from './search-in-workspace-factory';
 
 export namespace SearchInWorkspaceCommands {
+    const SEARCH_CATEGORY_KEY = 'vscode/search.contribution/search';
     const SEARCH_CATEGORY = 'Search';
     export const TOGGLE_SIW_WIDGET = {
         id: 'search-in-workspace.toggle'
     };
-    export const OPEN_SIW_WIDGET: Command = {
+    export const OPEN_SIW_WIDGET = Command.toLocalizedCommand({
         id: 'search-in-workspace.open',
         category: SEARCH_CATEGORY,
         label: 'Find in Files'
-
-    };
-    export const FIND_IN_FOLDER: Command = {
+    }, 'vscode/search.contribution/findInFiles', SEARCH_CATEGORY_KEY);
+    export const FIND_IN_FOLDER = Command.toLocalizedCommand({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
         label: 'Find in Folder'
-    };
-    export const REFRESH_RESULTS: Command = {
+    }, 'vscode/search.contribution/findInFolder', SEARCH_CATEGORY_KEY);
+    export const REFRESH_RESULTS = Command.toLocalizedCommand({
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
         iconClass: codicon('refresh')
-    };
-    export const CANCEL_SEARCH: Command = {
+    }, 'vscode/search.contribution/RefreshAction.label', SEARCH_CATEGORY_KEY);
+    export const CANCEL_SEARCH = Command.toLocalizedCommand({
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
         iconClass: codicon('search-stop')
-    };
-    export const COLLAPSE_ALL: Command = {
+    }, 'vscode/search.contribution/CancelSearchAction.label', SEARCH_CATEGORY_KEY);
+    export const COLLAPSE_ALL = Command.toLocalizedCommand({
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
         iconClass: codicon('collapse-all')
-    };
-    export const EXPAND_ALL: Command = {
+    }, 'vscode/search.contribution/CollapseDeepestExpandedLevelAction.label', SEARCH_CATEGORY_KEY);
+    export const EXPAND_ALL = Command.toLocalizedCommand({
         id: 'search-in-workspace.expand-all',
         category: SEARCH_CATEGORY,
         label: 'Expand All',
         iconClass: codicon('expand-all')
-    };
-    export const CLEAR_ALL: Command = {
+    }, 'vscode/search.contribution/ExpandAllAction.label', SEARCH_CATEGORY_KEY);
+    export const CLEAR_ALL = Command.toLocalizedCommand({
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
         iconClass: codicon('clear-all')
-    };
+    }, 'vscode/search.contribution/ClearSearchResultsAction.label', SEARCH_CATEGORY_KEY);
 }
 
 @injectable()

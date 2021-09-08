@@ -33,6 +33,7 @@ import { Emitter, Mutable, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Representation of an outline symbol information node.
@@ -73,6 +74,8 @@ export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
 @injectable()
 export class OutlineViewWidget extends TreeWidget {
 
+    static LABEL = nls.localize('vscode/outline.contribution/name', 'Outline');
+
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
     constructor(
@@ -83,8 +86,8 @@ export class OutlineViewWidget extends TreeWidget {
         super(treeProps, model, contextMenuRenderer);
 
         this.id = 'outline-view';
-        this.title.label = 'Outline';
-        this.title.caption = 'Outline';
+        this.title.label = OutlineViewWidget.LABEL;
+        this.title.caption = OutlineViewWidget.LABEL;
         this.title.closable = true;
         this.title.iconClass = codicon('symbol-class');
         this.addClass('theia-outline-view');
@@ -104,7 +107,7 @@ export class OutlineViewWidget extends TreeWidget {
     protected getRoot(children: TreeNode[]): CompositeTreeNode {
         return {
             id: 'outline-view-root',
-            name: 'Outline Root',
+            name: OutlineViewWidget.LABEL,
             visible: false,
             children,
             parent: undefined
@@ -177,7 +180,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     protected renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
-            return <div className='theia-widget-noInfo no-outline'>No outline information available.</div>;
+            return <div className='theia-widget-noInfo no-outline'>{nls.localize('vscode/outlinePane/no-editor', 'No outline information available.')}</div>;
         }
         return super.renderTree(model);
     }

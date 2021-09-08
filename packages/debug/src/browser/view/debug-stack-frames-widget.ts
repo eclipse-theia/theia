@@ -22,6 +22,7 @@ import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frame
 import { DebugStackFrame } from '../model/debug-stack-frame';
 import { DebugViewModel } from './debug-view-model';
 import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugStackFramesWidget extends SourceTreeWidget {
@@ -55,7 +56,7 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:frames:' + this.viewModel.id;
-        this.title.label = 'Call Stack';
+        this.title.label = nls.localize('vscode/debug.contribution/callStack', 'Call Stack');
         this.toDispose.push(this.frames);
         this.source = this.frames;
 

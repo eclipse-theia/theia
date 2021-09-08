@@ -23,6 +23,7 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { nls } from '@theia/core/lib/common/nls';
 
 // See https://github.com/Microsoft/vscode/issues/30180
 export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
@@ -38,7 +39,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'files.watcherExclude': {
-            description: 'List of paths to exclude from the filesystem watcher',
+            description: nls.localize('vscode/files.contribution/watcherExclude', 'List of paths to exclude from the filesystem watcher'),
             additionalProperties: {
                 type: 'boolean'
             },
@@ -52,46 +53,60 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.exclude': {
             type: 'object',
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
-            description: 'Configure glob patterns for excluding files and folders.',
+            description: nls.localize('vscode/files.contribution/exclude', 'Configure glob patterns for excluding files and folders.'),
             scope: 'resource'
         },
         'files.enableTrash': {
             type: 'boolean',
             default: true,
-            description: 'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
+            description: nls.localize(
+                'vscode/files.contribution/useTrash',
+                'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
+            )
         },
         'files.associations': {
             type: 'object',
-            description: 'Configure file associations to languages (e.g. \"*.extension\": \"html\"). \
-These have precedence over the default associations of the languages installed.'
+            description: nls.localize(
+                'vscode/files.contribution/associations',
+                'Configure file associations to languages (e.g. \"*.extension\": \"html\"). These have precedence over the default associations of the languages installed.'
+            )
         },
         'files.autoGuessEncoding': {
             type: 'boolean',
             default: false,
-            description: 'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.',
+            description: nls.localize(
+                'vscode/files.contribution/autoGuessEncoding',
+                'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.'
+            ),
             scope: 'language-overridable',
             included: Object.keys(SUPPORTED_ENCODINGS).length > 1
         },
         'files.participants.timeout': {
             type: 'number',
             default: 5000,
-            markdownDescription: 'Timeout in milliseconds after which file participants for create, rename, and delete are cancelled. Use `0` to disable participants.'
+            markdownDescription: nls.localize(
+                'vscode/mainThreadFileSystemEventService/files.participants.timeout',
+                'Timeout in milliseconds after which file participants for create, rename, and delete are cancelled. Use `0` to disable participants.'
+            )
         },
         'files.maxFileSizeMB': {
             type: 'number',
             default: MAX_FILE_SIZE_MB,
-            markdownDescription: 'Controls the max file size in MB which is possible to open.'
+            markdownDescription: nls.localize('theia/filesystem/maxFileSizeMB', 'Controls the max file size in MB which is possible to open.')
         },
         'files.trimTrailingWhitespace': {
             type: 'boolean',
             default: false,
-            description: 'When enabled, will trim trailing whitespace when saving a file.',
+            description: nls.localize('vscode/files.contribution/trimTrailingWhitespace', 'When enabled, will trim trailing whitespace when saving a file.'),
             scope: 'language-overridable'
         },
         'files.maxConcurrentUploads': {
             type: 'integer',
             default: 1,
-            description: 'Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.',
+            description: nls.localize(
+                'theia/filesystem/maxConcurrentUploads',
+                'Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.'
+            ),
         }
     }
 };

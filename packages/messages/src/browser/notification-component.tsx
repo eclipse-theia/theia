@@ -18,6 +18,7 @@ import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { NotificationManager, Notification } from './notifications-manager';
 import { codicon } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface NotificationComponentProps {
     readonly manager: NotificationManager;
@@ -86,7 +87,8 @@ export class NotificationComponent extends React.Component<NotificationComponent
                             <li className={codicon('chevron-down') + collapsed ? ' expand' : ' collapse'} title={collapsed ? 'Expand' : 'Collapse'}
                                 data-message-id={messageId} onClick={this.onToggleExpansion} />
                         )}
-                        {!isProgress && (<li className={codicon('close', true)} title='Clear' data-message-id={messageId} onClick={this.onClear} />)}
+                        {!isProgress && (<li className={codicon('close', true)} title={nls.localize('vscode/abstractTree/clear', 'Clear')} data-message-id={messageId}
+                            onClick={this.onClear} />)}
                     </ul>
                 </div>
                 {(source || !!actions.length) && (

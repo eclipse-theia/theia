@@ -22,12 +22,13 @@ import { VSXSearchMode } from './vsx-extensions-search-model';
 import { generateExtensionWidgetId } from './vsx-extensions-widget';
 import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class VSXExtensionsViewContainer extends ViewContainer {
 
     static ID = 'vsx-extensions-view-container';
-    static LABEL = 'Extensions';
+    static LABEL = nls.localize('vscode/settingsLayout/extensions', 'Extensions');
 
     disableDNDBetweenContainers = true;
 
@@ -165,7 +166,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     protected getToggleVisibilityGroupLabel(): string {
-        return 'a/Views';
+        return 'a/' + nls.localize('vscode/viewPaneContainer/views', 'Views');
     }
 }
 export namespace VSXExtensionsViewContainer {

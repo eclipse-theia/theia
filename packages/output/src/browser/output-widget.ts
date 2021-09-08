@@ -27,11 +27,13 @@ import { Message, BaseWidget, DockPanel, Widget, MessageLoop, StatefulWidget, co
 import { OutputUri } from '../common/output-uri';
 import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     static readonly ID = 'outputView';
+    static readonly LABEL = nls.localize('vscode/settingsLayout/output', 'Output');
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
@@ -50,8 +52,8 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     constructor() {
         super();
         this.id = OutputWidget.ID;
-        this.title.label = 'Output';
-        this.title.caption = 'Output';
+        this.title.label = OutputWidget.LABEL;
+        this.title.caption = OutputWidget.LABEL;
         this.title.iconClass = codicon('output');
         this.title.closable = true;
         this.addClass('theia-output');

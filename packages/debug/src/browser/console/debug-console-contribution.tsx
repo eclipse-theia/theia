@@ -18,6 +18,7 @@ import { ConsoleSessionManager } from '@theia/console/lib/browser/console-sessio
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
 import { AbstractViewContribution, bindViewContribution, codicon, Widget, WidgetFactory } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { nls } from '@theia/core/lib/common/nls';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
@@ -32,13 +33,16 @@ export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
 
 export namespace DebugConsoleCommands {
-    const DEBUG_CONSOLE_CATEGORY = 'Debug';
-    export const CLEAR: Command = {
+
+    export const DEBUG_CATEGORY_KEY = 'vscode/debugCommands/debug';
+    export const DEBUG_CATEGORY = 'Debug';
+
+    export const CLEAR = Command.toLocalizedCommand({
         id: 'debug.console.clear',
-        category: DEBUG_CONSOLE_CATEGORY,
+        category: DEBUG_CATEGORY,
         label: 'Clear Console',
         iconClass: codicon('clear-all')
-    };
+    }, 'vscode/repl/clearRepl', DEBUG_CATEGORY_KEY);
 }
 
 @injectable()
@@ -124,7 +128,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         toolbarRegistry.registerItem({
             id: DebugConsoleCommands.CLEAR.id,
             command: DebugConsoleCommands.CLEAR.id,
-            tooltip: 'Clear Console',
+            tooltip: DebugConsoleCommands.CLEAR.label,
             priority: 0,
         });
     }
@@ -132,7 +136,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     static options: ConsoleOptions = {
         id: 'debug-console',
         title: {
-            label: 'Debug Console',
+            label: nls.localize('vscode/repl/debugConsole', 'Debug Console'),
             iconClass: codicon('debug-console')
         },
         input: {

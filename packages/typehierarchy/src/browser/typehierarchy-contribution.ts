@@ -137,14 +137,14 @@ export namespace TypeHierarchyCommands {
         id: 'typehierarchy:toggle'
     };
 
-    export const OPEN_SUBTYPE: Command = {
+    export const OPEN_SUBTYPE = Command.toLocalizedCommand({
         id: 'typehierarchy:open-subtype',
         label: 'Subtype Hierarchy'
-    };
+    }, 'theia/typehierarchy/subtypeHierarchy');
 
-    export const OPEN_SUPERTYPE: Command = {
+    export const OPEN_SUPERTYPE = Command.toLocalizedCommand({
         id: 'typehierarchy:open-supertype',
         label: 'Supertype Hierarchy'
-    };
+    }, 'theia/typehierarchy/supertypeHierarchy');
 
 }

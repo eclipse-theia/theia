@@ -33,6 +33,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget-options';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -84,7 +85,7 @@ export class GitScmProvider implements ScmProvider {
     protected readonly labelProvider: LabelProvider;
 
     readonly id = 'git';
-    readonly label = 'Git';
+    readonly label = nls.localize('vscode.git/package/displayName', 'Git');
 
     dispose(): void {
         this.toDispose.dispose();
@@ -110,8 +111,8 @@ export class GitScmProvider implements ScmProvider {
     get acceptInputCommand(): ScmCommand | undefined {
         return {
             command: 'git.commit.all',
-            tooltip: 'Commit all the staged changes',
-            title: 'Commit'
+            tooltip: nls.localize('vscode.git/package/command.commitAll', 'Commit all the staged changes'),
+            title: nls.localize('vscode.git/package/command.commit', 'Commit')
         };
     }
 
@@ -159,11 +160,16 @@ export class GitScmProvider implements ScmProvider {
                 }
             }
         }
-        state.groups.push(this.createGroup('merge', 'Merge Changes', state.mergeChanges, true));
-        state.groups.push(this.createGroup('index', 'Staged changes', state.stagedChanges, true));
-        state.groups.push(this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
+        state.groups.push(this.createGroup('merge', nls.localize('vscode.git/repository/merge changes', 'Merge Changes'), state.mergeChanges, true));
+        state.groups.push(this.createGroup('index', nls.localize('vscode.git/repository/staged changes', 'Staged changes'), state.stagedChanges, true));
+        state.groups.push(this.createGroup('workingTree', nls.localize('vscode.git/repository/changes', 'Changes'), state.unstagedChanges, false));
         this.state = state;
-        this.input.placeholder = `Message (press {0} to commit${status && status.branch ? ' on \'' + status.branch + '\'' : ''})`;
+        if (status && status.branch) {
+            this.input.placeholder = nls.localize('vscode.git/repository/commitMessageWithHeadLabel', 'Message (press {0} to commit on {1})', '{0}', status.branch);
+        } else {
+            this.input.placeholder = nls.localize('vscode.git/repository/commitMessage', 'Message (press {0} to commit)');
+        }
+
         this.fireDidChange();
     }
 
@@ -392,14 +398,14 @@ export class GitScmProvider implements ScmProvider {
         }
         return new ConfirmDialog({
             title: 'Discard changes',
-            msg: `Do you really want to discard changes in ${fileText}?`
+            msg: nls.localize('vscode.git/commands/confirm discard', 'Do you really want to discard changes in {0}?', fileText)
         }).open();
     }
 
     protected confirmAll(): Promise<boolean | undefined> {
         return new ConfirmDialog({
             title: 'Discard All Changes',
-            msg: 'Do you really want to discard all changes?'
+            msg: nls.localize('vscode.git/commands/confirm discard all', 'Do you really want to discard all changes?')
         }).open();
     }
 

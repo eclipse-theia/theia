@@ -24,7 +24,9 @@ export namespace nls {
 
     export const locale = typeof window === 'object' && window && window.localStorage.getItem(localeId) || undefined;
 
-    function format(message: string, args: string[]): string {
+    type FormatType = string | number | undefined;
+
+    function format(message: string, args: FormatType[]): string {
         let result = message;
         if (args.length > 0) {
             result = message.replace(/\{(\d+)\}/g, (match, rest) => {
@@ -42,9 +44,9 @@ export namespace nls {
         return result;
     }
 
-    export function localize(key: string, defaultValue: string, ...args: string[]): string {
+    export function localize(key: string, defaultValue: string, ...args: FormatType[]): string {
         let value = defaultValue;
-        if (localization) {
+        if (localization && key) {
             const translation = localization.translations[key];
             if (translation) {
                 // vscode's localizations often contain additional '&&' symbols, which we simply ignore

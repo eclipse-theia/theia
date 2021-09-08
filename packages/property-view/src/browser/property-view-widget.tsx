@@ -21,12 +21,13 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PropertyViewContentWidget } from './property-view-content-widget';
 import { PropertyViewService } from './property-view-service';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class PropertyViewWidget extends BaseWidget {
 
     static readonly ID = 'property-view';
-    static readonly LABEL = 'Properties';
+    static readonly LABEL = nls.localize('theia/property-view/properties', 'Properties');
 
     protected contentWidget: PropertyViewContentWidget;
 

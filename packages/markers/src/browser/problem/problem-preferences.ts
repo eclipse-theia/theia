@@ -16,23 +16,24 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const ProblemConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
         'problems.decorations.enabled': {
             'type': 'boolean',
-            'description': 'Show problem decorators (diagnostic markers) in tree widgets.',
+            'description': nls.localize('vscode/markersFileDecorations/markers.showOnFile', 'Show Errors & Warnings on files and folder.'),
             'default': true,
         },
         'problems.decorations.tabbar.enabled': {
             'type': 'boolean',
-            'description': 'Show problem decorators (diagnostic markers) in the tab bars.',
+            'description': nls.localize('theia/markers/tabbarDecorationsEnabled', 'Show problem decorators (diagnostic markers) in the tab bars.'),
             'default': true
         },
         'problems.autoReveal': {
             'type': 'boolean',
-            'description': 'Controls whether Problems view should reveal markers when file is opened.',
+            'description': nls.localize('vscode/messages/problems.panel.configuration.autoreveal', 'Controls whether Problems view should reveal markers when file is opened.'),
             'default': true
         }
     }

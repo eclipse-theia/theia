@@ -21,10 +21,9 @@ import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-con
 import { BulkEditCommands } from './bulk-edit-commands';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID } from './bulk-edit-tree';
+import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, BULK_EDIT_WIDGET_NAME } from './bulk-edit-tree';
 import { QuickViewService } from '@theia/core/lib/browser';
-
-export const BULK_EDIT_WIDGET_NAME = 'Refactor Preview';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeWidget> implements TabBarToolbarContribution {
@@ -64,13 +63,13 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
         toolbarRegistry.registerItem({
             id: BulkEditCommands.APPLY.id,
             command: BulkEditCommands.APPLY.id,
-            tooltip: 'Apply Refactoring',
+            tooltip: nls.localize('vscode/bulkEdit.contribution/apply', 'Apply Refactoring'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: BulkEditCommands.DISCARD.id,
             command: BulkEditCommands.DISCARD.id,
-            tooltip: 'Discard Refactoring',
+            tooltip: nls.localize('vscode/bulkEdit.contribution/Discard', 'Discard Refactoring'),
             priority: 1,
         });
     }

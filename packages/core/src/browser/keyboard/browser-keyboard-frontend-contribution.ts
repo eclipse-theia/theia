@@ -19,16 +19,18 @@ import { isOSX } from '../../common/os';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { BrowserKeyboardLayoutProvider, KeyboardLayoutData } from './browser-keyboard-layout-provider';
 import { QuickPickValue, QuickInputService, QuickPickItem } from '../quick-input';
+import { nls } from '../../common/nls';
 
 export namespace KeyboardCommands {
 
+    const KEYBOARD_CATEGORY_KEY = 'vscode/settingsLayout/keyboard';
     const KEYBOARD_CATEGORY = 'Keyboard';
 
-    export const CHOOSE_KEYBOARD_LAYOUT: Command = {
+    export const CHOOSE_KEYBOARD_LAYOUT = Command.toLocalizedCommand({
         id: 'core.keyboard.choose',
         category: KEYBOARD_CATEGORY,
         label: 'Choose Keyboard Layout',
-    };
+    }, 'theia/core/keyboard/choose', KEYBOARD_CATEGORY_KEY);
 
 }
 
@@ -50,9 +52,9 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
     protected async chooseLayout(): Promise<KeyboardLayoutData | undefined> {
         const current = this.layoutProvider.currentLayoutData;
         const autodetect: QuickPickValue<'autodetect'> = {
-            label: 'Auto-detect',
-            description: this.layoutProvider.currentLayoutSource !== 'user-choice' ? `(current: ${current.name})` : undefined,
-            detail: 'Try to detect the keyboard layout from browser information and pressed keys.',
+            label: nls.localize('vscode/editorStatus/autoDetect', 'Auto-detect'),
+            description: this.layoutProvider.currentLayoutSource !== 'user-choice' ? nls.localize('theia/core/keyboard/current', '(current: {0})', current.name) : undefined,
+            detail: nls.localize('theia/core/keyboard/tryDetect', 'Try to detect the keyboard layout from browser information and pressed keys.'),
             value: 'autodetect'
         };
         const pcLayouts = this.layoutProvider.allLayoutData
@@ -64,20 +66,22 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
             .sort((a, b) => compare(a.name, b.name))
             .map(layout => this.toQuickPickValue(layout, current === layout));
         let layouts: Array<QuickPickValue<KeyboardLayoutData | 'autodetect'> | QuickPickItem>;
+        const macKeyboards = nls.localize('theia/core/keyboard/mac', 'Mac Keyboards');
+        const pcKeyboards = nls.localize('theia/core/keyboard/pc', 'PC Keyboards');
         if (isOSX) {
             layouts = [
                 autodetect,
-                { type: 'separator', label: 'Mac Keyboards' }, ...macLayouts,
-                { type: 'separator', label: 'PC Keyboards' }, ...pcLayouts
+                { type: 'separator', label: macKeyboards }, ...macLayouts,
+                { type: 'separator', label: pcKeyboards }, ...pcLayouts
             ];
         } else {
             layouts = [
                 autodetect,
-                { type: 'separator', label: 'PC Keyboards' }, ...pcLayouts,
-                { type: 'separator', label: 'Mac Keyboards' }, ...macLayouts
+                { type: 'separator', label: pcKeyboards }, ...pcLayouts,
+                { type: 'separator', label: macKeyboards }, ...macLayouts
             ];
         }
-        const selectedItem = await this.quickInputService?.showQuickPick(layouts, { placeholder: 'Choose a keyboard layout' });
+        const selectedItem = await this.quickInputService?.showQuickPick(layouts, { placeholder: nls.localize('theia/core/keyboard/chooseLayout', 'Choose a keyboard layout') });
         if (selectedItem && ('value' in selectedItem)) {
             return this.layoutProvider.setLayoutData(selectedItem.value);
         }
@@ -86,7 +90,8 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
     protected toQuickPickValue(layout: KeyboardLayoutData, isCurrent: boolean): QuickPickValue<KeyboardLayoutData> {
         return {
             label: layout.name,
-            description: `${layout.hardware === 'mac' ? 'Mac' : 'PC'} (${layout.language})${isCurrent ? ' - current layout' : ''}`,
+            description:
+                `${layout.hardware === 'mac' ? 'Mac' : 'PC'} (${layout.language})${isCurrent ? nls.localize('theia/core/keyboard/currentLayout', ' - current layout') : ''}`,
             value: layout
         };
     }

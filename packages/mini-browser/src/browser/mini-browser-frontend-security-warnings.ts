@@ -15,8 +15,9 @@
  ********************************************************************************/
 
 import { MessageService } from '@theia/core';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { Dialog, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
@@ -44,12 +45,12 @@ export class MiniBrowserFrontendSecurityWarnings implements FrontendApplicationC
         }
         const hostPattern = await this.miniBrowserEnvironment.hostPatternPromise;
         if (hostPattern !== MiniBrowserEndpoint.HOST_PATTERN_DEFAULT) {
-            this.messageService.warn(`\
-The mini-browser endpoint's host pattern has been changed to \`${hostPattern}\`; changing the pattern can lead to security vulnerabilities. \
-See \`@theia/mini-browser/README.md\` for more information.`,
-            /* actions: */ 'Ok', 'Go To README',
-            ).then(action => {
-                if (action === 'Go To README') {
+            const goToReadme = nls.localize('theia/webview/goToReadme', 'Go To README');
+            const message = nls.localize('theia/webview/messageWarning', '\
+            The {0} endpoint\'s host pattern has been changed to `{1}`; changing the pattern can lead to security vulnerabilities. \
+            See `{2}` for more information.', 'mini-browser', hostPattern, '@theia/mini-browser/README.md');
+            this.messageService.warn(message, Dialog.OK, goToReadme).then(action => {
+                if (action === goToReadme) {
                     this.windowService.openNewWindow('https://www.npmjs.com/package/@theia/mini-browser', { external: true });
                 }
             });

@@ -16,6 +16,8 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core';
+// eslint-disable-next-line @theia/runtime-import-check
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface WorkingDirectoryStatus {
 
@@ -104,12 +106,12 @@ export namespace GitFileStatus {
      */
     export const toString = (status: GitFileStatus, staged?: boolean): string => {
         switch (status) {
-            case GitFileStatus.New: return !!staged ? 'Added' : 'Unstaged';
-            case GitFileStatus.Renamed: return 'Renamed';
-            case GitFileStatus.Copied: return 'Copied';
-            case GitFileStatus.Modified: return 'Modified';
-            case GitFileStatus.Deleted: return 'Deleted';
-            case GitFileStatus.Conflicted: return 'Conflicted';
+            case GitFileStatus.New: return !!staged ? nls.localize('theia/git/added', 'Added') : nls.localize('theia/git/unstaged', 'Unstaged');
+            case GitFileStatus.Renamed: return nls.localize('theia/git/renamed', 'Renamed');
+            case GitFileStatus.Copied: return nls.localize('theia/git/copied', 'Copied');
+            case GitFileStatus.Modified: return nls.localize('vscode.git/repository/modified', 'Modified');
+            case GitFileStatus.Deleted: return nls.localize('vscode.git/repository/deleted', 'Deleted');
+            case GitFileStatus.Conflicted: return nls.localize('theia/git/conflicted', 'Conflicted');
             default: throw new Error(`Unexpected Git file stats: ${status}.`);
         }
     };
@@ -117,7 +119,17 @@ export namespace GitFileStatus {
     /**
      * Returns with the human readable abbreviation of the Git file status argument. `staged` argument defaults to `false`.
      */
-    export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => GitFileStatus.toString(status, staged).charAt(0);
+    export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => {
+        switch (status) {
+            case GitFileStatus.New: return !!staged ? 'A' : 'U';
+            case GitFileStatus.Renamed: return 'R';
+            case GitFileStatus.Copied: return 'C';
+            case GitFileStatus.Modified: return 'M';
+            case GitFileStatus.Deleted: return 'D';
+            case GitFileStatus.Conflicted: return 'C';
+            default: throw new Error(`Unexpected Git file stats: ${status}.`);
+        }
+    };
 
     /**
      * It should be aligned with https://github.com/microsoft/vscode/blob/0dfa355b3ad185a6289ba28a99c141ab9e72d2be/extensions/git/src/repository.ts#L197

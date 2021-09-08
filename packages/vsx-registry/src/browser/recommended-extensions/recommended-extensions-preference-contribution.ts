@@ -16,6 +16,7 @@
 
 import { createPreferenceProxy, PreferenceContribution, PreferenceSchema, PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { interfaces } from '@theia/core/shared/inversify';
 import { ExtensionSchemaContribution, extensionsSchemaID } from './recommended-extensions-json-schema';
@@ -31,7 +32,7 @@ export const recommendedExtensionsPreferencesSchema: PreferenceSchema = {
     properties: {
         extensions: {
             $ref: extensionsSchemaID,
-            description: 'A list of the names of extensions recommended for use in this workspace.',
+            description: nls.localize('theia/vsx-registry/recommendedExtensions', 'A list of the names of extensions recommended for use in this workspace.'),
             defaultValue: { recommendations: [] },
         },
     },
@@ -44,7 +45,7 @@ export const recommendedExtensionNotificationPreferencesSchema: PreferenceSchema
     scope: PreferenceScope.Folder,
     properties: {
         [IGNORE_RECOMMENDATIONS_ID]: {
-            description: 'Controls whether notifications are shown for extension recommendations.',
+            description: nls.localize('theia/vsx-registry/showRecommendedExtensions', 'Controls whether notifications are shown for extension recommendations.'),
             default: false,
             type: 'boolean'
         }

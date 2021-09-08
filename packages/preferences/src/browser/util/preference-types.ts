@@ -20,6 +20,7 @@ import {
     TreeNode as BaseTreeNode,
     CompositeTreeNode as BaseCompositeTreeNode,
     PreferenceInspection,
+    CommonCommands,
 } from '@theia/core/lib/browser';
 import { Command, MenuPath } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
@@ -112,55 +113,55 @@ export namespace PreferencesCommands {
         id: 'preferences:openJson.toolbar',
         iconClass: 'codicon codicon-json'
     };
-    export const COPY_JSON_NAME: Command = {
+    export const COPY_JSON_NAME = Command.toLocalizedCommand({
         id: 'preferences:copyJson.name',
         label: 'Copy Setting ID'
-    };
-    export const RESET_PREFERENCE: Command = {
+    }, 'vscode/settingsTree/copySettingIdLabel');
+    export const RESET_PREFERENCE = Command.toLocalizedCommand({
         id: 'preferences:reset',
         label: 'Reset Setting'
-    };
+    }, 'vscode/settingsTree/resetSettingLabel');
 
-    export const COPY_JSON_VALUE: Command = {
+    export const COPY_JSON_VALUE = Command.toLocalizedCommand({
         id: 'preferences:copyJson.value',
         label: 'Copy Setting as JSON',
-    };
+    }, 'vscode/settingsTree/copySettingAsJSONLabel');
 
-    export const OPEN_USER_PREFERENCES: Command = {
+    export const OPEN_USER_PREFERENCES = Command.toLocalizedCommand({
         id: 'workbench.action.openGlobalSettings',
-        category: 'Preferences',
-        label: 'Open User Preferences',
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open User Settings',
+    }, 'vscode/preferences.contribution/openGlobalSettings', CommonCommands.PREFERENCES_CATEGORY_KEY);
 
-    export const OPEN_WORKSPACE_PREFERENCES: Command = {
+    export const OPEN_WORKSPACE_PREFERENCES = Command.toLocalizedCommand({
         id: 'workbench.action.openWorkspaceSettings',
-        category: 'Preferences',
-        label: 'Open Workspace Preferences',
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open Workspace Settings',
+    }, 'vscode/preferences.contribution/openWorkspaceSettings', CommonCommands.PREFERENCES_CATEGORY_KEY);
 
-    export const OPEN_FOLDER_PREFERENCES: Command = {
+    export const OPEN_FOLDER_PREFERENCES = Command.toLocalizedCommand({
         id: 'workbench.action.openFolderSettings',
-        category: 'Preferences',
-        label: 'Open Folder Preferences'
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open Folder Settings'
+    }, 'vscode/preferences.contribution/openFolderSettings', CommonCommands.PREFERENCES_CATEGORY_KEY);
 
-    export const OPEN_USER_PREFERENCES_JSON: Command = {
+    export const OPEN_USER_PREFERENCES_JSON = Command.toLocalizedCommand({
         id: 'workbench.action.openSettingsJson',
-        category: 'Preferences',
-        label: 'Open Preferences (JSON)'
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open Settings (JSON)'
+    }, 'vscode/preferences.contribution/openSettingsJson', CommonCommands.PREFERENCES_CATEGORY_KEY);
 
-    export const OPEN_WORKSPACE_PREFERENCES_JSON: Command = {
+    export const OPEN_WORKSPACE_PREFERENCES_JSON = Command.toLocalizedCommand({
         id: 'workbench.action.openWorkspaceSettingsFile',
-        category: 'Preferences',
-        label: 'Open Workspace Preferences (JSON)',
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open Workspace Settings (JSON)',
+    }, 'vscode/preferences.contribution/openWorkspaceSettingsFile', CommonCommands.PREFERENCES_CATEGORY_KEY);
 
-    export const OPEN_FOLDER_PREFERENCES_JSON: Command = {
+    export const OPEN_FOLDER_PREFERENCES_JSON = Command.toLocalizedCommand({
         id: 'workbench.action.openFolderSettingsFile',
-        category: 'Preferences',
-        label: 'Open Folder Preferences (JSON)',
-    };
+        category: CommonCommands.PREFERENCES_CATEGORY,
+        label: 'Open Folder Settings (JSON)',
+    }, 'vscode/preferences.contribution/openFolderSettingsFile', CommonCommands.PREFERENCES_CATEGORY_KEY);
 }
 
 export namespace PreferenceMenus {

@@ -23,6 +23,7 @@ import { DebugSession } from '../debug-session';
 import { DebugThread } from '../model/debug-thread';
 import { DebugViewModel } from '../view/debug-view-model';
 import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugThreadsWidget extends SourceTreeWidget {
@@ -59,7 +60,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:threads:' + this.viewModel.id;
-        this.title.label = 'Threads';
+        this.title.label = nls.localize('theia/debug/threads', 'Threads');
         this.toDispose.push(this.threads);
         this.source = this.threads;
 

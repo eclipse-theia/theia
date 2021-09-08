@@ -26,16 +26,17 @@ import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/c
 
 export namespace NavigatorDiffCommands {
     const COMPARE_CATEGORY = 'Compare';
-    export const COMPARE_FIRST: Command = {
+    const COMPARE_CATEGORY_KEY = 'vscode/editorCommands/compare';
+    export const COMPARE_FIRST = Command.toLocalizedCommand({
         id: 'compare:first',
         category: COMPARE_CATEGORY,
         label: 'Select for Compare'
-    };
-    export const COMPARE_SECOND: Command = {
+    }, 'vscode/fileActions.contribution/compareSource', COMPARE_CATEGORY_KEY);
+    export const COMPARE_SECOND = Command.toLocalizedCommand({
         id: 'compare:second',
         category: COMPARE_CATEGORY,
         label: 'Compare with Selected'
-    };
+    }, 'vscode/fileActions.contribution/compareWithSelected', COMPARE_CATEGORY_KEY);
 }
 
 @injectable()

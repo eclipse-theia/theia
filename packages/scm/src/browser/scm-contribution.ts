@@ -23,7 +23,7 @@ import {
     StatusBarEntry,
     KeybindingRegistry,
     ViewContainerTitleOptions,
-    codicon,
+    codicon
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
@@ -36,42 +36,46 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { ScmCommand } from './scm-provider';
 import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: 'Source Control',
+    label: nls.localize('vscode/scm.contribution/source control', 'Source Control'),
     iconClass: codicon('source-control'),
     closeable: true
 };
 
 export namespace SCM_COMMANDS {
-    export const CHANGE_REPOSITORY = {
+    export const CHANGE_REPOSITORY = Command.toLocalizedCommand({
         id: 'scm.change.repository',
         category: 'SCM',
-        label: 'Change Repository...'
-    };
+        label: nls.localize('theia/scm/changeRepository', 'Change Repository...')
+    });
     export const ACCEPT_INPUT = {
         id: 'scm.acceptInput'
     };
     export const TREE_VIEW_MODE = {
         id: 'scm.viewmode.tree',
-        tooltip: 'Toggle to Tree View',
+        tooltip: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View'),
         iconClass: codicon('list-tree'),
-        label: 'Toggle to Tree View',
+        originalLabel: 'Toggle to Tree View',
+        label: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View')
     };
     export const LIST_VIEW_MODE = {
         id: 'scm.viewmode.list',
-        tooltip: 'Toggle to List View',
+        tooltip: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View'),
         iconClass: codicon('list-flat'),
-        label: 'Toggle to List View',
+        originalLabel: 'Toggle to List View',
+        label: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View')
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
         category: 'SCM',
-        tooltip: 'Collapse All',
+        tooltip: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
         iconClass: codicon('collapse-all'),
-        label: 'Collapse All',
+        label: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
+        originalLabel: 'Collapse All'
     };
 }
 
@@ -99,7 +103,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         super({
             viewContainerId: SCM_VIEW_CONTAINER_ID,
             widgetId: SCM_WIDGET_FACTORY_ID,
-            widgetName: 'Source Control',
+            widgetName: SCM_VIEW_CONTAINER_TITLE_OPTIONS.label,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 300

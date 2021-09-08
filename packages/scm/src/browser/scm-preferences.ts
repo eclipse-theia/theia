@@ -22,6 +22,7 @@ import {
     PreferenceSchema,
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const scmPreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -30,10 +31,10 @@ export const scmPreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['tree', 'list'],
             enumDescriptions: [
-                'Show the repository changes as a tree.',
-                'Show the repository changes as a list.'
+                nls.localize('vscode/scm.contribution/scm.defaultViewMode.tree', 'Show the repository changes as a tree.'),
+                nls.localize('vscode/scm.contribution/scm.defaultViewMode.list', 'Show the repository changes as a list.')
             ],
-            description: 'Controls the default source control view mode.',
+            description: nls.localize('vscode/scm.contribution/scm.defaultViewMode', 'Controls the default source control view mode.'),
             default: 'list'
         }
     }

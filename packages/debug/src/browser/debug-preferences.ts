@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 
@@ -23,31 +24,36 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.trace': {
             type: 'boolean',
             default: false,
-            description: 'Enable/disable tracing communications with debug adapters'
+            description: nls.localize('theia/debug/toggleTracing', 'Enable/disable tracing communications with debug adapters')
         },
         'debug.debugViewLocation': {
             enum: ['default', 'left', 'right', 'bottom'],
             default: 'default',
-            description: 'Controls the location of the debug view.'
+            description: nls.localize('theia/debug/debugViewLocation', 'Controls the location of the debug view.')
         },
         'debug.openDebug': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
             default: 'openOnSessionStart',
-            description: 'Controls when the debug view should open.'
+            description: nls.localize('vscode/debug.contribution/openDebug', 'Controls when the debug view should open.')
         },
         'debug.internalConsoleOptions': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
             default: 'openOnFirstSessionStart',
-            description: 'Controls when the internal debug console should open.'
+            description: nls.localize('vscode/debug/internalConsoleOptions', 'Controls when the internal debug console should open.')
         },
         'debug.inlineValues': {
             type: 'boolean',
             default: false,
-            description: 'Show variable values inline in editor while debugging.'
+            description: nls.localize('vscode/debug.contribution/inlineValues', 'Show variable values inline in editor while debugging.')
         },
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
-            description: 'Controls when the debug status bar should be visible.',
+            enumDescriptions: [
+                nls.localize('vscode/debug.contribution/never', 'Never show debug in status bar'),
+                nls.localize('vscode/debug.contribution/always', 'Always show debug in status bar'),
+                nls.localize('vscode/debug.contribution/onFirstSessionStart', 'Show debug in status bar only after debug was started for the first time')
+            ],
+            description: nls.localize('vscode/debug.contribution/showInStatusBar', 'Controls when the debug status bar should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {

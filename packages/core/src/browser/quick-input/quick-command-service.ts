@@ -28,10 +28,10 @@ export const quickCommand: Command = {
     id: 'workbench.action.showCommands'
 };
 
-export const CLEAR_COMMAND_HISTORY: Command = {
+export const CLEAR_COMMAND_HISTORY = Command.toLocalizedCommand({
     id: 'clear.command.history',
     label: 'Clear Command History'
-};
+}, 'vscode/commandsQuickAccess/clearCommandHistory');
 
 @injectable()
 export class QuickCommandService implements QuickAccessContribution, QuickAccessProvider {

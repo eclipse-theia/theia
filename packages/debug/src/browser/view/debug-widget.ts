@@ -23,6 +23,7 @@ import { DebugConfigurationWidget } from './debug-configuration-widget';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionManager } from '../debug-session-manager';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
@@ -38,7 +39,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
     }
 
     static ID = 'debug';
-    static LABEL = 'Debug';
+    static LABEL = nls.localize('vscode/settingsLayout/debug', 'Debug');
 
     @inject(DebugViewModel)
     readonly model: DebugViewModel;

@@ -19,6 +19,7 @@ import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { Disposable, Emitter } from '@theia/core';
+import { nls } from '@theia/core/lib/common/nls';
 
 export interface PreferencesSearchbarState {
     searchTerm: string;
@@ -85,7 +86,14 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
      * Renders a badge displaying search results count.
      */
     protected renderResultsCountOption(): React.ReactNode {
-        const resultsFound = `${this.resultsCount === 0 ? 'No' : this.resultsCount} ${this.resultsCount === 1 ? 'Setting Found' : 'Settings Found'}`;
+        let resultsFound: string;
+        if (this.resultsCount === 0) {
+            resultsFound = nls.localize('vscode/settingsEditor2/noResults', 'No Settings Found');
+        } else if (this.resultsCount === 1) {
+            resultsFound = nls.localize('vscode/settingsEditor2/oneResult', '1 Setting Found');
+        } else {
+            resultsFound = nls.localize('vscode/settingsEditor2/moreThanOneResult', '{0} Settings Found', this.resultsCount.toFixed(0));
+        }
         return this.searchTermExists() ?
             (<span
                 className="results-found"
@@ -101,7 +109,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
     protected renderClearAllOption(): React.ReactNode {
         return <span
             className={`${codicon('clear-all')} option ${(this.searchTermExists() ? 'enabled' : '')}`}
-            title="Clear Search Results"
+            title={nls.localize('vscode/settingsEditor2/clearInput', 'Clear Search Results')}
             onClick={this.clearSearchResults}
         />;
     }
@@ -138,7 +146,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
                         type="text"
                         id={PreferencesSearchbarWidget.SEARCHBAR_ID}
                         spellCheck={false}
-                        placeholder="Search Settings"
+                        placeholder={nls.localize('vscode/settingsEditor2/SearchSettings.AriaLabel', 'Search Settings')}
                         className="settings-search-input theia-input"
                         onChange={this.handleSearch}
                         ref={this.searchbarRef}

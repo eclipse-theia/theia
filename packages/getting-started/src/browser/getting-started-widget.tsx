@@ -26,6 +26,7 @@ import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/appli
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -47,7 +48,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = 'Getting Started';
+    static readonly LABEL = nls.localize('vscode/gettingStarted.contribution/Getting Started', 'Getting Started');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -150,7 +151,7 @@ export class GettingStartedWidget extends ReactWidget {
      */
     protected renderHeader(): React.ReactNode {
         return <div className='gs-header'>
-            <h1>{this.applicationName}<span className='gs-sub-header'> Getting Started</span></h1>
+            <h1>{this.applicationName}<span className='gs-sub-header'>{' ' + GettingStartedWidget.LABEL}</span></h1>
         </div>;
     }
 
@@ -167,7 +168,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpen}
                 onKeyDown={this.doOpenEnter}>
-                Open
+                {nls.localize('vscode/dialogMainService/open', 'Open')}
             </a>
         </div>;
 
@@ -177,7 +178,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenFile}
                 onKeyDown={this.doOpenFileEnter}>
-                Open File
+                {nls.localize('vscode/dialogMainService/openFile', 'Open File')}
             </a>
         </div>;
 
@@ -187,7 +188,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenFolder}
                 onKeyDown={this.doOpenFolderEnter}>
-                Open Folder
+                {nls.localize('vscode/dialogMainService/openFolder', 'Open Folder')}
             </a>
         </div>;
 
@@ -197,12 +198,12 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenWorkspace}
                 onKeyDown={this.doOpenWorkspaceEnter}>
-                Open Workspace
+                {nls.localize('vscode/dialogMainService/openWorkspaceTitle', 'Open Workspace')}
             </a>
         );
 
         return <div className='gs-section'>
-            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>Open</h3>
+            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localize('vscode/dialogMainService/open', 'Open')}</h3>
             {open}
             {openFile}
             {openFolder}
@@ -237,14 +238,14 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenRecentWorkspace}
                 onKeyDown={this.doOpenRecentWorkspaceEnter}>
-                More...
+                {nls.localize('vscode/vs_code_welcome_page/welcomePage.moreRecent', 'More...')}
             </a>
         </div>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
-                <i className={codicon('history')}></i>Recent Workspaces
+                <i className={codicon('history')}></i>{nls.localize('vscode/vs_code_welcome_page/welcomePage.recent', 'Recently opened')}
             </h3>
-            {items.length > 0 ? content : <p className='gs-no-recent'>No Recent Workspaces</p>}
+            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localize('vscode/vs_code_welcome_page/welcomePage.noRecentFolders', 'No Recent Workspaces')}</p>}
             {more}
         </div>;
     }
@@ -257,7 +258,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className={codicon('settings-gear')}></i>
-                Settings
+                {nls.localize('vscode/preferences.contribution/settings', 'Settings')}
             </h3>
             <div className='gs-action-container'>
                 <a
@@ -265,7 +266,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={this.doOpenPreferences}
                     onKeyDown={this.doOpenPreferencesEnter}>
-                    Open Preferences
+                    {nls.localize('vscode/menubarControl/goToSetting', 'Open Preferences')}
                 </a>
             </div>
             <div className='gs-action-container'>
@@ -274,7 +275,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={this.doOpenKeyboardShortcuts}
                     onKeyDown={this.doOpenKeyboardShortcutsEnter}>
-                    Open Keyboard Shortcuts
+                    {nls.localize('vscode/preferences.contribution/openGlobalKeybindings', 'Open Keyboard Shortcuts')}
                 </a>
             </div>
         </div>;
@@ -287,7 +288,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className={codicon('question')}></i>
-                Help
+                {nls.localize('vscode/gettingStarted.contribution/help', 'Help')}
             </h3>
             <div className='gs-action-container'>
                 <a
@@ -295,7 +296,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.documentationUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.documentationUrl)}>
-                    Documentation
+                    {nls.localize('vscode/helpActions/openDocumentationUrl', 'Documentation')}
                 </a>
             </div>
             <div className='gs-action-container'>
@@ -304,7 +305,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.extensionUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.extensionUrl)}>
-                    Building a New Extension
+                    {nls.localize('theia/getting-started/newExtension', 'Building a New Extension')}
                 </a>
             </div>
             <div className='gs-action-container'>
@@ -313,7 +314,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.pluginUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.pluginUrl)}>
-                    Building a New Plugin
+                    {nls.localize('theia/getting-started/newPlugin', 'Building a New Plugin')}
                 </a>
             </div>
         </div>;
@@ -326,7 +327,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <div className='gs-action-container'>
                 <p className='gs-sub-header' >
-                    {this.applicationInfo ? 'Version ' + this.applicationInfo.version : ''}
+                    {this.applicationInfo ? nls.localize('vscode/extensions.contribution/extensionInfoVersion', 'Version: {0}', this.applicationInfo.version) : ''}
                 </p>
             </div>
         </div>;

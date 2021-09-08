@@ -22,8 +22,8 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
-import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
-import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider } from '@theia/core/lib/browser';
+import { SingleTextInputDialog, ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
+import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider, CommonCommands } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -38,108 +38,115 @@ import { WorkspaceInputDialog } from './workspace-input-dialog';
 import { Emitter, Event, OS } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { nls } from '@theia/core/lib/common/nls';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
 
-    const WORKSPACE_CATEGORY = 'Workspace';
-    const FILE_CATEGORY = 'File';
+    const WORKSPACE_CATEGORY_KEY = 'vscode/workspaceActions/workspaces';
+    const WORKSPACE_CATEGORY = 'Workspaces';
+    const FILE_CATEGORY = CommonCommands.FILE_CATEGORY;
 
     // On Linux and Windows, both files and folders cannot be opened at the same time in electron.
     // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
     // `OPEN` must *not* be available on Windows and Linux in electron.
     // VS Code does the same. See: https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430585357
     export const OPEN: Command & { dialogLabel: string } = {
-        id: 'workspace:open',
-        category: FILE_CATEGORY,
-        label: 'Open...',
-        dialogLabel: 'Open'
+        ...Command.toLocalizedCommand({
+            id: 'workspace:open',
+            category: CommonCommands.FILE_CATEGORY,
+            label: 'Open...'
+        }, 'vscode/workspaceActions/openFileFolder', CommonCommands.FILE_CATEGORY_KEY),
+        dialogLabel: nls.localize('vscode/dialogMainService/open', 'Open')
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: Command & { dialogLabel: string } = {
         id: 'workspace:openFile',
-        category: FILE_CATEGORY,
+        originalCategory: FILE_CATEGORY,
+        category: nls.localize(CommonCommands.FILE_CATEGORY_KEY, CommonCommands.FILE_CATEGORY),
         dialogLabel: 'Open File'
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
         id: 'workspace:openFolder',
-        dialogLabel: 'Open Folder' // No `label`. Otherwise, it shows up in the `Command Palette`.
+        dialogLabel: nls.localize('vscode/dialogMainService/openFolder', 'Open Folder') // No `label`. Otherwise, it shows up in the `Command Palette`.
     };
     export const OPEN_WORKSPACE: Command & { dialogLabel: string } = {
-        id: 'workspace:openWorkspace',
-        category: FILE_CATEGORY,
-        label: 'Open Workspace...',
-        dialogLabel: 'Open Workspace'
+        ...Command.toLocalizedCommand({
+            id: 'workspace:openWorkspace',
+            category: CommonCommands.FILE_CATEGORY,
+            label: 'Open Workspace...',
+        }, 'vscode/workspaceActions/openWorkspaceAction', CommonCommands.FILE_CATEGORY_KEY),
+        dialogLabel: nls.localize('vscode/dialogMainService/openWorkspaceTitle', 'Open Workspace')
     };
-    export const OPEN_RECENT_WORKSPACE: Command = {
+    export const OPEN_RECENT_WORKSPACE = Command.toLocalizedCommand({
         id: 'workspace:openRecent',
         category: FILE_CATEGORY,
         label: 'Open Recent Workspace...'
-    };
-    export const CLOSE: Command = {
+    }, 'theia/workspace/openRecentWorkspace', CommonCommands.FILE_CATEGORY_KEY);
+    export const CLOSE = Command.toLocalizedCommand({
         id: 'workspace:close',
         category: WORKSPACE_CATEGORY,
         label: 'Close Workspace'
-    };
-    export const NEW_FILE: Command = {
+    }, 'vscode/workspaceActions/closeWorkspace', WORKSPACE_CATEGORY_KEY);
+    export const NEW_FILE = Command.toLocalizedCommand({
         id: 'file.newFile',
         category: FILE_CATEGORY,
         label: 'New File'
-    };
-    export const NEW_FOLDER: Command = {
+    }, 'vscode/fileActions/newFile', CommonCommands.FILE_CATEGORY_KEY);
+    export const NEW_FOLDER = Command.toLocalizedCommand({
         id: 'file.newFolder',
         category: FILE_CATEGORY,
         label: 'New Folder'
-    };
+    }, 'vscode/fileActions/newFile', CommonCommands.FILE_CATEGORY_KEY);
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`
     });
-    export const FILE_RENAME: Command = {
+    export const FILE_RENAME = Command.toLocalizedCommand({
         id: 'file.rename',
         category: FILE_CATEGORY,
         label: 'Rename'
-    };
-    export const FILE_DELETE: Command = {
+    }, 'vscode/fileActions/rename', CommonCommands.FILE_CATEGORY_KEY);
+    export const FILE_DELETE = Command.toLocalizedCommand({
         id: 'file.delete',
         category: FILE_CATEGORY,
         label: 'Delete'
-    };
-    export const FILE_DUPLICATE: Command = {
+    }, 'vscode/fileActions/delete', CommonCommands.FILE_CATEGORY_KEY);
+    export const FILE_DUPLICATE = Command.toLocalizedCommand({
         id: 'file.duplicate',
         category: FILE_CATEGORY,
         label: 'Duplicate'
-    };
-    export const FILE_COMPARE: Command = {
+    }, 'theia/workspace/duplicate', CommonCommands.FILE_CATEGORY_KEY);
+    export const FILE_COMPARE = Command.toLocalizedCommand({
         id: 'file.compare',
         category: FILE_CATEGORY,
         label: 'Compare with Each Other'
-    };
-    export const ADD_FOLDER: Command = {
+    }, 'vscode/fileActions.contribution/compareSelected', CommonCommands.FILE_CATEGORY_KEY);
+    export const ADD_FOLDER = Command.toLocalizedCommand({
         id: 'workspace:addFolder',
         category: WORKSPACE_CATEGORY,
         label: 'Add Folder to Workspace...'
-    };
-    export const REMOVE_FOLDER: Command = {
+    }, 'vscode/workspaceCommands/addFolderToWorkspace', WORKSPACE_CATEGORY_KEY);
+    export const REMOVE_FOLDER = Command.toLocalizedCommand({
         id: 'workspace:removeFolder',
         category: WORKSPACE_CATEGORY,
         label: 'Remove Folder from Workspace'
-    };
-    export const SAVE_WORKSPACE_AS: Command = {
+    }, 'vscode/fileCommands/removeFolderFromWorkspace', WORKSPACE_CATEGORY_KEY);
+    export const SAVE_WORKSPACE_AS = Command.toLocalizedCommand({
         id: 'workspace:saveAs',
         category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
-    };
-    export const OPEN_WORKSPACE_FILE: Command = {
+    }, 'vscode/workspaceActions/saveWorkspaceAsAction', WORKSPACE_CATEGORY_KEY);
+    export const OPEN_WORKSPACE_FILE = Command.toLocalizedCommand({
         id: 'workspace:openConfigFile',
         category: WORKSPACE_CATEGORY,
         label: 'Open Workspace Configuration File'
-    };
-    export const SAVE_AS: Command = {
+    }, 'vscode/abstractWorkspaceEditingService/openWorkspaceConfigurationFile', WORKSPACE_CATEGORY_KEY);
+    export const SAVE_AS = Command.toLocalizedCommand({
         id: 'file.saveAs',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Save As...',
-    };
+    }, 'vscode/fileCommands/saveAs', CommonCommands.FILE_CATEGORY_KEY);
 }
 
 @injectable()
@@ -237,7 +244,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, fileName, fileExtension);
 
                     const dialog = new WorkspaceInputDialog({
-                        title: 'New File',
+                        title: nls.localize('vscode/fileActions/newFile', 'New File'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
@@ -260,7 +267,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const parentUri = parent.resource;
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled');
                     const dialog = new WorkspaceInputDialog({
-                        title: 'New Folder',
+                        title: nls.localize('vscode/fileActions/newFolder', 'New Folder'),
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
@@ -283,11 +290,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const parent = await this.getParent(uri);
                     if (parent) {
                         const oldName = uri.path.base;
-                        const stat = await this.fileService.resolve(uri);
-                        const fileType = stat.isDirectory ? 'Directory' : 'File';
-                        const titleStr = `Rename ${fileType}`;
                         const dialog = new SingleTextInputDialog({
-                            title: titleStr,
+                            title: nls.localize('vscode/fileActions/rename', 'Rename'),
                             initialValue: oldName,
                             initialSelectionRange: {
                                 start: 0,
@@ -333,10 +337,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     if (!workspaceSavedBeforeAdding) {
                         const saveCommand = registry.getCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id);
                         if (saveCommand && await new ConfirmDialog({
-                            title: 'Folder added to Workspace',
-                            msg: 'A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?',
-                            ok: 'Yes',
-                            cancel: 'No'
+                            title: nls.localize('theia/workspace/workspaceFolderAddedTitle', 'Folder added to Workspace'),
+                            msg: nls.localize('theia/workspace/workspaceFolderAdded',
+                                'A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?'),
+                            ok: Dialog.YES,
+                            cancel: Dialog.NO
                         }).open()) {
                             registry.executeCommand(saveCommand.id);
                         }
@@ -404,21 +409,21 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // do not allow recursive rename
         if (!allowNested && !validFilename(name)) {
-            return 'Invalid file or folder name';
+            return nls.localize('vscode/configureSnippets/bad_name1', 'Invalid file or folder name');
         }
         if (name.startsWith('/')) {
-            return 'Absolute paths or names that starts with / are not allowed';
+            return nls.localize('vscode/fileActions/fileNameStartsWithSlashError', 'Absolute paths or names that starts with / are not allowed');
         } else if (name.startsWith(' ') || name.endsWith(' ')) {
-            return 'Names with leading or trailing whitespaces are not allowed';
+            return nls.localize('vscode/fileActions/fileNameWhitespaceWarning', 'Names with leading or trailing whitespaces are not allowed');
         }
         // check and validate each sub-paths
         if (name.split(/[\\/]/).some(file => !file || !validFilename(file) || /^\s+$/.test(file))) {
-            return `The name "${this.trimFileName(name)}" is not a valid file or folder name.`;
+            return nls.localize('vscode/fileActions/invalidFileNameError', 'The name "{0}" is not a valid file or folder name.', this.trimFileName(name));
         }
         const childUri = parent.resource.resolve(name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
-            return `A file or folder "${this.trimFileName(name)}" already exists at this location.`;
+            return nls.localize('vscode/fileActions/fileNameExistsError', 'A file or folder "{0}" already exists at this location.', this.trimFileName(name));
         }
         return '';
     }
@@ -489,8 +494,9 @@ export class WorkspaceCommandContribution implements CommandContribution {
         const toRemove = uris.filter(uri => roots.has(uri.toString()));
         if (toRemove.length > 0) {
             const messageContainer = document.createElement('div');
-            messageContainer.textContent = `Are you sure you want to remove the following folder${toRemove.length > 1 ? 's' : ''} from the workspace?`;
-            messageContainer.title = 'Note: Nothing will be erased from disk';
+            messageContainer.textContent = nls.localize(`theia/workspace/removeFolder${toRemove.length > 1 ? 's' : ''}`,
+                `Are you sure you want to remove the following folder${toRemove.length > 1 ? 's' : ''} from the workspace?`);
+            messageContainer.title = nls.localize('theia/workspace/noErasure', 'Note: Nothing will be erased from disk');
             const list = document.createElement('div');
             list.classList.add('theia-dialog-node');
             toRemove.forEach(uri => {
@@ -508,7 +514,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             });
             messageContainer.appendChild(list);
             const dialog = new ConfirmDialog({
-                title: 'Remove Folder from Workspace',
+                title: nls.localize('vscode/fileCommands/removeFolderFromWorkspace', 'Remove Folder from Workspace'),
                 msg: messageContainer
             });
             if (await dialog.open()) {

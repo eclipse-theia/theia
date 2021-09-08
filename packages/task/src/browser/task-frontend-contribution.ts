@@ -31,83 +31,84 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export namespace TaskCommands {
+    const TASK_CATEGORY_KEY = 'vscode/settingsLayout/task';
     const TASK_CATEGORY = 'Task';
-    export const TASK_RUN: Command = {
+    export const TASK_RUN = Command.toLocalizedCommand({
         id: 'task:run',
         category: TASK_CATEGORY,
         label: 'Run Task...'
-    };
+    }, 'vscode/task.contribution/RunTaskAction.label', TASK_CATEGORY_KEY);
 
-    export const TASK_RUN_BUILD: Command = {
+    export const TASK_RUN_BUILD = Command.toLocalizedCommand({
         id: 'task:run:build',
         category: TASK_CATEGORY,
         label: 'Run Build Task...'
-    };
+    }, 'vscode/task.contribution/BuildAction.label', TASK_CATEGORY_KEY);
 
-    export const TASK_RUN_TEST: Command = {
+    export const TASK_RUN_TEST = Command.toLocalizedCommand({
         id: 'task:run:test',
         category: TASK_CATEGORY,
         label: 'Run Test Task...'
-    };
+    }, 'vscode/task.contribution/TestAction.label', TASK_CATEGORY_KEY);
 
-    export const WORKBENCH_RUN_TASK: Command = {
+    export const WORKBENCH_RUN_TASK = Command.toLocalizedCommand({
         id: 'workbench.action.tasks.runTask',
         category: TASK_CATEGORY
-    };
+    }, '', TASK_CATEGORY_KEY);
 
-    export const TASK_RUN_LAST: Command = {
+    export const TASK_RUN_LAST = Command.toLocalizedCommand({
         id: 'task:run:last',
         category: TASK_CATEGORY,
         label: 'Run Last Task'
-    };
+    }, 'vscode/task.contribution/ReRunTaskAction.label', TASK_CATEGORY_KEY);
 
-    export const TASK_ATTACH: Command = {
+    export const TASK_ATTACH = Command.toLocalizedCommand({
         id: 'task:attach',
         category: TASK_CATEGORY,
         label: 'Attach Task...'
-    };
+    }, 'theia/task/attachTask', TASK_CATEGORY_KEY);
 
-    export const TASK_RUN_TEXT: Command = {
+    export const TASK_RUN_TEXT = Command.toLocalizedCommand({
         id: 'task:run:text',
         category: TASK_CATEGORY,
         label: 'Run Selected Text'
-    };
+    }, 'vscode/terminalMenu/miRunSelectedText', TASK_CATEGORY_KEY);
 
-    export const TASK_CONFIGURE: Command = {
+    export const TASK_CONFIGURE = Command.toLocalizedCommand({
         id: 'task:configure',
         category: TASK_CATEGORY,
         label: 'Configure Tasks...'
-    };
+    }, 'vscode/task.contribution/miConfigureTask', TASK_CATEGORY_KEY);
 
-    export const TASK_OPEN_USER: Command = {
+    export const TASK_OPEN_USER = Command.toLocalizedCommand({
         id: 'task:open_user',
         category: TASK_CATEGORY,
         label: 'Open User Tasks'
-    };
+    }, 'theia/task/openUserTasks', TASK_CATEGORY_KEY);
 
-    export const TASK_CLEAR_HISTORY: Command = {
+    export const TASK_CLEAR_HISTORY = Command.toLocalizedCommand({
         id: 'task:clear-history',
         category: TASK_CATEGORY,
         label: 'Clear History'
-    };
+    }, 'theia/task/clearHistory', TASK_CATEGORY_KEY);
 
-    export const TASK_SHOW_RUNNING: Command = {
+    export const TASK_SHOW_RUNNING = Command.toLocalizedCommand({
         id: 'task:show-running',
         category: TASK_CATEGORY,
         label: 'Show Running Tasks'
-    };
+    }, 'vscode/task.contribution/runningTasks', TASK_CATEGORY_KEY);
 
-    export const TASK_TERMINATE: Command = {
+    export const TASK_TERMINATE = Command.toLocalizedCommand({
         id: 'task:terminate',
         category: TASK_CATEGORY,
         label: 'Terminate Task'
-    };
+    }, 'vscode/abstractTaskService/terminateTask', TASK_CATEGORY_KEY);
 
-    export const TASK_RESTART_RUNNING: Command = {
+    export const TASK_RESTART_RUNNING = Command.toLocalizedCommand({
         id: 'task:restart-running',
         category: TASK_CATEGORY,
         label: 'Restart Running Task...'
-    };
+    }, 'vscode/abstractTaskService/restartTask', TASK_CATEGORY_KEY);
 }
 
 const TASKS_STORAGE_KEY = 'tasks';
@@ -201,7 +202,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         if (!!items.length) {
             this.statusBar.setElement(id, {
                 text: `$(tools) ${items.length}`,
-                tooltip: 'Show Running Tasks',
+                tooltip: TaskCommands.TASK_SHOW_RUNNING.label,
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2,
                 command: TaskCommands.TASK_SHOW_RUNNING.id,
@@ -361,7 +362,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
             commandId: TaskCommands.TASK_SHOW_RUNNING.id,
-            label: 'Show Running Tasks...',
+            label: TaskCommands.TASK_SHOW_RUNNING.label + '...',
             order: '0'
         });
 
@@ -373,7 +374,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
             commandId: TaskCommands.TASK_TERMINATE.id,
-            label: 'Terminate Task...',
+            label: TaskCommands.TASK_TERMINATE.label + '...',
             order: '2'
         });
 

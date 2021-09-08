@@ -31,22 +31,27 @@ import { WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
 import { LocationMapperService } from './location-mapper-service';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace MiniBrowserCommands {
-    export const PREVIEW: Command = {
+
+    export const PREVIEW_CATEGORY_KEY = 'vscode/extensionEditor/preview';
+    export const PREVIEW_CATEGORY = 'Preview';
+
+    export const PREVIEW = Command.toLocalizedCommand({
         id: 'mini-browser.preview',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
-    };
+    }, 'vscode/mainThreadFileSystemEventService/preview');
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',
         iconClass: codicon('go-to-file')
     };
-    export const OPEN_URL: Command = {
+    export const OPEN_URL = Command.toLocalizedCommand({
         id: 'mini-browser.openUrl',
-        category: 'Preview',
+        category: PREVIEW_CATEGORY,
         label: 'Open URL'
-    };
+    }, 'vscode/url.contribution/openUrl', PREVIEW_CATEGORY_KEY);
 }
 
 /**
@@ -78,7 +83,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     protected readonly supportedExtensions: Map<string, number> = new Map();
 
     readonly id = MiniBrowser.ID;
-    readonly label = 'Preview';
+    readonly label = nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY);
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
@@ -215,12 +220,12 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         toolbar.registerItem({
             id: MiniBrowserCommands.PREVIEW.id,
             command: MiniBrowserCommands.PREVIEW.id,
-            tooltip: 'Open Preview to the Side'
+            tooltip: nls.localize('theia/preview/openPreviewSide', 'Open Preview to the Side')
         });
         toolbar.registerItem({
             id: MiniBrowserCommands.OPEN_SOURCE.id,
             command: MiniBrowserCommands.OPEN_SOURCE.id,
-            tooltip: 'Open Source'
+            tooltip: nls.localize('theia/preview/openSource', 'Open Source')
         });
     }
 
@@ -276,8 +281,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     protected async openUrl(arg?: string): Promise<void> {
         const url = arg ? arg : await this.quickInputService?.input({
-            prompt: 'URL to open',
-            placeHolder: 'Type a URL'
+            prompt: nls.localize('vscode/url.contribution/urlToOpen', 'URL to open'),
+            placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL')
         });
         if (url) {
             await this.openPreview(url);
@@ -292,7 +297,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     protected async getOpenPreviewProps(startPage: string): Promise<MiniBrowserOpenerOptions> {
         const resetBackground = await this.resetBackground(new URI(startPage));
         return {
-            name: 'Preview',
+            name: nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY),
             startPage,
             toolbar: 'read-only',
             widgetOptions: {

@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 import { inject, injectable, postConstruct } from 'inversify';
-import { DialogProps } from './dialogs';
+import { Dialog, DialogProps } from './dialogs';
 import { ReactDialog } from './dialogs/react-dialog';
 import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
 import { Message } from './widgets/widget';
@@ -44,7 +44,7 @@ export class AboutDialog extends ReactDialog<void> {
         super({
             title: FrontendApplicationConfigProvider.get().applicationName,
         });
-        this.appendAcceptButton('Ok');
+        this.appendAcceptButton(Dialog.OK);
     }
 
     @postConstruct()

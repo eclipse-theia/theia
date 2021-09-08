@@ -18,6 +18,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { launchSchemaId } from '../debug-schema-updater';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const launchPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -25,7 +26,10 @@ export const launchPreferencesSchema: PreferenceSchema = {
     properties: {
         'launch': {
             $ref: launchSchemaId,
-            description: "Global debug launch configuration. Should be used as an alternative to 'launch.json' that is shared across workspaces",
+            description: nls.localize(
+                'vscode/debug.contribution/launch',
+                "Global debug launch configuration. Should be used as an alternative to 'launch.json' that is shared across workspaces"
+            ),
             defaultValue: { configurations: [], compounds: [] }
         }
     }

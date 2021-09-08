@@ -22,6 +22,7 @@ import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Informs the user whether Theia is running with hosted plugin.
@@ -62,7 +63,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
 
                     this.entry = {
                         text: `$(cube) ${HostedPluginInformer.DEVELOPMENT_HOST_TITLE}`,
-                        tooltip: `Hosted Plugin '${pluginMetadata.model.name}'`,
+                        tooltip: `${nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin')} '${pluginMetadata.model.name}'`,
                         alignment: StatusBarAlignment.LEFT,
                         priority: 100
                     };

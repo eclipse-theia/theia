@@ -22,13 +22,14 @@ import {
     PreferenceContribution,
     PreferenceSchema
 } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const PreviewConfigSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'preview.openByDefault': {
             type: 'boolean',
-            description: 'Open the preview instead of the editor by default.',
+            description: nls.localize('theia/preview/openByDefault', 'Open the preview instead of the editor by default.'),
             default: false
         }
     }
