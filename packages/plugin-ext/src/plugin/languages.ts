@@ -209,7 +209,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         }
 
         return [this.doTransformDocumentSelector(selector)!];
-        function isArray(arg: any): arg is readonly any[] {
+        function isArray(arg: unknown): arg is readonly unknown[] {
             return Array.isArray(arg);
         }
     }

@@ -224,7 +224,7 @@ export function fromDocumentSelector(selector: theia.DocumentSelector | undefine
             pattern: fromGlobPattern(selector.pattern!)
         } as LanguageFilter;
     }
-    function isArray(arg: any): arg is readonly any[] {
+    function isArray(arg: unknown): arg is readonly unknown[] {
         return Array.isArray(arg);
     }
 

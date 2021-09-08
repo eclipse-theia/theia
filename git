@@ -1,0 +1,62 @@
+[33mcommit 1ad9b1e2136f3e40db61e32a7d493fcb48ec69e9[m[33m ([m[1;36mHEAD -> [m[1;32mgh10025[m[33m, [m[1;31morigin/gh10025[m[33m)[m
+Author: smart-bo <bo.g.zhang@ericsson.com>
+Date:   Wed Sep 8 16:06:36 2021 -0400
+
+    fix errors from #10025
+
+[1mdiff --git a/packages/plugin-ext/src/plugin/languages.ts b/packages/plugin-ext/src/plugin/languages.ts[m
+[1mindex c8e538f9bdb..7311b57292e 100644[m
+[1m--- a/packages/plugin-ext/src/plugin/languages.ts[m
+[1m+++ b/packages/plugin-ext/src/plugin/languages.ts[m
+[36m@@ -204,11 +204,14 @@[m [mexport class LanguagesExtImpl implements LanguagesExt {[m
+     }[m
+ [m
+     private transformDocumentSelector(selector: theia.DocumentSelector): SerializedDocumentFilter[] {[m
+[31m-        if (Array.isArray(selector)) {[m
+[32m+[m[32m        if (isArray(selector)) {[m
+             return selector.map(sel => this.doTransformDocumentSelector(sel)!);[m
+         }[m
+ [m
+         return [this.doTransformDocumentSelector(selector)!];[m
+[32m+[m[32m        function isArray(arg: any): arg is readonly any[] {[m
+[32m+[m[32m            return Array.isArray(arg);[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     private doTransformDocumentSelector(selector: string | theia.DocumentFilter): SerializedDocumentFilter | undefined {[m
+[1mdiff --git a/packages/plugin-ext/src/plugin/type-converters.ts b/packages/plugin-ext/src/plugin/type-converters.ts[m
+[1mindex 9580d1515d7..2cb823be257 100644[m
+[1m--- a/packages/plugin-ext/src/plugin/type-converters.ts[m
+[1m+++ b/packages/plugin-ext/src/plugin/type-converters.ts[m
+[36m@@ -169,9 +169,9 @@[m [mexport function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora[m
+         });[m
+     } else {[m
+         return ranges.map((r): DecorationOptions =>[m
+[31m-            ({[m
+[31m-                range: fromRange(r)![m
+[31m-            }));[m
+[32m+[m[32m        ({[m
+[32m+[m[32m            range: fromRange(r)![m
+[32m+[m[32m        }));[m
+     }[m
+ }[m
+ [m
+[36m@@ -213,7 +213,7 @@[m [mexport function toMarkdown(value: model.MarkdownString): MarkdownString {[m
+ export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {[m
+     if (!selector) {[m
+         return undefined;[m
+[31m-    } else if (Array.isArray(selector)) {[m
+[32m+[m[32m    } else if (isArray(selector)) {[m
+         return <LanguageSelector>selector.map(fromDocumentSelector);[m
+     } else if (typeof selector === 'string') {[m
+         return selector;[m
+[36m@@ -224,6 +224,9 @@[m [mexport function fromDocumentSelector(selector: theia.DocumentSelector | undefine[m
+             pattern: fromGlobPattern(selector.pattern!)[m
+         } as LanguageFilter;[m
+     }[m
+[32m+[m[32m    function isArray(arg: any): arg is readonly any[] {[m
+[32m+[m[32m        return Array.isArray(arg);[m
+[32m+[m[32m    }[m
+ [m
+ }[m
+ [m
