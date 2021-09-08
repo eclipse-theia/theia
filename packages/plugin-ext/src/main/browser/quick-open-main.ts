@@ -15,7 +15,7 @@
  ********************************************************************************/
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { InputBoxOptions, QuickPickItem as QuickPickItemExt } from '@theia/plugin';
+import { InputBoxOptions } from '@theia/plugin';
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
@@ -23,15 +23,17 @@ import {
     QuickOpenMain,
     MAIN_RPC_CONTEXT,
     TransferInputBox,
-    TransferQuickPick,
     TransferQuickPickItems,
     TransferQuickInput,
     TransferQuickInputButton
 } from '../../common/plugin-api-rpc';
 import {
-    InputOptions, PickOptions, QuickInputButton, QuickInputService, QuickPickItem, QuickPickValue
+    InputOptions,
+    PickOptions,
+    QuickInputButton,
+    QuickInputButtonHandle,
+    QuickInputService
 } from '@theia/core/lib/browser';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
@@ -47,7 +49,6 @@ export interface QuickInputSession {
 export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
     private quickInputService: QuickInputService;
-    private quickPickService: QuickPickService;
     private proxy: QuickOpenExt;
     private delegate: MonacoQuickInputService;
     private readonly items: Record<number, {
@@ -61,7 +62,6 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
         this.delegate = container.get(MonacoQuickInputService);
         this.quickInputService = container.get(QuickInputService);
-        this.quickPickService = container.get(QuickPickService);
     }
 
     dispose(): void {
@@ -196,52 +196,53 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
     $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput<T>): Promise<void> {
         const sessionId = params.id;
-        const session = this.sessions.get(sessionId);
-        // if (!session) {
-        //     if (params.type === 'quickPick') {
-        //         const quickPick = this.quickInputService.createQuickPick();
-        //         quickPick.onDidAccept(() => {
-        //             this.proxy.$acceptOnDidAccept(sessionId);
-        //         });
-        //         quickPick.onDidChangeActive((items: Array<monaco.quickInput.IQuickPickItem>) => {
-        //             this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
-        //         });
-        //         quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
-        //             this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
-        //         });
-        //         quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
-        //             this.proxy.$acceptOnDidTriggerButton(sessionId, button);
-        //         });
-        //         quickPick.onDidChangeValue((value: string) => {
-        //             this.proxy.$acceptDidChangeValue(sessionId, value);
-        //         });
-        //         quickPick.onDidHide(() => {
-        //             this.proxy.$acceptOnDidHide(sessionId);
-        //         });
-        //         session = {
-        //             input: quickPick,
-        //             handlesToItems: new Map()
-        //         };
-        //     } else {
-        //         const inputBox = this.quickInputService.createInputBox();
-        //         inputBox.onDidAccept(() => {
-        //             this.proxy.$acceptOnDidAccept(sessionId);
-        //         });
-        //         inputBox.onDidTriggerButton((button: QuickInputButtonHandle) => {
-        //             this.proxy.$acceptOnDidTriggerButton(sessionId, button);
-        //         });
-        //         inputBox.onDidChangeValue((value: string) => {
-        //             this.proxy.$acceptDidChangeValue(sessionId, value);
-        //         });
-        //         inputBox.onDidHide(() => {
-        //             this.proxy.$acceptOnDidHide(sessionId);
-        //         });
-        //         session = {
-        //             input: inputBox,
-        //             handlesToItems: new Map()
-        //         };
-        //     }
-        // }
+        let session = this.sessions.get(sessionId);
+        if (!session) {
+            if (params.type === 'quickPick') {
+                const quickPick = this.quickInputService.createQuickPick();
+                quickPick.onDidAccept(() => {
+                    this.proxy.$acceptOnDidAccept(sessionId);
+                });
+                quickPick.onDidChangeActive((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                    this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+                });
+                quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                    this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
+                });
+                quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
+                    this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+                });
+                quickPick.onDidChangeValue((value: string) => {
+                    this.proxy.$acceptDidChangeValue(sessionId, value);
+                });
+                quickPick.onDidHide(() => {
+                    this.proxy.$acceptOnDidHide(sessionId);
+                });
+                session = {
+                    input: quickPick,
+                    handlesToItems: new Map()
+                };
+            } else {
+                const inputBox = this.quickInputService.createInputBox();
+                inputBox.onDidAccept(() => {
+                    this.proxy.$acceptOnDidAccept(sessionId);
+                });
+                inputBox.onDidTriggerButton((button: QuickInputButtonHandle) => {
+                    this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+                });
+                inputBox.onDidChangeValue((value: string) => {
+                    this.proxy.$acceptDidChangeValue(sessionId, value);
+                });
+                inputBox.onDidHide(() => {
+                    this.proxy.$acceptOnDidHide(sessionId);
+                });
+                session = {
+                    input: inputBox,
+                    handlesToItems: new Map()
+                };
+            }
+            this.sessions.set(sessionId, session);
+        }
         if (session) {
             const { input, handlesToItems } = session;
             for (const param in params) {
@@ -297,47 +298,6 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
         return Promise.resolve(undefined);
     }
 
-    async $showCustomQuickPick<T extends QuickPickItemExt>(options: TransferQuickPick<T>): Promise<void> {
-        const sessionId = options.id;
-        const toDispose = new DisposableCollection();
-
-        toDispose.push(this.quickPickService.onDidAccept(() => {
-            this.proxy.$acceptOnDidAccept(sessionId);
-        }));
-        toDispose.push(this.quickPickService.onDidChangeActive((e: { quickPick: any, activeItems: Array<QuickPickValue<number>> }) => {
-            this.proxy.$onDidChangeActive(sessionId, e.activeItems.map(item => item.value!));
-        }));
-        toDispose.push(this.quickPickService.onDidChangeSelection((e: { quickPick: any, selectedItems: Array<QuickPickValue<number>> }) => {
-            this.proxy.$onDidChangeSelection(sessionId, e.selectedItems.map(item => item.value!));
-        }));
-        toDispose.push(this.quickPickService.onDidChangeValue((e: { quickPick: any, filter: string }) => {
-            this.proxy.$acceptDidChangeValue(sessionId, e.filter);
-        }));
-        toDispose.push(this.quickPickService.onDidTriggerButton(button => {
-            this.proxy.$acceptOnDidTriggerButton(sessionId, button);
-        }));
-        toDispose.push(this.quickPickService.onDidHide(() => {
-            this.proxy.$acceptOnDidHide(sessionId);
-            if (!toDispose.disposed) {
-                toDispose.dispose();
-            }
-        }));
-        this.toDispose.push(toDispose);
-
-        this.quickPickService.show(this.convertToQuickPickItem(options.items), {
-            buttons: options.buttons ? this.convertToQuickInputButtons(options.buttons) : [],
-            placeholder: options.placeholder,
-            matchOnDescription: options.matchOnDescription,
-            step: options.step,
-            title: options.title,
-            totalSteps: options.totalSteps,
-            ignoreFocusOut: options.ignoreFocusOut,
-            value: options.value,
-            matchOnLabel: true,
-            runIfSingle: false,
-        });
-    }
-
     $hide(): void {
         this.delegate.hide();
     }
@@ -349,21 +309,6 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             this.sessions.delete(sessionId);
         }
         return Promise.resolve(undefined);
-    }
-
-    private convertToQuickPickItem(items: TransferQuickPickItems[] | undefined): Array<QuickPickItem> {
-        const convertedItems: QuickPickValue<number>[] = [];
-        if (items) {
-            for (const i of items) {
-                convertedItems.push({
-                    label: i.label,
-                    description: i.description,
-                    detail: i.detail,
-                    value: i.handle
-                });
-            }
-        }
-        return convertedItems;
     }
 
     private convertToQuickInputButtons(buttons: Array<TransferQuickInputButton>): Array<QuickInputButton> {
