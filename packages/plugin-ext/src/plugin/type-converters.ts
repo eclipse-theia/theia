@@ -169,9 +169,9 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
         });
     } else {
         return ranges.map((r): DecorationOptions =>
-            ({
-                range: fromRange(r)!
-            }));
+        ({
+            range: fromRange(r)!
+        }));
     }
 }
 
@@ -213,7 +213,7 @@ export function toMarkdown(value: model.MarkdownString): MarkdownString {
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
     if (!selector) {
         return undefined;
-    } else if (Array.isArray(selector)) {
+    } else if (isArray(selector)) {
         return <LanguageSelector>selector.map(fromDocumentSelector);
     } else if (typeof selector === 'string') {
         return selector;
@@ -223,6 +223,9 @@ export function fromDocumentSelector(selector: theia.DocumentSelector | undefine
             scheme: selector.scheme,
             pattern: fromGlobPattern(selector.pattern!)
         } as LanguageFilter;
+    }
+    function isArray(arg: any): arg is readonly any[] {
+        return Array.isArray(arg);
     }
 
 }

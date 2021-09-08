@@ -204,11 +204,14 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     private transformDocumentSelector(selector: theia.DocumentSelector): SerializedDocumentFilter[] {
-        if (Array.isArray(selector)) {
+        if (isArray(selector)) {
             return selector.map(sel => this.doTransformDocumentSelector(sel)!);
         }
 
         return [this.doTransformDocumentSelector(selector)!];
+        function isArray(arg: any): arg is readonly any[] {
+            return Array.isArray(arg);
+        }
     }
 
     private doTransformDocumentSelector(selector: string | theia.DocumentFilter): SerializedDocumentFilter | undefined {
