@@ -26,12 +26,6 @@ export class DebugWatchSource extends TreeSource {
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;
 
-    constructor() {
-        super({
-            placeholder: 'No expressions'
-        });
-    }
-
     @postConstruct()
     protected init(): void {
         this.refresh();

@@ -22,6 +22,7 @@ import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileDownloadService } from './file-download-service';
+import { CommonCommands } from '@theia/core/lib/browser';
 
 @injectable()
 export class FileDownloadCommandContribution implements CommandContribution {
@@ -67,16 +68,16 @@ export class FileDownloadCommandContribution implements CommandContribution {
 
 export namespace FileDownloadCommands {
 
-    export const DOWNLOAD: Command = {
+    export const DOWNLOAD = Command.toLocalizedCommand({
         id: 'file.download',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Download'
-    };
+    }, 'vscode/fileActions/downloadButton', CommonCommands.FILE_CATEGORY_KEY);
 
-    export const COPY_DOWNLOAD_LINK: Command = {
+    export const COPY_DOWNLOAD_LINK = Command.toLocalizedCommand({
         id: 'file.copyDownloadLink',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Copy Download Link'
-    };
+    }, 'theia/filesystem/copyDownloadLink', CommonCommands.FILE_CATEGORY_KEY);
 
 }

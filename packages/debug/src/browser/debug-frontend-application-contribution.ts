@@ -51,6 +51,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -63,214 +64,241 @@ export namespace DebugMenus {
     export const DEBUG_BREAKPOINTS = [...DEBUG, 'f_breakpoints'];
 }
 
+function nlsEditBreakpoint(breakpointKey: string, breakpoint: string): string {
+    return nls.localize('vscode/breakpointEditorContribution/editBreakpoint', 'Edit {0}...', nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+}
+
+function nlsRemoveBreakpoint(breakpointKey: string, breakpoint: string): string {
+    return nls.localize('vscode/breakpointEditorContribution/removeBreakpoint', 'Remove {0}',
+        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+}
+
+function nlsEnableBreakpoint(breakpointKey: string, breakpoint: string): string {
+    return nls.localize('vscode/breakpointEditorContribution/enableBreakpoint', 'Enable {0}',
+        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+}
+
+function nlsDisableBreakpoint(breakpointKey: string, breakpoint: string): string {
+    return nls.localize('vscode/breakpointEditorContribution/disableBreakpoint', 'Disable {0}',
+        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+}
+
 export namespace DebugCommands {
 
+    export const DEBUG_CATEGORY_KEY = 'vscode/debugCommands/debug';
     export const DEBUG_CATEGORY = 'Debug';
 
-    export const START: Command = {
+    export const START = Command.toLocalizedCommand({
         id: 'workbench.action.debug.start',
         category: DEBUG_CATEGORY,
         label: 'Start Debugging',
         iconClass: codicon('debug-alt')
-    };
-    export const START_NO_DEBUG: Command = {
+    }, 'vscode/debugCommands/startDebug', DEBUG_CATEGORY_KEY);
+    export const START_NO_DEBUG = Command.toLocalizedCommand({
         id: 'workbench.action.debug.run',
         label: 'Debug: Start Without Debugging'
-    };
-    export const STOP: Command = {
+    }, 'vscode/debugCommands/startWithoutDebugging');
+    export const STOP = Command.toLocalizedCommand({
         id: 'workbench.action.debug.stop',
         category: DEBUG_CATEGORY,
-        label: 'Stop Debugging',
+        label: 'Stop',
         iconClass: codicon('debug-stop')
-    };
-    export const RESTART: Command = {
+    }, 'vscode/debugCommands/stop', DEBUG_CATEGORY_KEY);
+    export const RESTART = Command.toLocalizedCommand({
         id: 'workbench.action.debug.restart',
         category: DEBUG_CATEGORY,
-        label: 'Restart Debugging',
-    };
+        label: 'Restart',
+    }, 'vscode/debugCommands/restartDebug', DEBUG_CATEGORY_KEY);
 
-    export const OPEN_CONFIGURATIONS = {
+    export const OPEN_CONFIGURATIONS = Command.toLocalizedCommand({
         id: 'debug.configurations.open',
-        label: 'Debug: Open Configurations'
-    };
-    export const ADD_CONFIGURATION = {
+        category: DEBUG_CATEGORY,
+        label: 'Open Configurations'
+    }, 'vscode/debugViewlet/miOpenConfigurations', DEBUG_CATEGORY_KEY);
+    export const ADD_CONFIGURATION = Command.toLocalizedCommand({
         id: 'debug.configurations.add',
-        label: 'Debug: Add Configuration...'
-    };
+        category: DEBUG_CATEGORY,
+        label: 'Add Configuration...'
+    }, 'vscode/debugActionViewItems/addConfiguration', DEBUG_CATEGORY_KEY);
 
-    export const STEP_OVER: Command = {
+    export const STEP_OVER = Command.toLocalizedCommand({
         id: 'workbench.action.debug.stepOver',
         category: DEBUG_CATEGORY,
         label: 'Step Over',
         iconClass: codicon('debug-step-over')
-    };
-    export const STEP_INTO: Command = {
+    }, 'vscode/debugCommands/stepOverDebug', DEBUG_CATEGORY_KEY);
+    export const STEP_INTO = Command.toLocalizedCommand({
         id: 'workbench.action.debug.stepInto',
         category: DEBUG_CATEGORY,
         label: 'Step Into',
         iconClass: codicon('debug-step-into')
-    };
-    export const STEP_OUT: Command = {
+    }, 'vscode/debugCommands/stepIntoDebug', DEBUG_CATEGORY_KEY);
+    export const STEP_OUT = Command.toLocalizedCommand({
         id: 'workbench.action.debug.stepOut',
         category: DEBUG_CATEGORY,
         label: 'Step Out',
         iconClass: codicon('debug-step-out')
-    };
-    export const CONTINUE: Command = {
+    }, 'vscode/debugCommands/stepOutDebug', DEBUG_CATEGORY_KEY);
+    export const CONTINUE = Command.toLocalizedCommand({
         id: 'workbench.action.debug.continue',
         category: DEBUG_CATEGORY,
         label: 'Continue',
         iconClass: codicon('debug-continue')
-    };
-    export const PAUSE: Command = {
+    }, 'vscode/debugCommands/continueDebug', DEBUG_CATEGORY_KEY);
+    export const PAUSE = Command.toLocalizedCommand({
         id: 'workbench.action.debug.pause',
         category: DEBUG_CATEGORY,
         label: 'Pause',
         iconClass: codicon('debug-pause')
-    };
-    export const CONTINUE_ALL: Command = {
+    }, 'vscode/debugCommands/pauseDebug', DEBUG_CATEGORY_KEY);
+    export const CONTINUE_ALL = Command.toLocalizedCommand({
         id: 'debug.thread.continue.all',
         category: DEBUG_CATEGORY,
         label: 'Continue All',
         iconClass: codicon('debug-continue')
-    };
-    export const PAUSE_ALL: Command = {
+    }, 'theia/debug/continueAll', DEBUG_CATEGORY_KEY);
+    export const PAUSE_ALL = Command.toLocalizedCommand({
         id: 'debug.thread.pause.all',
         category: DEBUG_CATEGORY,
         label: 'Pause All',
         iconClass: codicon('debug-pause')
-    };
+    }, 'theia/debug/pauseAll', DEBUG_CATEGORY_KEY);
 
-    export const TOGGLE_BREAKPOINT: Command = {
+    export const TOGGLE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'editor.debug.action.toggleBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Toggle Breakpoint',
-    };
-    export const INLINE_BREAKPOINT: Command = {
+    }, 'vscode/debugEditorActions/miToggleBreakpoint', DEBUG_CATEGORY_KEY);
+    export const INLINE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'editor.debug.action.inlineBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Inline Breakpoint',
-    };
-    export const ADD_CONDITIONAL_BREAKPOINT: Command = {
+    }, 'vscode/debug.contribution/inlineBreakpoint', DEBUG_CATEGORY_KEY);
+    export const ADD_CONDITIONAL_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.add.conditional',
         category: DEBUG_CATEGORY,
         label: 'Add Conditional Breakpoint...',
-    };
-    export const ADD_LOGPOINT: Command = {
+    }, 'vscode/breakpointEditorContribution/addConditionalBreakpoint', DEBUG_CATEGORY_KEY);
+    export const ADD_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.add.logpoint',
         category: DEBUG_CATEGORY,
         label: 'Add Logpoint...',
-    };
-    export const ADD_FUNCTION_BREAKPOINT: Command = {
+    }, 'vscode/breakpointEditorContribution/addLogPoint', DEBUG_CATEGORY_KEY);
+    export const ADD_FUNCTION_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.add.function',
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint...',
-    };
-    export const ENABLE_ALL_BREAKPOINTS: Command = {
+    }, 'vscode/breakpointsView/addFunctionBreakpoint', DEBUG_CATEGORY_KEY);
+    export const ENABLE_ALL_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
         label: 'Enable All Breakpoints',
-    };
-    export const DISABLE_ALL_BREAKPOINTS: Command = {
+    }, 'vscode/breakpointsView/enableAllBreakpoints', DEBUG_CATEGORY_KEY);
+    export const DISABLE_ALL_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.disableAll',
         category: DEBUG_CATEGORY,
         label: 'Disable All Breakpoints',
-    };
-    export const EDIT_BREAKPOINT: Command = {
+    }, 'vscode/breakpointsView/disableAllBreakpoints', DEBUG_CATEGORY_KEY);
+    export const EDIT_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.edit',
         category: DEBUG_CATEGORY,
-        label: 'Edit Breakpoint...',
-    };
-    export const EDIT_LOGPOINT: Command = {
+        originalLabel: 'Edit Breakpoint...',
+        label: nlsEditBreakpoint('breakpoint', 'Breakpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const EDIT_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.edit',
         category: DEBUG_CATEGORY,
-        label: 'Edit Logpoint...',
-    };
-    export const REMOVE_BREAKPOINT: Command = {
+        originalLabel: 'Edit Logpoint...',
+        label: nlsEditBreakpoint('logPoint', 'Logpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const REMOVE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.remove',
         category: DEBUG_CATEGORY,
-        label: 'Remove Breakpoint',
-    };
-    export const REMOVE_LOGPOINT: Command = {
+        originalLabel: 'Remove Breakpoint',
+        label: nlsRemoveBreakpoint('breakpoint', 'Breakpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const REMOVE_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.remove',
         category: DEBUG_CATEGORY,
-        label: 'Remove Logpoint',
-    };
-    export const REMOVE_ALL_BREAKPOINTS: Command = {
+        originalLabel: 'Remove Logpoint',
+        label: nlsRemoveBreakpoint('logPoint', 'Logpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const REMOVE_ALL_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.removeAll',
         category: DEBUG_CATEGORY,
         label: 'Remove All Breakpoints',
-    };
-    export const TOGGLE_BREAKPOINTS_ENABLED: Command = {
+    }, 'vscode/breakpointsView/removeAllBreakpoints', DEBUG_CATEGORY_KEY);
+    export const TOGGLE_BREAKPOINTS_ENABLED = Command.toLocalizedCommand({
         id: 'debug.breakpoint.toggleEnabled'
-    };
-    export const SHOW_HOVER = {
+    });
+    export const SHOW_HOVER = Command.toLocalizedCommand({
         id: 'editor.debug.action.showDebugHover',
-        label: 'Debug: Show Hover'
-    };
+        category: DEBUG_CATEGORY,
+        label: 'Show Hover'
+    }, 'vscode/hover/showHover', DEBUG_CATEGORY_KEY);
 
-    export const RESTART_FRAME: Command = {
+    export const RESTART_FRAME = Command.toLocalizedCommand({
         id: 'debug.frame.restart',
         category: DEBUG_CATEGORY,
         label: 'Restart Frame',
-    };
-    export const COPY_CALL_STACK: Command = {
+    }, 'vscode/debug.contribution/restartFrame', DEBUG_CATEGORY_KEY);
+    export const COPY_CALL_STACK = Command.toLocalizedCommand({
         id: 'debug.callStack.copy',
         category: DEBUG_CATEGORY,
         label: 'Copy Call Stack',
-    };
+    }, 'vscode/debug.contribution/copyStackTrace', DEBUG_CATEGORY_KEY);
 
-    export const SET_VARIABLE_VALUE: Command = {
+    export const SET_VARIABLE_VALUE = Command.toLocalizedCommand({
         id: 'debug.variable.setValue',
         category: DEBUG_CATEGORY,
         label: 'Set Value',
-    };
-    export const COPY_VARIABLE_VALUE: Command = {
+    }, 'vscode/debug.contribution/setValue', DEBUG_CATEGORY_KEY);
+    export const COPY_VARIABLE_VALUE = Command.toLocalizedCommand({
         id: 'debug.variable.copyValue',
         category: DEBUG_CATEGORY,
         label: 'Copy Value',
-    };
-    export const COPY_VARIABLE_AS_EXPRESSION: Command = {
+    }, 'vscode/debug.contribution/copyValue', DEBUG_CATEGORY_KEY);
+    export const COPY_VARIABLE_AS_EXPRESSION = Command.toLocalizedCommand({
         id: 'debug.variable.copyAsExpression',
         category: DEBUG_CATEGORY,
         label: 'Copy As Expression',
-    };
-    export const WATCH_VARIABLE: Command = {
+    }, 'vscode/debug.contribution/copyAsExpression', DEBUG_CATEGORY_KEY);
+    export const WATCH_VARIABLE = Command.toLocalizedCommand({
         id: 'debug.variable.watch',
         category: DEBUG_CATEGORY,
         label: 'Add to Watch',
-    };
+    }, 'vscode/debug.contribution/addToWatchExpressions', DEBUG_CATEGORY_KEY);
 
-    export const ADD_WATCH_EXPRESSION: Command = {
+    export const ADD_WATCH_EXPRESSION = Command.toLocalizedCommand({
         id: 'debug.watch.addExpression',
         category: DEBUG_CATEGORY,
-        label: 'Add Watch Expression'
-    };
-    export const EDIT_WATCH_EXPRESSION: Command = {
+        label: 'Add Expression'
+    }, 'vscode/watchExpressionsView/addWatchExpression', DEBUG_CATEGORY_KEY);
+    export const EDIT_WATCH_EXPRESSION = Command.toLocalizedCommand({
         id: 'debug.watch.editExpression',
         category: DEBUG_CATEGORY,
-        label: 'Edit Watch Expression'
-    };
-    export const COPY_WATCH_EXPRESSION_VALUE: Command = {
+        label: 'Edit Expression'
+    }, 'vscode/debug.contribution/editWatchExpression', DEBUG_CATEGORY_KEY);
+    export const COPY_WATCH_EXPRESSION_VALUE = Command.toLocalizedCommand({
         id: 'debug.watch.copyExpressionValue',
         category: DEBUG_CATEGORY,
-        label: 'Copy Watch Expression Value'
-    };
-    export const REMOVE_WATCH_EXPRESSION: Command = {
+        label: 'Copy Expression Value'
+    }, 'theia/debug/copyExpressionValue', DEBUG_CATEGORY_KEY);
+    export const REMOVE_WATCH_EXPRESSION = Command.toLocalizedCommand({
         id: 'debug.watch.removeExpression',
         category: DEBUG_CATEGORY,
-        label: 'Remove Watch Expression'
-    };
-    export const COLLAPSE_ALL_WATCH_EXPRESSIONS: Command = {
+        label: 'Remove Expression'
+    }, 'vscode/debug.contribution/removeWatchExpression', DEBUG_CATEGORY_KEY);
+    export const COLLAPSE_ALL_WATCH_EXPRESSIONS = Command.toLocalizedCommand({
         id: 'debug.watch.collapseAllExpressions',
         category: DEBUG_CATEGORY,
-        label: 'Collapse All Watch Expressions'
-    };
-    export const REMOVE_ALL_WATCH_EXPRESSIONS: Command = {
+        label: 'Collapse All Expressions'
+    }, 'vscode/watchExpressionsView/collapse', DEBUG_CATEGORY_KEY);
+    export const REMOVE_ALL_WATCH_EXPRESSIONS = Command.toLocalizedCommand({
         id: 'debug.watch.removeAllExpressions',
         category: DEBUG_CATEGORY,
-        label: 'Remove All Watch Expressions'
-    };
+        label: 'Remove All Expressions'
+    }, 'vscode/watchExpressionsView/removeAllWatchExpressions', DEBUG_CATEGORY_KEY);
 }
 export namespace DebugThreadContextCommands {
     export const STEP_OVER = {
@@ -497,7 +525,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             }
         };
 
-        menus.registerSubmenu(DebugMenus.DEBUG, 'Run');
+        menus.registerSubmenu(DebugMenus.DEBUG, nls.localize('vscode/debug.contribution/run', 'Run'));
         registerMenuActions(DebugMenus.DEBUG_CONTROLS,
             DebugCommands.START,
             DebugCommands.START_NO_DEBUG,
@@ -522,7 +550,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registerMenuActions(DebugMenus.DEBUG_BREAKPOINT,
             DebugCommands.TOGGLE_BREAKPOINT
         );
-        menus.registerSubmenu(DebugMenus.DEBUG_NEW_BREAKPOINT, 'New Breakpoint');
+        menus.registerSubmenu(DebugMenus.DEBUG_NEW_BREAKPOINT, nls.localize('vscode/debug.contribution/miNewBreakpoint', 'New Breakpoint'));
         registerMenuActions(DebugMenus.DEBUG_NEW_BREAKPOINT,
             DebugCommands.ADD_CONDITIONAL_BREAKPOINT,
             DebugCommands.INLINE_BREAKPOINT,
@@ -545,15 +573,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugCommands.CONTINUE_ALL, ...DebugSessionContextCommands.CONTINUE_ALL }
         );
         registerMenuActions(DebugThreadsWidget.TERMINATE_MENU,
-            { ...DebugCommands.RESTART, ...DebugSessionContextCommands.RESTART, label: 'Restart' },
-            { ...DebugCommands.STOP, ...DebugSessionContextCommands.STOP, label: 'Stop' },
-            { ...DebugThreadContextCommands.TERMINATE, label: 'Terminate Thread' }
+            { ...DebugCommands.RESTART, ...DebugSessionContextCommands.RESTART },
+            { ...DebugCommands.STOP, ...DebugSessionContextCommands.STOP },
+            { ...DebugThreadContextCommands.TERMINATE, label: nls.localize('vscode/debug.contribution/terminateThread', 'Terminate Thread') }
         );
         registerMenuActions(DebugThreadsWidget.OPEN_MENU,
-            { ...DebugSessionContextCommands.REVEAL, label: 'Reveal' },
-            { ...DebugSessionContextCommands.OPEN_LEFT, label: 'Open Left' },
-            { ...DebugSessionContextCommands.OPEN_RIGHT, label: 'Open Right' },
-            { ...DebugSessionContextCommands.OPEN_BOTTOM, label: 'Open Bottom' }
+            { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') },
+            { ...DebugSessionContextCommands.OPEN_LEFT, label: nls.localize('theia/debug/openLeft', 'Open Left') },
+            { ...DebugSessionContextCommands.OPEN_RIGHT, label: nls.localize('theia/debug/openRight', 'Open Right') },
+            { ...DebugSessionContextCommands.OPEN_BOTTOM, label: nls.localize('theia/debug/openBottom', 'Open Bottom') }
         );
 
         registerMenuActions(DebugStackFramesWidget.CONTEXT_MENU,
@@ -571,12 +599,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         );
 
         registerMenuActions(DebugWatchWidget.EDIT_MENU,
-            { ...DebugCommands.EDIT_WATCH_EXPRESSION, label: 'Edit Expression' },
-            { ...DebugCommands.COPY_WATCH_EXPRESSION_VALUE, label: 'Copy Value' }
+            DebugCommands.EDIT_WATCH_EXPRESSION,
+            DebugCommands.COPY_WATCH_EXPRESSION_VALUE
         );
         registerMenuActions(DebugWatchWidget.REMOVE_MENU,
-            { ...DebugCommands.REMOVE_WATCH_EXPRESSION, label: 'Remove Expression' },
-            { ...DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS, label: 'Remove All Expressions' }
+            DebugCommands.REMOVE_WATCH_EXPRESSION,
+            DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS
         );
 
         registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
@@ -594,17 +622,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         );
 
         registerMenuActions(DebugEditorModel.CONTEXT_MENU,
-            { ...DebugEditorContextCommands.ADD_BREAKPOINT, label: 'Add Breakpoint' },
+            { ...DebugEditorContextCommands.ADD_BREAKPOINT, label: nls.localize('vscode/breakpointEditorContribution/addBreakpoint', 'Add Breakpoint') },
             { ...DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, label: DebugCommands.ADD_CONDITIONAL_BREAKPOINT.label },
             { ...DebugEditorContextCommands.ADD_LOGPOINT, label: DebugCommands.ADD_LOGPOINT.label },
             { ...DebugEditorContextCommands.REMOVE_BREAKPOINT, label: DebugCommands.REMOVE_BREAKPOINT.label },
             { ...DebugEditorContextCommands.EDIT_BREAKPOINT, label: DebugCommands.EDIT_BREAKPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: 'Enable Breakpoint' },
-            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: 'Disable Breakpoint' },
+            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: nlsEnableBreakpoint('breakpoint', 'Breakpoint') },
+            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: nlsDisableBreakpoint('breakpoint', 'Breakpoint') },
             { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
             { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: 'Enable Logpoint' },
-            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: 'Disable Logpoint' }
+            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('logPoint', 'Logpoint') },
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('logPoint', 'Logpoint') }
         );
     }
 
@@ -1078,7 +1106,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             priority: 1
         };
         const updateToggleBreakpointsEnabled = () => {
-            const tooltip = this.breakpointManager.breakpointsEnabled ? 'Deactivate Breakpoints' : 'Activate Breakpoints';
+            const activateBreakpoints = nls.localize('vscode/breakpointsView/enableAllBreakpoints', 'Enable Breakpoints');
+            const deactivateBreakpoints = nls.localize('vscode/breakpointsView/disableAllBreakpoints', 'Disable Breakpoints');
+            const tooltip = this.breakpointManager.breakpointsEnabled ? deactivateBreakpoints : activateBreakpoints;
             if (toggleBreakpointsEnabled.tooltip !== tooltip) {
                 toggleBreakpointsEnabled.tooltip = tooltip;
                 onDidChangeToggleBreakpointsEnabled.fire(undefined);
@@ -1088,7 +1118,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             id: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
             command: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
             icon: codicon('add'),
-            tooltip: 'Add Function Breakpoint'
+            tooltip: DebugCommands.ADD_FUNCTION_BREAKPOINT.label
         });
         updateToggleBreakpointsEnabled();
         this.breakpointManager.onDidChangeBreakpoints(updateToggleBreakpointsEnabled);
@@ -1104,20 +1134,20 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             id: DebugCommands.ADD_WATCH_EXPRESSION.id,
             command: DebugCommands.ADD_WATCH_EXPRESSION.id,
             icon: codicon('add'),
-            tooltip: 'Add Expression'
+            tooltip: DebugCommands.ADD_WATCH_EXPRESSION.label
         });
         toolbar.registerItem({
             id: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
             command: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
             icon: codicon('collapse-all'),
-            tooltip: 'Collapse All',
+            tooltip: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.label,
             priority: 1
         });
         toolbar.registerItem({
             id: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
             command: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
             icon: codicon('close-all'),
-            tooltip: 'Remove All Expressions',
+            tooltip: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.label,
             priority: 2
         });
     }

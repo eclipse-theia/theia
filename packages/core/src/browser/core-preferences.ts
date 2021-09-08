@@ -19,6 +19,7 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { isOSX } from '../common/os';
+import { nls } from '../common/nls';
 
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -31,19 +32,20 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'always',
             ],
             default: 'ifRequired',
-            description: 'When to confirm before closing the application window.',
+            description: nls.localize('vscode/workbench.contribution/confirmBeforeCloseWeb', 'When to confirm before closing the application window.'),
         },
         'breadcrumbs.enabled': {
             'type': 'boolean',
             'default': true,
-            'description': 'Enable/disable navigation breadcrumbs.',
+            'description': nls.localize('vscode/breadcrumbs/enabled', 'Enable/disable navigation breadcrumbs.'),
             'scope': 'application'
         },
         'files.encoding': {
             'type': 'string',
             'enum': Object.keys(SUPPORTED_ENCODINGS),
             'default': 'utf8',
-            'description': 'The default character set encoding to use when reading and writing files. This setting can also be configured per language.',
+            'description': nls.localize('vscode/files.contribution/encoding',
+                'The default character set encoding to use when reading and writing files. This setting can also be configured per language.'),
             'scope': 'language-overridable',
             'enumDescriptions': Object.keys(SUPPORTED_ENCODINGS).map(key => SUPPORTED_ENCODINGS[key].labelLong),
             'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
@@ -55,21 +57,22 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'keyCode',
             ],
             default: 'code',
-            description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
+            description: nls.localize('vscode/keybindingService/dispatch',
+                'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.')
         },
         'window.menuBarVisibility': {
             type: 'string',
             enum: ['classic', 'visible', 'hidden', 'compact'],
             markdownEnumDescriptions: [
-                'Menu is displayed at the top of the window and only hidden in full screen mode.',
-                'Menu is always visible at the top of the window even in full screen mode.',
-                'Menu is always hidden.',
-                'Menu is displayed as a compact button in the sidebar.'
+                nls.localize('vscode/workbench.contribution/window.menuBarVisibility.default', 'Menu is displayed at the top of the window and only hidden in full screen mode.'),
+                nls.localize('vscode/workbench.contribution/window.menuBarVisibility.visible', 'Menu is always visible at the top of the window even in full screen mode.'),
+                nls.localize('vscode/workbench.contribution/window.menuBarVisibility.hidden', 'Menu is always hidden.'),
+                nls.localize('vscode/workbench.contribution/window.menuBarVisibility.compact', 'Menu is displayed as a compact button in the sidebar.')
             ],
             default: 'classic',
             scope: 'application',
-            markdownDescription: `Control the visibility of the menu bar.
-            A setting of 'compact' will move the menu into the sidebar.`,
+            markdownDescription: nls.localize('vscode/workbench.contribution/menuBarVisibility', `Control the visibility of the menu bar.
+            A setting of 'compact' will move the menu into the sidebar.`),
             included: !isOSX
         },
         'workbench.list.openMode': {
@@ -79,39 +82,40 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'doubleClick'
             ],
             default: 'singleClick',
-            description: 'Controls how to open items in trees using the mouse.'
+            description: nls.localize('vscode/listService/openModeModifier', 'Controls how to open items in trees using the mouse.')
         },
         'workbench.editor.highlightModifiedTabs': {
             'type': 'boolean',
-            'description': 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.',
+            'description': nls.localize('vscode/workbench.contribution/highlightModifiedTabs', 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.'),
             'default': false
         },
         'workbench.editor.closeOnFileDelete': {
             'type': 'boolean',
             // eslint-disable-next-line max-len
-            'description': 'Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.',
+            'description': nls.localize('vscode/workbench.contribution/closeOnFileDelete', 'Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.'),
             'default': false
         },
         'workbench.commandPalette.history': {
             type: 'number',
             default: 50,
             minimum: 0,
-            description: 'Controls the number of recently used commands to keep in history for the command palette. Set to 0 to disable command history.'
+            // eslint-disable-next-line max-len
+            description: nls.localize('vscode/workbench.contribution/commandHistory', 'Controls the number of recently used commands to keep in history for the command palette. Set to 0 to disable command history.')
         },
         'workbench.colorTheme': {
             type: 'string',
             default: FrontendApplicationConfigProvider.get().defaultTheme,
-            description: 'Specifies the color theme used in the workbench.'
+            description: nls.localize('vscode/themeConfiguration/colorTheme', 'Specifies the color theme used in the workbench.')
         },
         'workbench.iconTheme': {
             type: ['string', 'null'],
             default: FrontendApplicationConfigProvider.get().defaultIconTheme,
-            description: "Specifies the icon theme used in the workbench or 'null' to not show any file icons."
+            description: nls.localize('vscode/themeConfiguration/iconTheme', "Specifies the icon theme used in the workbench or 'null' to not show any file icons.")
         },
         'workbench.silentNotifications': {
             type: 'boolean',
             default: false,
-            description: 'Controls whether to suppress notification popups.'
+            description: nls.localize('vscode/workbench.contribution/zenMode.silentNotifications', 'Controls whether to suppress notification popups.')
         },
         'workbench.statusBar.visible': {
             type: 'boolean',
@@ -122,7 +126,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['onHover', 'none', 'always'],
             default: 'onHover',
-            description: 'Controls whether the tree should render indent guides.'
+            description: nls.localize('vscode/listService/render tree indent guides', 'Controls whether the tree should render indent guides.')
         },
         'workbench.hover.delay': {
             type: 'number',

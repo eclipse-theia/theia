@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
+import { nls } from '../../common/nls';
 import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '../../browser/preferences';
 import { isOSX, isWindows } from '../../common';
 
@@ -37,19 +38,15 @@ export const electronWindowPreferencesSchema: PreferenceSchema = {
             'maximum': ZoomLevel.MAX,
             'scope': 'application',
             // eslint-disable-next-line max-len
-            'description': 'Adjust the zoom level of the window. The original size is 0 and each increment above (e.g. 1.0) or below (e.g. -1.0) represents zooming 20% larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity.'
+            'description': nls.localize('vscode/desktop.contribution/zoomLevel', 'Adjust the zoom level of the window. The original size is 0 and each increment above (e.g. 1.0) or below (e.g. -1.0) represents zooming 20% larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity.')
         },
         'window.titleBarStyle': {
             type: 'string',
             enum: ['native', 'custom'],
-            markdownEnumDescriptions: [
-                'Native title bar is displayed.',
-                'Custom title bar is displayed.'
-            ],
             default: isWindows ? 'custom' : 'native',
             scope: 'application',
             // eslint-disable-next-line max-len
-            markdownDescription: 'Adjust the appearance of the window title bar. On Linux and Windows, this setting also affects the application and context menu appearances. Changes require a full restart to apply.',
+            description: nls.localize('vscode/desktop.contribution/titleBarStyle', 'Adjust the appearance of the window title bar. On Linux and Windows, this setting also affects the application and context menu appearances. Changes require a full restart to apply.'),
             included: !isOSX
         },
     }

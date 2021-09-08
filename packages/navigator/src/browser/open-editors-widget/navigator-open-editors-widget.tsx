@@ -38,6 +38,7 @@ import { OpenEditorsTreeDecoratorService } from './navigator-open-editors-decora
 import { OPEN_EDITORS_CONTEXT_MENU } from './navigator-open-editors-menus';
 import { CommandService } from '@theia/core/lib/common';
 import { OpenEditorsCommands } from './navigator-open-editors-commands';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,
@@ -51,7 +52,7 @@ export interface OpenEditorsNodeRow extends TreeWidget.NodeRow {
 @injectable()
 export class OpenEditorsWidget extends FileTreeWidget {
     static ID = 'theia-open-editors-widget';
-    static LABEL = 'Open Editors';
+    static LABEL = nls.localize('vscode/openEditorsView/openEditors', 'Open Editors');
 
     @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
     @inject(CommandService) protected readonly commandService: CommandService;

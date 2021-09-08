@@ -23,6 +23,7 @@ import {
     PreferenceContribution,
     PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 const frontendConfig = FrontendApplicationConfigProvider.get();
 
@@ -32,7 +33,7 @@ export const WebviewConfigSchema: PreferenceSchema = {
         'webview.trace': {
             type: 'string',
             enum: ['off', 'on', 'verbose'],
-            description: 'Controls communication tracing with webviews.',
+            description: nls.localize('theia/plugin-ext/webviewTrace', 'Controls communication tracing with webviews.'),
             default: 'off'
         }
     }
@@ -42,7 +43,7 @@ if (frontendConfig.securityWarnings) {
     WebviewConfigSchema.properties['webview.warnIfUnsecure'] = {
         scope: 'application',
         type: 'boolean',
-        description: 'Warns users that webviews are currently deployed unsecurely.',
+        description: nls.localize('theia/plugin-ext/webviewWarnIfUnsecure', 'Warns users that webviews are currently deployed unsecurely.'),
         default: true,
     };
 }

@@ -29,10 +29,10 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon, CommonCommands
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
@@ -52,6 +52,7 @@ import {
     ENVIRONMENT_VARIABLE_COLLECTIONS_KEY,
     SerializableExtensionEnvironmentVariableCollection
 } from '../common/base-terminal-protocol';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -64,77 +65,78 @@ export namespace TerminalMenus {
 }
 
 export namespace TerminalCommands {
+    const TERMINAL_CATEGORY_KEY = 'vscode/settingsLayout/terminal';
     const TERMINAL_CATEGORY = 'Terminal';
-    export const NEW: Command = {
+    export const NEW = Command.toLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
         label: 'Open New Terminal'
-    };
-    export const NEW_ACTIVE_WORKSPACE: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.new', TERMINAL_CATEGORY_KEY);
+    export const NEW_ACTIVE_WORKSPACE = Command.toLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
         label: 'Open New Terminal (In Active Workspace)'
-    };
-    export const TERMINAL_CLEAR: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.newInActiveWorkspace', TERMINAL_CATEGORY_KEY);
+    export const TERMINAL_CLEAR = Command.toLocalizedCommand({
         id: 'terminal:clear',
         category: TERMINAL_CATEGORY,
         label: 'Clear Terminal'
-    };
-    export const TERMINAL_CONTEXT: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.clear', TERMINAL_CATEGORY_KEY);
+    export const TERMINAL_CONTEXT = Command.toLocalizedCommand({
         id: 'terminal:context',
         category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
-    };
-    export const SPLIT: Command = {
+    }, 'vscode/scm.contribution/open in terminal', TERMINAL_CATEGORY_KEY);
+    export const SPLIT = Command.toLocalizedCommand({
         id: 'terminal:split',
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
-    };
-    export const TERMINAL_FIND_TEXT: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.split', TERMINAL_CATEGORY_KEY);
+    export const TERMINAL_FIND_TEXT = Command.toLocalizedCommand({
         id: 'terminal:find',
         category: TERMINAL_CATEGORY,
         label: 'Find'
-    };
-    export const TERMINAL_FIND_TEXT_CANCEL: Command = {
+    }, 'vscode/findController/startFindAction', TERMINAL_CATEGORY_KEY);
+    export const TERMINAL_FIND_TEXT_CANCEL = Command.toLocalizedCommand({
         id: 'terminal:find:cancel',
         category: TERMINAL_CATEGORY,
         label: 'Hide find widget'
-    };
+    }, 'vscode/terminalActions/workbench.action.terminal.hideFind', TERMINAL_CATEGORY_KEY);
 
-    export const SCROLL_LINE_UP: Command = {
+    export const SCROLL_LINE_UP = Command.toLocalizedCommand({
         id: 'terminal:scroll:line:up',
         category: TERMINAL_CATEGORY,
         label: 'Scroll line up'
-    };
-    export const SCROLL_LINE_DOWN: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.scrollUp', TERMINAL_CATEGORY_KEY);
+    export const SCROLL_LINE_DOWN = Command.toLocalizedCommand({
         id: 'terminal:scroll:line:down',
         category: TERMINAL_CATEGORY,
         label: 'Scroll line down'
-    };
-    export const SCROLL_TO_TOP: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.scrollDown', TERMINAL_CATEGORY_KEY);
+    export const SCROLL_TO_TOP = Command.toLocalizedCommand({
         id: 'terminal:scroll:top',
         category: TERMINAL_CATEGORY,
         label: 'Scroll to top'
-    };
-    export const SCROLL_PAGE_UP: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.scrollToTop', TERMINAL_CATEGORY_KEY);
+    export const SCROLL_PAGE_UP = Command.toLocalizedCommand({
         id: 'terminal:scroll:page:up',
         category: TERMINAL_CATEGORY,
         label: 'Scroll page up'
-    };
-    export const SCROLL_PAGE_DOWN: Command = {
+    }, 'vscode/terminalActions/workbench.action.terminal.scrollUpPage', TERMINAL_CATEGORY_KEY);
+    export const SCROLL_PAGE_DOWN = Command.toLocalizedCommand({
         id: 'terminal:scroll:page:down',
         category: TERMINAL_CATEGORY,
         label: 'Scroll page down'
-    };
+    }, 'vscode/terminalActions/workbench.action.terminal.scrollDownPage', TERMINAL_CATEGORY_KEY);
 
     /**
      * Command that displays all terminals that are currently opened
      */
-    export const SHOW_ALL_OPENED_TERMINALS: Command = {
+    export const SHOW_ALL_OPENED_TERMINALS = Command.toLocalizedCommand({
         id: 'workbench.action.showAllTerminals',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Terminals'
-    };
+    }, 'vscode/terminal.contribution/tasksQuickAccessHelp', CommonCommands.VIEW_CATEGORY_KEY);
 }
 
 @injectable()
@@ -389,10 +391,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerSubmenu(TerminalMenus.TERMINAL, 'Terminal');
+        menus.registerSubmenu(TerminalMenus.TERMINAL, TerminalWidgetImpl.LABEL);
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
             commandId: TerminalCommands.NEW.id,
-            label: 'New Terminal',
+            label: nls.localize('vscode/terminalActions/workbench.action.terminal.new.short', 'New Terminal'),
             order: '0'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
@@ -598,7 +600,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                     resource
                 }));
                 const selectedItem = await this.quickInputService?.showQuickPick(items, {
-                    placeholder: 'Select current working directory for new terminal'
+                    placeholder: nls.localize('vscode/terminalActions/workbench.action.terminal.newWorkspacePlaceholder', 'Select current working directory for new terminal')
                 });
                 resolve(selectedItem?.resource?.toString());
             }

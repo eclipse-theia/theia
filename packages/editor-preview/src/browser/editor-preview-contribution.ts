@@ -14,17 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ApplicationShell, KeybindingContribution, KeybindingRegistry, SHELL_TABBAR_CONTEXT_MENU, Widget } from '@theia/core/lib/browser';
+import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingRegistry, SHELL_TABBAR_CONTEXT_MENU, Widget } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from './editor-preview-widget';
 
 export namespace EditorPreviewCommands {
-    export const PIN_PREVIEW_COMMAND: Command = {
+    export const PIN_PREVIEW_COMMAND = Command.toLocalizedCommand({
         id: 'workbench.action.keepEditor',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Keep Editor',
-    };
+    }, 'vscode/editor.contribution/keepEditor', CommonCommands.VIEW_CATEGORY_KEY);
 }
 
 @injectable()
@@ -61,7 +62,7 @@ export class EditorPreviewContribution implements CommandContribution, MenuContr
     registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: EditorPreviewCommands.PIN_PREVIEW_COMMAND.id,
-            label: 'Keep Open',
+            label: nls.localize('vscode/editor.contribution/keepOpen', 'Keep Open'),
             order: '6',
         });
     }

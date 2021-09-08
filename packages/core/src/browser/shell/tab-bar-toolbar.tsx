@@ -27,6 +27,7 @@ import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
 import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
 import { MenuModelRegistry } from '../../common/menu';
+import { nls } from '../../common/nls';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -403,7 +404,8 @@ export class TabBarToolbar extends ReactWidget {
 
     protected renderMore(): React.ReactNode {
         return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
-            <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu} title='More Actions...' />
+            <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu}
+                title={nls.localize('vscode/compositePart/viewsAndMoreActions', 'More Actions...')} />
         </div>;
     }
 

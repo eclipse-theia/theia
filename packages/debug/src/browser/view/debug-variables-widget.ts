@@ -19,6 +19,7 @@ import { MenuPath } from '@theia/core/lib/common';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { DebugVariablesSource } from './debug-variables-source';
 import { DebugViewModel } from './debug-view-model';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {
@@ -51,7 +52,7 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:variables:' + this.viewModel.id;
-        this.title.label = 'Variables';
+        this.title.label = nls.localize('vscode/debug.contribution/variables', 'Variables');
         this.toDispose.push(this.variables);
         this.source = this.variables;
     }

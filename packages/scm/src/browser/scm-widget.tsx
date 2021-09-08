@@ -28,6 +28,7 @@ import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmPreferences } from './scm-preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class ScmWidget extends BaseWidget implements StatefulWidget {
@@ -103,7 +104,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : 'no repository found';
+        this.title.label = repository ? repository.provider.label : nls.localize('vscode/scm.contribution/no open repo', 'No repository found');
         this.title.caption = this.title.label;
         this.update();
         if (repository) {

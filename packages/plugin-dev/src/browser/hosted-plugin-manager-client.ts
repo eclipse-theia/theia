@@ -29,39 +29,43 @@ import { HostedPluginPreferences } from './hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Commands to control Hosted plugin instances.
  */
 export namespace HostedPluginCommands {
+    const HOSTED_PLUGIN_CATEGORY_KEY = 'theia/plugin-dev/hostedPlugin';
     const HOSTED_PLUGIN_CATEGORY = 'Hosted Plugin';
-    export const START: Command = {
+    export const START = Command.toLocalizedCommand({
         id: 'hosted-plugin:start',
         category: HOSTED_PLUGIN_CATEGORY,
         label: 'Start Instance'
-    };
+    }, 'theia/plugin-dev/startInstance', HOSTED_PLUGIN_CATEGORY_KEY);
 
-    export const DEBUG: Command = {
+    export const DEBUG = Command.toLocalizedCommand({
         id: 'hosted-plugin:debug',
         category: HOSTED_PLUGIN_CATEGORY,
         label: 'Debug Instance'
-    };
+    }, 'theia/plugin-dev/debugInstance', HOSTED_PLUGIN_CATEGORY_KEY);
 
-    export const STOP: Command = {
+    export const STOP = Command.toLocalizedCommand({
         id: 'hosted-plugin:stop',
         category: HOSTED_PLUGIN_CATEGORY,
         label: 'Stop Instance'
-    };
-    export const RESTART: Command = {
+    }, 'theia/plugin-dev/stopInstance', HOSTED_PLUGIN_CATEGORY_KEY);
+
+    export const RESTART = Command.toLocalizedCommand({
         id: 'hosted-plugin:restart',
         category: HOSTED_PLUGIN_CATEGORY,
         label: 'Restart Instance'
-    };
-    export const SELECT_PATH: Command = {
+    }, 'theia/plugin-dev/restartInstance', HOSTED_PLUGIN_CATEGORY_KEY);
+
+    export const SELECT_PATH = Command.toLocalizedCommand({
         id: 'hosted-plugin:select-path',
         category: HOSTED_PLUGIN_CATEGORY,
         label: 'Select Path'
-    };
+    }, 'theia/plugin-dev/selectPath', HOSTED_PLUGIN_CATEGORY_KEY);
 }
 
 /**
@@ -143,7 +147,7 @@ export class HostedPluginManagerClient {
 
     async start(debugConfig?: DebugPluginConfiguration): Promise<void> {
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
-            this.messageService.warn('Hosted instance is already running.');
+            this.messageService.warn(nls.localize('theia/plugin-dev/alreadyRunning', 'Hosted instance is already running.'));
             return;
         }
 
@@ -157,7 +161,7 @@ export class HostedPluginManagerClient {
 
         try {
             this.stateChanged.fire({ state: HostedInstanceState.STARTING, pluginLocation: this.pluginLocation });
-            this.messageService.info('Starting hosted instance server ...');
+            this.messageService.info(nls.localize('theia/plugin-dev/starting', 'Starting hosted instance server ...'));
 
             if (debugConfig) {
                 this.isDebug = true;
@@ -168,10 +172,10 @@ export class HostedPluginManagerClient {
             }
             await this.openPluginWindow();
 
-            this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
+            this.messageService.info(`${nls.localize('theia/plugin-dev/running', 'Hosted instance is running at:')} ${this.pluginInstanceURL}`);
             this.stateChanged.fire({ state: HostedInstanceState.RUNNING, pluginLocation: this.pluginLocation });
         } catch (error) {
-            this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(error));
+            this.messageService.error(nls.localize('theia/plugin-dev/failed', 'Failed to run hosted plugin instance: {0}', this.getErrorMessage(error)));
             this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation });
             this.stop();
         }
@@ -199,7 +203,7 @@ export class HostedPluginManagerClient {
                 type: 'node',
                 request: 'attach',
                 timeout: 30000,
-                name: 'Hosted Plugin',
+                name: nls.localize('theia/plugin-dev/hostedPlugin', 'Hosted Plugin'),
                 smartStep: true,
                 sourceMaps: !!outFiles,
                 outFiles
@@ -209,13 +213,15 @@ export class HostedPluginManagerClient {
 
     async stop(checkRunning: boolean = true): Promise<void> {
         if (checkRunning && !await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
-            this.messageService.warn('Hosted instance is not running.');
+            this.messageService.warn(nls.localize('theia/plugin-dev/notRunning', 'Hosted instance is not running.'));
             return;
         }
         try {
             this.stateChanged.fire({ state: HostedInstanceState.STOPPING, pluginLocation: this.pluginLocation! });
             await this.hostedPluginServer.terminateHostedPluginInstance();
-            this.messageService.info((this.pluginInstanceURL ? this.pluginInstanceURL : 'The instance') + ' has been terminated.');
+            this.messageService.info((this.pluginInstanceURL
+                ? nls.localize('theia/plugin-dev/instanceTerminated', '{0} has been terminated', this.pluginInstanceURL)
+                : nls.localize('theia/plugin-dev/unknownTerminated', 'The instance has been terminated')));
             this.stateChanged.fire({ state: HostedInstanceState.STOPPED, pluginLocation: this.pluginLocation! });
         } catch (error) {
             this.messageService.error(this.getErrorMessage(error));
@@ -226,7 +232,7 @@ export class HostedPluginManagerClient {
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
             await this.stop(false);
 
-            this.messageService.info('Starting hosted instance server ...');
+            this.messageService.info(nls.localize('theia/plugin-dev/starting', 'Starting hosted instance server ...'));
 
             // It takes some time before OS released all resources e.g. port.
             // Keep trying to run hosted instance with delay.
@@ -243,7 +249,7 @@ export class HostedPluginManagerClient {
                         this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation!.toString());
                     }
                     await this.openPluginWindow();
-                    this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
+                    this.messageService.info(`${nls.localize('theia/plugin-dev/running', 'Hosted instance is running at:')} ${this.pluginInstanceURL}`);
                     this.stateChanged.fire({
                         state: HostedInstanceState.RUNNING,
                         pluginLocation: this.pluginLocation!
@@ -254,11 +260,11 @@ export class HostedPluginManagerClient {
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
-            this.messageService.error('Failed to run hosted plugin instance: ' + this.getErrorMessage(lastError));
+            this.messageService.error(nls.localize('theia/plugin-dev/failed', 'Failed to run hosted plugin instance: {0}', this.getErrorMessage(lastError)));
             this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation! });
             this.stop();
         } else {
-            this.messageService.warn('Hosted Plugin instance was not running.');
+            this.messageService.warn(nls.localize('theia/plugin-dev/notRunning', 'Hosted instance is not running.'));
             this.start();
         }
     }
@@ -274,7 +280,7 @@ export class HostedPluginManagerClient {
 
         const result = await this.fileDialogService.showOpenDialog({
             title: HostedPluginCommands.SELECT_PATH.label!,
-            openLabel: 'Select',
+            openLabel: nls.localize('theia/plugin-dev/select', 'Select'),
             canSelectFiles: false,
             canSelectFolders: true,
             canSelectMany: false
@@ -283,9 +289,9 @@ export class HostedPluginManagerClient {
         if (result) {
             if (await this.hostedPluginServer.isPluginValid(result.toString())) {
                 this.pluginLocation = result;
-                this.messageService.info('Plugin folder is set to: ' + this.labelProvider.getLongName(result));
+                this.messageService.info(nls.localize('theia/plugin-dev/pluginFolder', 'Plugin folder is set to: {0}', this.labelProvider.getLongName(result)));
             } else {
-                this.messageService.error('Specified folder does not contain valid plugin.');
+                this.messageService.error(nls.localize('theia/plugin-dev/noValidPlugin', 'Specified folder does not contain valid plugin.'));
             }
         }
     }
@@ -386,7 +392,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
 
     constructor(windowService: WindowService) {
         super({
-            title: 'Your browser prevented opening of a new tab'
+            title: nls.localize('theia/plugin-dev/preventedNewTab', 'Your browser prevented opening of a new tab')
         });
         this.windowService = windowService;
 
@@ -396,7 +402,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         this.contentNode.appendChild(this.linkNode);
 
         const messageNode = document.createElement('div');
-        messageNode.innerText = 'Hosted instance is started at: ';
+        messageNode.innerText = nls.localize('theia/plugin-dev/running', 'Hosted instance is running at:') + ' ';
         messageNode.appendChild(this.linkNode);
         this.contentNode.appendChild(messageNode);
 

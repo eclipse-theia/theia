@@ -22,6 +22,7 @@ import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './prefere
 import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
 import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core/lib/common/nls';
 
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,
@@ -38,7 +39,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = 'Preferences';
+    static readonly LABEL = nls.localize('vscode/actions/preferences', 'Preferences');
 
     @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
     @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;

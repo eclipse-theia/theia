@@ -49,170 +49,189 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ScmInputIssueType } from '@theia/scm/lib/browser/scm-input';
 import { DecorationsService } from '@theia/core/lib/browser/decorations-service';
 import { GitDecorationProvider } from './git-decoration-provider';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace GIT_COMMANDS {
-    export const CLONE = {
+
+    const GIT_CATEGORY_KEY = 'vscode.git/package/displayName';
+    const GIT_CATEGORY = 'Git';
+
+    export const CLONE = Command.toLocalizedCommand({
         id: 'git.clone',
-        label: 'Git: Clone...'
-    };
-    export const FETCH = {
+        category: GIT_CATEGORY,
+        label: 'Clone...'
+    }, 'vscode.git/package/command.clone', GIT_CATEGORY_KEY);
+    export const FETCH = Command.toLocalizedCommand({
         id: 'git.fetch',
-        label: 'Git: Fetch...'
-    };
-    export const PULL_DEFAULT = {
+        category: GIT_CATEGORY,
+        label: 'Fetch...'
+    }, 'vscode.git/package/command.fetch', GIT_CATEGORY_KEY);
+    export const PULL_DEFAULT = Command.toLocalizedCommand({
         id: 'git.pull.default',
-        label: 'Git: Pull'
-    };
-    export const PULL_DEFAULT_FAVORITE = {
+        category: GIT_CATEGORY,
+        label: 'Pull'
+    }, 'vscode.git/package/command.pull', GIT_CATEGORY_KEY);
+    export const PULL_DEFAULT_FAVORITE: Command = {
         id: PULL_DEFAULT.id + '.favorite',
-        label: PULL_DEFAULT.label
+        label: PULL_DEFAULT.label,
+        originalLabel: PULL_DEFAULT.originalLabel
     };
-    export const PULL = {
+    export const PULL = Command.toLocalizedCommand({
         id: 'git.pull',
-        label: 'Git: Pull from...'
-    };
-    export const PUSH_DEFAULT = {
+        category: GIT_CATEGORY,
+        label: 'Pull from...'
+    }, 'vscode.git/package/command.pullFrom', GIT_CATEGORY_KEY);
+    export const PUSH_DEFAULT = Command.toLocalizedCommand({
         id: 'git.push.default',
-        label: 'Git: Push'
-    };
-    export const PUSH_DEFAULT_FAVORITE = {
+        category: GIT_CATEGORY,
+        label: 'Push'
+    }, 'vscode.git/package/command.push', GIT_CATEGORY_KEY);
+    export const PUSH_DEFAULT_FAVORITE: Command = {
         id: PUSH_DEFAULT.id + '.favorite',
-        label: PUSH_DEFAULT.label
+        label: PUSH_DEFAULT.label,
+        originalLabel: PUSH_DEFAULT.originalLabel
     };
-    export const PUSH = {
+    export const PUSH = Command.toLocalizedCommand({
         id: 'git.push',
-        label: 'Git: Push to...'
-    };
-    export const MERGE = {
+        category: GIT_CATEGORY,
+        label: 'Push to...'
+    }, 'vscode.git/package/command.pushTo', GIT_CATEGORY_KEY);
+    export const MERGE = Command.toLocalizedCommand({
         id: 'git.merge',
-        label: 'Git: Merge...'
-    };
-    export const CHECKOUT = {
+        category: GIT_CATEGORY,
+        label: 'Merge...'
+    }, 'vscode.git/package/command.merge', GIT_CATEGORY_KEY);
+    export const CHECKOUT = Command.toLocalizedCommand({
         id: 'git.checkout',
-        label: 'Git: Checkout'
-    };
+        category: GIT_CATEGORY,
+        label: 'Checkout'
+    }, 'vscode.git/package/command.checkout', GIT_CATEGORY_KEY);
     export const COMMIT = {
-        id: 'git.commit.all',
+        ...Command.toLocalizedCommand({
+            id: 'git.commit.all',
+            label: 'Commit',
+            iconClass: codicon('check')
+        }, 'vscode.git/package/command.commit'),
         tooltip: 'Commit all the staged changes',
-        label: 'Commit',
-        iconClass: codicon('check')
     };
-    export const COMMIT_ADD_SIGN_OFF = {
+    export const COMMIT_ADD_SIGN_OFF = Command.toLocalizedCommand({
         id: 'git-commit-add-sign-off',
         label: 'Add Signed-off-by',
-        category: 'Git',
+        category: GIT_CATEGORY,
         iconClass: codicon('edit')
-    };
+    }, 'theia/git/addSignedOff', GIT_CATEGORY_KEY);
     export const COMMIT_AMEND = {
         id: 'git.commit.amend'
     };
     export const COMMIT_SIGN_OFF = {
         id: 'git.commit.signOff'
     };
-    export const OPEN_FILE: Command = {
+    export const OPEN_FILE = Command.toLocalizedCommand({
         id: 'git.open.file',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Open File',
         iconClass: codicon('go-to-file')
-    };
-    export const OPEN_CHANGED_FILE: Command = {
+    }, 'vscode.git/package/command.openFile', GIT_CATEGORY_KEY);
+    export const OPEN_CHANGED_FILE = Command.toLocalizedCommand({
         id: 'git.open.changed.file',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Open File',
         iconClass: codicon('go-to-file')
-    };
-    export const OPEN_CHANGES: Command = {
+    }, 'vscode.git/package/command.openFile', GIT_CATEGORY_KEY);
+    export const OPEN_CHANGES = Command.toLocalizedCommand({
         id: 'git.open.changes',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Open Changes',
         iconClass: codicon('git-compare')
-    };
-    export const SYNC = {
+    }, 'vscode.git/package/command.openChange', GIT_CATEGORY_KEY);
+    export const SYNC = Command.toLocalizedCommand({
         id: 'git.sync',
-        label: 'Git: Sync'
-    };
-    export const PUBLISH = {
+        category: GIT_CATEGORY,
+        label: 'Sync'
+    }, 'vscode.git/package/command.sync', GIT_CATEGORY_KEY);
+    export const PUBLISH = Command.toLocalizedCommand({
         id: 'git.publish',
-        label: 'Git: Publish Branch'
-    };
-    export const STAGE = {
+        category: GIT_CATEGORY,
+        label: 'Publish Branch'
+    }, 'vscode.git/package/command.publish', GIT_CATEGORY_KEY);
+    export const STAGE = Command.toLocalizedCommand({
         id: 'git.stage',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Stage Changes',
         iconClass: codicon('add')
-    };
-    export const STAGE_ALL = {
+    }, 'vscode.git/package/command.stage', GIT_CATEGORY_KEY);
+    export const STAGE_ALL = Command.toLocalizedCommand({
         id: 'git.stage.all',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Stage All Changes',
         iconClass: codicon('add')
-    };
-    export const UNSTAGE = {
+    }, 'vscode.git/package/command.stageAll', GIT_CATEGORY_KEY);
+    export const UNSTAGE = Command.toLocalizedCommand({
         id: 'git.unstage',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Unstage Changes',
         iconClass: codicon('dash')
-    };
-    export const UNSTAGE_ALL = {
+    }, 'vscode.git/package/command.unstage', GIT_CATEGORY_KEY);
+    export const UNSTAGE_ALL = Command.toLocalizedCommand({
         id: 'git.unstage.all',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Unstage All',
         iconClass: codicon('dash')
-    };
-    export const DISCARD = {
+    }, 'vscode.git/package/command.unstageAll', GIT_CATEGORY_KEY);
+    export const DISCARD = Command.toLocalizedCommand({
         id: 'git.discard',
         iconClass: codicon('discard'),
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Discard Changes'
-    };
-    export const DISCARD_ALL = {
+    }, 'vscode.git/package/command.clean', GIT_CATEGORY_KEY);
+    export const DISCARD_ALL = Command.toLocalizedCommand({
         id: 'git.discard.all',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Discard All Changes',
         iconClass: codicon('discard')
-    };
-    export const STASH = {
+    }, 'vscode.git/package/command.cleanAll', GIT_CATEGORY_KEY);
+    export const STASH = Command.toLocalizedCommand({
         id: 'git.stash',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Stash...'
-    };
-    export const APPLY_STASH = {
+    }, 'vscode.git/package/command.stash', GIT_CATEGORY_KEY);
+    export const APPLY_STASH = Command.toLocalizedCommand({
         id: 'git.stash.apply',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Apply Stash...'
-    };
-    export const APPLY_LATEST_STASH = {
+    }, 'vscode.git/package/command.stashApply', GIT_CATEGORY_KEY);
+    export const APPLY_LATEST_STASH = Command.toLocalizedCommand({
         id: 'git.stash.apply.latest',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Apply Latest Stash'
-    };
-    export const POP_STASH = {
+    }, 'vscode.git/package/command.stashApplyLatest', GIT_CATEGORY_KEY);
+    export const POP_STASH = Command.toLocalizedCommand({
         id: 'git.stash.pop',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Pop Stash...'
-    };
-    export const POP_LATEST_STASH = {
+    }, 'vscode.git/package/command.stashPop', GIT_CATEGORY_KEY);
+    export const POP_LATEST_STASH = Command.toLocalizedCommand({
         id: 'git.stash.pop.latest',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Pop Latest Stash'
-    };
-    export const DROP_STASH = {
+    }, 'vscode.git/package/command.stashPopLatest', GIT_CATEGORY_KEY);
+    export const DROP_STASH = Command.toLocalizedCommand({
         id: 'git.stash.drop',
-        category: 'Git',
+        category: GIT_CATEGORY,
         label: 'Drop Stash...'
-    };
-    export const REFRESH = {
+    }, 'vscode.git/package/command.stashDrop', GIT_CATEGORY_KEY);
+    export const REFRESH = Command.toLocalizedCommand({
         id: 'git-refresh',
         label: 'Refresh',
-        category: 'Git',
+        category: GIT_CATEGORY,
         iconClass: codicon('refresh')
-    };
-    export const INIT_REPOSITORY = {
+    }, 'vscode.git/package/command.refresh', GIT_CATEGORY_KEY);
+    export const INIT_REPOSITORY = Command.toLocalizedCommand({
         id: 'git-init',
         label: 'Initialize Repository',
-        category: 'Git',
+        category: GIT_CATEGORY,
         iconClass: codicon('add')
-    };
+    }, 'vscode.git/package/command.init', GIT_CATEGORY_KEY);
 }
 export namespace GIT_MENUS {
     // Top level Groups
@@ -221,22 +240,22 @@ export namespace GIT_MENUS {
 
     export const SUBMENU_COMMIT = {
         group: COMMANDS_GROUP,
-        label: 'Commit',
+        label: nls.localize('vscode.git/package/submenu.commit', 'Commit'),
         menuGroups: ['1_commit'],
     };
     export const SUBMENU_CHANGES = {
         group: COMMANDS_GROUP,
-        label: 'Changes',
+        label: nls.localize('vscode.git/package/submenu.changes', 'Changes'),
         menuGroups: ['1_changes']
     };
     export const SUBMENU_PULL_PUSH = {
         group: COMMANDS_GROUP,
-        label: 'Pull, Push',
+        label: nls.localize('vscode.git/package/submenu.pullpush', 'Pull, Push'),
         menuGroups: ['2_pull', '3_push', '4_fetch']
     };
     export const SUBMENU_STASH = {
         group: COMMANDS_GROUP,
-        label: 'Stash',
+        label: nls.localize('vscode.git/package/submenu.stash', 'Stash'),
         menuGroups: ['1_stash']
     };
 }
@@ -548,7 +567,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 if (lastCommit === undefined) {
                     scmRepository.input.issue = {
                         type: ScmInputIssueType.Error,
-                        message: 'No previous commit to amend'
+                        message: nls.localize('theia/git/noPreviousCommit', 'No previous commit to amend')
                     };
                     scmRepository.input.focus();
                     return;
@@ -620,7 +639,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             registerItem({
                 id: command.id + '_fav',
                 command: command.id,
-                tooltip: command.label.slice('Git: '.length),
+                tooltip: command.label,
                 group: GIT_MENUS.FAV_GROUP,
                 priority: 100 - index
             })
@@ -629,20 +648,20 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         registerItem({
             id: GIT_COMMANDS.COMMIT_AMEND.id,
             command: GIT_COMMANDS.COMMIT_AMEND.id,
-            tooltip: 'Commit (Amend)',
+            tooltip: nls.localize('vscode.git/package/command.commitStagedAmend', 'Commit (Amend)'),
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_COMMIT)
         });
         registerItem({
             id: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
             command: GIT_COMMANDS.COMMIT_SIGN_OFF.id,
-            tooltip: 'Commit (Signed Off)',
+            tooltip: nls.localize('vscode.git/package/command.commitStagedSigned', 'Commit (Signed Off)'),
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_COMMIT)
         });
         [GIT_COMMANDS.PULL_DEFAULT, GIT_COMMANDS.PULL].forEach(command =>
             registerItem({
                 id: command.id,
                 command: command.id,
-                tooltip: command.label.slice('Git: '.length),
+                tooltip: command.label,
                 group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_PULL_PUSH)
             })
         );
@@ -650,14 +669,14 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             registerItem({
                 id: command.id,
                 command: command.id,
-                tooltip: command.label.slice('Git: '.length),
+                tooltip: command.label,
                 group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_PULL_PUSH, 1)
             })
         );
         registerItem({
             id: GIT_COMMANDS.FETCH.id,
             command: GIT_COMMANDS.FETCH.id,
-            tooltip: GIT_COMMANDS.FETCH.label.slice('Git: '.length),
+            tooltip: GIT_COMMANDS.FETCH.label,
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_PULL_PUSH, 2)
         });
 
@@ -677,28 +696,28 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         registerItem({
             id: GIT_COMMANDS.STAGE_ALL.id,
             command: GIT_COMMANDS.STAGE_ALL.id,
-            tooltip: 'Stage All Changes',
+            tooltip: GIT_COMMANDS.STAGE_ALL.label,
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_CHANGES),
             priority: 30
         });
         registerItem({
             id: GIT_COMMANDS.UNSTAGE_ALL.id,
             command: GIT_COMMANDS.UNSTAGE_ALL.id,
-            tooltip: 'Unstage All Changes',
+            tooltip: GIT_COMMANDS.UNSTAGE_ALL.label,
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_CHANGES),
             priority: 20
         });
         registerItem({
             id: GIT_COMMANDS.DISCARD_ALL.id,
             command: GIT_COMMANDS.DISCARD_ALL.id,
-            tooltip: 'Discard All Changes',
+            tooltip: GIT_COMMANDS.DISCARD_ALL.label,
             group: this.asSubMenuItemOf(GIT_MENUS.SUBMENU_CHANGES),
             priority: 10
         });
         registerItem({
             id: GIT_COMMANDS.MERGE.id,
             command: GIT_COMMANDS.MERGE.id,
-            tooltip: GIT_COMMANDS.MERGE.label.slice('Git: '.length),
+            tooltip: GIT_COMMANDS.MERGE.label,
             group: GIT_MENUS.COMMANDS_GROUP
         });
     }
@@ -802,7 +821,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         if (this.syncService.isSyncing()) {
             return {
                 title: '$(codicon-sync~spin)',
-                tooltip: 'Synchronizing Changes...'
+                tooltip: nls.localize('vscode.git/statusbar/syncing changes', 'Synchronizing Changes...')
             };
         }
         const { upstreamBranch, aheadBehind } = status;
@@ -810,13 +829,13 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             return {
                 title: '$(codicon-sync)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
-                tooltip: 'Synchronize Changes'
+                tooltip: nls.localize('vscode.git/repository/sync changes', 'Synchronize Changes')
             };
         }
         return {
             title: '$(codicon-cloud-upload)',
             command: GIT_COMMANDS.PUBLISH.id,
-            tooltip: 'Publish Changes'
+            tooltip: nls.localize('vscode.git/statusbar/publish changes', 'Publish Changes')
         };
     }
 
@@ -829,7 +848,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         if (!message.trim()) {
             scmRepository.input.issue = {
                 type: ScmInputIssueType.Error,
-                message: 'Please provide a commit message'
+                message: nls.localize('vscode.git/repository/commitMessageWhitespacesOnlyWarning', 'Please provide a commit message')
             };
             scmRepository.input.focus();
             return;
@@ -837,7 +856,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         if (!scmRepository.provider.stagedChanges.length) {
             scmRepository.input.issue = {
                 type: ScmInputIssueType.Error,
-                message: 'No changes added to commit'
+                message: nls.localize('vscode.git/commands/no changes', 'No changes added to commit')
             };
             scmRepository.input.focus();
             return;
@@ -878,7 +897,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         } catch (e) {
             scmRepository.input.issue = {
                 type: ScmInputIssueType.Warning,
-                message: 'Make sure you configure your \'user.name\' and \'user.email\' in git.'
+                message: nls.localize('vscode/commands/missing user info', 'Make sure you configure your \'user.name\' and \'user.email\' in git.')
             };
         }
 

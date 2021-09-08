@@ -31,9 +31,10 @@ import { isOSX, environment } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { FileNavigatorCommands } from './navigator-contribution';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const FILE_NAVIGATOR_ID = 'files';
-export const LABEL = 'No folder opened';
+export const LABEL = nls.localize('vscode/emptyView/noWorkspace', 'No folder opened');
 export const CLASS = 'theia-Files';
 
 @injectable()
@@ -65,7 +66,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super.init();
         // This ensures that the context menu command to hide this widget receives the label 'Folders'
         // regardless of the name of workspace. See ViewContainer.updateToolbarItems.
-        const dataset = { ...this.title.dataset, visibilityCommandLabel: 'Folders' };
+        const dataset = { ...this.title.dataset, visibilityCommandLabel: nls.localize('vscode/explorerViewlet/folders', 'Folders') };
         this.title.dataset = dataset;
         this.updateSelectionContextKeys();
         this.toDispose.pushAll([
@@ -246,6 +247,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
      * Instead of displaying an empty navigator tree, this will show a button to add more folders.
      */
     protected renderEmptyMultiRootWorkspace(): React.ReactNode {
+        // TODO: @msujew Implement a markdown renderer and use vscode/explorerViewlet/noFolderHelp
         return <div className='theia-navigator-container'>
             <div className='center'>You have not yet added a folder to the workspace.</div>
             <div className='open-workspace-button-container'>

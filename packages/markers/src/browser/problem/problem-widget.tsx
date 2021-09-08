@@ -27,6 +27,7 @@ import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-typ
 import * as React from '@theia/core/shared/react';
 import { ProblemPreferences } from './problem-preferences';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const PROBLEMS_WIDGET_ID = 'problems';
 
@@ -50,8 +51,8 @@ export class ProblemWidget extends TreeWidget {
         super(treeProps, model, contextMenuRenderer);
 
         this.id = PROBLEMS_WIDGET_ID;
-        this.title.label = 'Problems';
-        this.title.caption = 'Problems';
+        this.title.label = nls.localize('vscode/settingsLayout/problems', 'Problems');
+        this.title.caption = this.title.label;
         this.title.iconClass = codicon('warning');
         this.title.closable = true;
         this.addClass('theia-marker-container');

@@ -177,7 +177,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         toolbar.registerItem({
             id: PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR.id,
             command: PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR.id,
-            tooltip: 'Open Preferences in JSON',
+            tooltip: PreferencesCommands.OPEN_USER_PREFERENCES_JSON.label,
             priority: 0,
         });
     }

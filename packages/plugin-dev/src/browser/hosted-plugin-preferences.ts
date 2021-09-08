@@ -16,18 +16,19 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
         'hosted-plugin.watchMode': {
             type: 'boolean',
-            description: 'Run watcher on plugin under development',
+            description: nls.localize('theia/plugin-dev/watchMode', 'Run watcher on plugin under development'),
             default: true
         },
         'hosted-plugin.debugMode': {
             type: 'string',
-            description: 'Using inspect or inspect-brk for Node.js debug',
+            description: nls.localize('theia/plugin-dev/debugMode', 'Using inspect or inspect-brk for Node.js debug'),
             default: 'inspect',
             enum: ['inspect', 'inspect-brk']
         },
@@ -36,7 +37,10 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             },
-            description: 'Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).',
+            description: nls.localize(
+                'theia/plugin-dev/launchOutFiles',
+                'Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).'
+            ),
             default: ['${pluginPath}/out/**/*.js']
         }
     }

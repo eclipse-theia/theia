@@ -87,11 +87,7 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
     }
 
     protected getHoverMessage(): string {
-        if (isOSX) {
-            return 'Cmd + click to follow link';
-        } else {
-            return 'Ctrl + click to follow link';
-        }
+        return TerminalWidgetImpl.getFollowLinkHover();
     }
 
 }

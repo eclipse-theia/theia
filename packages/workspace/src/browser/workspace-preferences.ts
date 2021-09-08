@@ -22,17 +22,18 @@ import {
     PreferenceSchema,
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'workspace.preserveWindow': {
-            description: 'Enable opening workspaces in current window.',
+            description: nls.localize('theia/workspace/preserveWindow', 'Enable opening workspaces in current window.'),
             type: 'boolean',
             default: false
         },
         'workspace.supportMultiRootWorkspace': {
-            description: 'Controls whether multi-root workspace support is enabled.',
+            description: nls.localize('theia/workspace/supportMultiRootWorkspace', 'Controls whether multi-root workspace support is enabled.'),
             type: 'boolean',
             default: true
         }

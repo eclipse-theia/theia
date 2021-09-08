@@ -53,7 +53,7 @@ import {
     WorkspacePreferences,
     WorkspaceService
 } from '@theia/workspace/lib/browser';
-import { EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget-factory';
+import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
@@ -77,50 +77,51 @@ import URI from '@theia/core/lib/common/uri';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
 import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
+import { nls } from '@theia/core/lib/common/nls';
 
 export namespace FileNavigatorCommands {
-    export const REVEAL_IN_NAVIGATOR: Command = {
+    export const REVEAL_IN_NAVIGATOR = Command.toLocalizedCommand({
         id: 'navigator.reveal',
         label: 'Reveal in Explorer'
-    };
-    export const TOGGLE_HIDDEN_FILES: Command = {
+    }, 'theia/navigator/reveal');
+    export const TOGGLE_HIDDEN_FILES = Command.toLocalizedCommand({
         id: 'navigator.toggle.hidden.files',
         label: 'Toggle Hidden Files'
-    };
-    export const TOGGLE_AUTO_REVEAL: Command = {
+    }, 'theia/navigator/toggleHiddenFiles');
+    export const TOGGLE_AUTO_REVEAL = Command.toLocalizedCommand({
         id: 'navigator.toggle.autoReveal',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Auto Reveal'
-    };
-    export const REFRESH_NAVIGATOR: Command = {
+    }, 'theia/navigator/autoReveal', CommonCommands.FILE_CATEGORY_KEY);
+    export const REFRESH_NAVIGATOR = Command.toLocalizedCommand({
         id: 'navigator.refresh',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Refresh in Explorer',
         iconClass: codicon('refresh')
-    };
-    export const COLLAPSE_ALL: Command = {
+    }, 'theia/navigator/refresh', CommonCommands.FILE_CATEGORY_KEY);
+    export const COLLAPSE_ALL = Command.toLocalizedCommand({
         id: 'navigator.collapse.all',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Collapse Folders in Explorer',
         iconClass: codicon('collapse-all')
-    };
+    }, 'vscode/explorerView/collapseExplorerFolders', CommonCommands.FILE_CATEGORY_KEY);
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'
     };
-    export const FOCUS: Command = {
+    export const FOCUS = Command.toLocalizedCommand({
         id: 'workbench.files.action.focusFilesExplorer',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Focus on Files Explorer'
-    };
-    export const COPY_RELATIVE_FILE_PATH: Command = {
+    }, 'vscode/fileActions/focusFilesExplorer', CommonCommands.FILE_CATEGORY_KEY);
+    export const COPY_RELATIVE_FILE_PATH = Command.toLocalizedCommand({
         id: 'navigator.copyRelativeFilePath',
         label: 'Copy Relative Path'
-    };
-    export const OPEN: Command = {
+    }, 'vscode/fileActions.contribution/copyRelativePath');
+    export const OPEN = Command.toLocalizedCommand({
         id: 'navigator.open',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Open'
-    };
+    }, 'vscode/dialogMainService/open', CommonCommands.FILE_CATEGORY_KEY);
 }
 
 /**
@@ -206,7 +207,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         super({
             viewContainerId: EXPLORER_VIEW_CONTAINER_ID,
             widgetId: FILE_NAVIGATOR_ID,
-            widgetName: 'Explorer',
+            widgetName: EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS.label,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 100
@@ -428,9 +429,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
             commandId: FileNavigatorCommands.OPEN.id,
-            label: 'Open'
+            label: FileNavigatorCommands.OPEN.label
         });
-        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
+        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, nls.localize('vscode/fileActions.contribution/explorerOpenWith', 'Open With...'));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
@@ -499,7 +500,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All',
+            label: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
             order: 'z2'
         });
 
@@ -588,13 +589,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
-            tooltip: 'Refresh Explorer',
+            tooltip: nls.localize('vscode/explorerView/refreshExplorer', 'Refresh Explorer'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
-            tooltip: 'Collapse All',
+            tooltip: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
             priority: 1,
         });
         this.registerMoreToolbarItem({

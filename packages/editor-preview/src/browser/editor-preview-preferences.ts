@@ -16,13 +16,14 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const EditorPreviewConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
         'editor.enablePreview': {
             type: 'boolean',
-            description: 'Controls whether editors are opened as previews when selected or single-clicked.',
+            description: nls.localize('vscode/workbench.contribution/enablePreview', 'Controls whether editors are opened as previews when selected or single-clicked.'),
             default: true
         },
     }

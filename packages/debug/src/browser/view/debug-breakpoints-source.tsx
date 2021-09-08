@@ -29,12 +29,6 @@ export class DebugBreakpointsSource extends TreeSource {
     @inject(BreakpointManager)
     protected readonly breakpoints: BreakpointManager;
 
-    constructor() {
-        super({
-            placeholder: 'No breakpoints'
-        });
-    }
-
     @postConstruct()
     protected init(): void {
         this.fireDidChange();

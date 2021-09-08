@@ -26,6 +26,7 @@ import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
 import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 /**
  * Adds a status bar element displaying the state of secondary Theia instance with hosted plugin and
@@ -114,7 +115,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         this.pluginState = HostedInstanceState.STOPPED;
 
         this.entry = {
-            text: 'Hosted Plugin: Stopped $(angle-up)',
+            text: `${nls.localize('theia/plugin-dev/hostedPluginStopped', 'Hosted Plugin: Stopped')} $(angle-up)`,
             alignment: StatusBarAlignment.LEFT,
             priority: 100,
             onclick: e => {
@@ -135,7 +136,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         this.hostedPluginLogViewer.showLogConsole();
 
         this.entry = {
-            text: '$(cog~spin) Hosted Plugin: Starting',
+            text: `$(cog~spin) ${nls.localize('theia/plugin-dev/hostedPluginStarting', 'Hosted Plugin: Starting')}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 100
         };
@@ -152,9 +153,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         let entryText: string;
         if (this.hostedPluginPreferences['hosted-plugin.watchMode'] && this.watcherSuccess) {
-            entryText = '$(cog~spin) Hosted Plugin: Watching $(angle-up)';
+            entryText = `$(cog~spin) ${nls.localize('theia/plugin-dev/hostedPluginWatching', 'Hosted Plugin: Watching')}$(angle-up)`;
         } else {
-            entryText = '$(cog~spin) Hosted Plugin: Running $(angle-up)';
+            entryText = `$(cog~spin) ${nls.localize('theia/plugin-dev/hostedPluginRunning', 'Hosted Plugin: Running')} $(angle-up)`;
         }
 
         this.entry = {
@@ -177,7 +178,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         this.pluginState = HostedInstanceState.FAILED;
 
         this.entry = {
-            text: 'Hosted Plugin: Stopped $(angle-up)',
+            text: `${nls.localize('theia/plugin-dev/hostedPluginStopped', 'Hosted Plugin: Stopped')} $(angle-up)`,
             alignment: StatusBarAlignment.LEFT,
             priority: 100,
             onclick: e => {
@@ -258,7 +259,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             // Re-set the element only if it's visible on status bar
             if (this.entry) {
                 const offlineElement = {
-                    text: 'Hosted Plugin: Stopped',
+                    text: nls.localize('theia/plugin-dev/hostedPluginStopped', 'Hosted Plugin: Stopped'),
                     alignment: StatusBarAlignment.LEFT,
                     priority: 100
                 };
@@ -303,7 +304,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      */
     protected addCommandsForRunningPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.STOP.id, {
-            label: 'Stop Instance',
+            label: nls.localize('theia/plugin-dev/stopInstance', 'Stop Instance'),
             icon: codicon('debug-stop'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.stop(), 100)
         });
@@ -314,7 +315,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         });
 
         commands.addCommand(HostedPluginCommands.RESTART.id, {
-            label: 'Restart Instance',
+            label: nls.localize('theia/plugin-dev/restartInstance', 'Restart Instance'),
             icon: codicon('debug-restart'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.restart(), 100)
         });
@@ -330,7 +331,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      */
     protected addCommandsForStoppedPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.START.id, {
-            label: 'Start Instance',
+            label: nls.localize('theia/plugin-dev/startInstance', 'Start Instance'),
             icon: codicon('play'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.start(), 100)
         });
@@ -341,7 +342,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         });
 
         commands.addCommand(HostedPluginCommands.DEBUG.id, {
-            label: 'Debug Instance',
+            label: nls.localize('theia/plugin-dev/debugInstance', 'Debug Instance'),
             icon: codicon('debug'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.debug(), 100)
         });

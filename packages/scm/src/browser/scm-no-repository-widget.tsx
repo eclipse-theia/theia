@@ -18,6 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class ScmNoRepositoryWidget extends ReactWidget {
@@ -33,7 +34,7 @@ export class ScmNoRepositoryWidget extends ReactWidget {
     protected render(): React.ReactNode {
         return <AlertMessage
             type='WARNING'
-            header='No repository found'
+            header={nls.localize('vscode/scm.contribution/no open repo', 'No repository found')}
         />;
     }
 

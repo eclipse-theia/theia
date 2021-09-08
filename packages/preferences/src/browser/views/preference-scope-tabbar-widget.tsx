@@ -23,13 +23,14 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { PreferenceScopeCommandManager } from '../util/preference-scope-command-manager';
 import { Preference, PreferenceMenus } from '../util/preference-types';
 import { CommandRegistry, DisposableCollection, Emitter, MenuModelRegistry } from '@theia/core/lib/common';
+import { nls } from '@theia/core/lib/common/nls';
 
-const USER_TAB_LABEL = 'User';
-const USER_TAB_INDEX = PreferenceScope[USER_TAB_LABEL];
-const WORKSPACE_TAB_LABEL = 'Workspace';
-const WORKSPACE_TAB_INDEX = PreferenceScope[WORKSPACE_TAB_LABEL];
-const FOLDER_TAB_LABEL = 'Folder';
-const FOLDER_TAB_INDEX = PreferenceScope[FOLDER_TAB_LABEL];
+const USER_TAB_LABEL = nls.localize('vscode/preferencesWidgets/userSettings', 'User');
+const USER_TAB_INDEX = PreferenceScope['User'];
+const WORKSPACE_TAB_LABEL = nls.localize('vscode/preferencesWidgets/workspaceSettings', 'Workspace');
+const WORKSPACE_TAB_INDEX = PreferenceScope['Workspace'];
+const FOLDER_TAB_LABEL = nls.localize('vscode/preferencesWidgets/folderSettings', 'Folder');
+const FOLDER_TAB_INDEX = PreferenceScope['Folder'];
 
 const PREFERENCE_TAB_CLASSNAME = 'preferences-scope-tab';
 const GENERAL_FOLDER_TAB_CLASSNAME = 'preference-folder';

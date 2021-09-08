@@ -24,12 +24,6 @@ export class DebugThreadsSource extends TreeSource {
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;
 
-    constructor() {
-        super({
-            placeholder: 'Not running'
-        });
-    }
-
     @postConstruct()
     protected init(): void {
         this.fireDidChange();

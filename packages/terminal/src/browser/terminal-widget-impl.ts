@@ -37,6 +37,7 @@ import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-han
 import { TerminalThemeService } from './terminal-theme-service';
 import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { Key } from '@theia/core/lib/browser/keys';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -48,7 +49,7 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    private readonly TERMINAL = 'Terminal';
+    static LABEL = nls.localize('vscode/settingsLayout/terminal', 'Terminal');
     protected terminalKind = 'user';
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
@@ -94,7 +95,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     @postConstruct()
     protected init(): void {
-        this.setTitle(this.options.title || this.TERMINAL);
+        this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
         this.title.iconClass = codicon('terminal');
 
         if (this.options.kind) {
@@ -131,7 +132,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.loadAddon(this.fitAddon);
 
         this.hoverMessage = document.createElement('div');
-        this.hoverMessage.textContent = 'Cmd + click to follow link';
+        this.hoverMessage.textContent = TerminalWidgetImpl.getFollowLinkHover();
         this.hoverMessage.style.position = 'fixed';
         // TODO use `var(--theia-editorHoverWidget-foreground) with a newer Monaco version
         this.hoverMessage.style.color = 'var(--theia-editorWidget-foreground)';
@@ -244,6 +245,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
+    }
+
+    static getFollowLinkHover(): string {
+        const cmdCtrl = isOSX ? 'Cmd' : 'Ctrl';
+        return nls.localize('vscode/terminalLinkManager/followLink', 'Follow link') + ' (' +
+            nls.localize(`vscode/terminalLinkManager/terminalLinkHandler.followLink${cmdCtrl}`, `${cmdCtrl} + Click`) + ')';
     }
 
     get kind(): 'user' | string {

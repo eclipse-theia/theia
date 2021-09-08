@@ -18,6 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
+import { nls } from '@theia/core/lib/common/nls';
 import MenuRegistry = monaco.actions.MenuRegistry;
 
 export interface MonacoActionGroup {
@@ -50,7 +51,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
 
         this.registerPeekSubmenu(registry);
 
-        registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
+        registry.registerSubmenu(MonacoMenus.SELECTION, nls.localize('vscode/menubar/mSelection', 'Selection'));
         for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.MenubarSelectionMenu)) {
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
@@ -67,7 +68,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     }
 
     protected registerPeekSubmenu(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, 'Peek');
+        registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, nls.localize('vscode/goToCommands/peek.submenu', 'Peek'));
 
         for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.EditorContextPeek)) {
             if (!monaco.actions.isIMenuItem(item)) {

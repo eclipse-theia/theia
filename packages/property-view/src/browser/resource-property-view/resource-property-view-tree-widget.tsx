@@ -34,6 +34,7 @@ import {
     ResourcePropertiesRoot,
     ROOT_ID
 } from './resource-property-view-tree-items';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class ResourcePropertyViewTreeWidget extends TreeWidget implements PropertyViewContentWidget {
@@ -92,18 +93,22 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     protected fillPropertiesTree(fileStatObject?: FileStat): void {
         if (fileStatObject) {
             this.propertiesTree.clear();
-            const infoNode = this.createCategoryNode('info', 'Info');
+            const infoNode = this.createCategoryNode('info', nls.localize('vscode/logsActions/info', 'Info'));
             this.propertiesTree.set('info', infoNode);
 
-            infoNode.children.push(this.createResultLineNode('isDirectory', 'Directory', fileStatObject.isDirectory, infoNode));
-            infoNode.children.push(this.createResultLineNode('isFile', 'File', fileStatObject.isFile, infoNode));
-            infoNode.children.push(this.createResultLineNode('isSymbolicLink', 'Symbolic link', fileStatObject.isSymbolicLink, infoNode));
-            infoNode.children.push(this.createResultLineNode('location', 'Location', this.getLocationString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('name', 'Name', this.getFileName(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('path', 'Path', this.getFilePath(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('lastModification', 'Last modified', this.getLastModificationString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('created', 'Created', this.getCreationTimeString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('size', 'Size', this.getSizeString(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('isDirectory', nls.localize('theia/property-view/directory', 'Directory'), fileStatObject.isDirectory, infoNode));
+            infoNode.children.push(this.createResultLineNode('isFile', nls.localize('theia/property-view/file', 'File'), fileStatObject.isFile, infoNode));
+            infoNode.children.push(this.createResultLineNode('isSymbolicLink', nls.localize('theia/property-view/symbolicLink', 'Symbolic link'),
+                fileStatObject.isSymbolicLink, infoNode));
+            infoNode.children.push(this.createResultLineNode('location', nls.localize('theia/property-view/location', 'Location'),
+                this.getLocationString(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('name', nls.localize('theia/property-view/name', 'Name'), this.getFileName(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('path', nls.localize('theia/property-view/path', 'Path'), this.getFilePath(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('lastModification', nls.localize('theia/property-view/lastModified', 'Last modified'),
+                this.getLastModificationString(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('created', nls.localize('theia/property-view/created', 'Created'),
+                this.getCreationTimeString(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('size', nls.localize('theia/property-view/size', 'Size'), this.getSizeString(fileStatObject), infoNode));
             this.refreshModelChildren();
         }
     }
@@ -129,7 +134,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     }
 
     protected getSizeString(fileStat: FileStat): string {
-        return fileStat.size ? fileStat.size + ' bytes' : '';
+        return fileStat.size ? nls.localize('vscode/files/sizeB', '{0} B', fileStat.size.toString()) : '';
     }
 
     /*

@@ -90,192 +90,196 @@ export namespace CommonMenus {
 
 export namespace CommonCommands {
 
-    const FILE_CATEGORY = 'File';
-    const VIEW_CATEGORY = 'View';
+    export const FILE_CATEGORY_KEY = 'vscode/menubarControl/mFile';
+    export const VIEW_CATEGORY_KEY = 'vscode/menubarControl/mView';
+    export const PREFERENCES_CATEGORY_KEY = 'vscode/actions/preferences';
+    export const FILE_CATEGORY = 'File';
+    export const VIEW_CATEGORY = 'View';
+    export const PREFERENCES_CATEGORY = 'Preferences';
 
     export const OPEN: Command = {
         id: 'core.open',
     };
 
-    export const CUT: Command = {
+    export const CUT = Command.toLocalizedCommand({
         id: 'core.cut',
         label: 'Cut'
-    };
-    export const COPY: Command = {
+    }, 'vscode/fileActions.contribution/cut');
+    export const COPY = Command.toLocalizedCommand({
         id: 'core.copy',
         label: 'Copy'
-    };
-    export const PASTE: Command = {
+    }, 'vscode/fileActions/copyFile');
+    export const PASTE = Command.toLocalizedCommand({
         id: 'core.paste',
         label: 'Paste'
-    };
+    }, 'vscode/fileActions/pasteFile');
 
-    export const COPY_PATH: Command = {
+    export const COPY_PATH = Command.toLocalizedCommand({
         id: 'core.copy.path',
         label: 'Copy Path'
-    };
+    }, 'vscode/fileActions.contribution/copyPath');
 
-    export const UNDO: Command = {
+    export const UNDO = Command.toLocalizedCommand({
         id: 'core.undo',
         label: 'Undo'
-    };
-    export const REDO: Command = {
+    }, 'vscode/textInputActions/undo');
+    export const REDO = Command.toLocalizedCommand({
         id: 'core.redo',
         label: 'Redo'
-    };
-    export const SELECT_ALL: Command = {
+    }, 'vscode/textInputActions/redo');
+    export const SELECT_ALL = Command.toLocalizedCommand({
         id: 'core.selectAll',
         label: 'Select All'
-    };
+    }, 'vscode/textInputActions/selectAll');
 
-    export const FIND: Command = {
+    export const FIND = Command.toLocalizedCommand({
         id: 'core.find',
         label: 'Find'
-    };
-    export const REPLACE: Command = {
+    }, 'vscode/simpleFindReplaceWidget/label.find');
+    export const REPLACE = Command.toLocalizedCommand({
         id: 'core.replace',
         label: 'Replace'
-    };
+    }, 'vscode/simpleFindReplaceWidget/label.replace');
 
-    export const NEXT_TAB: Command = {
+    export const NEXT_TAB = Command.toLocalizedCommand({
         id: 'core.nextTab',
         category: VIEW_CATEGORY,
         label: 'Switch to Next Tab'
-    };
-    export const PREVIOUS_TAB: Command = {
+    }, 'vscode/menubar/mShowNextTab', VIEW_CATEGORY_KEY);
+    export const PREVIOUS_TAB = Command.toLocalizedCommand({
         id: 'core.previousTab',
         category: VIEW_CATEGORY,
         label: 'Switch to Previous Tab'
-    };
-    export const NEXT_TAB_IN_GROUP: Command = {
+    }, 'vscode/menubar/mShowPreviousTab', VIEW_CATEGORY_KEY);
+    export const NEXT_TAB_IN_GROUP = Command.toLocalizedCommand({
         id: 'core.nextTabInGroup',
         category: VIEW_CATEGORY,
         label: 'Switch to Next Tab in Group'
-    };
-    export const PREVIOUS_TAB_IN_GROUP: Command = {
+    }, 'theia/core/common/showNextTabInGroup', VIEW_CATEGORY_KEY);
+    export const PREVIOUS_TAB_IN_GROUP = Command.toLocalizedCommand({
         id: 'core.previousTabInGroup',
         category: VIEW_CATEGORY,
         label: 'Switch to Previous Tab in Group'
-    };
-    export const NEXT_TAB_GROUP: Command = {
+    }, 'theia/core/common/showPreviousTabInGroup', VIEW_CATEGORY_KEY);
+    export const NEXT_TAB_GROUP = Command.toLocalizedCommand({
         id: 'core.nextTabGroup',
         category: VIEW_CATEGORY,
         label: 'Switch to Next Tab Group'
-    };
-    export const PREVIOUS_TAB_GROUP: Command = {
+    }, 'theia/core/common/showNextTabGroup', VIEW_CATEGORY_KEY);
+    export const PREVIOUS_TAB_GROUP = Command.toLocalizedCommand({
         id: 'core.previousTabBar',
         category: VIEW_CATEGORY,
         label: 'Switch to Previous Tab Group'
-    };
-    export const CLOSE_TAB: Command = {
+    }, 'theia/core/common/showPreviousTabGroup', VIEW_CATEGORY_KEY);
+    export const CLOSE_TAB = Command.toLocalizedCommand({
         id: 'core.close.tab',
         category: VIEW_CATEGORY,
         label: 'Close Tab'
-    };
-    export const CLOSE_OTHER_TABS: Command = {
+    }, 'theia/core/common/closeTab', VIEW_CATEGORY_KEY);
+    export const CLOSE_OTHER_TABS = Command.toLocalizedCommand({
         id: 'core.close.other.tabs',
         category: VIEW_CATEGORY,
         label: 'Close Other Tabs'
-    };
-    export const CLOSE_RIGHT_TABS: Command = {
+    }, 'theia/core/common/closeOthers', VIEW_CATEGORY_KEY);
+    export const CLOSE_RIGHT_TABS = Command.toLocalizedCommand({
         id: 'core.close.right.tabs',
         category: VIEW_CATEGORY,
         label: 'Close Tabs to the Right'
-    };
-    export const CLOSE_ALL_TABS: Command = {
+    }, 'theia/core/common/closeRight', VIEW_CATEGORY_KEY);
+    export const CLOSE_ALL_TABS = Command.toLocalizedCommand({
         id: 'core.close.all.tabs',
         category: VIEW_CATEGORY,
         label: 'Close All Tabs'
-    };
-    export const CLOSE_MAIN_TAB: Command = {
+    }, 'theia/core/common/closeAll', VIEW_CATEGORY_KEY);
+    export const CLOSE_MAIN_TAB = Command.toLocalizedCommand({
         id: 'core.close.main.tab',
         category: VIEW_CATEGORY,
         label: 'Close Tab in Main Area'
-    };
-    export const CLOSE_OTHER_MAIN_TABS: Command = {
+    }, 'theia/core/common/closeTabMain', VIEW_CATEGORY_KEY);
+    export const CLOSE_OTHER_MAIN_TABS = Command.toLocalizedCommand({
         id: 'core.close.other.main.tabs',
         category: VIEW_CATEGORY,
         label: 'Close Other Tabs in Main Area'
-    };
-    export const CLOSE_ALL_MAIN_TABS: Command = {
+    }, 'theia/core/common/closeOtherTabMain', VIEW_CATEGORY_KEY);
+    export const CLOSE_ALL_MAIN_TABS = Command.toLocalizedCommand({
         id: 'core.close.all.main.tabs',
         category: VIEW_CATEGORY,
         label: 'Close All Tabs in Main Area'
-    };
-    export const COLLAPSE_PANEL: Command = {
+    }, 'theia/core/common/closeAllTabMain', VIEW_CATEGORY_KEY);
+    export const COLLAPSE_PANEL = Command.toLocalizedCommand({
         id: 'core.collapse.tab',
         category: VIEW_CATEGORY,
         label: 'Collapse Side Panel'
-    };
-    export const COLLAPSE_ALL_PANELS: Command = {
+    }, 'theia/core/common/collapseTab', VIEW_CATEGORY_KEY);
+    export const COLLAPSE_ALL_PANELS = Command.toLocalizedCommand({
         id: 'core.collapse.all.tabs',
         category: VIEW_CATEGORY,
         label: 'Collapse All Side Panels'
-    };
-    export const TOGGLE_BOTTOM_PANEL: Command = {
+    }, 'theia/core/common/collapseAllTabs', VIEW_CATEGORY_KEY);
+    export const TOGGLE_BOTTOM_PANEL = Command.toLocalizedCommand({
         id: 'core.toggle.bottom.panel',
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
-    };
-    export const TOGGLE_STATUS_BAR: Command = {
+    }, 'theia/core/common/collapseBottomPanel', VIEW_CATEGORY_KEY);
+    export const TOGGLE_STATUS_BAR = Command.toLocalizedCommand({
         id: 'workbench.action.toggleStatusbarVisibility',
         category: VIEW_CATEGORY,
         label: 'Toggle Status Bar Visibility'
-    };
-    export const TOGGLE_MAXIMIZED: Command = {
+    }, 'vscode/layoutActions/toggleStatusbar');
+    export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
         label: 'Toggle Maximized'
-    };
-    export const OPEN_VIEW: Command = {
+    }, 'theia/core/common/toggleMaximized', VIEW_CATEGORY_KEY);
+    export const OPEN_VIEW = Command.toLocalizedCommand({
         id: 'core.openView',
         category: VIEW_CATEGORY,
         label: 'Open View...'
-    };
+    }, 'vscode/quickAccess.contribution/miOpenView', VIEW_CATEGORY_KEY);
 
-    export const SAVE: Command = {
+    export const SAVE = Command.toLocalizedCommand({
         id: 'core.save',
         category: FILE_CATEGORY,
         label: 'Save',
-    };
-    export const SAVE_WITHOUT_FORMATTING: Command = {
+    }, 'vscode/fileCommands/save', FILE_CATEGORY_KEY);
+    export const SAVE_WITHOUT_FORMATTING = Command.toLocalizedCommand({
         id: 'core.saveWithoutFormatting',
         category: FILE_CATEGORY,
         label: 'Save without Formatting',
-    };
-    export const SAVE_ALL: Command = {
+    }, 'vscode/fileCommands/saveWithoutFormatting', FILE_CATEGORY_KEY);
+    export const SAVE_ALL = Command.toLocalizedCommand({
         id: 'core.saveAll',
         category: FILE_CATEGORY,
         label: 'Save All',
-    };
+    }, 'vscode/fileCommands/saveAll', FILE_CATEGORY_KEY);
 
-    export const AUTO_SAVE: Command = {
+    export const AUTO_SAVE = Command.toLocalizedCommand({
         id: 'textEditor.commands.autosave',
         category: FILE_CATEGORY,
         label: 'Auto Save',
-    };
+    }, 'vscode/fileActions.contribution/miAutoSave', FILE_CATEGORY_KEY);
 
-    export const ABOUT_COMMAND: Command = {
+    export const ABOUT_COMMAND = Command.toLocalizedCommand({
         id: 'core.about',
         label: 'About'
-    };
+    }, 'vscode/windowActions/about');
 
-    export const OPEN_PREFERENCES: Command = {
+    export const OPEN_PREFERENCES = Command.toLocalizedCommand({
         id: 'preferences:open',
-        category: 'Settings',
+        category: PREFERENCES_CATEGORY,
         label: 'Open Preferences',
-    };
+    }, 'vscode/preferences.contribution/preferences', PREFERENCES_CATEGORY_KEY);
 
-    export const SELECT_COLOR_THEME: Command = {
+    export const SELECT_COLOR_THEME = Command.toLocalizedCommand({
         id: 'workbench.action.selectTheme',
         label: 'Color Theme',
-        category: 'Preferences'
-    };
-    export const SELECT_ICON_THEME: Command = {
+        category: PREFERENCES_CATEGORY
+    }, 'vscode/themes.contribution/selectTheme.label', PREFERENCES_CATEGORY_KEY);
+    export const SELECT_ICON_THEME = Command.toLocalizedCommand({
         id: 'workbench.action.selectIconTheme',
         label: 'File Icon Theme',
-        category: 'Preferences'
-    };
+        category: PREFERENCES_CATEGORY
+    }, 'vscode/themes.contribution/selectIconTheme.label', PREFERENCES_CATEGORY_KEY);
 
     export const CONFIGURE_DISPLAY_LANGUAGE = Command.toLocalizedCommand({
         id: 'workbench.action.configureLanguage',
@@ -370,14 +374,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
             iconClass: 'codicon codicon-settings-gear',
-            title: 'Settings',
+            title: nls.localize(CommonCommands.PREFERENCES_CATEGORY_KEY, CommonCommands.PREFERENCES_CATEGORY),
             menuPath: SETTINGS_MENU,
             order: 0,
         });
         const accountsMenu = {
             id: 'accounts-menu',
             iconClass: 'codicon codicon-person',
-            title: 'Accounts',
+            title: nls.localize('vscode/activitybarPart/accounts', 'Accounts'),
             menuPath: ACCOUNTS_MENU,
             order: 1,
         };
@@ -442,7 +446,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
                         iconClass: 'codicon codicon-menu',
-                        title: 'Application Menu',
+                        title: nls.localize('vscode/menubar/mAppMenu', 'Application Menu'),
                         menuPath: ['menubar'],
                         order: 0,
                     });
@@ -475,10 +479,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(CommonMenus.FILE, 'File');
-        registry.registerSubmenu(CommonMenus.EDIT, 'Edit');
-        registry.registerSubmenu(CommonMenus.VIEW, 'View');
-        registry.registerSubmenu(CommonMenus.HELP, 'Help');
+        registry.registerSubmenu(CommonMenus.FILE, nls.localize('vscode/menubarControl/mFile', 'File'));
+        registry.registerSubmenu(CommonMenus.EDIT, nls.localize('vscode/menubarControl/mEdit', 'Edit'));
+        registry.registerSubmenu(CommonMenus.VIEW, nls.localize('vscode/menubarControl/mView', 'View'));
+        registry.registerSubmenu(CommonMenus.HELP, nls.localize('vscode/menubarControl/mHelp', 'Help'));
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
@@ -491,7 +495,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.AUTO_SAVE.id
         });
 
-        registry.registerSubmenu(CommonMenus.FILE_SETTINGS_SUBMENU, 'Settings');
+        registry.registerSubmenu(CommonMenus.FILE_SETTINGS_SUBMENU, nls.localize(CommonCommands.PREFERENCES_CATEGORY_KEY, CommonCommands.PREFERENCES_CATEGORY));
 
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.UNDO.id,
@@ -544,37 +548,37 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
-            label: 'Close',
+            label: nls.localize('vscode/editor.contribution/close', 'Close'),
             order: '0'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
-            label: 'Close Others',
+            label: nls.localize('vscode/editor.contribution/closeOthers', 'Close Others'),
             order: '1'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
-            label: 'Close to the Right',
+            label: nls.localize('vscode/editor.contribution/closeRight', 'Close to the Right'),
             order: '2'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
-            label: 'Close All',
+            label: nls.localize('vscode/editor.contribution/closeAll', 'Close All'),
             order: '3'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.COLLAPSE_PANEL.id,
-            label: 'Collapse',
+            label: CommonCommands.COLLAPSE_PANEL.label,
             order: '4'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.TOGGLE_MAXIMIZED.id,
-            label: 'Toggle Maximized',
+            label: CommonCommands.TOGGLE_MAXIMIZED.label,
             order: '5'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
-            label: 'About',
+            label: CommonCommands.ABOUT_COMMAND.label,
             order: '9'
         });
 
@@ -1072,7 +1076,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         this.quickInputService?.showQuickPick(items,
             {
-                placeholder: 'Select File Icon Theme',
+                placeholder: nls.localize('vscode/extensionsActions/select file icon theme', 'Select File Icon Theme'),
                 activeItem: items.find(item => item.id === resetTo),
                 onDidChangeSelection: (quickPick: QuickPick<QuickPickItem>, selectedItems: Array<QuickPickItem>) => {
                     resetTo = undefined;
@@ -1111,7 +1115,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         const items = [...itemsByTheme.light, ...itemsByTheme.dark, ...itemsByTheme.hc];
         this.quickInputService?.showQuickPick(items,
             {
-                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+                placeholder: nls.localize('vscode/extensionActions/select color theme', 'Select Color Theme (Up/Down Keys to Preview)'),
                 activeItem: items.find((item: QuickPickItem) => item.id === resetTo),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onDidChangeSelection: (quickPick: any, selectedItems: Array<QuickPickItem>) => {

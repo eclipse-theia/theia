@@ -23,7 +23,8 @@ import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
     Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed,
-    CorePreferences
+    CorePreferences,
+    CommonCommands
 } from '@theia/core/lib/browser';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
@@ -36,11 +37,11 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export namespace FileSystemCommands {
 
-    export const UPLOAD: Command = {
+    export const UPLOAD = Command.toLocalizedCommand({
         id: 'file.upload',
-        category: 'File',
+        category: CommonCommands.FILE_CATEGORY,
         label: 'Upload Files...'
-    };
+    }, 'theia/filesystem/uploadFiles', CommonCommands.FILE_CATEGORY_KEY);
 
 }
 

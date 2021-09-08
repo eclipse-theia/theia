@@ -26,11 +26,11 @@ import { EDITOR_CONTEXT_MENU_SCM } from '@theia/scm-extra/lib/browser/scm-extra-
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace BlameCommands {
-    export const TOGGLE_GIT_ANNOTATIONS: Command = {
+    export const TOGGLE_GIT_ANNOTATIONS = Command.toLocalizedCommand({
         id: 'git.editor.toggle.annotations',
         category: 'Git',
         label: 'Toggle Blame Annotations'
-    };
+    }, 'theia/git/toggleBlameAnnotations', 'vscode.git/package/displayName');
     export const CLEAR_GIT_ANNOTATIONS: Command = {
         id: 'git.editor.clear.annotations'
     };

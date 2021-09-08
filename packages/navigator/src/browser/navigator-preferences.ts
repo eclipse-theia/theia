@@ -16,13 +16,14 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const FileNavigatorConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
         'explorer.autoReveal': {
             type: 'boolean',
-            description: 'Selects file under editing in the explorer.',
+            description: nls.localize('vscode/files.contribution/autoReveal', 'Selects file under editing in the explorer.'),
             default: true
         }
     }

@@ -61,11 +61,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     readonly statusBarId = 'select-run-debug-statusbar-item';
 
-    private readonly command: Command = {
+    private readonly command = Command.toLocalizedCommand({
         id: 'select.debug.configuration',
-        category: 'Debug',
+        category: DebugCommands.DEBUG_CATEGORY,
         label: 'Select and Start Debugging'
-    };
+    }, 'vscode/debugCommands/selectAndStartDebugging', DebugCommands.DEBUG_CATEGORY_KEY);
 
     @postConstruct()
     protected initialize(): void {

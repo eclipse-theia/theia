@@ -19,6 +19,7 @@ import { Command } from '@theia/core/lib/common';
 
 export namespace OutputCommands {
 
+    const OUTPUT_CATEGORY_KEY = 'vscode/outputView/output';
     const OUTPUT_CATEGORY = 'Output';
 
     /* #region VS Code `OutputChannel` API */
@@ -50,47 +51,47 @@ export namespace OutputCommands {
 
     /* #endregion VS Code `OutputChannel` API */
 
-    export const CLEAR__WIDGET: Command = {
+    export const CLEAR__WIDGET = Command.toLocalizedCommand({
         id: 'output:widget:clear',
         category: OUTPUT_CATEGORY,
         iconClass: codicon('clear-all')
-    };
+    }, '', OUTPUT_CATEGORY_KEY);
 
-    export const LOCK__WIDGET: Command = {
+    export const LOCK__WIDGET = Command.toLocalizedCommand({
         id: 'output:widget:lock',
         category: OUTPUT_CATEGORY,
         iconClass: codicon('unlock')
-    };
+    }, '', OUTPUT_CATEGORY_KEY);
 
-    export const UNLOCK__WIDGET: Command = {
+    export const UNLOCK__WIDGET = Command.toLocalizedCommand({
         id: 'output:widget:unlock',
         category: OUTPUT_CATEGORY,
         iconClass: codicon('lock')
-    };
+    }, '', OUTPUT_CATEGORY_KEY);
 
-    export const CLEAR__QUICK_PICK: Command = {
+    export const CLEAR__QUICK_PICK = Command.toLocalizedCommand({
         id: 'output:pick-clear',
         label: 'Clear Output Channel...',
         category: OUTPUT_CATEGORY
-    };
+    }, 'theia/output/clearOutputChannel', OUTPUT_CATEGORY_KEY);
 
-    export const SHOW__QUICK_PICK: Command = {
+    export const SHOW__QUICK_PICK = Command.toLocalizedCommand({
         id: 'output:pick-show',
         label: 'Show Output Channel...',
         category: OUTPUT_CATEGORY
-    };
+    }, 'theia/output/showOutputChannel', OUTPUT_CATEGORY_KEY);
 
-    export const HIDE__QUICK_PICK: Command = {
+    export const HIDE__QUICK_PICK = Command.toLocalizedCommand({
         id: 'output:pick-hide',
         label: 'Hide Output Channel...',
         category: OUTPUT_CATEGORY
-    };
+    }, 'theia/output/hideOutputChannel', OUTPUT_CATEGORY_KEY);
 
-    export const DISPOSE__QUICK_PICK: Command = {
+    export const DISPOSE__QUICK_PICK = Command.toLocalizedCommand({
         id: 'output:pick-dispose',
         label: 'Close Output Channel...',
         category: OUTPUT_CATEGORY
-    };
+    }, 'theia/output/closeOutputChannel', OUTPUT_CATEGORY_KEY);
 
     export const COPY_ALL: Command = {
         id: 'output:copy-all',

@@ -27,9 +27,10 @@ import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const BULK_EDIT_TREE_WIDGET_ID = 'bulkedit';
-export const BULK_EDIT_WIDGET_NAME = 'Refactor Preview';
+export const BULK_EDIT_WIDGET_NAME = nls.localize('vscode/bulkEdit.contribution/panel', 'Refactor Preview');
 
 @injectable()
 export class BulkEditTreeWidget extends TreeWidget {
@@ -94,7 +95,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         if (CompositeTreeNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
-        return <div className='theia-widget-noInfo noEdits'>No edits have been detected in the workspace so far.</div>;
+        return <div className='theia-widget-noInfo noEdits'>{nls.localize('vscode/bulkEditService/nothing', 'No edits have been detected in the workspace so far.')}</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

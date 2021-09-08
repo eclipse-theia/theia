@@ -17,6 +17,7 @@
 import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
@@ -66,13 +67,13 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     protected computeTitle(): string {
         switch (this.options.id) {
             case VSXExtensionsSourceOptions.INSTALLED:
-                return 'Installed';
+                return nls.localize('vscode/extensions.contribution/installed filter', 'Installed');
             case VSXExtensionsSourceOptions.BUILT_IN:
-                return 'Built-in';
+                return nls.localize('vscode/extensions.contribution/builtin filter', 'Built-in');
             case VSXExtensionsSourceOptions.RECOMMENDED:
-                return 'Recommended';
+                return nls.localize('vscode/extensions.contribution/most popular recommended', 'Recommended');
             case VSXExtensionsSourceOptions.SEARCH_RESULT:
-                return 'Open VSX Registry';
+                return nls.localize('theia/vsx-registry/openVSX', 'Open VSX Registry');
             default:
                 return '';
         }

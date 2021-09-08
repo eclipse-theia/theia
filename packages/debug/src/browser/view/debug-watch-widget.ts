@@ -19,6 +19,7 @@ import { MenuPath } from '@theia/core/lib/common';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { DebugWatchSource } from './debug-watch-source';
 import { DebugViewModel } from './debug-view-model';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugWatchWidget extends SourceTreeWidget {
@@ -51,7 +52,7 @@ export class DebugWatchWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:watch:' + this.viewModel.id;
-        this.title.label = 'Watch';
+        this.title.label = nls.localize('vscode/debug.contribution/watch', 'Watch');
         this.toDispose.push(this.variables);
         this.source = this.variables;
     }

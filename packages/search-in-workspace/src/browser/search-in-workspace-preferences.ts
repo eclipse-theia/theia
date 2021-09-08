@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 
@@ -21,34 +22,35 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'search.lineNumbers': {
-            description: 'Controls whether to show line numbers for search results.',
+            description: nls.localize('vscode/search.contribution/search.showLineNumbers', 'Controls whether to show line numbers for search results.'),
             default: false,
             type: 'boolean',
         },
         'search.collapseResults': {
-            description: 'Controls whether the search results will be collapsed or expanded.',
+            description: nls.localize('vscode/search.contribution/search.collapseAllResults', 'Controls whether the search results will be collapsed or expanded.'),
             default: 'auto',
             type: 'string',
             enum: ['auto', 'alwaysCollapse', 'alwaysExpand'],
         },
         'search.searchOnType': {
-            description: 'Search all files as you type in the search field.',
+            description: nls.localize('vscode/search.contribution/search.searchOnType', 'Search all files as you type in the search field.'),
             default: true,
             type: 'boolean',
         },
         'search.searchOnTypeDebouncePeriod': {
             // eslint-disable-next-line max-len
-            description: 'When `search.searchOnType` is enabled, controls the timeout in milliseconds between a character being typed and the search starting. Has no effect when `search.searchOnType` is disabled.',
+            description: nls.localize('vscode/search.contribution/search.searchOnTypeDebouncePeriod', 'When `search.searchOnType` is enabled, controls the timeout in milliseconds between a character being typed and the search starting. Has no effect when `search.searchOnType` is disabled.'),
             default: 300,
             type: 'number',
         },
         'search.searchOnEditorModification': {
-            description: 'Search the active editor when modified.',
+            description: nls.localize('theia/search-in-workspace/searchOnEditorModification', 'Search the active editor when modified.'),
             default: true,
             type: 'boolean',
         },
         'search.smartCase': {
-            description: 'Search case-insensitively if the pattern is all lowercase, otherwise, search case-sensitively.',
+            // eslint-disable-next-line max-len
+            description: nls.localize('vscode/search.contribution/search.smartCase', 'Search case-insensitively if the pattern is all lowercase, otherwise, search case-sensitively.'),
             default: false,
             type: 'boolean',
         }

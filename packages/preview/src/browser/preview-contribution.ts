@@ -20,12 +20,14 @@ import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidget
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import URI from '@theia/core/lib/common/uri';
 import { Position } from '@theia/core/shared/vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { PreviewPreferences } from './preview-preferences';
+import { nls } from '@theia/core/lib/common/nls';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -34,11 +36,11 @@ export namespace PreviewCommands {
      * No `label`. Otherwise, it would show up in the `Command Palette` and we already have the `Preview` open handler.
      * See in (`WorkspaceCommandContribution`)[https://bit.ly/2DncrSD].
      */
-    export const OPEN: Command = {
+    export const OPEN = Command.toLocalizedCommand({
         id: 'preview:open',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
-    };
+    }, 'vscode/mainThreadFileSystemEventService/preview');
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source',
         iconClass: codicon('go-to-file')
@@ -54,7 +56,7 @@ export interface PreviewOpenerOptions extends WidgetOpenerOptions {
 export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     readonly id = PreviewUri.id;
-    readonly label = 'Preview';
+    readonly label = nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY);
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -227,12 +229,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            tooltip: 'Open Preview to the Side'
+            tooltip: nls.localize('theia/preview/openPreviewSide', 'Open Preview to the Side')
         });
         registry.registerItem({
             id: PreviewCommands.OPEN_SOURCE.id,
             command: PreviewCommands.OPEN_SOURCE.id,
-            tooltip: 'Open Source'
+            tooltip: nls.localize('theia/preview/openSource', 'Open Source')
         });
     }
 
