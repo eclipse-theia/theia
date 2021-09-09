@@ -63,7 +63,7 @@ export class OutlineViewService implements WidgetFactory {
             this.widget.setOutlineTree(roots);
         }
         // onDidChangeOutline needs to be fired even when the outline view widget is closed
-        // in order to udpate breadcrumbs.
+        // in order to update breadcrumbs.
         this.onDidChangeOutlineEmitter.fire(roots);
     }
 
