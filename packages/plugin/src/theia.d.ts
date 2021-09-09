@@ -7801,6 +7801,16 @@ export module '@theia/plugin' {
         kind?: CodeActionKind;
 
         /**
+         * Marks that the code action cannot currently be applied.
+         */
+        disabled?: { reason: string };
+
+        /**
+         * Marks this as a preferred action.
+         */
+        isPreferred?: boolean;
+
+        /**
          * Creates a new code action.
          *
          * A code action must have at least a [title](#CodeAction.title) and [edits](#CodeAction.edit)
@@ -7865,6 +7875,13 @@ export module '@theia/plugin' {
          * may list our every specific kind they provide, such as `CodeActionKind.Refactor.Extract.append('function`)`
          */
         readonly providedCodeActionKinds?: ReadonlyArray<CodeActionKind>;
+
+        /**
+         * Documentation from the provider is shown in the code actions menu
+         *
+         * At most one documentation entry will be shown per provider.
+         */
+        documentation?: ReadonlyArray<{ command: Command, kind: CodeActionKind }>
     }
 
     /**
