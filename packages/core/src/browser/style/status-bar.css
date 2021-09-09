@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 :root {
-    --theia-statusBar-height: 19px;
+    --theia-statusBar-height: 22px;
 }
 
 #theia-statusBar {
@@ -57,6 +57,11 @@ body.theia-no-open-workspace #theia-statusBar {
 
 #theia-statusBar .area .element > * {
     margin-left: calc(var(--theia-ui-padding)/2);
+}
+
+#theia-statusBar .area .element .codicon {
+    /* Scaling down codicons from 16 to 14 pixels */
+    font-size: 14px;
 }
 
 #theia-statusBar .area .element > *:last-child {

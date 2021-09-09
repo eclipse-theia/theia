@@ -27,7 +27,8 @@ import {
     defaultTreeProps,
     TreeDecoratorService,
     TreeModel,
-    TreeModelImpl
+    TreeModelImpl,
+    BreadcrumbsContribution
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
@@ -35,11 +36,19 @@ import '../../src/browser/styles/index.css';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
+import { BreadcrumbPopupOutlineView, BreadcrumbPopupOutlineViewFactory, OutlineBreadcrumbsContribution } from './outline-breadcrumbs-contribution';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
         () => createOutlineViewWidget(ctx.container)
     );
+
+    bind(BreadcrumbPopupOutlineViewFactory).toFactory(({ container }) => () => {
+        const child = createOutlineViewWidgetContainer(container);
+        child.rebind(OutlineViewWidget).to(BreadcrumbPopupOutlineView);
+        child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, expandOnlyOnExpansionToggleClick: true, search: false, virtualized: false });
+        return child.get(OutlineViewWidget);
+    });
 
     bind(OutlineViewService).toSelf().inSingletonScope();
     bind(WidgetFactory).toService(OutlineViewService);
@@ -47,18 +56,12 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, OutlineViewContribution);
     bind(FrontendApplicationContribution).toService(OutlineViewContribution);
     bind(TabBarToolbarContribution).toService(OutlineViewContribution);
+
+    bind(OutlineBreadcrumbsContribution).toSelf().inSingletonScope();
+    bind(BreadcrumbsContribution).toService(OutlineBreadcrumbsContribution);
 });
 
-/**
- * Create an `OutlineViewWidget`.
- * - The creation of the `OutlineViewWidget` includes:
- *  - The creation of the tree widget itself with it's own customized props.
- *  - The binding of necessary components into the container.
- * @param parent the Inversify container.
- *
- * @returns the `OutlineViewWidget`.
- */
-function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
+function createOutlineViewWidgetContainer(parent: interfaces.Container): interfaces.Container {
     const child = createTreeContainer(parent);
 
     child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, expandOnlyOnExpansionToggleClick: true, search: true });
@@ -73,6 +76,20 @@ function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidge
     child.bind(OutlineDecoratorService).toSelf().inSingletonScope();
     child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(OutlineDecoratorService)).inSingletonScope();
     bindContributionProvider(child, OutlineTreeDecorator);
+    return child;
+}
+
+/**
+ * Create an `OutlineViewWidget`.
+ * - The creation of the `OutlineViewWidget` includes:
+ *  - The creation of the tree widget itself with it's own customized props.
+ *  - The binding of necessary components into the container.
+ * @param parent the Inversify container.
+ *
+ * @returns the `OutlineViewWidget`.
+ */
+function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
+    const child = createOutlineViewWidgetContainer(parent);
 
     return child.get(OutlineViewWidget);
 }

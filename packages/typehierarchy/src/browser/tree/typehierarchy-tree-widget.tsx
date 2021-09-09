@@ -25,6 +25,7 @@ import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-render
 import { TreeWidget, TreeProps } from '@theia/core/lib/browser/tree/tree-widget';
 import { TypeHierarchyTreeModel } from './typehierarchy-tree-model';
 import { TypeHierarchyTree } from './typehierarchy-tree';
+import { codicon } from '@theia/core/lib/browser';
 
 @injectable()
 export class TypeHierarchyTreeWidget extends TreeWidget {
@@ -44,7 +45,7 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
         this.title.caption = TypeHierarchyTreeWidget.WIDGET_LABEL;
         this.addClass(TypeHierarchyTreeWidget.Styles.TYPE_HIERARCHY_TREE_CLASS);
         this.title.closable = true;
-        this.title.iconClass = 'fa fa-sitemap';
+        this.title.iconClass = codicon('type-hierarchy');
         this.toDispose.push(this.model.onSelectionChanged(selection => {
             const node = selection[0];
             if (node) {

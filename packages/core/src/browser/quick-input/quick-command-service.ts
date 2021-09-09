@@ -22,6 +22,7 @@ import { CorePreferences } from '../core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
 import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
 import { KeySequence } from '../keys';
+import { codiconArray } from '../widgets';
 
 export const quickCommand: Command = {
     id: 'workbench.action.showCommands'
@@ -139,7 +140,7 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     private getItemIconClasses(command: Command): string[] | undefined {
         const toggledHandler = this.commandRegistry.getToggledHandler(command.id);
         if (toggledHandler) {
-            return ['fa fa-check'];
+            return codiconArray('check');
         }
         return undefined;
     }

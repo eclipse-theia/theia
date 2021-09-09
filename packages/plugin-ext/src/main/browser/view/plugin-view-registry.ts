@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct, optional } from '@theia/core/shared/
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget
+    StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget, codicon
 } from '@theia/core/lib/browser';
 import { ViewContainer, View, ViewWelcome } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -146,7 +146,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         });
         this.doRegisterViewContainer('test', 'left', {
             label: 'Test',
-            iconClass: 'theia-plugin-test-tab-icon',
+            iconClass: codicon('beaker'),
             closeable: true
         });
         this.contextKeyService.onDidChange(e => {

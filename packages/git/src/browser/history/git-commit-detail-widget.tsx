@@ -19,7 +19,7 @@
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, codicon
 } from '@theia/core/lib/browser';
 import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
 import { GitCommitDetailHeaderWidget } from './git-commit-detail-header-widget';
@@ -53,7 +53,7 @@ export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget 
         this.id = 'commit' + options.commitSha;
         this.title.label = options.commitSha.substr(0, 8);
         this.title.closable = true;
-        this.title.iconClass = 'icon-git-commit tab-git-icon';
+        this.title.iconClass = codicon('git-commit');
 
         this.addClass('theia-scm');
         this.addClass('theia-git');

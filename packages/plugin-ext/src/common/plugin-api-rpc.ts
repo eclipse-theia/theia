@@ -1773,7 +1773,7 @@ export const MAIN_RPC_CONTEXT = {
 };
 
 export interface TasksExt {
-    $provideTasks(handle: number, token?: CancellationToken): Promise<TaskDto[] | undefined>;
+    $provideTasks(handle: number): Promise<TaskDto[] | undefined>;
     $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
     $onDidStartTask(execution: TaskExecutionDto, terminalId: number): void;
     $onDidEndTask(id: number): void;

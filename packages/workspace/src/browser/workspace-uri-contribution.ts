@@ -39,6 +39,10 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     getIcon(element: URI | URIIconReference | FileStat): string {
+        const uri = this.getUri(element);
+        if (uri && this.workspaceVariable.getWorkspaceRootUri(uri)?.isEqual(uri)) {
+            return 'rootfolder-icon';
+        }
         return super.getIcon(this.asURIIconReference(element));
     }
 

@@ -32,7 +32,8 @@ import {
     NavigatableWidget,
     ApplicationShell,
     TabBar,
-    Title
+    Title,
+    codicon
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -95,13 +96,13 @@ export namespace FileNavigatorCommands {
         id: 'navigator.refresh',
         category: 'File',
         label: 'Refresh in Explorer',
-        iconClass: 'refresh'
+        iconClass: codicon('refresh')
     };
     export const COLLAPSE_ALL: Command = {
         id: 'navigator.collapse.all',
         category: 'File',
         label: 'Collapse Folders in Explorer',
-        iconClass: 'theia-collapse-all-icon'
+        iconClass: codicon('collapse-all')
     };
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'

@@ -698,7 +698,7 @@ export class TheiaPluginScanner implements PluginScanner {
             taskType: definitionContribution.type,
             source: pluginName,
             properties: {
-                required: definitionContribution.required,
+                required: definitionContribution.required || [],
                 all: propertyKeys,
                 schema: definitionContribution
             }

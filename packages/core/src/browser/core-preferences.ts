@@ -23,6 +23,55 @@ import { isOSX } from '../common/os';
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
+        'application.confirmExit': {
+            type: 'string',
+            enum: [
+                'never',
+                'ifRequired',
+                'always',
+            ],
+            default: 'ifRequired',
+            description: 'When to confirm before closing the application window.',
+        },
+        'breadcrumbs.enabled': {
+            'type': 'boolean',
+            'default': true,
+            'description': 'Enable/disable navigation breadcrumbs.',
+            'scope': 'application'
+        },
+        'files.encoding': {
+            'type': 'string',
+            'enum': Object.keys(SUPPORTED_ENCODINGS),
+            'default': 'utf8',
+            'description': 'The default character set encoding to use when reading and writing files. This setting can also be configured per language.',
+            'scope': 'language-overridable',
+            'enumDescriptions': Object.keys(SUPPORTED_ENCODINGS).map(key => SUPPORTED_ENCODINGS[key].labelLong),
+            'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
+        },
+        'keyboard.dispatch': {
+            type: 'string',
+            enum: [
+                'code',
+                'keyCode',
+            ],
+            default: 'code',
+            description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
+        },
+        'window.menuBarVisibility': {
+            type: 'string',
+            enum: ['classic', 'visible', 'hidden', 'compact'],
+            markdownEnumDescriptions: [
+                'Menu is displayed at the top of the window and only hidden in full screen mode.',
+                'Menu is always visible at the top of the window even in full screen mode.',
+                'Menu is always hidden.',
+                'Menu is displayed as a compact button in the sidebar.'
+            ],
+            default: 'classic',
+            scope: 'application',
+            markdownDescription: `Control the visibility of the menu bar.
+            A setting of 'compact' will move the menu into the sidebar.`,
+            included: !isOSX
+        },
         'workbench.list.openMode': {
             type: 'string',
             enum: [
@@ -42,16 +91,6 @@ export const corePreferenceSchema: PreferenceSchema = {
             // eslint-disable-next-line max-len
             'description': 'Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.',
             'default': false
-        },
-        'application.confirmExit': {
-            type: 'string',
-            enum: [
-                'never',
-                'ifRequired',
-                'always',
-            ],
-            default: 'ifRequired',
-            description: 'When to confirm before closing the application window.',
         },
         'workbench.commandPalette.history': {
             type: 'number',
@@ -74,51 +113,21 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: false,
             description: 'Controls whether to suppress notification popups.'
         },
-        'files.encoding': {
-            'type': 'string',
-            'enum': Object.keys(SUPPORTED_ENCODINGS),
-            'default': 'utf8',
-            'description': 'The default character set encoding to use when reading and writing files. This setting can also be configured per language.',
-            'scope': 'language-overridable',
-            'enumDescriptions': Object.keys(SUPPORTED_ENCODINGS).map(key => SUPPORTED_ENCODINGS[key].labelLong),
-            'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
-        },
         'workbench.tree.renderIndentGuides': {
             type: 'string',
             enum: ['onHover', 'none', 'always'],
             default: 'onHover',
             description: 'Controls whether the tree should render indent guides.'
         },
-        'keyboard.dispatch': {
-            type: 'string',
-            enum: [
-                'code',
-                'keyCode',
-            ],
-            default: 'code',
-            description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
-        },
-        'window.menuBarVisibility': {
-            type: 'string',
-            enum: ['classic', 'visible', 'hidden', 'compact'],
-            markdownEnumDescriptions: [
-                'Menu is displayed at the top of the window and only hidden in full screen mode.',
-                'Menu is always visible at the top of the window even in full screen mode.',
-                'Menu is always hidden.',
-                'Menu is displayed as a compact button in the sidebar.'
-            ],
-            default: 'classic',
-            scope: 'application',
-            markdownDescription: `Control the visibility of the menu bar. 
-            A setting of 'compact' will move the menu into the sidebar.`,
-            included: !isOSX
-        },
     }
 };
 
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
+    'breadcrumbs.enabled': boolean;
+    'files.encoding': string
     'keyboard.dispatch': 'code' | 'keyCode';
+    'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
@@ -126,9 +135,7 @@ export interface CoreConfiguration {
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;
     'workbench.silentNotifications': boolean;
-    'files.encoding': string
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
-    'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');

@@ -18,7 +18,7 @@
 
 import * as electron from '../../../shared/electron';
 import { inject, injectable } from 'inversify';
-import { ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands } from '../../browser';
+import { ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
@@ -84,7 +84,7 @@ export class ElectronContextMenuRenderer extends ContextMenuRenderer {
 
     protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): ElectronContextMenuAccess {
         const menu = this.menuFactory.createContextMenu(menuPath, args);
-        const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor!;
+        const { x, y } = coordinateFromAnchor(anchor);
         const zoom = electron.webFrame.getZoomFactor();
         // x and y values must be Ints or else there is a conversion error
         menu.popup({ x: Math.round(x * zoom), y: Math.round(y * zoom) });

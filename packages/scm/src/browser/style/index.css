@@ -239,15 +239,11 @@
 
 .scm-theia-header {
     display: flex;
+    align-items: center;
 }
 
 .scm-theia-header:hover {
     cursor: pointer;
-}
-
-.scm-tab-icon {
-    -webkit-mask: url('scm.svg');
-    mask: url('scm.svg');
 }
 
 .theia-scm-inline-actions-container {
@@ -267,7 +263,6 @@
 }
 
 .theia-scm-inline-action {
-    padding: 0px 3px;
     font-size: var(--theia-ui-font-size1);
     margin: 0 2px;
     cursor: pointer;

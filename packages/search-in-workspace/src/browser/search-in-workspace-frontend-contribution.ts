@@ -18,7 +18,7 @@ import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenu
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
-import { Widget } from '@theia/core/lib/browser/widgets';
+import { codicon, Widget } from '@theia/core/lib/browser/widgets';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
@@ -49,31 +49,31 @@ export namespace SearchInWorkspaceCommands {
         id: 'search-in-workspace.refresh',
         category: SEARCH_CATEGORY,
         label: 'Refresh',
-        iconClass: 'codicon codicon-refresh'
+        iconClass: codicon('refresh')
     };
     export const CANCEL_SEARCH: Command = {
         id: 'search-in-workspace.cancel',
         category: SEARCH_CATEGORY,
         label: 'Cancel Search',
-        iconClass: 'codicon codicon-search-stop'
+        iconClass: codicon('search-stop')
     };
     export const COLLAPSE_ALL: Command = {
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
-        iconClass: 'codicon codicon-collapse-all'
+        iconClass: codicon('collapse-all')
     };
     export const EXPAND_ALL: Command = {
         id: 'search-in-workspace.expand-all',
         category: SEARCH_CATEGORY,
         label: 'Expand All',
-        iconClass: 'codicon codicon-expand-all'
+        iconClass: codicon('expand-all')
     };
     export const CLEAR_ALL: Command = {
         id: 'search-in-workspace.clear-all',
         category: SEARCH_CATEGORY,
         label: 'Clear Search Results',
-        iconClass: 'codicon codicon-clear-all'
+        iconClass: codicon('clear-all')
     };
 }
 

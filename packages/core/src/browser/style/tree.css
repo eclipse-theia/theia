@@ -73,7 +73,6 @@
 }
 
 .theia-ExpansionToggle.theia-mod-busy {
-    background: var(--theia-icon-loading) center center no-repeat;
     animation: theia-spin 1.25s linear infinite;
 }
 

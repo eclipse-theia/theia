@@ -180,16 +180,26 @@
 
 .p-Menu-itemIcon::before,
 .p-Menu-itemSubmenuIcon::before {
-  font-family: FontAwesome;
+  font: normal normal normal 16px/1 codicon;
+  display: inline-block;
+  text-decoration: none;
+  text-rendering: auto;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  transform: translateY(20%);
 }
 
 
 .p-Menu-item.p-mod-toggled > .p-Menu-itemIcon::before {
-  content: '\f00c';
+  content: '\eab2';
+  transform: scale(0.8) translateY(20%);
 }
 
 
 .p-Menu-item[data-type='submenu'] > .p-Menu-itemSubmenuIcon::before {
-  content: '\f0da';
-
+  content: '\eab6';
 }

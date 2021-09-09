@@ -111,7 +111,7 @@ export class PluginSharedStyle {
                 background-position: 2px;
                 width: ${size}px;
                 height: ${size}px;
-                background: no-repeat url("${theme.type === 'light' ? lightIconUrl : darkIconUrl}");
+                background: center no-repeat url("${theme.type === 'light' ? lightIconUrl : darkIconUrl}");
                 background-size: ${size}px;
             `));
         return {

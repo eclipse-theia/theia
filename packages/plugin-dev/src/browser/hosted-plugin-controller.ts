@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
+import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange, codicon } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common';
 import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
 import { Menu } from '@theia/core/shared/@phosphor/widgets';
@@ -304,7 +304,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected addCommandsForRunningPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.STOP.id, {
             label: 'Stop Instance',
-            icon: 'fa fa-stop',
+            icon: codicon('debug-stop'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.stop(), 100)
         });
 
@@ -315,7 +315,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         commands.addCommand(HostedPluginCommands.RESTART.id, {
             label: 'Restart Instance',
-            icon: 'fa fa-repeat',
+            icon: codicon('debug-restart'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.restart(), 100)
         });
 
@@ -331,7 +331,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected addCommandsForStoppedPlugin(commands: CommandRegistry, menu: Menu): void {
         commands.addCommand(HostedPluginCommands.START.id, {
             label: 'Start Instance',
-            icon: 'fa fa-play',
+            icon: codicon('play'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.start(), 100)
         });
 
@@ -342,7 +342,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
         commands.addCommand(HostedPluginCommands.DEBUG.id, {
             label: 'Debug Instance',
-            icon: 'fa fa-bug',
+            icon: codicon('debug'),
             execute: () => setTimeout(() => this.hostedPluginManagerClient.debug(), 100)
         });
 

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode } from '@theia/core/lib/browser';
+import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
@@ -104,7 +104,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.id = SearchInWorkspaceWidget.ID;
         this.title.label = SearchInWorkspaceWidget.LABEL;
         this.title.caption = SearchInWorkspaceWidget.LABEL;
-        this.title.iconClass = 'search-in-workspace-tab-icon';
+        this.title.iconClass = codicon('search');
         this.title.closable = true;
         this.contentNode = document.createElement('div');
         this.contentNode.classList.add('t-siw-search-container');
@@ -114,22 +114,22 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.node.appendChild(this.contentNode);
 
         this.matchCaseState = {
-            className: 'match-case',
+            className: codicon('case-sensitive'),
             enabled: false,
             title: 'Match Case'
         };
         this.wholeWordState = {
-            className: 'whole-word',
+            className: codicon('whole-word'),
             enabled: false,
             title: 'Match Whole Word'
         };
         this.regExpState = {
-            className: 'use-regexp',
+            className: codicon('regex'),
             enabled: false,
             title: 'Use Regular Expression'
         };
         this.includeIgnoredState = {
-            className: 'include-ignored fa fa-eye',
+            className: codicon('eye'),
             enabled: false,
             title: 'Include Ignored Files'
         };
@@ -354,7 +354,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderReplaceFieldToggle(): React.ReactNode {
-        const toggle = <span className={`fa fa-caret-${this.showReplaceField ? 'down' : 'right'}`}></span>;
+        const toggle = <span className={codicon(this.showReplaceField ? 'chevron-down' : 'chevron-right')}></span>;
         return <div
             title='Toggle Replace'
             className='replace-toggle'
@@ -532,7 +532,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         return <div className='replace-all-button-container'>
             <span
                 title='Replace All'
-                className={`replace-all-button${enabled ? ' ' : ' disabled'}`}
+                className={`${codicon('replace-all', true)} ${enabled ? ' ' : ' disabled'}`}
                 onClick={() => {
                     if (enabled) {
                         this.resultTreeWidget.replace(undefined);
@@ -588,7 +588,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         return <div className='button-container'>
             <span
                 title='Toggle Search Details'
-                className='fa fa-ellipsis-h btn'
+                className={codicon('ellipsis')}
                 onClick={() => {
                     this.showSearchDetails = !this.showSearchDetails;
                     this.update();

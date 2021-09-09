@@ -1,9 +1,19 @@
 # Change Log
 
-## v1.18.0
+## v1.19.0
+
+<a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
+
+- [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility` [#10020](https://github.com/eclipse-theia/theia/pull/10020)
+
+## v1.18.0 - 9/30/2021
+
+- [core, outline-view, file-system, workspace] added breadcrumbs contribution points and renderers to `core` and contributions to other packages. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
 
 <a name="breaking_changes_1.18.0">[Breaking Changes:](#breaking_changes_1.18.0)</a>
 
+- [core] added `BreadcrumbsRendererFactory` to constructor arguments of `DockPanelRenderer` and `ToolbarAwareTabBar`. [#9920](https://github.com/eclipse-theia/theia/pull/9920)
+- [task] `TaskDefinition.properties.required` is now optional to align with the specification [#10015](https://github.com/eclipse-theia/theia/pull/10015)
 - [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility` [#10020](https://github.com/eclipse-theia/theia/pull/10020)
 
 ## v1.17.2 - 9/1/2021

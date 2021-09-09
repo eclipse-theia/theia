@@ -20,7 +20,9 @@ import { Disposable, MenuPath, SelectionService } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
-import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, Widget, UnsafeWidgetUtilities } from '../widgets';
+import {
+    EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, CODICON_LOADING_CLASSES, Widget, UnsafeWidgetUtilities
+} from '../widgets';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
@@ -564,7 +566,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             classes.push(COLLAPSED_CLASS);
         }
         if (node.busy) {
-            classes.push(BUSY_CLASS);
+            classes.push(BUSY_CLASS, ...CODICON_LOADING_CLASSES);
         } else {
             classes.push(...CODICON_TREE_ITEM_CLASSES);
         }

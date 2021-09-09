@@ -20,7 +20,8 @@ import {
     WidgetManager,
     Widget,
     ApplicationShell,
-    Navigatable
+    Navigatable,
+    codicon
 } from '@theia/core/lib/browser';
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { TimelineWidget } from './timeline-widget';
@@ -50,7 +51,7 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
         id: 'timeline-refresh-toolbar-item',
         command: 'timeline-refresh',
         tooltip: 'Refresh',
-        icon: 'fa fa-refresh'
+        icon: codicon('refresh')
     };
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem(this.toolbarItem);

@@ -71,12 +71,12 @@ export class TaskDefinitionRegistry {
         let matchedDefinition: TaskDefinition | undefined;
         let highest = -1;
         for (const def of definitions) {
-            let score = 0;
-            if (!def.properties.required.every(requiredProp => taskConfiguration[requiredProp] !== undefined)) {
+            const required = def.properties.required || [];
+            if (!required.every(requiredProp => taskConfiguration[requiredProp] !== undefined)) {
                 continue;
             }
-            score += def.properties.required.length; // number of required properties
-            const requiredProps = new Set(def.properties.required);
+            let score = required.length; // number of required properties
+            const requiredProps = new Set(required);
             // number of optional properties
             score += def.properties.all.filter(p => !requiredProps.has(p) && taskConfiguration[p] !== undefined).length;
             if (score > highest) {

@@ -48,12 +48,14 @@
 |----------------------------------------------------------------------------*/
 
 #theia-app-shell .ps__rail-x,
-#theia-dialog-shell .ps__rail-x {
+#theia-dialog-shell .ps__rail-x,
+#theia-breadcrumbs-popups-overlay .ps__rail-x {
     height: var(--theia-scrollbar-rail-width);
 }
 
 #theia-app-shell .ps__rail-x > .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x > .ps__thumb-x {
+#theia-dialog-shell .ps__rail-x > .ps__thumb-x,
+#theia-breadcrumbs-popups-overlay .ps__thumb-x {
     height: var(--theia-scrollbar-width);
     bottom: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
     background: var(--theia-scrollbarSlider-background);
@@ -63,7 +65,9 @@
 #theia-app-shell .ps__rail-x:hover,
 #theia-app-shell .ps__rail-x:focus,
 #theia-dialog-shell .ps__rail-x:hover,
-#theia-dialog-shell .ps__rail-x:focus {
+#theia-dialog-shell .ps__rail-x:focus,
+#theia-breadcrumbs-popups-overlay .ps__rail-x:hover,
+#theia-breadcrumbs-popups-overlay .ps__rail-x:focus {
     height: var(--theia-scrollbar-rail-width);
 }
 
@@ -72,17 +76,22 @@
 #theia-app-shell .ps__rail-x.ps--clicking .ps__thumb-x,
 #theia-dialog-shell .ps__rail-x:hover > .ps__thumb-x,
 #theia-dialog-shell .ps__rail-x:focus > .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x.ps--clicking .ps__thumb-x  {
+#theia-dialog-shell .ps__rail-x.ps--clicking .ps__thumb-x,
+#theia-breadcrumbs-popups-overlay .ps__rail-x:hover > .ps__thumb-x,
+#theia-breadcrumbs-popups-overlay .ps__rail-x:focus > .ps__thumb-x,
+#theia-breadcrumbs-popups-overlay .ps__rail-x.ps--clicking .ps__thumb-x  {
     height: var(--theia-scrollbar-width);
 }
 
 #theia-app-shell .ps__rail-y,
-#theia-dialog-shell .ps__rail-y {
+#theia-dialog-shell .ps__rail-y,
+#theia-breadcrumbs-popups-overlay .ps__rail-y {
     width: var(--theia-scrollbar-rail-width);
 }
 
 #theia-app-shell .ps__rail-y > .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y > .ps__thumb-y {
+#theia-dialog-shell .ps__rail-y > .ps__thumb-y,
+#theia-breadcrumbs-popups-overlay .ps__rail-y > .ps__thumb-y {
     width: var(--theia-scrollbar-width);
     right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
     background: var(--theia-scrollbarSlider-background);
@@ -92,7 +101,9 @@
 #theia-app-shell .ps__rail-y:hover,
 #theia-app-shell .ps__rail-y:focus,
 #theia-dialog-shell .ps__rail-y:hover,
-#theia-dialog-shell .ps__rail-y:focus {
+#theia-dialog-shell .ps__rail-y:focus,
+#theia-breadcrumbs-popups-overlay .ps__rail-y:hover,
+#theia-breadcrumbs-popups-overlay .ps__rail-y:focus {
     width: var(--theia-scrollbar-rail-width);
 }
 
@@ -101,27 +112,32 @@
 #theia-app-shell .ps__rail-y.ps--clicking .ps__thumb-y,
 #theia-dialog-shell .ps__rail-y:hover > .ps__thumb-y,
 #theia-dialog-shell .ps__rail-y:focus > .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y.ps--clicking .ps__thumb-y  {
+#theia-dialog-shell .ps__rail-y.ps--clicking .ps__thumb-y,
+#theia-breadcrumbs-popups-overlay .ps__rail-y:hover > .ps__thumb-y,
+#theia-breadcrumbs-popups-overlay .ps__rail-y:focus > .ps__thumb-y,
+#theia-breadcrumbs-popups-overlay .ps__rail-y.ps--clicking .ps__thumb-y  {
     right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
     width: var(--theia-scrollbar-width);
 }
 
 #theia-app-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb'],
-#theia-dialog-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb']{
+#theia-dialog-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb'],
+#theia-breadcrumbs-popups-overlay .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb'] {
     background-color: var(--theia-scrollbarSlider-activeBackground);
 }
 
 #theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:hover,
 #theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:focus,
 #theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:hover,
-#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:focus
-{
+#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:focus,
+#theia-breadcrumbs-popups-overlay .ps [class^='ps__rail'] > [class^='ps__thumb']:hover,
+#theia-breadcrumbs-popups-overlay .ps [class^='ps__rail'] > [class^='ps__thumb']:focus {
     background: var(--theia-scrollbarSlider-hoverBackground);
 }
 
 #theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:active,
-#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:active
-{
+#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:active,
+#theia-breadcrumbs-popups-overlay .ps [class^='ps__rail'] > [class^='ps__thumb']:active {
     background: var(--theia-scrollbarSlider-activeBackground);
 }
 
@@ -130,7 +146,10 @@
 #theia-app-shell .ps--scrolling-y > [class^='ps__rail'],
 #theia-dialog-shell .ps:hover > [class^='ps__rail'],
 #theia-dialog-shell .ps--focus > [class^='ps__rail'],
-#theia-dialog-shell .ps--scrolling-y > [class^='ps__rail'] {
+#theia-dialog-shell .ps--scrolling-y > [class^='ps__rail'],
+#theia-breadcrumbs-popups-overlay .ps:hover > [class^='ps__rail'],
+#theia-breadcrumbs-popups-overlay .ps--focus > [class^='ps__rail'],
+#theia-breadcrumbs-popups-overlay .ps--scrolling-y > [class^='ps__rail'] {
     opacity: 1;
     background: transparent;
 }

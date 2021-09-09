@@ -37,11 +37,7 @@
 .theia-plugin-view-container {
     -webkit-mask: url('');
     mask: url('');
-}
-
-.theia-plugin-test-tab-icon {
-    -webkit-mask: url('test.svg');
-    mask: url('test.svg');
+    background-color: var(--theia-activityBar-inactiveForeground);
 }
 
 .theia-plugin-file-icon,

@@ -22,7 +22,7 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { Widget } from '@theia/core/lib/browser';
+import { codicon, Widget } from '@theia/core/lib/browser';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
@@ -43,11 +43,11 @@ export namespace KeymapsCommands {
     };
     export const OPEN_KEYMAPS_JSON_TOOLBAR: Command = {
         id: 'keymaps:openJson.toolbar',
-        iconClass: 'theia-open-json-icon'
+        iconClass: codicon('json')
     };
     export const CLEAR_KEYBINDINGS_SEARCH: Command = {
         id: 'keymaps.clearSearch',
-        iconClass: 'clear-all'
+        iconClass: codicon('clear-all')
     };
 }
 

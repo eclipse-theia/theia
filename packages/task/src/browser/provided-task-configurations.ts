@@ -101,12 +101,12 @@ export class ProvidedTaskConfigurations {
         let highest = -1;
         const tasks = await this.getTasks(token);
         for (const task of tasks) { // find detected tasks that match the `definition`
-            let score = 0;
-            if (!definition.properties.required.every(requiredProp => customization[requiredProp] !== undefined)) {
+            const required = definition.properties.required || [];
+            if (!required.every(requiredProp => customization[requiredProp] !== undefined)) {
                 continue;
             }
-            score += definition.properties.required.length; // number of required properties
-            const requiredProps = new Set(definition.properties.required);
+            let score = required.length; // number of required properties
+            const requiredProps = new Set(required);
             // number of optional properties
             score += definition.properties.all.filter(p => !requiredProps.has(p) && customization[p] !== undefined).length;
             if (score >= highest) {

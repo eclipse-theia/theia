@@ -27,12 +27,21 @@
     font-size: calc(var(--theia-content-font-size) * 0.8);
 }
 
+.p-TabBar-tabIcon.theia-file-icons-js.file-icon {
+    padding-left: 1px !important;
+    padding-right: 3px !important;
+}
+
 .theia-file-icons-js.file-icon {
     min-width: var(--theia-icon-size);
-    height: var(--theia-icon-size);
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+:not(.p-TabBar-tabIcon).default-folder-icon,
+:not(.p-TabBar-tabIcon).default-file-icon {
+    transform: translateX(-2px);
 }
 
 .fa-file:before,

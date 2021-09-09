@@ -16,7 +16,7 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget, codicon } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND, ProblemMarker } from '../../common/problem-marker';
@@ -41,7 +41,7 @@ export namespace ProblemsCommands {
     };
     export const COLLAPSE_ALL_TOOLBAR: Command = {
         id: 'problems.collapse.all.toolbar',
-        iconClass: 'theia-collapse-all-icon'
+        iconClass: codicon('collapse-all')
     };
     export const COPY: Command = {
         id: 'problems.copy'
@@ -53,7 +53,7 @@ export namespace ProblemsCommands {
         id: 'problems.clear.all',
         category: 'Problems',
         label: 'Clear All',
-        iconClass: 'clear-all'
+        iconClass: codicon('clear-all')
     };
 }
 
@@ -89,8 +89,8 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     protected setStatusBarElement(problemStat: ProblemStat): void {
         this.statusBar.setElement('problem-marker-status', {
             text: problemStat.infos <= 0
-                ? `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`
-                : `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings} $(info-circle) ${problemStat.infos}`,
+                ? `$(codicon-error) ${problemStat.errors} $(codicon-warning) ${problemStat.warnings}`
+                : `$(codicon-error) ${problemStat.errors} $(codicon-warning) ${problemStat.warnings} $(codicon-info) ${problemStat.infos}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
             command: this.toggleCommand ? this.toggleCommand.id : undefined,

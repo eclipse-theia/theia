@@ -23,6 +23,7 @@ import {
     StatusBarEntry,
     KeybindingRegistry,
     ViewContainerTitleOptions,
+    codicon,
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
@@ -40,7 +41,7 @@ export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
     label: 'Source Control',
-    iconClass: 'scm-tab-icon',
+    iconClass: codicon('source-control'),
     closeable: true
 };
 
@@ -56,20 +57,20 @@ export namespace SCM_COMMANDS {
     export const TREE_VIEW_MODE = {
         id: 'scm.viewmode.tree',
         tooltip: 'Toggle to Tree View',
-        iconClass: 'codicon codicon-list-tree',
+        iconClass: codicon('list-tree'),
         label: 'Toggle to Tree View',
     };
     export const LIST_VIEW_MODE = {
         id: 'scm.viewmode.list',
         tooltip: 'Toggle to List View',
-        iconClass: 'codicon codicon-list-flat',
+        iconClass: codicon('list-flat'),
         label: 'Toggle to List View',
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
         category: 'SCM',
         tooltip: 'Collapse All',
-        iconClass: 'codicon codicon-collapse-all',
+        iconClass: codicon('collapse-all'),
         label: 'Collapse All',
     };
 }
