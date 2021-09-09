@@ -231,6 +231,7 @@ export class FrontendApplication {
             return new Promise(resolve => {
                 window.requestAnimationFrame(() => {
                     startupElem.classList.add('theia-hidden');
+                    console.log(`Finished loading frontend application after ${(performance.now() / 1000).toFixed(3)} seconds`);
                     const preloadStyle = window.getComputedStyle(startupElem);
                     const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
                     window.setTimeout(() => {
