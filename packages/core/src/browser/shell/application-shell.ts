@@ -264,11 +264,11 @@ export class ApplicationShell extends Widget {
 
         if (!environment.electron.is()) {
             this.corePreferences.ready.then(() => {
-                this.setTopPanelVisibily(this.corePreferences['window.menuBarVisibility']);
+                this.setTopPanelVisibility(this.corePreferences['window.menuBarVisibility']);
             });
             this.corePreferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'window.menuBarVisibility') {
-                    this.setTopPanelVisibily(preference.newValue);
+                    this.setTopPanelVisibility(preference.newValue);
                 }
             });
         }
@@ -301,7 +301,7 @@ export class ApplicationShell extends Widget {
         this.activeChanged.connect(updateFocusContextKeys);
     }
 
-    protected setTopPanelVisibily(preference: string): void {
+    protected setTopPanelVisibility(preference: string): void {
         const hiddenPreferences = ['compact', 'hidden'];
         this.topPanel.setHidden(hiddenPreferences.includes(preference));
     }
