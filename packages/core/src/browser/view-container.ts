@@ -617,6 +617,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             return undefined;
         }
         this.updateCurrentPart(part);
+        part.collapsed = false;
         return part.wrapped;
     }
 
