@@ -343,6 +343,8 @@ export interface CodeAction {
     edit?: WorkspaceEdit;
     diagnostics?: MarkerData[];
     kind?: string;
+    disabled?: { reason: string };
+    isPreferred?: boolean;
 }
 
 export interface CodeActionContext {

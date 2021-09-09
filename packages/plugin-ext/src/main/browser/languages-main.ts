@@ -1013,6 +1013,7 @@ function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {
     return {
         ...action,
         diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        disabled: action.disabled?.reason,
         edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
     };
 }
