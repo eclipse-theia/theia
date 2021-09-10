@@ -48,11 +48,15 @@ export function loadVsRequire(context: any): Promise<any> {
 
 export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
-        if (nls.locale && ['de', 'es', 'fr', 'it', 'ja', 'ko', 'ru', 'zh-cn', 'zh-tw'].includes(nls.locale)) {
+        if (nls.locale) {
             vsRequire.config({
                 'vs/nls': {
                     availableLanguages: {
                         '*': nls.locale
+                    },
+                    loadBundle: (_name: string, _language: string, callback: (err: unknown, messages: Record<string, string[]>) => void) => {
+                        // The `monaco-nls.json` is build using the `translate-monaco.js` script file
+                        callback(undefined, createMessageBundle(require('../../data/monaco-nls.json')));
                     }
                 }
             });
@@ -161,4 +165,29 @@ export function clearMonacoQuickAccessProviders(): void {
 
     // Clear Monaco QuickAccessRegistry as it currently includes monaco internal providers and not Theia's providers
     registry.clear();
+}
+
+function createMessageBundle(bundle: Record<string, Record<string, string>>): Record<string, string[]> {
+    const result: Record<string, string[]> = {};
+    for (const [fullName, items] of Object.entries(bundle)) {
+        const nameIndex = fullName.lastIndexOf('/');
+        let name = fullName;
+        if (nameIndex >= 0) {
+            name = fullName.substring(nameIndex + 1);
+        }
+        const array: string[] = [];
+        const keys = Object.keys(items);
+        for (let i = 0; i < keys.length; i++) {
+            let key = keys[i];
+            if (key.startsWith('_duplicate/')) {
+                const index = Number(key.substring('_duplicate/'.length));
+                key = keys[index];
+                keys[i] = key;
+            }
+            const fullItemName = `vscode/${name}/${key}`;
+            array.push(nls.localize(fullItemName, items[key]));
+        }
+        result[fullName] = array;
+    }
+    return result;
 }
