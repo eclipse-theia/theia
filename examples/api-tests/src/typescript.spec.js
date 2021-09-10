@@ -81,7 +81,7 @@ container.load(loggerBackendModule);
 function load(raw) {
     return Promise.resolve(raw.default).then(module =>
         container.load(module)
-    )
+    );
 }
 
 function start(port, host, argv) {
@@ -172,9 +172,8 @@ module.exports = (port, host, argv) => Promise.resolve()
     }
 
     /**
-     * @template T
-     * @param {() => Promise<T> | T} condition
-     * @returns {Promise<T>}
+     * @param {() => Promise<unknown> | unknown} condition
+     * @returns {Promise<void>}
      */
     function waitForAnimation(condition) {
         return new Promise(async (resolve, dispose) => {
@@ -745,17 +744,25 @@ SPAN {
     });
 
     it('editor.action.quickFix', async function () {
-        const column = 6;
-        const lineNumber = 19;
+        const column = 29;
+        const lineNumber = 18;
         const editor = await openEditor(serverUri);
-        // @ts-ignore
         const currentChar = () => editor.getControl().getModel().getLineContent(lineNumber).charAt(column - 1);
 
-        // missing semicolon at
-        //     )|
+        // container.load(modul)
+        editor.getControl().getModel().applyEdits([{
+            range: {
+                startLineNumber: lineNumber,
+                endLineNumber: lineNumber,
+                startColumn: 29,
+                endColumn: 30
+            },
+            forceMoveMarkers: false,
+            text: ''
+        }]);
         editor.getControl().setPosition({ lineNumber, column });
         editor.getControl().revealPosition({ lineNumber, column });
-        assert.equal(currentChar(), '');
+        assert.equal(currentChar(), ')');
 
         const quickFixController = editor.getControl()._contributions['editor.contrib.quickFixController'];
         const lightBulbNode = () => {
@@ -778,8 +785,8 @@ SPAN {
         keybindings.dispatchKeyDown('ArrowDown');
         keybindings.dispatchKeyDown('Enter');
 
-        await waitForAnimation(() => currentChar() === ';');
-        assert.equal(currentChar(), ';');
+        await waitForAnimation(() => currentChar() === 'e');
+        assert.equal(currentChar(), 'e');
 
         await waitForAnimation(() => !lightBulbVisible());
         assert.isFalse(lightBulbVisible());
