@@ -126,7 +126,7 @@
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
-    padding: 8px 4px 0px 4px;
+    padding: 5px 4px 7px 4px;
 }
 
 .theia-notification-message {
@@ -140,6 +140,7 @@
     display: block;
     overflow: hidden;
     user-select: text;
+    margin-top: 3px;
 }
 
 .theia-notification-message a {
@@ -152,8 +153,12 @@
     outline-color: var(--theia-focusBorder);
 }
 
+.theia-notification-icon {
+    margin-top: 1px;
+}
+
 .theia-notification-icon:before {
-    font-size: 24px;
+    font-size: 18px;
     padding-right: 4px;
 }
 
