@@ -169,10 +169,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
             };
         });
     } else {
-        return ranges.map((r): DecorationOptions =>
-        ({
-            range: fromRange(r)!
-        }));
+        return ranges.map(r => ({ range: fromRange(r) }));
     }
 }
 
@@ -686,7 +683,8 @@ export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.Call
         detail: item.detail,
         uri: item.uri,
         range: fromRange(item.range),
-        selectionRange: fromRange(item.selectionRange)
+        selectionRange: fromRange(item.selectionRange),
+        tags: item.tags
     };
 }
 

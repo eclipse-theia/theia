@@ -72,7 +72,8 @@ export class CallHierarchyAdapter {
             range: this.fromRange(item.range),
             selectionRange: this.fromRange(item.selectionRange),
             name: item.name,
-            kind: item.kind
+            kind: item.kind,
+            tags: item.tags
         };
     }
 

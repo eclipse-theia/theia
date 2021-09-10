@@ -151,7 +151,8 @@ export function toDefinition(definition: model.CallHierarchyDefinition | undefin
         selectionRange: toRange(definition.selectionRange),
         symbolName: definition.name,
         symbolKind: SymbolKindConverter.toSymbolKind(definition.kind),
-        containerName: undefined
+        containerName: undefined,
+        tags: definition.tags
     };
 }
 
