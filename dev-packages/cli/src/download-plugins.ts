@@ -162,6 +162,8 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         fileExt = '.tar.gz';
     } else if (pluginUrl.endsWith('vsix')) {
         fileExt = '.vsix';
+    } else if (pluginUrl.endsWith('theia')) {
+        fileExt = '.theia'; // theia plugins.
     } else {
         failures.push(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
         return;
@@ -210,7 +212,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         return;
     }
 
-    if (fileExt === '.vsix' && packed === true) {
+    if ((fileExt === '.vsix' || fileExt === '.theia') && packed === true) {
         // Download .vsix without decompressing.
         const file = createWriteStream(targetPath);
         await pipelineAsPromised(response.body, file);
