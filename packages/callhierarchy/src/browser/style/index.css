@@ -56,3 +56,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.theia-CallHierarchyTree .definitionNode.deprecatedDefinition .definitionNode-content {
+    text-decoration: line-through;
+}

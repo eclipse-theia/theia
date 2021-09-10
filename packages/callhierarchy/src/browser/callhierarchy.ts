@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Range, SymbolKind, Location } from '@theia/core/shared/vscode-languageserver-types';
+import { Range, SymbolKind, Location, SymbolTag } from '@theia/core/shared/vscode-languageserver-types';
 
 export const CALLHIERARCHY_ID = 'callhierarchy';
 
@@ -23,7 +23,8 @@ export interface Definition {
     selectionRange: Range,
     symbolName: string,
     symbolKind: SymbolKind,
-    containerName: string | undefined
+    containerName: string | undefined,
+    tags?: readonly SymbolTag[];
 }
 
 export interface Caller {

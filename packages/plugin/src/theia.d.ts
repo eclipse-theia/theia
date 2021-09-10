@@ -10636,6 +10636,11 @@ declare module '@theia/plugin' {
         selectionRange: Range;
 
         /**
+         * Tags for this item.
+         */
+        tags?: readonly SymbolTag[];
+
+        /**
          * Creates a new call hierarchy item.
          */
         constructor(kind: SymbolKind, name: string, detail: string, uri: Uri, range: Range, selectionRange: Range);
