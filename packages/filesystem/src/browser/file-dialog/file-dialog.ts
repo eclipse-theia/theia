@@ -146,16 +146,16 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
-        navigationPanel.appendChild(this.back = createIconButton(...codiconArray('chevron-left')));
+        navigationPanel.appendChild(this.back = createIconButton(...codiconArray('chevron-left', true)));
         this.back.classList.add(NAVIGATION_BACK_CLASS);
         this.back.title = 'Navigate Back';
-        navigationPanel.appendChild(this.forward = createIconButton(...codiconArray('chevron-right')));
+        navigationPanel.appendChild(this.forward = createIconButton(...codiconArray('chevron-right', true)));
         this.forward.classList.add(NAVIGATION_FORWARD_CLASS);
         this.forward.title = 'Navigate Forward';
-        navigationPanel.appendChild(this.home = createIconButton(...codiconArray('home')));
+        navigationPanel.appendChild(this.home = createIconButton(...codiconArray('home', true)));
         this.home.classList.add(NAVIGATION_HOME_CLASS);
         this.home.title = 'Go To Initial Location';
-        navigationPanel.appendChild(this.up = createIconButton(...codiconArray('arrow-up')));
+        navigationPanel.appendChild(this.up = createIconButton(...codiconArray('arrow-up', true)));
         this.up.classList.add(NAVIGATION_UP_CLASS);
         this.up.title = 'Navigate Up One Directory';
 
