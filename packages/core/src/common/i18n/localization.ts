@@ -31,3 +31,47 @@ export interface Localization {
     localizedLanguageName?: string;
     translations: { [key: string]: string };
 }
+
+export type FormatType = string | number | boolean | undefined;
+
+export namespace Localization {
+
+    function format(message: string, args: FormatType[]): string {
+        let result = message;
+        if (args.length > 0) {
+            result = message.replace(/\{(\d+)\}/g, (match, rest) => {
+                const index = rest[0];
+                const arg = args[index];
+                let replacement = match;
+                if (typeof arg === 'string') {
+                    replacement = arg;
+                } else if (typeof arg === 'number' || typeof arg === 'boolean' || !arg) {
+                    replacement = String(arg);
+                }
+                return replacement;
+            });
+        }
+        return result;
+    }
+
+    export function localize(localization: Localization | undefined, key: string, defaultValue: string, ...args: FormatType[]): string {
+        let value = defaultValue;
+        if (localization) {
+            const translation = localization.translations[key];
+            if (translation) {
+                // vscode's localizations often contain additional '&&' symbols, which we simply ignore
+                value = translation.replace(/&&/g, '');
+            }
+        }
+        return format(value, args);
+    }
+
+    export function transformKey(key: string): string {
+        let nlsKey = key;
+        const keySlashIndex = key.lastIndexOf('/');
+        if (keySlashIndex >= 0) {
+            nlsKey = key.substring(keySlashIndex + 1);
+        }
+        return nlsKey;
+    }
+}

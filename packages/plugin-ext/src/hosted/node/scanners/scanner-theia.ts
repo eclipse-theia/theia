@@ -382,6 +382,7 @@ export class TheiaPluginScanner implements PluginScanner {
             throw new Error(`Could not read json file '${packageTranslation.path}'.`);
         }
         translation.id = packageTranslation.id;
+        translation.path = packageTranslation.path;
         return translation;
     }
 

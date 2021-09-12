@@ -33,6 +33,7 @@ import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginUriFactory } from './scanners/plugin-uri-factory';
 import { FilePluginUriFactory } from './scanners/file-plugin-uri-factory';
+import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -58,6 +59,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(HostedPluginReader);
 
+    bind(HostedPluginLocalizationService).toSelf().inSingletonScope();
     bind(HostedPluginDeployerHandler).toSelf().inSingletonScope();
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
