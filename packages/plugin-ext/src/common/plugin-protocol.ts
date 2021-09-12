@@ -128,10 +128,20 @@ export interface PluginPackageViewContainer {
     icon: string;
 }
 
+export enum PluginViewType {
+    Tree = 'tree',
+    Webview = 'webview'
+}
+
+/**
+ * Whether a plugin installed by a user or system.
+ */
+
 export interface PluginPackageView {
     id: string;
     name: string;
     when?: string;
+    type?: string;
 }
 
 export interface PluginPackageViewWelcome {
@@ -689,6 +699,7 @@ export interface View {
     id: string;
     name: string;
     when?: string;
+    type?: string;
 }
 
 /**

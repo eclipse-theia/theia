@@ -28,11 +28,15 @@ import { PluginIconPath } from './plugin-icon-path';
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
+    private readonly webviews = new Map<string, WebviewImpl>();
     private readonly serializers = new Map<string, {
         serializer: theia.WebviewPanelSerializer,
         plugin: Plugin
     }>();
     private initData: WebviewInitData | undefined;
+
+    readonly onDidDisposeEmitter = new Emitter<void>();
+     /* internal */ readonly onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
 
     constructor(
         rpc: RPCProtocol,
@@ -50,6 +54,11 @@ export class WebviewsExtImpl implements WebviewsExt {
         const panel = this.getWebviewPanel(handle);
         if (panel) {
             panel.webview.onMessageEmitter.fire(message);
+        } else {
+            const webview = this.getWebview(handle);
+            if (webview) {
+                webview.onMessageEmitter.fire(message);
+            }
         }
     }
     $onDidChangeWebviewPanelViewState(handle: string, newState: WebviewPanelViewState): void {
@@ -129,6 +138,19 @@ export class WebviewsExtImpl implements WebviewsExt {
         return panel;
     }
 
+    createNewWebview(
+        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        plugin: Plugin,
+        viewId: string
+    ): WebviewImpl {
+        if (!this.initData) {
+            throw new Error('Webviews are not initialized');
+        }
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
+        this.webviews.set(viewId, webview);
+        return webview;
+    }
+
     registerWebviewPanelSerializer(
         viewType: string,
         serializer: theia.WebviewPanelSerializer,
@@ -152,6 +174,14 @@ export class WebviewsExtImpl implements WebviewsExt {
             return this.webviewPanels.get(viewId);
         }
         return undefined;
+    }
+
+    public deleteWebview(handle: string): void {
+        this.webviews.delete(handle);
+    }
+
+    public getWebview(handle: string): WebviewImpl | undefined {
+        return this.webviews.get(handle);
     }
 }
 
