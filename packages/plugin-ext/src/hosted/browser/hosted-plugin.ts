@@ -64,6 +64,7 @@ import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
+import { WebviewViewService } from '../../main/browser/webview-views/webview-views';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -156,6 +157,9 @@ export class HostedPluginSupport {
     @inject(PluginCustomEditorRegistry)
     protected readonly customEditorRegistry: PluginCustomEditorRegistry;
 
+    @inject(WebviewViewService)
+    protected readonly webviewViewService: WebviewViewService;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
@@ -203,6 +207,7 @@ export class HostedPluginSupport {
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
         this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
+        this.webviewViewService.onDidRegisterResolver(event => this.activateByView(event.viewId));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {

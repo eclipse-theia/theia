@@ -895,13 +895,15 @@ const codeEditorPreferenceProperties = {
     'editor.peekWidgetDefaultFocus': {
         'enumDescriptions': [
             'Focus the tree when opening peek',
-            'Focus the editor when opening peek'
+            'Focus the editor when opening peek',
+            'Focus the webview when opening peek'
         ],
         'description': 'Controls whether to focus the inline editor or the tree in the peek widget.',
         'type': 'string',
         'enum': [
             'tree',
-            'editor'
+            'editor',
+            'webview'
         ],
         'default': 'tree'
     },

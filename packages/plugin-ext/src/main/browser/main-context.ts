@@ -56,6 +56,7 @@ import { ThemingMainImpl } from './theming-main';
 import { CommentsMainImp } from './comments/comments-main';
 import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
 import { SecretsMainImpl } from './secrets-main';
+import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -126,6 +127,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const customEditorsMain = new CustomEditorsMainImpl(rpc, container, webviewsMain);
     rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain);
+
+    const webviewViewsMain = new WebviewViewsMainImpl(rpc, container, webviewsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webviewViewsMain);
 
     const storageMain = new StorageMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);
