@@ -230,11 +230,11 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
-        const badge: number | undefined = this.getDecorationData(data.title, 'badge')[0];
-        if (!badge) {
+        const totalBadge = this.getDecorationData(data.title, 'badge').reduce((sum, badge) => sum! + badge!, 0);
+        if (!totalBadge) {
             return h.div({});
         }
-        const limitedBadge = badge >= 100 ? '99+' : badge;
+        const limitedBadge = totalBadge >= 100 ? '99+' : totalBadge;
         return isInSidePanel
             ? h.div({ className: 'theia-badge-decorator-sidebar' }, `${limitedBadge}`)
             : h.div({ className: 'theia-badge-decorator-horizontal' }, `${limitedBadge}`);
@@ -280,7 +280,6 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     protected getDecorationData<K extends keyof WidgetDecoration.Data>(title: Title<Widget>, key: K): WidgetDecoration.Data[K][] {
         return this.getDecorations(title).filter(data => data[key] !== undefined).map(data => data[key]);
-
     }
 
     /**
@@ -384,8 +383,8 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {SideBarRenderData} data Data used to render the tab icon.
      * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      */
-    renderIcon(data: SideBarRenderData, inSidePanel?: boolean): VirtualElement {
-        if (!inSidePanel && this.iconThemeService && this.iconThemeService.current === 'none') {
+    renderIcon(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+        if (!isInSidePanel && this.iconThemeService && this.iconThemeService.current === 'none') {
             return h.div();
         }
         let top: string | undefined;
@@ -402,13 +401,13 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (decorationData.length > 0) {
             const baseIcon: VirtualElement = h.div({ className: baseClassName, style }, data.title.iconLabel);
             const wrapperClassName: string = WidgetDecoration.Styles.ICON_WRAPPER_CLASS;
-            const decoratorSizeClassName: string = inSidePanel ? WidgetDecoration.Styles.DECORATOR_SIDEBAR_SIZE_CLASS : WidgetDecoration.Styles.DECORATOR_SIZE_CLASS;
+            const decoratorSizeClassName: string = isInSidePanel ? WidgetDecoration.Styles.DECORATOR_SIDEBAR_SIZE_CLASS : WidgetDecoration.Styles.DECORATOR_SIZE_CLASS;
 
             decorationData
                 .filter(notEmpty)
                 .map(overlay => [overlay.position, overlay] as [WidgetDecoration.IconOverlayPosition, WidgetDecoration.IconOverlay | WidgetDecoration.IconClassOverlay])
                 .forEach(([position, overlay]) => {
-                    const iconAdditionalClasses: string[] = [decoratorSizeClassName, WidgetDecoration.IconOverlayPosition.getStyle(position, inSidePanel)];
+                    const iconAdditionalClasses: string[] = [decoratorSizeClassName, WidgetDecoration.IconOverlayPosition.getStyle(position, isInSidePanel)];
                     const overlayIconStyle = (color?: string) => {
                         if (color === undefined) {
                             return {};
