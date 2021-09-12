@@ -57,7 +57,7 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
         this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));
     }
 
-    protected fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);
+    fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);
 
     /**
      * Assign tabs the decorators provided by all the contributions.
