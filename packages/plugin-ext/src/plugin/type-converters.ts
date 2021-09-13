@@ -27,7 +27,7 @@ import { isMarkdownString, MarkdownString } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { TaskGroup } from './types-impl';
-import { isArray } from '../common/arrays';
+import { isArrayAsReadonly } from '../common/arrays';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -214,7 +214,7 @@ export function toMarkdown(value: model.MarkdownString): MarkdownString {
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
     if (!selector) {
         return undefined;
-    } else if (isArray(selector)) {
+    } else if (isArrayAsReadonly(selector)) {
         return <LanguageSelector>selector.map(fromDocumentSelector);
     } else if (typeof selector === 'string') {
         return selector;

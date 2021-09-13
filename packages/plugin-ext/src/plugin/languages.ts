@@ -90,7 +90,7 @@ import { DeclarationAdapter } from './languages/declaration';
 import { CallHierarchyAdapter } from './languages/call-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
-import { isArray } from '../common/arrays';
+import { isArrayAsReadonly } from '../common/arrays';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -205,14 +205,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     private transformDocumentSelector(selector: theia.DocumentSelector): SerializedDocumentFilter[] {
-        if (isArray(selector)) {
+        if (isArrayAsReadonly(selector)) {
             return selector.map(sel => this.doTransformDocumentSelector(sel)!);
         }
 
         return [this.doTransformDocumentSelector(selector)!];
-        // function isArray(arg: unknown): arg is readonly unknown[] {
-        //     return Array.isArray(arg);
-        // }
     }
 
     private doTransformDocumentSelector(selector: string | theia.DocumentFilter): SerializedDocumentFilter | undefined {

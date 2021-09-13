@@ -46,8 +46,8 @@ export interface Splice<T> {
 }
 
 /**
- * @returns True if the input object is an array.
+ * @returns True if the input object is readonlyarray.
  */
-export function isArray(arg: unknown): arg is readonly unknown[] {
+export function isArrayAsReadonly(arg: unknown): arg is readonly unknown[] {
     return Array.isArray(arg);
 }
