@@ -46,8 +46,9 @@ export interface Splice<T> {
 }
 
 /**
- * @returns True if the input object is readonlyarray.
+ * @returns 'true' if the 'arg' is a 'ReadonlyArray'.
  */
-export function isArrayAsReadonly(arg: unknown): arg is readonly unknown[] {
+export function isReadonlyArray(arg: unknown): arg is readonly unknown[] {
+    // Since Typescript does not properly narrow down typings for 'ReadonlyArray' we need to help it.
     return Array.isArray(arg);
 }
