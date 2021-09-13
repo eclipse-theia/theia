@@ -44,3 +44,10 @@ export interface Splice<T> {
     readonly deleteCount: number;
     readonly toInsert: T[];
 }
+
+/**
+ * @returns True if the input object is an array.
+ */
+export function isArray(arg: unknown): arg is readonly unknown[] {
+    return Array.isArray(arg);
+}

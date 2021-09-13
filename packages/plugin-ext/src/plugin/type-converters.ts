@@ -27,6 +27,7 @@ import { isMarkdownString, MarkdownString } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { TaskGroup } from './types-impl';
+import { isArray } from '../common/arrays';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -223,9 +224,6 @@ export function fromDocumentSelector(selector: theia.DocumentSelector | undefine
             scheme: selector.scheme,
             pattern: fromGlobPattern(selector.pattern!)
         } as LanguageFilter;
-    }
-    function isArray(arg: unknown): arg is readonly unknown[] {
-        return Array.isArray(arg);
     }
 
 }
