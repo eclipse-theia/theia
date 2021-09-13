@@ -39,7 +39,7 @@ export class TasksExtImpl implements TasksExt {
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
     protected callbackIdBase: string = UUID.uuid4();
-    protected callbackId: number;
+    protected callbackId = 0;
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected lastStartedTask: number | undefined;
@@ -188,7 +188,7 @@ export class TasksExtImpl implements TasksExt {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.resolveTask(task, token).then(resolvedTask => {
-                if (resolvedTask && resolvedTask.taskType === 'customExecution') {
+                if (resolvedTask && resolvedTask.taskType === 'customExecution' && !resolvedTask.executionId) {
                     resolvedTask.executionId = this.addCustomExecution(resolvedTask.callback);
                     resolvedTask.callback = undefined;
                 }

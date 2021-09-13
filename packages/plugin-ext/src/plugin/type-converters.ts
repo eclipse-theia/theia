@@ -168,10 +168,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
             };
         });
     } else {
-        return ranges.map((r): DecorationOptions =>
-            ({
-                range: fromRange(r)!
-            }));
+        return ranges.map(r => ({ range: fromRange(r)! }));
     }
 }
 
@@ -893,10 +890,8 @@ export function fromCustomExecution(execution: theia.CustomExecution, taskDto: T
     const callback = execution.callback;
     if (callback) {
         taskDto.callback = callback;
-        return taskDto;
-    } else {
-        throw new Error('Converting CustomExecution callback is not implemented');
     }
+    return taskDto;
 }
 
 export function getProcessExecution(taskDto: TaskDto): theia.ProcessExecution {
