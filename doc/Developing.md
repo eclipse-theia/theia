@@ -91,6 +91,7 @@ git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
     && yarn browser build \
+    && yarn download:plugins \
     && yarn browser start
 ```
 
@@ -103,6 +104,7 @@ To build and run the Electron example:
         && cd theia \
         && yarn \
         && yarn electron build \
+        && yarn download:plugins \
         && yarn electron start
 ```
 
@@ -123,6 +125,7 @@ git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
     && yarn browser build \
+    && yarn download:plugins \
     && yarn browser start --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
 ```
 
@@ -284,10 +287,10 @@ To rebuild each time a change is detected in frontend or backend you can run:
 
 ```sh
 # either
-yarn watch:browser
+yarn browser watch
 
 # or
-yarn watch:electron
+yarn electron watch
 ```
 
 ### Watch a specific package
