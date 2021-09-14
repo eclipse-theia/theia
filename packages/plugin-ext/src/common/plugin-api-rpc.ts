@@ -609,7 +609,6 @@ export interface QuickOpenMain {
 
     $hide(): void;
     $showInputBox(options: TransferInputBox, validateInput: boolean): Promise<string | undefined>;
-    $showCustomQuickPick<T extends theia.QuickPickItem>(options: TransferQuickPick<T>): void;
 }
 
 export interface WorkspaceMain {

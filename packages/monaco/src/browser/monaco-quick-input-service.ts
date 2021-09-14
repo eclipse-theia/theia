@@ -261,6 +261,12 @@ export class MonacoQuickInputService implements QuickInputService {
             return item;
         });
     }
+
+    createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
+        const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
+        return this.wrapQuickPick(quickPick);
+    }
+
     wrapQuickPick<T extends QuickPickItem>(wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>): QuickPick<T> {
         return new MonacoQuickPick(wrapped, this.keybindingRegistry);
     }
