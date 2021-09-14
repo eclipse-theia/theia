@@ -36,7 +36,9 @@ import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
-import { PreferenceService } from './preferences';
+import { bindPreferenceService } from './frontend-application-bindings';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/';
 
 disableJSDOM();
 
@@ -88,7 +90,7 @@ before(async () => {
         bind(ContextKeyService).toSelf().inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
         bind(CorePreferences).toConstantValue(<CorePreferences>{});
-        bind(PreferenceService).toSelf().inSingletonScope();
+        bindPreferenceService(bind);
     });
 
     testContainer.load(module);
@@ -104,6 +106,10 @@ describe('keybindings', () => {
 
     before(() => {
         disableJSDOM = enableJSDOM();
+        FrontendApplicationConfigProvider.set({
+            ...ApplicationProps.DEFAULT.frontend.config,
+            'applicationName': 'test'
+        });
     });
 
     after(() => {
@@ -539,4 +545,3 @@ function isKeyBindingRegistered(keybinding: Keybinding): boolean {
     );
     return keyBindingFound;
 }
-
