@@ -27,6 +27,7 @@ import { isMarkdownString, MarkdownString } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { TaskGroup } from './types-impl';
+import { isReadonlyArray } from '../common/arrays';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -169,9 +170,9 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
         });
     } else {
         return ranges.map((r): DecorationOptions =>
-            ({
-                range: fromRange(r)!
-            }));
+        ({
+            range: fromRange(r)!
+        }));
     }
 }
 
@@ -213,7 +214,7 @@ export function toMarkdown(value: model.MarkdownString): MarkdownString {
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
     if (!selector) {
         return undefined;
-    } else if (Array.isArray(selector)) {
+    } else if (isReadonlyArray(selector)) {
         return <LanguageSelector>selector.map(fromDocumentSelector);
     } else if (typeof selector === 'string') {
         return selector;

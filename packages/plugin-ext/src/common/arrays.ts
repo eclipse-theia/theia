@@ -44,3 +44,11 @@ export interface Splice<T> {
     readonly deleteCount: number;
     readonly toInsert: T[];
 }
+
+/**
+ * @returns 'true' if the 'arg' is a 'ReadonlyArray'.
+ */
+export function isReadonlyArray(arg: unknown): arg is readonly unknown[] {
+    // Since Typescript does not properly narrow down typings for 'ReadonlyArray' we need to help it.
+    return Array.isArray(arg);
+}
