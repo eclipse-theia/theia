@@ -36,6 +36,7 @@ import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
+import { PreferenceService } from './preferences';
 
 disableJSDOM();
 
@@ -87,6 +88,7 @@ before(async () => {
         bind(ContextKeyService).toSelf().inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
         bind(CorePreferences).toConstantValue(<CorePreferences>{});
+        bind(PreferenceService).toSelf().inSingletonScope();
     });
 
     testContainer.load(module);

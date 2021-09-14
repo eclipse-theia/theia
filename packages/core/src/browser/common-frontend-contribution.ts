@@ -217,6 +217,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     };
+    export const TOGGLE_STATUS_BAR: Command = {
+        id: 'core.toggle.statusbar',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Status Bar'
+    };
     export const TOGGLE_MAXIMIZED: Command = {
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
@@ -528,8 +533,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: '0'
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
-            commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
+            commandId: CommonCommands.TOGGLE_STATUS_BAR.id,
             order: '1'
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
+            commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
+            order: '2'
         });
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
@@ -771,6 +780,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_STATUS_BAR, {
+            execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
+        });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
             isEnabled: (event?: Event) => this.canToggleMaximized(event),
             isVisible: (event?: Event) => this.canToggleMaximized(event),
@@ -950,6 +962,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
                 keybinding: 'ctrlcmd+j',
+            },
+            {
+                command: CommonCommands.TOGGLE_STATUS_BAR.id,
+                keybinding: 'ctrlcmd+b',
             },
             {
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,
