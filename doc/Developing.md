@@ -206,7 +206,7 @@ This will install dependencies, link and build TypeScript packages, lint, and bu
 Dependencies must be installed before running this command.
 
 ```sh
-yarn build
+yarn compile
 ```
 
 ## Linting
@@ -225,13 +225,13 @@ Note that `yarn all` does linting.
 From the root:
 
 ```sh
-npx run build @theia/package-name
+npx run compile @theia/package-name
 ```
 
 From the package:
 
 ```sh
-yarn build
+yarn compile
 ```
 
 ## Run the browser-based example application
@@ -258,6 +258,8 @@ yarn electron start
 ```
 
 ## Rebuilding
+
+Rebuilds everything: TypeScript and example applications.
 
 ```sh
 yarn build
