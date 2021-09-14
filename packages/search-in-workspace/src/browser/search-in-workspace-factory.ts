@@ -34,9 +34,7 @@ export const SEARCH_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
 @injectable()
 export class SearchInWorkspaceFactory implements WidgetFactory {
 
-    static ID = SEARCH_VIEW_CONTAINER_ID;
-
-    readonly id = SearchInWorkspaceFactory.ID;
+    readonly id = SEARCH_VIEW_CONTAINER_ID;
 
     protected searchWidgetOptions: ViewContainer.Factory.WidgetOptions = {
         canHide: false,
