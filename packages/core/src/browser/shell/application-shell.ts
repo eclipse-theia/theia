@@ -69,6 +69,10 @@ export type ApplicationShellLayoutVersion =
 export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
+export const delayedShellInjectionFactory = Symbol('delayedShellInjectionFactory');
+export interface delayedShellInjectionFactory {
+    (): ApplicationShell
+}
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
 export interface DockPanelRendererFactory {
     (): DockPanelRenderer
@@ -206,6 +210,9 @@ export class ApplicationShell extends Widget {
 
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
+
+    protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<void>();
+    readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
 
     /**
      * Construct a new application shell.
@@ -1050,7 +1057,10 @@ export class ApplicationShell extends Widget {
                 this.track(toTrack);
             }
             if (widget.onDidChangeTrackableWidgets) {
-                widget.onDidChangeTrackableWidgets(widgets => widgets.forEach(w => this.track(w)));
+                widget.onDidChangeTrackableWidgets(widgets => {
+                    widgets.forEach(w => { this.track(w); });
+                    this.onDidChangeTrackableWidgetsEmitter.fire();
+                });
             }
         }
     }

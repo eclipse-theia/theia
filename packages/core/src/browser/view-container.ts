@@ -37,7 +37,6 @@ import { ProgressBarFactory } from './progress-bar-factory';
 import { Drag, IDragEvent } from '@phosphor/dragdrop';
 import { MimeData } from '@phosphor/coreutils';
 import { ElementExt } from '@phosphor/domutils';
-import { TabBarDecoratorService } from './shell/tab-bar-decorator';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -116,9 +115,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    @inject(TabBarDecoratorService)
-    protected readonly decoratorService: TabBarDecoratorService;
-
     @postConstruct()
     protected init(): void {
         this.id = this.options.id;
@@ -167,7 +163,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 label: 'Hide'
             }),
             this.onDidChangeTrackableWidgetsEmitter,
-            this.onDidChangeTrackableWidgets(() => this.decoratorService.fireDidChangeDecorations())
         ]);
         if (this.options.progressLocationId) {
             this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: this.options.progressLocationId }));
