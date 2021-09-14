@@ -961,7 +961,7 @@ export class SideTabBar extends ScrollableTabBar {
     };
 
     /**
-     * handles `viewContainerPart` drag enter.
+     * Handles `viewContainerPart` drag enter.
      */
     protected onDragEnter = (event: IDragEvent) => {
         this.cancelViewContainerDND();

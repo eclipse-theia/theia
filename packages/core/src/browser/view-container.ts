@@ -740,9 +740,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }
         }
 
-        const draggingOutsideisDisabled = this.disableDNDBetweenContainers || widget.viewContainer?.disableDNDBetweenContainers
+        const isDraggingOutsideDisabled = this.disableDNDBetweenContainers || widget.viewContainer?.disableDNDBetweenContainers
             || widget.options.disableDraggingToOtherContainers;
-        if (draggingOutsideisDisabled && !sameContainers) {
+        if (isDraggingOutsideDisabled && !sameContainers) {
             const { target } = event;
             if (target instanceof HTMLElement) {
                 target.classList.add('theia-cursor-no-drop');
