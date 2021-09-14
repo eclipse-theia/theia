@@ -20,6 +20,8 @@ import { inject, injectable, named } from 'inversify';
 import { Event, Emitter, ContributionProvider } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
 import { FrontendApplicationContribution } from '../frontend-application';
+import { ApplicationShell } from './application-shell';
+import { delayedShellInjectionFactory } from './application-shell';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
 
@@ -53,11 +55,19 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
     @inject(ContributionProvider) @named(TabBarDecorator)
     protected readonly contributions: ContributionProvider<TabBarDecorator>;
 
+    protected shell: ApplicationShell;
+    @inject(delayedShellInjectionFactory) protected readonly shellInjector: delayedShellInjectionFactory;
+
     initialize(): void {
         this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));
+        // Avoid circular dependency caused by the direct injection of the ApplicationShell
+        setTimeout(() => {
+            this.shell = this.shellInjector();
+            this.shell.onDidChangeTrackableWidgets(() => this.fireDidChangeDecorations());
+        });
     }
 
-    fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);
+    protected fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);
 
     /**
      * Assign tabs the decorators provided by all the contributions.
