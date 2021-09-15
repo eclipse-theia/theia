@@ -9434,6 +9434,10 @@ declare module '@theia/plugin' {
          */
         appendLine(value: string): void;
     }
+    export enum DebugConsoleMode {
+        Separate = 0,
+        MergeWithParent = 1
+    }
 
     /**
      * An event describing the changes to the set of [breakpoints](#Breakpoint).
