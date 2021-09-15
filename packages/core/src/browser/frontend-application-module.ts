@@ -118,6 +118,7 @@ import {
     DefaultBreadcrumbRenderer,
 } from './breadcrumbs';
 import { RendererHost } from './widgets';
+import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -185,6 +186,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(CommandOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(CommandOpenHandler);
+
+    bind(TooltipServiceImpl).toSelf().inSingletonScope();
+    bind(TooltipService).toService(TooltipServiceImpl);
 
     bindContributionProvider(bind, ApplicationShellLayoutMigration);
     bind<ApplicationShellLayoutMigration>(ApplicationShellLayoutMigration).toConstantValue({

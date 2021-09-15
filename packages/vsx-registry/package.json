@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.17.0",
     "@theia/filesystem": "1.17.0",
+    "@types/markdown-it": "*",
     "@theia/ovsx-client": "1.17.0",
     "@theia/plugin-ext": "1.17.0",
     "@theia/plugin-ext-vscode": "1.17.0",
@@ -14,6 +15,7 @@
     "@types/sanitize-html": "^2.3.1",
     "@types/showdown": "^1.7.1",
     "bent": "^7.1.0",
+    "markdown-it": "^8.4.0",
     "p-debounce": "^2.1.0",
     "requestretry": "^3.1.0",
     "sanitize-html": "^2.3.2",

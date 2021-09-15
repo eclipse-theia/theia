@@ -40,3 +40,4 @@ export * from './diff-uris';
 export * from './core-preferences';
 export * from './view-container';
 export * from './breadcrumbs';
+export * from './tooltip-service';
