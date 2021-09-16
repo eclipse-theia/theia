@@ -91,6 +91,8 @@ import type {
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+// TODO: fix the import.
+// eslint-disable-next-line @theia/runtime-import-check
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/browser';

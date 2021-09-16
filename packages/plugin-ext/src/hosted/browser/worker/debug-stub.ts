@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// TODO: fix the import.
+// eslint-disable-next-line @theia/runtime-import-check
 import { DebugExtImpl } from '../../../plugin/node/debug/debug';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 

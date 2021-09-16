@@ -23,6 +23,8 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
+// TODO: fix the import.
+// eslint-disable-next-line @theia/runtime-import-check
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 
