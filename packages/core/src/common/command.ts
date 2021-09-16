@@ -18,6 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+// eslint-disable-next-line @theia/runtime-import-check
 import { nls } from '../browser/nls';
 
 /**
