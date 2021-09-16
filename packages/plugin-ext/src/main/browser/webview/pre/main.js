@@ -193,7 +193,6 @@
             initialScrollProgress: undefined
         };
 
-
         /**
          * @param {HTMLDocument?} document
          * @param {HTMLElement?} body
