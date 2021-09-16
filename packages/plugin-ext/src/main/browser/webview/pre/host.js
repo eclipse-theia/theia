@@ -25,7 +25,18 @@
     const hostMessaging = new class HostMessaging {
         constructor() {
             this.handlers = new Map();
-            window.addEventListener('message', (e) => {
+            window.addEventListener('message', e => {
+                let sourceIsChildFrame = false;
+                for (let i = 0; i < window.frames.length; i++) {
+                    const frame = window.frames[i];
+                    if (e.source === frame) {
+                        sourceIsChildFrame = true;
+                        break;
+                    }
+                }
+                if (!sourceIsChildFrame && e.source !== window && e.source !== window.parent) {
+                    // return;
+                }
                 if (e.data && (e.data.command === 'onmessage' || e.data.command === 'do-update-state')) {
                     // Came from inner iframe
                     this.postMessage(e.data.command, e.data.data);
