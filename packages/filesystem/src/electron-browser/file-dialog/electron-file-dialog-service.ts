@@ -35,6 +35,7 @@ type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'show
 // and at packaging time, clients can decide whether they need the native or the browser-based
 // solution.
 //
+// eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()

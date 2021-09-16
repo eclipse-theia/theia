@@ -30,7 +30,9 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
+// eslint-disable-next-line @theia/runtime-import-check
 import { DEFAULT_WINDOW_HASH } from '../browser/window/window-service';
+
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
 /**
