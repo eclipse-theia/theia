@@ -160,7 +160,13 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.locationListRenderer.host.classList.add(NAVIGATION_LOCATION_LIST_PANEL_CLASS);
         navigationPanel.appendChild(this.locationListRenderer.host);
 
-        this.treeFiltersRenderer = this.createFileTreeFiltersRenderer();
+        if (this.props.filters) {
+            this.treeFiltersRenderer = this.createFileTreeFiltersRenderer();
+            const filters = Object.keys(this.props.filters);
+            if (filters.length) {
+                this.widget.model.tree.setFilter(this.props.filters[filters[0]]);
+            }
+        }
     }
 
     get model(): FileDialogModel {
