@@ -167,6 +167,10 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
         if (this.props.filters) {
             this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });
+            const filters = Object.keys(this.props.filters);
+            if (filters.length) {
+                this.widget.model.tree.setFilter(this.props.filters[filters[0]]);
+            }
         }
     }
 
