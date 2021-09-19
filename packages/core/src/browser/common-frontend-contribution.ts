@@ -218,9 +218,9 @@ export namespace CommonCommands {
         label: 'Toggle Bottom Panel'
     };
     export const TOGGLE_STATUS_BAR: Command = {
-        id: 'core.toggle.statusbar',
+        id: 'workbench.action.toggleStatusbarVisibility',
         category: VIEW_CATEGORY,
-        label: 'Toggle Status Bar'
+        label: 'Toggle Status Bar Visibility'
     };
     export const TOGGLE_MAXIMIZED: Command = {
         id: 'core.toggleMaximized',
@@ -534,7 +534,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.TOGGLE_STATUS_BAR.id,
-            order: '1'
+            order: '1',
+            label: 'Toggle Status Bar'
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
@@ -962,10 +963,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
                 keybinding: 'ctrlcmd+j',
-            },
-            {
-                command: CommonCommands.TOGGLE_STATUS_BAR.id,
-                keybinding: 'ctrlcmd+b',
             },
             {
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,

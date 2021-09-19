@@ -86,7 +86,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         delete this.scrollOptions;
         this.id = 'theia-statusBar';
         this.addClass('noselect');
-        // Don't show the status bar until get `workbench.statusBar.visible` preference with `true` value.
+        // Hide the status bar until the `workbench.statusBar.visible` preference returns with a `true` value.
         this.hide();
         this.preferences.ready.then(() => {
             const preferenceValue = this.preferences.get<boolean>('workbench.statusBar.visible', true);
