@@ -7321,6 +7321,18 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Represents the connection of two locations. Provides additional metadata over normal {@link Location locations},
+     * including an origin range.
+     */
+    export type LocationLink = DefinitionLink;
+
+    /**
+     * The declaration of a symbol representation as one or many {@link Location locations}
+     * or {@link LocationLink location links}.
+     */
+    export type Declaration = Location | Location[] | LocationLink[];
+
+    /**
      * The event that is fired when diagnostics change.
      */
     export interface DiagnosticChangeEvent {
