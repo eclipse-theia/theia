@@ -272,6 +272,8 @@ export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.C
         case types.CompletionItemKind.Event: return model.CompletionItemKind.Event;
         case types.CompletionItemKind.Operator: return model.CompletionItemKind.Operator;
         case types.CompletionItemKind.TypeParameter: return model.CompletionItemKind.TypeParameter;
+        case types.CompletionItemKind.User: return model.CompletionItemKind.User;
+        case types.CompletionItemKind.Issue: return model.CompletionItemKind.Issue;
     }
     return model.CompletionItemKind.Property;
 }
@@ -303,6 +305,8 @@ export function toCompletionItemKind(kind?: model.CompletionItemKind): types.Com
         case model.CompletionItemKind.Event: return types.CompletionItemKind.Event;
         case model.CompletionItemKind.Operator: return types.CompletionItemKind.Operator;
         case model.CompletionItemKind.TypeParameter: return types.CompletionItemKind.TypeParameter;
+        case model.CompletionItemKind.User: return types.CompletionItemKind.User;
+        case model.CompletionItemKind.Issue: return types.CompletionItemKind.Issue;
     }
     return types.CompletionItemKind.Property;
 }
