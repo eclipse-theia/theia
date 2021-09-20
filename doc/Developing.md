@@ -90,8 +90,8 @@ To build and run the browser example:
 git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
-    && yarn browser build \
     && yarn download:plugins \
+    && yarn browser build \
     && yarn browser start
 ```
 
@@ -100,12 +100,12 @@ Start your browser on http://localhost:3000.
 To build and run the Electron example:
 
 ```sh
-    git clone https://github.com/eclipse-theia/theia \
-        && cd theia \
-        && yarn \
-        && yarn electron build \
-        && yarn download:plugins \
-        && yarn electron start
+git clone https://github.com/eclipse-theia/theia \
+    && cd theia \
+    && yarn \
+    && yarn download:plugins \
+    && yarn electron build \
+    && yarn electron start
 ```
 
 ### Download plugins
