@@ -9438,6 +9438,22 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Represents the debug console mode.
+     */
+    export enum DebugConsoleMode {
+        /**
+         * Debug session should have a separate debug console.
+         */
+        Separate = 0,
+
+        /**
+         * Debug session should share debug console with its parent session.
+         * This value has no effect for sessions which do not have a parent session.
+         */
+        MergeWithParent = 1
+    }
+
+    /**
      * An event describing the changes to the set of [breakpoints](#Breakpoint).
      */
     export interface BreakpointsChangeEvent {
