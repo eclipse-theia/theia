@@ -113,13 +113,11 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     }
 
     async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
-        let result: { type: string, configurations: theia.DebugConfiguration[] }[] = [];
+        const result: { type: string, configurations: theia.DebugConfiguration[] }[] = [];
 
-        for (const type of this.contributors.keys()) {
-            const contributor = this.contributors.get(type);
-            if (contributor) {
-                result = result.concat({ type, configurations: await contributor.provideDebugConfigurations(undefined, true) || [] });
-            }
+        for (const [type, contributor] of this.contributors.entries()) {
+            const configurations = await contributor.provideDebugConfigurations(undefined, true) ?? [];
+            result.push({type, configurations});
         }
 
         return result;

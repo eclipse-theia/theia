@@ -926,7 +926,7 @@ export function createAPIFactory(
             Task2,
             DebugAdapterExecutable,
             DebugAdapterServer,
-            DebugConfigurationProviderTriggerKind: DebugConfigurationProviderTriggerKind,
+            DebugConfigurationProviderTriggerKind,
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
