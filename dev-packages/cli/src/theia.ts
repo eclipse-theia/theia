@@ -45,17 +45,31 @@ function toStringArray(argv?: (string | number)[]): string[] | undefined {
         : argv.map(arg => String(arg));
 }
 
-function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, { modules: string[] }> {
+function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, {
+    modules: string[]
+    cacheRoot?: string
+    force?: boolean
+}> {
     return {
         command,
-        describe: `Rebuild native node modules for the ${target}`,
+        describe: `Rebuild/revert native node modules for "${target}"`,
         builder: {
+            'cacheRoot': {
+                type: 'string',
+                describe: 'Root folder where to store the .browser_modules cache'
+            },
             'modules': {
                 array: true,
+                describe: 'List of modules to rebuild/revert'
             },
+            'force': {
+                alias: 'f',
+                type: 'boolean',
+                describe: 'Rebuild modules for Electron anyway'
+            }
         },
-        handler: args => {
-            rebuild(target, args.modules);
+        handler: ({ cacheRoot, modules, force }) => {
+            rebuild(target, { cacheRoot, modules, force });
         }
     };
 }

@@ -56,17 +56,22 @@
     "@theia/workspace": "1.17.0"
   },
   "scripts": {
-    "prepare": "yarn run clean && yarn build",
     "clean": "theia clean",
-    "build": "theia build --mode development",
-    "watch": "yarn build --watch",
-    "start": "theia start --plugins=local-dir:../../plugins",
-    "start:debug": "yarn start --log-level=debug",
-    "test": "theia test . --plugins=local-dir:../../plugins --test-spec=../api-tests/**/*.spec.js",
-    "test:debug": "yarn test --test-inspect",
+    "build": "yarn compile && yarn bundle",
+    "bundle": "theia build --mode development",
+    "compile": "tsc -b",
     "coverage": "yarn test --test-coverage && yarn coverage:report",
+    "coverage:clean": "rimraf .nyc_output && rimraf coverage",
     "coverage:report": "nyc report --reporter=html",
-    "coverage:clean": "rimraf .nyc_output && rimraf coverage"
+    "rebuild": "theia rebuild:browser --cacheRoot ../..",
+    "start": "yarn rebuild && theia start --plugins=local-dir:../../plugins",
+    "start:debug": "yarn start --log-level=debug",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\" \"yarn start\"",
+    "test": "yarn rebuild && theia test . --plugins=local-dir:../../plugins --test-spec=../api-tests/**/*.spec.js",
+    "test:debug": "yarn test --test-inspect",
+    "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\"",
+    "watch:bundle": "theia build --watch --mode development",
+    "watch:compile": "tsc -b -w"
   },
   "devDependencies": {
     "@theia/cli": "1.17.0"
