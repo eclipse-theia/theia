@@ -16,8 +16,8 @@
 
 import * as net from 'net';
 import * as theia from '@theia/plugin';
-import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
+import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
 const isElectron = require('is-electron');
 
 /**
