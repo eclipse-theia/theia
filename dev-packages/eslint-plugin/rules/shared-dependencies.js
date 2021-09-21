@@ -15,6 +15,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable max-len */
+
 const fs = require('fs');
 const path = require('path');
 
@@ -27,7 +29,7 @@ const {
 /** @type {import('eslint').Rule.RuleModule} */
 module.exports = {
     meta: {
-        type: "problem",
+        type: 'problem',
         fixable: 'code',
         docs: {
             description: 'Errors when a dependency shared by @theia/core is used implicitly, or when a package depends on a shared dependency instead of reusing it from @theia/core/shared. This rule only affects files from packages that depend on @theia/core.',
@@ -49,9 +51,6 @@ module.exports = {
                     });
                 }
             }
-            /**
-             * @param {import('estree').Literal} node
-             */
             function checkModuleImport(node) {
                 const module = /** @type {string} */(node.value);
                 if (isSharedModule(module)) {
