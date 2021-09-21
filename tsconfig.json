@@ -16,6 +16,9 @@
       "path": "dev-packages/cli"
     },
     {
+      "path": "dev-packages/eslint-plugin"
+    },
+    {
       "path": "dev-packages/ovsx-client"
     },
     {

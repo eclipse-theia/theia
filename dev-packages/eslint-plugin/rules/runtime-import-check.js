@@ -105,7 +105,7 @@ module.exports = {
             TSExternalModuleReference(node) {
                 checkModuleImport(node.expression);
             },
-        }
+        };
         function checkModuleImport(node) {
             const module = /** @type {string} */(node.value);
             if (matchedImportRule.restricted.some(restricted => module.includes(`/${restricted}/`))) {
@@ -116,4 +116,4 @@ module.exports = {
             }
         }
     },
-}
+};
