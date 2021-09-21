@@ -55,7 +55,7 @@ commands:
       - type: exec
         component: che-dev
         command: >
-          yarn watch:ts
+          yarn watch:compile
         workdir: /projects/theia
   - name: >
       theia: Watch Browser Example

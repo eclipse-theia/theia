@@ -272,7 +272,7 @@ yarn build
 To run TypeScript in watch-mode so that TypeScript files are compiled as you modify them:
 
 ```sh
-yarn watch:ts
+yarn watch:compile
 ```
 
 ### Watch the core and extension packages
