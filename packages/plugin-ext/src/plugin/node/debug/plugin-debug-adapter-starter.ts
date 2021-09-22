@@ -18,6 +18,8 @@ import * as net from 'net';
 import * as theia from '@theia/plugin';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
 import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
+import { StreamCommunicationProvider } from '@theia/debug/lib/node/stream-communication-provider';
+import { Disposable } from '@theia/core/lib/common/disposable';
 const isElectron = require('is-electron');
 
 /**
@@ -63,11 +65,9 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
         childProcess = spawn(command, args, options);
     }
 
-    return {
-        input: childProcess.stdin!,
-        output: childProcess.stdout!,
-        dispose: () => childProcess.kill()
-    };
+    const provider = new StreamCommunicationProvider(childProcess.stdout!, childProcess.stdin!);
+    provider.push(Disposable.create(() => childProcess.kill()));
+    return provider;
 }
 
 /**
@@ -75,9 +75,7 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
  */
 export function connectDebugAdapter(server: theia.DebugAdapterServer): CommunicationProvider {
     const socket = net.createConnection(server.port, server.host);
-    return {
-        input: socket,
-        output: socket,
-        dispose: () => socket.end()
-    };
+    const provider = new StreamCommunicationProvider(socket, socket);
+    provider.push(Disposable.create(() => socket.end()));
+    return provider;
 }
