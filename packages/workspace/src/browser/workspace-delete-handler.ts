@@ -144,19 +144,70 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Perform deletion of a given URI.
+     * Perform deletion of a given URI and closes all open editors without saving if necessary.
      *
      * @param uri URI of selected resource.
+     * @param options deletion options.
      */
     protected async delete(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
             await Promise.all([
                 this.closeWithoutSaving(uri),
-                this.fileService.delete(uri, options)
+                options.useTrash ? this.moveFileToTrash(uri, options) : this.deleteFilePermanently(uri, options)
             ]);
         } catch (e) {
             console.error(e);
         }
+    }
+
+    /**
+     * Permanently deletes the given resource from the file system.
+     *
+     * @param uri URI of selected resource.
+     * @param options deletion options.
+     */
+    protected async deleteFilePermanently(uri: URI, options: FileDeleteOptions): Promise<void> {
+        this.fileService.delete(uri, { ...options, useTrash: false });
+    }
+
+    /**
+     * Moves the given resource to the Trash of the file system.
+     *
+     * @param uri URI of selected resource.
+     * @param options deletion options.
+     */
+    protected async moveFileToTrash(uri: URI, options: FileDeleteOptions): Promise<void> {
+        try {
+            this.fileService.delete(uri, { ...options, useTrash: true });
+        } catch (error) {
+            if (await this.confirmDeletePermanently(uri, error)) {
+                return this.deleteFilePermanently(uri, options);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Display dialog to confirm the permanent deletion of a file.
+     *
+     * @param uri URI of selected resource.
+     * @param error error caused during Trash deletion.
+     */
+    protected async confirmDeletePermanently(uri: URI, error?: Error): Promise<boolean> {
+        const title = `Move File to Trash ${error?.message || 'Error'}`;
+
+        const msg = document.createElement('div');
+
+        const question = document.createElement('p');
+        question.textContent = `Failed to delete ${uri.path.base} using the Trash. Do you want to permanently delete instead?`;
+        msg.append(question);
+
+        const info = document.createElement('p');
+        info.textContent = 'You can disable the usage of Trash in the preferences.';
+        msg.append(info);
+
+        const response = await new ConfirmDialog({ title, msg }).open();
+        return response || false;
     }
 
     /**
