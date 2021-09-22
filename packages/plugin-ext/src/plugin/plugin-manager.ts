@@ -334,7 +334,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected async activateByBaseEvent(baseEvent: string): Promise<void> {
-        await Promise.all(Array.from(this.activations.keys()).map(activation => {
+        await Promise.all(Array.from(this.activations.keys(), activation => {
             if (activation.startsWith(baseEvent)) {
                 this.activateBySingleEvent(activation);
             }
