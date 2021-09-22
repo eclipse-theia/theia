@@ -326,7 +326,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     async $activateByEvent(activationEvent: string): Promise<void> {
         if (activationEvent.endsWith(':*')) {
-            const baseEvent = activationEvent.substring(0, activationEvent.lastIndexOf(':'));
+            const baseEvent = activationEvent.substring(0, activationEvent.length - 2);
             await this.activateByBaseEvent(baseEvent);
         } else {
             await this.activateBySingleEvent(activationEvent);
@@ -334,11 +334,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected async activateByBaseEvent(baseEvent: string): Promise<void> {
-        for (const activation of this.activations.keys()) {
+        await Promise.all(Array.from(this.activations.keys()).map(activation => {
             if (activation.startsWith(baseEvent)) {
-                await this.activateBySingleEvent(activation);
+                this.activateBySingleEvent(activation);
             }
-        }
+        }));
     }
 
     protected async activateBySingleEvent(activationEvent: string): Promise<void> {

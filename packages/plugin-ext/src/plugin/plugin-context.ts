@@ -768,8 +768,11 @@ export function createAPIFactory(
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
             },
-            registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider,
-                triggerKind?: theia.DebugConfigurationProviderTriggerKind): Disposable {
+            registerDebugConfigurationProvider(
+                debugType: string,
+                provider: theia.DebugConfigurationProvider,
+                triggerKind?: theia.DebugConfigurationProviderTriggerKind
+            ): Disposable {
                 return debugExt.registerDebugConfigurationProvider(debugType, provider, triggerKind || DebugConfigurationProviderTriggerKind.Initial);
             },
             registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {

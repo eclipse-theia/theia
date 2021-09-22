@@ -188,8 +188,10 @@ export class DebugExtImpl implements DebugExt {
     registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider, trigger: theia.DebugConfigurationProviderTriggerKind): Disposable {
         console.log(`Debug configuration provider has been registered: ${debugType}, trigger: ${trigger}`);
         const providersByTriggerKind = trigger === DebugConfigurationProviderTriggerKind.Initial ? this.configurationProviders : this.dynamicConfigurationProviders;
-        const providers = providersByTriggerKind.get(debugType) || new Set<theia.DebugConfigurationProvider>();
-        providersByTriggerKind.set(debugType, providers);
+        let providers = providersByTriggerKind.get(debugType);
+        if (!providers) {
+            providersByTriggerKind.set(debugType, providers = new Set());
+        }
         providers.add(provider);
 
         return Disposable.create(() => {
@@ -341,8 +343,11 @@ export class DebugExtImpl implements DebugExt {
     async $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration | undefined> {
         let current = debugConfiguration;
 
-        for (const providers of [this.configurationProviders.get(debugConfiguration.type),
-            this.dynamicConfigurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+        for (const providers of [
+            this.configurationProviders.get(debugConfiguration.type),
+            this.dynamicConfigurationProviders.get(debugConfiguration.type),
+            this.configurationProviders.get('*')
+        ]) {
             if (providers) {
                 for (const provider of providers) {
                     if (provider.resolveDebugConfiguration) {
@@ -368,8 +373,11 @@ export class DebugExtImpl implements DebugExt {
         Promise<theia.DebugConfiguration | undefined> {
         let current = debugConfiguration;
 
-        for (const providers of [this.configurationProviders.get(debugConfiguration.type),
-            this.dynamicConfigurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+        for (const providers of [
+            this.configurationProviders.get(debugConfiguration.type),
+            this.dynamicConfigurationProviders.get(debugConfiguration.type),
+            this.configurationProviders.get('*')
+        ]) {
             if (providers) {
                 for (const provider of providers) {
                     if (provider.resolveDebugConfigurationWithSubstitutedVariables) {

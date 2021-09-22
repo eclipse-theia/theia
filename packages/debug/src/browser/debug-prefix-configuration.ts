@@ -111,7 +111,8 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         const items: QuickPickItem[] = [];
         const configurationManager = this.debugConfigurationManager;
         const configurations = configurationManager.all;
-        Array.from(configurations).forEach(config => {
+
+        for (const config of configurations) {
             items.push({
                 label: config.configuration.name,
                 description: this.workspaceService.isMultiRootWorkspaceOpened
@@ -119,13 +120,13 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
                     : '',
                 execute: () => this.runConfiguration(config)
             });
-        });
+        }
 
-        // Resolve dynamic configurations
+        // Resolve dynamic configurations from providers
         const configurationsByType = await configurationManager.provideDynamicDebugConfigurations();
-        configurationsByType.forEach(t => {
-            const type = t.type;
-            const dynamicConfigurations = t.configurations;
+        for (const typeConfigurations of configurationsByType) {
+            const type = typeConfigurations.type;
+            const dynamicConfigurations = typeConfigurations.configurations;
             if (dynamicConfigurations.length > 0) {
                 items.push({
                     label: type,
@@ -133,14 +134,14 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
                 });
             }
 
-            dynamicConfigurations.forEach(config => {
+            for (const configuration of dynamicConfigurations) {
                 items.push({
-                    label: config.name,
+                    label: configuration.name,
                     description: '',
-                    execute: () => this.runConfiguration({configuration: config, dynamic: true})
+                    execute: () => this.runConfiguration({configuration: configuration, dynamic: true})
                 });
-            });
-        });
+            }
+        }
 
         return filterItems(items, filter);
     }
