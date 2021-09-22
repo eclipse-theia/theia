@@ -18,7 +18,7 @@ import { inject, injectable, optional } from 'inversify';
 import { isOSX } from '../../common/os';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { BrowserKeyboardLayoutProvider, KeyboardLayoutData } from './browser-keyboard-layout-provider';
-import { QuickPickValue, QuickInputService, QuickPickItem } from '../quick-input';
+import { QuickPickValue, QuickInputService, QuickPickItem } from '../../common/quick-input-service';
 
 export namespace KeyboardCommands {
 

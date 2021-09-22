@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
-import { QuickPickValue } from '@theia/core/lib/browser';
+import { QuickPickValue } from '@theia/core/lib/common/quick-input-service';
 
 /** The representation of a task template used in the auto-generation of `tasks.json` */
 export interface TaskTemplateEntry {

@@ -94,7 +94,7 @@ import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/c
 // eslint-disable-next-line @theia/runtime-import-check
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/browser';
+import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/common';
 
 export interface PreferenceData {
     [scope: number]: any;

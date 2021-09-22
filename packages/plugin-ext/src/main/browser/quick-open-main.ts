@@ -33,7 +33,7 @@ import {
     QuickInputButton,
     QuickInputButtonHandle,
     QuickInputService
-} from '@theia/core/lib/browser';
+} from '@theia/core/lib/common';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';

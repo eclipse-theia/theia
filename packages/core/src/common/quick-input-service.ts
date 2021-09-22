@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CancellationToken, Event } from '../../common';
-import URI from '../../common/uri';
-import { KeySequence } from '../keyboard';
+import URI from './uri';
 import * as fuzzy from 'fuzzy';
+import { CancellationToken } from './cancellation';
+import { Event } from './event';
+import { KeySequence } from './keys';
 
 export interface Match {
     start: number;

@@ -29,7 +29,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
-import { QuickInputButtonHandle } from '@theia/core/lib/browser';
+import { QuickInputButtonHandle } from '@theia/core/lib/common';
 
 const canceledName = 'Canceled';
 /**

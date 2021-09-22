@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ApplicationShell, FrontendApplication, QuickPickItem, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
+import { ApplicationShell, FrontendApplication, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
+import { QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-input-service';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { CommandService, ILogger } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';

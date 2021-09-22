@@ -19,14 +19,13 @@ import {
     codiconArray,
     QuickAccessContribution,
     QuickAccessProvider,
-    QuickAccessRegistry,
-    QuickInputService
+    QuickAccessRegistry
 } from '@theia/core/lib/browser';
 import { CancellationToken, CommandContribution, CommandRegistry, CommandService } from '@theia/core/lib/common';
 import { TerminalWidget } from './base/terminal-widget';
 import { TerminalService } from './base/terminal-service';
 import { TerminalCommands } from './terminal-frontend-contribution';
-import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItem, QuickPicks, QuickInputService } from '@theia/core/lib/common/quick-input-service';
 
 @injectable()
 export class TerminalQuickOpenService implements QuickAccessProvider {

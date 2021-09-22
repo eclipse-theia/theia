@@ -18,8 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
-import { CommandRegistry, MenuModelRegistry, CommandService } from '@theia/core/lib/common';
+import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService } from '@theia/core/lib/browser';
+import { CommandRegistry, MenuModelRegistry, CommandService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutputWidget } from './output-widget';
 import { OutputContextMenu } from './output-context-menu';

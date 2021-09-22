@@ -15,6 +15,8 @@
 - [application-manager] break `rebuild` API: second argument is now an optional object instead of an optional array.
 - [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` []()
 - [core] moved `NewWindowOptions` to `common/window.ts` []()
+- [core] moved `quick-input-service.ts` under `common` []()
+- [core] moved `keys.ts` under `common` []()
 
 ## v1.17.2 - 9/1/2021
 

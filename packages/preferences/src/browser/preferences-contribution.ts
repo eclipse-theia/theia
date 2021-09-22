@@ -25,9 +25,8 @@ import {
     PreferenceScope,
     PreferenceProvider,
     PreferenceService,
-    QuickInputService,
-    QuickPickItem,
 } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPickItem } from '@theia/core/lib/common';
 import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';

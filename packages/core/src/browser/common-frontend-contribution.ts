@@ -52,7 +52,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
-import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
+import { QuickInputService, QuickPick, QuickPickItem } from '../common/quick-input-service';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from './nls';
 

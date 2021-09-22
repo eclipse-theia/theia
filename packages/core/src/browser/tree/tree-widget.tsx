@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import { Disposable, MenuPath, SelectionService } from '../../common';
-import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
+import { Key, KeyCode, KeyModifier } from '../../common/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
 import {

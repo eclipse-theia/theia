@@ -17,7 +17,7 @@
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { PluginServer } from '../../common';
 import { Command } from '@theia/core/lib/common/command';
-import { QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/common';
 
 @injectable()
 export class PluginExtDeployCommandService /* implements QuickOpenModel */ {

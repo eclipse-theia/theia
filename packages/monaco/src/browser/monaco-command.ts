@@ -17,7 +17,8 @@
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { Position, Location } from '@theia/core/shared/vscode-languageserver-types';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
-import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
+import { CommonCommands, ApplicationShell } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common';
 import { EditorCommands, EditorManager } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';

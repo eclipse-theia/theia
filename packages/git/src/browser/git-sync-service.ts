@@ -16,7 +16,8 @@
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MessageService, Emitter, Event } from '@theia/core';
-import { ConfirmDialog, QuickInputService } from '@theia/core/lib/browser';
+import { ConfirmDialog } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
 import { GitErrorHandler } from './git-error-handler';

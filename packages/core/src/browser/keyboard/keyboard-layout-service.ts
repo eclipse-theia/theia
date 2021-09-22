@@ -21,7 +21,7 @@ import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
-import { KeyCode, Key } from './keys';
+import { KeyCode, Key } from '../../common/keys';
 
 export interface KeyboardLayout {
     /**

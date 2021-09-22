@@ -23,7 +23,7 @@ import { OS } from '@theia/core/lib/common/os';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { VariableInput } from './variable-input';
-import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
+import { QuickInputService, QuickPickValue } from '@theia/core/lib/common';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 
 @injectable()

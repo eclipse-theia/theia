@@ -18,7 +18,7 @@ import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegist
 import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { CommonMenus } from '../common-frontend-contribution';
 import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
-import { QuickInputService } from './quick-input-service';
+import { QuickInputService } from '../../common/quick-input-service';
 
 @injectable()
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {

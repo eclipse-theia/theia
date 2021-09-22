@@ -19,7 +19,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { ScmService } from './scm-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { QuickInputService } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common';
 
 @injectable()
 export class ScmQuickOpenService {

@@ -27,7 +27,7 @@ import * as fuzzy from '@theia/core/shared/fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
-import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/common/quick-input-service';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',

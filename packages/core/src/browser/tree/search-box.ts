@@ -17,7 +17,7 @@
 import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce';
 import { BaseWidget, Message } from '../widgets/widget';
 import { Emitter, Event } from '../../common/event';
-import { KeyCode, Key } from '../keyboard/keys';
+import { KeyCode, Key } from '../../common/keys';
 
 /**
  * Initializer properties for the search box widget.

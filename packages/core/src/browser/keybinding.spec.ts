@@ -23,7 +23,7 @@ import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotif
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
 import { Keybinding } from '../common/keybinding';
-import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
+import { KeyCode, Key, KeyModifier, KeySequence } from '../common/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';

@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { QuickPickItem, LabelProvider, QuickInputService } from '@theia/core/lib/browser';
+import { LabelProvider } from '@theia/core/lib/browser';
+import { QuickPickItem, QuickInputService } from '@theia/core/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';

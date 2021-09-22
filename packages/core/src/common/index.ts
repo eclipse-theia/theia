@@ -14,30 +14,32 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './types';
-export * from './disposable';
-export * from './reference';
-export * from './event';
+export * from './application-error';
 export * from './cancellation';
 export * from './command';
-export * from './menu';
-export * from './selection-service';
-export * from './objects';
-export * from './os';
-export * from './resource';
+export * from './contribution-filter';
 export * from './contribution-provider';
-export * from './path';
+export * from './disposable';
+export * from './event';
+export * from './keys';
 export * from './logger';
-export * from './messaging';
+export * from './lsp-types';
+export * from './menu';
 export * from './message-service';
 export * from './message-service-protocol';
+export * from './messaging';
+export * from './objects';
+export * from './os';
+export * from './path';
 export * from './progress-service';
 export * from './progress-service-protocol';
+export * from './quick-input-service';
+export * from './reference';
+export * from './resource';
 export * from './selection';
+export * from './selection-service';
 export * from './strings';
-export * from './application-error';
-export * from './lsp-types';
-export * from './contribution-filter';
+export * from './types';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };

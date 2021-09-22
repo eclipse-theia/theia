@@ -17,7 +17,7 @@
 import { enableJSDOM } from '../../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
-import { KeyCode, Key, KeyModifier, KeySequence } from './keys';
+import { KeyCode, Key, KeyModifier, KeySequence } from '../../common/keys';
 import * as os from '../../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';

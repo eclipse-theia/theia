@@ -22,7 +22,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { GitErrorHandler } from './git-error-handler';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProvider, QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
+import { LabelProvider} from '@theia/core/lib/browser';
+import { QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/common/quick-input-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 

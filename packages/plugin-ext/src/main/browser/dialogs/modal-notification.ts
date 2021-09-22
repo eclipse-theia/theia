@@ -15,7 +15,8 @@
  ********************************************************************************/
 import { injectable } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { codiconArray, Key } from '@theia/core/lib/browser';
+import { codiconArray } from '@theia/core/lib/browser';
+import { Key } from '@theia/core/lib/common';
 import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 import { MainMessageItem } from '../../../common/plugin-api-rpc';

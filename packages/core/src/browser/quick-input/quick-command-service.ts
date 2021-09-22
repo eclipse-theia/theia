@@ -20,7 +20,7 @@ import { Disposable, Command, CommandRegistry, CancellationToken } from '../../c
 import { ContextKeyService } from '../context-key-service';
 import { CorePreferences } from '../core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
+import { filterItems, QuickPickItem, QuickPicks } from '../../common/quick-input-service';
 import { KeySequence } from '../keys';
 import { codiconArray } from '../widgets';
 

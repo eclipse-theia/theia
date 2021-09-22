@@ -21,7 +21,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { QuickAccessProvider, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
-import { filterItems, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/common';
 import { EditorManager, EditorWidget } from '.';
 
 @injectable()

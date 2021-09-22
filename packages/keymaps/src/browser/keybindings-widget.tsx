@@ -22,8 +22,9 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
-    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon
+    KeybindingRegistry, SingleTextInputDialog, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, ScopedKeybinding, codicon
 } from '@theia/core/lib/browser';
+import { Key, KeySequence } from '@theia/core/lib/common';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 

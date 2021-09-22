@@ -17,7 +17,7 @@
 import { injectable, inject, optional } from 'inversify';
 import { Emitter } from '../../common/event';
 import { QuickPickService } from '../../common/quick-pick-service';
-import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, QuickPickOptions } from './quick-input-service';
+import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, QuickPickOptions } from '../../common/quick-input-service';
 
 @injectable()
 export class QuickPickServiceImpl implements QuickPickService {

@@ -19,7 +19,7 @@ import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
 import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
-import { KeyCode, KeySequence, Key } from './keyboard/keys';
+import { KeyCode, KeySequence, Key } from '../common/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';

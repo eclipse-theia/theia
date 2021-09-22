@@ -19,7 +19,7 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { Widget } from '@theia/core/shared/@phosphor/widgets';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { injectable, postConstruct, inject, Container, interfaces } from '@theia/core/shared/inversify';
-import { Key } from '@theia/core/lib/browser';
+import { Key } from '@theia/core/lib/common/keys';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugSessionManager } from '../debug-session-manager';

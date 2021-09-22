@@ -18,11 +18,11 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
-import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { MenuContribution, CommandContribution, QuickInputService } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';

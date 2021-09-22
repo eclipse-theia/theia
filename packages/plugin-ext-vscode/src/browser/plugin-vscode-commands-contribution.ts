@@ -20,13 +20,14 @@ import {
     CommonCommands,
     NavigatableWidget,
     open,
-    OpenerService, OpenHandler,
-    QuickInputService,
+    OpenerService,
+    OpenHandler,
     Saveable,
     TabBar,
     Title,
     Widget
 } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common/quick-input-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';

@@ -15,11 +15,11 @@
  ********************************************************************************/
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { KeybindingRegistry } from '@theia/core/lib/browser';
 import {
-    InputBox, InputOptions, KeybindingRegistry, PickOptions,
-    QuickInputButton, QuickInputService, QuickPick, QuickPickItem, QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
-} from '@theia/core/lib/browser';
-import { CancellationToken, Event } from '@theia/core/lib/common';
+    CancellationToken, Event, InputBox, InputOptions, PickOptions, QuickInputButton, QuickInputService,
+    QuickPick, QuickPickItem, QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
+} from '@theia/core/lib/common';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 

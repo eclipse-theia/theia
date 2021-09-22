@@ -24,7 +24,7 @@ import { LocalStorageService } from '../storage-service';
 import { MessageService } from '../../common/message-service';
 import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
-import { Key } from './keys';
+import { Key } from '../../common/keys';
 
 describe('browser keyboard layout provider', function (): void {
 

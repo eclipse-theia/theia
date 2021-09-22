@@ -25,11 +25,14 @@ import {
     isOSX,
     SelectionService,
     Emitter,
-    Event
+    Event,
+    KeyCode,
+    Key,
+    QuickInputService
 } from '@theia/core/lib/common';
 import {
-    ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon
+    ApplicationShell, KeybindingContribution,
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, codicon
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WidgetManager } from '@theia/core/lib/browser';

@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Widget, Message, BaseWidget, StatefulWidget, MessageLoop, codicon } from '@theia/core/lib/browser';
+import { Key, KeyCode } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';

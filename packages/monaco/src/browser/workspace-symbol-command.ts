@@ -18,9 +18,9 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { KeybindingContribution, KeybindingRegistry, OpenerService, LabelProvider } from '@theia/core/lib/browser';
 
-import { QuickAccessContribution, QuickAccessProvider, QuickInputService, QuickAccessRegistry, QuickPicks, QuickPickItem, findMatches } from '@theia/core/lib/browser/quick-input';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input';
 import {
-    CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken
+    CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken, QuickInputService, QuickPicks, QuickPickItem, findMatches
 } from '@theia/core/lib/common';
 import { CommandContribution } from '@theia/core/lib/common';
 import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';

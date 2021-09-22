@@ -35,7 +35,7 @@ import {
     AuthenticationSession,
     AuthenticationSessionsChangeEvent
 } from '../../common/plugin-api-rpc-model';
-import { QuickPickValue } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { QuickPickValue } from '@theia/core/lib/common/quick-input-service';
 
 export class AuthenticationMainImpl implements AuthenticationMain {
     private readonly proxy: AuthenticationExt;

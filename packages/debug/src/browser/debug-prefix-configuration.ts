@@ -23,9 +23,10 @@ import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
-import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { QuickInputService } from '@theia/core/lib/common/quick-input-service';
 import { DebugPreferences } from './debug-preferences';
-import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/common/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
 
 @injectable()
