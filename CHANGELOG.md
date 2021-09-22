@@ -18,6 +18,8 @@
   - renamed `handleDefault` to `handleElectronDefault`
   - renamed `createContextMenu` to `createElectronContextMenu`
   - renamed `createMenuBar` to `createElectronMenuBar`
+- [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
+- [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 
 ## v1.18.0 - 9/30/2021
 
