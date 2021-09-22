@@ -25,7 +25,7 @@ import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-pr
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Message, BaseWidget, DockPanel, Widget, MessageLoop, StatefulWidget, codicon } from '@theia/core/lib/browser';
 import { OutputUri } from '../common/output-uri';
-import { OutputChannelManager, OutputChannel } from '../common/output-channel';
+import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
 
 @injectable()

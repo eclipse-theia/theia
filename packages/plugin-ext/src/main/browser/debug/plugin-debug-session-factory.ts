@@ -20,7 +20,7 @@ import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
-import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';

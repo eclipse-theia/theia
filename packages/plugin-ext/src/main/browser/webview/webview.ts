@@ -40,7 +40,7 @@ import { Schemes } from '../../../common/uri-components';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
-import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
