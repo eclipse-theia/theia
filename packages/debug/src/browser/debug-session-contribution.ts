@@ -23,7 +23,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/w
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions } from './debug-session-options';
-import { OutputChannelManager, OutputChannel } from '@theia/output/lib/common/output-channel';
+import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from './debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
 import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';

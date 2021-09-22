@@ -25,7 +25,7 @@ import { OutputWidget } from './output-widget';
 import { OutputContextMenu } from './output-context-menu';
 import { OutputUri } from '../common/output-uri';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { OutputChannelManager, OutputChannel } from '../common/output-channel';
+import { OutputChannelManager, OutputChannel } from './output-channel';
 import { OutputCommands } from './output-commands';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 

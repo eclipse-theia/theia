@@ -15,14 +15,12 @@
  ********************************************************************************/
 
 import { interfaces } from '@theia/core/shared/inversify';
-
 import {
-    createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
-    // eslint-disable-next-line @theia/runtime-import-check
+    PreferenceProxy,
+    PreferenceSchema,
+    PreferenceService,
+    createPreferenceProxy
 } from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {

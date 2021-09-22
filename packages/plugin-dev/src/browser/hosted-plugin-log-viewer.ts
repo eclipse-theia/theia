@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { OutputChannel, OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 import { LogPart } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';

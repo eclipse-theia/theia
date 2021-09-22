@@ -21,7 +21,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { OutputWidget } from './output-widget';
 import { OutputCommands } from './output-commands';
 import { OutputContribution } from './output-contribution';
-import { OutputChannelManager } from '../common/output-channel';
+import { OutputChannelManager } from './output-channel';
 
 @injectable()
 export class OutputToolbarContribution implements TabBarToolbarContribution {

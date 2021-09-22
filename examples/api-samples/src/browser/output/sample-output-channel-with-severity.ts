@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
-import { OutputChannelManager, OutputChannelSeverity } from '@theia/output/lib/common/output-channel';
+import { OutputChannelManager, OutputChannelSeverity } from '@theia/output/lib/browser/output-channel';
 
 @injectable()
 export class SampleOutputChannelWithSeverity
