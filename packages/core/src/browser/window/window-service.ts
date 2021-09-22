@@ -15,20 +15,12 @@
  ********************************************************************************/
 
 import { Event } from '../../common/event';
-
-export interface NewWindowOptions {
-    readonly external?: boolean;
-}
+import { NewWindowOptions } from '../../common/window';
 
 /**
  * Service for opening new browser windows.
  */
 export const WindowService = Symbol('WindowService');
-
-/**
- * The window hash value that is used to spawn a new default window.
- */
-export const DEFAULT_WINDOW_HASH: string = '!empty';
 
 export interface WindowService {
 
