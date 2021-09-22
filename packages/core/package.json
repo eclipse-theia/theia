@@ -159,13 +159,14 @@
     "src"
   ],
   "scripts": {
-    "prepare": "node scripts/generate-shared.js",
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "generate-layout": "electron ./scripts/generate-layout",
+    "lint": "theiaext lint",
+    "prepare": "node scripts/generate-shared.js",
     "test": "theiaext test",
-    "generate-layout": "electron ./scripts/generate-layout"
+    "watch": "theiaext watch"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.17.0",

@@ -23,6 +23,7 @@
     "chai-string": "^1.4.0",
     "colors": "^1.4.0",
     "concurrently": "^3.5.0",
+    "debug": "^4.3.2",
     "electron-mocha": "^8.2.0",
     "eslint": "^7.14.0",
     "eslint-plugin-deprecation": "^1.1.0",
@@ -30,9 +31,11 @@
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-no-unsanitized": "^3.1.4",
     "eslint-plugin-react": "^7.21.5",
+    "glob": "^7.1.7",
     "ignore-styles": "^5.0.1",
     "jsdom": "^11.5.1",
     "lerna": "^4.0.0",
+    "nsfw": "^2.1.2",
     "nyc": "^15.0.0",
     "rimraf": "^2.6.1",
     "sinon": "^3.3.0",
@@ -41,7 +44,8 @@
     "typedoc": "^0.21.2",
     "typedoc-plugin-external-module-map": "^1.2.1",
     "typescript": "^3.9.2",
-    "uuid": "^8.0.0"
+    "uuid": "^8.0.0",
+    "yargs": "^15.3.1"
   },
   "scripts": {
     "all": "yarn install && yarn lint && yarn build",
@@ -49,7 +53,7 @@
     "build": "yarn compile && yarn build:examples",
     "build:examples": "yarn download:plugins && lerna run --scope=\"@theia/example-*\" bundle --parallel",
     "clean": "yarn rebuild:clean && yarn lint:clean && node scripts/run-reverse-topo.js yarn clean",
-    "compile": "tsc -b",
+    "compile": "ts-clean dev-packages/* packages/* && tsc -b",
     "compile:references": "node scripts/compile-references.js",
     "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig configs/typedoc-tsconfig.json --options configs/typedoc.json .",
     "download:plugins": "theia download:plugins",
@@ -69,7 +73,7 @@
     "test": "yarn test:theia && yarn electron test && yarn browser test",
     "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
     "watch": "concurrently --kill-others -n tsc,browser,electron -c red,yellow,blue \"tsc -b -w --preserveWatchOutput\" \"yarn --cwd examples/browser watch:bundle\" \"yarn --cwd examples/electron watch:bundle\"",
-    "watch:compile": "tsc -b -w"
+    "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\""
   },
   "workspaces": [
     "dev-packages/*",

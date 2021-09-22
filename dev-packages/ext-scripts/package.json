@@ -5,18 +5,19 @@
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "description": "NPM scripts for Theia packages.",
   "bin": {
+    "run": "theia-run.js",
     "theiaext": "theia-ext.js",
-    "run": "theia-run.js"
+    "ts-clean": "theia-ts-clean.js"
   },
   "theia-monorepo-scripts": {
     "ext:clean": "theiaext compile:clean && theiaext lint:clean && theiaext test:clean",
     "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
-    "ext:compile": "tsc -b",
+    "ext:compile": "ts-clean && tsc -b",
     "ext:compile:fast": "tsc -p",
     "ext:compile:clean": "rimraf lib *.tsbuildinfo",
     "ext:lint": "eslint --cache=true --no-error-on-unmatched-pattern=true \"{src,test}/**/*.{ts,tsx}\"",
     "ext:lint:clean": "rimraf .eslintcache",
-    "ext:watch": "tsc -b -w",
+    "ext:watch": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean -w\" \"tsc -b -w --preserveWatchOutput\"",
     "ext:watch:fast": "tsc -p -w",
     "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
     "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",

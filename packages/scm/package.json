@@ -38,11 +38,12 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "docs": "theiaext docs"
+    "compile": "theiaext compile",
+    "docs": "theiaext docs",
+    "lint": "theiaext lint",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.17.0"
