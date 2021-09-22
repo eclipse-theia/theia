@@ -20,7 +20,7 @@ import { CorePreferences } from '../core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { WindowService } from './window-service';
-import { DEFAULT_WINDOW_HASH } from './window-service';
+import { DEFAULT_WINDOW_HASH } from '../../common/window';
 
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {

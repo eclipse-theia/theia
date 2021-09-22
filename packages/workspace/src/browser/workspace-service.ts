@@ -17,7 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
-import { DEFAULT_WINDOW_HASH, WindowService } from '@theia/core/lib/browser/window/window-service';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
     FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
 } from '@theia/core/lib/browser';

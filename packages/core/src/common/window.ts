@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
+ * Copyright (C) 2021 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,11 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { NewWindowOptions } from '../common/window';
+/**
+ * The window hash value that is used to spawn a new default window.
+ */
+export const DEFAULT_WINDOW_HASH: string = '!empty';
 
-export const electronMainWindowServicePath = '/services/electron-window';
-export const ElectronMainWindowService = Symbol('ElectronMainWindowService');
-export interface ElectronMainWindowService {
-    openNewWindow(url: string, options?: NewWindowOptions): undefined;
-    openNewDefaultWindow(): void;
+/**
+ * The options for opening new windows.
+ */
+export interface NewWindowOptions {
+    /**
+     * Controls whether the window should be opened externally.
+     */
+    readonly external?: boolean;
 }
