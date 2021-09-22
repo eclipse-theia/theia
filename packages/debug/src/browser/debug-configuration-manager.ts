@@ -75,7 +75,9 @@ export class DebugConfigurationManager {
     readonly onWillProvideDebugConfiguration: Event<WillProvideDebugConfiguration> = this.onWillProvideDebugConfigurationEmitter.event;
 
     protected readonly onWillProvideDynamicDebugConfigurationEmitter = new Emitter<WillProvideDebugConfiguration>();
-    readonly onWillProvideDynamicDebugConfiguration: Event<WillProvideDebugConfiguration> = this.onWillProvideDynamicDebugConfigurationEmitter.event;
+    get onWillProvideDynamicDebugConfiguration(): Event<WillProvideDebugConfiguration> {
+        return this.onWillProvideDynamicDebugConfigurationEmitter.event;
+    }
 
     protected debugConfigurationTypeKey: ContextKey<string>;
 
