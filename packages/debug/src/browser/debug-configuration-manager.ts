@@ -155,7 +155,8 @@ export class DebugConfigurationManager {
         this.updateCurrent(option);
     }
     protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
-        this._currentOptions = options && !options.dynamic ? this.find(options.configuration.name, options.workspaceFolderUri) : options;
+        const isDynamic = options?.configuration.dynamic;
+        this._currentOptions = options && !isDynamic ? this.find(options.configuration.name, options.workspaceFolderUri) : options;
 
         if (!this._currentOptions) {
             const { model } = this;

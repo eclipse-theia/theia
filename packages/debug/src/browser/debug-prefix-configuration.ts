@@ -138,7 +138,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
                 items.push({
                     label: configuration.name,
                     description: '',
-                    execute: () => this.runConfiguration({configuration: configuration, dynamic: true})
+                    execute: () => this.runConfiguration({configuration})
                 });
             }
         }
