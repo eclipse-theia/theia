@@ -60,7 +60,7 @@
     "clean": "theiaext clean",
     "compile": "theiaext compile",
     "lint": "theiaext lint",
-    "test": "theiaext test",
+    "test": "theiaext test --no-cluster",
     "test:watch": "theiaext test:watch",
     "watch": "theiaext watch"
   },

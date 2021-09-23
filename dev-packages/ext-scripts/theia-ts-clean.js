@@ -169,7 +169,7 @@ async function tsCleanRun(src, dst, dry) {
         if (await exists(src, `${base}.ts`) || await exists(src, `${base}.tsx`)) {
             return;
         }
-        debug('missing source', path.resolve(src, `${base}.ts(x)`));
+        console.log('Missing source:', path.resolve(src, `${base}.ts(x)`));
         await Promise.all(generated.map(async file => {
             debug('delete', file);
             if (!dry) {
