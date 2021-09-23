@@ -14,6 +14,7 @@
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
     "@types/node": "12",
+    "@types/puppeteer": "^2.0.0",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
     "@types/uuid": "^7.0.3",
@@ -37,6 +38,8 @@
     "lerna": "^4.0.0",
     "nsfw": "^2.1.2",
     "nyc": "^15.0.0",
+    "puppeteer": "^2.0.0",
+    "puppeteer-to-istanbul": "^1.2.2",
     "rimraf": "^2.6.1",
     "sinon": "^3.3.0",
     "temp": "^0.8.3",
@@ -75,7 +78,8 @@
     "test": "yarn test:theia && yarn electron test && yarn browser test",
     "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
     "watch": "concurrently --kill-others -n tsc,browser,electron -c red,yellow,blue \"tsc -b -w --preserveWatchOutput\" \"yarn --cwd examples/browser watch:bundle\" \"yarn --cwd examples/electron watch:bundle\"",
-    "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\""
+    "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\"",
+    "performance:startup": "concurrently --success first -k -r \"cd scripts/performance && node measure-performance.js --name Startup --folder startup --runs 10\" \"yarn --cwd examples/browser start\""
   },
   "workspaces": [
     "dev-packages/*",

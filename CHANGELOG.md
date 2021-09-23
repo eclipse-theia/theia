@@ -5,6 +5,7 @@
 [1.19.0 Milestone](https://github.com/eclipse-theia/theia/milestone/25)
 
 - [plugin-ext] add additional startup logging for plugin starting and application loading [#10116](https://github.com/eclipse-theia/theia/pull/10116) - Contributed on behalf of STMicroelectronics
+- [scripts] added startup performance measurement script [#9777](https://github.com/eclipse-theia/theia/pull/9777) - Contributed on behalf of STMicroelectronics
 
 ## v1.18.0 - 9/30/2021
 
