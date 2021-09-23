@@ -140,6 +140,14 @@ export namespace EditorCommands {
         label: 'Toggle Word Wrap'
     };
     /**
+     * Command that close editor.
+     */
+    export const CLOSE_EDITOR: Command = {
+        id: 'workbench.action.closeEditor',
+        category: VIEW_CATEGORY,
+        label: 'Close Editor'
+    };
+    /**
      * Command that re-opens the last closed editor.
      */
     export const REOPEN_CLOSED_EDITOR: Command = {
@@ -253,6 +261,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
         registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
+        registry.registerCommand(EditorCommands.CLOSE_EDITOR);
         registry.registerCommand(EditorCommands.REOPEN_CLOSED_EDITOR);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
