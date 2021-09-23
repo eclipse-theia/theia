@@ -28,12 +28,12 @@ const yargs = require('yargs');
 
 const glob = util.promisify(_glob);
 
-smartClean().catch(error => {
+tsClean().catch(error => {
     console.error(error);
     process.exit(1);
 });
 
-async function smartClean() {
+async function tsClean() {
     yargs
         .command(
             '$0 [globs..]',
@@ -85,8 +85,8 @@ async function smartClean() {
                         const src = path.resolve(root, compilerOptions.rootDir);
                         const dst = path.resolve(root, compilerOptions.outDir);
                         await watch
-                            ? smartCleanWatch(src, dst, dry)
-                            : smartCleanRun(src, dst, dry);
+                            ? tsCleanWatch(src, dst, dry)
+                            : tsCleanRun(src, dst, dry);
                     }));
                 }));
             }
@@ -110,8 +110,8 @@ async function smartClean() {
  * @param {string} dst
  * @param {boolean} dry
  */
-async function smartCleanWatch(src, dst, dry) {
-    await smartCleanRun(src, dst, dry);
+async function tsCleanWatch(src, dst, dry) {
+    await tsCleanRun(src, dst, dry);
     const watcher = await nsfw(src, async events => {
         for (const event of events) {
             let absolute;
@@ -142,7 +142,7 @@ async function smartCleanWatch(src, dst, dry) {
  * @param {string} dst
  * @param {boolean} dry
  */
-async function smartCleanRun(src, dst, dry) {
+async function tsCleanRun(src, dst, dry) {
     /**
      * Generated files relative to `dst`.
      */
@@ -155,21 +155,21 @@ async function smartCleanRun(src, dst, dry) {
      * Value is the list of found generated files (absolute path).
      * @type {Map<string, string[]>}
      */
-    const prefixes = new Map();
+    const bases = new Map();
     for (const file of files) {
         const parse = path.parse(file);
-        const prefix = path.join(parse.dir, fileNameFromBase(parse.base));
-        let generated = prefixes.get(prefix);
+        const base = path.join(parse.dir, removeExtension(parse.base));
+        let generated = bases.get(base);
         if (!generated) {
-            prefixes.set(prefix, generated = []);
+            bases.set(base, generated = []);
         }
         generated.push(path.resolve(dst, file));
     }
-    await Promise.all(Array.from(prefixes.entries(), async ([prefix, generated]) => {
-        if (await exists(src, `${prefix}.ts`) || await exists(src, `${prefix}.tsx`)) {
+    await Promise.all(Array.from(bases.entries(), async ([base, generated]) => {
+        if (await exists(src, `${base}.ts`) || await exists(src, `${base}.tsx`)) {
             return;
         }
-        debug('missing source', path.resolve(src, `${prefix}.ts(x)`));
+        debug('missing source', path.resolve(src, `${base}.ts(x)`));
         await Promise.all(generated.map(async file => {
             debug('delete', file);
             if (!dry) {
@@ -197,7 +197,7 @@ function generatedFilesFromBase(...parts) {
  * .d.ts, .d.ts.map, .js, .js.map, .ts, .tsx
  * @param {string} base
  */
-function fileNameFromBase(base) {
+function removeExtension(base) {
     return base.replace(/\.(d\.ts(\.map)?|js(\.map)?|tsx?)$/i, '');
 }
 
