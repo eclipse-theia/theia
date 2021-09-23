@@ -56,7 +56,8 @@ export class CustomEditorOpener implements OpenHandler {
         switch (this.editor.priority) {
             case CustomEditorPriority.default: return 500;
             case CustomEditorPriority.builtin: return 400;
-            case CustomEditorPriority.option: return 300;
+            /** `option` should not open the custom-editor by default. */
+            case CustomEditorPriority.option: return 1;
             default: return 200;
         }
     }
