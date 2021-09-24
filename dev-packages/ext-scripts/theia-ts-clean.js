@@ -76,14 +76,23 @@ async function tsClean() {
                             debug(`"${root}" is not a directory, skipping...`);
                             return;
                         }
-                        const tsconfig = path.resolve(root, 'tsconfig.json');
-                        if (!await exists(tsconfig)) {
+                        const tsconfigPath = path.resolve(root, 'tsconfig.json');
+                        if (!await exists(tsconfigPath)) {
                             debug(`"${root}" is not a TypeScript package, skipping...`);
                             return;
                         }
-                        const { compilerOptions } = await fs.promises.readFile(tsconfig, 'utf8').then(JSON.parse);
-                        const src = path.resolve(root, compilerOptions.rootDir);
-                        const dst = path.resolve(root, compilerOptions.outDir);
+                        const {
+                            compilerOptions: {
+                                outDir = undefined,
+                                rootDir = undefined,
+                            } = {},
+                        } = await fs.promises.readFile(tsconfigPath, 'utf8').then(JSON.parse);
+                        if (typeof outDir !== 'string' || typeof rootDir !== 'string') {
+                            debug(`"${tsconfigPath}" doesn't look like a compilation configuration, skipping...`);
+                            return;
+                        }
+                        const src = path.resolve(root, rootDir);
+                        const dst = path.resolve(root, outDir);
                         await watch
                             ? tsCleanWatch(src, dst, dry)
                             : tsCleanRun(src, dst, dry);
