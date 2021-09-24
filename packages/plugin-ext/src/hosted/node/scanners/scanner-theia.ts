@@ -218,7 +218,7 @@ export class TheiaPluginScanner implements PluginScanner {
 
                 for (const location of Object.keys(viewsContainers)) {
                     const containers = this.readViewsContainers(viewsContainers[location], rawPlugin);
-                    const loc = location === 'activitybar' ? 'left' : location;
+                    const loc = location === 'activitybar' ? 'left' : location === 'panel' ? 'bottom' : location;
                     if (contributions.viewsContainers[loc]) {
                         contributions.viewsContainers[loc] = contributions.viewsContainers[loc].concat(containers);
                     } else {
