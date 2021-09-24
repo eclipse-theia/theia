@@ -17,7 +17,7 @@
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as stream from 'stream';
-import { CommunicationProvider, DebugProtocolMessage } from './debug-model';
+import { CommunicationProvider } from './debug-model';
 
 export class StreamCommunicationProvider extends DisposableCollection implements CommunicationProvider {
     private messageReceivedEmitter = new Emitter<string>();
@@ -42,8 +42,7 @@ export class StreamCommunicationProvider extends DisposableCollection implements
     };
 
     send(message: string): void {
-        const messageString = JSON.stringify(message);
-        const msg = `${StreamCommunicationProvider.CONTENT_LENGTH}: ${Buffer.byteLength(messageString, 'utf8')}${StreamCommunicationProvider.TWO_CRLF}${messageString}`;
+        const msg = `${StreamCommunicationProvider.CONTENT_LENGTH}: ${Buffer.byteLength(message, 'utf8')}${StreamCommunicationProvider.TWO_CRLF}${message}`;
 
         this.toAdapter.write(msg, 'utf8');
     }

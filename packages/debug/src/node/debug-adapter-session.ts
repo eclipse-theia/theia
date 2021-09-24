@@ -23,8 +23,7 @@
 
 import {
     CommunicationProvider,
-    DebugAdapterSession,
-    DebugProtocolMessage,
+    DebugAdapterSession
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
