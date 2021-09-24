@@ -109,8 +109,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const items: QuickPickItem[] = [];
-        const configurationManager = this.debugConfigurationManager;
-        const configurations = configurationManager.all;
+        const configurations = this.debugConfigurationManager.all;
 
         for (const config of configurations) {
             items.push({
@@ -123,13 +122,12 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         }
 
         // Resolve dynamic configurations from providers
-        const configurationsByType = await configurationManager.provideDynamicDebugConfigurations();
+        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
         for (const typeConfigurations of configurationsByType) {
-            const type = typeConfigurations.type;
             const dynamicConfigurations = typeConfigurations.configurations;
             if (dynamicConfigurations.length > 0) {
                 items.push({
-                    label: type,
+                    label: typeConfigurations.type,
                     type: 'separator'
                 });
             }
@@ -137,7 +135,6 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    description: '',
                     execute: () => this.runConfiguration({configuration})
                 });
             }
