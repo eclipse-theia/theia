@@ -735,6 +735,15 @@ export class TaskService implements TaskConfigurationClient {
         console.debug('got lock');
 
         try {
+            // resolve problemMatchers
+            if (!option && task.problemMatcher) {
+                const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher };
+                const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
+                option = {
+                    customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
+                };
+            }
+
             const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
             // check if the task is active
             const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
