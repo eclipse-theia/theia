@@ -137,7 +137,7 @@ export class DebugVariable extends ExpressionContainer {
     constructor(
         session: DebugSessionProvider,
         protected readonly variable: DebugProtocol.Variable,
-        protected readonly parent: ExpressionContainer
+        readonly parent: ExpressionContainer
     ) {
         super({
             session,
@@ -359,7 +359,7 @@ export class DebugScope extends ExpressionContainer {
     }
 
     render(): React.ReactNode {
-        return this.raw.name;
+        return this.name;
     }
 
     get expensive(): boolean {
@@ -372,6 +372,10 @@ export class DebugScope extends ExpressionContainer {
             return new monaco.Range(line, column, endLine, endColumn);
         }
         return undefined;
+    }
+
+    get name(): string {
+        return this.raw.name;
     }
 
 }
