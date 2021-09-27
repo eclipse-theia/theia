@@ -29,7 +29,7 @@
 }
 
 .theia-marker-container .markerNode div,
-.theia-marker-container .markerFileNode div {
+.theia-marker-container .markerFileNode div:not(.file-icon) {
     display: flex;
     margin-right: 5px;
 }
