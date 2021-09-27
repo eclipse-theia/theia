@@ -39,10 +39,6 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     getIcon(element: URI | URIIconReference | FileStat): string {
-        const uri = this.getUri(element);
-        if (uri && this.workspaceVariable.getWorkspaceRootUri(uri)?.isEqual(uri)) {
-            return 'rootfolder-icon';
-        }
         return super.getIcon(this.asURIIconReference(element));
     }
 
@@ -68,6 +64,10 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     protected asURIIconReference(element: URI | URIIconReference | FileStat): URI | URIIconReference {
         if (FileStat.is(element)) {
             return URIIconReference.create(element.isDirectory ? 'folder' : 'file', element.resource);
+        }
+        const uri = this.getUri(element);
+        if (uri && this.workspaceVariable.getWorkspaceRootUri(uri)?.isEqual(uri)) {
+            return URIIconReference.create('folder', uri);
         }
         return element;
     }
