@@ -79,7 +79,8 @@ export class DefaultFileDialogService implements FileDialogService {
     }
 
     protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
-        const folder = folderToOpen || {
+        const folderExists = folderToOpen && await this.fileService.exists(folderToOpen.resource);
+        const folder = folderToOpen && folderExists ? folderToOpen : {
             resource: new URI(await this.environments.getHomeDirUri()),
             isDirectory: true
         };
