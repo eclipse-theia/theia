@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { nls } from '@theia/core/lib/browser/nls';
+import { nls } from '@theia/core/lib/common/nls';
 
 export function loadVsRequire(context: any): Promise<any> {
     // Monaco uses a custom amd loader that over-rides node's require.

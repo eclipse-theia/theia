@@ -10,6 +10,7 @@
 
 <a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
 
+- [core] moved `nls` localization namespace from `browser` to `common`. [#10153](https://github.com/eclipse-theia/theia/pull/10153)
 - [output] moved `output-channel` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
 - [output] moved `output-preferences` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
 - [view-container] `ViewContainerPart` constructor takes new 2 parameters: `originalContainerId` and `originalContainerTitle`. The existing `viewContainerId` parameter has been renamed to `currentContainerId` to enable drag & drop views. [#9644](https://github.com/eclipse-theia/theia/pull/9644)

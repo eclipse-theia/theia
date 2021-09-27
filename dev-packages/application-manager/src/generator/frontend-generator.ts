@@ -84,7 +84,7 @@ FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.fron
 const { ThemeService } = require('@theia/core/lib/browser/theming');
 ThemeService.get().loadUserTheme();
 
-const nls = require('@theia/core/lib/browser/nls');
+const nls = require('@theia/core/lib/browser/nls-loader');
 
 // nls translations MUST be loaded before requiring any code that uses them
 module.exports = nls.loadTranslations().then(() => {
