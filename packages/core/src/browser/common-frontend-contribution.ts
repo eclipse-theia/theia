@@ -54,7 +54,7 @@ import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
-import { nls } from './nls';
+import { nls } from '../common/nls';
 
 export namespace CommonMenus {
 
