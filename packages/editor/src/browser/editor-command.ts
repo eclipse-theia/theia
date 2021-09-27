@@ -261,7 +261,9 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
         registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
-        registry.registerCommand(EditorCommands.CLOSE_EDITOR);
+        registry.registerCommand(EditorCommands.CLOSE_EDITOR, {
+            execute: () => this.closeCurrentEditor()
+        });
         registry.registerCommand(EditorCommands.REOPEN_CLOSED_EDITOR);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
@@ -297,6 +299,12 @@ export class EditorCommandContribution implements CommandContribution {
         }
     }
 
+    protected closeCurrentEditor(): void {
+        const editor = this.editorManager.currentEditor;
+        if (editor) {
+            editor.close();
+        }
+    }
     protected canConfigureEncoding(): boolean {
         const widget = this.editorManager.currentEditor;
         const editor = widget && widget.editor;

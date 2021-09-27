@@ -19,6 +19,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { EditorCommands } from './editor-command';
+import { EditorKeybindingContexts } from './editor-keybinding-contexts';
 
 @injectable()
 export class EditorKeybindingContribution implements KeybindingContribution {
@@ -44,6 +45,11 @@ export class EditorKeybindingContribution implements KeybindingContribution {
             {
                 command: EditorCommands.REOPEN_CLOSED_EDITOR.id,
                 keybinding: this.isElectron() ? 'ctrlcmd+shift+t' : 'alt+shift+t'
+            },
+            {
+                command: EditorCommands.CLOSE_EDITOR.id,
+                context: EditorKeybindingContexts.editorTextFocus,
+                keybinding: isOSX ? 'cmd+w' : 'ctrl+f4'
             }
         );
     }

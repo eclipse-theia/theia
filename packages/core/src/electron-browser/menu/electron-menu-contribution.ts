@@ -268,6 +268,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         });
         registry.registerMenuAction(ElectronMenus.FILE_CLOSE, {
             commandId: ElectronCommands.CLOSE_WINDOW.id,
+            order: '1'
         });
     }
 }

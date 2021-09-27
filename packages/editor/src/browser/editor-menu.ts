@@ -102,6 +102,11 @@ export class EditorMenuContribution implements MenuContribution {
             label: 'Render Whitespace',
             order: '2'
         });
+        registry.registerMenuAction(CommonMenus.FILE_CLOSE, {
+            commandId: EditorCommands.CLOSE_EDITOR.id,
+            label: EditorCommands.CLOSE_EDITOR.label,
+            order: '0'
+        });
     }
 
 }
