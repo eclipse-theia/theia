@@ -149,7 +149,7 @@ import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
-import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { CancellationToken, CancellationError } from '@theia/core/lib/common/cancellation';
 import { score } from '@theia/callhierarchy/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
@@ -952,7 +952,8 @@ export function createAPIFactory(
             SemanticTokensEdit,
             ColorThemeKind,
             SourceControlInputBoxValidationType,
-            FileDecoration
+            FileDecoration,
+            CancellationError
         };
     };
 }
