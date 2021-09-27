@@ -69,7 +69,7 @@
     "prepare": "yarn compile:references && lerna run prepare && yarn compile",
     "publish": "yarn && yarn test && yarn publish:latest",
     "publish:latest": "lerna publish --exact --yes && yarn publish:check",
-    "publish:next": "lerna publish --exact --no-git-reset --canary=next --npm-tag=next --yes && yarn publish:check",
+    "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && yarn publish:check",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
     "test": "yarn test:theia && yarn electron test && yarn browser test",
