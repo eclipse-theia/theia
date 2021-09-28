@@ -9251,7 +9251,7 @@ declare module '@theia/plugin' {
          *
          * @param folder The workspace folder for which the configurations are used or undefined for a folderless setup.
          * @param token A cancellation token.
-         * @return An array of [debug configurations](#DebugConfiguration).
+         * @return An array of {@link DebugConfiguration debug configurations}.
          */
         provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
 
@@ -9536,6 +9536,25 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A DebugConfigurationProviderTriggerKind specifies when the `provideDebugConfigurations` method of a `DebugConfigurationProvider` should be called.
+     * Currently there are two situations:
+     *  (1) providing debug configurations to populate a newly created `launch.json`
+     *  (2) providing dynamically generated configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+     * A trigger kind is used when registering a `DebugConfigurationProvider` with {@link debug.registerDebugConfigurationProvider}.
+     */
+    export enum DebugConfigurationProviderTriggerKind {
+        /**
+         * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug configurations for a newly created launch.json.
+         */
+        Initial = 1,
+        /**
+         * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated debug configurations when the user asks for them through the UI
+         * (e.g. via the "Select and Start Debugging" command).
+         */
+        Dynamic = 2
+    }
+
+    /**
      * Namespace for debug functionality.
      */
     export namespace debug {
@@ -9596,14 +9615,21 @@ declare module '@theia/plugin' {
         export function registerDebugAdapterDescriptorFactory(debugType: string, factory: DebugAdapterDescriptorFactory): Disposable;
 
         /**
-         * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
+         * Register a {@link DebugConfigurationProvider debug configuration provider} for a specific debug type.
+         * The optional {@link DebugConfigurationProviderTriggerKind triggerKind} can be used to specify when the `provideDebugConfigurations` method of the provider is triggered.
+         * Currently there are two situations:
+         *  (1) providing debug configurations to populate a newly created `launch.json`
+         *  (2) providing dynamically generated configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+         * Please note that the `triggerKind` argument only applies to the `provideDebugConfigurations` method, the `resolveDebugConfiguration` methods are not affected at all.
+         * Registering a single provider with resolve methods for different trigger kinds results in the same resolve methods being called multiple times.
          * More than one provider can be registered for the same type.
          *
-         * @param type The debug type for which the provider is registered.
-         * @param provider The [debug configuration provider](#DebugConfigurationProvider) to register.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @param debugType The debug type for which the provider is registered.
+         * @param provider The {@link DebugConfigurationProvider debug configuration provider} to register.
+         * @param triggerKind The {@link DebugConfigurationProviderTrigger trigger} for which the 'provideDebugConfiguration' method of the provider is registered. If `triggerKind` is missing, the value `DebugConfigurationProviderTriggerKind.Initial` is assumed.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
-        export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
+        export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider, triggerKind?: DebugConfigurationProviderTriggerKind): Disposable;
 
         /**
          * Register a debug adapter tracker factory for the given debug type.

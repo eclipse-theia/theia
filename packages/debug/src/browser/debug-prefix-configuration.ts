@@ -107,10 +107,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         });
     }
 
-    getPicks(filter: string, token: CancellationToken): QuickPicks {
+    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         const items: QuickPickItem[] = [];
         const configurations = this.debugConfigurationManager.all;
-        Array.from(configurations).forEach(config => {
+
+        for (const config of configurations) {
             items.push({
                 label: config.configuration.name,
                 description: this.workspaceService.isMultiRootWorkspaceOpened
@@ -118,7 +119,27 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
                     : '',
                 execute: () => this.runConfiguration(config)
             });
-        });
+        }
+
+        // Resolve dynamic configurations from providers
+        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
+        for (const typeConfigurations of configurationsByType) {
+            const dynamicConfigurations = typeConfigurations.configurations;
+            if (dynamicConfigurations.length > 0) {
+                items.push({
+                    label: typeConfigurations.type,
+                    type: 'separator'
+                });
+            }
+
+            for (const configuration of dynamicConfigurations) {
+                items.push({
+                    label: configuration.name,
+                    execute: () => this.runConfiguration({configuration})
+                });
+            }
+        }
+
         return filterItems(items, filter);
     }
 

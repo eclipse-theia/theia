@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* tslint:disable:typedef */
 
-import * as theia from '@theia/plugin';
+import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -27,7 +27,8 @@ import {
     Plugin as InternalPlugin,
     PluginManager,
     PluginAPIFactory,
-    MainMessageType
+    MainMessageType,
+    DebugConfigurationProviderTriggerKind
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
@@ -767,8 +768,12 @@ export function createAPIFactory(
             registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
                 return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
             },
-            registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
-                return debugExt.registerDebugConfigurationProvider(debugType, provider);
+            registerDebugConfigurationProvider(
+                debugType: string,
+                provider: theia.DebugConfigurationProvider,
+                triggerKind?: theia.DebugConfigurationProviderTriggerKind
+            ): Disposable {
+                return debugExt.registerDebugConfigurationProvider(debugType, provider, triggerKind || DebugConfigurationProviderTriggerKind.Initial);
             },
             registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {
                 return debugExt.registerDebugAdapterTrackerFactory(debugType, factory);
@@ -924,6 +929,7 @@ export function createAPIFactory(
             Task2,
             DebugAdapterExecutable,
             DebugAdapterServer,
+            DebugConfigurationProviderTriggerKind,
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
