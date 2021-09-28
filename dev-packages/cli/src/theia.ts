@@ -59,16 +59,31 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                 describe: 'Root folder where to store the .browser_modules cache'
             },
             'modules': {
-                array: true,
+                alias: 'm',
+                array: true, // === `--modules/-m` can be specified multiple times
                 describe: 'List of modules to rebuild/revert'
             },
             'force': {
                 alias: 'f',
-                type: 'boolean',
-                describe: 'Rebuild modules for Electron anyway'
+                boolean: true,
+                describe: 'Rebuild modules for Electron anyway',
             }
         },
         handler: ({ cacheRoot, modules, force }) => {
+            // Note: `modules` is actually `string[] | undefined`.
+            if (modules) {
+                // It is ergonomic to pass arguments as --modules="a,b,c,..."
+                // but yargs doesn't parse it this way by default.
+                const flattened: string[] = [];
+                for (const value of modules) {
+                    if (value.includes(',')) {
+                        flattened.push(...value.split(',').map(mod => mod.trim()));
+                    } else {
+                        flattened.push(value);
+                    }
+                }
+                modules = flattened;
+            }
             rebuild(target, { cacheRoot, modules, force });
         }
     };

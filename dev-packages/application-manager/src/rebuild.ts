@@ -93,9 +93,16 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
     let success = true;
     // backup already-built browser modules
     await Promise.all(modules.map(async module => {
-        const src = path.dirname(require.resolve(`${module}/package.json`, {
-            paths: [process.cwd()],
-        }));
+        let modulePath;
+        try {
+            modulePath = require.resolve(`${module}/package.json`, {
+                paths: [process.cwd()],
+            });
+        } catch (_) {
+            console.debug(`Module not found: ${module}`);
+            return; // Skip
+        }
+        const src = path.dirname(modulePath);
         const dest = path.join(browserModuleCache, module);
         try {
             await fs.remove(dest);
@@ -109,6 +116,10 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
             success = false;
         }
     }));
+    if (Object.keys(modulesJson).length === 0) {
+        console.debug('No module to rebuild.');
+        process.exit(0);
+    }
     // update manifest tracking the backups original locations
     await fs.writeJSON(modulesJsonPath, modulesJson, { spaces: 2 });
     // if we failed to process a module then exit now
