@@ -2178,7 +2178,7 @@ export namespace DebugAdapterNamedPipeServer {
  * A debug adapter descriptor for an inline implementation.
  */
 @es5ClassCompat
-export class DebugAdapterInlineImplementation implements DebugAdapterInlineImplementation {
+export class DebugAdapterInlineImplementation {
     implementation: theia.DebugAdapter;
 
     /**

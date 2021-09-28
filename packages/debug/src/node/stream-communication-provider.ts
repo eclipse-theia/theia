@@ -27,6 +27,7 @@ export class StreamCommunicationProvider extends DisposableCollection implements
     private closeEmitter = new Emitter<void>();
     onClose: Event<void> = this.closeEmitter.event;
 
+    // these constants are for the message header, see: https://microsoft.github.io/debug-adapter-protocol/overview#header-part
     private static TWO_CRLF = '\r\n\r\n';
     private static CONTENT_LENGTH = 'Content-Length';
     private contentLength: number = -1;
