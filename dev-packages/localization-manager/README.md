@@ -14,6 +14,7 @@
 
 The `@theia/localization-manager` package is used easily create localizations of Theia and Theia extensions for different languages. 
 Its main use case is to extract localization keys and default values from `nls.localize` calls within the codebase.
+Additionally, it uses the [DeepL API](https://www.deepl.com/docs-api) to automatically translate any missing localization values.
 
 ## Additional Information
 

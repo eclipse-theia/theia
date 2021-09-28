@@ -29,7 +29,10 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
+    "@types/bent": "^7.0.1",
     "@types/fs-extra": "^4.0.2",
+    "bent": "^7.1.0",
+    "colors": "^1.4.0",
     "deepmerge": "^4.2.2",
     "fs-extra": "^4.0.2",
     "glob": "^7.2.0",
