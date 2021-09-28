@@ -14,6 +14,14 @@
     "url": "https://github.com/eclipse-theia/theia/issues"
   },
   "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "native/src",
+    "native/binding.gyp",
+    "scripts",
+    "*.js",
+    "*.d.ts",
+    "!.eslintrc.js"
+  ],
   "bin": {
     "electron": "electron-cli.js",
     "electron-codecs-test": "electron-codecs-test.js",
