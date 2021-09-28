@@ -219,7 +219,7 @@
 }
 
 .theia-sidebar-menu > i.codicon-menu {
-  font-size: calc(var(--theia-private-sidebar-icon-size)*0.7);
+  font-size: 16px;
 }
 
 /*-----------------------------------------------------------------------------
