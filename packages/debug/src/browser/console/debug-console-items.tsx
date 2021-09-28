@@ -103,6 +103,10 @@ export class ExpressionContainer implements CompositeConsoleItem {
             const response = await this.session!.sendRequest('variables', { variablesReference, filter, start, count });
             const { variables } = response.body;
             const names = new Set<string>();
+            for (const item of result) {
+                const variable = item as DebugVariable
+                names.add(variable.name)
+            }
             for (const variable of variables) {
                 if (!names.has(variable.name)) {
                     result.push(new DebugVariable(this.sessionProvider, variable, this));
