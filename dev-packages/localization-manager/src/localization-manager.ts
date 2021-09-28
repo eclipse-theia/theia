@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import 'colors';
+import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Localization } from './common';
@@ -39,13 +39,13 @@ export class LocalizationManager {
         try {
             source = await fs.readJson(options.sourceFile);
         } catch {
-            console.log(`Could not read file "${options.sourceFile}"`.red);
+            console.log(chalk.red(`Could not read file "${options.sourceFile}"`));
             process.exit(1);
         }
         const languages: string[] = [];
         for (const targetLanguage of options.targetLanguages) {
             if (!isSupportedLanguage(targetLanguage)) {
-                console.log(`Language "${targetLanguage}" is not supported for automatic localization`.yellow);
+                console.log(chalk.yellow(`Language "${targetLanguage}" is not supported for automatic localization`));
             } else {
                 languages.push(targetLanguage);
             }
@@ -69,7 +69,7 @@ export class LocalizationManager {
             try {
                 await fs.writeFile(targetPath, JSON.stringify(existingTranslations.get(targetLanguage)!, undefined, 4));
             } catch {
-                console.error(`Error writing translated file to '${targetPath}'`.red);
+                console.error(chalk.red(`Error writing translated file to '${targetPath}'`));
             }
         }
     }
@@ -94,9 +94,9 @@ export class LocalizationManager {
                 translationResponse.translations.forEach(({ text }, i) => {
                     map.localize(i, text);
                 });
-                console.log(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}"`.green);
+                console.log(chalk.green(`Successfully translated ${map.text.length} value${map.text.length > 1 ? 's' : ''} for language "${targetLanguage}"`));
             } catch (e) {
-                console.log(`Could not translate into language "${targetLanguage}"`.red, e);
+                console.log(chalk.red(`Could not translate into language "${targetLanguage}"`), e);
             }
         } else {
             console.log(`No translation necessary for language "${targetLanguage}"`);
