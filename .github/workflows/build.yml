@@ -102,10 +102,19 @@ jobs:
       - name: Pre-npm-Publish
         run: |
           yarn --skip-integrity-check --network-timeout 100000
-          yarn compile
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Pre-docs-Publish
+        run: |
+          yarn docs
+
+      - name: Publish GH Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
 
       - name: Publish NPM
         uses: nick-invision/retry@v2
@@ -117,15 +126,3 @@ jobs:
           command: yarn publish:next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48
-
-      # TODO: RE-ENABLE TYPEDOCS!
-
-      # - name: Pre-docs-Publish
-      #   run: |
-      #     yarn docs
-
-      # - name: Publish GH Pages
-      #   uses: peaceiris/actions-gh-pages@v3
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: ./gh-pages
