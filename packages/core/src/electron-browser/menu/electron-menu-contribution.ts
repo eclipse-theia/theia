@@ -207,7 +207,10 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
             isEnabled: () => currentWindow.isFullScreenable(),
             isVisible: () => currentWindow.isFullScreenable(),
-            execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
+            execute: () => {
+                currentWindow.setFullScreen(!currentWindow.isFullScreen());
+                currentWindow.menuBarVisible = true; // Ensure menu remains visible on Linux
+            }
         });
     }
 
