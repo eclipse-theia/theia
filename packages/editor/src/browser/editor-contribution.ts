@@ -140,7 +140,6 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         });
         const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => new CurrentWidgetCommandAdapter(this.shell, {
             isEnabled: title => title?.owner instanceof EditorWidget,
-            isVisible: title => title?.owner instanceof EditorWidget,
             execute: async title => {
                 if (title?.owner instanceof EditorWidget) {
                     const selection = title.owner.editor.selection;

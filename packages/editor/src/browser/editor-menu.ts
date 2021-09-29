@@ -130,6 +130,43 @@ export class EditorMenuContribution implements MenuContribution {
             label: nls.localizeByDefault('Close Editor'),
             order: '1'
         });
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_RIGHT.id,
+            label: nls.localizeByDefault('Split Editor Right'),
+            order: '0'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_LEFT.id,
+            label: nls.localizeByDefault('Split Editor Left'),
+            order: '1'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_UP.id,
+            label: nls.localizeByDefault('Split Editor Up'),
+            order: '2'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_DOWN.id,
+            label: nls.localizeByDefault('Split Editor Down'),
+            order: '3'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_ORTHO, {
+            commandId: EditorCommands.SPLIT_EDITOR_HORIZONTAL.id,
+            label: nls.localize('theia/editor/splitHorizontal', 'Split Editor Horizontal'),
+            order: '1'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_EDITOR_SUBMENU_ORTHO, {
+            commandId: EditorCommands.SPLIT_EDITOR_VERTICAL.id,
+            label: nls.localize('theia/editor/splitVertical', 'Split Editor Vertical'),
+            order: '2'
+        });
+
+        registry.registerSubmenu(CommonMenus.VIEW_EDITOR_SUBMENU, nls.localizeByDefault('Editor Layout'));
     }
 
 }

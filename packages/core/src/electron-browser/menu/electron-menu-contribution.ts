@@ -68,7 +68,7 @@ export namespace ElectronCommands {
 
 export namespace ElectronMenus {
     export const VIEW_WINDOW = [...CommonMenus.VIEW, 'window'];
-    export const VIEW_ZOOM = [...CommonMenus.VIEW, 'zoom'];
+    export const VIEW_ZOOM = [...CommonMenus.VIEW_APPEARANCE_SUBMENU, '4_appearance_submenu_zoom'];
 }
 
 export namespace ElectronMenus {
@@ -363,6 +363,11 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
         registry.registerMenuAction(ElectronMenus.FILE_CLOSE, {
             commandId: ElectronCommands.CLOSE_WINDOW.id,
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_APPEARANCE_SUBMENU_SCREEN, {
+            commandId: ElectronCommands.TOGGLE_FULL_SCREEN.id,
+            label: nls.localizeByDefault('Full Screen'),
+            order: '0'
         });
     }
 }
