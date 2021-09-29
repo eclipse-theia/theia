@@ -13,6 +13,7 @@
 - [task] `TaskDefinition.properties.required` is now optional to align with the specification [#10015](https://github.com/eclipse-theia/theia/pull/10015)
 - [core] `setTopPanelVisibily` renamed to `setTopPanelVisibility` [#10020](https://github.com/eclipse-theia/theia/pull/10020)
 - [application-manager] break `rebuild` API: second argument is now an optional object instead of an optional array.
+- [core] added `PreferenceService` to constructor arguments of `StatusBarImpl`. [#10092](https://github.com/eclipse-theia/theia/pull/10092)
 
 ## v1.17.2 - 9/1/2021
 

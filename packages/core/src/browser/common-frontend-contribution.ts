@@ -217,6 +217,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     };
+    export const TOGGLE_STATUS_BAR: Command = {
+        id: 'workbench.action.toggleStatusbarVisibility',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Status Bar Visibility'
+    };
     export const TOGGLE_MAXIMIZED: Command = {
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
@@ -528,8 +533,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: '0'
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
+            commandId: CommonCommands.TOGGLE_STATUS_BAR.id,
+            order: '1',
+            label: 'Toggle Status Bar'
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
-            order: '1'
+            order: '2'
         });
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
@@ -770,6 +780,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     this.shell.expandPanel('bottom');
                 }
             }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_STATUS_BAR, {
+            execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
             isEnabled: (event?: Event) => this.canToggleMaximized(event),
