@@ -49,7 +49,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
     };
 
     // quick check whether test files exist
-    collectFiles(fileOptions);
+    const files = collectFiles(fileOptions);
 
     const page = await newPage();
     page.on('dialog', dialog => dialog.dismiss());
@@ -121,7 +121,6 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
             await onWillRun();
         }
 
-        const files = collectFiles(fileOptions);
         for (const file of files) {
             await page.addScriptTag({ path: file });
         }

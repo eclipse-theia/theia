@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { Disposable, MaybePromise, CancellationTokenSource } from '../common';
 import { Key } from './keyboard/keys';
-import { Widget, BaseWidget, Message, addKeyListener } from './widgets';
+import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './widgets';
 import { FrontendApplicationContribution } from './frontend-application';
 
 @injectable()
@@ -168,8 +168,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         titleContentNode.appendChild(this.titleNode);
 
         this.closeCrossNode = document.createElement('i');
-        this.closeCrossNode.classList.add('fa');
-        this.closeCrossNode.classList.add('fa-times');
+        this.closeCrossNode.classList.add(...codiconArray('close'));
         this.closeCrossNode.classList.add('closeButton');
         titleContentNode.appendChild(this.closeCrossNode);
 
@@ -406,6 +405,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField = document.createElement('input');
         this.inputField.type = 'text';
         this.inputField.className = 'theia-input';
+        this.inputField.spellcheck = false;
         this.inputField.setAttribute('style', 'flex: 0;');
         this.inputField.value = props.initialValue || '';
         if (props.initialSelectionRange) {

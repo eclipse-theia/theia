@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
-import { DISABLED_CLASS } from '@theia/core/lib/browser';
+import { codiconArray, DISABLED_CLASS } from '@theia/core/lib/browser';
 
 export class DebugAction extends React.Component<DebugAction.Props> {
 
     render(): React.ReactNode {
         const { enabled, label, iconClass } = this.props;
-        const classNames = ['debug-action', 'theia-debug-' + iconClass];
+        const classNames = ['debug-action', ...codiconArray(iconClass, true)];
         if (enabled === false) {
             classNames.push(DISABLED_CLASS);
         }

@@ -73,7 +73,7 @@ export class ProgressStatusBarItem implements ProgressClient {
             this.statusBar.removeElement(this.id);
             return;
         }
-        const text = `$(refresh~spin) ${message}`;
+        const text = `$(codicon-sync~spin) ${message}`;
         this.statusBar.setElement(this.id, {
             text,
             alignment: StatusBarAlignment.LEFT,

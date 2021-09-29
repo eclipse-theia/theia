@@ -18,15 +18,17 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CancellationTokenSource, CancellationToken, checkCancelled, cancelled } from '@theia/core/lib/common/cancellation';
+import { CancellationTokenSource, CancellationToken, checkCancelled, cancelled, isCancelled } from '@theia/core/lib/common/cancellation';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Progress } from '@theia/core/lib/common/message-service-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-
 import throttle = require('@theia/core/shared/lodash.throttle');
+import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
+import { Semaphore } from 'async-mutex';
+import { FileSystemPreferences } from './filesystem-preferences';
 
-const maxChunkSize = 64 * 1024;
+export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
 export interface FileUploadParams {
     source?: DataTransfer
@@ -47,10 +49,19 @@ export class FileUploadService {
     static TARGET = 'target';
     static UPLOAD = 'upload';
 
+    protected uploadForm: FileUploadService.Form;
+    protected deferredUpload?: Deferred<FileUploadResult>;
+
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    protected uploadForm: FileUploadService.Form;
+    @inject(FileSystemPreferences)
+    protected fileSystemPreferences: FileSystemPreferences;
+
+    get maxConcurrentUploads(): number {
+        const maxConcurrentUploads = this.fileSystemPreferences['files.maxConcurrentUploads'];
+        return maxConcurrentUploads > 0 ? maxConcurrentUploads : Infinity;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -60,6 +71,7 @@ export class FileUploadService {
     protected createUploadForm(): FileUploadService.Form {
         const targetInput = document.createElement('input');
         targetInput.type = 'text';
+        targetInput.spellcheck = false;
         targetInput.name = FileUploadService.TARGET;
         targetInput.classList.add('theia-input');
 
@@ -79,7 +91,7 @@ export class FileUploadService {
 
         fileInput.addEventListener('change', () => {
             if (this.deferredUpload && fileInput.value) {
-                const source = new FormData(form);
+                const source: FileUploadService.Source = new FormData(form);
                 // clean up to allow upload to the same folder twice
                 fileInput.value = '';
                 const targetUri = new URI(<string>source.get(FileUploadService.TARGET));
@@ -87,20 +99,24 @@ export class FileUploadService {
                 this.deferredUpload = undefined;
                 const { onDidUpload } = this.uploadForm;
                 this.withProgress(
-                    (progress, token) => this.doUpload(targetUri, { source, progress, token, onDidUpload }),
-                    this.uploadForm.progress).then(resolve, reject);
+                    (progress, token) => this.uploadAll(targetUri, { source, progress, token, onDidUpload }),
+                    this.uploadForm.progress
+                ).then(resolve, reject);
             }
         });
         return { targetInput, fileInput };
     }
 
-    protected deferredUpload: Deferred<FileUploadResult> | undefined;
     async upload(targetUri: string | URI, params: FileUploadParams = {}): Promise<FileUploadResult> {
         const { source, onDidUpload } = params;
         if (source) {
             return this.withProgress(
-                (progress, token) => this.doUpload(new URI(String(targetUri)), { source, progress, token, onDidUpload }),
-                params.progress);
+                (progress, token) => this.uploadAll(
+                    typeof targetUri === 'string' ? new URI(targetUri) : targetUri,
+                    { source, progress, token, onDidUpload }
+                ),
+                params.progress,
+            );
         }
         this.deferredUpload = new Deferred<FileUploadResult>();
         this.uploadForm.targetInput.value = String(targetUri);
@@ -110,130 +126,230 @@ export class FileUploadService {
         return this.deferredUpload.promise;
     }
 
-    protected async doUpload(targetUri: URI, { source, progress, token, onDidUpload }: FileUploadService.UploadParams): Promise<FileUploadResult> {
-        const result: FileUploadResult = { uploaded: [] };
-        let total = 0;
-        let done = 0;
-        let totalFiles = 0;
-        let doneFiles = 0;
-        const reportProgress = throttle(() => progress.report({
-            message: `${doneFiles} out of ${totalFiles}`,
-            work: { done, total }
-        }), 60);
-        const deferredUpload = new Deferred<FileUploadResult>();
-        const endpoint = new Endpoint({ path: '/file-upload' });
-        const socketOpen = new Deferred<void>();
-        const socket = new WebSocket(endpoint.getWebSocketUrl().toString());
-        socket.onerror = e => {
-            socketOpen.reject(e);
-            deferredUpload.reject(e);
-        };
-        socket.onclose = ({ code, reason }) => deferredUpload.reject(new Error(String(reason || code)));
-        socket.onmessage = ({ data }) => {
-            const response = JSON.parse(data);
-            if (response.uri) {
-                doneFiles++;
-                result.uploaded.push(response.uri);
-                reportProgress();
-                if (onDidUpload) {
-                    onDidUpload(response.uri);
-                }
-                return;
-            }
-            if (response.done) {
-                done = response.done;
-                reportProgress();
-                return;
-            }
-            if (response.ok) {
-                deferredUpload.resolve(result);
-            } else if (response.error) {
-                deferredUpload.reject(new Error(response.error));
-            } else {
-                console.error('unknown upload response: ' + response);
-            }
-            socket.close();
-        };
-        socket.onopen = () => socketOpen.resolve();
-        const rejectAndClose = (e: Error) => {
-            deferredUpload.reject(e);
-            if (socket.readyState === 1) {
-                socket.close();
-            }
-        };
-        token.onCancellationRequested(() => rejectAndClose(cancelled()));
-        try {
-            let queue = Promise.resolve();
-            await this.index(targetUri, source, {
-                token,
-                progress,
-                accept: async ({ uri, file }) => {
-                    total += file.size;
-                    totalFiles++;
-                    reportProgress();
-                    queue = queue.then(async () => {
-                        try {
-                            await socketOpen.promise;
-                            checkCancelled(token);
-                            let readBytes = 0;
-                            socket.send(JSON.stringify({ uri: uri.toString(), size: file.size }));
-                            if (file.size) {
-                                do {
-                                    const fileSlice = await this.readFileSlice(file, readBytes);
-                                    checkCancelled(token);
-                                    readBytes = fileSlice.read;
-                                    socket.send(fileSlice.content);
-                                    while (socket.bufferedAmount > maxChunkSize * 2) {
-                                        await new Promise(resolve => setImmediate(resolve));
-                                        checkCancelled(token);
-                                    }
-                                } while (readBytes < file.size);
-                            }
-                        } catch (e) {
-                            rejectAndClose(e);
-                        }
-                    });
-                }
-            });
-            await queue;
-            await socketOpen.promise;
-            socket.send(JSON.stringify({ ok: true }));
-        } catch (e) {
-            rejectAndClose(e);
-        }
-        return deferredUpload.promise;
+    protected getUploadUrl(): string {
+        return HTTP_UPLOAD_URL;
     }
 
-    protected readFileSlice(file: File, read: number): Promise<{
-        content: ArrayBuffer
-        read: number
-    }> {
-        return new Promise((resolve, reject) => {
-            const bytesLeft = file.size - read;
-            if (!bytesLeft) {
-                reject(new Error('nothing to read'));
-                return;
+    protected async uploadAll(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
+        const responses: Promise<void>[] = [];
+        const status = new Map<File, {
+            total: number
+            done: number
+            uploaded?: boolean
+        }>();
+        const result: FileUploadResult = {
+            uploaded: []
+        };
+        /**
+         * When `false`: display the uploading progress.
+         * When `true`: display the server-processing progress.
+         */
+        let waitingForResponses = false;
+        const report = throttle(() => {
+            if (waitingForResponses) {
+                /** Number of files being processed. */
+                const total = status.size;
+                /** Number of files uploaded and processed. */
+                let done = 0;
+                for (const item of status.values()) {
+                    if (item.uploaded) {
+                        done += 1;
+                    }
+                }
+                params.progress.report({
+                    message: `Processed ${done} out of ${total}`,
+                    work: { total, done }
+                });
+            } else {
+                /** Total number of bytes being uploaded. */
+                let total = 0;
+                /** Current number of bytes uploaded. */
+                let done = 0;
+                for (const item of status.values()) {
+                    total += item.total;
+                    done += item.done;
+                }
+                params.progress.report({
+                    message: `Uploaded ${result.uploaded.length} out of ${status.size}`,
+                    work: { total, done }
+                });
             }
-            const size = Math.min(maxChunkSize, bytesLeft);
-            const slice = file.slice(read, read + size);
-            const reader = new FileReader();
-            reader.onload = () => {
-                read += size;
-                const content = reader.result as ArrayBuffer;
-                resolve({ content, read });
-            };
-            reader.onerror = reject;
-            reader.readAsArrayBuffer(slice);
+        }, 100);
+        const uploads: Promise<void>[] = [];
+        const uploadSemaphore = new Semaphore(this.maxConcurrentUploads);
+        try {
+            await this.index(targetUri, params.source, {
+                token: params.token,
+                progress: params.progress,
+                accept: async item => {
+                    // Track and initialize the file in the status map:
+                    status.set(item.file, { total: item.file.size, done: 0 });
+                    report();
+                    // Don't await here: the semaphore will organize the uploading tasks, not the async indexer.
+                    uploads.push(uploadSemaphore.runExclusive(async () => {
+                        checkCancelled(params.token);
+                        const { upload, response } = this.uploadFile(item.file, item.uri, params.token, (total, done) => {
+                            const entry = status.get(item.file);
+                            if (entry) {
+                                entry.total = total;
+                                entry.done = done;
+                                report();
+                            }
+                        });
+                        function onError(error: Error): void {
+                            status.delete(item.file);
+                            throw error;
+                        }
+                        responses.push(response
+                            .then(() => {
+                                checkCancelled(params.token);
+                                // Consider the file uploaded once the server sends OK back.
+                                result.uploaded.push(item.uri.toString(true));
+                                const entry = status.get(item.file);
+                                if (entry) {
+                                    entry.uploaded = true;
+                                    report();
+                                }
+                            })
+                            .catch(onError)
+                        );
+                        // Have the queue wait for the upload only.
+                        return upload
+                            .catch(onError);
+                    }));
+                }
+            });
+            checkCancelled(params.token);
+            await Promise.all(uploads);
+            checkCancelled(params.token);
+            waitingForResponses = true;
+            report();
+            await Promise.all(responses);
+        } catch (error) {
+            uploadSemaphore.cancel();
+            if (!isCancelled(error)) {
+                throw error;
+            }
+        }
+        return result;
+    }
+
+    protected uploadFile(
+        file: File,
+        targetUri: URI,
+        token: CancellationToken,
+        onProgress: (total: number, done: number) => void
+    ): {
+        /**
+         * Promise that resolves once the uploading is finished.
+         *
+         * Rejects on network error.
+         * Rejects if status is not OK (200).
+         * Rejects if cancelled.
+         */
+        upload: Promise<void>
+        /**
+         * Promise that resolves after the uploading step, once the server answers back.
+         *
+         * Rejects on network error.
+         * Rejects if status is not OK (200).
+         * Rejects if cancelled.
+         */
+        response: Promise<void>
+    } {
+        const data = new FormData();
+        data.set('uri', targetUri.toString(true));
+        data.set('file', file);
+        // TODO: Use Fetch API once it supports upload monitoring.
+        const xhr = new XMLHttpRequest();
+        token.onCancellationRequested(() => xhr.abort());
+        const upload = new Promise<void>((resolve, reject) => {
+            this.registerEvents(xhr.upload, unregister => ({
+                progress: (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
+                    if (event.total === event.loaded) {
+                        unregister();
+                        resolve();
+                    } else {
+                        onProgress(event.total, event.loaded);
+                    }
+                },
+                abort: () => {
+                    unregister();
+                    reject(cancelled());
+                },
+                error: () => {
+                    unregister();
+                    reject(new Error('POST upload error'));
+                },
+                // `load` fires once the response is received, not when the upload is finished.
+                // `resolve` should be called earlier within `progress` but this is a safety catch.
+                load: () => {
+                    unregister();
+                    if (xhr.status === 200) {
+                        resolve();
+                    } else {
+                        reject(new Error(`POST request failed: ${xhr.status} ${xhr.statusText}`));
+                    }
+                },
+            }));
         });
+        const response = new Promise<void>((resolve, reject) => {
+            this.registerEvents(xhr, unregister => ({
+                abort: () => {
+                    unregister();
+                    reject(cancelled());
+                },
+                error: () => {
+                    unregister();
+                    reject(new Error('POST request error'));
+                },
+                load: () => {
+                    unregister();
+                    if (xhr.status === 200) {
+                        resolve();
+                    } else {
+                        reject(new Error(`POST request failed: ${xhr.status} ${xhr.statusText}`));
+                    }
+                }
+            }));
+        });
+        xhr.open('POST', this.getUploadUrl(), /* async: */ true);
+        xhr.send(data);
+        return {
+            upload,
+            response
+        };
+    }
+
+    /**
+     * Utility function to attach events and get a callback to unregister those.
+     *
+     * You may not call `unregister` in the same tick as `register` is invoked.
+     */
+    protected registerEvents(
+        target: EventTarget,
+        register: (unregister: () => void) => Record<string, EventListenerOrEventListenerObject>
+    ): void {
+        const events = register(() => {
+            for (const [event, fn] of Object.entries(events)) {
+                target.removeEventListener(event, fn);
+            }
+        });
+        for (const [event, fn] of Object.entries(events)) {
+            target.addEventListener(event, fn);
+        }
     }
 
     protected async withProgress<T>(
         cb: (progress: Progress, token: CancellationToken) => Promise<T>,
-        { text }: FileUploadProgressParams = { text: 'Uploading Files...' }
+        { text }: FileUploadProgressParams = { text: 'Uploading Files' }
     ): Promise<T> {
         const cancellationSource = new CancellationTokenSource();
         const { token } = cancellationSource;
-        const progress = await this.messageService.showProgress({ text, options: { cancelable: true } }, () => cancellationSource.cancel());
+        const progress = await this.messageService.showProgress(
+            { text, options: { cancelable: true } },
+            () => cancellationSource.cancel()
+        );
         try {
             return await cb(progress, token);
         } finally {
@@ -250,9 +366,9 @@ export class FileUploadService {
     }
 
     protected async indexFormData(targetUri: URI, formData: FormData, context: FileUploadService.Context): Promise<void> {
-        for (const file of formData.getAll(FileUploadService.UPLOAD)) {
-            if (file instanceof File) {
-                await this.indexFile(targetUri, file, context);
+        for (const entry of formData.getAll(FileUploadService.UPLOAD)) {
+            if (entry instanceof File) {
+                await this.indexFile(targetUri, entry, context);
             }
         }
     }

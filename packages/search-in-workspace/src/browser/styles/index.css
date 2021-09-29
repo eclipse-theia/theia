@@ -89,18 +89,6 @@
     opacity: 1;
 }
 
-.t-siw-search-container .searchHeader .search-field .option.match-case {
-    background-image: var(--theia-icon-case-sensitive);
-}
-
-.t-siw-search-container .searchHeader .search-field .option.whole-word {
-    background-image: var(--theia-icon-whole-word);
-}
-
-.t-siw-search-container .searchHeader .search-field .option.use-regexp {
-    background-image: var(--theia-icon-regex);
-}
-
 .t-siw-search-container .searchHeader .search-field .option-buttons {
     height: 23px;
     display: flex;
@@ -176,17 +164,13 @@
     right:0;
 }
 
-.t-siw-search-container .searchHeader .search-details .button-container .btn{
-    cursor: pointer;
-}
-
 .t-siw-search-container .searchHeader .glob-field-container.hidden {
     display: none;
 }
 
 .t-siw-search-container .searchHeader .glob-field-container .glob-field {
     margin-bottom: 8px;
-    margin-left: 14px;
+    margin-left: 18px;
     display: flex;
     flex-direction: column;
 }
@@ -287,10 +271,6 @@
     display: none;
 }
 
-.result-node-buttons .remove-node {
-    background-image: var(--theia-icon-close);
-}
-
 .result-node-buttons > span {
     width: 15px;
     height: 15px;
@@ -308,20 +288,24 @@
 .replace-toggle {
     display: flex;
     align-items:  center;
-    width: 15px;
-    min-width: 15px;
+    width: 16px;
+    min-width: 16px;
     justify-content: center;
-    margin-right: 1px;
+    margin-right: 2px;
     box-sizing: border-box;
 }
 
 .theia-side-panel .replace-toggle {
-    width: 13px;
-    min-width: 13px;
+    width: 16px;
+    min-width: 16px;
+}
+
+.theia-side-panel .replace-toggle .codicon {
+    padding: 0px;
 }
 
 .replace-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(50%, 50%, 50%, 0.2);
 }
 
 .search-and-replace-fields {
@@ -346,14 +330,6 @@
     justify-content:  center;
 }
 
-.replace-all-button {
-    width:  100%;
-    height: 100%;
-    display: inline-block;
-    background: var(--theia-icon-replace-all) no-repeat center;
-    cursor: pointer;
-}
-
 .result-node-buttons .replace-result {
     background-image: var(--theia-icon-replace);
 }
@@ -361,14 +337,10 @@
     background-image: var(--theia-icon-replace-all);
 }
 
-.replace-all-button.disabled {
-    opacity: var(--theia-mod-disabled-opacity);;
+.replace-all-button-container .action-item.disabled {
+    opacity: var(--theia-mod-disabled-opacity);
+    background: transparent;
     cursor: default;
-}
-
-.search-in-workspace-tab-icon {
-    -webkit-mask: url('search.svg');
-    mask: url('search.svg');
 }
 
 .highlighted-count-container {

@@ -167,7 +167,9 @@ export enum CompletionItemKind {
     Customcolor = 22,
     Folder = 23,
     TypeParameter = 24,
-    Snippet = 25
+    User = 25,
+    Issue = 26,
+    Snippet = 27
 }
 
 export class IdObject {
@@ -521,6 +523,7 @@ export interface CallHierarchyDefinition {
     uri: UriComponents;
     range: Range;
     selectionRange: Range;
+    tags?: readonly SymbolTag[];
 }
 
 export interface CallHierarchyReference {
@@ -538,6 +541,7 @@ export interface CallHierarchyItem {
     uri: UriComponents;
     range: Range;
     selectionRange: Range;
+    tags?: readonly SymbolTag[];
 }
 
 export interface CallHierarchyIncomingCall {

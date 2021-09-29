@@ -65,6 +65,10 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         if (FileStat.is(element)) {
             return URIIconReference.create(element.isDirectory ? 'folder' : 'file', element.resource);
         }
+        const uri = this.getUri(element);
+        if (uri && this.workspaceVariable.getWorkspaceRootUri(uri)?.isEqual(uri)) {
+            return URIIconReference.create('folder', uri);
+        }
         return element;
     }
 

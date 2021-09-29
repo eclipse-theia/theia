@@ -126,7 +126,7 @@
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
-    padding: 8px 4px 0px 4px;
+    padding: 5px 4px 7px 4px;
 }
 
 .theia-notification-message {
@@ -140,6 +140,7 @@
     display: block;
     overflow: hidden;
     user-select: text;
+    margin-top: 3px;
 }
 
 .theia-notification-message a {
@@ -153,26 +154,23 @@
 }
 
 .theia-notification-icon {
-    font-family: FontAwesome;
-    display: inline-block;
-    padding-right: 4px;
-    vertical-align: middle;
-    width: 24px;
-    height: 24px;
+    margin-top: 1px;
 }
 
-.theia-notification-icon-info:before {
-    content: "\f05a";
+.theia-notification-icon:before {
+    font-size: 18px;
+    padding-right: 4px;
+}
+
+.theia-notification-icon.info:before {
     color: var(--theia-notificationsInfoIcon-foreground);
 }
 
-.theia-notification-icon-warning:before {
-    content: "\f071";
+.theia-notification-icon.warning:before {
     color: var(--theia-notificationsWarningIcon-foreground);
 }
 
-.theia-notification-icon-error:before {
-    content: "\f057";
+.theia-notification-icon.error:before {
     color: var(--theia-notificationsErrorIcon-foreground);
 }
 
@@ -190,25 +188,10 @@
     height: 16px;
     width: 16px;
     cursor: pointer;
-    margin-left: 8px;
-}
-
-.theia-notification-actions > .clear-all {
-    background: var(--theia-icon-close-all) no-repeat center center;
-}
-.theia-notification-actions > .clear-all:active {
-    transform: scale(1.1);
-}
-
-.theia-notification-actions > .clear {
-    background: var(--theia-icon-close) no-repeat center center;
-}
-.theia-notification-actions > .clear:active {
-    transform: scale(1.2);
+    margin-left: 4px;
 }
 
 .theia-notification-actions > .expand {
-    background: var(--theia-icon-collapse) no-repeat center center;
     transform: rotate(0deg) scale(1.5);
 }
 .theia-notification-actions > .expand:active {
@@ -216,11 +199,10 @@
 }
 
 .theia-notification-actions > .collapse {
-    background: var(--theia-icon-collapse) no-repeat center center;
-    transform: rotate(90deg) scale(1.5);
+    transform: rotate(-90deg) scale(1.5);
 }
 .theia-notification-actions > .collapse:active {
-    transform: rotate(90deg) scale(1.8);
+    transform: rotate(-90deg) scale(1.8);
 }
 
 .theia-notification-list-item-content-bottom {

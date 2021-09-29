@@ -76,10 +76,8 @@ export class SidePanelToolbar extends BaseWidget {
         if (!this.toolbar) {
             return;
         }
-        const current = this._toolbarTitle;
-        const widget = current && current.owner || undefined;
-        const items = widget ? this.tabBarToolbarRegistry.visibleItems(widget) : [];
-        this.toolbar.updateItems(items, widget);
+        const widget = this._toolbarTitle?.owner ?? undefined;
+        this.toolbar.updateTarget(widget);
     }
 
     protected init(): void {

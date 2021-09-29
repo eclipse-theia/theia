@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -17,7 +17,7 @@
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
     "@primer/octicons-react": "^9.0.0",
-    "@theia/application-package": "1.16.0",
+    "@theia/application-package": "1.17.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
@@ -32,6 +32,7 @@
     "@types/safer-buffer": "^2.1.0",
     "@types/ws": "^5.1.2",
     "@types/yargs": "^15",
+    "@vscode/codicons": "^0.0.21",
     "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
     "cookie": "^0.4.0",
@@ -44,7 +45,7 @@
     "fs-extra": "^4.0.2",
     "fuzzy": "^0.1.3",
     "iconv-lite": "^0.6.0",
-    "inversify": "^5.0.1",
+    "inversify": "^5.1.1",
     "jschardet": "^2.1.1",
     "keytar": "7.2.0",
     "lodash.debounce": "^4.0.8",
@@ -68,7 +69,7 @@
     "yargs": "^15.3.1"
   },
   "peerDependencies": {
-    "@theia/electron": "1.10.0"
+    "@theia/electron": "*"
   },
   "peerDependenciesMeta": {
     "@theia/electron": {
@@ -115,6 +116,10 @@
   },
   "theiaExtensions": [
     {
+      "frontend": "lib/browser/i18n/i18n-frontend-module",
+      "backend": "lib/node/i18n/i18n-backend-module"
+    },
+    {
       "frontend": "lib/browser/menu/browser-menu-module",
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
     },
@@ -154,16 +159,17 @@
     "src"
   ],
   "scripts": {
-    "prepare": "node scripts/generate-shared.js",
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "generate-layout": "electron ./scripts/generate-layout",
+    "lint": "theiaext lint",
+    "prepare": "node scripts/generate-shared.js",
     "test": "theiaext test",
-    "generate-layout": "electron ./scripts/generate-layout"
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.16.0",
+    "@theia/ext-scripts": "1.17.0",
     "minimist": "^1.2.0"
   },
   "nyc": {

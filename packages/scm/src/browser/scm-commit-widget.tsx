@@ -71,6 +71,9 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
             this.toDisposeOnRepositoryChange.push(repository.provider.onDidChange(async () => {
                 this.update();
             }));
+            this.toDisposeOnRepositoryChange.push(repository.provider.onDidChangeCommitTemplate(e => {
+                this.setInputValue(e);
+            }));
         }
     }
 
@@ -132,6 +135,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
                 className={`${ScmCommitWidget.Styles.INPUT_MESSAGE} theia-input theia-scm-input-message-${validationStatus}`}
                 id={ScmCommitWidget.Styles.INPUT_MESSAGE}
                 placeholder={message}
+                spellCheck={false}
                 autoFocus={true}
                 value={input.value}
                 onChange={this.setInputValue}

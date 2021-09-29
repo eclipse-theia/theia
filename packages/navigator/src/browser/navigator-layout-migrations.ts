@@ -51,3 +51,15 @@ export class NavigatorLayoutVersion3Migration implements ApplicationShellLayoutM
         return undefined;
     }
 }
+
+@injectable()
+export class NavigatorLayoutVersion5Migration implements ApplicationShellLayoutMigration {
+    readonly layoutVersion = 5.0;
+    onWillInflateWidget(desc: WidgetDescription): WidgetDescription | undefined {
+        if (desc.constructionOptions.factoryId === EXPLORER_VIEW_CONTAINER_ID && typeof desc.innerWidgetState === 'string') {
+            desc.innerWidgetState = desc.innerWidgetState.replace(/navigator-tab-icon/g, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS.iconClass!);
+            return desc;
+        }
+        return undefined;
+    }
+}

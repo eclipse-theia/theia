@@ -17,13 +17,17 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CorePreferences, Key, TreeModel, SelectableTreeNode } from '@theia/core/lib/browser';
+import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
+import {
+    CorePreferences, Key, TreeModel, SelectableTreeNode,
+    TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
+    TreeDecoration, NodeProps, OpenerService
+} from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeNode
 } from '@theia/core/lib/browser';
-import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
+import { FileTreeWidget, FileNode, DirNode, FileStatNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -45,6 +49,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
     @inject(NavigatorContextKeyService)
     protected readonly contextKeyService: NavigatorContextKeyService;
 
+    @inject(OpenerService) protected readonly openerService: OpenerService;
+
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
@@ -62,6 +68,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
     @postConstruct()
     protected init(): void {
         super.init();
+        // This ensures that the context menu command to hide this widget receives the label 'Folders'
+        // regardless of the name of workspace. See ViewContainer.updateToolbarItems.
+        const dataset = { ...this.title.dataset, visibilityCommandLabel: 'Folders' };
+        this.title.dataset = dataset;
         this.updateSelectionContextKeys();
         this.toDispose.pushAll([
             this.model.onSelectionChanged(() =>
@@ -102,13 +112,20 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
             const treeNodes = dataTransfer && this.getSelectedTreeNodesFromData(dataTransfer) || [];
-            treeNodes.filter(FileNode.is).forEach(treeNode => {
-                if (!SelectableTreeNode.isSelected(treeNode)) {
-                    this.model.toggleNode(treeNode);
-                }
-            });
             if (treeNodes.length > 0) {
+                treeNodes.filter(FileNode.is).forEach(treeNode => {
+                    if (!SelectableTreeNode.isSelected(treeNode)) {
+                        this.model.toggleNode(treeNode);
+                    }
+                });
                 this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
+            } else if (dataTransfer && dataTransfer.files?.length > 0) {
+                // the files were dragged from the outside the workspace
+                Array.from(dataTransfer.files).forEach(async file => {
+                    const fileUri = new URI(file.path);
+                    const opener = await this.openerService.getOpener(fileUri);
+                    opener.open(fileUri);
+                });
             }
         });
         const handler = (e: DragEvent) => {
@@ -137,6 +154,36 @@ export class FileNavigatorWidget extends FileTreeWidget {
             return this.renderEmptyMultiRootWorkspace();
         }
         return super.renderTree(model);
+    }
+
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
+        const tailDecorations = this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+
+        if (tailDecorations.length === 0) {
+            return;
+        }
+
+        // Handle rendering of directories versus file nodes.
+        if (FileStatNode.is(node) && node.fileStat.isDirectory) {
+            return this.renderTailDecorationsForDirectoryNode(node, props, tailDecorations);
+        } else {
+            return this.renderTailDecorationsForNode(node, props, tailDecorations);
+        }
+    }
+
+    protected renderTailDecorationsForDirectoryNode(node: TreeNode, props: NodeProps, tailDecorations:
+        (TreeDecoration.TailDecoration | TreeDecoration.TailDecorationIcon | TreeDecoration.TailDecorationIconClass)[]): React.ReactNode {
+        // If the node represents a directory, we just want to use the decorationData with the highest priority (last element).
+        const decoration = tailDecorations[tailDecorations.length - 1];
+        const { tooltip, fontData } = decoration as TreeDecoration.TailDecoration;
+        const color = (decoration as TreeDecoration.TailDecorationIcon).color;
+        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
+        const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
+        const content = <span className={this.getIconClass('circle', [TreeDecoration.Styles.DECORATOR_SIZE_CLASS])}></span>;
+
+        return <div className={className} style={style} title={tooltip}>
+            {content}
+        </div>;
     }
 
     protected shouldShowWelcomeView(): boolean {

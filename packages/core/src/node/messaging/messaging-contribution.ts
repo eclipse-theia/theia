@@ -33,6 +33,9 @@ import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
+import { HttpWebsocketAdapter, HttpWebsocketAdapterFactory } from './http-websocket-adapter';
+import { Application } from 'express';
+import { json } from 'body-parser';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -54,9 +57,13 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     @inject(MessagingListener)
     protected readonly messagingListener: MessagingListener;
 
+    @inject(HttpWebsocketAdapterFactory)
+    protected readonly httpWebsocketAdapterFactory: () => HttpWebsocketAdapter;
+
     protected webSocketServer: ws.Server | undefined;
-    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
+    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws | HttpWebsocketAdapter>();
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
+    protected readonly httpWebsocketAdapters = new Map<string, HttpWebsocketAdapter>();
 
     @postConstruct()
     protected init(): void {
@@ -115,7 +122,45 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 socket.alive = false;
                 socket.ping();
             });
+            this.httpWebsocketAdapters.forEach((adapter, id) => {
+                if (adapter.alive === false) {
+                    this.httpWebsocketAdapters.delete(id);
+                    adapter.onclose();
+                    return;
+                }
+                adapter.alive = false;
+            });
         }, this.checkAliveTimeout);
+    }
+
+    configure(app: Application): void {
+        interface HttpRequestBody {
+            id?: string,
+            polling?: boolean,
+            content?: string
+        }
+        app.use(json({ limit: '50mb' }));
+        app.use(async (req, res, next) => {
+            const body: HttpRequestBody = req.body;
+            if (body && typeof body.id === 'string') {
+                let adapter = this.httpWebsocketAdapters.get(body.id);
+                if (!adapter) {
+                    adapter = this.httpWebsocketAdapterFactory();
+                    this.httpWebsocketAdapters.set(body.id, adapter);
+                    this.handleConnection(adapter, req);
+                }
+                if (typeof body.polling === 'boolean' && body.polling) {
+                    res.send(await adapter.getPendingMessages());
+                } else {
+                    if (typeof body.content === 'string') {
+                        adapter.onmessage(body.content);
+                    }
+                    // Send empty message array
+                    res.send([]);
+                }
+            }
+            next();
+        });
     }
 
     /**
@@ -140,7 +185,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         });
     }
 
-    protected handleConnection(socket: ws, request: http.IncomingMessage): void {
+    protected handleConnection(socket: ws | HttpWebsocketAdapter, request: http.IncomingMessage): void {
         const pathname = request.url && url.parse(request.url).pathname;
         if (pathname && !this.wsHandlers.route(pathname, socket)) {
             console.error('Cannot find a ws handler for the path: ' + pathname);

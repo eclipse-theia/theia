@@ -74,12 +74,18 @@ export class DebugConfigurationManager {
     protected readonly onWillProvideDebugConfigurationEmitter = new Emitter<WillProvideDebugConfiguration>();
     readonly onWillProvideDebugConfiguration: Event<WillProvideDebugConfiguration> = this.onWillProvideDebugConfigurationEmitter.event;
 
+    protected readonly onWillProvideDynamicDebugConfigurationEmitter = new Emitter<WillProvideDebugConfiguration>();
+    get onWillProvideDynamicDebugConfiguration(): Event<WillProvideDebugConfiguration> {
+        return this.onWillProvideDynamicDebugConfigurationEmitter.event;
+    }
+
     protected debugConfigurationTypeKey: ContextKey<string>;
 
     protected initialized: Promise<void>;
     @postConstruct()
     protected async init(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
+        await this.preferences.ready;
         this.initialized = this.updateModels();
         this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'launch') {
@@ -149,8 +155,8 @@ export class DebugConfigurationManager {
         this.updateCurrent(option);
     }
     protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
-        this._currentOptions = options
-            && this.find(options.configuration.name, options.workspaceFolderUri);
+        this._currentOptions = options && !options.configuration.dynamic ? this.find(options.configuration.name, options.workspaceFolderUri) : options;
+
         if (!this._currentOptions) {
             const { model } = this;
             if (model) {
@@ -302,6 +308,15 @@ export class DebugConfigurationManager {
     }
     protected async fireWillProvideDebugConfiguration(): Promise<void> {
         await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
+    }
+
+    async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
+        await this.fireWillProvideDynamicDebugConfiguration();
+        return this.debug.provideDynamicDebugConfigurations!();
+    }
+
+    protected async fireWillProvideDynamicDebugConfiguration(): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillProvideDynamicDebugConfigurationEmitter, {});
     }
 
     protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {

@@ -20,25 +20,37 @@ import * as cp from 'child_process';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
+import { GeneratorOptions } from './generator/abstract-generator';
+import yargs = require('yargs');
 
 export class ApplicationPackageManager {
+
+    static defineGeneratorOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
+        mode: 'development' | 'production'
+        splitFrontend?: boolean
+    }> {
+        return cli
+            .option('mode', {
+                description: 'Generation mode to use',
+                choices: ['development', 'production'],
+                default: 'production' as const,
+            })
+            .option('split-frontend', {
+                description: 'Split frontend modules into separate chunks. By default enabled in the `development` mode and disabled in the `production` mode.',
+                type: 'boolean'
+            });
+    }
 
     readonly pck: ApplicationPackage;
     /** application process */
     readonly process: ApplicationProcess;
     /** manager process */
     protected readonly __process: ApplicationProcess;
-    protected readonly webpack: WebpackGenerator;
-    protected readonly backend: BackendGenerator;
-    protected readonly frontend: FrontendGenerator;
 
     constructor(options: ApplicationPackageOptions) {
         this.pck = new ApplicationPackage(options);
         this.process = new ApplicationProcess(this.pck, options.projectPath);
         this.__process = new ApplicationProcess(this.pck, path.join(__dirname, '..'));
-        this.webpack = new WebpackGenerator(this.pck);
-        this.backend = new BackendGenerator(this.pck);
-        this.frontend = new FrontendGenerator(this.pck);
     }
 
     protected async remove(fsPath: string): Promise<void> {
@@ -48,15 +60,19 @@ export class ApplicationPackageManager {
     }
 
     async clean(): Promise<void> {
-        await this.remove(this.pck.lib());
-        await this.remove(this.pck.srcGen());
-        await this.remove(this.webpack.genConfigPath);
+        await Promise.all([
+            this.remove(this.pck.lib()),
+            this.remove(this.pck.srcGen()),
+            this.remove(new WebpackGenerator(this.pck).genConfigPath)
+        ]);
     }
 
-    async generate(): Promise<void> {
-        await this.webpack.generate();
-        await this.backend.generate();
-        await this.frontend.generate();
+    async generate(options: GeneratorOptions = {}): Promise<void> {
+        await Promise.all([
+            new WebpackGenerator(this.pck, options).generate(),
+            new BackendGenerator(this.pck, options).generate(),
+            new FrontendGenerator(this.pck, options).generate(),
+        ]);
     }
 
     async copy(): Promise<void> {
@@ -64,8 +80,8 @@ export class ApplicationPackageManager {
         await fs.copy(this.pck.frontend('index.html'), this.pck.lib('index.html'));
     }
 
-    async build(args: string[] = []): Promise<void> {
-        await this.generate();
+    async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {
+        await this.generate(options);
         await this.copy();
         return this.__process.run('webpack', args);
     }

@@ -21,6 +21,7 @@
 }
 
 .theia-alert-message-container i {
+    transform: translateY(2px);
     padding-right: 3px;
 }
 

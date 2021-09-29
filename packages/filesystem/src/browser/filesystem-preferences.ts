@@ -23,51 +23,54 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
-import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 // See https://github.com/Microsoft/vscode/issues/30180
 export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
 export const GENERAL_MAX_FILE_SIZE_MB = 16 * 1024; // 16 GB
 
-export const MAX_FILE_SIZE_MB = environment.electron.is() ? process.arch === 'ia32' ? WIN32_MAX_FILE_SIZE_MB : GENERAL_MAX_FILE_SIZE_MB : 32;
+export const MAX_FILE_SIZE_MB = typeof process === 'object'
+    ? process.arch === 'ia32'
+        ? WIN32_MAX_FILE_SIZE_MB
+        : GENERAL_MAX_FILE_SIZE_MB
+    : 32;
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
-    'type': 'object',
-    'properties': {
+    type: 'object',
+    properties: {
         'files.watcherExclude': {
-            'description': 'List of paths to exclude from the filesystem watcher',
-            'additionalProperties': {
-                'type': 'boolean'
+            description: 'List of paths to exclude from the filesystem watcher',
+            additionalProperties: {
+                type: 'boolean'
             },
-            'default': {
+            default: {
                 '**/.git/objects/**': true,
                 '**/.git/subtree-cache/**': true,
                 '**/node_modules/**': true
             },
-            'scope': 'resource'
+            scope: 'resource'
         },
         'files.exclude': {
-            'type': 'object',
-            'default': { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
-            'description': 'Configure glob patterns for excluding files and folders.',
-            'scope': 'resource'
+            type: 'object',
+            default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
+            description: 'Configure glob patterns for excluding files and folders.',
+            scope: 'resource'
         },
         'files.enableTrash': {
-            'type': 'boolean',
-            'default': true,
-            'description': 'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
+            type: 'boolean',
+            default: true,
+            description: 'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
         },
         'files.associations': {
-            'type': 'object',
-            'description': 'Configure file associations to languages (e.g. \"*.extension\": \"html\"). \
+            type: 'object',
+            description: 'Configure file associations to languages (e.g. \"*.extension\": \"html\"). \
 These have precedence over the default associations of the languages installed.'
         },
         'files.autoGuessEncoding': {
-            'type': 'boolean',
-            'default': false,
-            'description': 'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.',
-            'scope': 'language-overridable',
-            'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
+            type: 'boolean',
+            default: false,
+            description: 'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.',
+            scope: 'language-overridable',
+            included: Object.keys(SUPPORTED_ENCODINGS).length > 1
         },
         'files.participants.timeout': {
             type: 'number',
@@ -80,38 +83,46 @@ These have precedence over the default associations of the languages installed.'
             markdownDescription: 'Controls the max file size in MB which is possible to open.'
         },
         'files.trimTrailingWhitespace': {
-            'type': 'boolean',
-            'default': false,
-            'description': 'When enabled, will trim trailing whitespace when saving a file.',
-            'scope': 'language-overridable'
+            type: 'boolean',
+            default: false,
+            description: 'When enabled, will trim trailing whitespace when saving a file.',
+            scope: 'language-overridable'
+        },
+        'files.maxConcurrentUploads': {
+            type: 'integer',
+            default: 1,
+            description: 'Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.',
         }
     }
 };
 
 export interface FileSystemConfiguration {
-    'files.watcherExclude': { [globPattern: string]: boolean };
-    'files.exclude': { [key: string]: boolean };
-    'files.enableTrash': boolean;
-    'files.associations': { [filepattern: string]: string };
-    'files.encoding': string;
-    'files.autoGuessEncoding': boolean;
-    'files.participants.timeout': number;
-    'files.maxFileSizeMB': number;
-    'files.trimTrailingWhitespace': boolean;
+    'files.watcherExclude': { [globPattern: string]: boolean }
+    'files.exclude': { [key: string]: boolean }
+    'files.enableTrash': boolean
+    'files.associations': { [filepattern: string]: string }
+    'files.encoding': string
+    'files.autoGuessEncoding': boolean
+    'files.participants.timeout': number
+    'files.maxFileSizeMB': number
+    'files.trimTrailingWhitespace': boolean
+    'files.maxConcurrentUploads': number
 }
 
+export const FileSystemPreferenceContribution = Symbol('FilesystemPreferenceContribution');
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
-export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, filesystemPreferenceSchema);
+export function createFileSystemPreferences(preferences: PreferenceService, schema: PreferenceSchema = filesystemPreferenceSchema): FileSystemPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createFileSystemPreferences(preferences);
+        const contribution = ctx.container.get<PreferenceContribution>(FileSystemPreferenceContribution);
+        return createFileSystemPreferences(preferences, contribution.schema);
     }).inSingletonScope();
-
-    bind(PreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
+    bind(FileSystemPreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
+    bind(PreferenceContribution).toService(FileSystemPreferenceContribution);
 }

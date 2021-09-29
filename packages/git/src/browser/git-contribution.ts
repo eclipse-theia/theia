@@ -25,7 +25,7 @@ import {
     MenuModelRegistry,
     Mutable
 } from '@theia/core';
-import { DiffUris, Widget } from '@theia/core/lib/browser';
+import { codicon, DiffUris, Widget } from '@theia/core/lib/browser';
 import {
     TabBarToolbarContribution,
     TabBarToolbarItem,
@@ -94,14 +94,14 @@ export namespace GIT_COMMANDS {
     export const COMMIT = {
         id: 'git.commit.all',
         tooltip: 'Commit all the staged changes',
-        iconClass: 'fa fa-check',
         label: 'Commit',
+        iconClass: codicon('check')
     };
     export const COMMIT_ADD_SIGN_OFF = {
         id: 'git-commit-add-sign-off',
         label: 'Add Signed-off-by',
-        iconClass: 'fa fa-pencil-square-o',
-        category: 'Git'
+        category: 'Git',
+        iconClass: codicon('edit')
     };
     export const COMMIT_AMEND = {
         id: 'git.commit.amend'
@@ -113,19 +113,19 @@ export namespace GIT_COMMANDS {
         id: 'git.open.file',
         category: 'Git',
         label: 'Open File',
-        iconClass: 'theia-open-file-icon'
+        iconClass: codicon('go-to-file')
     };
     export const OPEN_CHANGED_FILE: Command = {
         id: 'git.open.changed.file',
         category: 'Git',
         label: 'Open File',
-        iconClass: 'open-file'
+        iconClass: codicon('go-to-file')
     };
     export const OPEN_CHANGES: Command = {
         id: 'git.open.changes',
         category: 'Git',
         label: 'Open Changes',
-        iconClass: 'theia-open-change-icon'
+        iconClass: codicon('git-compare')
     };
     export const SYNC = {
         id: 'git.sync',
@@ -139,37 +139,37 @@ export namespace GIT_COMMANDS {
         id: 'git.stage',
         category: 'Git',
         label: 'Stage Changes',
-        iconClass: 'fa fa-plus'
+        iconClass: codicon('add')
     };
     export const STAGE_ALL = {
         id: 'git.stage.all',
         category: 'Git',
         label: 'Stage All Changes',
-        iconClass: 'fa fa-plus',
+        iconClass: codicon('add')
     };
     export const UNSTAGE = {
         id: 'git.unstage',
-        iconClass: 'fa fa-minus',
         category: 'Git',
-        label: 'Unstage Changes'
+        label: 'Unstage Changes',
+        iconClass: codicon('dash')
     };
     export const UNSTAGE_ALL = {
         id: 'git.unstage.all',
-        iconClass: 'fa fa-minus',
         category: 'Git',
         label: 'Unstage All',
+        iconClass: codicon('dash')
     };
     export const DISCARD = {
         id: 'git.discard',
-        iconClass: 'fa fa-undo',
+        iconClass: codicon('discard'),
         category: 'Git',
         label: 'Discard Changes'
     };
     export const DISCARD_ALL = {
         id: 'git.discard.all',
-        iconClass: 'fa fa-undo',
         category: 'Git',
         label: 'Discard All Changes',
+        iconClass: codicon('discard')
     };
     export const STASH = {
         id: 'git.stash',
@@ -204,14 +204,14 @@ export namespace GIT_COMMANDS {
     export const REFRESH = {
         id: 'git-refresh',
         label: 'Refresh',
-        iconClass: 'fa fa-refresh',
-        category: 'Git'
+        category: 'Git',
+        iconClass: codicon('refresh')
     };
     export const INIT_REPOSITORY = {
         id: 'git-init',
         label: 'Initialize Repository',
-        iconClass: 'fa fa-plus',
-        category: 'Git'
+        category: 'Git',
+        iconClass: codicon('add')
     };
 }
 export namespace GIT_MENUS {
@@ -790,7 +790,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             + (scmProvider.mergeChanges.length > 0 ? '!' : '');
         return {
             command: GIT_COMMANDS.CHECKOUT.id,
-            title: `$(code-fork) ${branch}${changes}`,
+            title: `$(codicon-source-control) ${branch}${changes}`,
             tooltip: `${branch}${changes}`
         };
     }
@@ -801,20 +801,20 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         }
         if (this.syncService.isSyncing()) {
             return {
-                title: '$(refresh~spin)',
+                title: '$(codicon-sync~spin)',
                 tooltip: 'Synchronizing Changes...'
             };
         }
         const { upstreamBranch, aheadBehind } = status;
         if (upstreamBranch) {
             return {
-                title: '$(refresh)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
+                title: '$(codicon-sync)' + (aheadBehind && (aheadBehind.ahead + aheadBehind.behind) > 0 ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
                 command: GIT_COMMANDS.SYNC.id,
                 tooltip: 'Synchronize Changes'
             };
         }
         return {
-            title: '$(cloud-upload)',
+            title: '$(codicon-cloud-upload)',
             command: GIT_COMMANDS.PUBLISH.id,
             tooltip: 'Publish Changes'
         };

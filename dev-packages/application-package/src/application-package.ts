@@ -17,12 +17,10 @@
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
-import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
+import { Extension, ExtensionPackage, ExtensionPackageOptions, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
-const merge = require('deepmerge/dist/cjs');
-
-// tslint:disable:no-implicit-dependencies
+import deepmerge = require('deepmerge');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
@@ -88,7 +86,7 @@ export class ApplicationPackage {
             theia.target = defaultTarget;
         }
 
-        return this._props = merge(ApplicationProps.DEFAULT, theia);
+        return this._props = deepmerge(ApplicationProps.DEFAULT, theia);
     }
 
     protected _pck: NodePackage | undefined;
@@ -112,7 +110,7 @@ export class ApplicationPackage {
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
             const collector = new ExtensionPackageCollector(
-                raw => this.newExtensionPackage(raw),
+                (raw: PublishedNodePackage, options: ExtensionPackageOptions = {}) => this.newExtensionPackage(raw, options),
                 this.resolveModule
             );
             this._extensionPackages = collector.collect(this.pck);
@@ -128,13 +126,18 @@ export class ApplicationPackage {
         return this.getExtensionPackage(extension) || this.resolveExtensionPackage(extension);
     }
 
+    /**
+     * Resolve an extension name to its associated package
+     * @param extension the name of the extension's package as defined in "dependencies" (might be aliased)
+     * @returns the extension package
+     */
     async resolveExtensionPackage(extension: string): Promise<ExtensionPackage | undefined> {
         const raw = await RawExtensionPackage.view(this.registry, extension);
-        return raw ? this.newExtensionPackage(raw) : undefined;
+        return raw ? this.newExtensionPackage(raw, { alias: extension }) : undefined;
     }
 
-    protected newExtensionPackage(raw: PublishedNodePackage): ExtensionPackage {
-        return new ExtensionPackage(raw, this.registry);
+    protected newExtensionPackage(raw: PublishedNodePackage, options: ExtensionPackageOptions = {}): ExtensionPackage {
+        return new ExtensionPackage(raw, this.registry, options);
     }
 
     get frontendModules(): Map<string, string> {

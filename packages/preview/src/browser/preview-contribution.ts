@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Widget } from '@theia/core/shared/@phosphor/widgets';
-import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler, codicon } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -37,11 +37,11 @@ export namespace PreviewCommands {
     export const OPEN: Command = {
         id: 'preview:open',
         label: 'Open Preview',
-        iconClass: 'theia-open-preview-icon'
+        iconClass: codicon('open-preview')
     };
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source',
-        iconClass: 'theia-open-file-icon'
+        iconClass: codicon('go-to-file')
     };
 }
 
@@ -266,7 +266,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     protected async openSource(ref?: Widget): Promise<EditorWidget | undefined> {
         if (ref instanceof PreviewWidget) {
             return this.editorManager.open(ref.uri, {
-                widgetOptions: { ref, mode: 'open-to-left' }
+                widgetOptions: { ref, mode: 'tab-after' }
             });
         }
     }

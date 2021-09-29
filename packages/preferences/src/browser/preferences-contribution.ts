@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
 import { MenuModelRegistry, CommandRegistry } from '@theia/core';
 import {
     CommonMenus,
@@ -25,6 +25,8 @@ import {
     PreferenceScope,
     PreferenceProvider,
     PreferenceService,
+    QuickInputService,
+    QuickPickItem,
 } from '@theia/core/lib/browser';
 import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
@@ -37,6 +39,7 @@ import { Preference, PreferencesCommands, PreferenceMenus } from './util/prefere
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
@@ -48,6 +51,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
 
     constructor() {
         super({
@@ -63,7 +67,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
             execute: async (query?: string) => {
                 const widget = await this.openView({ activate: true });
-                if (query) {
+                if (typeof query === 'string') {
                     widget.setSearchTerm(query);
                 }
             },
@@ -110,6 +114,27 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
                 const widget = await this.openView({ activate: true });
                 widget.setScope(PreferenceScope.Workspace);
             }
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_FOLDER_PREFERENCES, {
+            isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
+            isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
+            execute: () => this.openFolderPreferences(root => {
+                this.openView({ activate: true });
+                this.scopeTracker.setScope(root.resource);
+            })
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES_JSON, {
+            execute: async () => this.openJson(PreferenceScope.User)
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_WORKSPACE_PREFERENCES_JSON, {
+            isEnabled: () => !!this.workspaceService.workspace,
+            isVisible: () => !!this.workspaceService.workspace,
+            execute: async () => this.openJson(PreferenceScope.Workspace)
+        });
+        commands.registerCommand(PreferencesCommands.OPEN_FOLDER_PREFERENCES_JSON, {
+            isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
+            isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
+            execute: () => this.openFolderPreferences(root => this.openJson(PreferenceScope.Folder, root.resource.toString()))
         });
     }
 
@@ -181,6 +206,30 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
                     jsonEditorWidget.editor.cursor = { line: numReturns, character: 4 + preferenceId.length + 4 };
                 }
             }
+        }
+    }
+
+    protected async openJson(scope: PreferenceScope, resource?: string): Promise<void> {
+        const jsonUriToOpen = await this.obtainConfigUri(scope, false, resource);
+        if (jsonUriToOpen) {
+            await this.editorManager.open(jsonUriToOpen);
+        }
+    }
+
+    /**
+     * Prompts which workspace root folder to open the JSON settings.
+     */
+    protected async openFolderPreferences(callback: (root: FileStat) => unknown): Promise<void> {
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length === 1) {
+            callback(roots[0]);
+        } else {
+            const items: QuickPickItem[] = roots.map(root => ({
+                label: root.name,
+                description: root.resource.path.toString(),
+                execute: () => callback(root)
+            }));
+            this.quickInputService?.showQuickPick(items, { placeholder: 'Select workspace folder' });
         }
     }
 

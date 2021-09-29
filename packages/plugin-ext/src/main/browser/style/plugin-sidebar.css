@@ -30,7 +30,6 @@
 .theia-plugins .pluginHeaderContainer {
     padding: 5px 15px;
     font-size: var(--theia-ui-font-size0);
-    border-bottom: 1px solid;
 }
 
 .theia-side-panel .theia-plugins .pluginHeaderContainer {
@@ -48,6 +47,7 @@
 .theia-plugins .pluginName {
     flex: 1;
     margin-right: 5px;
+    margin-left: 4px;
     font-size: var(--theia-ui-font-size1);
     font-weight: 400;
 }

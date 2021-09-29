@@ -15,12 +15,13 @@
  ********************************************************************************/
 
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
-import { Panel, Widget, Message, StatefulWidget, PreferenceScope } from '@theia/core/lib/browser';
+import { Panel, Widget, Message, StatefulWidget, PreferenceScope, codicon } from '@theia/core/lib/browser';
 import { PreferencesEditorState, PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
+import URI from '@theia/core/lib/common/uri';
 
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,
@@ -52,7 +53,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         this.searchbarWidget.updateSearchTerm(query);
     }
 
-    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace): void {
+    setScope(scope: PreferenceScope.User | PreferenceScope.Workspace | URI): void {
         this.tabBarWidget.setScope(scope);
     }
 
@@ -78,7 +79,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         this.title.label = PreferencesWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
-        this.title.iconClass = 'fa fa-sliders';
+        this.title.iconClass = codicon('settings');
 
         this.searchbarWidget.addClass('preferences-searchbar-widget');
         this.addWidget(this.searchbarWidget);

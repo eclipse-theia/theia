@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { injectable } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Key } from '@theia/core/lib/browser';
+import { codiconArray, Key } from '@theia/core/lib/browser';
 import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 import { MainMessageItem } from '../../../common/plugin-api-rpc';
@@ -60,7 +60,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         const iconContainer = messageNode.appendChild(document.createElement('div'));
         iconContainer.classList.add(ICON);
         const iconElement = iconContainer.appendChild(document.createElement('i'));
-        iconElement.classList.add('fa', this.toIconClass(messageType), 'fa-fw', messageType.toString());
+        iconElement.classList.add(...this.toIconClass(messageType), messageType.toString());
 
         const textContainer = messageNode.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
@@ -86,13 +86,13 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         return messageNode;
     }
 
-    protected toIconClass(icon: MessageType): string {
+    protected toIconClass(icon: MessageType): string[] {
         if (icon === MessageType.Error) {
-            return 'fa-times-circle';
+            return codiconArray('error');
         }
         if (icon === MessageType.Warning) {
-            return 'fa-warning';
+            return codiconArray('warning');
         }
-        return 'fa-info-circle';
+        return codiconArray('info');
     }
 }

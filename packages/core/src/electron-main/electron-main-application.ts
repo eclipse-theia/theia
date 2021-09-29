@@ -30,6 +30,9 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
+// eslint-disable-next-line @theia/runtime-import-check
+import { DEFAULT_WINDOW_HASH } from '../browser/window/window-service';
+
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
 /**
@@ -37,6 +40,7 @@ const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yarg
  */
 export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptions {
     isMaximized?: boolean;
+    isFullScreen?: boolean;
 }
 
 /**
@@ -214,9 +218,11 @@ export class ElectronMainApplication {
      *
      * @param options
      */
-    async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultBrowserWindowOptions()): Promise<BrowserWindow> {
-        const options = await asyncOptions;
+    async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultTheiaWindowOptions()): Promise<BrowserWindow> {
+        let options = await asyncOptions;
+        options = this.avoidOverlap(options);
         const electronWindow = new BrowserWindow(options);
+        electronWindow.setMenuBarVisibility(false);
         this.attachReadyToShow(electronWindow);
         this.attachSaveWindowState(electronWindow);
         this.attachGlobalShortcuts(electronWindow);
@@ -224,14 +230,32 @@ export class ElectronMainApplication {
         return electronWindow;
     }
 
-    protected async getDefaultBrowserWindowOptions(): Promise<TheiaBrowserWindowOptions> {
-        const windowOptionsFromConfig = this.config.electron.windowOptions;
-        let windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate', undefined);
-        if (!windowState) {
-            windowState = this.getDefaultWindowState();
-        }
+    async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
+        const windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate') || this.getDefaultTheiaWindowOptions();
         return {
             ...windowState,
+            ...this.getDefaultOptions()
+        };
+    }
+
+    protected avoidOverlap(options: TheiaBrowserWindowOptions): TheiaBrowserWindowOptions {
+        const existingWindowsBounds = BrowserWindow.getAllWindows().map(window => window.getBounds());
+        if (existingWindowsBounds.length > 0) {
+            while (existingWindowsBounds.some(window => window.x === options.x || window.y === options.y)) {
+                // if the window is maximized or in fullscreen, use the default window options.
+                if (options.isMaximized || options.isFullScreen) {
+                    options = this.getDefaultTheiaWindowOptions();
+                }
+                options.x = options.x! + 30;
+                options.y = options.y! + 30;
+
+            }
+        }
+        return options;
+    }
+
+    protected getDefaultOptions(): TheiaBrowserWindowOptions {
+        return {
             show: false,
             title: this.config.applicationName,
             minWidth: 200,
@@ -243,19 +267,20 @@ export class ElectronMainApplication {
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
             },
-            ...windowOptionsFromConfig,
+            ...this.config.electron?.windowOptions || {},
         };
     }
 
-    protected async openDefaultWindow(): Promise<BrowserWindow> {
+    async openDefaultWindow(): Promise<BrowserWindow> {
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow()]);
-        electronWindow.loadURL(uri.toString(true));
+        electronWindow.loadURL(uri.withFragment(DEFAULT_WINDOW_HASH).toString(true));
         return electronWindow;
     }
 
     protected async openWindowWithWorkspace(workspacePath: string): Promise<BrowserWindow> {
-        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow()]);
-        electronWindow.loadURL(uri.withFragment(workspacePath).toString(true));
+        const options = await this.getLastWindowOptions();
+        const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow(options)]);
+        electronWindow.loadURL(uri.withFragment(encodeURI(workspacePath)).toString(true));
         return electronWindow;
     }
 
@@ -267,7 +292,9 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(params: ElectronMainExecutionParams, options: ElectronMainCommandOptions): Promise<void> {
-        if (options.file === undefined) {
+        if (params.secondInstance === false) {
+            await this.openWindowWithWorkspace(''); // restore previous workspace.
+        } else if (options.file === undefined) {
             await this.openDefaultWindow();
         } else {
             let workspacePath: string | undefined;
@@ -289,17 +316,25 @@ export class ElectronMainApplication {
             .withQuery(`port=${await this.backendPort}`);
     }
 
-    protected getDefaultWindowState(): BrowserWindowConstructorOptions {
+    protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
         // The `screen` API must be required when the application is ready.
         // See: https://electronjs.org/docs/api/screen#screen
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
         // See: https://github.com/electron/electron/issues/3490
         const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-        const height = Math.floor(bounds.height * (2 / 3));
-        const width = Math.floor(bounds.width * (2 / 3));
-        const y = Math.floor(bounds.y + (bounds.height - height) / 2);
-        const x = Math.floor(bounds.x + (bounds.width - width) / 2);
-        return { width, height, x, y };
+        const height = Math.round(bounds.height * (2 / 3));
+        const width = Math.round(bounds.width * (2 / 3));
+        const y = Math.round(bounds.y + (bounds.height - height) / 2);
+        const x = Math.round(bounds.x + (bounds.width - width) / 2);
+        return {
+            isFullScreen: false,
+            isMaximized: false,
+            width,
+            height,
+            x,
+            y,
+            ...this.getDefaultOptions()
+        };
     }
 
     /**
@@ -315,13 +350,9 @@ export class ElectronMainApplication {
     protected attachSaveWindowState(electronWindow: BrowserWindow): void {
         const saveWindowState = () => {
             try {
-                let bounds;
-                if (electronWindow.isMaximized()) {
-                    bounds = this.electronStore.get('windowstate', {});
-                } else {
-                    bounds = electronWindow.getBounds();
-                }
+                const bounds = electronWindow.getBounds();
                 this.electronStore.set('windowstate', {
+                    isFullScreen: electronWindow.isFullScreen(),
                     isMaximized: electronWindow.isMaximized(),
                     width: bounds.width,
                     height: bounds.height,

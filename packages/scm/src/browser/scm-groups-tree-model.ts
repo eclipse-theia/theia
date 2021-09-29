@@ -51,6 +51,9 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
         this.provider = provider;
         if (provider) {
             this.toDisposeOnRepositoryChange.push(provider.onDidChange(() => this.root = this.createTree()));
+            if (provider.onDidChangeResources) {
+                this.toDisposeOnRepositoryChange.push(provider.onDidChangeResources(() => this.root = this.createTree()));
+            }
             this.root = this.createTree();
         }
     }

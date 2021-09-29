@@ -14,9 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
 import { CancellationToken, Event } from '../../common';
 import URI from '../../common/uri';
+import { KeySequence } from '../keyboard';
+import * as fuzzy from 'fuzzy';
+
+export interface Match {
+    start: number;
+    end: number;
+}
+export interface QuickPickItemHighlights {
+    label?: Match[];
+    description?: Match[];
+    detail?: Match[];
+}
 
 export interface QuickPickItem {
     type?: 'item' | 'separator';
@@ -26,15 +37,33 @@ export interface QuickPickItem {
     ariaLabel?: string;
     description?: string;
     detail?: string;
-    resource?: URI;
+    keySequence?: KeySequence;
     iconClasses?: string[];
-    execute?: (item: QuickPickItem, lookFor: string) => void;
+    alwaysShow?: boolean;
+    highlights?: QuickPickItemHighlights;
+    buttons?: QuickInputButton[];
+    execute?: () => void;
+}
+
+export namespace QuickPickItem {
+    export function is(item: QuickPickSeparator | QuickPickItem): item is QuickPickItem {
+        // if it's not a separator, it's an item
+        return item.type !== 'separator';
+    }
 }
 
 export interface QuickPickSeparator {
     type: 'separator';
     label?: string;
 }
+
+export namespace QuickPickSeparator {
+    export function is(item: QuickPickSeparator | QuickPickItem): item is QuickPickSeparator {
+        return item.type === 'separator';
+    }
+}
+
+export type QuickPicks = (QuickPickSeparator | QuickPickItem)[];
 
 export interface QuickPickValue<V> extends QuickPickItem {
     value: V
@@ -66,7 +95,7 @@ export interface QuickInput {
     dispose(): void;
 }
 
-export interface IInputBox extends QuickInput {
+export interface InputBox extends QuickInput {
     value: string | undefined;
     valueSelection: Readonly<[number, number]> | undefined;
     placeholder: string | undefined;
@@ -82,21 +111,21 @@ export interface IInputBox extends QuickInput {
 export interface QuickPick<T extends QuickPickItem> extends QuickInput {
     value: string;
     placeholder: string | undefined;
-    readonly onDidChangeValue: Event<string>;
-    readonly onDidAccept: Event<void>;
-    buttons: ReadonlyArray<QuickInputButton>;
-    readonly onDidTriggerButton: Event<QuickInputButton>;
     items: ReadonlyArray<T | QuickPickSeparator>;
+    activeItems: ReadonlyArray<T>;
+    selectedItems: ReadonlyArray<T>;
     canSelectMany: boolean;
     matchOnDescription: boolean;
     matchOnDetail: boolean;
-    activeItems: ReadonlyArray<T>;
+    readonly onDidAccept: Event<void>;
+    readonly onDidChangeValue: Event<string>;
+    readonly onDidTriggerButton: Event<QuickInputButton>;
+    readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>>;
     readonly onDidChangeActive: Event<T[]>;
-    selectedItems: ReadonlyArray<T>;
     readonly onDidChangeSelection: Event<T[]>;
 }
 
-export interface IPickOptions<T extends QuickPickItem> {
+export interface PickOptions<T extends QuickPickItem> {
     placeHolder?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
@@ -109,7 +138,7 @@ export interface IPickOptions<T extends QuickPickItem> {
     onDidFocus?: (entry: T) => void;
 }
 
-export interface IInputOptions {
+export interface InputOptions {
     value?: string;
     valueSelection?: [number, number];
     prompt?: string;
@@ -165,54 +194,101 @@ export interface QuickPickOptions<T extends QuickPickItem> {
     onDidTriggerItemButton?: (ItemButtonEvent: QuickPickItemButtonEvent<T>) => void
 }
 
-export interface IQuickInputService {
+export const QuickInputService = Symbol('QuickInputService');
+export interface QuickInputService {
     readonly backButton: QuickInputButton;
     readonly onShow: Event<void>;
     readonly onHide: Event<void>;
     open(filter: string): void;
-    reset(): void;
-    createInputBox(): IInputBox;
-    createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
-    input(options?: IInputOptions, token?: CancellationToken): Promise<string | undefined>;
-    pick<T extends QuickPickItem, O extends IPickOptions<T>>(picks: Promise<T[]> | T[], options?: O, token?: CancellationToken):
+    createInputBox(): InputBox;
+    input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
+    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<T[]> | T[], options?: O, token?: CancellationToken):
         Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
     showQuickPick<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T>;
     hide(): void;
+    /**
+     * Provides raw access to the quick pick controller.
+     */
+    createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
 }
 
-export function filterItems(items: Array<QuickPickItem>, filter: string): Array<QuickPickItem> {
-    return filter.trim().length === 0 ? items : items
-        .filter(item => item.label.toLowerCase().indexOf(filter.toLowerCase()) > -1)
-        .map(item => Object.assign(item, { highlights: { label: findMatches(item.label.toLowerCase(), filter.toLowerCase()) } }));
-}
+/**
+ * Filter the list of quick pick items based on the provided filter.
+ * Items are filtered based on if:
+ * - their `label` satisfies the filter using `fuzzy`.
+ * - their `description` satisfies the filter using `fuzzy`.
+ * - their `detail` satisfies the filter using `fuzzy`.
+ * Filtered items are also updated to display proper highlights based on how they were filtered.
+ * @param items the list of quick pick items.
+ * @param filter the filter to search for.
+ * @returns the list of quick pick items that satisfy the filter.
+ */
+export function filterItems(items: QuickPickItem[], filter: string): QuickPickItem[] {
+    filter = filter.trim().toLowerCase();
 
-export function findMatches(label: string, lookFor: string): Array<{ start: number, end: number }> | undefined {
-    const _label = label.toLocaleLowerCase(); const _lookFor = lookFor.toLocaleLowerCase();
-    return _label.indexOf(_lookFor) > -1 ? [{ start: _label.indexOf(_lookFor), end: _label.indexOf(_lookFor) + _lookFor.length }] : undefined;
-}
-
-@injectable()
-export class QuickInputService implements IQuickInputService {
-    createInputBox(): IInputBox { return {} as IInputBox; }
-
-    createQuickPick<T extends QuickPickItem>(): QuickPick<T> { return {} as QuickPick<T>; }
-
-    input(options?: IInputOptions, token?: CancellationToken): Promise<string | undefined> { return Promise.resolve(undefined); }
-
-    pick<T extends QuickPickItem, O extends IPickOptions<T>>(picks: Promise<T[]> | T[], options: O = <O>{}, token?: CancellationToken):
-        Promise<(O extends { canPickMany: true } ? T[] : T) | undefined> {
-        return Promise.resolve(undefined);
+    if (filter.length === 0) {
+        for (const item of items) {
+            item.highlights = undefined; // reset highlights from previous filtering.
+        }
+        return items;
     }
 
-    showQuickPick<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T> { return Promise.resolve({} as T); }
+    const filteredItems: QuickPickItem[] = [];
+    for (const item of items) {
+        if (
+            fuzzy.test(filter, item.label) ||
+            (item.description && fuzzy.test(filter, item.description)) ||
+            (item.detail && fuzzy.test(filter, item.detail))
+        ) {
+            item.highlights = {
+                label: findMatches(item.label, filter),
+                description: item.description ? findMatches(item.description, filter) : undefined,
+                detail: item.detail ? findMatches(item.detail, filter) : undefined
+            };
+            filteredItems.push(item);
+        }
+    }
+    return filteredItems;
+}
 
-    get backButton(): QuickInputButton { return {} as QuickInputButton; }
-    get onShow(): Event<void> { return {} as Event<void>; }
-    get onHide(): Event<void> { return {} as Event<void>; }
+/**
+ * Find match highlights when testing a word against a pattern.
+ * @param word the word to test.
+ * @param pattern the word to match against.
+ * @returns the list of highlights if present.
+ */
+export function findMatches(word: string, pattern: string): Array<{ start: number, end: number }> | undefined {
+    word = word.toLocaleLowerCase();
+    pattern = pattern.toLocaleLowerCase();
 
-    open(filter: string): void { }
+    if (pattern.trim().length === 0) {
+        return undefined;
+    }
 
-    reset(): void { }
+    const delimiter = '\u0000'; // null byte that shouldn't appear in the input and is used to denote matches.
+    const matchResult = fuzzy.match(pattern.replace(/\u0000/gu, ''), word, { pre: delimiter, post: delimiter });
+    if (!matchResult) {
+        return undefined;
+    }
 
-    hide(): void { }
+    const match = matchResult.rendered;
+    const highlights: { start: number, end: number }[] = [];
+
+    let lastIndex = 0;
+    /** We need to account for the extra markers by removing them from the range */
+    let offset = 0;
+
+    while (true) {
+        const start = match.indexOf(delimiter, lastIndex);
+        if (start === -1) { break; }
+        const end = match.indexOf(delimiter, start + 1);
+        if (end === -1) { break; }
+        highlights.push({
+            start: start - offset++,
+            end: end - offset++
+        });
+        lastIndex = end + 1;
+    }
+
+    return highlights.length > 0 ? highlights : undefined;
 }

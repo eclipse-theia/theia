@@ -113,6 +113,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
             }
         }));
 
+        this.session = this.sessionManager.selectedSession;
         this.toDispose.push(this.sessionManager.onDidChangeSelectedSession(session => {
             // Don't delete the last session by overriding it with 'undefined'
             if (session) {

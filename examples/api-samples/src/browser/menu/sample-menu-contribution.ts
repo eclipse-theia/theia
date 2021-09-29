@@ -14,8 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR, MenuContribution, MenuModelRegistry, MenuNode, SubMenuOptions } from '@theia/core/lib/common';
-import { injectable, interfaces } from '@theia/core/shared/inversify';
+import { QuickInputService } from '@theia/core/lib/browser';
+import {
+    Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR,
+    MenuContribution, MenuModelRegistry, MenuNode, MessageService, SubMenuOptions
+} from '@theia/core/lib/common';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 
 const SampleCommand: Command = {
     id: 'sample-command',
@@ -25,9 +29,21 @@ const SampleCommand2: Command = {
     id: 'sample-command2',
     label: 'Sample Command2'
 };
+const SampleQuickInputCommand: Command = {
+    id: 'sample-quick-input-command',
+    category: 'Quick Input',
+    label: 'Test Positive Integer'
+};
 
 @injectable()
 export class SampleCommandContribution implements CommandContribution {
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SampleCommand, {
             execute: () => {
@@ -37,6 +53,28 @@ export class SampleCommandContribution implements CommandContribution {
         commands.registerCommand(SampleCommand2, {
             execute: () => {
                 alert('This is sample command2!');
+            }
+        });
+        commands.registerCommand(SampleQuickInputCommand, {
+            execute: async () => {
+                const result = await this.quickInputService.input({
+                    placeHolder: 'Please provide a positive integer',
+                    validateInput: async (input: string) => {
+                        const numericValue = Number(input);
+                        if (isNaN(numericValue)) {
+                            return 'Invalid: NaN';
+                        } else if (numericValue % 2 === 1) {
+                            return 'Invalid: Odd Number';
+                        } else if (numericValue < 0) {
+                            return 'Invalid: Negative Number';
+                        } else if (!Number.isInteger(numericValue)) {
+                            return 'Invalid: Only Integers Allowed';
+                        }
+                    }
+                });
+                if (result) {
+                    this.messageService.info(`Positive Integer: ${result}`);
+                }
             }
         });
     }
@@ -70,6 +108,12 @@ export class SampleMenuContribution implements MenuContribution {
         });
         const placeholder = new PlaceholderMenuNode([...subSubMenuPath, 'placeholder'].join('-'), 'Placeholder', { order: '0' });
         menus.registerMenuNode(subSubMenuPath, placeholder);
+
+        /**
+         * Register an action menu with an invalid command (un-registered and without a label) in order
+         * to determine that menus and the layout does not break on startup.
+         */
+        menus.registerMenuAction(subMenuPath, { commandId: 'invalid-command' });
     }
 
 }

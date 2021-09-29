@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { codicon } from '@theia/core/lib/browser';
 import { Command } from '@theia/core/lib/common';
 
 export namespace OutputCommands {
@@ -52,19 +53,19 @@ export namespace OutputCommands {
     export const CLEAR__WIDGET: Command = {
         id: 'output:widget:clear',
         category: OUTPUT_CATEGORY,
-        iconClass: 'clear-all'
+        iconClass: codicon('clear-all')
     };
 
     export const LOCK__WIDGET: Command = {
         id: 'output:widget:lock',
         category: OUTPUT_CATEGORY,
-        iconClass: 'fa fa-unlock'
+        iconClass: codicon('unlock')
     };
 
     export const UNLOCK__WIDGET: Command = {
         id: 'output:widget:unlock',
         category: OUTPUT_CATEGORY,
-        iconClass: 'fa fa-lock'
+        iconClass: codicon('lock')
     };
 
     export const CLEAR__QUICK_PICK: Command = {

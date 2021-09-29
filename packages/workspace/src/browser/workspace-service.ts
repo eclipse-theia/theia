@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { DEFAULT_WINDOW_HASH, WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
 } from '@theia/core/lib/browser';
@@ -128,6 +128,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async doGetDefaultWorkspaceUri(): Promise<string | undefined> {
+
+        // If an empty window is explicitly requested do not restore a previous workspace.
+        // Note: `window.location.hash` includes leading "#" if non-empty.
+        if (window.location.hash === `#${DEFAULT_WINDOW_HASH}`) {
+            window.location.hash = '';
+            return undefined;
+        }
+
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
@@ -161,7 +169,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Set the URL fragment to the given workspace path.
      */
     protected setURLFragment(workspacePath: string): void {
-        window.location.hash = workspacePath;
+        window.location.hash = encodeURI(workspacePath);
     }
 
     get roots(): Promise<FileStat[]> {
@@ -206,6 +214,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             this.setURLFragment('');
         }
         this.updateTitle();
+        await this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
         await this.updateWorkspace();
     }
 
@@ -506,7 +515,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected openNewWindow(workspacePath: string): void {
         const url = new URL(window.location.href);
-        url.hash = workspacePath;
+        url.hash = encodeURI(workspacePath);
         this.windowService.openNewWindow(url.toString());
     }
 

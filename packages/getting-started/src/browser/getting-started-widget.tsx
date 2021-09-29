@@ -21,7 +21,7 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { CommonCommands, LabelProvider, Key, KeyCode } from '@theia/core/lib/browser';
+import { CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -202,7 +202,7 @@ export class GettingStartedWidget extends ReactWidget {
         );
 
         return <div className='gs-section'>
-            <h3 className='gs-section-header'><i className='fa fa-folder-open'></i>Open</h3>
+            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>Open</h3>
             {open}
             {openFile}
             {openFolder}
@@ -242,7 +242,7 @@ export class GettingStartedWidget extends ReactWidget {
         </div>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
-                <i className='fa fa-clock-o'></i>Recent Workspaces
+                <i className={codicon('history')}></i>Recent Workspaces
             </h3>
             {items.length > 0 ? content : <p className='gs-no-recent'>No Recent Workspaces</p>}
             {more}
@@ -256,7 +256,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected renderSettings(): React.ReactNode {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
-                <i className='fa fa-cog'></i>
+                <i className={codicon('settings-gear')}></i>
                 Settings
             </h3>
             <div className='gs-action-container'>
@@ -286,7 +286,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected renderHelp(): React.ReactNode {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
-                <i className='fa fa-question-circle'></i>
+                <i className={codicon('question')}></i>
                 Help
             </h3>
             <div className='gs-action-container'>

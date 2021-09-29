@@ -2018,6 +2018,10 @@ declare module '@theia/plugin' {
         onDidDelete: Event<Uri>;
     }
 
+    export class CancellationError extends Error {
+        constructor();
+    }
+
     /**
      * A cancellation token used to request cancellation on long running
      * or asynchronous task.
@@ -4828,6 +4832,12 @@ declare module '@theia/plugin' {
         title?: string;
 
         /**
+         * An optional human-readable subheading that will be rendered next to the main title.
+         * Setting the description to null, undefined, or empty string will remove the message from the view.
+         */
+        description?: string;
+
+        /**
          * Reveal an element. By default revealed element is selected.
          *
          * In order to not to select, set the option `select` to `false`.
@@ -6148,7 +6158,7 @@ declare module '@theia/plugin' {
      *
      * @sample `let sel:DocumentSelector = { scheme: 'file', language: 'typescript' }`;
      */
-    export type DocumentSelector = DocumentFilter | string | Array<DocumentFilter | string>;
+    export type DocumentSelector = DocumentFilter | string | ReadonlyArray<DocumentFilter | string>;
 
     /**
      * A tuple of two characters, like a pair of
@@ -6259,6 +6269,14 @@ declare module '@theia/plugin' {
      * and various editor features, like automatic bracket insertion, automatic indentation etc.
      */
     export interface LanguageConfiguration {
+        /**
+         * @deprecated Use the autoClosingPairs property in the language configuration file instead.
+         */
+        __characterPairSupport?: { autoClosingPairs: { close: String, notIn: String[], open: String }[] }
+        /**
+         * @deprecated Do not use. Will be replaced by a better API soon.
+         */
+        __electricCharacterSupport?: { brackets: any, docComment: { close: String, lineStart: String, open: String, scope: String } }
         /**
          * The language's comment settings.
          */
@@ -7000,7 +7018,9 @@ declare module '@theia/plugin' {
         Struct = 21,
         Event = 22,
         Operator = 23,
-        TypeParameter = 24
+        TypeParameter = 24,
+        User = 25,
+        Issue = 26
     }
 
     /**
@@ -9231,7 +9251,7 @@ declare module '@theia/plugin' {
          *
          * @param folder The workspace folder for which the configurations are used or undefined for a folderless setup.
          * @param token A cancellation token.
-         * @return An array of [debug configurations](#DebugConfiguration).
+         * @return An array of {@link DebugConfiguration debug configurations}.
          */
         provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
 
@@ -9422,6 +9442,22 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Represents the debug console mode.
+     */
+    export enum DebugConsoleMode {
+        /**
+         * Debug session should have a separate debug console.
+         */
+        Separate = 0,
+
+        /**
+         * Debug session should share debug console with its parent session.
+         * This value has no effect for sessions which do not have a parent session.
+         */
+        MergeWithParent = 1
+    }
+
+    /**
      * An event describing the changes to the set of [breakpoints](#Breakpoint).
      */
     export interface BreakpointsChangeEvent {
@@ -9500,6 +9536,25 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A DebugConfigurationProviderTriggerKind specifies when the `provideDebugConfigurations` method of a `DebugConfigurationProvider` should be called.
+     * Currently there are two situations:
+     *  (1) providing debug configurations to populate a newly created `launch.json`
+     *  (2) providing dynamically generated configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+     * A trigger kind is used when registering a `DebugConfigurationProvider` with {@link debug.registerDebugConfigurationProvider}.
+     */
+    export enum DebugConfigurationProviderTriggerKind {
+        /**
+         * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug configurations for a newly created launch.json.
+         */
+        Initial = 1,
+        /**
+         * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated debug configurations when the user asks for them through the UI
+         * (e.g. via the "Select and Start Debugging" command).
+         */
+        Dynamic = 2
+    }
+
+    /**
      * Namespace for debug functionality.
      */
     export namespace debug {
@@ -9560,14 +9615,21 @@ declare module '@theia/plugin' {
         export function registerDebugAdapterDescriptorFactory(debugType: string, factory: DebugAdapterDescriptorFactory): Disposable;
 
         /**
-         * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
+         * Register a {@link DebugConfigurationProvider debug configuration provider} for a specific debug type.
+         * The optional {@link DebugConfigurationProviderTriggerKind triggerKind} can be used to specify when the `provideDebugConfigurations` method of the provider is triggered.
+         * Currently there are two situations:
+         *  (1) providing debug configurations to populate a newly created `launch.json`
+         *  (2) providing dynamically generated configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+         * Please note that the `triggerKind` argument only applies to the `provideDebugConfigurations` method, the `resolveDebugConfiguration` methods are not affected at all.
+         * Registering a single provider with resolve methods for different trigger kinds results in the same resolve methods being called multiple times.
          * More than one provider can be registered for the same type.
          *
-         * @param type The debug type for which the provider is registered.
-         * @param provider The [debug configuration provider](#DebugConfigurationProvider) to register.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @param debugType The debug type for which the provider is registered.
+         * @param provider The {@link DebugConfigurationProvider debug configuration provider} to register.
+         * @param triggerKind The {@link DebugConfigurationProviderTrigger trigger} for which the 'provideDebugConfiguration' method of the provider is registered. If `triggerKind` is missing, the value `DebugConfigurationProviderTriggerKind.Initial` is assumed.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
-        export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
+        export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider, triggerKind?: DebugConfigurationProviderTriggerKind): Disposable;
 
         /**
          * Register a debug adapter tracker factory for the given debug type.
@@ -10620,6 +10682,11 @@ declare module '@theia/plugin' {
          * Must be contained by the [`range`](#CallHierarchyItem.range).
          */
         selectionRange: Range;
+
+        /**
+         * Tags for this item.
+         */
+        tags?: readonly SymbolTag[];
 
         /**
          * Creates a new call hierarchy item.

@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
-import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
+import { MessageService, Command, Emitter, Event } from '@theia/core/lib/common';
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -280,10 +280,10 @@ export class HostedPluginManagerClient {
             canSelectMany: false
         }, workspaceFolder);
 
-        if (UriSelection.is(result)) {
-            if (await this.hostedPluginServer.isPluginValid(result.uri.toString())) {
-                this.pluginLocation = result.uri;
-                this.messageService.info('Plugin folder is set to: ' + this.labelProvider.getLongName(result.uri));
+        if (result) {
+            if (await this.hostedPluginServer.isPluginValid(result.toString())) {
+                this.pluginLocation = result;
+                this.messageService.info('Plugin folder is set to: ' + this.labelProvider.getLongName(result));
             } else {
                 this.messageService.error('Specified folder does not contain valid plugin.');
             }

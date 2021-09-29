@@ -18,7 +18,7 @@ import { Widget } from '@theia/core/shared/@phosphor/widgets';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { QuickInputService } from '@theia/core/lib/browser';
+import { codicon, QuickInputService } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
@@ -36,11 +36,11 @@ export namespace MiniBrowserCommands {
     export const PREVIEW: Command = {
         id: 'mini-browser.preview',
         label: 'Open Preview',
-        iconClass: 'theia-open-preview-icon'
+        iconClass: codicon('open-preview')
     };
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',
-        iconClass: 'theia-open-file-icon'
+        iconClass: codicon('go-to-file')
     };
     export const OPEN_URL: Command = {
         id: 'mini-browser.openUrl',
@@ -53,7 +53,12 @@ export namespace MiniBrowserCommands {
  * Further options for opening a new `Mini Browser` widget.
  */
 export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrowserProps {
-
+    /**
+     * Controls how the mini-browser widget should be opened.
+     * - `source`: editable source.
+     * - `preview`: rendered content of the source.
+     */
+    openFor?: 'source' | 'preview';
 }
 
 @injectable()
@@ -99,14 +104,20 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         });
     }
 
-    canHandle(uri: URI): number {
+    canHandle(uri: URI, options?: MiniBrowserOpenerOptions): number {
         // It does not guard against directories. For instance, a folder with this name: `Hahahah.html`.
         // We could check with the FS, but then, this method would become async again.
         const extension = uri.toString().split('.').pop();
-        if (extension) {
+        if (!extension) {
+            return 0;
+        }
+        if (options?.openFor === 'source') {
+            return -100;
+        } else if (options?.openFor === 'preview') {
+            return 200; // higher than that of the editor.
+        } else {
             return this.supportedExtensions.get(extension.toLocaleLowerCase()) || 0;
         }
-        return 0;
     }
 
     async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
@@ -240,7 +251,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         }
         await this.open(uri, {
             mode: 'reveal',
-            widgetOptions: { ref, mode: 'open-to-right' }
+            widgetOptions: { ref, mode: 'open-to-right' },
+            openFor: 'preview'
         });
     }
 
@@ -248,7 +260,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         const uri = this.getSourceUri(ref);
         if (uri) {
             await open(this.openerService, uri, {
-                widgetOptions: { ref, mode: 'open-to-left' }
+                widgetOptions: { ref, mode: 'tab-after' },
+                openFor: 'source'
             });
         }
     }
@@ -286,7 +299,8 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
                 area: 'right'
             },
             resetBackground,
-            iconClass: 'theia-mini-browser-icon'
+            iconClass: codicon('preview'),
+            openFor: 'preview'
         };
     }
 

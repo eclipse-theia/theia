@@ -160,13 +160,14 @@
 
 .p-Menu-itemSubmenuIcon {
   width: var(--theia-icon-size);
-  padding: 0px 4px 0px 0px;
+  padding: 0px 10px 0px 0px;
 }
 
 
 .p-Menu-item[data-type='separator'] > div {
   padding: 0;
   height: 9px;
+  opacity: 0.36;
 }
 
 
@@ -178,18 +179,36 @@
   border-top: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
 }
 
+.p-Menu-item[data-type='separator'] > div.p-Menu-itemIcon::after {
+  margin-left: 12px;
+}
+
+.p-Menu-item[data-type='separator'] > div.p-Menu-itemSubmenuIcon::after {
+  margin-right: 12px;
+}
+
 .p-Menu-itemIcon::before,
 .p-Menu-itemSubmenuIcon::before {
-  font-family: FontAwesome;
+  font: normal normal normal 16px/1 codicon;
+  display: inline-block;
+  text-decoration: none;
+  text-rendering: auto;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  transform: translateY(20%);
 }
 
 
 .p-Menu-item.p-mod-toggled > .p-Menu-itemIcon::before {
-  content: '\f00c';
+  content: '\eab2';
+  transform: scale(0.8) translateY(20%);
 }
 
 
 .p-Menu-item[data-type='submenu'] > .p-Menu-itemSubmenuIcon::before {
-  content: '\f0da';
-
+  content: '\eab6';
 }

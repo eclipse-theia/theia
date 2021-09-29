@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Event } from './event';
+// eslint-disable-next-line @theia/runtime-import-check
 import { QuickInputButtonHandle, QuickPick, QuickPickItem, QuickPickOptions } from '../browser/quick-input/quick-input-service';
 
 export const quickPickServicePath = '/services/quickPick';

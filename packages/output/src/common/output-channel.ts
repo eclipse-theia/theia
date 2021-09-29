@@ -20,9 +20,12 @@ import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
+// eslint-disable-next-line @theia/runtime-import-check
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+// eslint-disable-next-line @theia/runtime-import-check
 import { MonacoTextModelService, IReference } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { OutputUri } from './output-uri';
+// eslint-disable-next-line @theia/runtime-import-check
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
 

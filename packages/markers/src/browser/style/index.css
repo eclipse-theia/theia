@@ -28,13 +28,9 @@
     align-items: center;
 }
 
-.theia-marker-container .markerNode,
-.theia-marker-container .markerFileNode {
-    width: calc(100% - 32px);
-}
-
 .theia-marker-container .markerNode div,
 .theia-marker-container .markerFileNode div {
+    display: flex;
     margin-right: 5px;
 }
 
@@ -83,10 +79,6 @@
     text-overflow: ellipsis;
 }
 
-.problem-tab-icon::before {
-    content: "\f06a"
-}
-
 .theia-marker-container .row-button-container {
     display: none;
 }
@@ -97,10 +89,4 @@
     flex: 1;
     align-items: center;
     align-self: center;
-}
-
-.theia-marker-container .row-button-container .remove-node {
-    background-image: var(--theia-icon-close);
-    width: 15px;
-    height: 15px;
 }

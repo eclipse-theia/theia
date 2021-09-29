@@ -38,19 +38,20 @@ export interface PreviewConfiguration {
     'preview.openByDefault': boolean;
 }
 
+export const PreviewPreferenceContribution = Symbol('PreviewPreferenceContribution');
 export const PreviewPreferences = Symbol('PreviewPreferences');
 export type PreviewPreferences = PreferenceProxy<PreviewConfiguration>;
 
-export function createPreviewPreferences(
-    preferences: PreferenceService
-): PreviewPreferences {
-    return createPreferenceProxy(preferences, PreviewConfigSchema);
+export function createPreviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = PreviewConfigSchema): PreviewPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindPreviewPreferences(bind: interfaces.Bind): void {
     bind(PreviewPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createPreviewPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: PreviewConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(PreviewPreferenceContribution);
+        return createPreviewPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(PreviewPreferenceContribution).toConstantValue({ schema: PreviewConfigSchema });
+    bind(PreferenceContribution).toService(PreviewPreferenceContribution);
 }

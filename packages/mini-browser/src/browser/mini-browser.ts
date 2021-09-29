@@ -19,7 +19,7 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { NavigatableWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BaseWidget, PanelLayout } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, codicon, PanelLayout } from '@theia/core/lib/browser/widgets/widget';
 import { MiniBrowserProps, MiniBrowserContentFactory } from './mini-browser-content';
 
 export { MiniBrowserProps };
@@ -33,7 +33,7 @@ export class MiniBrowserOptions {
 export class MiniBrowser extends BaseWidget implements NavigatableWidget, StatefulWidget {
 
     static ID = 'mini-browser';
-    static ICON = 'fa fa-globe';
+    static ICON = codicon('globe');
 
     @inject(MiniBrowserOptions)
     protected readonly options: MiniBrowserOptions;

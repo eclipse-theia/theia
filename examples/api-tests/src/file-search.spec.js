@@ -21,6 +21,7 @@ describe('file-search', function () {
 
     const Uri = require('@theia/core/lib/common/uri');
     const { QuickFileOpenService } = require('@theia/file-search/lib/browser/quick-file-open');
+    const { CancellationTokenSource } = require('@theia/core/lib/common/cancellation');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -32,30 +33,80 @@ describe('file-search', function () {
 
             it('should compare two quick-open-items by `label`', () => {
 
-                /** @type monaco.quickInput.IAnythingQuickPickItem */
-                const a = { label: 'a', resource: new Uri.default('a') };
-                /** @type monaco.quickInput.IAnythingQuickPickItem */
-                const b = { label: 'a', resource: new Uri.default('b') };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const a = { label: 'a', uri: new Uri.default('b') };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const b = { label: 'b', uri: new Uri.default('a') };
 
                 assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
                 assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');
                 assert.equal(quickFileOpenService['compareItems'](a, a), 0, 'items should be equal');
-
-                assert.equal(quickFileOpenService['compareItems'](a, b, 'label'), 1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](b, a, 'label'), -1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](a, a, 'label'), 0, 'items should be equal');
             });
 
             it('should compare two quick-open-items by `uri`', () => {
 
-                /** @type monaco.quickInput.IAnythingQuickPickItem */
-                const a = { label: 'a', resource: new Uri.default('a') };
-                /** @type monaco.quickInput.IAnythingQuickPickItem */
-                const b = { label: 'a', resource: new Uri.default('b') };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const a = { label: 'a', uri: new Uri.default('a') };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const b = { label: 'a', uri: new Uri.default('b') };
 
-                assert.equal(quickFileOpenService['compareItems'](a, b, 'resource'), 1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](b, a, 'resource'), -1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](a, a, 'resource'), 0, 'items should be equal');
+                assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
+                assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');
+                assert.equal(quickFileOpenService['compareItems'](a, a), 0, 'items should be equal');
+            });
+
+        });
+
+        describe('#filterAndRange', () => {
+
+            it('should return the default when not searching', () => {
+                const filterAndRange = quickFileOpenService['filterAndRange'];
+                assert.equal(filterAndRange, quickFileOpenService['filterAndRangeDefault']);
+            });
+
+            it('should update when searching', () => {
+                quickFileOpenService['getPicks']('a:2:1', new CancellationTokenSource().token); // perform a mock search.
+                const filterAndRange = quickFileOpenService['filterAndRange'];
+                assert.equal(filterAndRange.filter, 'a');
+                assert.deepEqual(filterAndRange.range, { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } });
+            });
+
+        });
+
+        describe('#splitFilterAndRange', () => {
+
+            const expression1 = 'a:2:1';
+            const expression2 = 'a:2,1';
+            const expression3 = 'a:2#2';
+            const expression4 = 'a#2:2';
+            const expression5 = 'a#2,1';
+            const expression6 = 'a#2#2';
+            const expression7 = 'a:2';
+            const expression8 = 'a#2';
+
+            it('should split the filter correctly for different combinations', () => {
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression1).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression2).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression3).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression4).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression5).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression6).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression7).filter), 'a');
+                assert.equal((quickFileOpenService['splitFilterAndRange'](expression8).filter), 'a');
+            });
+
+            it('should split the range correctly for different combinations', () => {
+                const rangeTest1 = { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } };
+                const rangeTest2 = { start: { line: 1, character: 1 }, end: { line: 1, character: 1 } };
+
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression1).range, rangeTest1);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression2).range, rangeTest1);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression3).range, rangeTest2);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression4).range, rangeTest2);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression5).range, rangeTest1);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression6).range, rangeTest2);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression7).range, rangeTest1);
+                assert.deepEqual(quickFileOpenService['splitFilterAndRange'](expression8).range, rangeTest1);
             });
 
         });

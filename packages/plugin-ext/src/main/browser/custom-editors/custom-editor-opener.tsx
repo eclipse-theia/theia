@@ -37,8 +37,12 @@ export class CustomEditorOpener implements OpenHandler {
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) {
-        this.id = `custom-editor-${this.editor.viewType}`;
+        this.id = CustomEditorOpener.toCustomEditorId(this.editor.viewType);
         this.label = this.editor.displayName;
+    }
+
+    static toCustomEditorId(editorViewType: string): string {
+        return `custom-editor-${editorViewType}`;
     }
 
     canHandle(uri: URI): number {
@@ -52,7 +56,8 @@ export class CustomEditorOpener implements OpenHandler {
         switch (this.editor.priority) {
             case CustomEditorPriority.default: return 500;
             case CustomEditorPriority.builtin: return 400;
-            case CustomEditorPriority.option: return 300;
+            /** `option` should not open the custom-editor by default. */
+            case CustomEditorPriority.option: return 1;
             default: return 200;
         }
     }

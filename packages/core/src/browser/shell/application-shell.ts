@@ -36,6 +36,9 @@ import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './ta
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed } from '../widgets';
+import { CorePreferences } from '../core-preferences';
+import { environment } from '../../common';
+import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -54,12 +57,14 @@ export type ApplicationShellLayoutVersion =
     /** view containers are introduced, backward compatible to 2.0 */
     3.0 |
     /** git history view is replaced by a more generic scm history view, backward compatible to 3.0 */
-    4.0;
+    4.0 |
+    /** Replace custom/font-awesome icons with codicons */
+    5.0;
 
 /**
  * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
  */
-export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 4.0;
+export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
@@ -78,19 +83,24 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar
+        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar,
+        @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
     ) { }
 
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();
-        const tabBar = new ToolbarAwareTabBar(this.tabBarToolbarRegistry, this.tabBarToolbarFactory, {
-            renderer,
-            // Scroll bar options
-            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
-            useBothWheelAxes: true,
-            scrollXMarginOffset: 4,
-            suppressScrollY: true
-        });
+        const tabBar = new ToolbarAwareTabBar(
+            this.tabBarToolbarRegistry,
+            this.tabBarToolbarFactory,
+            this.breadcrumbsRendererFactory,
+            {
+                renderer,
+                // Scroll bar options
+                handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+                useBothWheelAxes: true,
+                scrollXMarginOffset: 4,
+                suppressScrollY: true
+            });
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
         tabBar.disposed.connect(() => renderer.dispose());
@@ -204,7 +214,8 @@ export class ApplicationShell extends Widget {
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
-        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
+        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
     ) {
         super(options as Widget.IOptions);
         this.addClass(APPLICATION_SHELL_CLASS);
@@ -250,6 +261,17 @@ export class ApplicationShell extends Widget {
     protected init(): void {
         this.initSidebarVisibleKeyContext();
         this.initFocusKeyContexts();
+
+        if (!environment.electron.is()) {
+            this.corePreferences.ready.then(() => {
+                this.setTopPanelVisibility(this.corePreferences['window.menuBarVisibility']);
+            });
+            this.corePreferences.onPreferenceChanged(preference => {
+                if (preference.preferenceName === 'window.menuBarVisibility') {
+                    this.setTopPanelVisibility(preference.newValue);
+                }
+            });
+        }
     }
 
     protected initSidebarVisibleKeyContext(): void {
@@ -277,6 +299,11 @@ export class ApplicationShell extends Widget {
         };
         updateFocusContextKeys();
         this.activeChanged.connect(updateFocusContextKeys);
+    }
+
+    protected setTopPanelVisibility(preference: string): void {
+        const hiddenPreferences = ['compact', 'hidden'];
+        this.topPanel.setHidden(hiddenPreferences.includes(preference));
     }
 
     protected onBeforeAttach(msg: Message): void {
@@ -448,7 +475,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, this.corePreferences);
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
@@ -466,7 +493,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, this.corePreferences);
         dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
@@ -493,6 +520,7 @@ export class ApplicationShell extends Widget {
     protected createTopPanel(): Panel {
         const topPanel = new Panel();
         topPanel.id = 'theia-top-panel';
+        topPanel.hide();
         return topPanel;
     }
 
@@ -1345,7 +1373,7 @@ export class ApplicationShell extends Widget {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {
             const element: StatusBarEntry = {
-                text: '$(window-maximize)',
+                text: '$(codicon-window)',
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',
                 command: 'core.toggle.bottom.panel',

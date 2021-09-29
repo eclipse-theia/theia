@@ -249,7 +249,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
         const element = document.createElement('iframe');
         element.className = 'webview';
-        element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin');
+        element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads');
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
         element.style.border = 'none';
         element.style.width = '100%';

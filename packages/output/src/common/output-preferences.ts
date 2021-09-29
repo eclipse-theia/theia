@@ -15,12 +15,14 @@
  ********************************************************************************/
 
 import { interfaces } from '@theia/core/shared/inversify';
+
 import {
     createPreferenceProxy,
     PreferenceProxy,
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema
+    // eslint-disable-next-line @theia/runtime-import-check
 } from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {
@@ -38,18 +40,20 @@ export interface OutputConfiguration {
     'output.maxChannelHistory': number
 }
 
+export const OutputPreferenceContribution = Symbol('OutputPreferenceContribution');
 export const OutputPreferences = Symbol('OutputPreferences');
 export type OutputPreferences = PreferenceProxy<OutputConfiguration>;
 
-export function createOutputPreferences(preferences: PreferenceService): OutputPreferences {
-    return createPreferenceProxy(preferences, OutputConfigSchema);
+export function createOutputPreferences(preferences: PreferenceService, schema: PreferenceSchema = OutputConfigSchema): OutputPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindOutputPreferences(bind: interfaces.Bind): void {
     bind(OutputPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createOutputPreferences(preferences);
-    });
-
-    bind(PreferenceContribution).toConstantValue({ schema: OutputConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(OutputPreferenceContribution);
+        return createOutputPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(OutputPreferenceContribution).toConstantValue({ schema: OutputConfigSchema });
+    bind(PreferenceContribution).toService(OutputPreferenceContribution);
 }

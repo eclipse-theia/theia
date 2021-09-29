@@ -73,28 +73,28 @@
     padding: 0 8px 0 2px;
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .image-container{
+.theia-scm-history .commitListElement .containerHead .headContent .image-container {
     margin-right: 5px;
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .image-container img{
+.theia-scm-history .commitListElement .containerHead .headContent .image-container img {
     width: 27px;
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer{
+.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer {
     min-width: calc(100% - 93px);
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer.singleFileMode{
+.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer.singleFileMode {
     width: 100%;
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .expansionToggle{
+.theia-scm-history .commitListElement .containerHead .headContent .expansionToggle {
     display: flex;
     align-items: center;
 }
 
-.theia-scm-history .commitListElement .containerHead .headContent .detailButton{
+.theia-scm-history .commitListElement .containerHead .headContent .detailButton {
     display: flex;
     align-items: center;
     visibility: hidden;
@@ -122,6 +122,6 @@
     font-size: smaller;
 }
 
-.scm-history-tab-icon::before {
-    content: "\f1da"
+.theia-scm-history .large-spinner {
+    font-size: 48px;
 }

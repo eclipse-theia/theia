@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, TransferInputBox, Plugin,
-    Item, TransferQuickInputButton, TransferQuickPickItems, TransferQuickInput, TransferQuickPick
+    Item, TransferQuickInputButton, TransferQuickPickItems, TransferQuickInput
 } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
@@ -41,7 +41,7 @@ export function isPromiseCanceledError(error: any): boolean {
 }
 
 export function getIconUris(iconPath: theia.QuickInputButton['iconPath']): { dark: URI, light: URI } | { id: string } {
-    if (iconPath instanceof ThemeIcon) {
+    if (ThemeIcon.is(iconPath)) {
         return { id: iconPath.id };
     }
     const dark = getDarkIconUri(iconPath as URI | { light: URI; dark: URI; });
@@ -176,10 +176,6 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         const session: any = new InputBoxExt(this, this.proxy, plugin, () => this._sessions.delete(session._id));
         this._sessions.set(session._id, session);
         return session;
-    }
-
-    showCustomQuickPick<T extends QuickPickItem>(options: TransferQuickPick<T>): void {
-        this.proxy.$showCustomQuickPick(options);
     }
 
     hide(): void {
@@ -389,6 +385,7 @@ export class QuickInputExt implements QuickInput {
         this._fireHide();
         this.disposableCollection.dispose();
         this._onDidDispose();
+        this.quickOpenMain.$dispose(this._id);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -439,7 +436,7 @@ export class QuickInputExt implements QuickInput {
             const relativePath = path.relative(packagePath, normalizedPath);
             return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
         };
-        if ('id' in iconPath || iconPath instanceof ThemeIcon) {
+        if (ThemeIcon.is(iconPath)) {
             return iconPath;
         } else if (typeof iconPath === 'string' || iconPath instanceof monaco.Uri) {
             return URI.parse(toUrl(iconPath));
@@ -616,6 +613,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
             this._handlesToItems.set(i, item);
             this._itemsToHandles.set(item, i);
         });
+        items.forEach((item, i) => Object.assign(item, { handle: i }));
         this.update({
             items
         });
@@ -689,27 +687,5 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
         const items = handles.map(handle => this._handlesToItems.get(handle)).filter(e => !!e) as T[];
         this._selectedItems = items;
         this._onDidChangeSelectionEmitter.fire(items);
-    }
-
-    show(): void {
-        super.show();
-        this.quickOpen.showCustomQuickPick({
-            id: this._id,
-            title: this.title,
-            step: this.step,
-            totalSteps: this.totalSteps,
-            enabled: this.enabled,
-            busy: this.busy,
-            ignoreFocusOut: this.ignoreFocusOut,
-            value: this.value,
-            placeholder: this.placeholder,
-            buttons: this.buttons,
-            items: convertToTransferQuickPickItems(this.items),
-            canSelectMany: this.canSelectMany,
-            matchOnDescription: this.matchOnDescription,
-            matchOnDetail: this.matchOnDetail,
-            activeItems: this.activeItems,
-            selectedItems: this.selectedItems
-        });
     }
 }

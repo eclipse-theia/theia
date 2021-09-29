@@ -44,16 +44,20 @@ export interface ProblemConfiguration {
     'problems.autoReveal': boolean
 }
 
+export const ProblemPreferenceContribution = Symbol('ProblemPreferenceContribution');
 export const ProblemPreferences = Symbol('ProblemPreferences');
 export type ProblemPreferences = PreferenceProxy<ProblemConfiguration>;
 
-export const createProblemPreferences = (preferences: PreferenceService): ProblemPreferences =>
-    createPreferenceProxy(preferences, ProblemConfigSchema);
+export function createProblemPreferences(preferences: PreferenceService, schema: PreferenceSchema = ProblemConfigSchema): ProblemPreferences {
+    return createPreferenceProxy(preferences, schema);
+}
 
 export const bindProblemPreferences = (bind: interfaces.Bind): void => {
     bind(ProblemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createProblemPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: ProblemConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(ProblemPreferenceContribution);
+        return createProblemPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(ProblemPreferenceContribution).toConstantValue({ schema: ProblemConfigSchema });
+    bind(PreferenceContribution).toService(ProblemPreferenceContribution);
 };

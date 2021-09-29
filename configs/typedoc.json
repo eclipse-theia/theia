@@ -1,17 +1,16 @@
 {
-  "ignoreCompilerErrors": true,
-  "mode": "modules",
-  "out": "gh-pages/docs/next",
-  "excludeExternals": true,
-  "includeDeclarations": true,
-  "readme": "README.md",
-  "module": "commonjs",
-  "target": "es6",
-  "hideGenerator": true,
-  "external-modulemap": ".*\/packages\/([\\w\\-_]+)\/",
-  "name": "Theia TypeDoc",
+  "emit": false,
   "exclude": [
-    "**/+(dev-packages|examples|typings)/**/*",
+    "+(dev-packages|examples|typings|scripts)",
+    "packages/plugin/src/theia-proposed.d.ts",
+    "packages/*/lib",
+    "**/node_modules",
     "**/*spec.ts"
-  ]
+  ],
+  "excludeExternals": true,
+  "external-modulemap": ".*\/packages\/([\\w\\-_]+)\/",
+  "hideGenerator": true,
+  "name": "Theia TypeDoc",
+  "out": "gh-pages/docs/next",
+  "readme": "README.md"
 }

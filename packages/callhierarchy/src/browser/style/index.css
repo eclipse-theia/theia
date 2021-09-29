@@ -51,12 +51,12 @@
     color: var(--theia-descriptionForeground);
 }
 
-.call-hierarchy-tab-icon::before {
-    content: "\f0ab"
-}
-
 .theia-CallHierarchyTree .definitionNode-content {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.theia-CallHierarchyTree .definitionNode.deprecatedDefinition .definitionNode-content {
+    text-decoration: line-through;
 }

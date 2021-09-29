@@ -38,6 +38,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         return <input type='text'
             ref={input => this.input = input || undefined}
             defaultValue={this.model.query}
+            spellCheck={false}
             className='theia-input'
             placeholder='Search Extensions in Open VSX Registry'
             onChange={this.updateQuery}>

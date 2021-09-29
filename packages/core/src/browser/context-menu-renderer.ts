@@ -20,10 +20,18 @@ import { injectable } from 'inversify';
 import { MenuPath } from '../common/menu';
 import { Disposable, DisposableCollection } from '../common/disposable';
 
-export type Anchor = MouseEvent | { x: number, y: number };
+export interface Coordinate { x: number; y: number; }
+export const Coordinate = Symbol('Coordinate');
 
-export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor {
+export type Anchor = MouseEvent | Coordinate;
+
+export function toAnchor(anchor: HTMLElement | Coordinate): Anchor {
     return anchor instanceof HTMLElement ? { x: anchor.offsetLeft, y: anchor.offsetTop } : anchor;
+}
+
+export function coordinateFromAnchor(anchor: Anchor): Coordinate {
+    const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
+    return { x, y };
 }
 
 export abstract class ContextMenuAccess implements Disposable {

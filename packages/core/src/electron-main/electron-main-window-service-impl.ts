@@ -18,6 +18,7 @@ import { shell } from '../../shared/electron';
 import { injectable, inject } from 'inversify';
 import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication } from './electron-main-application';
+// eslint-disable-next-line @theia/runtime-import-check
 import { NewWindowOptions } from '../browser/window/window-service';
 
 @injectable()
@@ -35,6 +36,10 @@ export class ElectronMainWindowServiceImpl implements ElectronMainWindowService 
             });
         }
         return undefined;
+    }
+
+    openNewDefaultWindow(): void {
+        this.app.openDefaultWindow();
     }
 
 }

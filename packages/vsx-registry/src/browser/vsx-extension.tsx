@@ -28,7 +28,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { MenuPath } from '@theia/core/lib/common';
-import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
@@ -390,8 +390,8 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
                         <span className='name'>{displayName}</span> <span className='version'>{version}</span>
                     </div>
                     <div className='stat'>
-                        {!!downloadCount && <span className='download-count'><i className='fa fa-download' />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {!!averageRating && <span className='average-rating'><i className='fa fa-star' />{averageRating.toFixed(1)}</span>}
+                        {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
+                        {!!averageRating && <span className='average-rating'><i className={codicon('star-full')} />{averageRating.toFixed(1)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
@@ -440,7 +440,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                             {publisher}
                         </span>
                         {!!downloadCount && <span className='download-count' onClick={this.openExtension}>
-                            <i className="fa fa-download" />{downloadFormatter.format(downloadCount)}</span>}
+                            <i className={codicon('cloud-download')} />{downloadFormatter.format(downloadCount)}</span>}
                         {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
@@ -481,17 +481,17 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
             icon = 'shield';
             tooltip = `Only verified owners can publish to "${publisher}" namespace.` + tooltip;
         }
-        return <i className={`fa fa-${icon} namespace-access`} title={tooltip} onClick={this.openPublishedBy} />;
+        return <i className={`${codicon(icon)} namespace-access`} title={tooltip} onClick={this.openPublishedBy} />;
     }
 
     protected renderStars(): React.ReactNode {
         const rating = this.props.extension.averageRating || 0;
 
         const renderStarAt = (position: number) => position <= rating ?
-            <i className='fa fa-star' /> :
+            <i className={codicon('star-full')} /> :
             position > rating && position - rating < 1 ?
-                <i className='fa fa-star-half-o' /> :
-                <i className='fa fa-star-o' />;
+                <i className={codicon('star-half')} /> :
+                <i className={codicon('star-empty')} />;
         return <React.Fragment>
             {renderStarAt(1)}{renderStarAt(2)}{renderStarAt(3)}{renderStarAt(4)}{renderStarAt(5)}
         </React.Fragment>;

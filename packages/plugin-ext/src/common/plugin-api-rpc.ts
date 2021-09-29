@@ -91,9 +91,10 @@ import type {
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+// eslint-disable-next-line @theia/runtime-import-check
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { IPickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/browser';
+import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/browser';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -600,7 +601,7 @@ export interface IInputBoxOptions {
 }
 
 export interface QuickOpenMain {
-    $show(instance: number, options: IPickOptions<TransferQuickPickItems>, token: CancellationToken): Promise<number | number[] | undefined>;
+    $show(instance: number, options: PickOptions<TransferQuickPickItems>, token: CancellationToken): Promise<number | number[] | undefined>;
     $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any>;
     $setError(instance: number, error: Error): Promise<void>;
     $input(options: theia.InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined>;
@@ -609,7 +610,6 @@ export interface QuickOpenMain {
 
     $hide(): void;
     $showInputBox(options: TransferInputBox, validateInput: boolean): Promise<string | undefined>;
-    $showCustomQuickPick<T extends theia.QuickPickItem>(options: TransferQuickPick<T>): void;
 }
 
 export interface WorkspaceMain {
@@ -667,6 +667,7 @@ export interface TreeViewsMain {
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
+    $setDescription(treeViewId: string, description: string): void;
 }
 
 export interface TreeViewsExt {
@@ -1594,13 +1595,33 @@ export interface StorageExt {
     $updatePluginsWorkspaceData(data: KeysToKeysToAnyValue): void;
 }
 
+/**
+ * A DebugConfigurationProviderTriggerKind specifies when the `provideDebugConfigurations` method of a `DebugConfigurationProvider` should be called.
+ * Currently there are two situations:
+ *  (1) providing debug configurations to populate a newly created `launch.json`
+ *  (2) providing dynamically generated configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+ * A trigger kind is used when registering a `DebugConfigurationProvider` with {@link debug.registerDebugConfigurationProvider}.
+ */
+export enum DebugConfigurationProviderTriggerKind {
+    /**
+     * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug
+     * configurations for a newly created launch.json.
+     */
+    Initial = 1,
+    /**
+     * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated debug configurations when the user asks for them through the UI
+     * (e.g. via the "Select and Start Debugging" command).
+     */
+    Dynamic = 2
+}
+
 export interface DebugExt {
     $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
     $breakpointsDidChange(added: Breakpoint[], removed: string[], changed: Breakpoint[]): void;
     $sessionDidCreate(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
-    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined, dynamic?: boolean): Promise<theia.DebugConfiguration[]>;
     $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
     $resolveDebugConfigurationWithSubstitutedVariables(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined):
         Promise<theia.DebugConfiguration | undefined>;
@@ -1772,7 +1793,7 @@ export const MAIN_RPC_CONTEXT = {
 };
 
 export interface TasksExt {
-    $provideTasks(handle: number, token?: CancellationToken): Promise<TaskDto[] | undefined>;
+    $provideTasks(handle: number): Promise<TaskDto[] | undefined>;
     $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
     $onDidStartTask(execution: TaskExecutionDto, terminalId: number): void;
     $onDidEndTask(id: number): void;

@@ -66,7 +66,7 @@ import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/pl
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
 
 export type PluginHost = 'frontend' | string;
-export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
+export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
 export const PluginProgressLocation = 'plugin';
 
@@ -198,6 +198,8 @@ export class HostedPluginSupport {
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
+        // Activate all providers of dynamic configurations, i.e. Let the user pick a configuration from all the available ones.
+        this.debugConfigurationManager.onWillProvideDynamicDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugDynamicConfigurations', '*'));
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
@@ -364,7 +366,7 @@ export class HostedPluginSupport {
             if (contributions.state === PluginContributions.State.LOADED) {
                 contributions.state = PluginContributions.State.STARTING;
                 const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
-                const dynamicContributions = hostContributions.get(plugin.host) || [];
+                const dynamicContributions = hostContributions.get(host) || [];
                 dynamicContributions.push(contributions);
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {

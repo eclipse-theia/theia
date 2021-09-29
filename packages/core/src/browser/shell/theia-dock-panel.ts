@@ -18,9 +18,13 @@ import { find, toArray, ArrayExt } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { MessageLoop } from '../widgets';
+import { UnsafeWidgetUtilities } from '../widgets';
+import { CorePreferences } from '../core-preferences';
+import { inject } from 'inversify';
+import { Emitter, environment } from '../../common';
 
-const MAXIMIZED_CLASS = 'theia-maximized';
+export const MAXIMIZED_CLASS = 'theia-maximized';
+const VISIBLE_MENU_MAXIMIZED_CLASS = 'theia-visible-menu-maximized';
 
 export const MAIN_AREA_ID = 'theia-main-content-panel';
 export const BOTTOM_AREA_ID = 'theia-bottom-content-panel';
@@ -44,7 +48,12 @@ export class TheiaDockPanel extends DockPanel {
      */
     readonly widgetRemoved = new Signal<this, Widget>(this);
 
-    constructor(options?: DockPanel.IOptions) {
+    protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
+    readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
+
+    constructor(options?: DockPanel.IOptions,
+        @inject(CorePreferences) protected readonly preferences?: CorePreferences
+    ) {
         super(options);
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
@@ -54,6 +63,30 @@ export class TheiaDockPanel extends DockPanel {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
+        if (preferences) {
+            preferences.onPreferenceChanged(preference => {
+                if (!this.isElectron() && preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
+                    this.handleMenuBarVisibility(preference.newValue);
+                }
+            });
+        }
+    }
+
+    isElectron(): boolean {
+        return environment.electron.is();
+    }
+
+    protected handleMenuBarVisibility(newValue: string): void {
+        const areaContainer = this.node.parentElement;
+        const maximizedElement = this.getMaximizedElement();
+
+        if (areaContainer === maximizedElement) {
+            if (newValue === 'visible') {
+                this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+            } else {
+                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+            }
+        }
     }
 
     protected _currentTitle: Title<Widget> | undefined;
@@ -142,27 +175,28 @@ export class TheiaDockPanel extends DockPanel {
             return;
         }
         if (this.isAttached) {
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-            this.node.remove();
-            MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            UnsafeWidgetUtilities.detach(this);
         }
         maximizedElement.style.display = 'block';
         this.addClass(MAXIMIZED_CLASS);
-        MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-        maximizedElement.appendChild(this.node);
-        MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+        const preference = this.preferences?.get('window.menuBarVisibility');
+        if (!this.isElectron() && preference === 'visible') {
+            this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
+        }
+        UnsafeWidgetUtilities.attach(this, maximizedElement);
         this.fit();
+        this.onDidToggleMaximizedEmitter.fire(this);
         this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
             maximizedElement.style.display = 'none';
             this.removeClass(MAXIMIZED_CLASS);
-            if (this.isAttached) {
-                MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
-                this.node.remove();
-                MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            this.onDidToggleMaximizedEmitter.fire(this);
+            if (!this.isElectron()) {
+                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
             }
-            MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
-            areaContainer.appendChild(this.node);
-            MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
+            if (this.isAttached) {
+                UnsafeWidgetUtilities.detach(this);
+            }
+            UnsafeWidgetUtilities.attach(this, areaContainer);
             this.fit();
         }));
 

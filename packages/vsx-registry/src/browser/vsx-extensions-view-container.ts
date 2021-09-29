@@ -15,12 +15,13 @@
  *******************************************************************************‚*/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ViewContainer, PanelLayout, ViewContainerPart, Message } from '@theia/core/lib/browser';
+import { ViewContainer, PanelLayout, ViewContainerPart, Message, codicon } from '@theia/core/lib/browser';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { VSXSearchMode } from './vsx-extensions-search-model';
 import { generateExtensionWidgetId } from './vsx-extensions-widget';
 import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
+import { VSXExtensionsCommands } from './vsx-extension-commands';
 
 @injectable()
 export class VSXExtensionsViewContainer extends ViewContainer {
@@ -42,7 +43,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
 
         this.setTitleOptions({
             label: VSXExtensionsViewContainer.LABEL,
-            iconClass: 'theia-vsx-extensions-icon',
+            iconClass: codicon('extensions'),
             closeable: true
         });
     }
@@ -155,6 +156,15 @@ export class VSXExtensionsViewContainer extends ViewContainer {
         this.model.search.query = state.query;
     }
 
+    protected updateToolbarItems(allParts: ViewContainerPart[]): void {
+        super.updateToolbarItems(allParts);
+        this.registerToolbarItem(VSXExtensionsCommands.INSTALL_FROM_VSIX.id, { tooltip: VSXExtensionsCommands.INSTALL_FROM_VSIX.label, group: 'other_1' });
+        this.registerToolbarItem(VSXExtensionsCommands.CLEAR_ALL.id, { tooltip: VSXExtensionsCommands.CLEAR_ALL.label, priority: 1, onDidChange: this.model.onDidChange });
+    }
+
+    protected getToggleVisibilityGroupLabel(): string {
+        return 'a/Views';
+    }
 }
 export namespace VSXExtensionsViewContainer {
     export interface State {

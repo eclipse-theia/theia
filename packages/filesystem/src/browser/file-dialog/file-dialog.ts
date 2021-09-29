@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Disposable, MaybeArray } from '@theia/core/lib/common';
-import { Key, LabelProvider } from '@theia/core/lib/browser';
+import { codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer, LocationListRendererFactory } from '../location';
@@ -146,16 +146,16 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
-        navigationPanel.appendChild(this.back = createIconButton('fa', 'fa-chevron-left'));
+        navigationPanel.appendChild(this.back = createIconButton(...codiconArray('chevron-left', true)));
         this.back.classList.add(NAVIGATION_BACK_CLASS);
         this.back.title = 'Navigate Back';
-        navigationPanel.appendChild(this.forward = createIconButton('fa', 'fa-chevron-right'));
+        navigationPanel.appendChild(this.forward = createIconButton(...codiconArray('chevron-right', true)));
         this.forward.classList.add(NAVIGATION_FORWARD_CLASS);
         this.forward.title = 'Navigate Forward';
-        navigationPanel.appendChild(this.home = createIconButton('fa', 'fa-home'));
+        navigationPanel.appendChild(this.home = createIconButton(...codiconArray('home', true)));
         this.home.classList.add(NAVIGATION_HOME_CLASS);
         this.home.title = 'Go To Initial Location';
-        navigationPanel.appendChild(this.up = createIconButton('fa', 'fa-level-up'));
+        navigationPanel.appendChild(this.up = createIconButton(...codiconArray('arrow-up', true)));
         this.up.classList.add(NAVIGATION_UP_CLASS);
         this.up.title = 'Navigate Up One Directory';
 
@@ -167,6 +167,10 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
         if (this.props.filters) {
             this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });
+            const filters = Object.keys(this.props.filters);
+            if (filters.length) {
+                this.widget.model.tree.setFilter(this.props.filters[filters[0]]);
+            }
         }
     }
 
@@ -404,6 +408,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
 
         this.fileNameField = document.createElement('input');
         this.fileNameField.type = 'text';
+        this.fileNameField.spellcheck = false;
         this.fileNameField.classList.add('theia-input', FILENAME_TEXTFIELD_CLASS);
         this.fileNameField.value = this.props.inputValue || '';
         fileNamePanel.appendChild(this.fileNameField);

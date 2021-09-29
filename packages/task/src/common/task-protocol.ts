@@ -274,7 +274,11 @@ export interface TaskDefinition {
     taskType: string;
     source: string;
     properties: {
-        required: string[];
+        /**
+         * Should be treated as an empty array if omitted.
+         * https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.5.3
+         */
+        required?: string[];
         all: string[];
         schema: IJSONSchema;
     }

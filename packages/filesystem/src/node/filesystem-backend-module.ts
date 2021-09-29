@@ -20,7 +20,6 @@ import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/cor
 import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherService, NsfwFileSystemWatcherServerOptions } from './nsfw-watcher/nsfw-filesystem-service';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { NodeFileUploadService } from './node-file-upload-service';
 import { NsfwOptions } from './nsfw-watcher/nsfw-options';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
@@ -29,7 +28,7 @@ import {
 } from '../common/remote-file-system-provider';
 import { FileSystemProvider } from '../common/files';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
-import { IPCConnectionProvider } from '@theia/core/lib/node';
+import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/core/lib/node';
 import { JsonRpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
 
@@ -63,7 +62,7 @@ export default new ContainerModule(bind => {
         }, RemoteFileSystemProxyFactory)
     ).inSingletonScope();
     bind(NodeFileUploadService).toSelf().inSingletonScope();
-    bind(MessagingService.Contribution).toService(NodeFileUploadService);
+    bind(BackendApplicationContribution).toService(NodeFileUploadService);
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
@@ -74,9 +73,9 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
     bind(FileSystemWatcherServerClient).toSelf();
     bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
 
-    bind<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions).toConstantValue({
-        entryPoint: path.resolve(__dirname, 'nsfw-watcher'),
-    });
+    bind<NsfwFileSystemWatcherServiceProcessOptions>(NsfwFileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => ({
+        entryPoint: path.join(__dirname, 'nsfw-watcher'),
+    })).inSingletonScope();
     bind<NsfwFileSystemWatcherServerOptions>(NsfwFileSystemWatcherServerOptions).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
         const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);

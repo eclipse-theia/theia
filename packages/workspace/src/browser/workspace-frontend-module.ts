@@ -46,6 +46,8 @@ import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { DiffService } from './diff-service';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
+import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
+import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -96,4 +98,5 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
+    rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 });

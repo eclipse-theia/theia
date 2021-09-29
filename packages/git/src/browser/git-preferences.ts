@@ -56,17 +56,20 @@ export interface GitConfiguration {
     'git.alwaysSignOff': boolean
 }
 
+export const GitPreferenceContribution = Symbol('GitPreferenceContribution');
 export const GitPreferences = Symbol('GitPreferences');
 export type GitPreferences = PreferenceProxy<GitConfiguration>;
 
-export function createGitPreferences(preferences: PreferenceService): GitPreferences {
-    return createPreferenceProxy(preferences, GitConfigSchema);
+export function createGitPreferences(preferences: PreferenceService, schema: PreferenceSchema = GitConfigSchema): GitPreferences {
+    return createPreferenceProxy(preferences, schema);
 }
 
 export function bindGitPreferences(bind: interfaces.Bind): void {
     bind(GitPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createGitPreferences(preferences);
-    });
-    bind(PreferenceContribution).toConstantValue({ schema: GitConfigSchema });
+        const contribution = ctx.container.get<PreferenceContribution>(GitPreferenceContribution);
+        return createGitPreferences(preferences, contribution.schema);
+    }).inSingletonScope();
+    bind(GitPreferenceContribution).toConstantValue({ schema: GitConfigSchema });
+    bind(PreferenceContribution).toService(GitPreferenceContribution);
 }

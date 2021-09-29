@@ -134,7 +134,7 @@ describe('Monaco API', async function () {
         }
 
         const textMateColorMap = textmateService['grammarRegistry'].getColorMap();
-        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the ligth theme to be enabled.');
+        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the light theme to be enabled.');
 
         const monacoColorMap = (monaco.modes.TokenizationRegistry.getColorMap() || []).
             splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());

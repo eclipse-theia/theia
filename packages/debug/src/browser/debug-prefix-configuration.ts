@@ -23,12 +23,14 @@ import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
-import { QuickAccessContribution, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
-import { filterItems } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { CancellationToken } from '@theia/core/lib/common';
 
 @injectable()
-export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickAccessContribution, monaco.quickInput.IQuickAccessDataService {
+export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickAccessContribution, QuickAccessProvider {
+    static readonly PREFIX = 'debug ';
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -44,6 +46,9 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
+
+    @inject(QuickAccessRegistry)
+    protected readonly quickAccessRegistry: QuickAccessRegistry;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -78,7 +83,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     execute(): void {
-        this.quickInputService?.open(DebugQuickAccessProvider.PREFIX);
+        this.quickInputService?.open(DebugPrefixConfiguration.PREFIX);
     }
 
     isEnabled(): boolean {
@@ -94,27 +99,47 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     registerQuickAccessProvider(): void {
-        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
-            ctor: DebugQuickAccessProvider,
-            prefix: DebugQuickAccessProvider.PREFIX,
+        this.quickAccessRegistry.registerQuickAccessProvider({
+            getInstance: () => this,
+            prefix: DebugPrefixConfiguration.PREFIX,
             placeholder: '',
             helpEntries: [{ description: 'Debug Configuration', needsEditor: false }]
         });
-        DebugQuickAccessProvider.dataService = this as monaco.quickInput.IQuickAccessDataService;
     }
 
-    async getPicks(filter: string, token: monaco.CancellationToken): Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>> {
-        const items: Array<monaco.quickInput.IAnythingQuickPickItem> = [];
+    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
+        const items: QuickPickItem[] = [];
         const configurations = this.debugConfigurationManager.all;
-        Array.from(configurations).forEach(config => {
+
+        for (const config of configurations) {
             items.push({
                 label: config.configuration.name,
                 description: this.workspaceService.isMultiRootWorkspaceOpened
                     ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
                     : '',
-                accept: () => this.runConfiguration(config)
+                execute: () => this.runConfiguration(config)
             });
-        });
+        }
+
+        // Resolve dynamic configurations from providers
+        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
+        for (const typeConfigurations of configurationsByType) {
+            const dynamicConfigurations = typeConfigurations.configurations;
+            if (dynamicConfigurations.length > 0) {
+                items.push({
+                    label: typeConfigurations.type,
+                    type: 'separator'
+                });
+            }
+
+            for (const configuration of dynamicConfigurations) {
+                items.push({
+                    label: configuration.name,
+                    execute: () => this.runConfiguration({configuration})
+                });
+            }
+        }
+
         return filterItems(items, filter);
     }
 
@@ -148,7 +173,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         const text: string = this.debugConfigurationManager.current
             ? this.debugConfigurationManager.current.configuration.name
             : '';
-        const icon = '$(play)';
+        const icon = '$(codicon-debug-alt-small)';
         this.statusBar.setElement(this.statusBarId, {
             alignment: StatusBarAlignment.LEFT,
             text: text.length ? `${icon} ${text}` : icon,
@@ -162,28 +187,5 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
      */
     protected removeDebugStatusBar(): void {
         this.statusBar.removeElement(this.statusBarId);
-    }
-}
-export class DebugQuickAccessProvider extends monaco.quickInput.PickerQuickAccessProvider<monaco.quickInput.IQuickPickItem> {
-    static PREFIX = 'debug ';
-    static dataService: monaco.quickInput.IQuickAccessDataService;
-
-    private static readonly NO_RESULTS_PICK: monaco.quickInput.IAnythingQuickPickItem = {
-        label: 'No matching launch configurations'
-    };
-
-    constructor() {
-        super(DebugQuickAccessProvider.PREFIX, {
-            canAcceptInBackground: true,
-            noResultsPick: DebugQuickAccessProvider.NO_RESULTS_PICK
-        });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getPicks(filter: string, disposables: any, token: monaco.CancellationToken): monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>
-        | Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>>
-        | monaco.quickInput.FastAndSlowPicks<monaco.quickInput.IAnythingQuickPickItem>
-        | null {
-        return DebugQuickAccessProvider.dataService?.getPicks(filter, token);
     }
 }

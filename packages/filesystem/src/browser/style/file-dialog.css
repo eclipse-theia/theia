@@ -16,8 +16,8 @@
 
 :root {
     --theia-private-file-dialog-input-height: 21px;
-    --theia-private-location-list-panel-left: 82px;
-    --theia-private-location-list-panel-width: 417px;
+    --theia-private-location-list-panel-left: 92px;
+    --theia-private-location-list-panel-width: 407px;
     --theia-private-navigation-panel-icon-size: 21px;
     --theia-private-navigation-panel-line-height: 23px;
 }
@@ -64,30 +64,22 @@
 /*
  * Navigation panel items
  */
- 
-.dialogContent .theia-NavigationPanel span
- {
+
+.dialogContent .theia-NavigationPanel span {
     position: absolute;
-    top: 0px;
+    top: 2px;
     line-height: var(--theia-private-navigation-panel-line-height);
     cursor: pointer;
     width: var(--theia-private-navigation-panel-icon-size);
     text-align: center;
 }
 
-.dialogContent .theia-NavigationPanel span:not(.theia-mod-disabled) i.active 
-{
-    transform: scale(var(--theia-toolbar-active-transform-scale));
-}
-
-.dialogContent .theia-NavigationPanel span:focus 
-{
+.dialogContent .theia-NavigationPanel span:focus {
     outline: none;
     box-shadow: none;
 }
 
-.dialogContent .theia-NavigationPanel span:focus-visible
-{
+.dialogContent .theia-NavigationPanel span:focus-visible {
     outline-width: 1px;
     outline-style: solid;
     outline-offset: -1px;
@@ -95,14 +87,13 @@
     outline-color: var(--theia-focusBorder);
 }
 
-.dialogContent .theia-NavigationBack.theia-mod-disabled:focus,
-.dialogContent .theia-NavigationForward.theia-mod-disabled:focus,
-.dialogContent .theia-NavigationHome.theia-mod-disabled:focus,
-.dialogContent .theia-NavigationUp.theia-mod-disabled:focus
-{
-    outline: none;
-    border: none;
-    opacity: var(--theia-mod-disabled-opacity) !important;
+.dialogContent span.theia-mod-disabled {
+    pointer-events: none;
+    cursor: default;
+}
+
+.dialogContent span.theia-mod-disabled .action-item {
+    background: none;
 }
 
 .dialogContent .theia-NavigationBack {
@@ -110,15 +101,15 @@
 }
 
 .dialogContent .theia-NavigationForward {
-    left: 21px;
+    left: 23px;
 }
 
 .dialogContent .theia-NavigationHome {
-    left: 41px;
+    left: 45px;
 }
 
 .dialogContent .theia-NavigationUp {
-    left: 61px;
+    left: 67px;
 }
 
 .dialogContent .theia-LocationListPanel {

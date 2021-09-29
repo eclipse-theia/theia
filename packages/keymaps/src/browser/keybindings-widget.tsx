@@ -22,7 +22,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
-    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding
+    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
@@ -116,7 +116,7 @@ export class KeybindingWidget extends ReactWidget {
         this.id = KeybindingWidget.ID;
         this.title.label = KeybindingWidget.LABEL;
         this.title.caption = KeybindingWidget.LABEL;
-        this.title.iconClass = 'fa fa-bars';
+        this.title.iconClass = codicon('three-bars');
         this.title.closable = true;
         this.update();
 
@@ -296,6 +296,7 @@ export class KeybindingWidget extends ReactWidget {
                     id='search-kb'
                     className={`theia-input${(this.items.length > 0) ? '' : ' no-kb'}`}
                     type='text'
+                    spellCheck={false}
                     placeholder='Search keybindings'
                     autoComplete='off'
                     onKeyUp={this.searchKeybindings}
@@ -385,7 +386,7 @@ export class KeybindingWidget extends ReactWidget {
         return <a title='Edit Keybinding' href='#' onClick={e => {
             e.preventDefault();
             this.editKeybinding(item);
-        }}><i className='fa fa-pencil kb-action-item'></i></a>;
+        }}><i className={`${codicon('edit')} kb-action-item`}></i></a>;
     }
 
     /**
@@ -398,7 +399,7 @@ export class KeybindingWidget extends ReactWidget {
             ? <a title='Reset Keybinding' href='#' onClick={e => {
                 e.preventDefault();
                 this.resetKeybinding(item);
-            }}><i className='fa fa-undo kb-action-item'></i></a> : '';
+            }}><i className={`${codicon('discard')} kb-action-item`}></i></a> : '';
     }
 
     /**

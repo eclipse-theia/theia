@@ -28,9 +28,12 @@ export interface ScmProvider extends Disposable {
 
     readonly groups: ScmResourceGroup[];
     readonly onDidChange: Event<void>;
+    readonly onDidChangeResources?: Event<void>;
 
     readonly statusBarCommands?: ScmCommand[];
     readonly onDidChangeStatusBarCommands?: Event<ScmCommand[] | undefined>;
+
+    readonly onDidChangeCommitTemplate: Event<string>;
 
     readonly amendSupport?: ScmAmendSupport;
 }
