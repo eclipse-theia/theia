@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2021 Red Hat, Inc. and others.
+ * Copyright (C) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -68,7 +68,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                 this.webviewViews.set(handle, webviewView);
                 this.webviewsMain.hookWebview(webviewView.webview);
 
-                let state = undefined;
+                let state: string | undefined;
                 if (webviewView.webview.state) {
                     try {
                         state = JSON.parse(webviewView.webview.state);
@@ -91,7 +91,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                 });
 
                 try {
-                    this.proxy.$resolveWebviewView(handle, viewType, '', undefined, cancellation);
+                    this.proxy.$resolveWebviewView(handle, viewType, webviewView.title, state, cancellation);
                 } catch (error) {
                     this.logger.error(`Error resolving webview view '${viewType}': ${error}`);
                     webviewView.webview.setHTML('failed to load plugin webview view');

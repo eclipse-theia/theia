@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2021 Red Hat, Inc.
+ * Copyright (C) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -115,7 +115,7 @@ export class WebviewViewsExtImpl implements WebviewViewsExt {
     }
 }
 
-export class WebviewViewExtImpl extends Disposable implements theia.WebviewView {
+export class WebviewViewExtImpl implements theia.WebviewView {
 
     readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
@@ -142,8 +142,6 @@ export class WebviewViewExtImpl extends Disposable implements theia.WebviewView 
         webview: WebviewImpl,
         isVisible: boolean,
     ) {
-        super(() => { });
-
         this._viewType = viewType;
         this._title = title;
         this.handle = handle;

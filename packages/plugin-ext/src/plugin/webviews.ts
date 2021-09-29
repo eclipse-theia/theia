@@ -36,7 +36,7 @@ export class WebviewsExtImpl implements WebviewsExt {
     private initData: WebviewInitData | undefined;
 
     readonly onDidDisposeEmitter = new Emitter<void>();
-     /* internal */ readonly onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
+    readonly onDidDispose: Event<void> = this.onDidDisposeEmitter.event;
 
     constructor(
         rpc: RPCProtocol,

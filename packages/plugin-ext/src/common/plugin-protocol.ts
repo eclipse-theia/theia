@@ -133,10 +133,6 @@ export enum PluginViewType {
     Webview = 'webview'
 }
 
-/**
- * Whether a plugin installed by a user or system.
- */
-
 export interface PluginPackageView {
     id: string;
     name: string;

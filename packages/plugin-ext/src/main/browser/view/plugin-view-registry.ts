@@ -42,10 +42,9 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 
-import { WebviewView, WebviewViewService } from '../webview-views/webview-views';
+import { WebviewViewImpl, WebviewViewService } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { v4 } from 'uuid';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -332,26 +331,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected async registerWebviewView(viewId: string): Promise<void> {
-        const webview = await this.widgetManager.getOrCreateWidget<WebviewWidget>(
-            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: v4() });
-
-        webview.setContentOptions({ allowScripts: true });
-        const webviewView: WebviewView = {
-            webview: webview,
-            onDidChangeVisibility: webview.onDidChangeVisibility,
-            onDispose: webview.onDidDispose,
-            get title(): string | undefined { return this.title; },
-            set title(value: string | undefined) { this.title = value; },
-
-            get description(): string | undefined { return this.description; },
-            set description(value: string | undefined) { this.description = value; },
-
-            dispose: webview.dispose,
-
-            show: () => {
-                this.openView(viewId);
-            }
-        };
+        const webviewView = new WebviewViewImpl(this.widgetManager);
+        await webviewView.ready;
         const token = CancellationToken.None;
         this.getView(viewId).then(async view => {
             if (view) {
@@ -703,7 +684,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     protected async createViewDataWidget(viewId: string, webviewId?: string): Promise<Widget | undefined> {
         const view = this.views.get(viewId);
-        if (view?.[1].type === PluginViewType.Webview) {
+        if (view?.[1]?.type === PluginViewType.Webview) {
             const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId });
             return webviewWidget;
         }
