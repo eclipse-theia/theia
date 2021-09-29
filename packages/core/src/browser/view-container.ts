@@ -792,6 +792,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return new DisposableCollection(
             addEventListener(part.headerElement, 'dragstart',
                 event => {
+                    event.preventDefault();
                     const mimeData = new MimeData();
                     mimeData.setData('application/vnd.phosphor.view-container-factory', () => part);
                     const clonedHeader = part.headerElement.cloneNode(true) as HTMLElement;
