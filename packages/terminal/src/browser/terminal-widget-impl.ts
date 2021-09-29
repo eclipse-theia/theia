@@ -234,6 +234,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.onDataEmitter.fire(data);
         }));
 
+        this.toDispose.push(this.term.onBinary(data => {
+            this.onDataEmitter.fire(data);
+        }));
+
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
@@ -499,7 +503,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     }
                 };
 
-                const disposable = this.term.onData(sendData);
+                const disposable = new DisposableCollection();
+                disposable.push(this.term.onData(sendData));
+                disposable.push(this.term.onBinary(sendData));
+
                 connection.onDispose(() => disposable.dispose());
 
                 this.toDisposeOnConnect.push(connection);
