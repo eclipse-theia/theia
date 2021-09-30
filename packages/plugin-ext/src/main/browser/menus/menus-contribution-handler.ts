@@ -44,6 +44,7 @@ import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
 import { QuickCommandService } from '@theia/core/lib/browser';
+import { FileTreeWidget } from '@theia/filesystem/lib/browser';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 @injectable()
@@ -496,21 +497,27 @@ export class MenusContributionPointHandler {
             return Disposable.NULL;
         }
 
-        const selectedResource = () => {
+        const getSelectedResources = () => {
             const selection = this.selectionService.selection;
+            const resourceParams = [];
             if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
-                return selection.source.toTreeViewSelection(selection[0]);
+                resourceParams[0] = selection.source.toTreeViewSelection(selection[0]);
+            } else {
+                const uri = this.resourceContextKey.get();
+                resourceParams[0] = uri ? uri['codeUri'] : undefined;
             }
-            const uri = this.resourceContextKey.get();
-            return uri ? uri['codeUri'] : undefined;
+            if (TreeWidgetSelection.is(selection) && selection.source instanceof FileTreeWidget && selection.length > 1) {
+                resourceParams.push(selection.map((item: any) => item.uri && item.uri.codeUri));
+            }
+            return resourceParams;
         };
 
         const toDispose = new DisposableCollection();
         menuPaths.forEach(menuPath => {
             toDispose.push(this.registerMenuAction(menuPath, menu, command => ({
-                execute: () => this.commands.executeCommand(command, selectedResource()),
-                isEnabled: () => this.commands.isEnabled(command, selectedResource()),
-                isVisible: () => this.commands.isVisible(command, selectedResource())
+                execute: () => this.commands.executeCommand(command, ...getSelectedResources()),
+                isEnabled: () => this.commands.isEnabled(command, ...getSelectedResources()),
+                isVisible: () => this.commands.isVisible(command, ...getSelectedResources())
             })));
         });
         return toDispose;
