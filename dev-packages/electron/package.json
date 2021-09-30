@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Electron runtime dependencies for Theia",
   "publishConfig": {
     "access": "public"
