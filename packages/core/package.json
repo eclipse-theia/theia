@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -17,7 +17,7 @@
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
     "@primer/octicons-react": "^9.0.0",
-    "@theia/application-package": "1.17.0",
+    "@theia/application-package": "1.18.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
@@ -169,7 +169,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.17.0",
+    "@theia/ext-scripts": "1.18.0",
     "minimist": "^1.2.0"
   },
   "nyc": {

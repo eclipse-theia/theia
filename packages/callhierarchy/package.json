@@ -1,11 +1,11 @@
 {
   "name": "@theia/callhierarchy",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Theia - Call Hierarchy Extension",
   "dependencies": {
-    "@theia/core": "1.17.0",
-    "@theia/editor": "1.17.0",
-    "@theia/monaco": "1.17.0",
+    "@theia/core": "1.18.0",
+    "@theia/editor": "1.18.0",
+    "@theia/monaco": "1.18.0",
     "ts-md5": "^1.2.2"
   },
   "publishConfig": {
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.17.0"
+    "@theia/ext-scripts": "1.18.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
