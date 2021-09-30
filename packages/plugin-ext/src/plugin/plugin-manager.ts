@@ -33,7 +33,7 @@ import * as theia from '@theia/plugin';
 import { join } from './path';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
-import { Memento, KeyValueStorageProxy } from './plugin-storage';
+import { Memento, KeyValueStorageProxy, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -372,7 +372,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             extensionUri: Uri.file(plugin.pluginFolder),
-            globalState: new Memento(plugin.model.id, true, this.storageProxy),
+            globalState: new GlobalState(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
             asAbsolutePath: asAbsolutePath,

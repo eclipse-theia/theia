@@ -60,6 +60,12 @@ export class Memento implements theia.Memento {
     }
 }
 
+export class GlobalState extends Memento {
+
+    /** @todo: API is not yet implemented. */
+    setKeysForSync(keys: readonly string[]): void { }
+}
+
 /**
  * Singleton.
  * Is used to proxy storage requests to main side.
