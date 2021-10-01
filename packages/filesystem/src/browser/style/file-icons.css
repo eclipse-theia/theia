@@ -37,11 +37,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-left: 2px;
+    padding-right: 4px;
 }
 
-:not(.p-TabBar-tabIcon).default-folder-icon,
-:not(.p-TabBar-tabIcon).default-file-icon {
-    transform: translateX(-2px);
+.default-folder-icon,
+.default-file-icon {
+    padding-right: 6px;
 }
 
 .fa-file:before,

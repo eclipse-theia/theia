@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Electron runtime dependencies for Theia",
   "publishConfig": {
     "access": "public"
@@ -14,6 +14,14 @@
     "url": "https://github.com/eclipse-theia/theia/issues"
   },
   "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "native/src",
+    "native/binding.gyp",
+    "scripts",
+    "*.js",
+    "*.d.ts",
+    "!.eslintrc.js"
+  ],
   "bin": {
     "electron": "electron-cli.js",
     "electron-codecs-test": "electron-codecs-test.js",

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DebugExt, } from '../../../common/plugin-api-rpc';
+import { DebugExt } from '../../../common/plugin-api-rpc';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
@@ -37,8 +37,8 @@ export class PluginDebugAdapterContribution {
         return this.description.label;
     }
 
-    async provideDebugConfigurations(workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
-        return this.debugExt.$provideDebugConfigurations(this.type, workspaceFolderUri);
+    async provideDebugConfigurations(workspaceFolderUri: string | undefined, dynamic: boolean = false): Promise<DebugConfiguration[]> {
+        return this.debugExt.$provideDebugConfigurations(this.type, workspaceFolderUri, dynamic);
     }
 
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {

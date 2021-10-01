@@ -182,8 +182,17 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined> {
-        return this.monacoService.input();
+        let inputOptions: monaco.quickInput.IInputOptions | undefined;
+        if (options) {
+            const { validateInput, ...props } = options;
+            inputOptions = { ...props };
+            if (validateInput) {
+                inputOptions.validateInput = async input => validateInput(input);
+            }
+        }
+        return this.monacoService.input(inputOptions, token);
     }
+
     pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: T[] | Promise<T[]>, options?: O, token?: CancellationToken):
         Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         return this.monacoService.pick(picks, options, token);
@@ -261,6 +270,12 @@ export class MonacoQuickInputService implements QuickInputService {
             return item;
         });
     }
+
+    createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
+        const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
+        return this.wrapQuickPick(quickPick);
+    }
+
     wrapQuickPick<T extends QuickPickItem>(wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>): QuickPick<T> {
         return new MonacoQuickPick(wrapped, this.keybindingRegistry);
     }

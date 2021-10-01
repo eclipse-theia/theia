@@ -24,7 +24,7 @@ import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
 import URI from '@theia/core/lib/common/uri';
-import { Location, Range, SymbolKind, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
+import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import * as React from '@theia/core/shared/react';
 
@@ -103,7 +103,13 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         const symbol = definition.symbolName;
         const location = this.labelProvider.getName(new URI(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
-        return <div className='definitionNode'>
+        const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
+        const classNames = ['definitionNode'];
+        if (isDeprecated) {
+            classNames.push('deprecatedDefinition');
+        }
+
+        return <div className={classNames.join(' ')}>
             <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>
@@ -123,7 +129,13 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         const referenceCount = caller.references.length;
         const location = this.labelProvider.getName(new URI(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
-        return <div className='definitionNode'>
+        const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
+        const classNames = ['definitionNode'];
+        if (isDeprecated) {
+            classNames.push('deprecatedDefinition');
+        }
+
+        return <div className={classNames.join(' ')}>
             <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>

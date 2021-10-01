@@ -27,6 +27,7 @@ import { isMarkdownString, MarkdownString } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { TaskGroup } from './types-impl';
+import { isReadonlyArray } from '../common/arrays';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -168,10 +169,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
             };
         });
     } else {
-        return ranges.map((r): DecorationOptions =>
-            ({
-                range: fromRange(r)!
-            }));
+        return ranges.map(r => ({ range: fromRange(r) }));
     }
 }
 
@@ -213,7 +211,7 @@ export function toMarkdown(value: model.MarkdownString): MarkdownString {
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
     if (!selector) {
         return undefined;
-    } else if (Array.isArray(selector)) {
+    } else if (isReadonlyArray(selector)) {
         return <LanguageSelector>selector.map(fromDocumentSelector);
     } else if (typeof selector === 'string') {
         return selector;
@@ -271,6 +269,8 @@ export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.C
         case types.CompletionItemKind.Event: return model.CompletionItemKind.Event;
         case types.CompletionItemKind.Operator: return model.CompletionItemKind.Operator;
         case types.CompletionItemKind.TypeParameter: return model.CompletionItemKind.TypeParameter;
+        case types.CompletionItemKind.User: return model.CompletionItemKind.User;
+        case types.CompletionItemKind.Issue: return model.CompletionItemKind.Issue;
     }
     return model.CompletionItemKind.Property;
 }
@@ -302,6 +302,8 @@ export function toCompletionItemKind(kind?: model.CompletionItemKind): types.Com
         case model.CompletionItemKind.Event: return types.CompletionItemKind.Event;
         case model.CompletionItemKind.Operator: return types.CompletionItemKind.Operator;
         case model.CompletionItemKind.TypeParameter: return types.CompletionItemKind.TypeParameter;
+        case model.CompletionItemKind.User: return types.CompletionItemKind.User;
+        case model.CompletionItemKind.Issue: return types.CompletionItemKind.Issue;
     }
     return types.CompletionItemKind.Property;
 }
@@ -681,7 +683,8 @@ export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.Call
         detail: item.detail,
         uri: item.uri,
         range: fromRange(item.range),
-        selectionRange: fromRange(item.selectionRange)
+        selectionRange: fromRange(item.selectionRange),
+        tags: item.tags
     };
 }
 

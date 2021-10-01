@@ -1,0 +1,10 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true
+  },
+  "include": [
+    "rules"
+  ],
+  "references": []
+}

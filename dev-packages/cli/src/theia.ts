@@ -45,17 +45,46 @@ function toStringArray(argv?: (string | number)[]): string[] | undefined {
         : argv.map(arg => String(arg));
 }
 
-function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, { modules: string[] }> {
+function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, {
+    modules: string[]
+    cacheRoot?: string
+    force?: boolean
+}> {
     return {
         command,
-        describe: `Rebuild native node modules for the ${target}`,
+        describe: `Rebuild/revert native node modules for "${target}"`,
         builder: {
-            'modules': {
-                array: true,
+            'cacheRoot': {
+                type: 'string',
+                describe: 'Root folder where to store the .browser_modules cache'
             },
+            'modules': {
+                alias: 'm',
+                array: true, // === `--modules/-m` can be specified multiple times
+                describe: 'List of modules to rebuild/revert'
+            },
+            'force': {
+                alias: 'f',
+                boolean: true,
+                describe: 'Rebuild modules for Electron anyway',
+            }
         },
-        handler: args => {
-            rebuild(target, args.modules);
+        handler: ({ cacheRoot, modules, force }) => {
+            // Note: `modules` is actually `string[] | undefined`.
+            if (modules) {
+                // It is ergonomic to pass arguments as --modules="a,b,c,..."
+                // but yargs doesn't parse it this way by default.
+                const flattened: string[] = [];
+                for (const value of modules) {
+                    if (value.includes(',')) {
+                        flattened.push(...value.split(',').map(mod => mod.trim()));
+                    } else {
+                        flattened.push(value);
+                    }
+                }
+                modules = flattened;
+            }
+            rebuild(target, { cacheRoot, modules, force });
         }
     };
 }

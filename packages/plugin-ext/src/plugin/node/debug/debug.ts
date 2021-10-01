@@ -19,7 +19,7 @@ import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint } from '../../../common/plugin-api-rpc-model';
-import { DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
+import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginWebSocketChannel } from '../../../common/connection';
@@ -43,8 +43,11 @@ export class DebugExtImpl implements DebugExt {
     // debug sessions by sessionId
     private sessions = new Map<string, PluginDebugAdapterSession>();
 
-    // providers by type
+    // providers by type (initial)
     private configurationProviders = new Map<string, Set<theia.DebugConfigurationProvider>>();
+    // providers by type (dynamic)
+    private dynamicConfigurationProviders = new Map<string, Set<theia.DebugConfigurationProvider>>();
+
     /**
      * Only use internally, don't send it to the frontend. It's expensive!
      * It's already there as a part of the plugin metadata.
@@ -182,19 +185,22 @@ export class DebugExtImpl implements DebugExt {
         });
     }
 
-    registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
-        console.log(`Debug configuration provider has been registered: ${debugType}`);
-        const providers = this.configurationProviders.get(debugType) || new Set<theia.DebugConfigurationProvider>();
-        this.configurationProviders.set(debugType, providers);
+    registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider, trigger: theia.DebugConfigurationProviderTriggerKind): Disposable {
+        console.log(`Debug configuration provider has been registered: ${debugType}, trigger: ${trigger}`);
+        const providersByTriggerKind = trigger === DebugConfigurationProviderTriggerKind.Initial ? this.configurationProviders : this.dynamicConfigurationProviders;
+        let providers = providersByTriggerKind.get(debugType);
+        if (!providers) {
+            providersByTriggerKind.set(debugType, providers = new Set());
+        }
         providers.add(provider);
 
         return Disposable.create(() => {
             // eslint-disable-next-line @typescript-eslint/no-shadow
-            const providers = this.configurationProviders.get(debugType);
+            const providers = providersByTriggerKind.get(debugType);
             if (providers) {
                 providers.delete(provider);
                 if (providers.size === 0) {
-                    this.configurationProviders.delete(debugType);
+                    providersByTriggerKind.delete(debugType);
                 }
             }
         });
@@ -319,10 +325,10 @@ export class DebugExtImpl implements DebugExt {
         return undefined;
     }
 
-    async $provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration[]> {
+    async $provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined, dynamic: boolean = false): Promise<theia.DebugConfiguration[]> {
         let result: theia.DebugConfiguration[] = [];
 
-        const providers = this.configurationProviders.get(debugType);
+        const providers = dynamic ? this.dynamicConfigurationProviders.get(debugType) : this.configurationProviders.get(debugType);
         if (providers) {
             for (const provider of providers) {
                 if (provider.provideDebugConfigurations) {
@@ -337,7 +343,11 @@ export class DebugExtImpl implements DebugExt {
     async $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration | undefined> {
         let current = debugConfiguration;
 
-        for (const providers of [this.configurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+        for (const providers of [
+            this.configurationProviders.get(debugConfiguration.type),
+            this.dynamicConfigurationProviders.get(debugConfiguration.type),
+            this.configurationProviders.get('*')
+        ]) {
             if (providers) {
                 for (const provider of providers) {
                     if (provider.resolveDebugConfiguration) {
@@ -363,7 +373,11 @@ export class DebugExtImpl implements DebugExt {
         Promise<theia.DebugConfiguration | undefined> {
         let current = debugConfiguration;
 
-        for (const providers of [this.configurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+        for (const providers of [
+            this.configurationProviders.get(debugConfiguration.type),
+            this.dynamicConfigurationProviders.get(debugConfiguration.type),
+            this.configurationProviders.get('*')
+        ]) {
             if (providers) {
                 for (const provider of providers) {
                     if (provider.resolveDebugConfigurationWithSubstitutedVariables) {

@@ -1,14 +1,14 @@
 {
   "private": true,
   "name": "@theia/api-samples",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@theia/core": "1.17.0",
-    "@theia/filesystem": "1.17.0",
-    "@theia/output": "1.17.0",
-    "@theia/vsx-registry": "1.17.0",
-    "@theia/workspace": "1.17.0"
+    "@theia/core": "1.18.0",
+    "@theia/filesystem": "1.18.0",
+    "@theia/output": "1.18.0",
+    "@theia/vsx-registry": "1.18.0",
+    "@theia/workspace": "1.18.0"
   },
   "theiaExtensions": [
     {
@@ -47,6 +47,6 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.17.0"
+    "@theia/ext-scripts": "1.18.0"
   }
 }

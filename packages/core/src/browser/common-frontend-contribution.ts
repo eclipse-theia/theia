@@ -217,6 +217,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     };
+    export const TOGGLE_STATUS_BAR: Command = {
+        id: 'workbench.action.toggleStatusbarVisibility',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Status Bar Visibility'
+    };
     export const TOGGLE_MAXIMIZED: Command = {
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
@@ -528,8 +533,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: '0'
         });
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
+            commandId: CommonCommands.TOGGLE_STATUS_BAR.id,
+            order: '1',
+            label: 'Toggle Status Bar'
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
-            order: '1'
+            order: '2'
         });
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
@@ -770,6 +780,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     this.shell.expandPanel('bottom');
                 }
             }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_STATUS_BAR, {
+            execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
             isEnabled: (event?: Event) => this.canToggleMaximized(event),
@@ -1225,6 +1238,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
+            { id: 'list.highlightForeground', defaults: { dark: '#18A3FF', light: '#0066BF', hc: 'focusBorder' }, description: 'List/Tree foreground color of the match highlights when searching inside the list/tree.' },
+            { id: 'list.focusHighlightForeground', defaults: { dark: 'list.highlightForeground', light: 'list.activeSelectionForeground', hc: 'list.highlightForeground' }, description: 'List/Tree foreground color of the match highlights on actively focused items when searching inside the list/tree.' },
             { id: 'tree.inactiveIndentGuidesStroke', defaults: { dark: Color.transparent('tree.indentGuidesStroke', 0.4), light: Color.transparent('tree.indentGuidesStroke', 0.4), hc: Color.transparent('tree.indentGuidesStroke', 0.4) }, description: 'Tree stroke color for the inactive indentation guides.' },
 
             // Editor Group & Tabs colors should be aligned with https://code.visualstudio.com/api/references/theme-color#editor-groups-tabs
@@ -1467,6 +1482,27 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: 'sideBar.foreground',
                     hc: 'sideBar.foreground'
                 }, description: 'Quick Input foreground color. The Quick Input widget is the container for views like the color theme picker.'
+            },
+            {
+                id: 'quickInput.list.focusBackground', defaults: {
+                    dark: undefined,
+                    light: undefined,
+                    hc: undefined
+                }, description: 'quickInput.list.focusBackground deprecation. Please use quickInputList.focusBackground instead'
+            },
+            {
+                id: 'quickInputList.focusForeground', defaults: {
+                    dark: 'list.activeSelectionForeground',
+                    light: 'list.activeSelectionForeground',
+                    hc: 'list.activeSelectionForeground'
+                }, description: 'Quick picker foreground color for the focused item'
+            },
+            {
+                id: 'quickInputList.focusBackground', defaults: {
+                    dark: 'list.activeSelectionBackground',
+                    light: 'list.activeSelectionBackground',
+                    hc: undefined
+                }, description: 'Quick picker background color for the focused item.'
             },
 
             // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors

@@ -35,6 +35,7 @@ type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'show
 // and at packaging time, clients can decide whether they need the native or the browser-based
 // solution.
 //
+// eslint-disable-next-line @theia/runtime-import-check
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
@@ -91,13 +92,17 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected async canRead(uris: MaybeArray<URI>): Promise<boolean> {
-        const inaccessibleFilePaths = await Promise.all((Array.isArray(uris) ? uris : [uris]).map(
-            async uri => (!await this.fileService.access(uri, FileAccess.Constants.R_OK) && uri.path || '')
-        ).filter(e => e));
-        if (inaccessibleFilePaths.length) {
-            this.messageService.error(`Cannot read ${inaccessibleFilePaths.length} resources: ${inaccessibleFilePaths.join(', ')}`);
+        const resources = Array.isArray(uris) ? uris : [uris];
+        const unreadableResourcePaths: string[] = [];
+        await Promise.all(resources.map(async resource => {
+            if (!await this.fileService.access(resource, FileAccess.Constants.R_OK)) {
+                unreadableResourcePaths.push(resource.path.toString());
+            }
+        }));
+        if (unreadableResourcePaths.length > 0) {
+            this.messageService.error(`Cannot read ${unreadableResourcePaths.length} resource(s): ${unreadableResourcePaths.join(', ')}`);
         }
-        return !!inaccessibleFilePaths.length;
+        return unreadableResourcePaths.length === 0;
     }
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {

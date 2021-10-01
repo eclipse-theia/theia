@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
-import { GitFileBlame, Commit } from '../../common';
+import { GitFileBlame } from '../../common';
 import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
 import URI from '@theia/core/lib/common/uri';
@@ -114,14 +114,20 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
             const sha = commit.sha;
             const commitTime = moment(commit.author.timestamp);
             const heat = this.getHeatColor(commitTime);
-            const content = this.formatContentLine(commit, commitTime);
+            const content = commit.summary.replace('\n', '↩︎').replace(/'/g, "\\'");
             const short = sha.substr(0, 7);
-            const selector = 'git-' + short + '::before';
-            beforeContentStyles.set(sha, new EditorDecorationStyle(selector, style => {
+            new EditorDecorationStyle('git-' + short, style => {
                 EditorDecorationStyle.copyStyle(BlameDecorator.defaultGutterStyles, style);
-                style.content = `'${content}'`;
                 style.borderColor = heat;
+            });
+            beforeContentStyles.set(sha, new EditorDecorationStyle('git-' + short + '::before', style => {
+                EditorDecorationStyle.copyStyle(BlameDecorator.defaultGutterBeforeStyles, style);
+                style.content = `'${content}'`;
             }));
+            new EditorDecorationStyle('git-' + short + '::after', style => {
+                EditorDecorationStyle.copyStyle(BlameDecorator.defaultGutterAfterStyles, style);
+                style.content = `'${commitTime.fromNow()}'`;
+            });
         }
         const commitLines = blame.lines;
         const highlightedSha = this.getShaForLine(blame, highlightLine) || '';
@@ -138,7 +144,7 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
                 options.beforeContentClassName += ' ' + BlameDecorator.highlightStyle.className;
             }
             if (sha === previousLineSha) {
-                options.beforeContentClassName += ' ' + BlameDecorator.continuationStyle.className;
+                options.beforeContentClassName += ' ' + BlameDecorator.beforeContinuationStyle.className + ' ' + BlameDecorator.afterContinuationStyle.className;
             }
             previousLineSha = sha;
             const range = Range.create(Position.create(line, 0), Position.create(line, 0));
@@ -146,24 +152,6 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
         }
         const styles = [...beforeContentStyles.values()];
         return { editorDecorations, styles };
-    }
-
-    protected formatContentLine(commit: Commit, commitTime: moment.Moment): string {
-        const when = commitTime.fromNow();
-        const contentWidth = BlameDecorator.maxWidth - when.length - 2;
-        let content = commit.summary.substring(0, contentWidth + 1);
-        content = content.replace('\n', '↩︎').replace(/'/g, "\\'");
-        if (content.length > contentWidth) {
-            let cropAt = content.lastIndexOf(' ', contentWidth - 4);
-            if (cropAt < contentWidth / 2) {
-                cropAt = contentWidth - 3;
-            }
-            content = content.substring(0, cropAt) + '...';
-        }
-        if (content.length < contentWidth) {
-            content = content + '\u2007'.repeat(contentWidth - content.length); // fill up with blanks
-        }
-        return `${content} ${when}`;
     }
 
     protected now = moment();
@@ -200,24 +188,38 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
 
 export namespace BlameDecorator {
 
-    export const maxWidth = 50; // character
-
     export const defaultGutterStyles = <CSSStyleDeclaration>{
-        width: `${maxWidth}ch`,
-        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        display: 'inline-flex',
+        width: '50ch',
+        marginRight: '26px',
+        justifyContent: 'space-between',
         backgroundColor: 'var(--theia-gitlens-gutterBackgroundColor)',
-        height: '100%',
-        margin: '0 26px -1px 0',
-        display: 'inline-block',
         borderRight: '2px solid',
+        height: '100%',
+        overflow: 'hidden'
     };
 
-    export const continuationStyle = new EditorDecorationStyle('git-blame-continuation-line::before', style => {
+    export const defaultGutterBeforeStyles = <CSSStyleDeclaration>{
+        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+    };
+
+    export const defaultGutterAfterStyles = <CSSStyleDeclaration>{
+        color: 'var(--theia-gitlens-gutterForegroundColor)',
+        marginLeft: '12px'
+    };
+
+    export const highlightStyle = new EditorDecorationStyle('git-blame-highlight', style => {
+        style.backgroundColor = 'var(--theia-gitlens-lineHighlightBackgroundColor)';
+    });
+
+    export const beforeContinuationStyle = new EditorDecorationStyle('git-blame-continuation-line::before', style => {
         style.content = "'\u2007'"; // blank
     });
 
-    export const highlightStyle = new EditorDecorationStyle('git-blame-highlight::before', style => {
-        style.backgroundColor = 'var(--theia-gitlens-lineHighlightBackgroundColor)';
+    export const afterContinuationStyle = new EditorDecorationStyle('git-blame-continuation-line::after', style => {
+        style.content = "'\u2007'";
     });
 
 }

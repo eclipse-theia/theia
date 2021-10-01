@@ -71,6 +71,12 @@ export interface DebugService extends Disposable {
     provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]>;
 
     /**
+     * Provides dynamic debug configurations by a provider debug type
+     * @returns An Array of objects containing the debug type and corresponding dynamic debug configurations array
+     */
+    provideDynamicDebugConfigurations?(): Promise<{ type: string, configurations: DebugConfiguration[] }[]>;
+
+    /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
      * or by adding/changing/removing attributes before variable substitution.
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.

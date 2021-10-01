@@ -46,8 +46,10 @@ jobs:
         shell: bash
         run: |
           yarn --skip-integrity-check --network-timeout 100000
+          yarn lint
           npx electron-replace-ffmpeg
           npx electron-codecs-test
+          yarn build:examples
           ./scripts/check_git_status.sh
         env:
           NODE_OPTIONS: --max_old_space_size=4096
@@ -63,13 +65,13 @@ jobs:
         if: matrix.tests != 'skip' && runner.os == 'Linux'
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: yarn test:browser
+          run: yarn browser test
 
       - name: Test (electron)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: yarn test:electron
+          run: yarn electron test
 
   publish:
     needs: build
@@ -97,13 +99,24 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Pre-Publish
+      - name: Pre-npm-Publish
         run: |
           yarn --skip-integrity-check --network-timeout 100000
-          yarn docs
         env:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
+
+      - name: Pre-docs-Publish
+        run: |
+          yarn docs
+        env:
+          NODE_OPTIONS: --max_old_space_size=8196
+
+      - name: Publish GH Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
 
       - name: Publish NPM
         uses: nick-invision/retry@v2
@@ -113,11 +126,6 @@ jobs:
           max_attempts: 3
           retry_on: error
           command: yarn publish:next
+          on_retry_command: git reset --hard
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48
-
-      - name: Publish GH Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gh-pages

@@ -113,6 +113,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: false,
             description: 'Controls whether to suppress notification popups.'
         },
+        'workbench.statusBar.visible': {
+            type: 'boolean',
+            default: true,
+            description: 'Controls the visibility of the status bar at the bottom of the workbench.'
+        },
         'workbench.tree.renderIndentGuides': {
             type: 'string',
             enum: ['onHover', 'none', 'always'],
@@ -135,6 +140,7 @@ export interface CoreConfiguration {
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;
     'workbench.silentNotifications': boolean;
+    'workbench.statusBar.visible': boolean;
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
 }
 

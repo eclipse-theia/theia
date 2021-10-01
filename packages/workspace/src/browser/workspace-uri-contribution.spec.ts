@@ -120,9 +120,9 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             expect(labelProvider.getIcon(FileStat.file('file:///home/test'))).eq(ret);
         });
 
-        it('should return rootfolder-icon for a URI or file stat that corresponds to a workspace root', () => {
-            expect(labelProvider.getIcon(new URI('file:///workspace'))).eq('rootfolder-icon');
-            expect(labelProvider.getIcon(FileStat.dir('file:///workspace'))).eq('rootfolder-icon');
+        it('should return the default folder icon for a URI or file stat that corresponds to a workspace root', () => {
+            expect(labelProvider.getIcon(new URI('file:///workspace'))).eq(labelProvider.defaultFolderIcon);
+            expect(labelProvider.getIcon(FileStat.dir('file:///workspace'))).eq(labelProvider.defaultFolderIcon);
         });
     });
 

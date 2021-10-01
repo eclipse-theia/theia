@@ -33,7 +33,7 @@ import * as theia from '@theia/plugin';
 import { join } from './path';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
-import { Memento, KeyValueStorageProxy } from './plugin-storage';
+import { Memento, KeyValueStorageProxy, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -79,7 +79,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         '*',
         'onLanguage',
         'onCommand',
-        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
+        'onDebug',
+        'onDebugInitialConfigurations',
+        'onDebugResolve',
+        'onDebugAdapterProtocolTracker',
+        'onDebugDynamicConfigurations',
         'workspaceContains',
         'onView',
         'onUri',
@@ -321,6 +325,23 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $activateByEvent(activationEvent: string): Promise<void> {
+        if (activationEvent.endsWith(':*')) {
+            const baseEvent = activationEvent.substring(0, activationEvent.length - 2);
+            await this.activateByBaseEvent(baseEvent);
+        } else {
+            await this.activateBySingleEvent(activationEvent);
+        }
+    }
+
+    protected async activateByBaseEvent(baseEvent: string): Promise<void> {
+        await Promise.all(Array.from(this.activations.keys(), activation => {
+            if (activation.startsWith(baseEvent)) {
+                return this.activateBySingleEvent(activation);
+            }
+        }));
+    }
+
+    protected async activateBySingleEvent(activationEvent: string): Promise<void> {
         const activations = this.activations.get(activationEvent);
         if (!activations) {
             return;
@@ -351,7 +372,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             extensionUri: Uri.file(plugin.pluginFolder),
-            globalState: new Memento(plugin.model.id, true, this.storageProxy),
+            globalState: new GlobalState(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
             asAbsolutePath: asAbsolutePath,
@@ -361,7 +382,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             secrets,
             globalStoragePath: globalStoragePath,
             globalStorageUri: Uri.file(globalStoragePath),
-            environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id)
+            environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
+            extensionMode: 1 // @todo: implement proper `extensionMode`.
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
 

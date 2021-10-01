@@ -248,7 +248,7 @@ async function processLocalhostRequest(event, requestUrl) {
     const origin = requestUrl.origin;
 
     const resolveRedirect = redirectOrigin => {
-        if (!redirectOrigin) {
+        if (!redirectOrigin || requestUrl.origin === redirectOrigin) {
             return fetch(event.request);
         }
         const location = event.request.url.replace(new RegExp(`^${requestUrl.origin}(/|$)`), `${redirectOrigin}$1`);

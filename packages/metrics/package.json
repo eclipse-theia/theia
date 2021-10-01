@@ -1,9 +1,9 @@
 {
   "name": "@theia/metrics",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Theia - Metrics Extension",
   "dependencies": {
-    "@theia/core": "1.17.0",
+    "@theia/core": "1.18.0",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {
@@ -31,14 +31,15 @@
     "src"
   ],
   "scripts": {
-    "lint": "theiaext lint",
     "build": "theiaext build",
-    "watch": "theiaext watch",
     "clean": "theiaext clean",
-    "test": "theiaext test"
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.17.0"
+    "@theia/ext-scripts": "1.18.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

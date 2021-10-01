@@ -189,6 +189,26 @@ export enum ColorThemeKind {
     HighContrast = 3
 }
 
+export enum ExtensionMode {
+    /**
+     * The extension is installed normally (for example, from the marketplace
+     * or VSIX) in the editor.
+     */
+    Production = 1,
+
+    /**
+     * The extension is running from an `--extensionDevelopmentPath` provided
+     * when launching the editor.
+     */
+    Development = 2,
+
+    /**
+     * The extension is running from an `--extensionTestsPath` and
+     * the extension host is running unit tests.
+     */
+    Test = 3,
+}
+
 /**
  * Represents the validation type of the Source Control input.
  */
@@ -892,7 +912,9 @@ export enum CompletionItemKind {
     Struct = 21,
     Event = 22,
     Operator = 23,
-    TypeParameter = 24
+    TypeParameter = 24,
+    User = 25,
+    Issue = 26
 }
 
 @es5ClassCompat
@@ -2344,6 +2366,7 @@ export class CallHierarchyItem {
     uri: URI;
     range: Range;
     selectionRange: Range;
+    tags?: readonly SymbolTag[];
 
     constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
         this.kind = kind;
