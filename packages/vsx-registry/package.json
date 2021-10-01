@@ -11,12 +11,10 @@
     "@theia/preferences": "1.18.0",
     "@theia/workspace": "1.18.0",
     "@types/bent": "^7.0.1",
-    "@types/sanitize-html": "^2.3.1",
     "@types/showdown": "^1.7.1",
     "bent": "^7.1.0",
     "p-debounce": "^2.1.0",
     "requestretry": "^3.1.0",
-    "sanitize-html": "^2.3.2",
     "semver": "^5.4.1",
     "showdown": "^1.9.1",
     "uuid": "^8.0.0"
