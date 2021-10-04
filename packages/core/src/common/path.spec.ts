@@ -257,6 +257,20 @@ describe('Path', () => {
         });
     }
 
+    describe('Normalize path separator', () => {
+        it('should handle windows styled paths', async () => {
+            const path = 'C:\\a\\b\\c';
+            const expected = '/c:/a/b/c';
+            expect(new Path(path).toString()).eq(expected);
+        });
+
+        it('should prefix drive letter with /', async () => {
+            const path = 'c:/a/b/c';
+            const expected = '/c:/a/b/c';
+            expect(new Path(path).toString()).eq(expected);
+        });
+    });
+
     const linuxHome = '/home/test-user';
     const windowsHome = '/C:/Users/test-user';
 
@@ -340,5 +354,6 @@ describe('Path', () => {
             const expected = '~/a/b/theia';
             expect(Path.untildify(path, '')).eq(expected);
         });
+
     });
 });
