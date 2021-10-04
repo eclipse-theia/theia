@@ -194,6 +194,7 @@ export class DebugConfigurationManager {
             await this.doOpen(model);
         }
     }
+
     async addConfiguration(): Promise<void> {
         const { model } = this;
         if (!model) {
@@ -285,7 +286,7 @@ export class DebugConfigurationManager {
      */
     protected async ensureContent(uri: URI, model: DebugConfigurationModel): Promise<void> {
         const textModel = await this.textModelService.createModelReference(uri);
-        const currentContent = textModel.object.getText();
+        const currentContent = textModel.object.valid ? textModel.object.getText() : '';
         try { // Look for the minimal well-formed launch.json content: {configurations: []}
             const parsedContent = parse(currentContent);
             if (Array.isArray(parsedContent.configurations)) {
@@ -294,7 +295,6 @@ export class DebugConfigurationManager {
         } catch {
             // Just keep going
         }
-
         const debugType = await this.selectDebugType();
         const configurations = debugType ? await this.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
         const content = this.getInitialConfigurationContent(configurations);
