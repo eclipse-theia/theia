@@ -27,6 +27,8 @@ import throttle = require('@theia/core/shared/lodash.throttle');
 import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 import { Semaphore } from 'async-mutex';
 import { FileSystemPreferences } from './filesystem-preferences';
+import { FileService } from './file-service';
+import { ConfirmDialog } from '@theia/core/lib/browser';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -57,6 +59,9 @@ export class FileUploadService {
 
     @inject(FileSystemPreferences)
     protected fileSystemPreferences: FileSystemPreferences;
+
+    @inject(FileService)
+    protected fileService: FileService;
 
     get maxConcurrentUploads(): number {
         const maxConcurrentUploads = this.fileSystemPreferences['files.maxConcurrentUploads'];
@@ -182,6 +187,9 @@ export class FileUploadService {
                 token: params.token,
                 progress: params.progress,
                 accept: async item => {
+                    if (await this.fileService.exists(item.uri) && !await this.confirmOverwrite(item.uri)) {
+                        return;
+                    }
                     // Track and initialize the file in the status map:
                     status.set(item.file, { total: item.file.size, done: 0 });
                     report();
@@ -232,6 +240,16 @@ export class FileUploadService {
             }
         }
         return result;
+    }
+
+    protected async confirmOverwrite(fileUri: URI): Promise<boolean> {
+        const dialog = new ConfirmDialog({
+            title: 'Replace file',
+            msg: `File '${fileUri.path.base}' already exists in the destination folder. Do you want to replace it?`,
+            ok: 'Replace',
+            cancel: 'Cancel'
+        });
+        return !!await dialog.open();
     }
 
     protected uploadFile(
