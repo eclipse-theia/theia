@@ -63,7 +63,7 @@ export class NodeFileUploadService implements BackendApplicationContribution {
         }
         try {
             const target = FileUri.fsPath(fields.uri);
-            await fs.move(request.file.path, target);
+            await fs.move(request.file.path, target, { overwrite: true });
             response.status(200).send(target); // ok
         } catch (error) {
             console.error(error);
