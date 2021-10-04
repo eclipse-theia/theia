@@ -53,10 +53,21 @@ export class Path {
         } else if (path.length >= 2 && path.charCodeAt(1) === 58 /* ':' */) {
             const code = path.charCodeAt(0);
             if (code >= 65 /* A */ && code <= 90 /* Z */) {
-                path = `${String.fromCharCode(code + 32)}:${path.substr(2)}`; // "/c:".length === 3
+                path = `${String.fromCharCode(code + 32)}:${path.substr(2)}`; // "c:".length === 2
+            }
+            if (path.charCodeAt(0) !== 47 /* '/' */) {
+                path = `${String.fromCharCode(47)}${path}`;
             }
         }
         return path;
+    }
+    /**
+     * Normalize path separator to use Path.separator
+     * @param Path candidate to normalize
+     * @returns Normalized string path
+     */
+    static normalizePathSeparator(path: string): string {
+        return path.split(/[\\]/).join(Path.separator);
     }
 
     /**
@@ -112,11 +123,12 @@ export class Path {
     constructor(
         raw: string
     ) {
+        raw = Path.normalizePathSeparator(raw);
         this.raw = Path.normalizeDrive(raw);
-        const firstIndex = raw.indexOf(Path.separator);
-        const lastIndex = raw.lastIndexOf(Path.separator);
+        const firstIndex = this.raw.indexOf(Path.separator);
+        const lastIndex = this.raw.lastIndexOf(Path.separator);
         this.isAbsolute = firstIndex === 0;
-        this.base = lastIndex === -1 ? raw : raw.substr(lastIndex + 1);
+        this.base = lastIndex === -1 ? this.raw : this.raw.substr(lastIndex + 1);
         this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || Path.isDrive(this.base));
         this.root = this.computeRoot();
 
