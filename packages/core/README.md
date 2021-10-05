@@ -79,6 +79,7 @@ export class SomeClass {
  - [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom)
  - [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets)
  - [`@theia/application-package@1.18.0`](https://www.npmjs.com/package/@theia/application-package)
+ - [`@theia/application-package/lib/api@1.18.0`](https://www.npmjs.com/package/@theia/application-package)
  - [`@theia/application-package/lib/environment@1.18.0`](https://www.npmjs.com/package/@theia/application-package)
  - [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify)
  - [`electron@^9.0.2`](https://www.npmjs.com/package/electron)
