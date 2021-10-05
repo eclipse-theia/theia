@@ -613,9 +613,15 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
             this._handlesToItems.set(i, item);
             this._itemsToHandles.set(item, i);
         });
-        items.forEach((item, i) => Object.assign(item, { handle: i }));
         this.update({
-            items
+            items: items.map((item, i) => ({
+                label: item.label,
+                description: item.description,
+                handle: i,
+                detail: item.detail,
+                picked: item.picked,
+                alwaysShow: item.alwaysShow
+            }))
         });
     }
 
