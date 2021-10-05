@@ -27,3 +27,8 @@
     background-repeat: no-repeat;
     background-size: 15%;
 }
+
+.unclosable-window-icon {
+    -webkit-mask: url('window-icon.svg');
+    mask: url('window-icon.svg');
+}

@@ -185,16 +185,32 @@ body.theia-editor-highlightModifiedTabs
     background-repeat: no-repeat;
 }
 
+/* common icons */
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon,
 .p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon {
     min-height: 14px;
     background-size: 13px;
     background-position-y: 3px;
+    background: var(--theia-icon-foreground);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: auto 13px;
     mask-repeat: no-repeat;
     mask-size: auto 13px;
     padding-right: 8px;
+}
+
+/* codicons */
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon.codicon,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.codicon {
+    background: none;
+}
+
+/* file icons */
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.file-icon,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.file-icon {
+    background: none;
+    padding-bottom: 0px;
+    min-height: 20px;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.fa,
