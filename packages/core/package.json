@@ -92,6 +92,7 @@
       "@phosphor/virtualdom",
       "@phosphor/widgets",
       "@theia/application-package:@theia/application-package/index",
+      "@theia/application-package/lib/api",
       "@theia/application-package/lib/environment",
       "fs-extra",
       "fuzzy",

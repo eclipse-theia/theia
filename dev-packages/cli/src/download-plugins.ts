@@ -34,6 +34,7 @@ import { getProxyForUrl } from 'proxy-from-env';
 import * as stream from 'stream';
 import * as temp from 'temp';
 import { promisify } from 'util';
+import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
 
 const pipelineAsPromised = promisify(stream.pipeline);
 
@@ -73,7 +74,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     const {
         packed = false,
         ignoreErrors = false,
-        apiVersion = '1.50.0',
+        apiVersion = DEFAULT_SUPPORTED_API_VERSION,
         apiUrl = 'https://open-vsx.org/api'
     } = options;
 
@@ -129,7 +130,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
                 const extension = await client.getLatestCompatibleExtensionVersion(id);
                 const downloadUrl = extension?.files.download;
                 if (downloadUrl) {
-                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed);
+                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
                 }
             }));
         }
@@ -153,7 +154,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
  * @param packed whether to decompress or not.
  * @param cachedExtensionPacks the list of cached extension packs already downloaded.
  */
-async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean): Promise<void> {
+async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean, version?: string): Promise<void> {
     if (!plugin) {
         return;
     }
@@ -223,7 +224,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         await decompress(tempFile.path, targetPath);
     }
 
-    console.warn(green(`+ ${plugin}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+    console.warn(green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
 }
 
 /**

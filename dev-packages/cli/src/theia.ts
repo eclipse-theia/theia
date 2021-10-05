@@ -18,7 +18,7 @@ import * as temp from 'temp';
 import * as yargs from 'yargs';
 import yargsFactory = require('yargs/yargs');
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
-import { ApplicationProps } from '@theia/application-package';
+import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package';
 import checkHoisted from './check-hoisting';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
@@ -212,7 +212,7 @@ function theiaCli(): void {
                 'api-version': {
                     alias: 'v',
                     describe: 'Supported API version for plugins',
-                    default: '1.50.0'
+                    default: DEFAULT_SUPPORTED_API_VERSION
                 },
                 'api-url': {
                     alias: 'u',
