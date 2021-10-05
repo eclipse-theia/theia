@@ -333,19 +333,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => this.shell.saveAll()
         });
         commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
-            execute: async (uri?: monaco.Uri) => {
-                let widget = this.editorManager.currentEditor || this.shell.currentWidget;
-                if (uri) {
-                    const uriString = uri.toString();
-                    widget = this.shell.widgets.find(w => {
-                        const resourceUri = NavigatableWidget.is(w) && w.getResourceUri();
-                        return (resourceUri && resourceUri.toString()) === uriString;
-                    });
-                }
-                if (this.codeEditorWidgetUtil.is(widget)) {
-                    await this.shell.closeWidget(widget.id);
-                }
-            }
+            execute: () => commands.executeCommand(CommonCommands.CLOSE_MAIN_TAB.id)
         });
         commands.registerCommand({ id: 'workbench.action.closeOtherEditors' }, {
             execute: async (uri?: monaco.Uri) => {
