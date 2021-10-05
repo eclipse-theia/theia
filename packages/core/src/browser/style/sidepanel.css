@@ -128,6 +128,11 @@
   -webkit-mask-position: 50% 50%;
 }
 
+/* inactive legacy/plugin icons */
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon:not(.codicon) {
+  background: var(--theia-activityBar-inactiveForeground);
+}
+
 /* inactive file icons */
 .p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon {
   background: inherit !important;
@@ -144,8 +149,9 @@
   color: var(--theia-activityBar-foreground);
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tabIcon.theia-plugin-view-container:hover,
-.p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon.theia-plugin-view-container {
+/* active legacy/plugin icons */
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon:not(.codicon):hover,
+.p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon:not(.codicon) {
   background-color: var(--theia-activityBar-foreground);
 }
 
