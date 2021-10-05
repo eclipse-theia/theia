@@ -17,6 +17,11 @@ The plugin helps identify problems during development through static analysis in
 
 ## Rules
 
+### `no-src-import`:
+
+The rule prevents imports using `/src/` rather than `/lib/` as it causes build failures.
+The rule helps developers more easily identify the cause of build errors caused by the incorrect import.
+
 #### `runtime-import-check`:
 
 The rule prevents imports from folders meant for incompatible runtimes.
