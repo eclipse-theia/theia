@@ -17,9 +17,8 @@
 import { Range, SerializedDocumentFilter, WorkspaceSymbolParams } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { PluginMetricsResolver } from './plugin-metrics-resolver';
 import { LanguagesMainImpl } from '@theia/plugin-ext/lib/main/browser/languages-main';
-import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import * as vst from '@theia/core/shared/vscode-languageserver-protocol';
+import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import { PluginInfo } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 
@@ -40,103 +39,103 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
     protected provideCompletionItems(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.CompletionContext, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionList> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.CompletionRequest.type.method,
+            lsp.CompletionRequest.type.method,
             super.provideCompletionItems(handle, model, position, context, token));
     }
 
     protected resolveCompletionItem(handle: number,
         item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionItem> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.CompletionRequest.type.method,
+            lsp.CompletionRequest.type.method,
             super.resolveCompletionItem(handle, item, token));
     }
 
     protected provideReferences(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         context: monaco.languages.ReferenceContext, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Location[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.ReferencesRequest.type.method,
+            lsp.ReferencesRequest.type.method,
             super.provideReferences(handle, model, position, context, token));
     }
 
     protected provideImplementation(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Definition> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.ImplementationRequest.type.method,
+            lsp.ImplementationRequest.type.method,
             super.provideImplementation(handle, model, position, token));
     }
 
     protected provideTypeDefinition(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Definition> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.TypeDefinitionRequest.type.method,
+            lsp.TypeDefinitionRequest.type.method,
             super.provideTypeDefinition(handle, model, position, token));
     }
 
     protected provideHover(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Hover> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.HoverRequest.type.method,
+            lsp.HoverRequest.type.method,
             super.provideHover(handle, model, position, token));
     }
 
     protected provideDocumentHighlights(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.DocumentHighlight[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentHighlightRequest.type.method,
+            lsp.DocumentHighlightRequest.type.method,
             super.provideDocumentHighlights(handle, model, position, token));
     }
 
-    protected provideWorkspaceSymbols(handle: number, params: WorkspaceSymbolParams, token: monaco.CancellationToken): Thenable<SymbolInformation[]> {
+    protected provideWorkspaceSymbols(handle: number, params: WorkspaceSymbolParams, token: monaco.CancellationToken): Thenable<lsp.SymbolInformation[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.WorkspaceSymbolRequest.type.method,
+            lsp.WorkspaceSymbolRequest.type.method,
             super.provideWorkspaceSymbols(handle, params, token));
     }
 
-    protected resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: monaco.CancellationToken): Thenable<SymbolInformation> {
+    protected resolveWorkspaceSymbol(handle: number, symbol: lsp.SymbolInformation, token: monaco.CancellationToken): Thenable<lsp.SymbolInformation> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.WorkspaceSymbolRequest.type.method,
+            lsp.WorkspaceSymbolRequest.type.method,
             super.resolveWorkspaceSymbol(handle, symbol, token));
     }
 
     protected async provideLinks(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): Promise<monaco.languages.ProviderResult<monaco.languages.ILinksList>> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentLinkRequest.type.method,
+            lsp.DocumentLinkRequest.type.method,
             super.provideLinks(handle, model, token));
     }
 
     protected async resolveLink(handle: number, link: monaco.languages.ILink,
         token: monaco.CancellationToken): Promise<monaco.languages.ProviderResult<monaco.languages.ILink>> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentLinkRequest.type.method,
+            lsp.DocumentLinkRequest.type.method,
             super.resolveLink(handle, link, token));
     }
 
     protected async provideCodeLenses(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): Promise<monaco.languages.ProviderResult<monaco.languages.CodeLensList>> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.CodeLensRequest.type.method,
+            lsp.CodeLensRequest.type.method,
             super.provideCodeLenses(handle, model, token));
     }
 
     protected resolveCodeLens(handle: number, model: monaco.editor.ITextModel,
         codeLens: monaco.languages.CodeLens, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CodeLens> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.CodeLensResolveRequest.type.method,
+            lsp.CodeLensResolveRequest.type.method,
             super.resolveCodeLens(handle, model, codeLens, token));
     }
 
     protected provideDocumentSymbols(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.DocumentSymbol[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentSymbolRequest.type.method,
+            lsp.DocumentSymbolRequest.type.method,
             super.provideDocumentSymbols(handle, model, token));
     }
 
     protected provideDefinition(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Definition> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DefinitionRequest.type.method,
+            lsp.DefinitionRequest.type.method,
             super.provideDefinition(handle, model, position, token));
     }
 
@@ -144,49 +143,49 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
         position: monaco.Position, token: monaco.CancellationToken,
         context: monaco.languages.SignatureHelpContext): Promise<monaco.languages.ProviderResult<monaco.languages.SignatureHelpResult>> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.SignatureHelpRequest.type.method,
+            lsp.SignatureHelpRequest.type.method,
             super.provideSignatureHelp(handle, model, position, token, context));
     }
 
     protected provideDocumentFormattingEdits(handle: number, model: monaco.editor.ITextModel,
         options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentFormattingRequest.type.method,
+            lsp.DocumentFormattingRequest.type.method,
             super.provideDocumentFormattingEdits(handle, model, options, token));
     }
 
     protected provideDocumentRangeFormattingEdits(handle: number, model: monaco.editor.ITextModel,
         range: Range, options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentRangeFormattingRequest.type.method,
+            lsp.DocumentRangeFormattingRequest.type.method,
             super.provideDocumentRangeFormattingEdits(handle, model, range, options, token));
     }
 
     protected provideOnTypeFormattingEdits(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         ch: string, options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentOnTypeFormattingRequest.type.method,
+            lsp.DocumentOnTypeFormattingRequest.type.method,
             super.provideOnTypeFormattingEdits(handle, model, position, ch, options, token));
     }
 
     protected provideFoldingRanges(handle: number, model: monaco.editor.ITextModel,
         context: monaco.languages.FoldingContext, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.FoldingRange[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.FoldingRangeRequest.type.method,
+            lsp.FoldingRangeRequest.type.method,
             super.provideFoldingRanges(handle, model, context, token));
     }
 
     protected provideDocumentColors(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.IColorInformation[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.DocumentColorRequest.type.method,
+            lsp.DocumentColorRequest.type.method,
             super.provideDocumentColors(handle, model, token));
     }
 
     protected provideColorPresentations(handle: number, model: monaco.editor.ITextModel,
         colorInfo: monaco.languages.IColorInformation, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.IColorPresentation[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.ColorPresentationRequest.type.method,
+            lsp.ColorPresentationRequest.type.method,
             super.provideColorPresentations(handle, model, colorInfo, token));
     }
 
@@ -194,21 +193,21 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.CodeActionRequest.type.method,
+            lsp.CodeActionRequest.type.method,
             super.provideCodeActions(handle, model, rangeOrSelection, context, token));
     }
 
     protected provideRenameEdits(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, newName: string, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.WorkspaceEdit & monaco.languages.Rejection> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.RenameRequest.type.method,
+            lsp.RenameRequest.type.method,
             super.provideRenameEdits(handle, model, position, newName, token));
     }
 
     protected resolveRenameLocation(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.RenameLocation> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
-            vst.RenameRequest.type.method,
+            lsp.RenameRequest.type.method,
             super.resolveRenameLocation(handle, model, position, token));
     }
 

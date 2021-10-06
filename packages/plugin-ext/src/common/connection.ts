@@ -13,10 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import type { Channel } from '@theia/core/lib/common/messaging';
+import type { Message, MessageReader, MessageWriter } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Disposable } from './disposable-util';
 import { PluginMessageReader } from './plugin-message-reader';
 import { PluginMessageWriter } from './plugin-message-writer';
-import { IWebSocket, MessageReader, MessageWriter, Message } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { PluginMessage } from './plugin-message';
 
 /**
  * The interface for describing the connection between plugins and main side.
@@ -52,23 +55,28 @@ export class PluginConnection implements Connection {
 }
 
 /**
- * [IWebSocket](#IWebSocket) implementation over RPC.
+ * Wrapper around a [PluginConnection](#PluginConnection) to match the [Channel](#Channel) interface.
  */
-export class PluginWebSocketChannel implements IWebSocket {
-    constructor(protected readonly connection: PluginConnection) { }
+export class PluginChannel implements Channel<string> {
+
+    constructor(
+        protected readonly connection: PluginConnection
+    ) { }
 
     send(content: string): void {
-        this.connection.writer.write(content);
+        // vscode-jsonrpc's MessageReader/Writer expect to send JSON-RPC messages.
+        // Use a bogus jsonrpc version and pass along the `content` to send.
+        // `content` here is opaque: it could be any string.
+        const message: PluginMessage = { jsonrpc: '0.0', content };
+        this.connection.writer.write(message);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(cb: (data: any) => void): void {
-        this.connection.reader.listen(cb);
+    onMessage(cb: (data: string) => void): void {
+        this.connection.reader.listen((message: PluginMessage) => cb(message.content));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void {
-        this.connection.reader.onError(e => cb(e));
+    onError(cb: (reason: unknown) => void): void {
+        this.connection.reader.onError(cb);
     }
 
     onClose(cb: (code: number, reason: string) => void): void {
@@ -79,3 +87,10 @@ export class PluginWebSocketChannel implements IWebSocket {
         this.connection.dispose();
     }
 }
+
+/**
+ * Use `PluginChannel` instead.
+ *
+ * @deprecated since 1.19.0
+ */
+export const PluginWebSocketChannel = PluginChannel;

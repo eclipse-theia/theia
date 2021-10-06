@@ -16,16 +16,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter } from '../event';
+import { Channel } from './channel';
 
-export class WebSocketChannel implements IWebSocket {
+export class WebSocketChannel implements Channel<string> {
 
     static wsPath = '/services';
 
+    fireError: (reason: any) => void = () => { };
+
     protected readonly closeEmitter = new Emitter<[number, string]>();
     protected readonly toDispose = new DisposableCollection(this.closeEmitter);
+    protected fireOpen: () => void = () => { };
+    protected fireMessage: (data: any) => void = () => { };
+    protected closing = false;
 
     constructor(
         readonly id: number,
@@ -34,12 +39,6 @@ export class WebSocketChannel implements IWebSocket {
 
     dispose(): void {
         this.toDispose.dispose();
-    }
-
-    protected checkNotDisposed(): void {
-        if (this.toDispose.disposed) {
-            throw new Error('The channel has been disposed.');
-        }
     }
 
     handleMessage(message: WebSocketChannel.Message): void {
@@ -107,28 +106,29 @@ export class WebSocketChannel implements IWebSocket {
         this.fireClose(code, reason);
     }
 
-    protected fireOpen: () => void = () => { };
     onOpen(cb: () => void): void {
         this.checkNotDisposed();
         this.fireOpen = cb;
         this.toDispose.push(Disposable.create(() => this.fireOpen = () => { }));
     }
 
-    protected fireMessage: (data: any) => void = () => { };
     onMessage(cb: (data: any) => void): void {
         this.checkNotDisposed();
         this.fireMessage = cb;
         this.toDispose.push(Disposable.create(() => this.fireMessage = () => { }));
     }
 
-    fireError: (reason: any) => void = () => { };
     onError(cb: (reason: any) => void): void {
         this.checkNotDisposed();
         this.fireError = cb;
         this.toDispose.push(Disposable.create(() => this.fireError = () => { }));
     }
 
-    protected closing = false;
+    onClose(cb: (code: number, reason: string) => void): Disposable {
+        this.checkNotDisposed();
+        return this.closeEmitter.event(([code, reason]) => cb(code, reason));
+    }
+
     protected fireClose(code: number, reason: string): void {
         if (this.closing) {
             return;
@@ -141,9 +141,11 @@ export class WebSocketChannel implements IWebSocket {
         }
         this.dispose();
     }
-    onClose(cb: (code: number, reason: string) => void): Disposable {
-        this.checkNotDisposed();
-        return this.closeEmitter.event(([code, reason]) => cb(code, reason));
+
+    protected checkNotDisposed(): void {
+        if (this.toDispose.disposed) {
+            throw new Error('The channel has been disposed.');
+        }
     }
 
 }

@@ -17,7 +17,7 @@
 import * as chai from 'chai';
 import { ConsoleLogger } from '../../node/messaging/logger';
 import { JsonRpcProxyFactory, JsonRpcProxy } from './proxy-factory';
-import { createMessageConnection } from 'vscode-jsonrpc/lib/main';
+import { createMessageConnection } from 'vscode-languageserver-protocol/node';
 import * as stream from 'stream';
 
 const expect = chai.expect;
@@ -55,22 +55,16 @@ class TestClient {
 
 describe('Proxy-Factory', () => {
 
-    it('Should correctly send notifications and requests.', done => {
+    it('Should correctly send notifications', async () => {
         const it = getSetup();
         it.clientProxy.notifyThat('hello');
-        function check(): void {
-            if (it.client.notifications.length === 0) {
-                console.log('waiting another 50 ms');
-                setTimeout(check, 50);
-            } else {
-                expect(it.client.notifications[0]).eq('hello');
-                it.serverProxy.doStuff('foo').then(result => {
-                    expect(result).to.be.eq('done: foo');
-                    done();
-                });
-            }
-        }
-        check();
+        await new Promise(resolve => setTimeout(resolve, 50));
+        expect(it.client.notifications[0]).eq('hello');
+    });
+    it('Should correctly handle requests', async () => {
+        const it = getSetup();
+        const result = await it.serverProxy.doStuff('foo');
+        expect(result).to.be.eq('done: foo');
     });
     it('Rejected Promise should result in rejected Promise.', done => {
         const it = getSetup();

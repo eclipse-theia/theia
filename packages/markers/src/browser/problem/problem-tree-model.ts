@@ -22,7 +22,7 @@ import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
 import { Marker } from '../../common/marker';
-import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemUtils } from './problem-utils';
 
 @injectable()

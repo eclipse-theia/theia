@@ -34,7 +34,7 @@ describe('Known Command Conversions', () => {
 
         // when
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        KnownCommands.map(commandID, [uri, position], (mappedID: string, mappedArgs: any[]) => {
+        KnownCommands.map(commandID, [uri, position], (mappedID: string, mappedArgs: any[] = []) => {
 
             // then
             assert.strictEqual(commandID, mappedID);

@@ -533,7 +533,13 @@ export class HostedPluginSupport {
 
     protected async getStoragePath(): Promise<string | undefined> {
         const roots = await this.workspaceService.roots;
-        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace?.resource.toString(), roots.map(root => root.resource.toString()));
+        const storagePath = await this.pluginPathsService.getHostStoragePath(
+            this.workspaceService.workspace?.resource.toString(),
+            roots.map(root => root.resource.toString()),
+        );
+        if (storagePath) {
+            return storagePath;
+        }
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {

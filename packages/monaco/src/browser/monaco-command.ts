@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { Position, Location } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
@@ -230,10 +230,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected configureEol(editor: MonacoEditor): void {
         const items = ['LF', 'CRLF'].map(lineEnding =>
-        ({
-            label: lineEnding,
-            execute: () => this.setEol(editor, lineEnding)
-        })
+            ({
+                label: lineEnding,
+                execute: () => this.setEol(editor, lineEnding)
+            })
         );
         this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select End of Line Sequence') });
     }
@@ -259,16 +259,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         if (model) {
             const { tabSize } = model.getOptions();
             const sizes = Array.from(Array(8), (_, x) => x + 1);
-            const tabSizeOptions = sizes.map(size =>
-            ({
+            const tabSizeOptions = sizes.map(size => ({
                 label: size === tabSize ? size + '   ' + nls.localizeByDefault('Configured Tab Size') : size.toString(),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 execute: () => model.updateOptions({
                     tabSize: size || tabSize,
                     insertSpaces: useSpaces
                 })
-            })
-            );
+            }));
             this.quickInputService?.showQuickPick(tabSizeOptions, { placeholder: nls.localizeByDefault('Select Tab Size for Current File') });
         }
     }

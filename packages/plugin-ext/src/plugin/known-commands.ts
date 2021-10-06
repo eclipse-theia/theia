@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Range as R, Position as P, Location as L } from '@theia/core/shared/vscode-languageserver-types';
+import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 import { cloneAndChange } from '../common/objects';
 import { Position, Range, Location, CallHierarchyItem, URI, TextDocumentShowOptions } from './types-impl';
@@ -332,16 +332,16 @@ export namespace KnownCommands {
         };
     }
 
-    function fromPositionToP(p: theia.Position): P {
-        return P.create(p.line, p.character);
+    function fromPositionToP(p: theia.Position): lsp.Position {
+        return lsp.Position.create(p.line, p.character);
     }
 
-    function fromRangeToR(r: theia.Range): R {
-        return R.create(fromPositionToP(r.start), fromPositionToP(r.end));
+    function fromRangeToR(r: theia.Range): lsp.Range {
+        return lsp.Range.create(fromPositionToP(r.start), fromPositionToP(r.end));
     }
 
-    function fromLocationToL(l: theia.Location): L {
-        return L.create(l.uri.toString(), fromRangeToR(l.range));
+    function fromLocationToL(l: theia.Location): lsp.Location {
+        return lsp.Location.create(l.uri.toString(), fromRangeToR(l.range));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config

@@ -57,7 +57,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         return pluginDirPath;
     }
 
-    async getHostStoragePath(workspaceUri: string | undefined, rootUris: string[]): Promise<string | undefined> {
+    async getHostStoragePath(workspaceUri: string | null | undefined, rootUris: string[]): Promise<string | undefined> {
         const parentStorageDir = await this.getWorkspaceStorageDirPath();
 
         if (!parentStorageDir) {

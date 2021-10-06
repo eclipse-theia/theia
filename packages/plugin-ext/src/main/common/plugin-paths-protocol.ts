@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import type { JsonRpcService } from '@theia/core/lib/common/messaging/json-rpc-service';
+
 export const pluginPathsServicePath = '/services/plugin-paths';
 
 // Service to create plugin configuration folders for different purpose.
 export const PluginPathsService = Symbol('PluginPathsService');
-export interface PluginPathsService {
+export type PluginPathsService = JsonRpcService<{
     /** Returns hosted log path. Create directory by this path if it is not exist on the file system. */
     getHostLogPath(): Promise<string>;
     /** Returns storage path for given workspace */
     getHostStoragePath(workspaceUri: string | undefined, rootUris: string[]): Promise<string | undefined>;
-}
+}>;

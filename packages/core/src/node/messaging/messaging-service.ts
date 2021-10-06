@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as ws from 'ws';
-import { MessageConnection } from 'vscode-ws-jsonrpc';
-import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
+import { MessageConnection } from 'vscode-languageserver-protocol';
+import { RpcMessageRelay } from '../../common/messaging';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 export interface MessagingService {
@@ -29,7 +29,7 @@ export interface MessagingService {
      * Accept a raw JSON-RPC connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    forward(path: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void;
+    forward(path: string, callback: (params: MessagingService.PathParams, connection: RpcMessageRelay) => void): void;
     /**
      * Accept a web socket channel on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
@@ -57,15 +57,17 @@ export namespace MessagingService {
     }
 }
 
-export interface WebSocketChannelConnection extends IConnection {
+export interface WebSocketChannelConnection extends RpcMessageRelay {
     channel: WebSocketChannel;
 }
 export namespace WebSocketChannelConnection {
-    export function is(connection: IConnection): connection is WebSocketChannelConnection {
+    export function is(connection: RpcMessageRelay): connection is WebSocketChannelConnection {
         return (connection as WebSocketChannelConnection).channel instanceof WebSocketChannel;
     }
-
-    export function create(connection: IConnection, channel: WebSocketChannel): WebSocketChannelConnection {
+    /**
+     * Mutate `connection` to become a `WebSocketChannelConnection`.
+     */
+    export function create(connection: RpcMessageRelay, channel: WebSocketChannel): WebSocketChannelConnection {
         const result = connection as WebSocketChannelConnection;
         result.channel = channel;
         return result;

@@ -26,6 +26,8 @@ export type RecursivePartial<T> = {
 };
 export type MaybeArray<T> = T | T[];
 export type MaybePromise<T> = T | PromiseLike<T>;
+/** Extract `T` from `PromiseLike<T>`. */
+export type Unpromise<T> = T extends PromiseLike<infer U> ? U : T;
 
 export interface Prioritizeable<T> {
     readonly priority: number;

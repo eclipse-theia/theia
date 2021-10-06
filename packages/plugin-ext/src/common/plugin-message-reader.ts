@@ -14,87 +14,62 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DataCallback, Emitter, Event, PartialMessageInfo } from '@theia/core/shared/vscode-ws-jsonrpc';
-
-export abstract class AbstractMessageReader {
-    protected errorEmitter = new Emitter<Error>();
-    protected closeEmitter = new Emitter<void>();
-    protected partialMessageEmitter = new Emitter<PartialMessageInfo>();
-    dispose(): void {
-        this.errorEmitter.dispose();
-        this.closeEmitter.dispose();
-    }
-    get onError(): Event<Error> {
-        return this.errorEmitter.event;
-    }
-    fireError(error: Error): void {
-        this.errorEmitter.fire(this.asError(error));
-    }
-    get onClose(): Event<void> {
-        return this.closeEmitter.event;
-    }
-    fireClose(): void {
-        this.closeEmitter.fire(undefined);
-    }
-    get onPartialMessage(): Event<PartialMessageInfo> {
-        return this.partialMessageEmitter.event;
-    }
-    firePartialMessage(info: PartialMessageInfo): void {
-        this.partialMessageEmitter.fire(info);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asError(error: any): Error {
-        if (error instanceof Error) {
-            return error;
-        } else {
-            return new Error(`Reader received error. Reason: ${typeof error.message === 'string' ? error.message : 'unknown'}`);
-        }
-    }
-}
+import { AbstractMessageReader, Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
+import { PluginMessage } from './plugin-message';
 
 /**
- * Support for reading string message through RPC protocol.
+ * Support for reading string messages through RPC protocol.
+ *
+ * Buffers events until a listener is registered.
  */
 export class PluginMessageReader extends AbstractMessageReader {
+
     protected state: 'initial' | 'listening' | 'closed' = 'initial';
-    protected callback: DataCallback | undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly events: { message?: any, error?: any }[] = [];
 
-    constructor() {
-        super();
-    }
+    protected callback?: (message: PluginMessage) => void;
 
-    listen(callback: DataCallback): void {
+    /**
+     * Buffered events until `.listen` is called. Becomes `undefined` after.
+     */
+    protected bufferedEvents?: { message?: string, error?: unknown }[] = [];
+
+    listen(callback: (message: PluginMessage) => void): Disposable {
         if (this.state === 'initial') {
             this.state = 'listening';
             this.callback = callback;
-            while (this.events.length !== 0) {
-                const event = this.events.pop()!;
-                if (event.message) {
-                    this.readMessage(event.message);
-                } else if (event.error) {
-                    this.fireError(event.error);
+            for (const { message, error } of this.bufferedEvents!) {
+                if (!this.callback) {
+                    break; // We got disposed.
+                } else if (message) {
+                    this.emitMessage(message);
+                } else if (error) {
+                    this.fireError(error);
                 } else {
                     this.fireClose();
                 }
             }
+            this.bufferedEvents = undefined;
+            return { dispose: () => this.callback = undefined };
         }
+        return { dispose: () => { } };
     }
 
+    /**
+     * Notify the listener (`this.callback`) that a new message was received.
+     *
+     * If a listener isn't registered yet we will queue the messages (FIFO).
+     */
     readMessage(message: string): void {
         if (this.state === 'initial') {
-            this.events.splice(0, 0, { message });
+            this.bufferedEvents!.push({ message });
         } else if (this.state === 'listening') {
-            const data = JSON.parse(message);
-            this.callback!(data);
+            this.emitMessage(message);
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fireError(error: any): void {
+    fireError(error: unknown): void {
         if (this.state === 'initial') {
-            this.events.splice(0, 0, { error });
+            this.bufferedEvents!.push({ error });
         } else if (this.state === 'listening') {
             super.fireError(error);
         }
@@ -102,10 +77,15 @@ export class PluginMessageReader extends AbstractMessageReader {
 
     fireClose(): void {
         if (this.state === 'initial') {
-            this.events.splice(0, 0, {});
+            this.bufferedEvents!.push({});
         } else if (this.state === 'listening') {
             super.fireClose();
         }
         this.state = 'closed';
+    }
+
+    protected emitMessage(message: string): void {
+        const data = JSON.parse(message);
+        this.callback!(data);
     }
 }

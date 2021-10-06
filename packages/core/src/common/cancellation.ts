@@ -46,6 +46,15 @@ export namespace CancellationToken {
         isCancellationRequested: true,
         onCancellationRequested: shortcutEvent
     });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function Is(what: any): what is CancellationToken {
+        return typeof what === 'object'
+            // eslint-disable-next-line no-null/no-null
+            && what !== null
+            && typeof what.onCancellationRequested === 'function'
+            && typeof what.isCancellationRequested === 'boolean';
+    }
 }
 
 export class CancellationError extends Error {

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import type { MessageConnection } from 'vscode-jsonrpc';
+import type { MessageConnection } from 'vscode-languageserver-protocol';
 import type { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 export interface ElectronMessagingService {

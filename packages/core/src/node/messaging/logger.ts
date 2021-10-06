@@ -14,24 +14,4 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Logger } from 'vscode-ws-jsonrpc';
-
-export class ConsoleLogger implements Logger {
-
-    error(message: string): void {
-        console.log(message);
-    }
-
-    warn(message: string): void {
-        console.log(message);
-    }
-
-    info(message: string): void {
-        console.log(message);
-    }
-
-    log(message: string): void {
-        console.log(message);
-    }
-
-}
+export { ConsoleLogger } from '../../common/logger-protocol';

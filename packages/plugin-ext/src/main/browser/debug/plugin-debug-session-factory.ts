@@ -25,7 +25,7 @@ import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
-import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { Channel } from '@theia/core/lib/common/messaging';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -57,7 +57,7 @@ export class PluginDebugSession extends DebugSession {
 
 /**
  * Session factory for a client debug session that communicates with debug adapter contributed as plugin.
- * The main difference is to use a connection factory that creates [IWebSocket](#IWebSocket) over Rpc channel.
+ * The main difference is to use a connection factory that creates [Channel](#Channel) over Rpc channel.
  */
 export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
     constructor(
@@ -68,7 +68,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected readonly messages: MessageClient,
         protected readonly outputChannelManager: OutputChannelManager,
         protected readonly debugPreferences: DebugPreferences,
-        protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>,
+        protected readonly connectionFactory: (sessionId: string) => Promise<Channel<string>>,
         protected readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected readonly debugContributionProvider: ContributionProvider<DebugContribution>
@@ -80,8 +80,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         const connection = new DebugSessionConnection(
             sessionId,
             this.connectionFactory,
-            this.getTraceOutputChannel());
-
+            this.getTraceOutputChannel()
+        );
         return new PluginDebugSession(
             sessionId,
             options,

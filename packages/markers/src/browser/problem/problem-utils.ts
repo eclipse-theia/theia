@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Marker } from '../../common/marker';
-import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export namespace ProblemUtils {
 

@@ -94,7 +94,9 @@ export class PluginsKeyValueStorage {
             return this.deferredGlobalDataPath.promise;
         }
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
-        return storagePath ? path.join(storagePath, 'workspace-state.json') : undefined;
+        if (storagePath) {
+            return path.join(storagePath, 'workspace-state.json');
+        }
     }
 
     private async readFromFile(pathToFile: string): Promise<KeysToKeysToAnyValue> {

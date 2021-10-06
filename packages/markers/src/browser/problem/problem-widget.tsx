@@ -23,7 +23,7 @@ import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel,
     ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode, TREE_NODE_INFO_CLASS, codicon
 } from '@theia/core/lib/browser';
-import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as React from '@theia/core/shared/react';
 import { ProblemPreferences } from './problem-preferences';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';

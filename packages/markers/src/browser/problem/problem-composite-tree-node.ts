@@ -18,7 +18,7 @@ import { CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
 import { MarkerInfoNode } from '../marker-tree';
 import URI from '@theia/core/lib/common/uri';
 import { Marker } from '../../common/marker';
-import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ProblemUtils } from './problem-utils';
 
 export namespace ProblemCompositeTreeNode {

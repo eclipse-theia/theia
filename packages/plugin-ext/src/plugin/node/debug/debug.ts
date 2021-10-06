@@ -21,7 +21,7 @@ import { Breakpoint } from '../../../common/plugin-api-rpc-model';
 import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { PluginWebSocketChannel } from '../../../common/connection';
+import { PluginChannel } from '../../../common/connection';
 import { CommandRegistryImpl } from '../../command-registry';
 import { ConnectionExtImpl } from '../../connection-ext';
 import {
@@ -307,7 +307,7 @@ export class DebugExtImpl implements DebugExt {
         this.sessions.set(sessionId, debugAdapterSession);
 
         const connection = await this.connectionExt!.ensureConnection(sessionId);
-        debugAdapterSession.start(new PluginWebSocketChannel(connection));
+        debugAdapterSession.start(new PluginChannel(connection));
 
         return sessionId;
     }

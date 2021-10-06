@@ -20,7 +20,7 @@ let disableJSDOM = enableJSDOM();
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Diagnostic, Range, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic, Range, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Event } from '@theia/core/lib/common/event';
 import { Marker } from '../../common/marker';
 import { MarkerManager } from '../marker-manager';

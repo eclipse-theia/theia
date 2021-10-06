@@ -26,7 +26,7 @@ import {
     DebugAdapterSession
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { Channel } from '@theia/core/lib/common/messaging';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 
 /**
@@ -35,7 +35,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     private readonly toDispose = new DisposableCollection();
-    private channel: IWebSocket | undefined;
+    private channel?: Channel<string>;
 
     constructor(
         readonly id: string,
@@ -53,12 +53,12 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     }
 
-    async start(channel: IWebSocket): Promise<void> {
+    async start(channel: Channel<string>): Promise<void> {
         if (this.channel) {
             throw new Error('The session has already been started, id: ' + this.id);
         }
         this.channel = channel;
-        this.channel.onMessage((message: string) => this.write(message));
+        this.channel.onMessage(message => this.write(message));
         this.channel.onClose(() => this.channel = undefined);
 
     }

@@ -14,16 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Position, Range, Location } from '@theia/core/shared/vscode-languageserver-types';
-import * as lsp from '@theia/core/shared/vscode-languageserver-types';
+import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable, TextDocumentContentChangeDelta, Reference } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
-export {
-    Position, Range, Location
-};
+export { Position, Range, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const TextEditorProvider = Symbol('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
@@ -120,7 +117,7 @@ export interface MouseTarget {
     /**
      * The 'approximate' editor position
      */
-    readonly position?: Position;
+    readonly position?: lsp.Position;
     /**
      * Desired mouse column (e.g. when position.column gets clamped to text length -- clicking after text on a line).
      */
@@ -128,7 +125,7 @@ export interface MouseTarget {
     /**
      * The 'approximate' editor range
      */
-    readonly range?: Range;
+    readonly range?: lsp.Range;
     /**
      * Some extra detail.
      */
@@ -191,7 +188,7 @@ export interface FindMatch {
     /**
      * The range for the given match.
      */
-    readonly range: Range;
+    readonly range: lsp.Range;
 }
 
 export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
@@ -201,11 +198,11 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     readonly document: TextEditorDocument;
     readonly onDocumentContentChanged: Event<TextDocumentChangeEvent>;
 
-    cursor: Position;
-    readonly onCursorPositionChanged: Event<Position>;
+    cursor: lsp.Position;
+    readonly onCursorPositionChanged: Event<lsp.Position>;
 
-    selection: Range;
-    readonly onSelectionChanged: Event<Range>;
+    selection: lsp.Range;
+    readonly onSelectionChanged: Event<lsp.Range>;
 
     /**
      * The text editor should be revealed,
@@ -219,10 +216,10 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     readonly onMouseDown: Event<EditorMouseEvent>;
 
     readonly onScrollChanged: Event<void>;
-    getVisibleRanges(): Range[];
+    getVisibleRanges(): lsp.Range[];
 
-    revealPosition(position: Position, options?: RevealPositionOptions): void;
-    revealRange(range: Range, options?: RevealRangeOptions): void;
+    revealPosition(position: lsp.Position, options?: RevealPositionOptions): void;
+    revealRange(range: lsp.Range, options?: RevealRangeOptions): void;
 
     /**
      * Rerender the editor.
@@ -249,7 +246,7 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
      */
     getLinesDecorations(startLineNumber: number, endLineNumber: number): EditorDecoration[];
 
-    getVisibleColumn(position: Position): number;
+    getVisibleColumn(position: lsp.Position): number;
 
     /**
      * Replaces the text of source given in ReplaceTextParams.
@@ -290,8 +287,8 @@ export interface Dimension {
 
 export interface TextEditorSelection {
     uri: URI
-    cursor?: Position
-    selection?: Range
+    cursor?: lsp.Position
+    selection?: lsp.Range
 }
 
 export interface RevealPositionOptions {
@@ -323,7 +320,7 @@ export interface ReplaceOperation {
     /**
      * the position that shall be replaced
      */
-    range: Range;
+    range: lsp.Range;
     /**
      * the text to replace with
      */

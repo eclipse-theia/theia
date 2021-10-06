@@ -26,7 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
-import { Range } from '@theia/core/shared/vscode-languageserver-types';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
@@ -157,12 +157,12 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                     eol: e.eol,
                     versionId: e.versionId,
                     changes: e.changes.map(c =>
-                    ({
-                        text: c.text,
-                        range: c.range,
-                        rangeLength: c.rangeLength,
-                        rangeOffset: c.rangeOffset
-                    }))
+                        ({
+                            text: c.text,
+                            range: c.range,
+                            rangeLength: c.rangeLength,
+                            rangeOffset: c.rangeOffset
+                        }))
                 }, model.dirty)
             ),
             Disposable.create(() => this.syncedModels.delete(key))

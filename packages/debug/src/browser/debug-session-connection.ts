@@ -17,10 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DebugProtocol } from 'vscode-debugprotocol';
+import { Channel } from '@theia/core/lib/common/messaging';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
-import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
 
 export interface DebugExitEvent {
     code?: number
@@ -116,7 +116,7 @@ export class DebugSessionConnection implements Disposable {
     private sequence = 1;
 
     protected readonly pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
-    protected readonly connection: Promise<IWebSocket>;
+    protected readonly connection: Promise<Channel<string>>;
 
     protected readonly requestHandlers = new Map<string, DebugRequestHandler>();
 
@@ -131,7 +131,7 @@ export class DebugSessionConnection implements Disposable {
 
     constructor(
         readonly sessionId: string,
-        protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>,
+        protected readonly connectionFactory: (sessionId: string) => Promise<Channel<string>>,
         protected readonly traceOutputChannel: OutputChannel | undefined
     ) {
         this.connection = this.createConnection();
@@ -150,7 +150,7 @@ export class DebugSessionConnection implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected async createConnection(): Promise<IWebSocket> {
+    protected async createConnection(): Promise<Channel<string>> {
         if (this.disposed) {
             throw new Error('Connection has been already disposed.');
         } else {

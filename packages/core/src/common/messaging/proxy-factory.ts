@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { MessageConnection, ResponseError } from 'vscode-ws-jsonrpc';
+import { MessageConnection, ResponseError, ParameterStructures, CancellationToken } from 'vscode-languageserver-protocol';
 import { ApplicationError } from '../application-error';
 import { Event, Emitter } from '../event';
 import { Disposable } from '../disposable';
@@ -114,14 +114,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
     protected waitForConnection(): void {
-        this.connectionPromise = new Promise(resolve =>
-            this.connectionPromiseResolve = resolve
-        );
-        this.connectionPromise.then(connection => {
-            connection.onClose(() =>
-                this.onDidCloseConnectionEmitter.fire(undefined)
-            );
-            this.onDidOpenConnectionEmitter.fire(undefined);
+        this.connectionPromise = new Promise(resolve => {
+            this.connectionPromiseResolve = resolve;
         });
     }
 
@@ -132,10 +126,33 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * response.
      */
     listen(connection: MessageConnection): void {
-        connection.onRequest((prop, ...args) => this.onRequest(prop, ...args));
-        connection.onNotification((prop, ...args) => this.onNotification(prop, ...args));
+        // When a method is called without arguments then `params` is `undefined`.
+        // `token` seems to always be set by `vscode-jsonrpc` on the receiving side.
+        connection.onRequest((method: string, params: object | unknown[] | undefined, token: CancellationToken) => {
+            if (params === undefined) {
+                return this.onRequest(method, token);
+            }
+            if (!Array.isArray(params)) {
+                throw new Error('Unexpected JSON-RPC params format');
+            }
+            return this.onRequest(method, ...params, token);
+        });
+        connection.onNotification((method: string, params: object | unknown[] | undefined) => {
+            if (params === undefined) {
+                return this.onNotification(method);
+            }
+            if (!Array.isArray(params)) {
+                throw new Error('Unexpected JSON-RPC params format');
+            }
+            return this.onNotification(method, ...params);
+        });
         connection.onDispose(() => this.waitForConnection());
+        connection.onClose(() => {
+            this.waitForConnection();
+            this.onDidCloseConnectionEmitter.fire();
+        });
         connection.listen();
+        this.onDidOpenConnectionEmitter.fire();
         this.connectionPromiseResolve(connection);
     }
 
@@ -151,10 +168,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      *
      * @returns A promise of the method call completion.
      */
-    protected async onRequest(method: string, ...args: any[]): Promise<any> {
+    protected async onRequest(method: string, ...params: any[]): Promise<any> {
         try {
             if (this.target) {
-                return await this.target[method](...args);
+                return await this.target[method](...params);
             } else {
                 throw new Error(`no target was set to handle ${method}`);
             }
@@ -176,9 +193,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * Same as [[onRequest]], but called on incoming notifications rather than
      * methods calls.
      */
-    protected onNotification(method: string, ...args: any[]): void {
+    protected onNotification(method: string, ...params: any[]): void {
         if (this.target) {
-            this.target[method](...args);
+            this.target[method](...params);
         }
     }
 
@@ -212,46 +229,39 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * `fooProxy.bar()` will call the `bar` method on the remote Foo object.
      *
      * @param target - unused.
-     * @param p - The property accessed on the Proxy object.
+     * @param property - The property accessed on the Proxy object.
      * @param receiver - unused.
      * @returns A callable that executes the JSON-RPC call.
      */
-    get(target: T, p: PropertyKey, receiver: any): any {
-        if (p === 'setClient') {
+    get(target: T, property: PropertyKey, receiver: any): any {
+        if (property === 'setClient') {
             return (client: any) => {
                 this.target = client;
             };
         }
-        if (p === 'getClient') {
+        if (property === 'getClient') {
             return () => this.target;
         }
-        if (p === 'onDidOpenConnection') {
+        if (property === 'onDidOpenConnection') {
             return this.onDidOpenConnectionEmitter.event;
         }
-        if (p === 'onDidCloseConnection') {
+        if (property === 'onDidCloseConnection') {
             return this.onDidCloseConnectionEmitter.event;
         }
-        const isNotify = this.isNotification(p);
-        return (...args: any[]) => {
-            const method = p.toString();
+        const isNotify = this.isNotification(property);
+        return async (...args: any[]) => {
+            const method = property.toString();
             const capturedError = new Error(`Request '${method}' failed`);
-            return this.connectionPromise.then(connection =>
-                new Promise((resolve, reject) => {
-                    try {
-                        if (isNotify) {
-                            connection.sendNotification(method, ...args);
-                            resolve(undefined);
-                        } else {
-                            const resultPromise = connection.sendRequest(method, ...args) as Promise<any>;
-                            resultPromise
-                                .catch((err: any) => reject(this.deserializeError(capturedError, err)))
-                                .then((result: any) => resolve(result));
-                        }
-                    } catch (err) {
-                        reject(err);
-                    }
-                })
-            );
+            const connection = await this.connectionPromise;
+            if (isNotify) {
+                connection.sendNotification(method, ParameterStructures.byPosition, ...args);
+            } else {
+                try {
+                    return await connection.sendRequest(method, ParameterStructures.byPosition, ...args);
+                } catch (error) {
+                    throw this.deserializeError(capturedError, error);
+                }
+            }
         };
     }
 
@@ -276,6 +286,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         }
         return e;
     }
+
     protected deserializeError(capturedError: Error, e: any): any {
         if (e instanceof ResponseError) {
             const capturedStack = capturedError.stack || '';
@@ -291,5 +302,4 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         }
         return e;
     }
-
 }

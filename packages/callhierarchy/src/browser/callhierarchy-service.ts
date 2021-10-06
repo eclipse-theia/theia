@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Definition, Caller, Callee } from './callhierarchy';
 import { ContributionProvider, Disposable } from '@theia/core/lib/common';
 import { LanguageSelector, score } from '../common/language-selector';

@@ -44,7 +44,7 @@ import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribut
 import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
-import { PluginWebSocketChannel } from '../../../common/connection';
+import { PluginChannel } from '../../../common/connection';
 import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
@@ -149,7 +149,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.debugPreferences,
             async (sessionId: string) => {
                 const connection = await this.connectionMain.ensureConnection(sessionId);
-                return new PluginWebSocketChannel(connection);
+                return new PluginChannel(connection);
             },
             this.fileService,
             terminalOptionsExt,

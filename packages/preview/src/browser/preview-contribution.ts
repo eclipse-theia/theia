@@ -22,7 +22,7 @@ import { DisposableCollection, CommandContribution, CommandRegistry, Command, Me
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { MiniBrowserCommands } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
 import URI from '@theia/core/lib/common/uri';
-import { Position } from '@theia/core/shared/vscode-languageserver-types';
+import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';

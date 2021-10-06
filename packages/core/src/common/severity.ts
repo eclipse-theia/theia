@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DiagnosticSeverity } from 'vscode-languageserver-types';
+import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
 
 export enum Severity {
     Ignore = 0,

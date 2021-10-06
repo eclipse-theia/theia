@@ -42,16 +42,19 @@ export class PluginServerHandler implements PluginServer {
         return this.pluginDeployer.undeploy(pluginId);
     }
 
-    setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
-        return this.pluginsKeyValueStorage.set(key, value, kind);
+    setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind | CancellationToken): Promise<boolean> {
+        return this.pluginsKeyValueStorage.set(key, value, this.ignoreCancellationToken(kind));
     }
 
-    getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
-        return this.pluginsKeyValueStorage.get(key, kind);
+    getStorageValue(key: string, kind: PluginStorageKind | CancellationToken): Promise<KeysToAnyValues> {
+        return this.pluginsKeyValueStorage.get(key, this.ignoreCancellationToken(kind));
     }
 
-    getAllStorageValues(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
-        return this.pluginsKeyValueStorage.getAll(kind);
+    getAllStorageValues(kind: PluginStorageKind | CancellationToken): Promise<KeysToKeysToAnyValue> {
+        return this.pluginsKeyValueStorage.getAll(this.ignoreCancellationToken(kind));
     }
 
+    protected ignoreCancellationToken<T>(what: T | CancellationToken): T | undefined {
+        return CancellationToken.Is(what) ? undefined : what;
+    }
 }

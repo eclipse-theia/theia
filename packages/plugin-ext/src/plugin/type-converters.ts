@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import * as lstypes from '@theia/core/shared/vscode-languageserver-types';
+import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import { URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
@@ -982,22 +982,22 @@ export function getShellExecutionOptions(options: theia.ShellExecutionOptions): 
     return result;
 }
 
-export function fromSymbolInformation(symbolInformation: theia.SymbolInformation): lstypes.SymbolInformation | undefined {
+export function fromSymbolInformation(symbolInformation: theia.SymbolInformation): lsp.SymbolInformation | undefined {
     if (!symbolInformation) {
         return undefined;
     }
 
     if (symbolInformation.location && symbolInformation.location.range) {
-        const p1 = lstypes.Position.create(symbolInformation.location.range.start.line, symbolInformation.location.range.start.character);
-        const p2 = lstypes.Position.create(symbolInformation.location.range.end.line, symbolInformation.location.range.end.character);
-        return lstypes.SymbolInformation.create(symbolInformation.name, symbolInformation.kind++ as lstypes.SymbolKind, lstypes.Range.create(p1, p2),
+        const p1 = lsp.Position.create(symbolInformation.location.range.start.line, symbolInformation.location.range.start.character);
+        const p2 = lsp.Position.create(symbolInformation.location.range.end.line, symbolInformation.location.range.end.character);
+        return lsp.SymbolInformation.create(symbolInformation.name, symbolInformation.kind++ as lsp.SymbolKind, lsp.Range.create(p1, p2),
             symbolInformation.location.uri.toString(), symbolInformation.containerName);
     }
 
     return {
         name: symbolInformation.name,
         containerName: symbolInformation.containerName,
-        kind: symbolInformation.kind++ as lstypes.SymbolKind,
+        kind: symbolInformation.kind++ as lsp.SymbolKind,
         location: {
             uri: symbolInformation.location.uri.toString(),
             range: symbolInformation.location.range,
@@ -1005,7 +1005,7 @@ export function fromSymbolInformation(symbolInformation: theia.SymbolInformation
     };
 }
 
-export function toSymbolInformation(symbolInformation: lstypes.SymbolInformation): theia.SymbolInformation | undefined {
+export function toSymbolInformation(symbolInformation: lsp.SymbolInformation): theia.SymbolInformation | undefined {
     if (!symbolInformation) {
         return undefined;
     }

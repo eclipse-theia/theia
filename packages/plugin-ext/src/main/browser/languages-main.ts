@@ -45,19 +45,17 @@ import CoreURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import * as vst from '@theia/core/shared/vscode-languageserver-types';
+import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
-import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
-import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -361,11 +359,11 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         };
     }
 
-    protected provideWorkspaceSymbols(handle: number, params: WorkspaceSymbolParams, token: monaco.CancellationToken): Thenable<vst.SymbolInformation[]> {
+    protected provideWorkspaceSymbols(handle: number, params: WorkspaceSymbolParams, token: monaco.CancellationToken): Thenable<lsp.SymbolInformation[]> {
         return this.proxy.$provideWorkspaceSymbols(handle, params.query, token);
     }
 
-    protected resolveWorkspaceSymbol(handle: number, symbol: vst.SymbolInformation, token: monaco.CancellationToken): Thenable<vst.SymbolInformation | undefined> {
+    protected resolveWorkspaceSymbol(handle: number, symbol: lsp.SymbolInformation, token: monaco.CancellationToken): Thenable<lsp.SymbolInformation | undefined> {
         return this.proxy.$resolveWorkspaceSymbol(handle, symbol, token);
     }
 
@@ -772,7 +770,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected createCallHierarchyService(handle: number, language: LanguageSelector): CallHierarchyService {
         return {
             selector: language,
-            getRootDefinition: (uri: DocumentUri, position: Position, cancellationToken: CancellationToken) =>
+            getRootDefinition: (uri: lsp.DocumentUri, position: lsp.Position, cancellationToken: CancellationToken) =>
                 this.proxy.$provideRootDefinition(handle, toUriComponents(uri), fromPosition(position), cancellationToken)
                     .then(def => Array.isArray(def) ? def.map(item => toDefinition(item)) : toDefinition(def)),
             getCallers: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
@@ -914,8 +912,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
 }
 
-function reviveMarker(marker: MarkerData): vst.Diagnostic {
-    const monacoMarker: vst.Diagnostic = {
+function reviveMarker(marker: MarkerData): lsp.Diagnostic {
+    const monacoMarker: lsp.Diagnostic = {
         code: marker.code,
         severity: reviveSeverity(marker.severity),
         range: reviveRange(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn),
@@ -935,16 +933,16 @@ function reviveMarker(marker: MarkerData): vst.Diagnostic {
     return monacoMarker;
 }
 
-function reviveSeverity(severity: MarkerSeverity): vst.DiagnosticSeverity {
+function reviveSeverity(severity: MarkerSeverity): lsp.DiagnosticSeverity {
     switch (severity) {
-        case MarkerSeverity.Error: return vst.DiagnosticSeverity.Error;
-        case MarkerSeverity.Warning: return vst.DiagnosticSeverity.Warning;
-        case MarkerSeverity.Info: return vst.DiagnosticSeverity.Information;
-        case MarkerSeverity.Hint: return vst.DiagnosticSeverity.Hint;
+        case MarkerSeverity.Error: return lsp.DiagnosticSeverity.Error;
+        case MarkerSeverity.Warning: return lsp.DiagnosticSeverity.Warning;
+        case MarkerSeverity.Info: return lsp.DiagnosticSeverity.Information;
+        case MarkerSeverity.Hint: return lsp.DiagnosticSeverity.Hint;
     }
 }
 
-function reviveRange(startLine: number, startColumn: number, endLine: number, endColumn: number): vst.Range {
+function reviveRange(startLine: number, startColumn: number, endLine: number, endColumn: number): lsp.Range {
     // note: language server range is 0-based, marker is 1-based, so need to deduct 1 here
     return {
         start: {
@@ -958,7 +956,7 @@ function reviveRange(startLine: number, startColumn: number, endLine: number, en
     };
 }
 
-function reviveRelated(related: RelatedInformation): vst.DiagnosticRelatedInformation {
+function reviveRelated(related: RelatedInformation): lsp.DiagnosticRelatedInformation {
     return {
         message: related.message,
         location: {
@@ -968,10 +966,10 @@ function reviveRelated(related: RelatedInformation): vst.DiagnosticRelatedInform
     };
 }
 
-function reviveTag(tag: DiagnosticTag): vst.DiagnosticTag {
+function reviveTag(tag: lsp.DiagnosticTag): lsp.DiagnosticTag {
     switch (tag) {
-        case 1: return DiagnosticTag.Unnecessary;
-        case 2: return DiagnosticTag.Deprecated;
+        case 1: return lsp.DiagnosticTag.Unnecessary;
+        case 2: return lsp.DiagnosticTag.Deprecated;
     }
 }
 

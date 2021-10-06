@@ -1632,7 +1632,7 @@ export class ProgressOptions {
     /**
      * The location at which progress should show.
      */
-    location: ProgressLocation;
+    location: ProgressLocation | { viewId: string };
     /**
      * A human-readable string which will be used to describe the
      * operation.
@@ -1645,7 +1645,7 @@ export class ProgressOptions {
      * button.
      */
     cancellable?: boolean;
-    constructor(location: ProgressLocation, title?: string, cancellable?: boolean) {
+    constructor(location: ProgressLocation | { viewId: string }, title?: string, cancellable?: boolean) {
         this.location = location;
     }
 }

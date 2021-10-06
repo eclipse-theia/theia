@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CompositeTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
 import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
 import { CallHierarchyServiceProvider } from '../callhierarchy-service';
-import { Position } from '@theia/core/shared/vscode-languageserver-types';
+import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 

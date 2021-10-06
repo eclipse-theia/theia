@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
+import { Logger } from 'vscode-languageserver-protocol';
 import { JsonRpcServer } from './messaging/proxy-factory';
 
 export const ILoggerServer = Symbol('ILoggerServer');
@@ -84,6 +85,26 @@ export namespace LogLevel {
 
         return undefined;
     }
+}
+
+export class ConsoleLogger implements Logger {
+
+    error(message: string): void {
+        console.log(message);
+    }
+
+    warn(message: string): void {
+        console.log(message);
+    }
+
+    info(message: string): void {
+        console.log(message);
+    }
+
+    log(message: string): void {
+        console.log(message);
+    }
+
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

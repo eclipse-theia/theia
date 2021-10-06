@@ -81,12 +81,10 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public acceptMessage(pluginHostId: string, message: string): boolean {
         return pluginHostId === 'main';
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onMessage(pluginHostId: string, jsonMessage: string): void {
         if (this.childProcess) {
             this.childProcess.send(jsonMessage);

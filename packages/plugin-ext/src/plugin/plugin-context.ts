@@ -20,7 +20,7 @@
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { CancellationError, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
     MAIN_RPC_CONTEXT,
@@ -229,8 +229,8 @@ export function createAPIFactory(
             get providers(): ReadonlyArray<theia.AuthenticationProviderInformation> {
                 return authenticationExt.providers;
             },
-            getSession(providerId: string, scopes: string[], options: theia.AuthenticationGetSessionOptions) {
-                return authenticationExt.getSession(plugin, providerId, scopes, options as any);
+            getSession(providerId: string, scopes: string[], options: theia.AuthenticationGetSessionOptions = {}): Promise<theia.AuthenticationSession> {
+                return authenticationExt.getSession(plugin, providerId, scopes, { ...options, createIfNone: true });
             },
             logout(providerId: string, sessionId: string): Thenable<void> {
                 return authenticationExt.logout(providerId, sessionId);
@@ -530,13 +530,18 @@ export function createAPIFactory(
                 const data = await documents.openDocument(uri);
                 return data && data.document;
             },
-            createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
-                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
-            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<URI[]> {
+            createFileSystemWatcher(pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher {
+                return extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete);
+            },
+            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: theia.CancellationToken): PromiseLike<URI[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
-            findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
-                callbackOrToken?: CancellationToken | ((result: theia.TextSearchResult) => void), token?: CancellationToken): Promise<theia.TextSearchComplete> {
+            findTextInFiles(
+                query: theia.TextSearchQuery,
+                optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
+                callbackOrToken?: theia.CancellationToken | ((result: theia.TextSearchResult) => void),
+                token?: theia.CancellationToken
+            ): Promise<theia.TextSearchComplete> {
                 return workspaceExt.findTextInFiles(query, optionsOrCallback, callbackOrToken, token);
             },
             saveAll(includeUntitled?: boolean): PromiseLike<boolean> {
