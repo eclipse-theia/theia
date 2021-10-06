@@ -219,13 +219,43 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (isInSidePanel || (this.tabBar && this.tabBar.titles.length < 2)) {
             return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
         }
+
+        // Collect prefix data.
+        const prefixes: string[] = [];
+        for (const captionPrefixes of this.getDecorationData(data.title, 'captionPrefixes')) {
+            if (captionPrefixes) {
+                for (const prefix of captionPrefixes) {
+                    prefixes.push(prefix.data);
+                }
+            }
+        }
+
+        // Collect suffix data.
+        const suffixes: string[] = [];
+        for (const captionSuffixes of this.getDecorationData(data.title, 'captionSuffixes')) {
+            if (captionSuffixes) {
+                for (const suffix of captionSuffixes) {
+                    suffixes.push(suffix.data);
+                }
+            }
+        }
+
         const originalToDisplayedMap = this.findDuplicateLabels([...this.tabBar!.titles]);
         const labelDetails: string | undefined = originalToDisplayedMap.get(data.title.caption);
-        if (labelDetails) {
+
+        if (labelDetails || prefixes.length > 0 || suffixes.length > 0) {
+            const detailLabel: string[] = [];
+            detailLabel.push(...prefixes);
+            if (labelDetails) {
+                detailLabel.push(labelDetails);
+            }
+            detailLabel.push(...suffixes);
+
             return h.div({ className: 'p-TabBar-tabLabelWrapper' },
                 h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label),
-                h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
+                h.div({ className: 'p-TabBar-tabLabelDetails', style }, detailLabel.join(' ')));
         }
+
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
     }
 
