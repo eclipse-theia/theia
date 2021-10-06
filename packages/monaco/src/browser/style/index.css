@@ -99,6 +99,13 @@
   font-family: sans-serif;
 }
 
+.monaco-editor .monaco-list .monaco-list-row.focused,
+.monaco-editor .monaco-list .monaco-list-row.focused,
+.monaco-editor .monaco-list .monaco-list-row.focused .suggest-icon {
+  color: var(--theia-list-activeSelectionForeground) !important;
+  background-color: var(--theia-list-activeSelectionBackground) !important;
+}
+
 /* Monaco Quick Input */
 .quick-input-widget {
   width: 600px !important;
