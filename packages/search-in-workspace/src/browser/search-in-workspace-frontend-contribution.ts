@@ -41,6 +41,11 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Find in Files'
     }, 'vscode/search.contribution/findInFiles', SEARCH_CATEGORY_KEY);
+    export const REPLACE_IN_FILES = Command.toLocalizedCommand({
+        id: 'search-in-workspace.replace',
+        category: SEARCH_CATEGORY,
+        label: 'Replace in Files'
+    }, 'vscode/searchActions/replaceInFiles', SEARCH_CATEGORY_KEY);
     export const FIND_IN_FOLDER = Command.toLocalizedCommand({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
@@ -122,6 +127,14 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             execute: async () => {
                 const widget = await this.openView({ activate: true });
                 widget.updateSearchTerm(this.getSearchTerm());
+            }
+        });
+
+        commands.registerCommand(SearchInWorkspaceCommands.REPLACE_IN_FILES, {
+            isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
+            execute: async () => {
+                const widget = await this.openView({ activate: true });
+                widget.updateSearchTerm(this.getSearchTerm(), true);
             }
         });
 
@@ -214,7 +227,12 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
         });
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id
+            commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
+            order: '2'
+        });
+        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
+            order: '3'
         });
     }
 
