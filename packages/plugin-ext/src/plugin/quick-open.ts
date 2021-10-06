@@ -259,7 +259,7 @@ export class QuickInputExt implements QuickInput {
     private onDidHideEmitter: Emitter<void>;
     private onDidTriggerButtonEmitter: Emitter<theia.QuickInputButton>;
     private _updateTimeout: any;
-    private _pendingUpdate: TransferQuickInput<any> = { id: this._id };
+    private _pendingUpdate: TransferQuickInput = { id: this._id };
 
     constructor(readonly quickOpen: QuickOpenExtImpl, readonly quickOpenMain: QuickOpenMain, readonly plugin: Plugin, private _onDidDispose: () => void) {
         this.title = undefined;
@@ -615,6 +615,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
         });
         this.update({
             items: items.map((item, i) => ({
+                type: item.type,
                 label: item.label,
                 description: item.description,
                 handle: i,
