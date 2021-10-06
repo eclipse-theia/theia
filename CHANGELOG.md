@@ -6,6 +6,7 @@
 
 - [plugin-ext] add additional startup logging for plugin starting and application loading [#10116](https://github.com/eclipse-theia/theia/pull/10116) - Contributed on behalf of STMicroelectronics
 - [scripts] added startup performance measurement script [#9777](https://github.com/eclipse-theia/theia/pull/9777) - Contributed on behalf of STMicroelectronics
+- [scripts] added extension impact script [#10192](https://github.com/eclipse-theia/theia/pull/10192) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
 
