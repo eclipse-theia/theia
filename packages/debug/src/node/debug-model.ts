@@ -87,11 +87,6 @@ export interface DebugAdapterForkExecutable {
  */
 export type DebugAdapterExecutable = DebugAdapterSpawnExecutable | DebugAdapterForkExecutable;
 
-export interface DebugProtocolMessage extends Object {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [properties: string]: any;
-}
-
 /**
  * Provides some way we can communicate with the running debug adapter. In general there is
  * no obligation as of how to launch/initialize local or remote debug adapter
