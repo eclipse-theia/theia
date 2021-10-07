@@ -42,10 +42,10 @@
     order: 1;
 }
 
-.modal-Notification .icon .fa {
+.modal-Notification .icon .codicon {
     line-height: inherit;
     vertical-align: middle;
-    font-size: 120%;
+    font-size: calc(var(--theia-ui-padding)*5);
     color: var(--theia-editorInfo-foreground);
 }
 
@@ -105,4 +105,19 @@
 
 .modal-Notification .buttons > button:hover {
     background-color: var(--theia-button-hoverBackground);
+}
+
+.modal-Notification .detail {
+    align-self: center;
+    order: 3;
+    flex: 1 100%;
+    color: var(--theia-descriptionForeground);
+}
+
+.modal-Notification .detail > p {
+    margin: calc(var(--theia-ui-padding) * 2) 0px 0px 0px;
+}
+
+.modal-Notification .text {
+    padding: calc(var(--theia-ui-padding)*1.5);
 }

@@ -2395,6 +2395,13 @@ declare module '@theia/plugin' {
      */
     export interface MessageOptions {
 
+        /*
+         * Human-readable detail message that is rendered
+         * less prominent. Note that detail is only shown
+         * for modal messages.
+         */
+        detail?: string;
+
         /**
          * Indicates that this message should be modal.
          */
