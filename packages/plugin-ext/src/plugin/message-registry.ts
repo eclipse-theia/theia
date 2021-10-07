@@ -50,14 +50,17 @@ export class MessageRegistryExt {
             } else {
                 if ('modal' in optionsOrFirstItem) {
                     options.modal = optionsOrFirstItem.modal;
+                    if ('detail' in optionsOrFirstItem) {
+                        options.detail = optionsOrFirstItem.detail;
+                    }
                 }
             }
+            for (const item of rest) {
+                pushItem(item);
+            }
+            const actionHandle = await this.proxy.$showMessage(type, message, options, actions);
+            return actionHandle !== undefined ? items[actionHandle] : undefined;
         }
-        for (const item of rest) {
-            pushItem(item);
-        }
-        const actionHandle = await this.proxy.$showMessage(type, message, options, actions);
-        return actionHandle !== undefined ? items[actionHandle] : undefined;
-    }
 
+    }
 }
