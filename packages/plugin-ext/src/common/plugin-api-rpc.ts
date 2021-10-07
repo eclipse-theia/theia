@@ -555,7 +555,7 @@ export interface TransferQuickInputButton extends theia.QuickInputButton {
     handle?: number;
 }
 
-export type TransferQuickInput<T extends theia.QuickPickItem> = TransferQuickPick<T> | TransferInputBox;
+export type TransferQuickInput = TransferQuickPick | TransferInputBox;
 
 export interface BaseTransferQuickInput {
     [key: string]: any;
@@ -566,14 +566,14 @@ export interface BaseTransferQuickInput {
     visible?: boolean;
 }
 
-export interface TransferQuickPick<T extends theia.QuickPickItem> extends BaseTransferQuickInput {
+export interface TransferQuickPick extends BaseTransferQuickInput {
     type?: 'quickPick';
     value?: string;
     placeholder?: string;
     buttons?: TransferQuickInputButton[];
     items?: TransferQuickPickItems[];
-    activeItems?: ReadonlyArray<T>;
-    selectedItems?: ReadonlyArray<T>;
+    activeItems?: ReadonlyArray<theia.QuickPickItem>;
+    selectedItems?: ReadonlyArray<theia.QuickPickItem>;
     canSelectMany?: boolean;
     ignoreFocusOut?: boolean;
     matchOnDescription?: boolean;
@@ -605,7 +605,7 @@ export interface QuickOpenMain {
     $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any>;
     $setError(instance: number, error: Error): Promise<void>;
     $input(options: theia.InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined>;
-    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput<T>): Promise<void>;
+    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput): Promise<void>;
     $dispose(id: number): Promise<void>;
 
     $hide(): void;

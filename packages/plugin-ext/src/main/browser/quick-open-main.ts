@@ -194,7 +194,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
     private sessions = new Map<number, QuickInputSession>();
 
-    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput<T>): Promise<void> {
+    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput): Promise<void> {
         const sessionId = params.id;
         let session = this.sessions.get(sessionId);
         if (!session) {
