@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
 import * as showdown from 'showdown';
-import * as sanitize from 'sanitize-html';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
@@ -275,15 +275,15 @@ export class VSXExtensionsModel {
 
     protected compileReadme(readmeMarkdown: string): string {
         const markdownConverter = new showdown.Converter({
+            headerLevelStart: 2,
             noHeaderId: true,
             strikethrough: true,
-            headerLevelStart: 2
+            tables: true,
+            underline: true
         });
 
         const readmeHtml = markdownConverter.makeHtml(readmeMarkdown);
-        return sanitize(readmeHtml, {
-            allowedTags: sanitize.defaults.allowedTags.concat(['h1', 'h2', 'img'])
-        });
+        return DOMPurify.sanitize(readmeHtml);
     }
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
