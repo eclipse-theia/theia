@@ -40,7 +40,7 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
                 type === MainMessageType.Warning ? MessageType.Warning :
                     MessageType.Info;
             const modalNotification = new ModalNotification();
-            return modalNotification.showDialog(messageType, message, actions);
+            return modalNotification.showDialog(messageType, message, options, actions);
         }
         switch (type) {
             case MainMessageType.Info:

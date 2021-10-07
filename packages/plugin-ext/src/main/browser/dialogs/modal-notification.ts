@@ -18,7 +18,8 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { codiconArray, Key } from '@theia/core/lib/browser';
 import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
-import { MainMessageItem } from '../../../common/plugin-api-rpc';
+import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 export enum MessageType {
     Error = 'error',
@@ -29,6 +30,7 @@ export enum MessageType {
 const NOTIFICATION = 'modal-Notification';
 const ICON = 'icon';
 const TEXT = 'text';
+const DETAIL = 'detail';
 
 @injectable()
 export class ModalNotification extends AbstractDialog<string | undefined> {
@@ -36,7 +38,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
     protected actionTitle: string | undefined;
 
     constructor() {
-        super({ title: 'Theia' });
+        super({ title: FrontendApplicationConfigProvider.get().applicationName });
     }
 
     protected onCloseRequest(msg: Message): void {
@@ -48,12 +50,12 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         return this.actionTitle;
     }
 
-    showDialog(messageType: MessageType, text: string, actions: MainMessageItem[]): Promise<string | undefined> {
-        this.contentNode.appendChild(this.createMessageNode(messageType, text, actions));
+    showDialog(messageType: MessageType, text: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<string | undefined> {
+        this.contentNode.appendChild(this.createMessageNode(messageType, text, options, actions));
         return this.open();
     }
 
-    protected createMessageNode(messageType: MessageType, text: string, actions: MainMessageItem[]): HTMLElement {
+    protected createMessageNode(messageType: MessageType, text: string, options: MainMessageOptions, actions: MainMessageItem[]): HTMLElement {
         const messageNode = document.createElement('div');
         messageNode.classList.add(NOTIFICATION);
 
@@ -67,6 +69,13 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         const textElement = textContainer.appendChild(document.createElement('p'));
         textElement.textContent = text;
 
+        if (options.detail) {
+            const detailContainer = textContainer.appendChild(document.createElement('div'));
+            detailContainer.classList.add(DETAIL);
+            const detailElement = detailContainer.appendChild(document.createElement('p'));
+            detailElement.textContent = options.detail;
+        }
+
         actions.forEach((action: MainMessageItem) => {
             const button = this.createButton(action.title);
             button.classList.add('main');
@@ -79,8 +88,10 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
                 },
                 'click');
         });
-        if (!actions.some(action => action.isCloseAffordance === true)) {
-            this.appendCloseButton('close');
+        if (actions.length <= 0) {
+            this.appendAcceptButton();
+        } else if (!actions.some(action => action.isCloseAffordance === true)) {
+            this.appendCloseButton('Close');
         }
 
         return messageNode;
