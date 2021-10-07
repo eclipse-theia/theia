@@ -22,8 +22,6 @@ import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { fork, ForkOptions } from 'child_process';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
-import URI from '../common/uri';
-import { FileUri } from '../node/file-uri';
 import { Deferred } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
 import { ContributionProvider } from '../common/contribution-provider';
@@ -34,6 +32,7 @@ import Storage = require('electron-store');
 import { DEFAULT_WINDOW_HASH } from '../browser/window/window-service';
 import { isOSX, isWindows } from '../common';
 import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../electron-common/messaging/electron-messages';
+import { URI } from 'vscode-uri';
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
@@ -298,14 +297,14 @@ export class ElectronMainApplication {
 
     async openDefaultWindow(): Promise<BrowserWindow> {
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow()]);
-        electronWindow.loadURL(uri.withFragment(DEFAULT_WINDOW_HASH).toString(true));
+        electronWindow.loadURL(uri.with({ fragment: DEFAULT_WINDOW_HASH }).toString(true));
         return electronWindow;
     }
 
     protected async openWindowWithWorkspace(workspacePath: string): Promise<BrowserWindow> {
         const options = await this.getLastWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow(options)]);
-        electronWindow.loadURL(uri.withFragment(encodeURI(workspacePath)).toString(true));
+        electronWindow.loadURL(uri.with({ fragment: encodeURI(workspacePath) }).toString(true));
         return electronWindow;
     }
 
@@ -337,8 +336,9 @@ export class ElectronMainApplication {
     }
 
     protected async createWindowUri(): Promise<URI> {
-        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
-            .withQuery(`port=${await this.backendPort}`);
+        return URI.file(this.globals.THEIA_FRONTEND_HTML_PATH).with({
+            query: `port=${await this.backendPort}`
+        });
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {

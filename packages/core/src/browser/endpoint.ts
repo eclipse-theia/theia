@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '../common/uri';
+import { URI } from 'vscode-uri';
 
 /**
  * An endpoint provides URLs for http and ws, based on configuration and defaults.
@@ -32,11 +32,11 @@ export class Endpoint {
     ) { }
 
     getWebSocketUrl(): URI {
-        return new URI(`${this.wsScheme}//${this.host}${this.pathname}${this.path}`);
+        return URI.parse(`${this.wsScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
     getRestUrl(): URI {
-        return new URI(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
+        return URI.parse(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
     protected get pathname(): string {

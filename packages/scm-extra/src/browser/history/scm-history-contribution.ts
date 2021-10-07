@@ -19,7 +19,7 @@ import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/bro
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmHistoryWidget } from './scm-history-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { EDITOR_CONTEXT_MENU_SCM } from '../scm-extra-contribution';

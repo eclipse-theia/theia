@@ -19,13 +19,14 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { getTempDir } from '../temp-dir-util';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as filenamify from 'filenamify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { PluginTheiaEnvironment } from '../../common/plugin-theia-environment';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
 
-    private readonly systemPluginsDirUri = FileUri.create(getTempDir('theia-unpacked'));
+    private readonly systemPluginsDirUri = URI.file(getTempDir('theia-unpacked'));
 
     @inject(PluginTheiaEnvironment)
     protected readonly environment: PluginTheiaEnvironment;
@@ -53,6 +54,6 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
         if (context.pluginEntry().type === PluginType.User) {
             pluginsDirUri = await this.environment.getPluginsDirUri();
         }
-        return FileUri.fsPath(pluginsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+        return Uri.joinPath(pluginsDirUri, filenamify(context.pluginEntry().id(), { replacement: '_' })).fsPath;
     }
 }

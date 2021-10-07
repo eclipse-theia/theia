@@ -19,7 +19,7 @@ import { isOSX, } from '@theia/core';
 import { TerminalContribution } from './terminal-contribution';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export abstract class AbstractCmdClickTerminalContribution implements TerminalContribution {
@@ -108,7 +108,7 @@ export class URLMatcher extends AbstractCmdClickTerminalContribution {
 
     getHandler(): (event: MouseEvent, uri: string) => void {
         return (event: MouseEvent, uri: string) =>
-            open(this.openerService, new URI(uri));
+            open(this.openerService, URI.parse(uri));
     }
 }
 
@@ -125,7 +125,7 @@ export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
     getHandler(): (event: MouseEvent, uri: string) => void {
         return (event: MouseEvent, matched: string) => {
             const uri = matched.startsWith('http') ? matched : `http://${matched}`;
-            open(this.openerService, new URI(uri));
+            open(this.openerService, URI.parse(uri));
         };
     }
 }

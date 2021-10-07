@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
@@ -24,6 +24,7 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
@@ -151,7 +152,7 @@ export class FileNavigatorModel extends FileTreeModel {
     protected createMultipleRootNode(): WorkspaceNode {
         const workspace = this.workspaceService.workspace;
         let name = workspace
-            ? workspace.resource.path.name
+            ? Uri.name(workspace.resource)
             : 'untitled';
         name += ' (Workspace)';
         return WorkspaceNode.createRoot(name);
@@ -175,7 +176,7 @@ export class FileNavigatorModel extends FileTreeModel {
      * @returns file tree node if the file with given uri was revealed, undefined otherwise
      */
     async revealFile(uri: URI): Promise<TreeNode | undefined> {
-        if (!uri.path.isAbsolute) {
+        if (!Path.isAbsolute(uri.path)) {
             return undefined;
         }
         let node = this.getNodeClosestToRootByUri(uri);
@@ -194,13 +195,13 @@ export class FileNavigatorModel extends FileTreeModel {
         }
 
         // fail stop condition
-        if (uri.path.isRoot) {
+        if (Path.isRoot(uri.path)) {
             // file system root is reached but workspace root wasn't found, it means that
             // given uri is not in workspace root folder or points to not existing file.
             return undefined;
         }
 
-        if (await this.revealFile(uri.parent)) {
+        if (await this.revealFile(Uri.dirname(uri))) {
             if (node === undefined) {
                 // get node if it wasn't mounted into navigator tree before expansion
                 node = this.getNodeClosestToRootByUri(uri);

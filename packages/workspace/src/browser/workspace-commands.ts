@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
@@ -35,7 +35,7 @@ import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { WorkspaceInputDialog } from './workspace-input-dialog';
-import { Emitter, Event, OS } from '@theia/core/lib/common';
+import { Emitter, Event, OS, Uri } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
@@ -239,13 +239,13 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new WorkspaceInputDialog({
                         title: 'New File',
                         parentUri: parentUri,
-                        initialValue: vacantChildUri.path.base,
+                        initialValue: Uri.basename(vacantChildUri),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
 
                     dialog.open().then(async name => {
                         if (name) {
-                            const fileUri = parentUri.resolve(name);
+                            const fileUri = Uri.joinPath(parentUri, name);
                             await this.fileService.create(fileUri);
                             this.fireCreateNewFile({ parent: parentUri, uri: fileUri });
                             open(this.openerService, fileUri);
@@ -262,12 +262,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new WorkspaceInputDialog({
                         title: 'New Folder',
                         parentUri: parentUri,
-                        initialValue: vacantChildUri.path.base,
+                        initialValue: Uri.basename(vacantChildUri),
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
                     dialog.open().then(async name => {
                         if (name) {
-                            const folderUri = parentUri.resolve(name);
+                            const folderUri = Uri.joinPath(parentUri, name);
                             await this.fileService.createFolder(folderUri);
                             this.fireCreateNewFile({ parent: parentUri, uri: folderUri });
                         }
@@ -282,7 +282,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 uris.forEach(async uri => {
                     const parent = await this.getParent(uri);
                     if (parent) {
-                        const oldName = uri.path.base;
+                        const oldName = Uri.basename(uri);
                         const stat = await this.fileService.resolve(uri);
                         const fileType = stat.isDirectory ? 'Directory' : 'File';
                         const titleStr = `Rename ${fileType}`;
@@ -291,7 +291,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                             initialValue: oldName,
                             initialSelectionRange: {
                                 start: 0,
-                                end: uri.path.name.length
+                                end: Uri.name(uri).length
                             },
                             validate: async (newName, mode) => {
                                 if (oldName === newName && mode === 'preview') {
@@ -303,7 +303,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         const fileName = await dialog.open();
                         if (fileName) {
                             const oldUri = uri;
-                            const newUri = uri.parent.resolve(fileName);
+                            const newUri = Uri.joinPath(Uri.dirname(uri), fileName);
                             this.fileService.move(oldUri, newUri);
                         }
                     }
@@ -384,7 +384,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     protected async validateFileRename(oldName: string, newName: string, parent: FileStat): Promise<string> {
         if (
             await this.backendOS === OS.Type.Windows
-            && parent.resource.resolve(newName).isEqual(parent.resource.resolve(oldName), false)
+            && Uri.isEqual(Uri.joinPath(parent.resource, newName), Uri.joinPath(parent.resource, oldName), false)
         ) {
             return '';
         }
@@ -415,7 +415,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         if (name.split(/[\\/]/).some(file => !file || !validFilename(file) || /^\s+$/.test(file))) {
             return `The name "${this.trimFileName(name)}" is not a valid file or folder name.`;
         }
-        const childUri = parent.resource.resolve(name);
+        const childUri = Uri.joinPath(parent.resource, name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
             return `A file or folder "${this.trimFileName(name)}" already exists at this location.`;
@@ -443,7 +443,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
     protected async getParent(candidate: URI): Promise<FileStat | undefined> {
         try {
-            return await this.fileService.resolve(candidate.parent);
+            return await this.fileService.resolve(Uri.dirname(candidate));
         } catch {
             return undefined;
         }

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
@@ -44,7 +44,7 @@ export class EditorWidgetFactory implements WidgetFactory {
     protected readonly selectionService: SelectionService;
 
     createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
-        const uri = new URI(options.uri);
+        const uri = URI.parse(options.uri);
         return this.createEditor(uri, options);
     }
 

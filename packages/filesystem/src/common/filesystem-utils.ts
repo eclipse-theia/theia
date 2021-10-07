@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { FileStat } from '../common/files';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 export namespace FileSystemUtils {
 
@@ -32,10 +33,10 @@ export namespace FileSystemUtils {
 
         let index = 1;
         let base = name + ext;
-        while (children.some(child => child.path.base === base)) {
+        while (children.some(child => Uri.basename(child) === base)) {
             index = index + 1;
             base = name + '_' + index + ext;
         }
-        return parentUri.resolve(base);
+        return Uri.joinPath(parentUri, base);
     }
 }

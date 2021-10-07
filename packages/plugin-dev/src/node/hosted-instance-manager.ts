@@ -21,11 +21,10 @@ import * as net from 'net';
 import * as path from 'path';
 import * as request from 'request';
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { environment } from '@theia/core';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
@@ -136,7 +135,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         if (pluginUri.scheme === 'file') {
             processOptions = { ...PROCESS_OPTIONS };
             // get filesystem path that work cross operating systems
-            processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
+            processOptions.env!.HOSTED_PLUGIN = pluginUri.fsPath;
 
             // Disable all the other plugins on this instance
             processOptions.env!.THEIA_PLUGINS = '';
@@ -225,7 +224,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     isPluginValid(uri: URI): boolean {
-        const pckPath = path.join(FileUri.fsPath(uri), 'package.json');
+        const pckPath = path.join(uri.fsPath, 'package.json');
         if (fs.existsSync(pckPath)) {
             const pck = fs.readJSONSync(pckPath);
             try {
@@ -289,7 +288,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 if (match) {
                     this.hostedInstanceProcess.stdout!.removeListener('data', outputListener);
                     started = true;
-                    resolve(new URI(match[1]));
+                    resolve(URI.parse(match[1]));
                 }
             };
 

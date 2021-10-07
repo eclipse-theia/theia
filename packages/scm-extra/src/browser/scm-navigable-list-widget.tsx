@@ -16,7 +16,7 @@
 
 import { SELECTED_CLASS, Key, Widget } from '@theia/core/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
@@ -78,9 +78,9 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected getRepositoryLabel(uri: string): string | undefined {
-        const repository = this.scmService.findRepository(new URI(uri));
+        const repository = this.scmService.findRepository(URI.parse(uri));
         const isSelectedRepo = this.scmService.selectedRepository && repository && this.scmService.selectedRepository.provider.rootUri === repository.provider.rootUri;
-        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.provider.rootUri)) : undefined;
+        return repository && !isSelectedRepo ? this.labelProvider.getLongName(URI.parse(repository.provider.rootUri)) : undefined;
     }
 
     protected renderHeaderRow({ name, value, classNames, title }: { name: string, value: React.ReactNode, classNames?: string[], title?: string }): React.ReactNode {

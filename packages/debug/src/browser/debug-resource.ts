@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Resource, ResourceResolver } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugSource } from './model/debug-source';
 

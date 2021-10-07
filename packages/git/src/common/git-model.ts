@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Path } from '@theia/core';
 
 export interface WorkingDirectoryStatus {
@@ -203,9 +203,9 @@ export namespace Repository {
     export function is(repository: Object | undefined): repository is Repository {
         return !!repository && 'localUri' in repository;
     }
-    export function relativePath(repository: Repository | URI, uri: URI | string): Path | undefined {
-        const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));
-        return repositoryUri.relative(new URI(String(uri)));
+    export function relativePath(repository: Repository | URI, uri: URI | string): string | undefined {
+        const repositoryUri = URI.parse(Repository.is(repository) ? repository.localUri : String(repository));
+        return Path.relative(repositoryUri.path, String(uri));
     }
 }
 

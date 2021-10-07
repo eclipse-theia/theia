@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Uri } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MiniBrowserEnvironment } from '@theia/mini-browser/lib/browser/environment/mini-browser-environment';
 
 @injectable()
@@ -29,8 +30,8 @@ export class PreviewLinkNormalizer {
     normalizeLink(documentUri: URI, link: string): string {
         try {
             if (!this.urlScheme.test(link)) {
-                const location = documentUri.parent.resolve(link).path.toString();
-                return this.miniBrowserEnvironment.getEndpoint('normalized-link').getRestUrl().resolve(location).toString();
+                const location = Uri.joinPath(Uri.dirname(documentUri), link).path;
+                return Uri.joinPath(this.miniBrowserEnvironment.getEndpoint('normalized-link').getRestUrl(), location).toString();
             }
         } catch {
             // ignore

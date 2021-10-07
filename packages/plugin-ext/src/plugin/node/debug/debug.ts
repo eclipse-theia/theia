@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Emitter } from '@theia/core/lib/common/event';
-import { Path } from '@theia/core/lib/common/path';
+import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint } from '../../../common/plugin-api-rpc-model';
@@ -33,7 +33,7 @@ import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { connectInlineDebugAdapter, connectPipeDebugAdapter, connectSocketDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
-import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
+import { Uri } from '@theia/core';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -474,10 +474,10 @@ export class DebugExtImpl implements DebugExt {
         }
 
         const uri = URI.parse(folder);
-        const path = new Path(uri.path);
+        const base = Uri.basename(uri);
         return {
             uri: uri,
-            name: path.base,
+            name: base,
             index: 0
         };
     }

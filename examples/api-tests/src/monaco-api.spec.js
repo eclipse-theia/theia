@@ -26,6 +26,7 @@ describe('Monaco API', async function () {
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
     const { CommandRegistry } = require('@theia/core/lib/common/command');
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -37,8 +38,8 @@ describe('Monaco API', async function () {
     let monacoEditor;
 
     before(async () => {
-        const root = workspaceService.tryGetRoots()[0];
-        const editor = await editorManager.open(root.resource.resolve('package.json'), {
+        const root = workspaceService.tryGetRoots()[0].resource;
+        const editor = await editorManager.open(Uri.joinPath(root, 'package.json'), {
             mode: 'reveal'
         });
         monacoEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editor));

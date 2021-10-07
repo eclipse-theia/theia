@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
@@ -31,6 +31,7 @@ import { OpenEditorNode } from '@theia/navigator/lib/browser/open-editors-widget
 import { LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class ProblemDecorator implements TreeDecorator {
@@ -122,11 +123,11 @@ export class ProblemDecorator implements TreeDecorator {
         let workspacePrefixString = '';
         let separator = '';
         let filePathString = '';
-        const nodeURIDir = nodeURI.parent;
+        const nodeURIDir = Uri.dirname(nodeURI);
         if (parentWorkspace) {
-            const relativeDirFromWorkspace = parentWorkspace.relative(nodeURIDir);
+            const relativeDirFromWorkspace = Path.relative(parentWorkspace.path, nodeURIDir.path);
             workspacePrefixString = workspaceRoots.length > 1 ? this.labelProvider.getName(parentWorkspace) : '';
-            filePathString = relativeDirFromWorkspace?.toString() ?? '';
+            filePathString = relativeDirFromWorkspace ?? '';
             separator = filePathString && workspacePrefixString ? ' \u2022 ' : ''; // add a bullet point between workspace and path
         } else {
             workspacePrefixString = nodeURIDir.path.toString();
@@ -139,11 +140,11 @@ export class ProblemDecorator implements TreeDecorator {
         // We traverse up and assign the diagnostic to the container directory.
         // Note, instead of stopping at the WS root, we traverse up the driver root.
         // We will filter them later based on the expansion state of the tree.
-        for (const [uri, marker] of new Map(markers.map(m => [new URI(m.uri), m] as [URI, Marker<Diagnostic>])).entries()) {
+        for (const [uri, marker] of new Map(markers.map(m => [URI.parse(m.uri), m] as [URI, Marker<Diagnostic>])).entries()) {
             const uriString = uri.toString();
             result.set(uriString, marker);
-            let parentUri: URI | undefined = uri.parent;
-            while (parentUri && !parentUri.path.isRoot) {
+            let parentUri: URI | undefined = Uri.dirname(uri);
+            while (parentUri && !Path.isRoot(parentUri.path)) {
                 const parentUriString = parentUri.toString();
                 const existing = result.get(parentUriString);
                 // Make sure the highest diagnostic severity (smaller number) will be propagated to the container directory.
@@ -154,7 +155,7 @@ export class ProblemDecorator implements TreeDecorator {
                         owner: marker.owner,
                         kind: marker.kind
                     });
-                    parentUri = parentUri.parent;
+                    parentUri = Uri.dirname(parentUri);
                 } else {
                     parentUri = undefined;
                 }
@@ -165,7 +166,7 @@ export class ProblemDecorator implements TreeDecorator {
 
     protected collectMarkers(tree: Tree): Marker<Diagnostic>[] {
         return Array.from(this.problemManager.getUris())
-            .map(uri => new URI(uri))
+            .map(uri => URI.parse(uri))
             .map(uri => this.problemManager.findMarkers({ uri }))
             .map(markers => markers.sort(this.compare.bind(this)))
             .map(markers => markers.shift())

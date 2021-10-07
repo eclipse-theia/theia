@@ -26,7 +26,7 @@ import { CommandContribution } from '@theia/core/lib/common';
 import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContribution, KeybindingContribution, CommandHandler, QuickAccessContribution {
@@ -109,7 +109,7 @@ export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContr
     }
 
     protected createItem(sym: SymbolInformation, provider: WorkspaceSymbolProvider, filter: string, token: CancellationToken): QuickPickItem {
-        const uri = new URI(sym.location.uri);
+        const uri = URI.parse(sym.location.uri);
         const iconClasses = this.toCssClassName(sym.kind);
         let parent = sym.containerName;
         if (parent) {

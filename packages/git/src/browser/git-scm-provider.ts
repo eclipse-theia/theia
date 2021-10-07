@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { Emitter } from '@theia/core';
+import { Emitter, Uri } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandService } from '@theia/core/lib/common/command';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
@@ -183,7 +183,7 @@ export class GitScmProvider implements ScmProvider {
     }
 
     protected addScmResource(group: ScmResourceGroup, change: GitFileChange): void {
-        const sourceUri = new URI(change.uri);
+        const sourceUri = URI.parse(change.uri);
         group.resources.push({
             group,
             sourceUri,
@@ -202,25 +202,25 @@ export class GitScmProvider implements ScmProvider {
     }
 
     getUriToOpen(change: GitFileChange): URI {
-        const changeUri: URI = new URI(change.uri);
-        const fromFileUri = change.oldUri ? new URI(change.oldUri) : changeUri; // set oldUri on renamed and copied
+        const changeUri: URI = URI.parse(change.uri);
+        const fromFileUri = change.oldUri ? URI.parse(change.oldUri) : changeUri; // set oldUri on renamed and copied
         if (change.status === GitFileStatus.Deleted) {
             if (change.staged) {
-                return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
+                return changeUri.with({ scheme: GIT_RESOURCE_SCHEME, query: 'HEAD' });
             } else {
-                return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+                return changeUri.with({ scheme: GIT_RESOURCE_SCHEME });
             }
         }
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
                 return DiffUris.encode(
-                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                    fromFileUri.with({ scheme: GIT_RESOURCE_SCHEME, query: 'HEAD' }),
+                    changeUri.with({ scheme: GIT_RESOURCE_SCHEME }),
                     this.labelProvider.getName(changeUri) + ' (Index)');
             }
             if (this.stagedChanges.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
-                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME),
+                    fromFileUri.with({ scheme: GIT_RESOURCE_SCHEME }),
                     changeUri,
                     this.labelProvider.getName(changeUri) + ' (Working tree)');
             }
@@ -228,16 +228,16 @@ export class GitScmProvider implements ScmProvider {
                 return changeUri;
             }
             return DiffUris.encode(
-                fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                fromFileUri.with({ scheme: GIT_RESOURCE_SCHEME, query: 'HEAD' }),
                 changeUri,
                 this.labelProvider.getName(changeUri) + ' (Working tree)');
         }
         if (change.staged) {
-            return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+            return changeUri.with({ scheme: GIT_RESOURCE_SCHEME });
         }
         if (this.stagedChanges.find(c => c.uri === change.uri)) {
             return DiffUris.encode(
-                changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                changeUri.with({ scheme: GIT_RESOURCE_SCHEME }),
                 changeUri,
                 this.labelProvider.getName(changeUri) + ' (Working tree)');
         }
@@ -277,9 +277,9 @@ export class GitScmProvider implements ScmProvider {
             const uris = Array.isArray(uriArg) ? uriArg : [uriArg];
             const unstagedUris = uris
                 .filter(uri => {
-                    const resourceUri = new URI(uri);
-                    return unstagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)))
-                        || mergeChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
+                    const resourceUri = URI.parse(uri);
+                    return unstagedChanges.some(change => Uri.isEqualOrParent(resourceUri, URI.parse(change.uri)))
+                        || mergeChanges.some(change => Uri.isEqualOrParent(resourceUri, URI.parse(change.uri)));
                 }
                 );
             if (unstagedUris.length !== 0) {
@@ -307,8 +307,8 @@ export class GitScmProvider implements ScmProvider {
             const uris = Array.isArray(uriArg) ? uriArg : [uriArg];
             const stagedUris = uris
                 .filter(uri => {
-                    const resourceUri = new URI(uri);
-                    return stagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
+                    const resourceUri = URI.parse(uri);
+                    return stagedChanges.some(change => Uri.isEqualOrParent(resourceUri, URI.parse(change.uri)));
                 }
                 );
             if (stagedUris.length !== 0) {
@@ -345,8 +345,8 @@ export class GitScmProvider implements ScmProvider {
         const pairs = await Promise.all(
             uris
                 .filter(uri => {
-                    const uriAsUri = new URI(uri);
-                    return status.changes.some(change => uriAsUri.isEqualOrParent(new URI(change.uri)));
+                    const uriAsUri = URI.parse(uri);
+                    return status.changes.some(change => Uri.isEqualOrParent(uriAsUri, URI.parse(change.uri)));
                 })
                 .map(uri => {
                     const includeIndexFlag = async () => {
@@ -375,7 +375,7 @@ export class GitScmProvider implements ScmProvider {
                             this.gitErrorHandler.handleError(error);
                         }
                     } else {
-                        await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(pair.uri));
+                        await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, URI.parse(pair.uri));
                     }
                 };
                 return discardSingle();
@@ -386,7 +386,7 @@ export class GitScmProvider implements ScmProvider {
     protected confirm(paths: string[]): Promise<boolean | undefined> {
         let fileText: string;
         if (paths.length <= 3) {
-            fileText = paths.map(path => this.labelProvider.getName(new URI(path))).join(', ');
+            fileText = paths.map(path => this.labelProvider.getName(URI.parse(path))).join(', ');
         } else {
             fileText = `${paths.length} files`;
         }
@@ -412,7 +412,7 @@ export class GitScmProvider implements ScmProvider {
     }
 
     protected async deleteAll(uris: string[]): Promise<void> {
-        await Promise.all(uris.map(uri => this.delete(new URI(uri))));
+        await Promise.all(uris.map(uri => this.delete(URI.parse(uri))));
     }
 
     public createScmCommit(gitCommit: CommitWithChanges): ScmCommit {
@@ -457,7 +457,7 @@ export class GitScmProvider implements ScmProvider {
     }
 
     public relativePath(uri: string): string {
-        const parsedUri = new URI(uri);
+        const parsedUri = URI.parse(uri);
         const gitRepo = { localUri: this.rootUri };
         const relativePath = Repository.relativePath(gitRepo, parsedUri);
         if (relativePath) {
@@ -467,7 +467,10 @@ export class GitScmProvider implements ScmProvider {
     }
 
     protected toCommitDetailUri(commitSha: string): URI {
-        return new URI('').withScheme(GitScmProvider.GIT_COMMIT_DETAIL).withFragment(commitSha);
+        return URI.from({
+            scheme: GitScmProvider.GIT_COMMIT_DETAIL,
+            fragment: commitSha
+        });
     }
 }
 
@@ -579,16 +582,16 @@ export class GitScmFileChange implements ScmFileChange {
     }
 
     getUriToOpen(): URI {
-        const uri: URI = new URI(this.fileChange.uri);
-        const fromFileURI = this.fileChange.oldUri ? new URI(this.fileChange.oldUri) : uri; // set oldUri on renamed and copied
+        const uri: URI = URI.parse(this.fileChange.uri);
+        const fromFileURI = this.fileChange.oldUri ? URI.parse(this.fileChange.oldUri) : uri; // set oldUri on renamed and copied
         if (!this.range) {
             return uri;
         }
         const fromURI = this.range.fromRevision
-            ? fromFileURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.range.fromRevision.toString())
+            ? fromFileURI.with({ scheme: GIT_RESOURCE_SCHEME, query: this.range.fromRevision.toString() })
             : fromFileURI;
         const toURI = this.range.toRevision
-            ? uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.range.toRevision.toString())
+            ? uri.with({ scheme: GIT_RESOURCE_SCHEME, query: this.range.toRevision.toString() })
             : uri;
         let uriToOpen = uri;
         if (this.fileChange.status === GitFileStatus.Deleted) {

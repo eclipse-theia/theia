@@ -17,7 +17,7 @@
 import debounce from 'p-debounce';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugThread } from '../model/debug-thread';

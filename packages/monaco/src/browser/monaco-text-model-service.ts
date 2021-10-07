@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
@@ -48,7 +48,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     readonly ready: Promise<void> = this._ready.promise;
 
     protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
-        uri => this.loadModel(new URI(uri))
+        uri => this.loadModel(URI.parse(uri))
     );
 
     @inject(ResourceProvider)

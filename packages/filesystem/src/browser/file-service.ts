@@ -30,7 +30,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -67,6 +67,7 @@ import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
+import { Path, Uri } from '@theia/core';
 
 export interface FileOperationParticipant {
 
@@ -427,7 +428,7 @@ export class FileService {
 
     protected async withProvider(resource: URI): Promise<FileSystemProvider> {
         // Assert path is absolute
-        if (!resource.path.isAbsolute) {
+        if (!Path.isAbsolute(resource.path)) {
             throw new FileOperationError(`Unable to resolve filesystem provider with relative file path ${this.resourceForError(resource)}`, FileOperationResult.FILE_INVALID_PATH);
         }
 
@@ -535,7 +536,7 @@ export class FileService {
                 const entries = await provider.readdir(resource);
                 const resolvedEntries = await Promise.all(entries.map(async ([name, type]) => {
                     try {
-                        const childResource = resource.resolve(name);
+                        const childResource = Uri.joinPath(resource, name);
                         const childStat = resolveMetadata ? await provider.stat(childResource) : { type };
 
                         return await this.toFileStat(provider, childResource, childStat, entries.length, resolveMetadata, recurse);
@@ -793,7 +794,7 @@ export class FileService {
 
             // mkdir recursively as needed
             if (!stat) {
-                await this.mkdirp(provider, resource.parent);
+                await this.mkdirp(provider, Uri.dirname(resource));
             }
 
             // optimization: if the provider has unbuffered write capability and the data
@@ -1119,9 +1120,9 @@ export class FileService {
 
         // if target exists get valid target
         if (exists && !overwrite) {
-            const parent = await this.resolve(target.parent);
-            const name = isSameResourceWithDifferentPathCase ? target.path.name : target.path.name + '_copy';
-            target = FileSystemUtils.generateUniqueResourceURI(target.parent, parent, name, target.path.ext);
+            const parent = await this.resolve(Uri.dirname(target));
+            const name = isSameResourceWithDifferentPathCase ? Uri.name(target) : Uri.name(target) + '_copy';
+            target = FileSystemUtils.generateUniqueResourceURI(Uri.dirname(target), parent, name, Uri.extname(target));
         }
 
         // delete as needed (unless target is same resource with different path case)
@@ -1130,7 +1131,7 @@ export class FileService {
         }
 
         // create parent folders
-        await this.mkdirp(targetProvider, target.parent);
+        await this.mkdirp(targetProvider, Uri.dirname(target));
 
         // copy source => target
         if (mode === 'copy') {
@@ -1206,7 +1207,7 @@ export class FileService {
         // create children in target
         if (Array.isArray(sourceFolder.children)) {
             await Promise.all(sourceFolder.children.map(async sourceChild => {
-                const targetChild = targetFolder.resolve(sourceChild.name);
+                const targetChild = Uri.joinPath(targetFolder, sourceChild.name);
                 if (sourceChild.isDirectory) {
                     return this.doCopyFolder(sourceProvider, await this.resolve(sourceChild.resource), targetProvider, targetChild);
                 } else {
@@ -1230,7 +1231,7 @@ export class FileService {
                 throw new Error(`Unable to copy when source '${this.resourceForError(source)}' is same as target '${this.resourceForError(target)}' with different path case on a case insensitive file system`);
             }
 
-            if (!isSameResourceWithDifferentPathCase && target.isEqualOrParent(source, isPathCaseSensitive)) {
+            if (!isSameResourceWithDifferentPathCase && Uri.isEqualOrParent(target, source, isPathCaseSensitive)) {
                 throw new Error(`Unable to move/copy when source '${this.resourceForError(source)}' is parent of target '${this.resourceForError(target)}'.`);
             }
         }
@@ -1243,7 +1244,7 @@ export class FileService {
             // it as it would delete the source as well. In this case we have to throw
             if (sourceProvider === targetProvider) {
                 const isPathCaseSensitive = !!(sourceProvider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
-                if (source.isEqualOrParent(target, isPathCaseSensitive)) {
+                if (Uri.isEqualOrParent(source, target, isPathCaseSensitive)) {
                     throw new Error(`Unable to move/copy '${this.resourceForError(source)}' into '${this.resourceForError(target)}' since a file would replace the folder it is contained in.`);
                 }
             }
@@ -1269,7 +1270,7 @@ export class FileService {
         const directoriesToCreate: string[] = [];
 
         // mkdir until we reach root
-        while (!directory.path.isRoot) {
+        while (!Path.isRoot(directory.path)) {
             try {
                 const stat = await provider.stat(directory);
                 if ((stat.type & FileType.Directory) === 0) {
@@ -1285,16 +1286,16 @@ export class FileService {
                 }
 
                 // Upon error, remember directories that need to be created
-                directoriesToCreate.push(directory.path.base);
+                directoriesToCreate.push(Uri.basename(directory));
 
                 // Continue up
-                directory = directory.parent;
+                directory = Uri.dirname(directory);
             }
         }
 
         // Create directories as needed
         for (let i = directoriesToCreate.length - 1; i >= 0; i--) {
-            directory = directory.resolve(directoriesToCreate[i]);
+            directory = Uri.joinPath(directory, directoriesToCreate[i]);
 
             try {
                 await provider.mkdir(directory);

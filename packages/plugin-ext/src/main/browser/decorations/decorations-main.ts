@@ -26,9 +26,8 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { UriComponents } from '../../../common/uri-components';
-import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import URI from '@theia/core/lib/common/uri';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 
 /*---------------------------------------------------------------------------------------------
@@ -55,7 +54,7 @@ class DecorationRequestsQueue {
     enqueue(uri: URI, token: CancellationToken): Promise<DecorationData> {
         const id = ++this.idPool;
         const result = new Promise<DecorationData>(resolve => {
-            this.requests.set(id, { id, uri: VSCodeURI.parse(uri.toString()) });
+            this.requests.set(id, { id, uri });
             this.resolver.set(id, resolve);
             this.processQueue();
         });
@@ -132,7 +131,7 @@ export class DecorationsMainImpl implements DecorationsMain, Disposable {
         const providerSet = this.providers.get(handle);
         if (providerSet) {
             const [emitter] = providerSet;
-            emitter.fire(resources && resources.map(r => new URI(VSCodeURI.revive(r).toString())));
+            emitter.fire(resources && resources.map(r => URI.revive(r)));
         }
     }
 

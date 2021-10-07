@@ -18,8 +18,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import URI from '@theia/core/lib/common/uri';
-
 export interface UriComponents {
     scheme: string;
     authority: string;
@@ -85,14 +83,4 @@ export namespace Schemes {
     export const vscodeSettings = 'vscode-settings';
 
     export const webviewPanel = 'webview-panel';
-}
-
-export function theiaUritoUriComponents(uri: URI): UriComponents {
-    return {
-        scheme: uri.scheme,
-        authority: uri.authority,
-        path: uri.path.toString(),
-        query: uri.query,
-        fragment: uri.fragment
-    };
 }

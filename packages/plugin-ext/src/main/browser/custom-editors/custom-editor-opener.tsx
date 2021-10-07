@@ -15,14 +15,14 @@
  ********************************************************************************/
 
 import { inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, OpenerOptions, OpenHandler, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import * as glob from './glob';
 import { CustomEditor } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
 import { v4 } from 'uuid';
-import { Emitter } from '@theia/core';
+import { Emitter, Uri } from '@theia/core';
 
 export class CustomEditorOpener implements OpenHandler {
 
@@ -97,7 +97,7 @@ export class CustomEditorOpener implements OpenHandler {
 
     selectorMatches(selector: CustomEditorSelector, resource: URI): boolean {
         if (selector.filenamePattern) {
-            if (glob.match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase())) {
+            if (glob.match(selector.filenamePattern.toLowerCase(), Uri.basename(resource).toLowerCase())) {
                 return true;
             }
         }

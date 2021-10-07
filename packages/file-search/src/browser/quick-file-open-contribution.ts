@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution } from '@theia/core/lib/browser';
@@ -35,7 +35,7 @@ export class QuickFileOpenFrontendContribution implements QuickAccessContributio
                     [fileURI] = args;
                 }
                 if (fileURI) {
-                    this.quickFileOpenService.openFile(new URI(fileURI));
+                    this.quickFileOpenService.openFile(URI.parse(fileURI));
                 } else {
                     this.quickFileOpenService.open();
                 }

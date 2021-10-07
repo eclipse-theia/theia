@@ -18,7 +18,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 export interface VariableResolveOptions {

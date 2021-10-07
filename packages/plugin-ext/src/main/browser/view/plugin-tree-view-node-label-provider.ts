@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProviderContribution, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { TreeViewNode } from './tree-view-widget';
@@ -44,13 +44,13 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
         }
         if (node.themeIconId) {
             if (node.themeIconId === 'file' || node.themeIconId === 'folder') {
-                const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
+                const uri = node.resourceUri && URI.parse(node.resourceUri) || undefined;
                 return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
             }
             return monaco.theme.ThemeIcon.asClassName({ id: node.themeIconId });
         }
         if (node.resourceUri) {
-            return this.labelProvider.getIcon(new URI(node.resourceUri));
+            return this.labelProvider.getIcon(URI.parse(node.resourceUri));
         }
         return undefined;
     }
@@ -60,7 +60,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
             return node.name;
         }
         if (node.resourceUri) {
-            return this.labelProvider.getName(new URI(node.resourceUri));
+            return this.labelProvider.getName(URI.parse(node.resourceUri));
         }
         return undefined;
     }
@@ -70,7 +70,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
             return node.description;
         }
         if (node.description === true && node.resourceUri) {
-            return this.labelProvider.getLongName(new URI(node.resourceUri));
+            return this.labelProvider.getLongName(URI.parse(node.resourceUri));
         }
         return undefined;
     }

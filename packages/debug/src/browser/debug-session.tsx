@@ -19,7 +19,7 @@
 import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider } from '@theia/core/lib/common';
+import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider, Uri } from '@theia/core/lib/common';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
@@ -31,7 +31,7 @@ import { DebugSource } from './model/debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions } from './model/debug-breakpoint';
 import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import debounce = require('p-debounce');
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
@@ -149,7 +149,7 @@ export class DebugSession implements CompositeTreeElement {
                 sourceReference: Number(uri.query)
             };
         }
-        const name = uri.displayName;
+        const name = Uri.displayName(uri);
         let path;
         const underlying = await this.fileService.toUnderlyingResource(uri);
         if (underlying.scheme === 'file') {
@@ -538,7 +538,7 @@ export class DebugSession implements CompositeTreeElement {
         const uris = [...this._breakpoints.keys()];
         this._breakpoints.clear();
         for (const uri of uris) {
-            this.fireDidChangeBreakpoints(new URI(uri));
+            this.fireDidChangeBreakpoints(URI.parse(uri));
         }
     }
 
@@ -737,7 +737,7 @@ export class DebugSession implements CompositeTreeElement {
             yield uri;
         } else {
             for (const uriString of this.breakpoints.getUris()) {
-                yield new URI(uriString);
+                yield URI.parse(uriString);
             }
             yield BreakpointManager.FUNCTION_URI;
             yield BreakpointManager.EXCEPTION_URI;

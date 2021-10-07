@@ -19,12 +19,13 @@ import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSav
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Readable, ReadableStream } from '@theia/core/lib/common/stream';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities, FileReadStreamOptions, BinarySize } from '../common/files';
 import { FileService, TextFileOperationError, TextFileOperationResult } from './file-service';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
+import { Uri } from '@theia/core';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -71,7 +72,7 @@ export class FileResource implements Resource {
             }
         }));
         this.toDispose.push(this.fileService.onDidRunOperation(e => {
-            if ((e.isOperation(FileOperation.DELETE) || e.isOperation(FileOperation.MOVE)) && e.resource.isEqualOrParent(this.uri)) {
+            if ((e.isOperation(FileOperation.DELETE) || e.isOperation(FileOperation.MOVE)) && Uri.isEqualOrParent(e.resource, this.uri)) {
                 this.sync();
             }
         }));

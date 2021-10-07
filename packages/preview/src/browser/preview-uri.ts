@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export namespace PreviewUri {
     export const id = 'code-editor-preview';
@@ -31,13 +31,13 @@ export namespace PreviewUri {
             params.push(...uri.query.split('&'));
         }
         const query = params.join('&');
-        return uri.withQuery(query);
+        return uri.with({ query });
     }
     export function decode(uri: URI): URI {
         if (!match(uri)) {
             return uri;
         }
         const query = uri.query.split('&').filter(p => p !== param).join('&');
-        return uri.withQuery(query);
+        return uri.with({ query });
     }
 }

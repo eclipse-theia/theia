@@ -18,7 +18,7 @@ import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
 import { DisposableCollection, MaybePromise } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';

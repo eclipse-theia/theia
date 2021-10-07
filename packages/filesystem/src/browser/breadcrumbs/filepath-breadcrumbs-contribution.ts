@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, Emitter, Event } from '@theia/core';
+import { Disposable, Emitter, Event, Path, Uri } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Breadcrumb, BreadcrumbsContribution, CompositeTreeNode, LabelProvider, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
 import { FilepathBreadcrumb } from './filepath-breadcrumb';
 import { BreadcrumbsFileTreeWidget } from './filepath-breadcrumbs-container';
@@ -56,7 +56,7 @@ export class FilepathBreadcrumbsContribution implements BreadcrumbsContribution 
         }
         const getContainerClass = this.getContainerClassCreator(uri);
         const getIconClass = this.getIconClassCreator(uri);
-        return uri.allLocations
+        return Uri.allLocations(uri)
             .map((location, index) => {
                 const icon = getIconClass(location, index);
                 const containerClass = getContainerClass(location, index);
@@ -73,22 +73,22 @@ export class FilepathBreadcrumbsContribution implements BreadcrumbsContribution 
     }
 
     protected getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
-        return (location, index) => location.isEqual(fileURI) ? 'file' : 'folder';
+        return location => Uri.isEqual(location, fileURI) ? 'file' : 'folder';
     }
 
     protected getIconClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
-        return (location, index) => location.isEqual(fileURI) ? this.labelProvider.getIcon(location) + ' file-icon' : '';
+        return location => Uri.isEqual(location, fileURI) ? this.labelProvider.getIcon(location) + ' file-icon' : '';
     }
 
     protected filterBreadcrumbs(_: URI, breadcrumb: FilepathBreadcrumb): boolean {
-        return !breadcrumb.uri.path.isRoot;
+        return !Path.isRoot(breadcrumb.uri.path);
     }
 
     async attachPopupContent(breadcrumb: Breadcrumb, parent: HTMLElement): Promise<Disposable | undefined> {
         if (!FilepathBreadcrumb.is(breadcrumb)) {
             return undefined;
         }
-        const folderFileStat = await this.fileSystem.resolve(breadcrumb.uri.parent);
+        const folderFileStat = await this.fileSystem.resolve(Uri.dirname(breadcrumb.uri));
         if (folderFileStat) {
             const rootNode = await this.createRootNode(folderFileStat);
             if (rootNode) {
@@ -120,7 +120,7 @@ export class FilepathBreadcrumbsContribution implements BreadcrumbsContribution 
 
     protected async createRootNode(folderToOpen: FileStat): Promise<DirNode | undefined> {
         const folderUri = folderToOpen.resource;
-        const rootUri = folderToOpen.isDirectory ? folderUri : folderUri.parent;
+        const rootUri = folderToOpen.isDirectory ? folderUri : Uri.dirname(folderUri);
         const rootStat = await this.fileSystem.resolve(rootUri);
         if (rootStat) {
             return DirNode.createRoot(rootStat);

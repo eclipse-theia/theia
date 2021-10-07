@@ -19,7 +19,7 @@ import * as crypto from 'crypto';
 import * as fs from '@theia/core/shared/fs-extra';
 import { Buffer } from 'buffer';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { Uri } from '@theia/core';
 
 /**
  * @deprecated since 1.17.0
@@ -38,7 +38,7 @@ export class NodeFileUpload implements Disposable {
         readonly uri: string,
         readonly size: number
     ) {
-        this.fsPath = FileUri.fsPath(uri);
+        this.fsPath = Uri.fsPath(uri);
         this.id = 'theia_upload_' + crypto.randomBytes(16).toString('hex');
         this.uploadPath = path.join(path.dirname(this.fsPath), this.id);
     }

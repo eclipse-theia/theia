@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, NavigatableWidgetOptions } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -43,7 +43,7 @@ export default new ContainerModule(bind => {
         id: PreviewUri.id,
         async createWidget(options: NavigatableWidgetOptions): Promise<PreviewWidget> {
             const { container } = ctx;
-            const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(options.uri));
+            const resource = await container.get<ResourceProvider>(ResourceProvider)(URI.parse(options.uri));
             const child = container.createChild();
             child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
             return child.get(PreviewWidget);

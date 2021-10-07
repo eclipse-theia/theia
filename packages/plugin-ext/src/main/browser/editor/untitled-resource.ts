@@ -17,7 +17,7 @@
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Resource, ResourceResolver, ResourceVersion, ResourceSaveOptions } from '@theia/core/lib/common/resource';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Schemes } from '../../../common/uri-components';
 import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -57,7 +57,7 @@ export class UntitledResourceResolver implements ResourceResolver {
                 }
             }
         }
-        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(Schemes.untitled).withPath(`/Untitled-${index++}${extension ? extension : ''}`),
+        return new UntitledResource(this.resources, uri ? uri : URI.from({ scheme: Schemes.untitled, path: `/Untitled-${index++}${extension ? extension : ''}` }),
             fileResourceResolver, content);
     }
 }
@@ -93,7 +93,7 @@ export class UntitledResource implements Resource {
 
     async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: boolean }): Promise<void> {
         if (!this.fileResource) {
-            this.fileResource = await this.fileResourceResolver.resolve(new URI(this.uri.path.toString()));
+            this.fileResource = await this.fileResourceResolver.resolve(this.uri);
             if (this.fileResource.onDidChangeContents) {
                 this.fileResource.onDidChangeContents(() => this.fireDidChangeContents());
             }
@@ -145,5 +145,5 @@ export function createUntitledURI(language?: string): URI {
             }
         }
     }
-    return new URI().withScheme(Schemes.untitled).withPath(`/Untitled-${index++}${extension ? extension : ''}`);
+    return URI.from({ scheme: Schemes.untitled, path: `/Untitled-${index++}${extension ? extension : ''}` });
 }

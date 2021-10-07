@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
@@ -25,6 +25,7 @@ import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeTy
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemUtils } from '../../common';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class FileTreeModel extends TreeModelImpl implements LocationService {
@@ -73,7 +74,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     async drives(): Promise<URI[]> {
         try {
             const drives = await this.environments.getDrives();
-            return drives.map(uri => new URI(uri));
+            return drives.map(uri => URI.parse(uri));
         } catch (e) {
             this.logger.error('Error when loading drives.', e);
             return [];
@@ -98,7 +99,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         if (!event.isOperation(FileOperation.MOVE)) {
             return;
         }
-        if (event.resource.parent.toString() === event.target.resource.parent.toString()) {
+        if (Uri.isEqual(Uri.dirname(event.resource), Uri.dirname(event.target.resource))) {
             // file rename
             return;
         }
@@ -141,7 +142,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     protected getAffectedNodes(uris: URI[]): Map<string, CompositeTreeNode> {
         const nodes = new Map<string, CompositeTreeNode>();
         for (const uri of uris) {
-            for (const node of this.getNodesByUri(uri.parent)) {
+            for (const node of this.getNodesByUri(Uri.dirname(uri))) {
                 if (DirNode.is(node) && node.expanded) {
                     nodes.set(node.id, node);
                 }
@@ -151,12 +152,12 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     }
 
     async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI> {
-        let targetUri = target.uri.resolve(source.path.base);
+        let targetUri = Uri.joinPath(target.uri, Uri.basename(source));
         try {
             if (source.path.toString() === target.uri.path.toString()) {
-                const parent = await this.fileService.resolve(source.parent);
-                const name = source.path.name + '_copy';
-                targetUri = FileSystemUtils.generateUniqueResourceURI(source.parent, parent, name, source.path.ext);
+                const parent = await this.fileService.resolve(Uri.dirname(source));
+                const name = Uri.name(source) + '_copy';
+                targetUri = FileSystemUtils.generateUniqueResourceURI(Uri.dirname(source), parent, name, Uri.extname(source));
             }
             await this.fileService.copy(source, targetUri);
         } catch (e) {
@@ -171,7 +172,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     async move(source: TreeNode, target: TreeNode): Promise<URI | undefined> {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const name = source.fileStat.name;
-            const targetUri = target.uri.resolve(name);
+            const targetUri = Uri.joinPath(target.uri, name);
             try {
                 await this.fileService.move(source.uri, targetUri);
                 return targetUri;

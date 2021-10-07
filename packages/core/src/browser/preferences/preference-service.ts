@@ -17,15 +17,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable } from '../../common';
+import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable, Path } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
 import { PreferenceSchemaProvider } from './preference-contribution';
-import URI from '../../common/uri';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
 import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { URI } from 'vscode-uri';
 
 export { PreferenceScope };
 
@@ -77,9 +77,9 @@ export class PreferenceChangeImpl implements PreferenceChange {
 
     // TODO add tests
     affects(resourceUri?: string): boolean {
-        const resourcePath = resourceUri && new URI(resourceUri).path;
+        const resourcePath = resourceUri && URI.parse(resourceUri).path;
         const domain = this.change.domain;
-        return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+        return !resourcePath || !domain || domain.some(uri => Path.relativity(uri, resourcePath) >= 0);
     }
 }
 /**

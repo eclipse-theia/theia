@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Marker } from '../common/marker';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
@@ -130,7 +130,7 @@ export abstract class MarkerManager<D extends object> {
 
     protected cleanMarkers(event: FileChangesEvent): void {
         for (const uriString of this.uri2MarkerCollection.keys()) {
-            const uri = new URI(uriString);
+            const uri = URI.parse(uriString);
             if (event.contains(uri, FileChangeType.DELETED)) {
                 this.cleanAllMarkers(uri);
             }
@@ -185,7 +185,7 @@ export abstract class MarkerManager<D extends object> {
             this.doCleanAllMarkers(uri);
         } else {
             for (const uriString of this.getUris()) {
-                this.doCleanAllMarkers(new URI(uriString));
+                this.doCleanAllMarkers(URI.parse(uriString));
             }
         }
     }

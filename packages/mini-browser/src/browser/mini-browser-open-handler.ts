@@ -16,7 +16,7 @@
 
 import { Widget } from '@theia/core/shared/@phosphor/widgets';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { codicon, QuickInputService } from '@theia/core/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
@@ -65,7 +65,7 @@ export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrows
 export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBrowser>
     implements FrontendApplicationContribution, CommandContribution, MenuContribution, TabBarToolbarContribution {
 
-    static PREVIEW_URI = new URI().withScheme('__minibrowser__preview__');
+    static PREVIEW_URI = URI.from({ scheme: '__minibrowser__preview__' });
 
     /**
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
@@ -290,7 +290,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     }
 
     protected async getOpenPreviewProps(startPage: string): Promise<MiniBrowserOpenerOptions> {
-        const resetBackground = await this.resetBackground(new URI(startPage));
+        const resetBackground = await this.resetBackground(URI.parse(startPage));
         return {
             name: 'Preview',
             startPage,

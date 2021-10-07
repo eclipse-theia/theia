@@ -30,7 +30,7 @@ import { CommandRegistry, Command, Disposable, DisposableCollection, CommandServ
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
@@ -226,7 +226,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         if (!repository) {
             return;
         }
-        const name = this.labelProvider.getName(new URI(repository.provider.rootUri));
+        const name = this.labelProvider.getName(URI.parse(repository.provider.rootUri));
         if (this.scmService.repositories.length > 1) {
             this.setStatusBarEntry(SCM_COMMANDS.CHANGE_REPOSITORY.id, {
                 text: `$(database) ${name}`,

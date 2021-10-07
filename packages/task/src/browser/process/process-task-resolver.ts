@@ -20,7 +20,7 @@ import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
 import { TaskDefinitionRegistry } from '../task-definition-registry';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
@@ -46,7 +46,7 @@ export class ProcessTaskResolver implements TaskResolver {
         if (type !== 'process' && type !== 'shell') {
             throw new Error('Unsupported task configuration type.');
         }
-        const context = typeof taskConfig._scope === 'string' ? new URI(taskConfig._scope) : undefined;
+        const context = typeof taskConfig._scope === 'string' ? URI.parse(taskConfig._scope) : undefined;
         const variableResolverOptions = {
             context, configurationSection: 'tasks'
         };

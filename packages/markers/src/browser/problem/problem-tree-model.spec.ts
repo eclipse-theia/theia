@@ -17,7 +17,13 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
-import URI from '@theia/core/lib/common/uri';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
+FrontendApplicationConfigProvider.set({
+    ...ApplicationProps.DEFAULT.frontend.config
+});
+
+import { URI } from '@theia/core/shared/vscode-uri';
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Diagnostic, Range, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
@@ -158,7 +164,7 @@ function createMockMarkerNode(marker: Marker<Diagnostic>): MarkerNode {
         name: 'marker',
         parent: undefined,
         selected: false,
-        uri: new URI(''),
+        uri: URI.from({ scheme: '' }),
         marker
     };
 }

@@ -20,7 +20,7 @@ import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';

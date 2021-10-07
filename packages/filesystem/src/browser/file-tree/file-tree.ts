@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { Mutable } from '@theia/core/lib/common/types';
 import { FileStat, Stat, FileType, FileOperationError, FileOperationResult } from '../../common/files';
@@ -24,6 +24,7 @@ import { UriSelection } from '@theia/core/lib/common/selection';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSelection } from '../file-selection';
 import { FileService } from '../file-service';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class FileTree extends TreeImpl {
@@ -145,7 +146,7 @@ export namespace DirNode {
     export function uriCompare(node: TreeNode, node2: TreeNode): number {
         if (FileStatNode.is(node)) {
             if (FileStatNode.is(node2)) {
-                return node.uri.displayName.localeCompare(node2.uri.displayName);
+                return Uri.displayName(node.uri).localeCompare(Uri.displayName(node2.uri));
             }
             return 1;
         }

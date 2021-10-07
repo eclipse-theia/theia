@@ -20,7 +20,7 @@ import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuMo
 import { BlameDecorator } from './blame-decorator';
 import { EditorManager, EditorKeybindingContexts, EditorWidget, EditorTextFocusContext, StrictEditorTextFocusContext } from '@theia/editor/lib/browser';
 import { BlameManager } from './blame-manager';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EDITOR_CONTEXT_MENU_SCM } from '@theia/scm-extra/lib/browser/scm-extra-contribution';
 
 import debounce = require('@theia/core/shared/lodash.debounce');

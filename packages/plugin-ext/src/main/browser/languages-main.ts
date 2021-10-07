@@ -41,7 +41,7 @@ import {
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
-import CoreURI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
@@ -214,13 +214,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     $clearDiagnostics(id: string): void {
         for (const uri of this.problemManager.getUris()) {
-            this.problemManager.setMarkers(new CoreURI(uri), id, []);
+            this.problemManager.setMarkers(URI.parse(uri), id, []);
         }
     }
 
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void {
         for (const [uriString, markers] of delta) {
-            const uri = new CoreURI(uriString);
+            const uri = URI.parse(uriString);
             this.problemManager.setMarkers(uri, id, markers.map(reviveMarker));
         }
     }

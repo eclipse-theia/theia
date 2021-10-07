@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ScmCommit } from '@theia/scm/lib/browser/scm-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export interface ScmFileChangeNode {
     readonly fileChange: ScmFileChange;

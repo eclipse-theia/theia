@@ -35,8 +35,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import URI from '@theia/core/lib/common/uri';
-import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Splice } from '../../common/arrays';
 import { UriComponents } from '../../common/uri-components';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -150,7 +149,7 @@ export class PluginScmProvider implements ScmProvider {
         private readonly _handle: number,
         private readonly _contextValue: string,
         private readonly _label: string,
-        private readonly _rootUri: vscodeURI | undefined
+        private readonly _rootUri: URI | undefined
     ) { }
 
     updateSourceControl(features: SourceControlProviderFeatures): void {
@@ -227,8 +226,8 @@ export class PluginScmProvider implements ScmProvider {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const colorVariable = (rawResource as any).colorId && this.colors.toCssVariableName((rawResource as any).colorId);
                     const decorations = {
-                        icon: icon ? vscodeURI.revive(icon) : undefined,
-                        iconDark: iconDark ? vscodeURI.revive(iconDark) : undefined,
+                        icon: icon ? URI.revive(icon) : undefined,
+                        iconDark: iconDark ? URI.revive(iconDark) : undefined,
                         tooltip,
                         strikeThrough,
                         // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911
@@ -243,7 +242,7 @@ export class PluginScmProvider implements ScmProvider {
                         this.handle,
                         groupHandle,
                         handle,
-                        new URI(vscodeURI.revive(sourceUri)),
+                        URI.revive(sourceUri),
                         group,
                         decorations,
                         contextValue || undefined,
@@ -298,7 +297,7 @@ export class ScmMainImpl implements ScmMain {
     }
 
     async $registerSourceControl(handle: number, id: string, label: string, rootUri: UriComponents | undefined): Promise<void> {
-        const provider = new PluginScmProvider(this.proxy, this.colors, handle, id, label, rootUri ? vscodeURI.revive(rootUri) : undefined);
+        const provider = new PluginScmProvider(this.proxy, this.colors, handle, id, label, rootUri ? URI.revive(rootUri) : undefined);
         const repository = this.scmService.registerScmProvider(provider, {
             input: {
                 validator: async value => {

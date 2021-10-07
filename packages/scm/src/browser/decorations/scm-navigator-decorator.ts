@@ -21,9 +21,10 @@ import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class ScmNavigatorDecorator implements TreeDecorator {
@@ -91,13 +92,13 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         for (const [uri, data] of decorationsMap.entries()) {
             const uriString = uri.toString();
             result.set(uriString, data);
-            let parentUri: URI | undefined = new URI(uri).parent;
-            while (parentUri && !parentUri.path.isRoot) {
+            let parentUri: URI | undefined = Uri.dirname(URI.parse(uri));
+            while (parentUri && !Path.isRoot(parentUri.path)) {
                 const parentUriString = parentUri.toString();
                 const existing = result.get(parentUriString);
                 if (existing === undefined) {
                     result.set(parentUriString, data);
-                    parentUri = parentUri.parent;
+                    parentUri = Uri.dirname(parentUri);
                 } else {
                     parentUri = undefined;
                 }

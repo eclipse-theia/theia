@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Git, GitFileBlame } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class BlameManager {
@@ -29,7 +29,7 @@ export class BlameManager {
     protected readonly repositoryTracker: GitRepositoryTracker;
 
     isBlameable(uri: string): boolean {
-        return !!this.repositoryTracker.getPath(new URI(uri));
+        return !!this.repositoryTracker.getPath(URI.parse(uri));
     }
 
     async getBlame(uri: string, content?: string): Promise<GitFileBlame | undefined> {

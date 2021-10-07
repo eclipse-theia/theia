@@ -208,7 +208,7 @@ export class ProblemWidget extends TreeWidget {
         const name = this.toNodeName(node);
         const description = this.toNodeDescription(node);
         // Use a custom scheme so that we fallback to the `DefaultUriLabelProviderContribution`.
-        const path = this.labelProvider.getLongName(node.uri.withScheme('marker'));
+        const path = this.labelProvider.getLongName(node.uri.with({ scheme: 'marker' }));
         return <div title={path} className='markerFileNode'>
             {icon && <div className={icon + ' file-icon'}></div>}
             <div className='name'>{name}</div>

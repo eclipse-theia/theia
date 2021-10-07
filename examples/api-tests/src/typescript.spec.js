@@ -20,7 +20,7 @@ describe('TypeScript', function () {
 
     const { assert } = chai;
 
-    const Uri = require('@theia/core/lib/common/uri');
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { BrowserMainMenuFactory } = require('@theia/core/lib/browser/menu/browser-menu-plugin');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -58,9 +58,9 @@ describe('TypeScript', function () {
     const typescriptPluginId = 'vscode.typescript-language-features';
     const referencesPluginId = 'ms-vscode.references-view';
     const rootUri = workspaceService.tryGetRoots()[0].resource;
-    const serverUri = rootUri.resolve('src-gen/backend/test-server.js');
-    const inversifyUri = rootUri.resolve('../../node_modules/inversify/lib/inversify.d.ts').normalizePath();
-    const containerUri = rootUri.resolve('../../node_modules/inversify/lib/container/container.d.ts').normalizePath();
+    const serverUri = Uri.joinPath(rootUri, 'src-gen/backend/test-server.js');
+    const inversifyUri = Uri.joinPath(rootUri, '../../node_modules/inversify/lib/inversify.d.ts');
+    const containerUri = Uri.joinPath(rootUri, '../../node_modules/inversify/lib/container/container.d.ts');
 
     before(async function () {
         await fileService.create(serverUri, `// @ts-check
@@ -741,7 +741,7 @@ SPAN {
         } else {
             assert.isDefined(node);
         }
-    });
+    }).timeout(120000);
 
     it('editor.action.quickFix', async function () {
         const column = 29;

@@ -21,6 +21,7 @@ describe('Keybindings', function () {
 
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { isOSX } = require('@theia/core/lib/common/os');
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { TerminalService } = require('@theia/terminal/lib/browser/base/terminal-service');
     const { TerminalCommands } = require('@theia/terminal/lib/browser/terminal-frontend-contribution');
@@ -73,7 +74,7 @@ describe('Keybindings', function () {
             when: 'false'
         }));
 
-        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('package.json'), {
+        const editor = await editorManager.open(Uri.joinPath(workspaceService.tryGetRoots()[0].resource, 'package.json'), {
             mode: 'activate',
             selection: {
                 start: {

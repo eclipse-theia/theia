@@ -44,7 +44,8 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
-    isWindows
+    isWindows,
+    Path
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
@@ -73,7 +74,7 @@ import { FileNavigatorModel } from './navigator-model';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
 import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
@@ -350,7 +351,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 const text = uris.map((uri: URI) => {
                     const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
                     if (workspaceRoot) {
-                        return workspaceRoot.relative(uri);
+                        return Path.relative(workspaceRoot.path, uri.path);
                     }
                 }).join(lineDelimiter);
                 await this.clipboardService.writeText(text);

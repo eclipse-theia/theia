@@ -18,7 +18,8 @@ import { FilepathBreadcrumb } from '@theia/filesystem/lib/browser/breadcrumbs/fi
 import { FilepathBreadcrumbClassNameFactory, FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from './workspace-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContribution {
@@ -29,9 +30,9 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
     getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);
         return (location, index) => {
-            if (location.isEqual(fileURI)) {
+            if (Uri.isEqual(location, fileURI)) {
                 return 'file';
-            } else if (workspaceRoot?.isEqual(location)) {
+            } else if (workspaceRoot && Uri.isEqual(workspaceRoot, location)) {
                 return 'root_folder';
             }
             return 'folder';
@@ -41,7 +42,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
     getIconClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);
         return (location, index) => {
-            if (location.isEqual(fileURI) || workspaceRoot?.isEqual(location)) {
+            if (Uri.isEqual(location, fileURI) || workspaceRoot && Uri.isEqual(workspaceRoot, location)) {
                 return this.labelProvider.getIcon(location) + ' file-icon';
             }
             return '';
@@ -50,7 +51,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
 
     protected filterBreadcrumbs(uri: URI, breadcrumb: FilepathBreadcrumb): boolean {
         const workspaceRootUri = this.workspaceService.getWorkspaceRootUri(uri);
-        const firstCrumbToHide = this.workspaceService.isMultiRootWorkspaceOpened ? workspaceRootUri?.parent : workspaceRootUri;
-        return super.filterBreadcrumbs(uri, breadcrumb) && (!firstCrumbToHide || !breadcrumb.uri.isEqualOrParent(firstCrumbToHide));
+        const firstCrumbToHide = this.workspaceService.isMultiRootWorkspaceOpened ? workspaceRootUri && Uri.dirname(workspaceRootUri) : workspaceRootUri;
+        return super.filterBreadcrumbs(uri, breadcrumb) && (!firstCrumbToHide || !Uri.isEqualOrParent(breadcrumb.uri, firstCrumbToHide));
     }
 }

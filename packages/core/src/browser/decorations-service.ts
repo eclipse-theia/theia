@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
+import { URI } from 'vscode-uri';
 import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event } from '../common';
 import { TernarySearchTree } from '../common/ternary-search-tree';
-import URI from '../common/uri';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -48,7 +48,7 @@ export interface DecorationsService {
 
     registerDecorationsProvider(provider: DecorationsProvider): Disposable;
 
-    getDecoration(uri: URI, includeChildren: boolean): Decoration [];
+    getDecoration(uri: URI, includeChildren: boolean): Decoration[];
 }
 
 class DecorationDataRequest {
@@ -77,7 +77,7 @@ class DecorationProviderWrapper {
                 this.data.clear();
             } else {
                 for (const uri of uris) {
-                    this.fetchData(new URI(uri.toString()));
+                    this.fetchData(uri);
                     const decoration = await provider.provideDecorations(uri, CancellationToken.None);
                     if (decoration) {
                         this.decorations.set(uri.toString(), decoration);
@@ -130,14 +130,14 @@ class DecorationProviderWrapper {
     private fetchData(uri: URI): Decoration | undefined {
 
         // check for pending request and cancel it
-        const pendingRequest = this.data.get(new URI(uri.toString()));
+        const pendingRequest = this.data.get(uri);
         if (pendingRequest instanceof DecorationDataRequest) {
             pendingRequest.source.cancel();
             this.data.delete(uri);
         }
 
         const source = new CancellationTokenSource();
-        const dataOrThenable = this.provider.provideDecorations(new URI(uri.toString()), source.token);
+        const dataOrThenable = this.provider.provideDecorations(uri, source.token);
         if (!isThenable<Decoration | Promise<Decoration | undefined> | undefined>(dataOrThenable)) {
             // sync -> we have a result now
             return this.keepItem(uri, dataOrThenable);
@@ -198,11 +198,11 @@ export class DecorationsServiceImpl implements DecorationsService {
         });
     }
 
-    getDecoration(uri: URI, includeChildren: boolean): Decoration [] {
+    getDecoration(uri: URI, includeChildren: boolean): Decoration[] {
         const data: Decoration[] = [];
         let containsChildren: boolean = false;
         for (const wrapper of this.data) {
-            wrapper.getOrRetrieve(new URI(uri.toString()), includeChildren, (deco, isChild) => {
+            wrapper.getOrRetrieve(uri, includeChildren, (deco, isChild) => {
                 if (!isChild || deco.bubble) {
                     data.push(deco);
                     containsChildren = isChild || containsChildren;

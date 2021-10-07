@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorManager, EditorWidget, TextEditor, TextEditorDocument, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
 import { ContentLines } from '@theia/scm/lib/browser/dirty-diff/content-lines';
 import { DirtyDiffUpdate } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-decorator';
@@ -101,7 +101,7 @@ export class DirtyDiffManager {
             fileUri,
             getContents: async (staged: boolean) => {
                 const query = staged ? '' : 'HEAD';
-                const uri = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(query);
+                const uri = fileUri.with({ scheme: GIT_RESOURCE_SCHEME, query });
                 const gitResource = await this.gitResourceResolver.getResource(uri);
                 return gitResource.readContents();
             },
@@ -242,8 +242,8 @@ export class DirtyDiffModel implements Disposable {
         if (!repository) {
             return false;
         }
-        const modelUri = this.editor.uri.withScheme('file').toString();
-        const repoUri = new URI(repository.localUri).withScheme('file').toString();
+        const modelUri = this.editor.uri.with({ scheme: 'file' }).toString();
+        const repoUri = URI.parse(repository.localUri).with({ scheme: 'file' }).toString();
         return modelUri.startsWith(repoUri) && this.previousRevision.isVersionControlled();
     }
 

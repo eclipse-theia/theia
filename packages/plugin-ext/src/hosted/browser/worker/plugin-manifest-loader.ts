@@ -18,13 +18,14 @@
 
 import { PluginModel, PluginPackage } from '../../../common/plugin-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 const NLS_REGEX = /^%([\w\d.-]+)%$/i;
 
 function getUri(pluginModel: PluginModel, relativePath: string): URI {
     const ownURI = new Endpoint().getRestUrl();
-    return ownURI.parent.resolve(PluginPackage.toPluginUrl(pluginModel, relativePath));
+    return Uri.joinPath(Uri.dirname(ownURI), PluginPackage.toPluginUrl(pluginModel, relativePath));
 }
 
 function readPluginFile(pluginModel: PluginModel, relativePath: string): Promise<string> {

@@ -32,7 +32,7 @@ import {
     TREE_NODE_INFO_CLASS,
     codicon
 } from '@theia/core/lib/browser';
-import { CancellationTokenSource, Emitter, Event } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event, Path, Uri } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
     EditorWidget, ReplaceOperation, EditorOpenerOptions, FindMatch
@@ -43,7 +43,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as React from '@theia/core/shared/react';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 import { ProgressService } from '@theia/core';
@@ -462,7 +462,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
         let path: string;
         if (result.root === this.defaultRootName) {
-            path = new URI(result.fileUri).path.dir.toString();
+            path = Uri.dirname(URI.parse(result.fileUri)).toString();
         } else {
             path = this.filenameAndPath(result.root, result.fileUri).path;
         }
@@ -651,7 +651,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected createRootFolderNode(rootUri: string): SearchInWorkspaceRootFolderNode {
-        const uri = new URI(rootUri);
+        const uri = URI.parse(rootUri);
         return {
             selected: false,
             path: uri.path.toString(),
@@ -689,10 +689,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected getFileNodesByUri(uri: URI): SearchInWorkspaceFileNode[] {
         const nodes: SearchInWorkspaceFileNode[] = [];
-        const fileUri = uri.withScheme('file').toString();
+        const fileUri = uri.with({ scheme: 'file' }).toString();
         for (const rootFolderNode of this.resultTree.values()) {
-            const rootUri = new URI(rootFolderNode.path).withScheme('file');
-            if (rootUri.isEqualOrParent(uri) || rootFolderNode.id === this.defaultRootName) {
+            const rootUri = URI.parse(rootFolderNode.path).with({ scheme: 'file' });
+            if (Uri.isEqualOrParent(rootUri, uri) || rootFolderNode.id === this.defaultRootName) {
                 for (const fileNode of rootFolderNode.children) {
                     if (fileNode.fileUri === fileUri) {
                         nodes.push(fileNode);
@@ -704,11 +704,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected filenameAndPath(rootUriStr: string, uriStr: string): { name: string, path: string } {
-        const uri: URI = new URI(uriStr);
-        const relativePath = new URI(rootUriStr).relative(uri.parent);
+        const uri = URI.parse(uriStr);
+        const relativePath = Path.relative(rootUriStr, Uri.dirname(uri).path);
         return {
-            name: uri.displayName,
-            path: relativePath ? relativePath.toString() : ''
+            name: Uri.displayName(uri),
+            path: relativePath ?? ''
         };
     }
 
@@ -929,7 +929,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
-                    title={new URI(node.fileUri).path.toString()}>
+                    title={URI.parse(node.fileUri).path}>
                     <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>
@@ -993,7 +993,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * @returns The editor widget to which the text replace will be done.
      */
     protected async doGetWidget(node: SearchInWorkspaceResultLineNode): Promise<EditorWidget> {
-        const fileUri = new URI(node.fileUri);
+        const fileUri = URI.parse(node.fileUri);
         const editorWidget = await this.editorManager.getOrCreateByUri(fileUri);
         return editorWidget;
     }
@@ -1002,11 +1002,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         let fileUri: URI;
         const resultNode = node.parent;
         if (resultNode && this.isReplacing && preview) {
-            const leftUri = new URI(node.fileUri);
+            const leftUri = URI.parse(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
         } else {
-            fileUri = new URI(node.fileUri);
+            fileUri = URI.parse(node.fileUri);
         }
 
         const opts: EditorOpenerOptions = {
@@ -1033,7 +1033,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected async createReplacePreview(node: SearchInWorkspaceFileNode): Promise<URI> {
-        const fileUri = new URI(node.fileUri).withScheme('file');
+        const fileUri = URI.parse(node.fileUri).with({ scheme: 'file' });
         const openedEditor = this.editorManager.all.find(({ editor }) => editor.uri.toString() === fileUri.toString());
         let content: string;
         if (openedEditor) {
@@ -1052,7 +1052,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             lines[l.line - 1] = start + this._replaceTerm + end;
         });
 
-        return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
+        return fileUri.with({ scheme: MEMORY_TEXT, query: lines.join('\n') });
     }
 
     protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget): void {

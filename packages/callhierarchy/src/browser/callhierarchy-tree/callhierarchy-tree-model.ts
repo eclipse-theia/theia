@@ -19,7 +19,7 @@ import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
 import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
 import { CallHierarchyServiceProvider } from '../callhierarchy-service';
 import { Position } from '@theia/core/shared/vscode-languageserver-types';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 
 @injectable()
@@ -43,7 +43,7 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
         this.tree.callHierarchyService = undefined;
         this._languageId = languageId;
         if (languageId && uri && position) {
-            const callHierarchyService = this.callHierarchyServiceProvider.get(languageId, new URI(uri));
+            const callHierarchyService = this.callHierarchyServiceProvider.get(languageId, URI.parse(uri));
             if (callHierarchyService) {
                 this.tree.callHierarchyService = callHierarchyService;
                 const cancellationSource = new CancellationTokenSource();

@@ -25,12 +25,12 @@ import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-pr
 import * as http from 'http';
 import * as https from 'https';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { FileUri } from '@theia/core/lib/node';
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { expect } from 'chai';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -55,8 +55,8 @@ const script2 = './test-arguments-2.js';
 
 // we use test-resources subfolder ('<theia>/packages/task/test-resources/'),
 // as workspace root, for these tests
-const wsRootUri: URI = FileUri.create(__dirname).resolve('../../test-resources');
-const wsRoot: string = FileUri.fsPath(wsRootUri);
+const wsRootUri = Uri.joinPath(URI.file(__dirname), '../../test-resources');
+const wsRoot = wsRootUri.fsPath;
 
 describe('Task server / back-end', function (): void {
     this.timeout(10000);
@@ -105,7 +105,7 @@ describe('Task server / back-end', function (): void {
         const messages: string[] = [];
 
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
             channel.onError(reject);
             channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
@@ -132,12 +132,12 @@ describe('Task server / back-end', function (): void {
     it('task using raw process - task server success response shall not contain a terminal id', async function (): Promise<void> {
         const someString = 'someSingleWordString';
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-        const executable = FileUri.fsPath(wsRootUri.resolve(command));
+        const executable = Uri.joinPath(wsRootUri, command).fsPath;
 
         // create task using raw process
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, [someString]), wsRoot);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId === taskInfo.taskId && event.code === 0) {
                     if (typeof taskInfo.terminalId === 'number') {
@@ -153,7 +153,7 @@ describe('Task server / back-end', function (): void {
 
     it('task is executed successfully with cwd as a file URI', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-        const config = createProcessTaskConfig('shell', command, undefined, FileUri.create(wsRoot).toString());
+        const config = createProcessTaskConfig('shell', command, undefined, URI.file(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
         await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
@@ -166,7 +166,7 @@ describe('Task server / back-end', function (): void {
 
     it('task is executed successfully using raw process', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-        const executable = FileUri.fsPath(wsRootUri.resolve(command));
+        const executable = Uri.joinPath(wsRootUri, command).fsPath;
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []));
         await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
@@ -413,11 +413,11 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
         options: { cwd: wsRoot },
         command: commandLongRunning,
         windows: {
-            command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningWindows)),
+            command: Uri.joinPath(wsRootUri, commandLongRunningWindows).fsPath,
             options: { cwd: wsRoot }
         },
         osx: {
-            command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningOsx))
+            command: Uri.joinPath(wsRootUri, commandLongRunningOsx).fsPath
         }
     };
 }

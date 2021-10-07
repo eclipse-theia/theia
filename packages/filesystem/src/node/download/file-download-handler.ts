@@ -21,13 +21,13 @@ import { v4 } from 'uuid';
 import { Request, Response } from '@theia/core/shared/express';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OK, BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND, INTERNAL_SERVER_ERROR, REQUESTED_RANGE_NOT_SATISFIABLE, PARTIAL_CONTENT } from 'http-status-codes';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { isEmpty } from '@theia/core/lib/common/objects';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { DirectoryArchiver } from './directory-archiver';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { FileDownloadCache, DownloadStorageItem } from './file-download-cache';
+import { Uri } from '@theia/core';
 
 interface PrepareDownloadOptions {
     filePath: string;
@@ -210,14 +210,14 @@ export class SingleFileDownloadHandler extends FileDownloadHandler {
             this.handleError(response, `Cannot access the 'uri' query from the request. The query was: ${JSON.stringify(query)}.`, BAD_REQUEST);
             return;
         }
-        const uri = new URI(query.uri).toString(true);
-        const filePath = FileUri.fsPath(uri);
+        const uri = URI.parse(query.uri);
+        const filePath = uri.fsPath;
 
         let stat: fs.Stats;
         try {
             stat = await fs.stat(filePath);
         } catch {
-            this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
+            this.handleError(response, `The file does not exist. URI: ${uri.toString(true)}.`, NOT_FOUND);
             return;
         }
         try {
@@ -264,7 +264,7 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
         }
         for (const uri of body.uris) {
             try {
-                await fs.access(FileUri.fsPath(uri));
+                await fs.access(Uri.fsPath(uri));
             } catch {
                 this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
                 return;
@@ -273,12 +273,12 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
         try {
             const downloadId = v4();
             const outputRootPath = await this.createTempDir(downloadId);
-            const distinctUris = Array.from(new Set(body.uris.map(uri => new URI(uri))));
+            const distinctUris = Array.from(new Set(body.uris.map(uri => URI.parse(uri))));
             const tarPaths = [];
             // We should have one key in the map per FS drive.
             for (const [rootUri, uris] of (await this.directoryArchiver.findCommonParents(distinctUris)).entries()) {
-                const rootPath = FileUri.fsPath(rootUri);
-                const entries = uris.map(FileUri.fsPath).map(p => path.relative(rootPath, p));
+                const rootPath = Uri.fsPath(rootUri);
+                const entries = uris.map(uri => Uri.fsPath(uri)).map(p => path.relative(rootPath, p));
                 const outputPath = path.join(outputRootPath, `${path.basename(rootPath)}.tar`);
                 await this.archive(rootPath, outputPath, entries);
                 tarPaths.push(outputPath);

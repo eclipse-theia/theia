@@ -33,7 +33,6 @@ import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
-import { reviver } from '../../../plugin/types-impl';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,9 +47,6 @@ const rpc = new RPCProtocolImpl({
     send: (m: string) => {
         ctx.postMessage(m);
     },
-},
-{
-    reviver: reviver
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

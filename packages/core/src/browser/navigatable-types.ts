@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '../common/uri';
+import { Uri } from '../common';
+import { URI } from 'vscode-uri';
 import { MaybeArray } from '../common/types';
 import { Widget, BaseWidget } from './widgets';
 
@@ -48,7 +49,7 @@ export namespace NavigatableWidget {
         context: MaybeArray<URI>
     ): IterableIterator<[URI, T & NavigatableWidget]> {
         const uris = Array.isArray(context) ? context : [context];
-        return get(widgets, resourceUri => uris.some(uri => uri.isEqualOrParent(resourceUri)));
+        return get(widgets, resourceUri => uris.some(uri => Uri.isEqualOrParent(uri, resourceUri)));
     }
     export function* get<T extends Widget>(
         widgets: Iterable<T>,

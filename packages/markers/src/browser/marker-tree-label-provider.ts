@@ -19,6 +19,7 @@ import { LabelProvider, LabelProviderContribution, DidChangeLabelEvent } from '@
 import { MarkerInfoNode } from './marker-tree';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class MarkerTreeLabelProvider implements LabelProviderContribution {
@@ -54,22 +55,22 @@ export class MarkerTreeLabelProvider implements LabelProviderContribution {
             description.push(this.labelProvider.getName(rootUri));
         }
         // If the given resource is not at the workspace root, include the parent directory to the label.
-        if (rootUri && rootUri.toString() !== node.uri.parent.toString()) {
-            description.push(this.labelProvider.getLongName(node.uri.parent));
+        if (rootUri && !Uri.isEqual(rootUri, Uri.dirname(node.uri))) {
+            description.push(this.labelProvider.getLongName(Uri.dirname(node.uri)));
         }
         // Get the full path of a resource which does not exist in the given workspace.
         if (!rootUri) {
-            description.push(this.labelProvider.getLongName(node.uri.parent.withScheme('markers')));
+            description.push(this.labelProvider.getLongName(Uri.dirname(node.uri).with({ scheme: 'markers' })));
         }
         return description.join(' ● ');
     }
 
     getDescription(node: MarkerInfoNode): string {
-        return this.labelProvider.getLongName(node.uri.parent);
+        return this.labelProvider.getLongName(Uri.dirname(node.uri));
     }
 
     affects(node: MarkerInfoNode, event: DidChangeLabelEvent): boolean {
-        return event.affects(node.uri) || event.affects(node.uri.parent);
+        return event.affects(node.uri) || event.affects(Uri.dirname(node.uri));
     }
 
 }

@@ -28,7 +28,7 @@ import { FileTreeLabelProvider } from './file-tree/file-tree-label-provider';
 import { FileService, FileServiceContribution } from './file-service';
 import { RemoteFileSystemProvider, RemoteFileSystemServer, remoteFileSystemPath, RemoteFileSystemProxyFactory } from '../common/remote-file-system-provider';
 import { FileSystem, FileStat, FileMoveOptions, FileDeleteOptions, FileSystemError } from '../common/filesystem';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileOperationError, FileOperationResult, BaseStatWithMetadata, FileStatWithMetadata, etag } from '../common/files';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -87,7 +87,7 @@ export default new ContainerModule(bind => {
         return new class implements FileSystem {
             async getFileStat(uri: string): Promise<FileStat | undefined> {
                 try {
-                    const stat = await fileService.resolve(new URI(uri), { resolveMetadata: true });
+                    const stat = await fileService.resolve(URI.parse(uri), { resolveMetadata: true });
                     return convertStat(stat);
                 } catch (e) {
                     if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
@@ -97,11 +97,11 @@ export default new ContainerModule(bind => {
                 }
             }
             exists(uri: string): Promise<boolean> {
-                return fileService.exists(new URI(uri));
+                return fileService.exists(URI.parse(uri));
             }
             async resolveContent(uri: string, options?: { encoding?: string | undefined; } | undefined): Promise<{ stat: FileStat; content: string; }> {
                 try {
-                    const content = await fileService.read(new URI(uri), options);
+                    const content = await fileService.read(URI.parse(uri), options);
                     return {
                         stat: convertStat(content),
                         content: content.value
@@ -112,7 +112,7 @@ export default new ContainerModule(bind => {
             }
             async setContent(file: FileStat, content: string, options?: { encoding?: string | undefined; } | undefined): Promise<FileStat> {
                 try {
-                    const result = await fileService.write(new URI(file.uri), content, {
+                    const result = await fileService.write(URI.parse(file.uri), content, {
                         ...options,
                         mtime: file.lastModification
                     });
@@ -126,7 +126,7 @@ export default new ContainerModule(bind => {
                 overwriteEncoding?: string | undefined;
             } | undefined): Promise<FileStat> {
                 try {
-                    const result = await fileService.update(new URI(file.uri), contentChanges, {
+                    const result = await fileService.update(URI.parse(file.uri), contentChanges, {
                         mtime: file.lastModification,
                         etag: etag({ size: file.size, mtime: file.lastModification }),
                         readEncoding: options?.encoding || UTF8,
@@ -140,7 +140,7 @@ export default new ContainerModule(bind => {
             }
             async move(sourceUri: string, targetUri: string, options?: FileMoveOptions | undefined): Promise<FileStat> {
                 try {
-                    const result = await fileService.move(new URI(sourceUri), new URI(targetUri), options);
+                    const result = await fileService.move(URI.parse(sourceUri), URI.parse(targetUri), options);
                     return convertStat(result);
                 } catch (e) {
                     rethrowError(sourceUri, e);
@@ -148,7 +148,7 @@ export default new ContainerModule(bind => {
             }
             async copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean | undefined; recursive?: boolean | undefined; } | undefined): Promise<FileStat> {
                 try {
-                    const result = await fileService.copy(new URI(sourceUri), new URI(targetUri), options);
+                    const result = await fileService.copy(URI.parse(sourceUri), URI.parse(targetUri), options);
                     return convertStat(result);
                 } catch (e) {
                     rethrowError(sourceUri, e);
@@ -156,7 +156,7 @@ export default new ContainerModule(bind => {
             }
             async createFile(uri: string, options?: { content?: string | undefined; encoding?: string | undefined; } | undefined): Promise<FileStat> {
                 try {
-                    const result = await fileService.create(new URI(uri), options?.content, { encoding: options?.encoding });
+                    const result = await fileService.create(URI.parse(uri), options?.content, { encoding: options?.encoding });
                     return convertStat(result);
                 } catch (e) {
                     rethrowError(uri, e);
@@ -164,7 +164,7 @@ export default new ContainerModule(bind => {
             }
             async createFolder(uri: string): Promise<FileStat> {
                 try {
-                    const result = await fileService.createFolder(new URI(uri));
+                    const result = await fileService.createFolder(URI.parse(uri));
                     return convertStat(result);
                 } catch (e) {
                     rethrowError(uri, e);
@@ -175,17 +175,17 @@ export default new ContainerModule(bind => {
             }
             async delete(uri: string, options?: FileDeleteOptions | undefined): Promise<void> {
                 try {
-                    return await fileService.delete(new URI(uri), { useTrash: options?.moveToTrash, recursive: true });
+                    return await fileService.delete(URI.parse(uri), { useTrash: options?.moveToTrash, recursive: true });
                 } catch (e) {
                     rethrowError(uri, e);
                 }
             }
             async getEncoding(uri: string): Promise<string> {
-                const { encoding } = await fileService.read(new URI(uri));
+                const { encoding } = await fileService.read(URI.parse(uri));
                 return encoding;
             }
             async guessEncoding(uri: string): Promise<string | undefined> {
-                const { encoding } = await fileService.read(new URI(uri), { autoGuessEncoding: true });
+                const { encoding } = await fileService.read(URI.parse(uri), { autoGuessEncoding: true });
                 return encoding;
             }
             async getRoots(): Promise<FileStat[]> {
@@ -200,10 +200,10 @@ export default new ContainerModule(bind => {
                 return environments.getDrives();
             }
             access(uri: string, mode?: number | undefined): Promise<boolean> {
-                return fileService.access(new URI(uri), mode);
+                return fileService.access(URI.parse(uri), mode);
             }
             getFsPath(uri: string): Promise<string | undefined> {
-                return fileService.fsPath(new URI(uri));
+                return fileService.fsPath(URI.parse(uri));
             }
 
         };

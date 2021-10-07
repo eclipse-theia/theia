@@ -17,11 +17,11 @@
 import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
+import { CommandRegistry, MenuModelRegistry, SelectionService, Command, Uri } from '@theia/core';
 import { codicon, Widget } from '@theia/core/lib/browser/widgets';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -133,7 +133,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                         const uri = stat.resource;
                         let uriStr = this.labelProvider.getLongName(uri);
                         if (stat && !stat.isDirectory) {
-                            uriStr = this.labelProvider.getLongName(uri.parent);
+                            uriStr = this.labelProvider.getLongName(Uri.dirname(uri));
                         }
                         resources.push(uriStr);
                     }

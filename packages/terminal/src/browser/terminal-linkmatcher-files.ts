@@ -16,13 +16,13 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { OS } from '@theia/core/lib/common';
+import { OS, Uri } from '@theia/core/lib/common';
 import { OpenerService } from '@theia/core/lib/browser';
 import { Position } from '@theia/editor/lib/browser';
 import { AbstractCmdClickTerminalContribution } from './terminal-linkmatcher';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 import { Path } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
@@ -92,8 +92,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
         if (!path) {
             return;
         }
-        const pathObj = new Path(path);
-        return pathObj.isAbsolute ? cwd.withPath(path) : cwd.resolve(path);
+        return Path.isAbsolute(path) ? cwd.with({ path }) : Uri.joinPath(cwd, path);
     }
 
     protected async extractPosition(link: string): Promise<Position> {

@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import URI from '../common/uri';
-import { URI as Uri } from 'vscode-uri';
+import { Uri } from '../common';
+import { URI } from 'vscode-uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
 import { LanguageService } from './language-service';
 
@@ -29,7 +29,7 @@ export class ResourceContextKey {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    protected resource: ContextKey<Uri>;
+    protected resource: ContextKey<URI>;
     protected resourceSchemeKey: ContextKey<string>;
     protected resourceFileName: ContextKey<string>;
     protected resourceExtname: ContextKey<string>;
@@ -39,7 +39,7 @@ export class ResourceContextKey {
 
     @postConstruct()
     protected init(): void {
-        this.resource = this.contextKeyService.createKey<Uri>('resource', undefined);
+        this.resource = this.contextKeyService.createKey<URI>('resource', undefined);
         this.resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
         this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
         this.resourceExtname = this.contextKeyService.createKey<string>('resourceExtname', undefined);
@@ -49,24 +49,23 @@ export class ResourceContextKey {
     }
 
     get(): URI | undefined {
-        const codeUri = this.resource.get();
-        return codeUri && new URI(codeUri);
+        return this.resource.get();
     }
 
     set(resourceUri: URI | undefined): void {
-        this.resource.set(resourceUri && resourceUri['codeUri']);
+        this.resource.set(resourceUri);
         this.resourceSchemeKey.set(resourceUri && resourceUri.scheme);
-        this.resourceFileName.set(resourceUri && resourceUri.path.base);
-        this.resourceExtname.set(resourceUri && resourceUri.path.ext);
+        this.resourceFileName.set(resourceUri && Uri.basename(resourceUri));
+        this.resourceExtname.set(resourceUri && Uri.extname(resourceUri));
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
-        this.resourceDirName.set(resourceUri && Uri.parse(resourceUri.path.dir.toString()).fsPath);
-        this.resourcePath.set(resourceUri && resourceUri['codeUri'].fsPath);
+        this.resourceDirName.set(resourceUri && Uri.dirname(resourceUri).toString());
+        this.resourcePath.set(resourceUri && resourceUri.fsPath);
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {
         if (uri) {
             for (const language of this.languages.languages) {
-                if (language.extensions.has(uri.path.ext)) {
+                if (language.extensions.has(Uri.extname(uri))) {
                     return language.id;
                 }
             }

@@ -16,7 +16,7 @@
 
 import { injectable, inject, unmanaged } from '@theia/core/shared/inversify';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Disposable, Emitter, Event } from '@theia/core/lib/common';
 import {
@@ -528,7 +528,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.uri;
     }
     createMoveToUri(resourceUri: URI): URI {
-        return this.uri.withPath(resourceUri.path);
+        return this.uri.with({ path: resourceUri.path });
     }
 
 }

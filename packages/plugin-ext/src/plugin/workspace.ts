@@ -30,11 +30,10 @@ import {
     PLUGIN_RPC_CONTEXT as Ext,
     MainMessageType,
 } from '../common/plugin-api-rpc';
-import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { URI } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { normalize } from '@theia/callhierarchy/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
@@ -42,6 +41,7 @@ import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { Uri } from '@theia/core';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -80,7 +80,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     get name(): string | undefined {
         if (this.workspaceFolders && this.workspaceFolders.length > 0) {
-            return new Path(this.workspaceFolders[0].uri.path).base;
+            return Uri.basename(URI.from(this.workspaceFolders[0].uri));
         }
 
         return undefined;
@@ -146,10 +146,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     private toWorkspaceFolder(root: string, index: number): theia.WorkspaceFolder {
         const uri = URI.parse(root);
-        const path = new Path(uri.path);
+        const base = Uri.basename(uri);
         return {
             uri: uri,
-            name: path.base,
+            name: base,
             index: index
         };
     }
@@ -176,7 +176,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                 includePattern = include;
             } else {
                 includePattern = include.pattern;
-                includeFolderUri = URI.file(include.base).toString();
+                includeFolderUri = URI.parse(include.base).toString();
             }
         } else {
             includePattern = '';
@@ -289,7 +289,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         function dirname(resource: URI): URI {
             if (resource.scheme === 'file') {
-                return URI.file(paths.dirname(resource.fsPath));
+                return URI.parse(paths.dirname(resource.fsPath));
             }
             return resource.with({
                 path: paths.dirname(resource.path)
@@ -340,7 +340,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
 
         const folder = this.getWorkspaceFolder(
-            typeof pathOrUri === 'string' ? URI.file(pathOrUri) : pathOrUri,
+            typeof pathOrUri === 'string' ? URI.parse(pathOrUri) : pathOrUri,
             true
         ) as theia.WorkspaceFolder;
 

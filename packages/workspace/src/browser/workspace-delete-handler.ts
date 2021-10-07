@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
@@ -23,6 +23,7 @@ import { WorkspaceUtils } from './workspace-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
@@ -68,7 +69,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * @param uris URIs of selected resources.
      */
     async execute(uris: URI[]): Promise<void> {
-        const distinctUris = URI.getDistinctParents(uris);
+        const distinctUris = Uri.getDistinctParents(uris);
         const resolved: FileDeleteOptions = {
             recursive: true,
             useTrash: this.fsPreferences['files.enableTrash'] && distinctUris[0] && this.fileService.hasCapability(distinctUris[0], FileSystemProviderCapabilities.Trash)
@@ -105,12 +106,12 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         const dirty = this.getDirty(uris);
         if (dirty.length) {
             if (dirty.length === 1) {
-                return `Do you really want to delete ${dirty[0].path.base} with unsaved changes?`;
+                return `Do you really want to delete ${Uri.basename(dirty[0])} with unsaved changes?`;
             }
             return `Do you really want to delete ${dirty.length} files with unsaved changes?`;
         }
         if (uris.length === 1) {
-            return `Do you really want to delete ${uris[0].path.base}?`;
+            return `Do you really want to delete ${Uri.basename(uris[0])}?`;
         }
         if (uris.length > 10) {
             return `Do you really want to delete all the ${uris.length} selected files?`;
@@ -121,7 +122,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         list.style.listStyleType = 'none';
         for (const uri of uris) {
             const listItem = document.createElement('li');
-            listItem.textContent = uri.path.base;
+            listItem.textContent = Uri.basename(uri);
             list.appendChild(listItem);
         }
         messageContainer.appendChild(list);

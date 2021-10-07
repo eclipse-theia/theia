@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceService } from './workspace-service';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
@@ -62,10 +63,10 @@ export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
     async execute(uris: URI[]): Promise<void> {
         await Promise.all(uris.map(async uri => {
             try {
-                const parent = await this.fileService.resolve(uri.parent);
+                const parent = await this.fileService.resolve(Uri.dirname(uri));
                 const parentUri = parent.resource;
-                const name = uri.path.name + '_copy';
-                const ext = uri.path.ext;
+                const name = Uri.name(uri) + '_copy';
+                const ext = Uri.extname(uri);
                 const target = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, name, ext);
                 await this.fileService.copy(uri, target);
             } catch (e) {

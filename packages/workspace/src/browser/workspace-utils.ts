@@ -17,9 +17,10 @@
 
 // TODO get rid of util files, replace with methods in a responsible class
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from './workspace-service';
+import { Uri } from '@theia/core';
 
 /**
  * Collection of workspace utility functions
@@ -40,6 +41,6 @@ export class WorkspaceUtils {
         // obtain all roots URIs for a given workspace
         const rootUris = this.workspaceService.tryGetRoots().map(root => root.resource);
         // return true if at least a single URI is a root directory
-        return rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
+        return rootUris.some(rootUri => uris.some(uri => Uri.isEqualOrParent(uri, rootUri)));
     }
 }

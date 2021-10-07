@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { URI } from '@theia/core/shared/vscode-uri';
-import CoreURI from '@theia/core/lib/common/uri';
 import { interfaces } from '@theia/core/shared/inversify';
 import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -58,9 +57,8 @@ export class WindowStateMain implements WindowMain, Disposable {
 
     async $openUri(uriComponent: UriComponents): Promise<boolean> {
         const uri = URI.revive(uriComponent);
-        const url = new CoreURI(encodeURI(uri.toString(true)));
         try {
-            await open(this.openerService, url);
+            await open(this.openerService, uri);
             return true;
         } catch (e) {
             return false;
@@ -69,7 +67,7 @@ export class WindowStateMain implements WindowMain, Disposable {
 
     async $asExternalUri(uriComponents: UriComponents): Promise<UriComponents> {
         const uri = URI.revive(uriComponents);
-        const resolved = await this.externalUriService.resolve(new CoreURI(uri));
+        const resolved = await this.externalUriService.resolve(uri);
         return URI.parse(resolved.toString());
     }
 

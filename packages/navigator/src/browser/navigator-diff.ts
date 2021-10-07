@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SelectionService, UriSelection } from '@theia/core/lib/common';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -51,10 +51,6 @@ export class NavigatorDiff {
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
-
-    constructor(
-    ) {
-    }
 
     protected _firstCompareFile: URI | undefined = undefined;
     protected get firstCompareFile(): URI | undefined {

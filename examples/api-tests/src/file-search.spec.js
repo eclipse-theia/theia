@@ -19,7 +19,7 @@ describe('file-search', function () {
 
     const { assert } = chai;
 
-    const Uri = require('@theia/core/lib/common/uri');
+    const { URI } = require('vscode-uri');
     const { QuickFileOpenService } = require('@theia/file-search/lib/browser/quick-file-open');
     const { CancellationTokenSource } = require('@theia/core/lib/common/cancellation');
 
@@ -34,9 +34,9 @@ describe('file-search', function () {
             it('should compare two quick-open-items by `label`', () => {
 
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
-                const a = { label: 'a', uri: new Uri.default('b') };
+                const a = { label: 'a', uri: URI.file('b') };
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
-                const b = { label: 'b', uri: new Uri.default('a') };
+                const b = { label: 'b', uri: URI.file('a') };
 
                 assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
                 assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');
@@ -46,9 +46,9 @@ describe('file-search', function () {
             it('should compare two quick-open-items by `uri`', () => {
 
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
-                const a = { label: 'a', uri: new Uri.default('a') };
+                const a = { label: 'a', uri: URI.file('a') };
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
-                const b = { label: 'a', uri: new Uri.default('b') };
+                const b = { label: 'a', uri: URI.file('b') };
 
                 assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
                 assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');

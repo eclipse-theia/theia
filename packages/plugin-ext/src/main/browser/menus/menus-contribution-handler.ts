@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
@@ -51,9 +51,8 @@ export class CodeEditorWidgetUtil {
     is(arg: any): arg is CodeEditorWidget {
         return arg instanceof EditorWidget || arg instanceof WebviewWidget;
     }
-    getResourceUri(editor: CodeEditorWidget): CodeUri | undefined {
-        const resourceUri = Navigatable.is(editor) && editor.getResourceUri();
-        return resourceUri ? resourceUri['codeUri'] : undefined;
+    getResourceUri(editor: CodeEditorWidget): URI | undefined {
+        return Navigatable.is(editor) && editor.getResourceUri() || undefined;
     }
 }
 
@@ -453,7 +452,7 @@ export class MenusContributionPointHandler {
         const timelineArgs: any[] = [];
         const arg = args[0];
         timelineArgs.push(this.toTimelineArg(arg));
-        timelineArgs.push(CodeUri.parse(arg.uri));
+        timelineArgs.push(URI.parse(arg.uri));
         timelineArgs.push('source' in arg ? arg.source : '');
         return timelineArgs;
     }
@@ -501,8 +500,7 @@ export class MenusContributionPointHandler {
             if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
                 return selection.source.toTreeViewSelection(selection[0]);
             }
-            const uri = this.resourceContextKey.get();
-            return uri ? uri['codeUri'] : undefined;
+            return this.resourceContextKey.get();
         };
 
         const toDispose = new DisposableCollection();

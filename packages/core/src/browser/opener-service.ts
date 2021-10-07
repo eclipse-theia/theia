@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { named, injectable, inject } from 'inversify';
-import URI from '../common/uri';
+import { URI } from 'vscode-uri';
 import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable } from '../common';
 
 export interface OpenerOptions {

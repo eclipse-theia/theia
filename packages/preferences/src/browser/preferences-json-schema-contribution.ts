@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { InMemoryResources } from '@theia/core';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { InMemoryResources, Uri } from '@theia/core';
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
@@ -54,7 +54,7 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
 
     private registerSchema(scope: PreferenceScope, context: JsonSchemaRegisterContext): void {
         const scopeStr = PreferenceScope[scope].toLowerCase();
-        const uri = new URI(PREFERENCE_URI_PREFIX + scopeStr);
+        const uri = URI.parse(PREFERENCE_URI_PREFIX + scopeStr);
 
         this.inmemoryResources.add(uri, this.serializeSchema(scope));
 
@@ -76,11 +76,11 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     }
 
     private getSchemaURIForScope(scope: PreferenceScope): URI {
-        return new URI(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
+        return URI.parse(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
     }
 
     private getFileMatch(scope: string): string[] {
         const baseName = this.preferenceConfigurations.getConfigName() + '.json';
-        return [baseName, new URI(USER_STORAGE_PREFIX + scope).resolve(baseName).toString()];
+        return [baseName, Uri.joinPath(URI.parse(USER_STORAGE_PREFIX + scope), baseName).toString()];
     }
 }

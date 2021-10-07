@@ -22,6 +22,7 @@ import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { Uri } from '@theia/core';
 
 /**
  * Informs the user whether Theia is running with hosted plugin.
@@ -90,7 +91,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     private updateTitle(root: FileStat | undefined): void {
         if (root) {
             const uri = root.resource;
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
+            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + Uri.displayName(uri);
         } else {
             document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;
         }

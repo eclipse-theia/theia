@@ -17,7 +17,7 @@
 import * as PDFObject from 'pdfobject';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
@@ -250,8 +250,8 @@ export class MiniBrowserContent extends BaseWidget {
     }
 
     protected async listenOnContentChange(location: string): Promise<void> {
-        if (await this.fileService.exists(new URI(location))) {
-            const fileUri = new URI(location);
+        const fileUri = URI.parse(location);
+        if (await this.fileService.exists(fileUri)) {
             const watcher = this.fileService.watch(fileUri);
             this.toDispose.push(watcher);
             const onFileChange = (event: FileChangesEvent) => {

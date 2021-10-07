@@ -19,12 +19,10 @@ import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
 import { rgPath } from 'vscode-ripgrep';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node/file-uri';
-import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { CancellationTokenSource, CancellationToken, ILogger, isWindows, Uri } from '@theia/core';
 import { RawProcessFactory } from '@theia/process/lib/node';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import * as path from 'path';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -84,14 +82,13 @@ export class FileSearchServiceImpl implements FileSearchService {
 
         await Promise.all(Object.keys(roots).map(async root => {
             try {
-                const rootUri = new URI(root);
-                const rootPath = FileUri.fsPath(rootUri);
+                const rootUri = URI.parse(root);
                 const rootOptions = roots[root];
 
                 await this.doFind(rootUri, rootOptions, candidate => {
 
                     // Convert OS-native candidate path to a file URI string
-                    const fileUri = FileUri.create(path.resolve(rootPath, candidate)).toString();
+                    const fileUri = Uri.joinPath(rootUri, candidate).fsPath;
 
                     // Skip results that have already been matched.
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
@@ -131,7 +128,7 @@ export class FileSearchServiceImpl implements FileSearchService {
 
     private doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
         return new Promise((resolve, reject) => {
-            const cwd = FileUri.fsPath(rootUri);
+            const cwd = rootUri.fsPath;
             const args = this.getSearchArgs(options);
             const ripgrep = cp.spawn(rgPath, args, { cwd, stdio: ['pipe', 'pipe', 'inherit'] });
             ripgrep.on('error', reject);

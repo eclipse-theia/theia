@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Navigatable } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';

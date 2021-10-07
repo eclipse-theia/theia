@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { isChrome } from '@theia/core/lib/browser/browser';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { SelectionService } from '@theia/core/lib/common/selection-service';

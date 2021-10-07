@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable } from '@theia/core/lib/common';
 import { Dimension, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
@@ -89,11 +89,11 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     getResourceUri(): URI {
-        return new URI(this.originalModel.uri);
+        return URI.parse(this.originalModel.uri);
     }
     createMoveToUri(resourceUri: URI): URI {
         const [left, right] = DiffUris.decode(this.uri);
-        return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
+        return DiffUris.encode(left.with({ path: resourceUri.path }), right.with({ path: resourceUri.path }));
     }
 
 }

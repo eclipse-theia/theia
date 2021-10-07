@@ -16,8 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import * as path from 'path';
-import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginPackage } from '../../../common';
 import { PluginUriFactory } from './plugin-uri-factory';
 /**
@@ -27,6 +26,6 @@ import { PluginUriFactory } from './plugin-uri-factory';
 @injectable()
 export class FilePluginUriFactory implements PluginUriFactory {
     createUri(pkg: PluginPackage, pkgRelativePath?: string): URI {
-        return FileUri.create(pkgRelativePath ? path.join(pkg.packagePath, pkgRelativePath) : pkg.packagePath);
+        return URI.parse(pkgRelativePath ? path.join(pkg.packagePath, pkgRelativePath) : pkg.packagePath);
     }
 }

@@ -33,9 +33,7 @@ import {
     rmdir, unlink, rename, futimes, truncate
 } from 'fs';
 import { promisify } from 'util';
-import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core/lib/common/path';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { OS, isWindows } from '@theia/core/lib/common/os';
@@ -65,6 +63,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { readFileIntoStream } from '../common/io';
+import { Path, Uri } from '@theia/core';
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -113,7 +112,7 @@ export class DiskFileSystemProvider implements Disposable,
         this.toDispose.push(this.watcher);
         this.watcher.setClient({
             onDidFilesChanged: params => this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
-                resource: new URI(uri),
+                resource: URI.parse(uri),
                 type
             }))),
             onError: () => this.onFileWatchErrorEmitter.fire()
@@ -172,7 +171,7 @@ export class DiskFileSystemProvider implements Disposable,
     }
 
     async fsPath(resource: URI): Promise<string> {
-        return FileUri.fsPath(resource);
+        return resource.fsPath;
     }
 
     protected async statLink(path: string): Promise<DiskFileSystemProvider.StatAndLink> {
@@ -215,7 +214,7 @@ export class DiskFileSystemProvider implements Disposable,
             const result: [string, FileType][] = [];
             await Promise.all(children.map(async child => {
                 try {
-                    const stat = await this.stat(resource.resolve(child));
+                    const stat = await this.stat(Uri.joinPath(resource, child));
                     result.push([child, stat.type]);
                 } catch (error) {
                     console.trace(error); // ignore errors for individual entries that can arise from permission denied
@@ -515,7 +514,7 @@ export class DiskFileSystemProvider implements Disposable,
     }
 
     protected rimraf(path: string): Promise<void> {
-        if (new Path(path).isRoot) {
+        if (Path.isRoot(path)) {
             throw new Error('rimraf - will refuse to recursively delete root');
         }
         return this.rimrafMove(path);
@@ -867,7 +866,7 @@ export class DiskFileSystemProvider implements Disposable,
     // #region Helpers
 
     protected toFilePath(resource: URI): string {
-        return normalize(FileUri.fsPath(resource));
+        return normalize(resource.fsPath);
     }
 
     private toFileSystemProviderError(error: NodeJS.ErrnoException): FileSystemProviderError {

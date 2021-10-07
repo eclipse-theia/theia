@@ -19,9 +19,9 @@ import * as cp from 'child_process';
 import * as processTree from 'ps-tree';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { FileUri } from '@theia/core/lib/node';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
+import { Uri } from '@theia/core';
 
 export const HostedPluginsManager = Symbol('HostedPluginsManager');
 
@@ -62,7 +62,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
     }
 
     runWatchCompilation(uri: string): Promise<void> {
-        const pluginRootPath = FileUri.fsPath(uri);
+        const pluginRootPath = Uri.fsPath(uri);
 
         if (this.watchCompilationRegistry.has(pluginRootPath)) {
             throw new Error('Watcher is already running in ' + pluginRootPath);
@@ -89,7 +89,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
     }
 
     stopWatchCompilation(uri: string): Promise<void> {
-        const pluginPath = FileUri.fsPath(uri);
+        const pluginPath = Uri.fsPath(uri);
 
         const watchProcess = this.watchCompilationRegistry.get(pluginPath);
         if (!watchProcess) {
@@ -101,7 +101,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
     }
 
     isWatchCompilationRunning(uri: string): Promise<boolean> {
-        const pluginPath = FileUri.fsPath(uri);
+        const pluginPath = Uri.fsPath(uri);
 
         return new Promise(resolve => resolve(this.watchCompilationRegistry.has(pluginPath)));
     }

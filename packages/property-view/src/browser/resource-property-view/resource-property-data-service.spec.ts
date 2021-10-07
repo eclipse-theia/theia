@@ -28,7 +28,7 @@ FrontendApplicationConfigProvider.set({
 import { Container } from '@theia/core/shared/inversify';
 import { ResourcePropertyDataService } from './resource-property-data-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PropertyDataService } from '../property-data-service';
 import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
@@ -42,7 +42,7 @@ const mockFileStat: FileStat = {
     isFile: false,
     isDirectory: true,
     isSymbolicLink: false,
-    resource: new URI('resource'),
+    resource: URI.parse('resource'),
     name: 'name'
 };
 
@@ -67,10 +67,10 @@ describe('resource-property-data-service', () => {
 
     const navigatableSelection: Navigatable = {
         getResourceUri(): URI | undefined {
-            return new URI('resource-uri');
+            return URI.parse('resource-uri');
         },
         createMoveToUri(): URI | undefined {
-            return new URI('move-uri');
+            return URI.parse('move-uri');
         }
     };
 
@@ -107,7 +107,7 @@ describe('resource-property-data-service', () => {
         it('should return the first file-stat for multiple file selections', async () => {
             const arrayFileSelection: FileSelection[] = [
                 { fileStat: mockFileStat },
-                { fileStat: { ...mockFileStat, resource: new URI('secondURI') } }
+                { fileStat: { ...mockFileStat, resource: URI.parse('secondURI') } }
             ];
             const data = await resourcePropertyDataService.providePropertyData(arrayFileSelection);
             expect(data).to.equal(arrayFileSelection[0].fileStat);

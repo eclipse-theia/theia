@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, named, interfaces } from 'inversify';
-import URI from '../../common/uri';
+import { Uri } from '../../common';
+import { URI } from 'vscode-uri';
 import { ContributionProvider, bindContributionProvider } from '../../common/contribution-provider';
 
 export const PreferenceConfiguration = Symbol('PreferenceConfiguration');
@@ -68,15 +69,15 @@ export class PreferenceConfigurations {
     }
 
     getName(configUri: URI): string {
-        return configUri.path.name;
+        return Uri.name(configUri);
     }
 
     getPath(configUri: URI): string {
-        return configUri.parent.path.base;
+        return Uri.dirname(configUri).toString();
     }
 
     createUri(folder: URI, configPath: string = this.getPaths()[0], configName: string = this.getConfigName()): URI {
-        return folder.resolve(configPath).resolve(configName + '.json');
+        return Uri.joinPath(folder, configPath, configName + '.json');
     }
 
 }

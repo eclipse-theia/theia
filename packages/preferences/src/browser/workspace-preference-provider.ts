@@ -17,11 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspacePreferenceProvider extends PreferenceProvider {
@@ -93,7 +94,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             return this.folderPreferenceProvider;
         }
-        if (this._delegate instanceof WorkspaceFilePreferenceProvider && this._delegate.getConfigUri().isEqual(workspace.resource)) {
+        if (this._delegate instanceof WorkspaceFilePreferenceProvider && Uri.isEqual(this._delegate.getConfigUri(), workspace.resource)) {
             return this._delegate;
         }
         return this.workspaceFileProviderFactory({

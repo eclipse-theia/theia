@@ -20,11 +20,12 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as jsoncparser from 'jsonc-parser';
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -113,12 +114,12 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     }
 
     protected workspaceStillExist(workspaceRootUri: string): boolean {
-        return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
+        return fs.pathExistsSync(Uri.fsPath(workspaceRootUri));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
         const arg = await this.cliParams.workspaceRoot.promise;
-        return arg !== undefined ? FileUri.create(arg).toString() : undefined;
+        return arg !== undefined ? URI.parse(arg).toString() : undefined;
     }
 
     /**
@@ -156,7 +157,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     protected async getUserStoragePath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        return path.resolve(FileUri.fsPath(configDirUri), 'recentworkspace.json');
+        return path.resolve(Uri.fsPath(configDirUri), 'recentworkspace.json');
     }
 }
 

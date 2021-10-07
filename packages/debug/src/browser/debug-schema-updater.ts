@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DebugService } from '../common/debug-service';
 import { debugPreferencesSchema } from './debug-preferences';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
@@ -27,7 +27,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 @injectable()
 export class DebugSchemaUpdater implements JsonSchemaContribution {
 
-    protected readonly uri = new URI(launchSchemaId);
+    protected readonly uri = URI.parse(launchSchemaId);
 
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;

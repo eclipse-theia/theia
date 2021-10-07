@@ -16,8 +16,8 @@
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { RecursivePartial } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { RecursivePartial, Uri } from '@theia/core';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Range } from '@theia/editor/lib/browser';
 import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
@@ -34,7 +34,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     readonly origins: SourceBreakpoint[];
 
     constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions) {
-        super(new URI(origin.uri), options);
+        super(URI.parse(origin.uri), options);
         this.origins = [origin];
     }
 
@@ -148,7 +148,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return <React.Fragment>
             <span className='line-info' title={this.labelProvider.getLongName(this.uri)}>
                 <span className='name'>{this.labelProvider.getName(this.uri)} </span>
-                <span className={'path ' + TREE_NODE_INFO_CLASS}>{this.labelProvider.getLongName(this.uri.parent)} </span>
+                <span className={'path ' + TREE_NODE_INFO_CLASS}>{this.labelProvider.getLongName(Uri.dirname(this.uri))} </span>
             </span>
             <span className='line'>{this.renderPosition()}</span>
         </React.Fragment>;

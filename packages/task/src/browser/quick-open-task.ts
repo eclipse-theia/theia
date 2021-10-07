@@ -18,7 +18,7 @@ import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { TaskService } from './task-service';
 import { TaskInfo, TaskConfiguration, TaskCustomization, TaskScope, TaskConfigurationScope } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProvider, QuickAccessProvider, QuickAccessRegistry, QuickInputService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -27,7 +27,7 @@ import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { filterItems, QuickInputButton, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
-import { CancellationToken } from '@theia/core/lib/common';
+import { CancellationToken, Uri } from '@theia/core/lib/common';
 
 export namespace ConfigureTaskAction {
     export const ID = 'workbench.action.tasks.configureTaskRunner';
@@ -181,7 +181,7 @@ export class QuickOpenTask implements QuickAccessProvider {
 
         const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.resource.toString());
         for (const rootFolder of rootUris) {
-            const folderName = new URI(rootFolder).displayName;
+            const folderName = Uri.displayName(URI.parse(rootFolder));
             if (groupedTasks.has(rootFolder)) {
                 const configs = groupedTasks.get(rootFolder.toString())!;
                 this.items.push(
@@ -450,7 +450,7 @@ export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem 
 function renderScope(scope: TaskConfigurationScope, isMulti: boolean): string {
     if (typeof scope === 'string') {
         if (isMulti) {
-            return new URI(scope).displayName;
+            return Uri.displayName(URI.parse(scope));
         } else {
             return '';
         }

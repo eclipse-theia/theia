@@ -24,7 +24,7 @@ import throttle = require('@theia/core/shared/lodash.throttle');
 import { NotificationPreferences } from './notification-preferences';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { OpenerService } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { NotificationContentRenderer } from './notification-content-renderer';
 
 export interface NotificationUpdateEvent {
@@ -284,7 +284,7 @@ export class NotificationManager extends MessageClient {
     }
 
     async openLink(link: string): Promise<void> {
-        const uri = new URI(link);
+        const uri = URI.parse(link);
         const opener = await this.openerService.getOpener(uri);
         opener.open(uri);
     }

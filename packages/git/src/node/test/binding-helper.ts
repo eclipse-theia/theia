@@ -24,6 +24,7 @@ import { GitEnvProvider, DefaultGitEnvProvider } from '../env/git-env-provider';
 import { MessageService, LogLevel } from '@theia/core/lib/common';
 import { MessageClient } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { IPCConnectionProvider } from '@theia/core/lib/node/messaging/ipc-connection-provider';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeBindings(): { container: Container, bind: interfaces.Bind } {
@@ -33,6 +34,7 @@ export function initializeBindings(): { container: Container, bind: interfaces.B
     bind(GitEnvProvider).toService(DefaultGitEnvProvider);
     bind(MessageService).toSelf();
     bind(MessageClient).toSelf();
+    bind(IPCConnectionProvider).toSelf().inSingletonScope();
     bindLogger(bind);
     return { container, bind };
 }

@@ -17,9 +17,9 @@
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import { CancellationToken } from '@theia/core/lib/common';
+import { CancellationToken, Uri } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Command } from '@theia/core/lib/common';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
@@ -298,7 +298,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private toItem(lookFor: string, uriOrString: URI | string): FileQuickPickItem {
-        const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
+        const uri = uriOrString instanceof URI ? uriOrString : URI.parse(uriOrString);
         const label = this.labelProvider.getName(uri);
         const description = this.getItemDescription(uri);
         const iconClasses = this.getItemIconClasses(uri);
@@ -322,7 +322,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private getItemDescription(uri: URI): string {
-        const resourcePathLabel = this.labelProvider.getLongName(uri.parent);
+        const resourcePathLabel = this.labelProvider.getLongName(Uri.dirname(uri));
         const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
 
         // Display the path normally if outside any workspace root.
@@ -333,9 +333,9 @@ export class QuickFileOpenService implements QuickAccessProvider {
         // Compute the multi-root label for the resource.
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
             const rootLabel = this.labelProvider.getName(rootUri);
-            return rootUri.path.toString() === uri.parent.path.toString() ? `${rootLabel}` : `${rootLabel} • ${resourcePathLabel}`;
+            return Uri.isEqual(rootUri, Uri.dirname(uri)) ? `${rootLabel}` : `${rootLabel} • ${resourcePathLabel}`;
         } else {
-            return rootUri.toString() === uri.parent.toString() ? '' : resourcePathLabel;
+            return Uri.isEqual(rootUri, Uri.dirname(uri)) ? '' : resourcePathLabel;
         }
     }
 

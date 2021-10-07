@@ -19,7 +19,6 @@ import * as nsfw from '@theia/core/shared/nsfw';
 import * as paths from 'path';
 import { IMinimatch, Minimatch } from 'minimatch';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import {
     FileChangeType,
     FileSystemWatcherClient,
@@ -30,6 +29,8 @@ import { FileChangeCollection } from '../file-change-collection';
 import { setInterval, clearInterval } from 'timers';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -85,7 +86,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
 
     async watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
         const watcherId = this.watcherSequence++;
-        const basePath = FileUri.fsPath(uri);
+        const basePath = Uri.fsPath(uri);
         this.debug('Starting watching:', basePath);
         const toDisposeWatcher = new DisposableCollection();
         this.watchers.set(watcherId, toDisposeWatcher);
@@ -207,7 +208,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             return;
         }
 
-        const uri = FileUri.create(path).toString();
+        const uri = URI.file(path).toString();
         this.changes.push({ uri, type });
 
         this.fireDidFilesChanged();

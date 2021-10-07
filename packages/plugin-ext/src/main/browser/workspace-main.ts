@@ -21,7 +21,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -266,7 +266,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     async $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void> {
-        await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(root => new URI(root)));
+        await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(root => URI.parse(root)));
     }
 
 }

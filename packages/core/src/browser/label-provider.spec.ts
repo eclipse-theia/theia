@@ -15,42 +15,42 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import { URI } from 'vscode-uri';
 import { DefaultUriLabelProviderContribution, URIIconReference } from './label-provider';
-import URI from '../common/uri';
 
 describe('DefaultUriLabelProviderContribution', function (): void {
 
     it('should return a short name', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
-        const shortName = prov.getName(new URI('file:///tmp/hello/you.txt'));
+        const shortName = prov.getName(URI.parse('file:///tmp/hello/you.txt'));
 
         expect(shortName).eq('you.txt');
     });
 
     it('should return a long name', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
-        const longName = prov.getLongName(new URI('file:///tmp/hello/you.txt'));
+        const longName = prov.getLongName(URI.parse('file:///tmp/hello/you.txt'));
 
         expect(longName).eq('/tmp/hello/you.txt');
     });
 
     it('should return icon class for something that seems to be a file', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
-        const icon = prov.getIcon(new URI('file:///tmp/hello/you.txt'));
+        const icon = prov.getIcon(URI.parse('file:///tmp/hello/you.txt'));
 
         expect(icon).eq('text-icon medium-blue theia-file-icons-js');
     });
 
     it('should return file icon class for something that seems to be a directory', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
-        const icon = prov.getIcon(new URI('file:///tmp/hello'));
+        const icon = prov.getIcon(URI.parse('file:///tmp/hello'));
 
         expect(icon).eq(prov.defaultFileIcon);
     });
 
     it('should return folder icon class for something that is a directory', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
-        const icon = prov.getIcon(URIIconReference.create('folder', new URI('file:///tmp/hello')));
+        const icon = prov.getIcon(URIIconReference.create('folder', URI.parse('file:///tmp/hello')));
 
         expect(icon).eq(prov.defaultFolderIcon);
     });

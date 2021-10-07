@@ -16,9 +16,9 @@
 
 import * as temp from 'temp';
 import { expect } from 'chai';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitFileStatus } from '../common';
 import { createGit } from './test/binding-helper';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 /* eslint-disable no-unused-expressions */
 
@@ -36,7 +36,7 @@ describe('git-slow', async function (): Promise<void> {
             this.timeout(50000);
 
             const root = track.mkdirSync('diff-slow-rename');
-            const localUri = FileUri.create(root).toString();
+            const localUri = URI.file(root).toString();
             const repository = { localUri };
 
             const git = await createGit();

@@ -17,7 +17,7 @@
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MaybePromise } from '@theia/core/lib/common/types';
@@ -46,7 +46,7 @@ export class MonacoLanguages implements LanguageService {
     @postConstruct()
     protected init(): void {
         for (const uri of this.problemManager.getUris()) {
-            this.updateMarkers(new URI(uri));
+            this.updateMarkers(URI.parse(uri));
         }
         this.problemManager.onDidChangeMarkers(uri => this.updateMarkers(uri));
     }

@@ -19,9 +19,10 @@ import path = require('path');
 import os = require('os');
 import express = require('@theia/core/shared/express');
 import fs = require('@theia/core/shared/fs-extra');
-import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { injectable } from '@theia/core/shared/inversify';
 import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class NodeFileUploadService implements BackendApplicationContribution {
@@ -62,7 +63,7 @@ export class NodeFileUploadService implements BackendApplicationContribution {
             return;
         }
         try {
-            const target = FileUri.fsPath(fields.uri);
+            const target = Uri.fsPath(fields.uri);
             await fs.move(request.file.path, target);
             response.status(200).send(target); // ok
         } catch (error) {

@@ -22,13 +22,14 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { Path } from '@theia/core';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
@@ -102,8 +103,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (!domain) {
             return true;
         }
-        const resourcePath = new URI(resourceUri).path;
-        return domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+        const resourcePath = URI.parse(resourceUri).path;
+        return domain.some(uri => Path.relativity(URI.parse(uri).path, resourcePath) >= 0);
     }
 
     getPreferences(resourceUri?: string): { [key: string]: any } {

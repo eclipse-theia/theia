@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ScmFileChangeLabelProvider } from '@theia/scm-extra/lib/browser/scm-file-change-label-provider';
@@ -83,9 +83,9 @@ export class GitDiffHeaderWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected getRepositoryLabel(uri: string): string | undefined {
-        const repository = this.scmService.findRepository(new URI(uri));
+        const repository = this.scmService.findRepository(URI.parse(uri));
         const isSelectedRepo = this.scmService.selectedRepository && repository && this.scmService.selectedRepository.provider.rootUri === repository.provider.rootUri;
-        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.provider.rootUri)) : undefined;
+        return repository && !isSelectedRepo ? this.labelProvider.getLongName(URI.parse(repository.provider.rootUri)) : undefined;
     }
 
     protected renderPathHeader(): React.ReactNode {
@@ -101,7 +101,7 @@ export class GitDiffHeaderWidget extends ReactWidget implements StatefulWidget {
             if (path.length > 0) {
                 return '/' + path;
             } else {
-                return this.labelProvider.getLongName(new URI(this.options.uri));
+                return this.labelProvider.getLongName(URI.parse(this.options.uri));
             }
         }
         return null;

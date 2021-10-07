@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
+import { URI } from 'vscode-uri';
 import { SelectionService } from '.';
 import { MaybeArray } from './types';
-import URI from './uri';
 import { UriAwareCommandHandler, UriCommandHandler } from './uri-command-handler';
 
 const expect = chai.expect;
@@ -33,8 +33,8 @@ const mockHandler: CommandHandlerMock = {
     lastCall: []
 };
 const selectedURIs = [
-    new URI('/foo'),
-    new URI('/bar'),
+    URI.file('/foo'),
+    URI.file('/bar'),
 ];
 const mockSelectionService = {
     selection: selectedURIs.map(uri => ({ uri }))
@@ -47,12 +47,12 @@ describe('URI-Aware Command Handlers', () => {
 
     describe('UriAwareCommandHandler', () => {
         it('getUri returns the first argument if it is a URI (single)', () => {
-            const args = [new URI('/passed/in'), 'some', 'other', 'args'];
+            const args = [URI.file('/passed/in'), 'some', 'other', 'args'];
             const output = UriAwareCommandHandler.MonoSelect(mockSelectionService, mockHandler)['getUri'](...args);
             expect(output).equals(args[0]);
         });
         it('getUri returns the first argument if it is a URI (multi)', () => {
-            const args = [[new URI('/passed/in')], 'some', 'other', 'args'];
+            const args = [[URI.file('/passed/in')], 'some', 'other', 'args'];
             const output = UriAwareCommandHandler.MultiSelect(mockSelectionService, mockHandler)['getUri'](...args);
             expect(output).equals(args[0]);
         });
@@ -67,12 +67,12 @@ describe('URI-Aware Command Handlers', () => {
             expect(output).deep.equals(selectedURIs);
         });
         it('calls the handler with the same args if the first argument if it is a URI (single)', () => {
-            const args = [new URI('/passed/in'), 'some', 'other', 'args'];
+            const args = [URI.file('/passed/in'), 'some', 'other', 'args'];
             UriAwareCommandHandler.MonoSelect(mockSelectionService, mockHandler)['execute'](...args);
             expect(mockHandler.lastCall).deep.equals(args);
         });
         it('calls the handler with the same args if the first argument if it is a URI (multi)', () => {
-            const args = [[new URI('/passed/in')], 'some', 'other', 'args'];
+            const args = [[URI.file('/passed/in')], 'some', 'other', 'args'];
             UriAwareCommandHandler.MultiSelect(mockSelectionService, mockHandler)['execute'](...args);
             expect(mockHandler.lastCall).deep.equals(args);
         });

@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable, named, postConstruct } from 'inversify';
+import { URI } from 'vscode-uri';
 import { ContributionProvider, Prioritizeable, Emitter, Event } from '../../common';
-import URI from '../../common/uri';
 import { Coordinate } from '../context-menu-renderer';
 import { BreadcrumbPopupContainer, BreadcrumbPopupContainerFactory } from './breadcrumb-popup-container';
 import { BreadcrumbsContribution, Styles, Breadcrumb } from './breadcrumbs-constants';

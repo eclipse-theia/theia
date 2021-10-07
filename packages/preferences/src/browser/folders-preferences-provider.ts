@@ -17,12 +17,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { Path } from '@theia/core';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
@@ -208,7 +209,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         if (!resourceUri) {
             return [];
         }
-        const resourcePath = new URI(resourceUri).path;
+        const resourcePath = URI.parse(resourceUri).path;
         let folder: Readonly<{ relativity: number, uri?: string }> = { relativity: Number.MAX_SAFE_INTEGER };
         const providers = new Map<string, FolderPreferenceProvider[]>();
         for (const provider of this.providers.values()) {
@@ -218,7 +219,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
             providers.set(uri, folderProviders);
 
             // in case we have nested folders mounted as workspace roots, select the innermost enclosing folder
-            const relativity = provider.folderUri.path.relativity(resourcePath);
+            const relativity = Path.relativity(provider.folderUri.path, resourcePath);
             if (relativity >= 0 && folder.relativity > relativity) {
                 folder = { relativity, uri };
             }

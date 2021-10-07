@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
@@ -27,7 +27,7 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { MenuPath } from '@theia/core/lib/common';
+import { MenuPath, Uri } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
@@ -290,7 +290,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
      */
     async getRegistryLink(path = ''): Promise<URI> {
         const uri = await this.environment.getRegistryUri();
-        return uri.resolve('extension/' + this.id.replace('.', '/')).resolve(path);
+        return Uri.joinPath(uri, 'extension/' + this.id.replace('.', '/'), path);
     }
 
     async serialize(): Promise<string> {
@@ -527,7 +527,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         const href = node.getAttribute('href');
         if (href && !href.startsWith('#')) {
             event.preventDefault();
-            this.props.extension.doOpen(new URI(href));
+            this.props.extension.doOpen(URI.parse(href));
         }
     };
 
@@ -555,7 +555,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         const extension = this.props.extension;
         const homepage = extension.publishedBy && extension.publishedBy.homepage;
         if (homepage) {
-            extension.doOpen(new URI(homepage));
+            extension.doOpen(URI.parse(homepage));
         }
     };
     readonly openAverageRating = async (e: React.MouseEvent) => {
@@ -572,7 +572,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
 
         const extension = this.props.extension;
         if (extension.repository) {
-            extension.doOpen(new URI(extension.repository));
+            extension.doOpen(URI.parse(extension.repository));
         }
     };
     readonly openLicense = (e: React.MouseEvent) => {
@@ -582,7 +582,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         const extension = this.props.extension;
         const licenseUrl = extension.licenseUrl;
         if (licenseUrl) {
-            extension.doOpen(new URI(licenseUrl));
+            extension.doOpen(URI.parse(licenseUrl));
         }
     };
 }

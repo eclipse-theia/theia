@@ -24,10 +24,10 @@ import * as Ajv from 'ajv';
 import debounce = require('p-debounce');
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
+import { InMemoryResources, deepClone, Emitter, Uri } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskServer } from '../common';
@@ -57,7 +57,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
 
-    protected readonly uri = new URI(taskSchemaId);
+    protected readonly uri = URI.parse(taskSchemaId);
 
     @postConstruct()
     protected init(): void {
@@ -78,7 +78,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
         context.registerSchema({
-            fileMatch: ['tasks.json', UserStorageUri.resolve('tasks.json').toString()],
+            fileMatch: ['tasks.json', Uri.joinPath(UserStorageUri, 'tasks.json').toString()],
             url: this.uri.toString()
         });
         this.workspaceService.updateSchema('tasks', { $ref: this.uri.toString() });

@@ -19,7 +19,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Schemes } from '../../common/uri-components';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Reference } from '@theia/core/lib/common/reference';
 
 @injectable()

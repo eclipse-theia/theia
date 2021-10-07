@@ -20,6 +20,7 @@ describe('Navigator', function () {
 
     const { assert } = chai;
 
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { DirNode, FileNode } = require('@theia/filesystem/lib/browser/file-tree/file-tree');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
@@ -32,8 +33,8 @@ describe('Navigator', function () {
     const navigatorContribution = container.get(FileNavigatorContribution);
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
-    const fileUri = rootUri.resolve('.test/nested/source/text.txt');
-    const targetUri = rootUri.resolve('.test/target');
+    const fileUri = Uri.joinPath(rootUri, '.test/nested/source/text.txt');
+    const targetUri = Uri.joinPath(rootUri, '.test/target');
 
     beforeEach(async () => {
         await fileService.create(fileUri, 'foo', { fromUserGesture: false, overwrite: true });
@@ -41,7 +42,7 @@ describe('Navigator', function () {
     });
 
     afterEach(async () => {
-        await fileService.delete(targetUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
+        await fileService.delete(Uri.dirname(targetUri), { fromUserGesture: false, useTrash: false, recursive: true });
     });
 
     /** @type {Array<['copy' | 'move', boolean]>} */
@@ -61,7 +62,7 @@ describe('Navigator', function () {
                 const navigator = await navigatorContribution.openView({ reveal: true });
                 await navigator.model.refresh();
 
-                const sourceUri = fileType === 'file' ? fileUri : fileUri.parent;
+                const sourceUri = fileType === 'file' ? fileUri : Uri.dirname(fileUri);
                 const sourceNode = await navigator.model.revealFile(sourceUri);
                 if (!ExpectedNodeType.is(sourceNode)) {
                     return assert.isTrue(ExpectedNodeType.is(sourceNode));

@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { TabBar, Widget, Title } from '@theia/core/shared/@phosphor/widgets';
 import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider, StatefulWidget, codicon } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { PreferenceScopeCommandManager } from '../util/preference-scope-command-manager';
 import { Preference, PreferenceMenus } from '../util/preference-types';
@@ -215,8 +215,8 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
 
     protected setFolderTitleProperties(multipleFolderRootsAreAvailable: boolean): void {
         this.folderTitle.iconClass = multipleFolderRootsAreAvailable ? FOLDER_DROPDOWN_ICON_CLASSNAME : '';
-        if (this.currentSelection.scope === FOLDER_TAB_INDEX) {
-            this.folderTitle.label = this.labelProvider.getName(new URI(this.currentSelection.uri));
+        if (this.currentSelection.scope === FOLDER_TAB_INDEX && this.currentSelection.uri) {
+            this.folderTitle.label = this.labelProvider.getName(URI.parse(this.currentSelection.uri));
             this.folderTitle.dataset = this.toDataSet(this.currentSelection);
             this.folderTitle.className = multipleFolderRootsAreAvailable ? SELECTED_FOLDER_DROPDOWN_CLASSNAME : SINGLE_FOLDER_TAB_CLASSNAME;
         } else {

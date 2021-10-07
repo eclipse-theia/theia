@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { LabelProvider, BreadcrumbsService, Widget, TreeNode, OpenerService, open, SelectableTreeNode, BreadcrumbsContribution, Breadcrumb } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { OutlineViewService } from './outline-view-service';
 import { OutlineSymbolInformationNode, OutlineViewWidget } from './outline-view-widget';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';

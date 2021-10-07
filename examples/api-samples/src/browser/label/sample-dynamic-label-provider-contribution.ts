@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DefaultUriLabelProviderContribution, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter, Event } from '@theia/core';
 
 @injectable()
@@ -55,7 +55,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
     }
 
     protected getUri(element: URI): URI {
-        return new URI(element.toString());
+        return element;
     }
 
     getIcon(element: URI): string {

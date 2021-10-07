@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { URI } from 'vscode-uri';
 import { CommandService } from '../common/command';
-import URI from '../common/uri';
 import { OpenHandler } from './opener-service';
 
 @injectable()

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -190,7 +190,7 @@ export class MonacoEditorProvider {
                 });
             }
         }
-        const uri = new URI(monacoUri.toString());
+        const uri = typeof monacoUri === 'string' ? URI.parse(monacoUri) : monacoUri;
         try {
             await open(this.openerService, uri, options);
             return true;
@@ -333,7 +333,7 @@ export class MonacoEditorProvider {
             options,
             override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
-            const originalFileUri = original.withoutQuery().withScheme('file').toString();
+            const originalFileUri = original.with({ scheme: 'file', query: '' }).toString();
             if (event.affects(originalFileUri, editor.document.languageId)) {
                 this.updateMonacoDiffEditorOptions(editor, event, originalFileUri);
             }

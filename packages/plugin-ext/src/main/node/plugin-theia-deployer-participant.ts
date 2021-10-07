@@ -26,7 +26,7 @@ export class PluginTheiaDeployerParticipant implements PluginDeployerParticipant
 
     async onWillStart(context: PluginDeployerStartContext): Promise<void> {
         const pluginsDirUri = await this.environments.getPluginsDirUri();
-        context.userEntries.push(pluginsDirUri.withScheme('local-dir').toString());
+        context.userEntries.push(pluginsDirUri.with({ scheme: 'local-dir' }).toString());
     }
 
 }

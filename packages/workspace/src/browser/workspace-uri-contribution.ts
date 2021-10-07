@@ -15,10 +15,11 @@
  ********************************************************************************/
 
 import { DefaultUriLabelProviderContribution, URIIconReference } from '@theia/core/lib/browser/label-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
@@ -66,7 +67,8 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
             return URIIconReference.create(element.isDirectory ? 'folder' : 'file', element.resource);
         }
         const uri = this.getUri(element);
-        if (uri && this.workspaceVariable.getWorkspaceRootUri(uri)?.isEqual(uri)) {
+        const rootUri = uri && this.workspaceVariable.getWorkspaceRootUri(uri);
+        if (uri && rootUri && Uri.isEqual(rootUri, uri)) {
             return URIIconReference.create('folder', uri);
         }
         return element;

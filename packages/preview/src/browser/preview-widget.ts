@@ -16,10 +16,10 @@
 
 import throttle = require('@theia/core/shared/lodash.throttle');
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Resource, MaybePromise } from '@theia/core';
+import { Resource, MaybePromise, Uri } from '@theia/core';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener, codicon } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -62,7 +62,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.uri = this.resource.uri;
         this.id = 'preview-widget-' + widgetCounter++;
         this.title.closable = true;
-        this.title.label = `Preview ${this.uri.path.base}`;
+        this.title.label = `Preview ${Uri.basename(this.uri)}`;
         this.title.caption = this.title.label;
         this.title.closable = true;
 
@@ -150,7 +150,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         return this.uri;
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.uri.withPath(resourceUri.path);
+        return this.uri.with({ path: resourceUri.path });
     }
 
     onActivateRequest(msg: Message): void {

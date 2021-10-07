@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { NavigatableWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { BaseWidget, codicon, PanelLayout } from '@theia/core/lib/browser/widgets/widget';
@@ -54,7 +54,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
     }
 
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.options.uri && this.options.uri.withPath(resourceUri.path);
+        return this.options.uri && this.options.uri.with({ path: resourceUri.path });
     }
 
     protected props: MiniBrowserProps | undefined;

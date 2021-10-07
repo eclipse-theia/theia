@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import URI from '../../common/uri';
+import { URI } from 'vscode-uri';
 import { Resource } from '../resource';
 
 @injectable()
@@ -25,7 +25,7 @@ export class MockResourceProvider {
 
     async get(uri: URI): Promise<Resource> {
         return {
-            uri: new URI(''),
+            uri: URI.from({ scheme: 'none' }),
             dispose(): void { },
             readContents(options?: { encoding?: string }): Promise<string> { return Promise.resolve(''); }
         };

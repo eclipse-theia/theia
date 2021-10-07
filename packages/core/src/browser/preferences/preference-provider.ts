@@ -19,11 +19,11 @@
 import debounce = require('p-debounce');
 import { injectable, inject } from 'inversify';
 import { JSONExt, JSONValue } from '@phosphor/coreutils';
-import URI from '../../common/uri';
-import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, Path } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { URI } from 'vscode-uri';
 
 export interface PreferenceProviderDataChange {
     readonly preferenceName: string;
@@ -35,9 +35,9 @@ export interface PreferenceProviderDataChange {
 
 export namespace PreferenceProviderDataChange {
     export function affects(change: PreferenceProviderDataChange, resourceUri?: string): boolean {
-        const resourcePath = resourceUri && new URI(resourceUri).path;
+        const resourcePath = resourceUri && URI.parse(resourceUri).path;
         const domain = change.domain;
-        return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+        return !resourcePath || !domain || domain.some(uri => Path.relativity(URI.parse(uri).path, resourcePath) >= 0);
     }
 }
 

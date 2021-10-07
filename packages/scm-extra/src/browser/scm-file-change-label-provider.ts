@@ -17,8 +17,9 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ScmFileChangeNode } from './scm-file-change-node';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class ScmFileChangeLabelProvider implements LabelProviderContribution {
@@ -34,19 +35,19 @@ export class ScmFileChangeLabelProvider implements LabelProviderContribution {
     }
 
     getIcon(node: ScmFileChangeNode): string {
-        return this.labelProvider.getIcon(new URI(node.fileChange.uri));
+        return this.labelProvider.getIcon(URI.parse(node.fileChange.uri));
     }
 
     getName(node: ScmFileChangeNode): string {
-        return this.labelProvider.getName(new URI(node.fileChange.uri));
+        return this.labelProvider.getName(URI.parse(node.fileChange.uri));
     }
 
     getDescription(node: ScmFileChangeNode): string {
-        return this.relativePath(new URI(node.fileChange.uri).parent);
+        return this.relativePath(Uri.dirname(URI.parse(node.fileChange.uri)));
     }
 
     affects(node: ScmFileChangeNode, event: DidChangeLabelEvent): boolean {
-        return event.affects(new URI(node.fileChange.uri));
+        return event.affects(URI.parse(node.fileChange.uri));
     }
 
     getCaption(node: ScmFileChangeNode): string {
@@ -54,11 +55,10 @@ export class ScmFileChangeLabelProvider implements LabelProviderContribution {
     }
 
     relativePath(uri: URI | string): string {
-        const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
+        const parsedUri = typeof uri === 'string' ? URI.parse(uri) : uri;
         const repo = this.scmService.findRepository(parsedUri);
         if (repo) {
-            const repositoryUri = new URI(repo.provider.rootUri);
-            const relativePath = repositoryUri.relative(parsedUri);
+            const relativePath = Path.relative(repo.provider.rootUri, parsedUri.path);
             if (relativePath) {
                 return relativePath.toString();
             }

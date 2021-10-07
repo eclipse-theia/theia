@@ -17,7 +17,7 @@
 import * as jsoncparser from 'jsonc-parser';
 import debounce = require('p-debounce');
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { PreferenceScope, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';

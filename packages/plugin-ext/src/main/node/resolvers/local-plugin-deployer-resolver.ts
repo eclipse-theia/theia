@@ -18,8 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { FileUri } from '@theia/core/lib/node';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export abstract class LocalPluginDeployerResolver implements PluginDeployerResolver {
@@ -43,11 +42,11 @@ export abstract class LocalPluginDeployerResolver implements PluginDeployerResol
     private async resolveLocalPluginPath(
         pluginResolverContext: PluginDeployerResolverContext,
         expectedScheme: string): Promise<string | null> {
-        const localUri = new URI(pluginResolverContext.getOriginId());
+        const localUri = URI.parse(pluginResolverContext.getOriginId());
         if (localUri.scheme !== expectedScheme) {
             return null;
         }
-        let fsPath = FileUri.fsPath(localUri);
+        let fsPath = localUri.fsPath;
         if (!path.isAbsolute(fsPath)) {
             fsPath = path.resolve(process.cwd(), fsPath);
         }

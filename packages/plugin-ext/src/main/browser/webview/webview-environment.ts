@@ -18,9 +18,10 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WebviewExternalEndpoint } from '../../common/webview-protocol';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class WebviewEnvironment {
@@ -61,11 +62,11 @@ export class WebviewEnvironment {
     }
 
     async resourceRoot(): Promise<string> {
-        return (await this.externalEndpointUrl()).resolve('theia-resource/{{resource}}').toString(true);
+        return Uri.joinPath(await this.externalEndpointUrl(), 'theia-resource/{{resource}}').toString(true);
     }
 
     async cspSource(): Promise<string> {
-        return (await this.externalEndpointUrl()).withPath('').withQuery('').withFragment('').toString(true).replace('{{uuid}}', '*');
+        return (await this.externalEndpointUrl()).with({ path: '', query: '', fragment: '' }).toString(true).replace('{{uuid}}', '*');
     }
 
     protected async getHostPattern(): Promise<string> {

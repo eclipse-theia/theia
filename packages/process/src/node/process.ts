@@ -17,8 +17,8 @@
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
-import { FileUri } from '@theia/core/lib/node';
 import { isOSX, isWindows } from '@theia/core';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Readable, Writable } from 'stream';
 import { exec } from 'child_process';
 import * as fs from 'fs';
@@ -207,9 +207,9 @@ export abstract class Process {
             return new Promise<string>(resolve => {
                 exec('lsof -p ' + this.pid + ' | grep cwd', (error, stdout, stderr) => {
                     if (stdout !== '') {
-                        resolve(FileUri.create(stdout.substring(stdout.indexOf('/'), stdout.length - 1)).toString());
+                        resolve(URI.file(stdout.substring(stdout.indexOf('/'), stdout.length - 1)).toString());
                     } else {
-                        resolve(FileUri.create(this.initialCwd).toString());
+                        resolve(URI.file(this.initialCwd).toString());
                     }
                 });
             });
@@ -217,15 +217,15 @@ export abstract class Process {
             return new Promise<string>(resolve => {
                 fs.readlink('/proc/' + this.pid + '/cwd', (err, linkedstr) => {
                     if (err || !linkedstr) {
-                        resolve(FileUri.create(this.initialCwd).toString());
+                        resolve(URI.file(this.initialCwd).toString());
                     } else {
-                        resolve(FileUri.create(linkedstr).toString());
+                        resolve(URI.file(linkedstr).toString());
                     }
                 });
             });
         } else {
             return new Promise<string>(resolve => {
-                resolve(FileUri.create(this.initialCwd).toString());
+                resolve(URI.file(this.initialCwd).toString());
             });
         }
     }

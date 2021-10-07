@@ -16,8 +16,9 @@
 
 // TODO get rid of util files, replace with methods in a responsible class
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { Uri } from '@theia/core';
 
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
@@ -27,5 +28,5 @@ export const VSCODE_EXT = 'code-workspace';
  */
 export async function getTemporaryWorkspaceFileUri(envVariableServer: EnvVariablesServer): Promise<URI> {
     const configDirUri = await envVariableServer.getConfigDirUri();
-    return new URI(configDirUri).resolve(`Untitled.${THEIA_EXT}`);
+    return Uri.joinPath(URI.parse(configDirUri), `Untitled.${THEIA_EXT}`);
 }

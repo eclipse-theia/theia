@@ -20,7 +20,7 @@ import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, App
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
 import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
@@ -114,7 +114,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.refreshOnRepositoryChange();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refreshOnRepositoryChange()));
         this.toDispose.push(this.labelProvider.onDidChange(event => {
-            if (this.scmNodes.some(node => ScmFileChangeNode.is(node) && event.affects(new URI(node.fileChange.uri)))) {
+            if (this.scmNodes.some(node => ScmFileChangeNode.is(node) && event.affects(URI.parse(node.fileChange.uri)))) {
                 this.update();
             }
         }));
@@ -188,7 +188,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.resetState(options);
         if (options && options.uri) {
             try {
-                const fileStat = await this.fileService.resolve(new URI(options.uri));
+                const fileStat = await this.fileService.resolve(URI.parse(options.uri));
                 this.singleFileMode = !fileStat.isDirectory;
             } catch {
                 this.singleFileMode = true;
@@ -331,8 +331,8 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const relPathEncoded = this.scmLabelProvider.relativePath(this.options.uri);
                     const relPath = relPathEncoded ? `${decodeURIComponent(relPathEncoded)}` : '';
 
-                    const repo = this.scmService.findRepository(new URI(this.options.uri));
-                    const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
+                    const repo = this.scmService.findRepository(URI.parse(this.options.uri));
+                    const repoName = repo ? `${this.labelProvider.getName(URI.parse(repo.provider.rootUri))}` : '';
 
                     const relPathAndRepo = [relPath, repoName].filter(Boolean).join(' in ');
                     path = ` for ${relPathAndRepo}`;

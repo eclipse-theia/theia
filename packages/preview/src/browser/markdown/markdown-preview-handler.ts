@@ -15,10 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { OpenerService } from '@theia/core/lib/browser';
-import { isOSX } from '@theia/core/lib/common';
-import { Path } from '@theia/core/lib/common/path';
+import { isOSX, Path, Uri } from '@theia/core/lib/common';
 
 import * as hljs from 'highlight.js';
 import * as markdownit from 'markdown-it';
@@ -44,8 +43,8 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     canHandle(uri: URI): number {
         return uri.scheme === 'file'
             && (
-                uri.path.ext.toLowerCase() === '.md' ||
-                uri.path.ext.toLowerCase() === '.markdown'
+                Uri.extname(uri).toLowerCase() === '.md' ||
+                Uri.extname(uri).toLowerCase() === '.markdown'
             ) ? 500 : 0;
     }
 
@@ -97,13 +96,16 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     }
 
     protected resolveUri(link: string, uri: URI, preview: boolean): URI {
-        const linkURI = new URI(link);
+        const linkURI = URI.parse(link);
         // URIs are always absolute, check link as a path whether it is relative
-        if (!new Path(link).isAbsolute && linkURI.scheme === uri.scheme &&
+        if (!Path.isAbsolute(link) && linkURI.scheme === uri.scheme &&
             (!linkURI.authority || linkURI.authority === uri.authority)) {
             // get a relative path from URI by trimming leading `/`
             const relativePath = linkURI.path.toString().substring(1);
-            const resolvedUri = uri.parent.resolve(relativePath).withFragment(linkURI.fragment).withQuery(linkURI.query);
+            const resolvedUri = Uri.joinPath(Uri.dirname(uri), relativePath).with({
+                fragment: linkURI.fragment,
+                query: linkURI.query
+            });
             return preview ? PreviewUri.encode(resolvedUri) : resolvedUri;
         }
         return linkURI;

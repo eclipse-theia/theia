@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import URI from '../common/uri';
+import { URI } from 'vscode-uri';
 import { MaybePromise } from '../common/types';
 import { Endpoint } from './endpoint';
 
@@ -40,7 +40,11 @@ export class ExternalUriService {
 
     protected toRemoteUrl(uri: URI, localhost: { address: string, port: number }): URI {
         const host = this.toRemoteHost(localhost);
-        return new Endpoint({ host }).getRestUrl().withPath(uri.path).withFragment(uri.fragment).withQuery(uri.query);
+        return new Endpoint({ host }).getRestUrl().with({
+            path: uri.path,
+            fragment: uri.fragment,
+            query: uri.fragment
+        });
     }
 
     protected toRemoteHost(localhost: { address: string, port: number }): string {

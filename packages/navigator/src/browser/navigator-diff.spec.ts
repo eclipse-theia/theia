@@ -29,14 +29,13 @@ import * as path from 'path';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { SelectionService, ILogger } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import URI from '@theia/core/lib/common/uri';
 import { OpenerService } from '@theia/core/lib/browser';
 import { MockOpenerService } from '@theia/core/lib/browser/test/mock-opener-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 disableJSDOM();
 
@@ -64,7 +63,7 @@ describe('NavigatorDiff', () => {
     it('should allow a valid first file to be added', async () => {
         const diff = testContainer.get(NavigatorDiff);
         testContainer.get(SelectionService).selection = [{
-            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/testFileA.json')).toString())
+            uri: URI.file(path.resolve(__dirname, '../../test-resources/testFileA.json'))
         }];
 
         const result = await diff.addFirstComparisonFile();
@@ -74,7 +73,7 @@ describe('NavigatorDiff', () => {
     it('should reject invalid file when added', async () => {
         const diff = testContainer.get(NavigatorDiff);
         testContainer.get(SelectionService).selection = [{
-            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/nonExistentFile.json')).toString())
+            uri: URI.file(path.resolve(__dirname, '../../test-resources/nonExistentFile.json'))
         }];
 
         const result = await diff.addFirstComparisonFile();
@@ -84,13 +83,13 @@ describe('NavigatorDiff', () => {
     it('should run comparison when second file is added', done => {
         const diff = testContainer.get(NavigatorDiff);
         testContainer.get(SelectionService).selection = [{
-            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/testFileA.json')).toString())
+            uri: URI.file(path.resolve(__dirname, '../../test-resources/testFileA.json'))
         }];
 
         diff.addFirstComparisonFile()
             .then(result => {
                 testContainer.get(SelectionService).selection = [{
-                    uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/testFileB.json')).toString())
+                    uri: URI.file(path.resolve(__dirname, '../../test-resources/testFileB.json'))
                 }];
 
                 diff.compareFiles()
@@ -104,7 +103,7 @@ describe('NavigatorDiff', () => {
     it('should fail to run comparison if first file not added', done => {
         const diff = testContainer.get(NavigatorDiff);
         testContainer.get(SelectionService).selection = [{
-            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/testFileA.json')).toString())
+            uri: URI.file(path.resolve(__dirname, '../../test-resources/testFileA.json'))
         }];
 
         diff.compareFiles()

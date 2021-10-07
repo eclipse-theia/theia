@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileOperation } from '@theia/filesystem/lib/common/files';
 import { NavigatableWidget, Saveable, SaveableSource, SaveOptions } from '@theia/core/lib/browser';
 import { Reference } from '@theia/core/lib/common/reference';
@@ -80,7 +80,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     }
 
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.resource.withPath(resourceUri.path);
+        return this.resource.with({ path: resourceUri.path });
     }
 
     storeState(): CustomEditorWidget.State {
@@ -92,7 +92,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
 
     restoreState(oldState: CustomEditorWidget.State): void {
         const { strResource } = oldState;
-        this.resource = new URI(strResource);
+        this.resource = URI.parse(strResource);
         super.restoreState(oldState);
     }
 

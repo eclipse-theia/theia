@@ -19,13 +19,14 @@
  *--------------------------------------------------------------------------------------------*/
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/platform/files/common/files.ts
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Event } from '@theia/core/lib/common/event';
 import { Disposable as IDisposable } from '@theia/core/lib/common/disposable';
 import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Uri } from '@theia/core';
 
 export const enum FileOperation {
     CREATE,
@@ -95,7 +96,7 @@ export class FileChangesEvent {
 
             // For deleted also return true when deleted folder is parent of target path
             if (change.type === FileChangeType.DELETED) {
-                return resource.isEqualOrParent(change.resource);
+                return Uri.isEqualOrParent(resource, change.resource);
             }
 
             return resource.toString() === change.resource.toString();
@@ -273,7 +274,7 @@ export namespace FileStat {
     export function fromStat(resource: URI, stat: Stat | { type: FileType } & Partial<Stat>): FileStat {
         return {
             resource,
-            name: resource.path.base || resource.path.toString(),
+            name: Uri.basename(resource) || resource.path.toString(),
             isFile: (stat.type & FileType.File) !== 0,
             isDirectory: (stat.type & FileType.Directory) !== 0,
             isSymbolicLink: (stat.type & FileType.SymbolicLink) !== 0,
@@ -284,10 +285,10 @@ export namespace FileStat {
         };
     }
     export function dir(resource: string | URI, stat?: Partial<Omit<Stat, 'type'>>): FileStat {
-        return fromStat(resource instanceof URI ? resource : new URI(resource), { type: FileType.Directory, ...stat });
+        return fromStat(resource instanceof URI ? resource : URI.parse(resource), { type: FileType.Directory, ...stat });
     }
     export function file(resource: string | URI, stat?: Partial<Omit<Stat, 'type'>>): FileStat {
-        return fromStat(resource instanceof URI ? resource : new URI(resource), { type: FileType.File, ...stat });
+        return fromStat(resource instanceof URI ? resource : URI.parse(resource), { type: FileType.File, ...stat });
     }
 }
 

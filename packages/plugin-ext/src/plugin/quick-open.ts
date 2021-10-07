@@ -48,8 +48,8 @@ export function getIconUris(iconPath: theia.QuickInputButton['iconPath']): { dar
     const light = getLightIconUri(iconPath as URI | { light: URI; dark: URI; });
     // Tolerate strings: https://github.com/microsoft/vscode/issues/110432#issuecomment-726144556
     return {
-        dark: typeof dark === 'string' ? URI.file(dark) : dark,
-        light: typeof light === 'string' ? URI.file(light) : light
+        dark: typeof dark === 'string' ? URI.parse(dark) : dark,
+        light: typeof light === 'string' ? URI.parse(light) : light
     };
 }
 

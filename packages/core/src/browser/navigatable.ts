@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '../common/uri';
 import { WidgetOpenHandler, WidgetOpenerOptions } from './widget-open-handler';
 import { NavigatableWidget, NavigatableWidgetOptions } from './navigatable-types';
+import { URI } from 'vscode-uri';
+import { Path } from '../common/uri-utils';
 export * from './navigatable-types';
 
 export abstract class NavigatableWidgetOpenHandler<W extends NavigatableWidget> extends WidgetOpenHandler<W> {
@@ -30,10 +31,13 @@ export abstract class NavigatableWidgetOpenHandler<W extends NavigatableWidget> 
 
     protected serializeUri(uri: URI): string {
         if (uri.scheme === 'file') {
-            return uri.withoutFragment().normalizePath().toString();
-        } else {
-            return uri.withoutFragment().toString();
+            uri = uri.with({
+                path: Path.normalize(uri.path)
+            });
         }
+        return uri.with({
+            fragment: ''
+        }).toString();
     }
 
 }

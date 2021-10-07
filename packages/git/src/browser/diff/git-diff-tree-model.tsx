@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmTreeModel } from '@theia/scm/lib/browser/scm-tree-model';
 import { Git, GitFileStatus } from '../../common';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
@@ -46,7 +46,7 @@ export class GitDiffTreeModel extends ScmTreeModel {
     async setContent(options: GitDiffTreeModel.Options): Promise<void> {
         const { rootUri, diffOptions } = options;
         this.toDisposeOnContentChange.dispose();
-        const scmRepository = this.scmService.findRepository(new URI(rootUri));
+        const scmRepository = this.scmService.findRepository(URI.parse(rootUri));
         if (scmRepository && scmRepository.provider.id === 'git') {
             const provider = scmRepository.provider as GitScmProvider;
             this.provider = provider;
@@ -65,11 +65,11 @@ export class GitDiffTreeModel extends ScmTreeModel {
 
         const gitFileChanges = await this.git.diff(repository, this.diffOptions);
 
-        const group: ScmResourceGroup = { id: 'changes', label: 'Files Changed', resources: [], provider, dispose: () => {} };
+        const group: ScmResourceGroup = { id: 'changes', label: 'Files Changed', resources: [], provider, dispose: () => { } };
         const resources: ScmResource[] = gitFileChanges
             .map(change => new GitScmFileChange(change, provider, this.diffOptions.range))
             .map(change => ({
-                sourceUri: new URI(change.uri),
+                sourceUri: URI.parse(change.uri),
                 decorations: {
                     letter: GitFileStatus.toAbbreviation(change.gitFileChange.status, true),
                     color: GitFileStatus.getColor(change.gitFileChange.status, true),
@@ -79,7 +79,7 @@ export class GitDiffTreeModel extends ScmTreeModel {
                 group,
             }));
         const changesGroup = { ...group, resources };
-        this._groups = [ changesGroup ];
+        this._groups = [changesGroup];
 
         this.root = this.createTree();
     }

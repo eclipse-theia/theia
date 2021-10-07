@@ -16,9 +16,10 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { TreeModelImpl, TreeNode, TreeProps, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser/tree';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmProvider, ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
 import { ScmContextKeyService } from './scm-context-key-service';
+import { Path, Uri } from '@theia/core';
 
 export const ScmTreeModelProps = Symbol('ScmTreeModelProps');
 export interface ScmTreeModelProps {
@@ -155,7 +156,7 @@ export abstract class ScmTreeModel extends TreeModelImpl {
                 const rootUri = group.provider.rootUri;
                 if (rootUri) {
                     const resourcePaths = sortedResources.map(resource => {
-                        const relativePath = new URI(rootUri).relative(resource.sourceUri);
+                        const relativePath = Path.relative(rootUri, resource.sourceUri.path);
                         const pathParts = relativePath ? relativePath.toString().split('/') : [];
                         return { resource, pathParts };
                     });
@@ -242,7 +243,7 @@ export abstract class ScmTreeModel extends TreeModelImpl {
         if (ScmFileChangeFolderNode.is(parent)) {
             parentPath = parent.sourceUri;
         }
-        const sourceUri = new URI(parentPath).resolve(nodeRelativePath);
+        const sourceUri = Uri.joinPath(URI.parse(parentPath), nodeRelativePath);
 
         const defaultExpansion = this.props.defaultExpansion ? (this.props.defaultExpansion === 'expanded') : true;
         const id = `${parent.groupId}:${String(sourceUri)}`;

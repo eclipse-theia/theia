@@ -28,8 +28,9 @@ FrontendApplicationConfigProvider.set({
 
 import * as chai from 'chai';
 import { expect } from 'chai';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MarkdownPreviewHandler } from './markdown-preview-handler';
+import { Uri } from '@theia/core';
 
 disableJSDOM();
 
@@ -42,7 +43,7 @@ before(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (previewHandler as any).linkNormalizer = {
         normalizeLink: (documentUri: URI, link: string) =>
-            'endpoint/' + documentUri.parent.resolve(link).path.toString().substr(1)
+            'endpoint/' + Uri.joinPath(Uri.dirname(documentUri), link).path.toString().substr(1)
     };
 });
 
@@ -115,16 +116,16 @@ describe('markdown-preview-handler', () => {
     });
 
     it('can handle \'.md\' files', () => {
-        expect(previewHandler.canHandle(new URI('a.md'))).greaterThan(0);
+        expect(previewHandler.canHandle(URI.parse('a.md'))).greaterThan(0);
     });
 
     it('can handle \'.markdown\' files', () => {
-        expect(previewHandler.canHandle(new URI('a.markdown'))).greaterThan(0);
+        expect(previewHandler.canHandle(URI.parse('a.markdown'))).greaterThan(0);
     });
 });
 
 async function assertRenderedContent(source: string, expectation: string): Promise<void> {
-    const contentElement = previewHandler.renderContent({ content: source, originUri: new URI('file:///workspace/DEMO.md') });
+    const contentElement = previewHandler.renderContent({ content: source, originUri: URI.file('/workspace/DEMO.md') });
     expect(contentElement.innerHTML).equals(expectation);
 }
 

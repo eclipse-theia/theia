@@ -32,7 +32,7 @@ import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PreferencesWidget } from './views/preference-widget';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';

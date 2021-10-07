@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject, decorate } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
 import { OpenerService, open, WidgetOpenMode, ApplicationShell, PreferenceService } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
@@ -67,7 +66,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     }
 
     async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
-        const uri = new URI(input.resource.toString());
+        const uri = input.resource;
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);
         const widget = await open(this.openerService, uri, openerOptions);
         const editorWidget = await this.findEditorWidgetByUri(widget, uri.toString());

@@ -25,7 +25,7 @@ import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
 import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { RecursivePartial } from '@theia/core/lib/common/types';
@@ -37,6 +37,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { Path, Uri } from '@theia/core';
 
 export interface PluginIconDefinition {
     iconPath: string;
@@ -130,8 +131,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     @postConstruct()
     protected init(): void {
         Object.assign(this, this.definition);
-        this.packageRootUri = new URI(this.packageUri);
-        this.locationUri = new URI(this.uri).parent;
+        this.packageRootUri = URI.parse(this.packageUri);
+        this.locationUri = Uri.dirname(URI.parse(this.uri));
     }
 
     dispose(): void {
@@ -194,7 +195,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             this.icons.clear();
         }));
 
-        const uri = new URI(this.uri);
+        const uri = URI.parse(this.uri);
         const result = await this.fileService.read(uri);
         const content = result.value;
         const json: RecursivePartial<PluginIconThemeDocument> = jsoncparser.parse(content, undefined, { disallowComments: false });
@@ -331,8 +332,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         if (!iconPath) {
             return undefined;
         }
-        const iconUri = this.locationUri.resolve(iconPath);
-        const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
+        const iconUri = Uri.joinPath(this.locationUri, iconPath);
+        const relativePath = Path.relative(this.packageRootUri.path, iconUri.path.normalize());
         return relativePath && `url('${new Endpoint({
             path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
         }).getRestUrl().toString()}')`;
@@ -512,14 +513,15 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const name = this.labelProvider.getName(element);
         const classNames = this.fileNameIcon(name);
         if (uri) {
-            const parsedURI = new URI(uri);
-            const isRoot = this.workspaceService.getWorkspaceRootUri(new URI(uri))?.isEqual(parsedURI);
+            const parsedURI = URI.parse(uri);
+            const rootURI = this.workspaceService.getWorkspaceRootUri(URI.parse(uri));
+            const isRoot = rootURI && Uri.isEqual(rootURI, parsedURI);
             if (isRoot) {
                 classNames.unshift(this.rootFolderIcon);
             } else {
                 classNames.unshift(this.fileIcon);
             }
-            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(parsedURI['codeUri']);
+            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(parsedURI);
             classNames.push(this.languageIcon(language.languageIdentifier.language));
         }
         return classNames;
@@ -548,7 +550,7 @@ export class PluginIconThemeService implements LabelProviderContribution {
         const packageUri = plugin.metadata.model.packageUri;
         const iconTheme = this.iconThemeFactory({
             id: contribution.id,
-            label: contribution.label || new URI(contribution.uri).path.base,
+            label: contribution.label || Uri.basename(URI.parse(contribution.uri)),
             description: contribution.description,
             uri: contribution.uri,
             uiTheme: contribution.uiTheme,

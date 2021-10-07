@@ -30,7 +30,7 @@ import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
@@ -61,7 +61,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
-    lastCwd = new URI();
+    lastCwd = URI.from({ scheme: '' });
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -304,11 +304,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.terminalService.getById(this.id)) {
             return this.shellTerminalServer.getCwdURI(this.terminalId)
                 .then(cwdUrl => {
-                    this.lastCwd = new URI(cwdUrl);
+                    this.lastCwd = URI.parse(cwdUrl);
                     return this.lastCwd;
                 }).catch(() => this.lastCwd);
         }
-        return Promise.resolve(new URI());
+        return Promise.resolve(URI.parse(''));
     }
 
     get processId(): Promise<number> {

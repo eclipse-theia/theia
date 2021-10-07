@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DockPanel } from '@theia/core/shared/@phosphor/widgets';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-types';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -78,7 +78,7 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     protected async openEditor(node: TreeNode, keepFocus: boolean = false): Promise<void> {
         if (TypeHierarchyTree.Node.is(node)) {
             const { selectionRange, uri } = node.item;
-            const editorWidget = await this.editorManager.open(new URI(uri), {
+            const editorWidget = await this.editorManager.open(URI.parse(uri), {
                 mode: keepFocus ? 'reveal' : 'activate',
                 selection: Range.create(selectionRange.start, selectionRange.end)
             });

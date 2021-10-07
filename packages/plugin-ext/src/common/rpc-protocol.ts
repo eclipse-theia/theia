@@ -25,8 +25,7 @@
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Range, Position } from '../plugin/types-impl';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -94,7 +93,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     constructor(connection: MessageConnection, transformations?: {
         replacer?: (key: string | undefined, value: any) => any,
-        reviver?: (key: string | undefined, value: any) =>  any
+        reviver?: (key: string | undefined, value: any) => any
     }) {
         this.toDispose.push(
             this.multiplexer = new RPCMultiplexer(connection)
@@ -392,12 +391,7 @@ export namespace ObjectsTransferrer {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function replacer(key: string | undefined, value: any): any {
-        if (value instanceof URI) {
-            return {
-                $type: SerializedObjectType.THEIA_URI,
-                data: value.toString()
-            } as SerializedObject;
-        } else if (value instanceof Range) {
+        if (value instanceof Range) {
             const range = value as Range;
             const serializedValue = {
                 start: {
@@ -416,7 +410,7 @@ export namespace ObjectsTransferrer {
         } else if (value && value['$mid'] === 1) {
             // Given value is VSCode URI
             // We cannot use instanceof here because VSCode URI has toJSON method which is invoked before this replacer.
-            const uri = VSCodeURI.revive(value);
+            const uri = URI.revive(value);
             return {
                 $type: SerializedObjectType.VSCODE_URI,
                 data: uri.toString()
@@ -436,10 +430,8 @@ export namespace ObjectsTransferrer {
     export function reviver(key: string | undefined, value: any): any {
         if (isSerializedObject(value)) {
             switch (value.$type) {
-                case SerializedObjectType.THEIA_URI:
-                    return new URI(value.data);
                 case SerializedObjectType.VSCODE_URI:
-                    return VSCodeURI.parse(value.data);
+                    return URI.parse(value.data);
                 case SerializedObjectType.THEIA_RANGE:
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const obj: any = JSON.parse(value.data);
@@ -463,7 +455,6 @@ interface SerializedObject {
 }
 
 enum SerializedObjectType {
-    THEIA_URI,
     VSCODE_URI,
     THEIA_RANGE,
     TEXT_BUFFER

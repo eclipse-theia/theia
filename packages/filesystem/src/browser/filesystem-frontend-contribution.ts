@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
-import { MaybePromise, SelectionService, isCancelled } from '@theia/core/lib/common';
+import { MaybePromise, SelectionService, isCancelled, Path, Uri } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import {
     FrontendApplicationContribution, ApplicationShell,
@@ -258,8 +258,8 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         if (event.operation !== FileOperation.MOVE) {
             return undefined;
         }
-        const path = event.source?.relative(resourceUri);
-        const targetUri = path && event.target.resolve(path);
+        const path = event.source && Path.relative(event.source.path, resourceUri.path);
+        const targetUri = path !== undefined && Uri.joinPath(event.target, path) || undefined;
         return targetUri && widget.createMoveToUri(targetUri);
     }
 

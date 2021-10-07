@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LocationService } from './location-service';
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
-import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter, Uri } from '@theia/core/lib/common';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogModel } from '../file-dialog/file-dialog-model';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -42,7 +42,7 @@ class ResolvedDirectoryCache {
     constructor(protected readonly fileService: FileService) { }
 
     tryResolveChildDirectories(inputAsURI: URI): string[] | undefined {
-        const parentDirectory = inputAsURI.path.dir.toString();
+        const parentDirectory = Uri.dirname(inputAsURI).toString();
         const cachedDirectories = this.cachedDirectories.get(parentDirectory);
         const pendingDirectories = this.pendingResolvedDirectories.get(parentDirectory);
         if (cachedDirectories) {
@@ -54,7 +54,7 @@ class ResolvedDirectoryCache {
     }
 
     protected async createResolutionPromise(directoryToResolve: string): Promise<void> {
-        return this.fileService.resolve(new URI(directoryToResolve)).then(({ children }) => {
+        return this.fileService.resolve(URI.file(directoryToResolve)).then(({ children }) => {
             if (children) {
                 const childDirectories = children.filter(child => child.isDirectory)
                     .map(directory => `${directory.resource.path}/`);
@@ -115,7 +115,7 @@ export class LocationListRenderer extends ReactRenderer {
     @postConstruct()
     async init(): Promise<void> {
         const homeDirWithPrefix = await this.variablesServer.getHomeDirUri();
-        this.homeDir = (new URI(homeDirWithPrefix)).path.toString();
+        this.homeDir = URI.file(homeDirWithPrefix).path.toString();
     }
 
     render(): void {
@@ -128,7 +128,7 @@ export class LocationListRenderer extends ReactRenderer {
         this.toDisposeOnNewCache.push(this.directoryCache.onDirectoryDidResolve(({ parent, children }) => {
             if (this.locationTextInput) {
                 const expandedPath = Path.untildify(this.locationTextInput.value, this.homeDir);
-                const inputParent = (new URI(expandedPath)).path.dir.toString();
+                const inputParent = Uri.dirname(URI.file(expandedPath)).toString();
                 if (inputParent === parent) {
                     this.tryRenderFirstMatch(this.locationTextInput, children);
                 }
@@ -234,7 +234,7 @@ export class LocationListRenderer extends ReactRenderer {
      */
     protected collectLocations(): LocationListRenderer.Location[] {
         const location = this.service.location;
-        const locations: LocationListRenderer.Location[] = (!!location ? location.allLocations : []).map(uri => ({ uri }));
+        const locations: LocationListRenderer.Location[] = (!!location ? Uri.allLocations(location) : []).map(uri => ({ uri }));
         if (this._drives) {
             const drives = this._drives.map(uri => ({ uri, isDrive: true }));
             // `URI.allLocations` returns with the URI without the trailing slash unlike `FileUri.create(fsPath)`.
@@ -248,7 +248,7 @@ export class LocationListRenderer extends ReactRenderer {
                 // Ignore drives which are already discovered as a location based on the current model root URI.
                 if (index === -1) {
                     // Make sure, it does not have the trailing slash.
-                    locations.push({ uri: new URI(toUriString(drive.uri)), isDrive: true });
+                    locations.push({ uri: URI.parse(toUriString(drive.uri)), isDrive: true });
                 } else {
                     // This is necessary for Windows to be able to show `/e:/` as a drive and `c:` as "non-drive" in the same way.
                     // `URI.path.toString()` Vs. `URI.displayName` behaves a bit differently on Windows.
@@ -279,14 +279,14 @@ export class LocationListRenderer extends ReactRenderer {
     protected renderLocation(location: LocationListRenderer.Location): React.ReactNode {
         const { uri, isDrive } = location;
         const value = uri.toString();
-        return <option value={value} key={uri.toString()}>{isDrive ? uri.path.toString() : uri.displayName}</option>;
+        return <option value={value} key={uri.toString()}>{isDrive ? uri.path.toString() : Uri.displayName(uri)}</option>;
     }
 
     protected onLocationChanged(e: React.ChangeEvent<HTMLSelectElement>): void {
         const locationList = this.locationList;
         if (locationList) {
             const value = locationList.value;
-            const uri = new URI(value);
+            const uri = URI.file(value);
             this.trySetNewLocation(uri);
             e.preventDefault();
             e.stopPropagation();
@@ -310,7 +310,7 @@ export class LocationListRenderer extends ReactRenderer {
             const { value } = inputElement;
             if ((value.startsWith('/') || value.startsWith('~/')) && value.slice(-1) !== '/') {
                 const expandedPath = Path.untildify(value, this.homeDir);
-                const valueAsURI = new URI(expandedPath);
+                const valueAsURI = URI.file(expandedPath);
                 const autocompleteDirectories = this.directoryCache.tryResolveChildDirectories(valueAsURI);
                 if (autocompleteDirectories) {
                     this.tryRenderFirstMatch(inputElement, autocompleteDirectories);
@@ -341,7 +341,7 @@ export class LocationListRenderer extends ReactRenderer {
                 // expand '~' if present and remove extra whitespace and any trailing slashes or periods.
                 const sanitizedInput = locationTextInput.value.trim().replace(/[\/\\.]*$/, '');
                 const untildifiedInput = Path.untildify(sanitizedInput, this.homeDir);
-                const uri = new URI(untildifiedInput);
+                const uri = URI.file(untildifiedInput);
                 this.trySetNewLocation(uri);
                 this.toggleToSelectInput();
             }

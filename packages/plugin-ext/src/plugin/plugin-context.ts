@@ -20,6 +20,7 @@
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
@@ -136,7 +137,6 @@ import {
     SemanticTokensEdit,
     ColorThemeKind,
     SourceControlInputBoxValidationType,
-    URI,
     FileDecoration,
     ExtensionMode
 } from './types-impl';
@@ -867,7 +867,7 @@ export function createAPIFactory(
             Selection: Selection,
             ViewColumn: ViewColumn,
             TextEditorSelectionChangeKind: TextEditorSelectionChangeKind,
-            Uri: URI,
+            Uri: URI as any,
             EndOfLine,
             TextEditorRevealType,
             TextEditorCursorStyle,

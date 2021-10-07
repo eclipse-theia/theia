@@ -21,7 +21,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { visit } from 'jsonc-parser';
-import URI from '@theia/core/lib/common/uri';
+import { Uri } from '@theia/core';
 
 monaco.languages.register({
     id: 'jsonc',
@@ -35,7 +35,7 @@ monaco.languages.register({
 
 monaco.languages.registerDocumentSymbolProvider('jsonc', {
     provideDocumentSymbols(model: monaco.editor.ITextModel): monaco.languages.DocumentSymbol[] {
-        if (new URI(model.uri.toString()).path.base !== 'launch.json') {
+        if (Uri.basename(model.uri) !== 'launch.json') {
             return [];
         }
         const children: monaco.languages.DocumentSymbol[] = [];

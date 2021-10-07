@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorWidgetFactory } from '@theia/editor/lib/browser/editor-widget-factory';
 import { injectable } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from './editor-preview-widget';
@@ -30,7 +30,7 @@ export class EditorPreviewWidgetFactory extends EditorWidgetFactory {
     readonly id = EditorPreviewWidgetFactory.ID;
 
     async createWidget(options: EditorPreviewOptions): Promise<EditorPreviewWidget> {
-        const uri = new URI(options.uri);
+        const uri = URI.parse(options.uri);
         const editor = await this.createEditor(uri, options) as EditorPreviewWidget;
         if (options.preview) {
             editor.initializePreview();

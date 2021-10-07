@@ -21,6 +21,7 @@ describe('Undo, Redo and Select All', function () {
     const { assert } = chai;
 
     const { animationFrame } = require('@theia/core/lib/browser/browser');
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -42,7 +43,7 @@ describe('Undo, Redo and Select All', function () {
     const scmContribution = container.get(ScmContribution);
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
-    const fileUri = rootUri.resolve('webpack.config.js');
+    const fileUri = Uri.joinPath(rootUri, 'webpack.config.js');
 
     const toTearDown = new DisposableCollection();
 

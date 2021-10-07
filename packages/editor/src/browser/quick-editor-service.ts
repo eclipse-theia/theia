@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CancellationToken } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { CancellationToken, Uri } from '@theia/core/lib/common';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { QuickAccessProvider, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
@@ -72,7 +72,7 @@ export class QuickEditorService implements QuickAccessContribution, QuickAccessP
     }
 
     protected toItem(uri: URI): QuickPickItem {
-        const description = this.labelProvider.getLongName(uri.parent);
+        const description = this.labelProvider.getLongName(Uri.dirname(uri));
         const icon = this.labelProvider.getIcon(uri);
         const iconClasses = icon === '' ? undefined : [icon + ' file-icon'];
 

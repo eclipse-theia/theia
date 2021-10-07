@@ -16,10 +16,10 @@
 
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 export class DebugSourceData {
     readonly raw: DebugProtocol.Source;
@@ -63,7 +63,7 @@ export class DebugSource extends DebugSourceData {
 
     get name(): string {
         if (this.inMemory) {
-            return this.raw.name || this.uri.path.base || this.uri.path.toString();
+            return this.raw.name || Uri.basename(this.uri) || this.uri.path;
         }
         return this.labelProvider.getName(this.uri);
     }
@@ -79,14 +79,18 @@ export class DebugSource extends DebugSourceData {
     static SCHEME_PATTERN = /^[a-zA-Z][a-zA-Z0-9\+\-\.]+:/;
     static toUri(raw: DebugProtocol.Source): URI {
         if (raw.sourceReference && raw.sourceReference > 0) {
-            return new URI().withScheme(DebugSource.SCHEME).withPath(raw.name!).withQuery(String(raw.sourceReference));
+            return URI.from({
+                scheme: DebugSource.SCHEME,
+                path: raw.name!,
+                query: String(raw.sourceReference)
+            });
         }
         if (!raw.path) {
             throw new Error('Unrecognized source type: ' + JSON.stringify(raw));
         }
         if (raw.path.match(DebugSource.SCHEME_PATTERN)) {
-            return new URI(raw.path);
+            return URI.parse(raw.path);
         }
-        return new URI(Uri.file(raw.path));
+        return URI.file(raw.path);
     }
 }

@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { CancellationToken, Event } from '../../common';
-import URI from '../../common/uri';
 import { KeySequence } from '../keyboard';
 import * as fuzzy from 'fuzzy';
+import { URI } from 'vscode-uri';
 
 export interface Match {
     start: number;

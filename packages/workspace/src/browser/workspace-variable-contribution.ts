@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core/lib/common/path';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class WorkspaceVariableContribution implements VariableContribution {
@@ -108,7 +108,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The basename of the currently opened file',
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && uri.path.base;
+                return uri && Uri.basename(uri);
             }
         });
         variables.registerVariable({
@@ -116,7 +116,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: "The currently opened file's name without extension",
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && uri.path.name;
+                return uri && Uri.name(uri);
             }
         });
         variables.registerVariable({
@@ -124,7 +124,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: "The name of the currently opened file's directory",
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && uri.path.dir.toString();
+                return uri && Uri.dirname(uri).toString();
             }
         });
         variables.registerVariable({
@@ -132,7 +132,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The extension of the currently opened file',
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && uri.path.ext;
+                return uri && Uri.extname(uri);
             }
         });
     }
@@ -142,7 +142,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             name: variable.name,
             description: variable.description,
             resolve: (context, workspaceRootName) => {
-                const workspaceRoot = workspaceRootName && this.workspaceService.tryGetRoots().find(r => r.resource.path.name === workspaceRootName);
+                const workspaceRoot = workspaceRootName && this.workspaceService.tryGetRoots().find(r => Uri.name(r.resource) === workspaceRootName);
                 return variable.resolve(workspaceRoot ? workspaceRoot.resource : context);
             }
         });
@@ -167,7 +167,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The name of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.displayName;
+                return uri && Uri.displayName(uri);
             }
         }));
         variables.registerVariable(scoped({
@@ -175,7 +175,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The name of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.displayName;
+                return uri && Uri.displayName(uri);
             }
         }));
         variables.registerVariable(scoped({
@@ -200,7 +200,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             resolve: (context?: URI) => {
                 const uri = this.getResourceUri();
                 const relativePath = uri && this.getWorkspaceRelativePath(uri, context);
-                return relativePath && new Path(relativePath).dir.toString();
+                return relativePath && Uri.dirname(URI.parse(relativePath)).toString();
             }
         }));
     }
@@ -215,7 +215,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     getWorkspaceRelativePath(uri: URI, context?: URI): string | undefined {
         const workspaceRootUri = this.getWorkspaceRootUri(context || uri);
-        const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
+        const path = workspaceRootUri && Path.relative(workspaceRootUri.path, uri.path);
         return path && path.toString();
     }
 

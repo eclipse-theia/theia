@@ -18,12 +18,13 @@ import * as nsfw from '@theia/core/shared/nsfw';
 import { join } from 'path';
 import { promises as fsp } from 'fs';
 import { IMinimatch, Minimatch } from 'minimatch';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import {
     FileChangeType, FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions
 } from '../../common/filesystem-watcher-protocol';
 import { FileChangeCollection } from '../file-change-collection';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 export interface NsfwWatcherOptions {
     ignored: IMinimatch[]
@@ -297,7 +298,7 @@ export class NsfwWatcher {
 
     protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, path: string): void {
         if (!this.isIgnored(path)) {
-            const uri = FileUri.create(path).toString();
+            const uri = URI.file(path).toString();
             changes.push({ type, uri });
         }
     }
@@ -422,7 +423,7 @@ export class NsfwFileSystemWatcherService implements FileSystemWatcherService {
         const watcherKey = this.getWatcherKey(uri, resolvedOptions);
         let watcher = this.watchers.get(watcherKey);
         if (watcher === undefined) {
-            const fsPath = FileUri.fsPath(uri);
+            const fsPath = Uri.fsPath(uri);
             watcher = this.createWatcher(clientId, fsPath, resolvedOptions);
             watcher.whenDisposed.then(() => this.watchers.delete(watcherKey));
             this.watchers.set(watcherKey, watcher);

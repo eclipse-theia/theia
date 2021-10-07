@@ -16,11 +16,12 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { v4 } from 'uuid';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Location } from '@theia/editor/lib/browser/editor';
 import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
 import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class TypeHierarchyTree extends TreeImpl {
@@ -157,7 +158,7 @@ export namespace TypeHierarchyTree {
 
         function decorationData(item: TypeHierarchyItem, direction: TypeHierarchyDirection): TreeDecoration.Data {
             const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
-                data: new URI(item.uri).displayName,
+                data: Uri.displayName(URI.parse(item.uri)),
                 fontData: {
                     color: 'var(--theia-descriptionForeground)',
                 }

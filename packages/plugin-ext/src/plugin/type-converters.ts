@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-types';
-import { URI } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto

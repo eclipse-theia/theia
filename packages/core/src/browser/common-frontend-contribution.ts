@@ -31,7 +31,6 @@ import { ApplicationShell } from './shell/application-shell';
 import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
-import URI from '../common/uri';
 import { ContextKeyService } from './context-key-service';
 import { OS, isOSX, isWindows } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
@@ -55,6 +54,7 @@ import { FormatType } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from './nls';
+import { URI } from 'vscode-uri';
 
 export namespace CommonMenus {
 
@@ -349,7 +349,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         // Global settings
         this.encodingRegistry.registerOverride({
             encoding: UTF8,
-            parent: new URI(configDirUri)
+            parent: URI.parse(configDirUri)
         });
 
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);

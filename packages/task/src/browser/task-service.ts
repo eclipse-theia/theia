@@ -21,7 +21,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -244,7 +244,7 @@ export class TaskService implements TaskConfigurationClient {
                                 }
                             }
                         }
-                        const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
+                        const uri = URI.from({ scheme: problem.resource.scheme, path: problem.resource.path });
                         const document = this.monacoWorkspace.getTextDocument(uri.toString());
                         if (problem.description.applyTo === ApplyToKind.openDocuments && !!document ||
                             problem.description.applyTo === ApplyToKind.closedDocuments && !document ||
@@ -263,7 +263,7 @@ export class TaskService implements TaskConfigurationClient {
                             }
                         }
                     } else { // should have received an event for finding the "background task begins" pattern
-                        uris.forEach(uriString => this.problemManager.setMarkers(new URI(uriString), problem.description.owner, []));
+                        uris.forEach(uriString => this.problemManager.setMarkers(URI.parse(uriString), problem.description.owner, []));
                     }
                 });
             }
@@ -329,7 +329,7 @@ export class TaskService implements TaskConfigurationClient {
     protected getTaskIdentifier(taskConfig: TaskConfiguration): string {
         const taskName = this.taskNameResolver.resolve(taskConfig);
         const sourceStrUri = this.taskSourceResolver.resolve(taskConfig);
-        return `${taskName} (${this.labelProvider.getName(new URI(sourceStrUri))})`;
+        return `${taskName} (${this.labelProvider.getName(URI.parse(sourceStrUri))})`;
     }
 
     /**
@@ -545,7 +545,7 @@ export class TaskService implements TaskConfigurationClient {
                     // write the selected matcher (or the decision of "never parse") into the `tasks.json`
                     this.updateTaskConfiguration(token, task, { problemMatcher: matcherNames });
                 } else if (selected.value?.learnMore) { // user wants to learn more about parsing task output
-                    open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
+                    open(this.openerService, URI.parse('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
                 // else, continue the task with no parser
             } else { // do not start the task in case that the user did not select any item from the list
@@ -924,7 +924,7 @@ export class TaskService implements TaskConfigurationClient {
                     const scope = task._scope || task._source;
                     if (resolvedMatcher.filePrefix && scope) {
                         const options = {
-                            context: new URI(scope).withScheme('file'),
+                            context: URI.parse(scope),
                             configurationSection: 'tasks'
                         };
                         const resolvedPrefix = await this.variableResolverService.resolve(resolvedMatcher.filePrefix, options);
@@ -961,7 +961,7 @@ export class TaskService implements TaskConfigurationClient {
                     const existingMarkers = this.problemManager.findMarkers({ owner: matcher.owner });
                     const uris = new Set<string>();
                     existingMarkers.forEach(marker => uris.add(marker.uri));
-                    uris.forEach(uriString => this.problemManager.setMarkers(new URI(uriString), matcher.owner, []));
+                    uris.forEach(uriString => this.problemManager.setMarkers(URI.parse(uriString), matcher.owner, []));
                 }
             }
         }

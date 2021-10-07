@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 
 @injectable()
@@ -33,7 +33,7 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
     }
 
     getLongName(uri: URI): string {
-        return this.labelProvider.getLongName(this.toFileUri(uri).withoutQuery().withoutFragment());
+        return this.labelProvider.getLongName(this.toFileUri(uri).with({ query: '', fragment: '' }));
     }
 
     getName(uri: URI): string {
@@ -46,11 +46,11 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
 
     affects(uri: URI, event: DidChangeLabelEvent): boolean {
         const fileUri = this.toFileUri(uri);
-        return event.affects(fileUri) || event.affects(fileUri.withoutQuery().withoutFragment());
+        return event.affects(fileUri) || event.affects(fileUri.with({ query: '', fragment: '' }));
     }
 
     protected toFileUri(uri: URI): URI {
-        return uri.withScheme('file');
+        return uri.with({ scheme: 'file' });
     }
 
     protected getTagSuffix(uri: URI): string {

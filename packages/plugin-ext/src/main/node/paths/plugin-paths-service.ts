@@ -15,13 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
 import { readdir, remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
-import { ILogger } from '@theia/core';
-import { FileUri } from '@theia/core/lib/node';
+import { ILogger, Uri } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
 import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
@@ -88,9 +87,9 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         } else {
             let stat;
             try {
-                stat = await fs.stat(FileUri.fsPath(workspaceUri));
+                stat = await fs.stat(Uri.fsPath(workspaceUri));
             } catch { /* no-op */ }
-            let displayName = new URI(workspaceUri).displayName;
+            let displayName = Uri.displayName(URI.parse(workspaceUri));
             if ((!stat || !stat.isDirectory()) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
                 displayName = displayName.slice(0, displayName.lastIndexOf('.'));
             }
@@ -132,12 +131,12 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
     private async getLogsDirPath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        return path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_LOGS_DIR);
+        return path.join(Uri.fsPath(configDirUri), PluginPaths.PLUGINS_LOGS_DIR);
     }
 
     private async getWorkspaceStorageDirPath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        return path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
+        return path.join(Uri.fsPath(configDirUri), PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
     }
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileChangeCollection } from './file-change-collection';
 import { FileChangeType } from '../common/files';
 
@@ -94,7 +94,7 @@ describe('FileChangeCollection', () => {
         const expectation = expectedTypes.map(type => typeAsString(type)).join(' + ');
         it(`${changes.map(type => typeAsString(type)).join(' + ')} => ${expectation}`, () => {
             const collection = new FileChangeCollection();
-            const uri = FileUri.create('/root/foo/bar.txt').toString();
+            const uri = URI.file('/root/foo/bar.txt').toString();
             for (const type of changes) {
                 collection.push({ uri, type });
             }

@@ -28,7 +28,6 @@ import { CustomEditorWidget } from './custom-editor-widget';
 import { Emitter } from '@theia/core';
 import { UriComponents } from '../../../common/uri-components';
 import { URI } from '@theia/core/shared/vscode-uri';
-import TheiaURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Reference } from '@theia/core/lib/common/reference';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -136,7 +135,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
 
                 if (capabilities.supportsMove) {
                     const onMoveCancelTokenSource = new CancellationTokenSource();
-                    widget.onMove(async (newResource: TheiaURI) => {
+                    widget.onMove(async (newResource: URI) => {
                         const oldModel = modelRef;
                         modelRef = await this.getOrCreateCustomEditorModel(modelType, newResource, viewType, onMoveCancelTokenSource.token);
                         this.proxy.$onMoveCustomEditor(identifier.id, URI.file(newResource.path.toString()), viewType);
@@ -174,7 +173,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
 
     protected async getOrCreateCustomEditorModel(
         modelType: CustomEditorModelType,
-        resource: TheiaURI,
+        resource: URI,
         viewType: string,
         cancellationToken: CancellationToken,
     ): Promise<Reference<CustomEditorModel>> {
@@ -197,7 +196,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
 
     protected async getCustomEditorModel(resourceComponents: UriComponents, viewType: string): Promise<MainCustomEditorModel> {
         const resource = URI.revive(resourceComponents);
-        const model = await this.customEditorService.models.get(new TheiaURI(resource), viewType);
+        const model = await this.customEditorService.models.get(resource, viewType);
         if (!model || !(model instanceof MainCustomEditorModel)) {
             throw new Error('Could not find model for custom editor');
         }
@@ -250,7 +249,7 @@ export interface CustomEditorModel extends Saveable, Disposable {
 
     revert(options?: Saveable.RevertOptions): Promise<void>;
     saveCustomEditor(options?: SaveOptions): Promise<void>;
-    saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void>;
+    saveCustomEditorAs(resource: URI, targetResource: URI, options?: SaveOptions): Promise<void>;
 }
 
 export class MainCustomEditorModel implements CustomEditorModel {
@@ -270,7 +269,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
     static async create(
         proxy: CustomEditorsExt,
         viewType: string,
-        resource: TheiaURI,
+        resource: URI,
         undoRedoService: UndoRedoService,
         fileService: FileService,
         editorPreferences: EditorPreferences,
@@ -283,7 +282,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
     constructor(
         private proxy: CustomEditorsExt,
         readonly viewType: string,
-        private readonly editorResource: TheiaURI,
+        private readonly editorResource: URI,
         private readonly editable: boolean,
         private readonly undoRedoService: UndoRedoService,
         private readonly fileService: FileService,
@@ -405,7 +404,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         }
     }
 
-    async saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void> {
+    async saveCustomEditorAs(resource: URI, targetResource: URI, options?: SaveOptions): Promise<void> {
         if (this.editable) {
             const source = new CancellationTokenSource();
             await this.proxy.$onSaveAs(this.resource, this.viewType, URI.file(targetResource.path.toString()), source.token);
@@ -492,7 +491,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
 
     static async create(
         viewType: string,
-        resource: TheiaURI,
+        resource: URI,
         editorModelService: EditorModelService,
         fileService: FileService
     ): Promise<CustomTextEditorModel> {
@@ -503,7 +502,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
 
     constructor(
         readonly viewType: string,
-        readonly editorResource: TheiaURI,
+        readonly editorResource: URI,
         private readonly model: Reference<MonacoEditorModel>,
         private readonly fileService: FileService
     ) {
@@ -548,7 +547,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
         return this.editorTextModel.save(options);
     }
 
-    async saveCustomEditorAs(resource: TheiaURI, targetResource: TheiaURI, options?: SaveOptions): Promise<void> {
+    async saveCustomEditorAs(resource: URI, targetResource: URI, options?: SaveOptions): Promise<void> {
         await this.saveCustomEditor(options);
         await this.fileService.copy(resource, targetResource, { overwrite: false });
     }

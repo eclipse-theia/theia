@@ -17,8 +17,8 @@
 import * as cp from 'child_process';
 import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
+import { Uri } from '@theia/core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -32,7 +32,7 @@ export class WindowsExternalTerminalService implements ExternalTerminalService {
     protected DEFAULT_TERMINAL_WINDOWS: string;
 
     async openTerminal(configuration: ExternalTerminalConfiguration, cwd: string): Promise<void> {
-        await this.spawnTerminal(configuration, FileUri.fsPath(cwd));
+        await this.spawnTerminal(configuration, Uri.fsPath(cwd));
     }
 
     async getDefaultExec(): Promise<string> {

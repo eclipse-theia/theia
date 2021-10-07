@@ -21,7 +21,8 @@ import { EditorOpenerOptions } from '../editor-manager';
 import { NavigationLocationUpdater } from './navigation-location-updater';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
 import { NavigationLocation, Range, ContentChangeLocation, RecentlyClosedEditor } from './navigation-location';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 /**
  * The navigation location service.
@@ -278,7 +279,7 @@ ${this.stack.map((location, i) => `${i}: ${JSON.stringify(NavigationLocation.toO
      * @param uri the uri of the editor that should be removed from the history.
      */
     removeClosedEditor(uri: URI): void {
-        this.recentlyClosedEditors = this.recentlyClosedEditors.filter(e => !uri.isEqual(e.uri));
+        this.recentlyClosedEditors = this.recentlyClosedEditors.filter(e => !Uri.isEqual(uri, e.uri));
     }
 
 }

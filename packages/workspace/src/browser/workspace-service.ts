@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
 import { DEFAULT_WINDOW_HASH, WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
@@ -23,7 +23,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, Uri, Path } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
@@ -140,7 +140,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            const workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            const workspaceUri = URI.parse(wpPath);
             let workspaceStat: FileStat | undefined;
             try {
                 workspaceStat = await this.fileService.resolve(workspaceUri);
@@ -428,7 +428,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         await this.updateWorkspace();
-        return toRemove.map(root => new URI(root));
+        return toRemove.map(root => URI.parse(root));
     }
 
     async getUntitledWorkspace(): Promise<URI> {
@@ -479,7 +479,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (uriStr.endsWith('/')) {
                 uriStr = uriStr.slice(0, -1);
             }
-            const normalizedUri = new URI(uriStr).normalizePath();
+            const normalizedUri = URI.parse(uriStr);
             return await this.fileService.resolve(normalizedUri);
         } catch (error) {
             return undefined;
@@ -533,7 +533,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             for (const root of this._roots) {
                 const uri = root.resource;
                 for (const path of paths) {
-                    const fileUri = uri.resolve(path);
+                    const fileUri = Uri.joinPath(uri, path);
                     const exists = await this.fileService.exists(fileUri);
                     if (exists) {
                         return exists;
@@ -604,7 +604,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             return;
         }
         const excludes = this.getExcludes(uriStr);
-        const watcher = this.fileService.watch(new URI(uriStr), {
+        const watcher = this.fileService.watch(URI.parse(uriStr), {
             recursive: true,
             excludes
         });
@@ -636,7 +636,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const rootUris: URI[] = [];
         for (const root of this.tryGetRoots()) {
             const rootUri = root.resource;
-            if (rootUri && rootUri.isEqualOrParent(uri)) {
+            if (rootUri && Uri.isEqualOrParent(rootUri, uri)) {
                 rootUris.push(rootUri);
             }
         }
@@ -657,7 +657,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Example: We should not try to read the contents of an .exe file.
      */
     protected isWorkspaceFile(fileStat: FileStat): boolean {
-        return fileStat.resource.path.ext === `.${THEIA_EXT}` || fileStat.resource.path.ext === `.${VSCODE_EXT}`;
+        return Uri.extname(fileStat.resource) === `.${THEIA_EXT}` || Uri.extname(fileStat.resource) === `.${VSCODE_EXT}`;
     }
 
     /**
@@ -715,10 +715,10 @@ export namespace WorkspaceData {
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
         const folderUris: string[] = [];
-        const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
+        const workspaceFileUri = URI.parse(workspaceFile ? workspaceFile.resource.toString() : '');
         for (const { path } of data.folders) {
-            const folderUri = new URI(path).withScheme('file');
-            const rel = workspaceFileUri.parent.relative(folderUri);
+            const folderUri = URI.parse(path);
+            const rel = Path.relative(Uri.dirname(workspaceFileUri).fsPath, folderUri.fsPath);
             if (rel) {
                 folderUris.push(rel.toString());
             } else {
@@ -736,7 +736,7 @@ export namespace WorkspaceData {
                 if (path.startsWith('file:///')) {
                     folders.push(path);
                 } else {
-                    folders.push(workspaceFile.resource.withScheme('file').parent.resolve(path).toString());
+                    folders.push(Uri.joinPath(Uri.dirname(workspaceFile.resource.with({ scheme: 'file' })), path).toString());
                 }
 
             }

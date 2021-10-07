@@ -16,7 +16,7 @@
 
 import { MaybePromise, Event } from '../../common';
 import { Disposable } from '../../../shared/vscode-languageserver-protocol';
-import URI from '../../common/uri';
+import { URI } from 'vscode-uri';
 
 export namespace Styles {
     export const BREADCRUMBS = 'theia-breadcrumbs';

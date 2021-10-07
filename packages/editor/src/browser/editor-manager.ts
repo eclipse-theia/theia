@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { RecursivePartial, Emitter, Event, MaybePromise } from '@theia/core/lib/common';
 import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';

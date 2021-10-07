@@ -40,7 +40,6 @@ import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
-import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
@@ -275,7 +274,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         }
         const className = classes.join(' ');
         const title = node.tooltip ||
-            (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
+            (node.resourceUri && this.labelProvider.getLongName(URI.parse(node.resourceUri)))
             || this.toNodeName(node);
         const attrs = this.decorateCaption(node, {
             className, id: node.id,

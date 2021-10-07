@@ -19,11 +19,11 @@ import { QuickPickItem, LabelProvider, QuickInputService } from '@theia/core/lib
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as moment from 'moment';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { Path } from '@theia/core/lib/common';
+import { Path, Uri } from '@theia/core/lib/common';
 
 @injectable()
 export class QuickOpenWorkspace {
@@ -43,7 +43,7 @@ export class QuickOpenWorkspace {
             this.envServer.getHomeDirUri(),
             this.workspaceService.getUntitledWorkspace()
         ]);
-        const home = new URI(homeDirUri).path.toString();
+        const home = URI.parse(homeDirUri).path.toString();
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push({
@@ -51,7 +51,7 @@ export class QuickOpenWorkspace {
             });
         }
         for (const workspace of workspaces) {
-            const uri = new URI(workspace);
+            const uri = URI.parse(workspace);
             let stat: FileStat | undefined;
             try {
                 stat = await this.fileService.resolve(uri);
@@ -69,12 +69,12 @@ export class QuickOpenWorkspace {
             this.items.push({
                 type: 'separator', label: `last modified ${moment(stat.mtime).fromNow()}`
             }, {
-                label: uri.path.base,
-                description: Path.tildify(uri.path.toString(), home),
+                label: Uri.basename(uri),
+                description: Path.tildify(uri.fsPath, home),
                 iconClasses,
                 execute: () => {
                     const current = this.workspaceService.workspace;
-                    const uriToOpen = new URI(workspace);
+                    const uriToOpen = URI.parse(workspace);
                     if ((current && current.resource.toString() !== workspace) || !current) {
                         this.workspaceService.open(uriToOpen);
                     }

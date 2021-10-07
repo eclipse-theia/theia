@@ -18,7 +18,6 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as temp from 'temp';
 import * as path from 'path';
 import { expect } from 'chai';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Git } from '../common/git';
 import { DugiteGit } from './dugite-git';
 import { Repository } from '../common';
@@ -26,6 +25,8 @@ import { initializeBindings } from './test/binding-helper';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { bindGit, bindRepositoryWatcher } from './git-backend-module';
 import { GitWatcherServer, GitStatusChangeEvent } from '../common/git-watcher';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 /* eslint-disable no-unused-expressions */
 
@@ -41,7 +42,7 @@ describe('git-watcher-slow', () => {
         this.timeout(40000);
 
         const root = track.mkdirSync('git-watcher-slow');
-        const localUri = FileUri.create(root).toString();
+        const localUri = URI.file(root).toString();
         const { container, bind } = initializeBindings();
         bindGit(bind);
         bindRepositoryWatcher(bind);
@@ -72,7 +73,7 @@ describe('git-watcher-slow', () => {
                     ignoredEvents--;
                     if (ignoredEvents === 0) {
                         // Once we consumed all the events we wanted to ignore, make the FS change.
-                        await fs.createFile(path.join(FileUri.fsPath(repository!.localUri), 'A.txt'));
+                        await fs.createFile(path.join(Uri.fsPath(repository!.localUri), 'A.txt'));
                         await sleep(6000);
                     }
                 } else {
@@ -92,7 +93,7 @@ describe('git-watcher-slow', () => {
 
         events.length = 0;
         // Revert the change we've made, and check for the notifications. Zero should be received.
-        await fs.unlink(path.join(FileUri.fsPath(repository!.localUri), 'A.txt'));
+        await fs.unlink(path.join(Uri.fsPath(repository!.localUri), 'A.txt'));
         await sleep(6000);
         expect(events).to.be.empty;
     });

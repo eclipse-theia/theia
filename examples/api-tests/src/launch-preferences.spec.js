@@ -36,6 +36,7 @@ describe('Launch Preferences', function () {
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
 
     const container = window.theia.container;
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
@@ -400,7 +401,7 @@ describe('Launch Preferences', function () {
             for (const name of ['settings', 'launch']) {
                 promises.push((async () => {
                     try {
-                        const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
+                        const reference = await textModelService.createModelReference(Uri.joinPath(rootUri, configPath, name + '.json'));
                         try {
                             if (!reference.object.valid) {
                                 return;
@@ -422,8 +423,8 @@ describe('Launch Preferences', function () {
         }
         return Promise.all([
             ...promises,
-            fileService.delete(rootUri.resolve('.theia'), { fromUserGesture: false, recursive: true }).catch(() => { }),
-            fileService.delete(rootUri.resolve('.vscode'), { fromUserGesture: false, recursive: true }).catch(() => { })
+            fileService.delete(Uri.joinPath(rootUri, '.theia'), { fromUserGesture: false, recursive: true }).catch(() => { }),
+            fileService.delete(Uri.joinPath(rootUri, '.vscode'), { fromUserGesture: false, recursive: true }).catch(() => { })
         ]);
     }
 
@@ -471,7 +472,7 @@ describe('Launch Preferences', function () {
                     for (const configPath of configPaths) {
                         promises.push((async () => {
                             try {
-                                const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
+                                const reference = await textModelService.createModelReference(Uri.joinPath(rootUri, configPath, name + '.json'));
                                 try {
                                     await workspace.applyBackgroundEdit(reference.object, [{
                                         text,

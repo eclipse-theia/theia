@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -163,7 +163,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
         }, this.readyDeferred.reject);
         this.server.setClient({
             notifyDidChangeFile: ({ changes }) => {
-                this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: new URI(event.resource), type: event.type })));
+                this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: URI.parse(event.resource), type: event.type })));
             },
             notifyFileWatchError: () => {
                 this.onFileWatchErrorEmitter.fire();
@@ -381,26 +381,26 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
     }
 
     stat(resource: string): Promise<Stat> {
-        return this.provider.stat(new URI(resource));
+        return this.provider.stat(URI.parse(resource));
     }
 
     access(resource: string, mode?: number): Promise<void> {
         if (hasAccessCapability(this.provider)) {
-            return this.provider.access(new URI(resource), mode);
+            return this.provider.access(URI.parse(resource), mode);
         }
         throw new Error('not supported');
     }
 
     async fsPath(resource: string): Promise<string> {
         if (hasAccessCapability(this.provider)) {
-            return this.provider.fsPath(new URI(resource));
+            return this.provider.fsPath(URI.parse(resource));
         }
         throw new Error('not supported');
     }
 
     open(resource: string, opts: FileOpenOptions): Promise<number> {
         if (hasOpenReadWriteCloseCapability(this.provider)) {
-            return this.provider.open(new URI(resource), opts);
+            return this.provider.open(URI.parse(resource), opts);
         }
         throw new Error('not supported');
     }
@@ -431,7 +431,7 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
 
     async readFile(resource: string): Promise<number[]> {
         if (hasReadWriteCapability(this.provider)) {
-            const buffer = await this.provider.readFile(new URI(resource));
+            const buffer = await this.provider.readFile(URI.parse(resource));
             return [...buffer.values()];
         }
         throw new Error('not supported');
@@ -439,37 +439,37 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
 
     writeFile(resource: string, content: number[], opts: FileWriteOptions): Promise<void> {
         if (hasReadWriteCapability(this.provider)) {
-            return this.provider.writeFile(new URI(resource), Uint8Array.from(content), opts);
+            return this.provider.writeFile(URI.parse(resource), Uint8Array.from(content), opts);
         }
         throw new Error('not supported');
     }
 
     delete(resource: string, opts: FileDeleteOptions): Promise<void> {
-        return this.provider.delete(new URI(resource), opts);
+        return this.provider.delete(URI.parse(resource), opts);
     }
 
     mkdir(resource: string): Promise<void> {
-        return this.provider.mkdir(new URI(resource));
+        return this.provider.mkdir(URI.parse(resource));
     }
 
     readdir(resource: string): Promise<[string, FileType][]> {
-        return this.provider.readdir(new URI(resource));
+        return this.provider.readdir(URI.parse(resource));
     }
 
     rename(source: string, target: string, opts: FileOverwriteOptions): Promise<void> {
-        return this.provider.rename(new URI(source), new URI(target), opts);
+        return this.provider.rename(URI.parse(source), URI.parse(target), opts);
     }
 
     copy(source: string, target: string, opts: FileOverwriteOptions): Promise<void> {
         if (hasFileFolderCopyCapability(this.provider)) {
-            return this.provider.copy(new URI(source), new URI(target), opts);
+            return this.provider.copy(URI.parse(source), URI.parse(target), opts);
         }
         throw new Error('not supported');
     }
 
     updateFile(resource: string, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
         if (hasUpdateCapability(this.provider)) {
-            return this.provider.updateFile(new URI(resource), changes, opts);
+            return this.provider.updateFile(URI.parse(resource), changes, opts);
         }
         throw new Error('not supported');
     }
@@ -478,7 +478,7 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
         if (this.watchers.has(requestedWatcherId)) {
             throw new Error('watcher id is already allocated!');
         }
-        const watcher = this.provider.watch(new URI(resource), opts);
+        const watcher = this.provider.watch(URI.parse(resource), opts);
         this.watchers.set(requestedWatcherId, watcher);
         this.toDispose.push(Disposable.create(() => this.unwatch(requestedWatcherId)));
     }
@@ -496,7 +496,7 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
     async readFileStream(resource: string, opts: FileReadStreamOptions, token: CancellationToken): Promise<number> {
         if (hasFileReadStreamCapability(this.provider)) {
             const handle = this.readFileStreamSeq++;
-            const stream = this.provider.readFileStream(new URI(resource), opts, token);
+            const stream = this.provider.readFileStream(URI.parse(resource), opts, token);
             stream.on('data', data => this.client?.onFileStreamData(handle, [...data.values()]));
             stream.on('error', error => {
                 const code = error instanceof FileSystemProviderError ? error.code : undefined;

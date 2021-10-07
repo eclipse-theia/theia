@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { BulkEditNodeSelection } from './bulk-edit-node-selection';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ResourceFileEdit, ResourceTextEdit } from '@theia/monaco/lib/browser/monaco-workspace';
 
 @injectable()
@@ -39,7 +39,7 @@ export class BulkEditTree extends TreeImpl {
             bulkEditInfos = edits
                 .map(edit => this.getResourcePath(edit))
                 .filter((path, index, arr) => path && arr.indexOf(path) === index)
-                .map((path: string) => this.createBulkEditInfo(path, new URI(path), fileContentsMap.get(path)))
+                .map((path: string) => this.createBulkEditInfo(path, URI.parse(path), fileContentsMap.get(path)))
                 .filter(Boolean);
 
             if (bulkEditInfos.length > 0) {

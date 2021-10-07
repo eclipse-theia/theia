@@ -28,7 +28,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { VSXResponseError, VSXSearchParam } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXAsyncClient } from './ovsx-async-client';
 

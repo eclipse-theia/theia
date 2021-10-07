@@ -16,8 +16,9 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { VSCODE_DEFAULT_API_VERSION } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-types';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class VSXEnvironment {
@@ -29,14 +30,14 @@ export class VSXEnvironment {
     async getRegistryUri(): Promise<URI> {
         if (!this._registryUri) {
             const vsxRegistryUrl = await this.environments.getValue('VSX_REGISTRY_URL');
-            this._registryUri = new URI(vsxRegistryUrl && vsxRegistryUrl.value || 'https://open-vsx.org');
+            this._registryUri = URI.parse(vsxRegistryUrl && vsxRegistryUrl.value || 'https://open-vsx.org');
         }
         return this._registryUri;
     }
 
     async getRegistryApiUri(): Promise<URI> {
         const registryUri = await this.getRegistryUri();
-        return registryUri.resolve('api');
+        return Uri.joinPath(registryUri, 'api');
     }
 
     protected _apiVersion: string | undefined;

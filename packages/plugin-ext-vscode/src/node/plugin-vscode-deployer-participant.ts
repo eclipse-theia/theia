@@ -26,7 +26,7 @@ export class PluginVSCodeDeployerParticipant implements PluginDeployerParticipan
 
     async onWillStart(context: PluginDeployerStartContext): Promise<void> {
         const extensionsDirUri = await this.environments.getExtensionsDirUri();
-        context.userEntries.push(extensionsDirUri.withScheme('local-dir').toString());
+        context.userEntries.push(extensionsDirUri.with({ scheme: 'local-dir' }).toString());
     }
 
 }

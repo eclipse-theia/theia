@@ -23,7 +23,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import * as React from '@theia/core/shared/react';
@@ -101,7 +101,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     protected decorateDefinitionCaption(definition: Definition): React.ReactNode {
         const containerName = definition.containerName;
         const symbol = definition.symbolName;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
+        const location = this.labelProvider.getName(URI.parse(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
         const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
         const classNames = ['definitionNode'];
@@ -127,7 +127,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         const containerName = definition.containerName;
         const symbol = definition.symbolName;
         const referenceCount = caller.references.length;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
+        const location = this.labelProvider.getName(URI.parse(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
         const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
         const classNames = ['definitionNode'];
@@ -189,10 +189,10 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     private doOpenEditor(uri: DocumentUri, range: Range, keepFocus: boolean): void {
         this.editorManager.open(
-            new URI(uri), {
-                mode: keepFocus ? 'reveal' : 'activate',
-                selection: range
-            }
+            URI.parse(uri), {
+            mode: keepFocus ? 'reveal' : 'activate',
+            selection: range
+        }
         ).then(editorWidget => {
             if (editorWidget.parent instanceof DockPanel) {
                 editorWidget.parent.selectWidget(editorWidget);

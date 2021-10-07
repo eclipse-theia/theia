@@ -19,10 +19,10 @@ import * as chai from 'chai';
 import * as cp from 'child_process';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
-import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
 import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol';
+import { Uri } from '@theia/core';
 /* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
@@ -46,7 +46,7 @@ describe('nsfw-filesystem-watcher', function (): void {
                 encoding: 'utf8',
             }).trim();
         }
-        root = FileUri.create(fs.realpathSync(tempPath));
+        root = URI.file(fs.realpathSync(tempPath));
         watcherService = createNsfwFileSystemWatcherService();
         watcherId = await watcherService.watchFileChanges(0, root.toString());
         await sleep(2000);
@@ -70,21 +70,21 @@ describe('nsfw-filesystem-watcher', function (): void {
         watcherService.setClient(watcherClient);
 
         const expectedUris = [
-            root.resolve('foo').toString(),
-            root.withPath(root.path.join('foo', 'bar')).toString(),
-            root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
+            Uri.joinPath(root, 'foo').toString(),
+            Uri.joinPath(root, 'foo', 'bar').toString(),
+            Uri.joinPath(root, 'foo', 'bar', 'baz.txt').toString()
         ];
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
-        expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
+        fs.mkdirSync(Uri.joinPath(root, 'foo').fsPath);
+        expect(fs.statSync(Uri.joinPath(root, 'foo').fsPath).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
-        expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
+        fs.mkdirSync(Uri.joinPath(root, 'foo', 'bar').fsPath);
+        expect(fs.statSync(Uri.joinPath(root, 'foo', 'bar').fsPath).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
-        expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
+        fs.writeFileSync(Uri.joinPath(root, 'foo', 'bar', 'baz.txt').fsPath, 'baz');
+        expect(fs.readFileSync(Uri.joinPath(root, 'foo', 'bar', 'baz.txt').fsPath, 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
         assert.deepStrictEqual([...actualUris], expectedUris);
@@ -105,16 +105,16 @@ describe('nsfw-filesystem-watcher', function (): void {
         /* Unwatch root */
         watcherService.unwatchFileChanges(watcherId);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
-        expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
+        fs.mkdirSync(Uri.joinPath(root, 'foo').fsPath);
+        expect(fs.statSync(Uri.joinPath(root, 'foo').fsPath).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.mkdirSync(FileUri.fsPath(root.resolve('foo').resolve('bar')));
-        expect(fs.statSync(FileUri.fsPath(root.resolve('foo').resolve('bar'))).isDirectory()).to.be.true;
+        fs.mkdirSync(Uri.joinPath(root, 'foo', 'bar').fsPath);
+        expect(fs.statSync(Uri.joinPath(root, 'foo', 'bar').fsPath).isDirectory()).to.be.true;
         await sleep(2000);
 
-        fs.writeFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'baz');
-        expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
+        fs.writeFileSync(Uri.joinPath(root, 'foo', 'bar', 'baz.txt').fsPath, 'baz');
+        expect(fs.readFileSync(Uri.joinPath(root, 'foo', 'bar', 'baz.txt').fsPath, 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
         assert.deepStrictEqual(actualUris.size, 0);

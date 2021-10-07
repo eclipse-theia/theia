@@ -21,7 +21,8 @@ import * as filenamify from 'filenamify';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { getTempDir } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
@@ -29,7 +30,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     @inject(PluginVSCodeEnvironment)
     protected readonly environment: PluginVSCodeEnvironment;
 
-    private readonly systemExtensionsDirUri = FileUri.create(getTempDir('vscode-unpacked'));
+    private readonly systemExtensionsDirUri = URI.file(getTempDir('vscode-unpacked'));
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
         if (!resolvedPlugin.isFile()) {
@@ -58,7 +59,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
         if (context.pluginEntry().type === PluginType.User) {
             extensionsDirUri = await this.environment.getExtensionsDirUri();
         }
-        return FileUri.fsPath(extensionsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+        return Uri.joinPath(extensionsDirUri, filenamify(context.pluginEntry().id(), { replacement: '_' })).fsPath;
     }
 
     protected async decompress(extensionDir: string, context: PluginDeployerFileHandlerContext): Promise<void> {

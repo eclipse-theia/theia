@@ -16,7 +16,7 @@
 
 import { Container } from '@theia/core/shared/inversify';
 import { ILogger, isWindows } from '@theia/core';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
@@ -102,9 +102,9 @@ before(() => {
     rootDirA = track.mkdirSync();
     rootDirB = track.mkdirSync();
     rootSubdirA = track.mkdirSync({ dir: rootDirA });
-    rootDirAUri = FileUri.create(rootDirA).toString();
-    rootDirBUri = FileUri.create(rootDirB).toString();
-    rootSubdirAUri = FileUri.create(rootSubdirA).toString();
+    rootDirAUri = URI.file(rootDirA).toString();
+    rootDirBUri = URI.file(rootDirB).toString();
+    rootSubdirAUri = URI.file(rootSubdirA).toString();
 
     let contents = '';
     for (let x = 0; x < 10000; x++) {
@@ -254,7 +254,7 @@ function compareSearchResults(expected: SearchInWorkspaceExpectation[], actual: 
         if (lines) {
             const line = lines[e.line - 1];
             e.lineText = line;
-            e.fileUri = FileUri.create(path.join(getRootPathFromName(e.fileUri), e.fileUri)).toString();
+            e.fileUri = URI.file(path.join(getRootPathFromName(e.fileUri), e.fileUri)).toString();
 
             const a = actual.find(l => l.fileUri === e.fileUri)!;
             const match = a.matches.find(m => m.line === e.line && m.character === e.character)!;

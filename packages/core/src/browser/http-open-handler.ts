@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
 import { OpenHandler } from './opener-service';
 import { WindowService } from './window/window-service';
 import { ExternalUriService } from './external-uri-service';
+import { URI } from 'vscode-uri';
 
 export interface HttpOpenHandlerOptions {
     openExternal?: boolean

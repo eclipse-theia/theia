@@ -16,7 +16,7 @@
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorPreferences } from './editor-preferences';
@@ -371,13 +371,13 @@ export class EditorCommandContribution implements CommandContribution {
     protected toLanguageUri(language: Language): URI {
         const extension = language.extensions.values().next();
         if (extension.value) {
-            return new URI('file:///' + extension.value);
+            return URI.parse('/' + extension.value);
         }
         const filename = language.filenames.values().next();
         if (filename.value) {
-            return new URI('file:///' + filename.value);
+            return URI.parse('/' + filename.value);
         }
-        return new URI('file:///.txt');
+        return URI.parse('/.txt');
     }
 
     private isAutoSaveOn(): boolean {

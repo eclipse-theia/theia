@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
 import {
     CorePreferences, Key, TreeModel, SelectableTreeNode,
@@ -122,7 +122,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
             } else if (dataTransfer && dataTransfer.files?.length > 0) {
                 // the files were dragged from the outside the workspace
                 Array.from(dataTransfer.files).forEach(async file => {
-                    const fileUri = new URI(file.path);
+                    const fileUri = URI.parse(file.path);
                     const opener = await this.openerService.getOpener(fileUri);
                     opener.open(fileUri);
                 });
@@ -217,7 +217,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
             }
             for (const file of raw.split('\n')) {
                 event.preventDefault();
-                const source = new URI(file);
+                const source = URI.parse(file);
                 this.model.copy(source, target);
             }
         }

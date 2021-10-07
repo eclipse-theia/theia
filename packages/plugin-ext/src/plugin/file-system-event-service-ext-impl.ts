@@ -30,8 +30,7 @@
 
 import { Emitter, WaitUntilEvent, AsyncEmitter } from '@theia/core/lib/common/event';
 import { IRelativePattern, parse } from '@theia/callhierarchy/lib/common/glob';
-import { UriComponents } from '@theia/core/shared/vscode-uri';
-import { URI } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorsAndDocumentsExtImpl as ExtHostDocumentsAndEditors } from './editors-and-documents';
 import type * as vscode from '@theia/plugin';
 import * as typeConverter from './type-converters';
@@ -44,6 +43,7 @@ import {
     WorkspaceFileEditDto, WorkspaceTextEditDto
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
+import { UriComponents } from '../common/uri-components';
 
 type Event<T> = vscode.Event<T>;
 type IExtensionDescription = Plugin;

@@ -20,7 +20,7 @@ import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidget
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Position } from '@theia/core/shared/vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider, } from './preview-handler';

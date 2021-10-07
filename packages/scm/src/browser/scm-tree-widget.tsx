@@ -18,7 +18,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
@@ -35,6 +35,7 @@ import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -138,7 +139,7 @@ export class ScmTreeWidget extends TreeWidget {
         if (ScmFileChangeNode.is(node)) {
             const parentPath =
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
-                    ? new URI(node.parent.sourceUri) : new URI(this.model.rootUri);
+                    ? URI.parse(node.parent.sourceUri) : URI.parse(this.model.rootUri ?? '');
 
             const content = <ScmResourceComponent
                 key={node.sourceUri}
@@ -155,7 +156,7 @@ export class ScmTreeWidget extends TreeWidget {
                     ...this.props,
                     parentPath,
                     sourceUri: node.sourceUri,
-                    decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
+                    decoration: this.decorationsService.getDecoration(URI.parse(node.sourceUri), true)[0],
                     colors: this.colors,
                     renderExpansionToggle: () => this.renderExpansionToggle(node, props),
                 }}
@@ -397,11 +398,11 @@ export class ScmTreeWidget extends TreeWidget {
         }
 
         let standaloneEditor: EditorWidget | undefined;
-        const resourcePath = resource.sourceUri.path.toString();
+        const resourcePath = resource.sourceUri.path;
 
         for (const widget of this.editorManager.all) {
             const resourceUri = widget.editor.document.uri;
-            const editorResourcePath = new URI(resourceUri).path.toString();
+            const editorResourcePath = URI.parse(resourceUri).path;
             if (resourcePath === editorResourcePath) {
                 if (widget.editor.uri.scheme === DiffUris.DIFF_SCHEME) {
                     // prefer diff editor
@@ -521,14 +522,14 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
     render(): JSX.Element | undefined {
         const { hover } = this.state;
         const { model, treeNode, colors, parentPath, sourceUri, decoration, labelProvider, commands, menus, contextKeys, caption } = this.props;
-        const resourceUri = new URI(sourceUri);
+        const resourceUri = URI.parse(sourceUri);
 
         const icon = labelProvider.getIcon(resourceUri);
         const color = decoration && decoration.colorId ? `var(${colors.toCssVariableName(decoration.colorId)})` : '';
         const letter = decoration && decoration.letter || '';
         const tooltip = decoration && decoration.tooltip || '';
-        const relativePath = parentPath.relative(resourceUri.parent);
-        const path = relativePath ? relativePath.toString() : labelProvider.getLongName(resourceUri.parent);
+        const relativePath = Path.relative(parentPath.path, Uri.dirname(resourceUri).path);
+        const path = relativePath ? relativePath.toString() : labelProvider.getLongName(Uri.dirname(resourceUri));
         const title = tooltip.length !== 0
             ? `${resourceUri.path.toString()} • ${tooltip}`
             : resourceUri.path.toString();
@@ -687,7 +688,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
         const { model, treeNode, sourceUri, labelProvider, commands, menus, contextKeys, caption } = this.props;
         const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
         const icon = labelProvider.getIcon(sourceFileStat);
-        const title = new URI(sourceUri).path.toString();
+        const title = URI.parse(sourceUri).path;
 
         return <div key={sourceUri}
             className={`scmItem  ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}

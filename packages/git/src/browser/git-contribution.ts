@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import {
     Command,
     CommandContribution,
@@ -724,7 +724,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         const ref = widget ? widget : this.editorManager.currentEditor;
         if (ref instanceof EditorWidget && DiffUris.isDiffUri(ref.editor.uri)) {
             const [, right] = DiffUris.decode(ref.editor.uri);
-            const uri = right.withScheme('file');
+            const uri = right.with({ scheme: 'file' });
             const selection = ref.editor.selection;
             return { uri, options: { selection, widgetOptions: { ref } } };
         }

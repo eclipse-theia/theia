@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
 import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, TreeViewWelcomeWidget } from '@theia/core/lib/browser';
@@ -260,7 +260,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         if (FileStatNodeData.is(node)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const fileStatNode: FileStatNode = node as any;
-            const resource = new URI(node.uri);
+            const resource = URI.parse(node.uri);
             fileStatNode.uri = resource;
             let stat: typeof node['stat'];
             // in order to support deprecated FileStat

@@ -17,6 +17,12 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
+FrontendApplicationConfigProvider.set({
+    ...ApplicationProps.DEFAULT.frontend.config
+});
+
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
@@ -25,14 +31,13 @@ import { Event } from '@theia/core/lib/common/event';
 import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
-import { FileUri } from '@theia/core/lib/node';
 import * as temp from 'temp';
 
 after(() => disableJSDOM());
@@ -59,7 +64,7 @@ beforeEach(() => {
     container.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     container.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
     container.bind(FileService).toConstantValue({} as FileService);
-    container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));
+    container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(URI.file(temp.track().mkdirSync())));
     labelProvider = container.get(WorkspaceUriLabelProviderContribution);
 });
 
@@ -79,12 +84,12 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
     describe('canHandle()', () => {
         it('should return 0 if the passed in argument is not a FileStat or URI with the "file" scheme', () => {
-            expect(labelProvider.canHandle(new URI('user-storage:settings.json'))).eq(0);
+            expect(labelProvider.canHandle(URI.parse('user-storage:settings.json'))).eq(0);
             expect(labelProvider.canHandle({ uri: 'file:///home/settings.json' })).eq(0);
         });
 
         it('should return 10 if the passed in argument is a FileStat or URI with the "file" scheme', () => {
-            expect(labelProvider.canHandle(new URI('file:///home/settings.json'))).eq(10);
+            expect(labelProvider.canHandle(URI.parse('file:///home/settings.json'))).eq(10);
             expect(labelProvider.canHandle(FileStat.file('file:///home/settings.json'))).eq(10);
         });
     });
@@ -116,19 +121,19 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             const ret = 'TestString';
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stubs.push(sinon.stub(DefaultUriLabelProviderContribution.prototype, <any>'getFileIcon').returns(ret));
-            expect(labelProvider.getIcon(new URI('file:///home/test'))).eq(ret);
+            expect(labelProvider.getIcon(URI.file('/home/test'))).eq(ret);
             expect(labelProvider.getIcon(FileStat.file('file:///home/test'))).eq(ret);
         });
 
         it('should return the default folder icon for a URI or file stat that corresponds to a workspace root', () => {
-            expect(labelProvider.getIcon(new URI('file:///workspace'))).eq(labelProvider.defaultFolderIcon);
+            expect(labelProvider.getIcon(URI.file('/workspace'))).eq(labelProvider.defaultFolderIcon);
             expect(labelProvider.getIcon(FileStat.dir('file:///workspace'))).eq(labelProvider.defaultFolderIcon);
         });
     });
 
     describe('getName()', () => {
         it('should return the display name of a file from its URI', () => {
-            const file = new URI('file:///workspace-2/jacques.doc');
+            const file = URI.file('/workspace-2/jacques.doc');
             const name = labelProvider.getName(file);
             expect(name).eq('jacques.doc');
         });
@@ -142,7 +147,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
     describe('getLongName()', () => {
         it('should return the path of a file relative to the workspace from the file\'s URI if the file is in the workspace', () => {
-            const file = new URI('file:///workspace/some/very-long/path.js');
+            const file = URI.file('/workspace/some/very-long/path.js');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('some/very-long/path.js');
         });
@@ -154,7 +159,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return the absolute path of a file from the file\'s URI if the file is not in the workspace', () => {
-            const file = new URI('file:///tmp/prout.txt');
+            const file = URI.file('/tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('/tmp/prout.txt');
         });
@@ -167,7 +172,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
         it('should return the path of a file if WorkspaceService returns no roots', () => {
             roots = [];
-            const file = new URI('file:///tmp/prout.txt');
+            const file = URI.file('/tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
             expect(longName).eq('/tmp/prout.txt');
         });

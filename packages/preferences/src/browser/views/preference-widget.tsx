@@ -21,7 +21,7 @@ import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,

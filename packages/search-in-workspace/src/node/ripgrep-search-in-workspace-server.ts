@@ -16,10 +16,9 @@
 
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { ILogger } from '@theia/core';
+import { ILogger, Uri } from '@theia/core';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
-import { FileUri } from '@theia/core/lib/node/file-uri';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
 
@@ -209,7 +208,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
-        const rootPaths = rootUris.map(root => FileUri.fsPath(root));
+        const rootPaths = rootUris.map(root => Uri.fsPath(root));
         // If there are absolute paths in `include` we will remove them and use
         // those as paths to search from.
         const searchPaths = this.extractSearchPathsFromIncludes(rootPaths, options);
@@ -290,7 +289,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     const file = bytesOrTextToString(obj.data.path);
                     if (file) {
                         currentSearchResult = {
-                            fileUri: FileUri.create(file).toString(),
+                            fileUri: URI.file(file).toString(),
                             root: this.getRoot(file, rootUris).toString(),
                             matches: []
                         };
@@ -439,11 +438,11 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
      * @param rootUris string URIs of the root folders in the current workspace
      */
     private getRoot(filePath: string, rootUris: string[]): URI {
-        const roots = rootUris.filter(root => new URI(root).withScheme('file').isEqualOrParent(FileUri.create(filePath).withScheme('file')));
+        const roots = rootUris.filter(root => Uri.isEqualOrParent(URI.parse(root).with({ scheme: 'file' }), URI.parse(filePath).with({ scheme: 'file' })));
         if (roots.length > 0) {
-            return FileUri.create(FileUri.fsPath(roots.sort((r1, r2) => r2.length - r1.length)[0]));
+            return URI.parse(roots.sort((r1, r2) => r2.length - r1.length)[0]);
         }
-        return new URI();
+        return URI.parse('');
     }
 
     // Cancel an ongoing search.  Trying to cancel a search that doesn't exist isn't an

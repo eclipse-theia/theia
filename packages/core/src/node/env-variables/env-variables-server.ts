@@ -20,13 +20,13 @@ import { injectable } from 'inversify';
 import * as drivelist from 'drivelist';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
-import { FileUri } from '../file-uri';
+import { URI } from 'vscode-uri';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
     protected readonly envs: { [key: string]: EnvVariable } = {};
-    protected readonly homeDirUri = FileUri.create(homedir()).toString();
+    protected readonly homeDirUri = URI.file(homedir()).toString();
     protected readonly configDirUri: Promise<string>;
 
     constructor() {
@@ -43,7 +43,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     protected async createConfigDirUri(): Promise<string> {
-        return FileUri.create(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
+        return URI.file(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
     }
 
     async getExecPath(): Promise<string> {
@@ -75,7 +75,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         for (const drive of drives) {
             for (const mountpoint of drive.mountpoints) {
                 if (this.filterHiddenPartitions(mountpoint.path)) {
-                    uris.push(FileUri.create(mountpoint.path).toString());
+                    uris.push(URI.file(mountpoint.path).toString());
                 }
             }
         }

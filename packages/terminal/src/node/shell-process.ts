@@ -19,8 +19,7 @@ import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
 import { isWindows, isOSX, OS } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EnvironmentUtils } from '@theia/core/lib/node/environment-utils';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
@@ -42,8 +41,8 @@ export interface ShellProcessOptions {
 
 function getRootPath(rootURI?: string): string {
     if (rootURI) {
-        const uri = new URI(rootURI);
-        return FileUri.fsPath(uri);
+        const uri = URI.parse(rootURI);
+        return uri.fsPath;
     } else {
         return os.homedir();
     }

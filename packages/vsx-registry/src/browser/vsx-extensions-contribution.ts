@@ -23,7 +23,7 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
-import { MenuModelRegistry, MessageService } from '@theia/core/lib/common';
+import { MenuModelRegistry, MessageService, Uri } from '@theia/core/lib/common';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { LabelProvider, PreferenceService } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
@@ -158,7 +158,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         };
         const extensionUri = await this.fileDialogService.showOpenDialog(props);
         if (extensionUri) {
-            if (extensionUri.path.ext === '.vsix') {
+            if (Uri.extname(extensionUri) === '.vsix') {
                 const extensionName = this.labelProvider.getName(extensionUri);
                 try {
                     await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, extensionUri);

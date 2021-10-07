@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { OpenUriCommandHandler } from './commands';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution {

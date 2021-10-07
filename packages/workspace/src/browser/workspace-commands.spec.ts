@@ -24,13 +24,13 @@ FrontendApplicationConfigProvider.set({
 });
 
 import { expect } from 'chai';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Container } from '@theia/core/shared/inversify';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { LabelProvider, OpenerService, FrontendApplication } from '@theia/core/lib/browser';
-import { MessageService, OS } from '@theia/core/lib/common';
+import { MessageService, OS, Uri } from '@theia/core/lib/common';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { WorkspaceCommandContribution } from './workspace-commands';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
@@ -50,7 +50,7 @@ describe('workspace-commands', () => {
         isFile: true,
         isDirectory: false,
         isSymbolicLink: false,
-        resource: new URI('foo/bar'),
+        resource: URI.parse('foo/bar'),
         name: 'bar',
     };
 
@@ -58,7 +58,7 @@ describe('workspace-commands', () => {
         isFile: false,
         isDirectory: true,
         isSymbolicLink: false,
-        resource: new URI('foo'),
+        resource: URI.parse('foo'),
         name: 'foo',
         children: [
             childStat
@@ -74,7 +74,7 @@ describe('workspace-commands', () => {
         container.bind(FileDialogService).toConstantValue(<FileDialogService>{});
         container.bind(FileService).toConstantValue(<FileService>{
             async exists(resource: URI): Promise<boolean> {
-                return resource.path.base.includes('bar'); // 'bar' exists for test purposes.
+                return Uri.basename(resource).includes('bar'); // 'bar' exists for test purposes.
             }
         });
         container.bind(FrontendApplication).toConstantValue(<FrontendApplication>{});

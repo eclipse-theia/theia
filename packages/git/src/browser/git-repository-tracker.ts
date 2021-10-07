@@ -16,10 +16,10 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
-import { Event, Emitter, Disposable, DisposableCollection, CancellationToken, CancellationTokenSource } from '@theia/core';
+import { Event, Emitter, Disposable, DisposableCollection, CancellationToken, CancellationTokenSource, Uri } from '@theia/core';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -118,12 +118,12 @@ export class GitRepositoryTracker {
 
     getUri(path: string): URI | undefined {
         const { repositoryUri } = this;
-        return repositoryUri && repositoryUri.resolve(path);
+        return repositoryUri && Uri.joinPath(repositoryUri, path);
     }
 
     get repositoryUri(): URI | undefined {
         const repository = this.selectedRepository;
-        return repository && new URI(repository.localUri);
+        return repository && URI.parse(repository.localUri);
     }
 
 }

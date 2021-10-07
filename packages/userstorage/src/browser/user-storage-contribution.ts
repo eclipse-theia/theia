@@ -15,13 +15,14 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemProvider } from '@theia/filesystem/lib/common/files';
 import { FileService, FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 import { DelegatingFileSystemProvider } from '@theia/filesystem/lib/common/delegating-file-system-provider';
 import { UserStorageUri } from './user-storage-uri';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class UserStorageContribution implements FileServiceContribution {
@@ -42,20 +43,20 @@ export class UserStorageContribution implements FileServiceContribution {
 
     protected async createProvider(service: FileService): Promise<FileSystemProvider> {
         const delegate = await service.activateProvider('file');
-        const configDirUri = new URI(await this.environments.getConfigDirUri());
+        const configDirUri = URI.parse(await this.environments.getConfigDirUri());
         return new DelegatingFileSystemProvider(delegate, {
             uriConverter: {
                 to: resource => {
-                    const relativePath = UserStorageUri.relative(resource);
-                    if (relativePath) {
-                        return configDirUri.resolve(relativePath).normalizePath();
+                    const relativePath = Path.relative(UserStorageUri.path, resource.path);
+                    if (relativePath !== undefined) {
+                        return Uri.joinPath(configDirUri, relativePath);
                     }
                     return undefined;
                 },
                 from: resource => {
-                    const relativePath = configDirUri.relative(resource);
-                    if (relativePath) {
-                        return UserStorageUri.resolve(relativePath);
+                    const relativePath = Path.relative(configDirUri.path, resource.path);
+                    if (relativePath !== undefined) {
+                        return Uri.joinPath(UserStorageUri, relativePath);
                     }
                     return undefined;
                 }

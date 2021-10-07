@@ -16,7 +16,7 @@
 
 import debounce = require('p-debounce');
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoConfigurationService } from '@theia/monaco/lib/browser/monaco-frontend-module';
@@ -94,7 +94,7 @@ export class DebugEditorModel implements Disposable {
 
     @postConstruct()
     protected init(): void {
-        this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
+        this.uri = this.editor.getControl().getModel()!.uri;
         this.toDispose.pushAll([
             this.hover,
             this.breakpointWidget,

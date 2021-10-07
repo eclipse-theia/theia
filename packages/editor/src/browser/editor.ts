@@ -16,7 +16,7 @@
 
 import { Position, Range, Location } from '@theia/core/shared/vscode-languageserver-types';
 import * as lsp from '@theia/core/shared/vscode-languageserver-types';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Event, Disposable, TextDocumentContentChangeDelta } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';

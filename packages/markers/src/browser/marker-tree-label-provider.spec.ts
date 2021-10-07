@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({
     ...ApplicationProps.DEFAULT.frontend.config
 });
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { ContributionProvider, Event } from '@theia/core/lib/common';
@@ -40,7 +40,6 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
-import { FileUri } from '@theia/core/lib/node';
 import * as temp from 'temp';
 
 disableJSDOM();
@@ -71,7 +70,7 @@ before(() => {
     testContainer.bind(LabelProvider).toSelf().inSingletonScope();
     testContainer.bind(MarkerTreeLabelProvider).toSelf().inSingletonScope();
     testContainer.bind(TreeLabelProvider).toSelf().inSingletonScope();
-    testContainer.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));
+    testContainer.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(URI.file(temp.track().mkdirSync())));
 
     testContainer.bind<ContributionProvider<LabelProviderContribution>>(ContributionProvider).toDynamicValue(ctx => ({
         getContributions(): LabelProviderContribution[] {
@@ -234,6 +233,6 @@ function createMarkerInfoNode(uri: string): MarkerInfoNode {
         children: [],
         expanded: true,
         selected: true,
-        uri: new URI(uri)
+        uri: URI.parse(uri)
     };
 }

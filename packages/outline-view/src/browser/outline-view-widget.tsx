@@ -32,7 +32,7 @@ import { Emitter, Mutable, UriSelection } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-types';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 /**
  * Representation of an outline symbol information node.
@@ -193,7 +193,7 @@ export class OutlineViewWidget extends TreeWidget {
     protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode { /* eslint-disable-line @typescript-eslint/no-explicit-any */
         const inflated = super.inflateFromStorage(node, parent) as Mutable<TreeNode & UriSelection>;
         if (node && 'uri' in node && typeof node.uri === 'string') {
-            inflated.uri = new URI(node.uri);
+            inflated.uri = URI.parse(node.uri);
         }
         return inflated;
     }

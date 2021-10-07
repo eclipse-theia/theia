@@ -19,7 +19,7 @@ import { GitFileChange, GitFileStatus, GitStatusChangeEvent } from '../common';
 import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
 import { Decoration, DecorationsProvider } from '@theia/core/lib/browser/decorations-service';
 import { GitRepositoryTracker } from './git-repository-tracker';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class GitDecorationProvider implements DecorationsProvider {
@@ -45,7 +45,7 @@ export class GitDecorationProvider implements DecorationsProvider {
 
         const uris = new Set([...this.decorations.keys()].concat([...newDecorations.keys()]));
         this.decorations = newDecorations;
-        this.onDidChangeDecorationsEmitter.fire([...uris.values()].map(value => new URI(value)));
+        this.onDidChangeDecorationsEmitter.fire([...uris.values()].map(value => URI.parse(value)));
     }
 
     private collectDecorationData(changes: GitFileChange[], bucket: Map<string, Decoration>): void {

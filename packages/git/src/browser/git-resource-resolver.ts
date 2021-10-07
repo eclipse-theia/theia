@@ -17,7 +17,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Git, Repository } from '../common';
 import { Resource, ResourceResolver } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GIT_RESOURCE_SCHEME, GitResource } from './git-resource';
 
@@ -42,7 +42,7 @@ export class GitResourceResolver implements ResourceResolver {
     }
 
     async getRepository(uri: URI): Promise<Repository | undefined> {
-        const fileUri = uri.withScheme('file');
+        const fileUri = uri.with({ scheme: 'file' });
         const repositories = this.repositoryProvider.allRepositories;
         // The layout restorer might ask for the known repositories this point.
         if (repositories.length === 0) {
@@ -55,9 +55,9 @@ export class GitResourceResolver implements ResourceResolver {
         // repository A, another repository B inside A and a resource A/B/C.ext.
         const sortedRepositories = repositories.sort((a, b) => b.localUri.length - a.localUri.length);
         for (const repository of sortedRepositories) {
-            const localUri = new URI(repository.localUri);
+            const localUri = URI.parse(repository.localUri);
             // make sure that localUri of repository has file scheme.
-            const localUriStr = localUri.withScheme('file').toString();
+            const localUriStr = localUri.with({ scheme: 'file' }).toString();
             if (fileUri.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }

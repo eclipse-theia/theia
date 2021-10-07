@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
 import { GitCommitDetailWidget } from './git-commit-detail-widget';
 import { GitScmProvider } from '../git-scm-provider';

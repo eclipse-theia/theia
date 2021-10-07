@@ -19,7 +19,7 @@ import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTr
 import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ProblemSelection } from './problem/problem-selection';
 
 export const MarkerOptions = Symbol('MarkerOptions');
@@ -71,7 +71,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         if (MarkerRootNode.is(parent)) {
             const nodes: MarkerInfoNode[] = [];
             for (const id of this.markerManager.getUris()) {
-                const uri = new URI(id);
+                const uri = URI.parse(id);
                 const existing = this.getNode(id);
                 const markers = this.markerManager.findMarkers({ uri });
                 const node = MarkerInfoNode.is(existing) ? existing : this.createMarkerInfo(id, uri);

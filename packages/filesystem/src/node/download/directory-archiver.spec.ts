@@ -19,9 +19,8 @@ import * as path from 'path';
 import * as temp from 'temp';
 import { extract } from 'tar-fs';
 import { expect } from 'chai';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MockDirectoryArchiver } from './test/mock-directory-archiver';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 
 /* eslint-disable no-unused-expressions */
 
@@ -45,7 +44,7 @@ describe('directory-archiver', () => {
         await archiver.archive(fromPath, path.join(toPath, 'output.tar'));
         expect(fs.existsSync(path.join(toPath, 'output.tar'))).to.be.true;
         const assertPath = track.mkdirSync('assertPath');
-        return new Promise(resolve => {
+        return new Promise<void>(resolve => {
             fs.createReadStream(path.join(toPath, 'output.tar')).pipe(extract(assertPath)).on('finish', () => {
                 expect(fs.readdirSync(assertPath).sort()).to.be.deep.equal(['A.txt', 'B.txt']);
                 expect(fs.readFileSync(path.join(assertPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal(fs.readFileSync(path.join(fromPath, 'A.txt'), { encoding: 'utf8' }));
@@ -85,8 +84,8 @@ describe('directory-archiver', () => {
         ] as ({ input: string[], expected: Map<string, string[]>, folders?: string[] })[]).forEach(test => {
             const { input, expected, folders } = test;
             it(`should find the common parent URIs among [${input.join(', ')}] => [${Array.from(expected.keys()).join(', ')}]`, async () => {
-                const archiver = new MockDirectoryArchiver(folders ? folders.map(FileUri.create) : []);
-                const actual = await archiver.findCommonParents(input.map(FileUri.create));
+                const archiver = new MockDirectoryArchiver(folders ? folders.map(folder => URI.parse(folder)) : []);
+                const actual = await archiver.findCommonParents(input.map(value => URI.parse(value)));
                 expect(asString(actual)).to.be.equal(asString(expected));
             });
         });
@@ -96,7 +95,7 @@ describe('directory-archiver', () => {
             const obj: any = {};
             for (const key of Array.from(map.keys()).sort()) {
                 const values = (map.get(key) || []).sort();
-                obj[new URI(key).withScheme('file').toString()] = `[${values.map(v => new URI(v).withScheme('file').toString()).join(', ')}]`;
+                obj[URI.parse(key).toString()] = `[${values.map(v => URI.parse(v).toString()).join(', ')}]`;
             }
             return JSON.stringify(obj);
         }

@@ -16,8 +16,8 @@
 
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { Disposable, Uri } from '@theia/core/lib/common';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugConsoleContribution } from '../console/debug-console-contribution';
@@ -108,7 +108,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceOpened) {
             return configuration.name;
         }
-        return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
+        return `${configuration.name} (${Uri.basename(URI.parse(workspaceFolderUri))})`;
     }
 
     protected readonly setCurrentConfiguration = (event: React.ChangeEvent<HTMLSelectElement>) => {

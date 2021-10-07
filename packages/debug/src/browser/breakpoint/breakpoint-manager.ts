@@ -19,7 +19,7 @@ import { Emitter } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
 import { Marker } from '@theia/markers/lib/common/marker';
 import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint } from './breakpoint-marker';
 
 export interface BreakpointsChangeEvent<T extends BaseBreakpoint> {
@@ -34,9 +34,9 @@ export type FunctionBreakpointsChangeEvent = BreakpointsChangeEvent<FunctionBrea
 @injectable()
 export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
 
-    static EXCEPTION_URI = new URI('debug:exception://');
+    static EXCEPTION_URI = URI.parse('debug:exception://');
 
-    static FUNCTION_URI = new URI('debug:function://');
+    static FUNCTION_URI = URI.parse('debug:function://');
 
     protected readonly owner = 'breakpoint';
 
@@ -101,7 +101,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     }
 
     addBreakpoint(breakpoint: SourceBreakpoint): boolean {
-        const uri = new URI(breakpoint.uri);
+        const uri = URI.parse(breakpoint.uri);
         const breakpoints = this.getBreakpoints(uri);
         const newBreakpoints = breakpoints.filter(({ raw }) => !(raw.line === breakpoint.raw.line && raw.column === breakpoint.raw.column));
         if (breakpoints.length === newBreakpoints.length) {
@@ -115,7 +115,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     enableAllBreakpoints(enabled: boolean): void {
         for (const uriString of this.getUris()) {
             let didChange = false;
-            const uri = new URI(uriString);
+            const uri = URI.parse(uriString);
             const markers = this.findMarkers({ uri });
             for (const marker of markers) {
                 if (marker.data.enabled !== enabled) {
@@ -148,7 +148,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         if (this._breakpointsEnabled !== breakpointsEnabled) {
             this._breakpointsEnabled = breakpointsEnabled;
             for (const uri of this.getUris()) {
-                this.fireOnDidChangeMarkers(new URI(uri));
+                this.fireOnDidChangeMarkers(URI.parse(uri));
             }
             this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
         }
@@ -236,7 +236,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         this._breakpointsEnabled = data.breakpointsEnabled;
         // eslint-disable-next-line guard-for-in
         for (const uri in data.breakpoints) {
-            this.setBreakpoints(new URI(uri), data.breakpoints[uri]);
+            this.setBreakpoints(URI.parse(uri), data.breakpoints[uri]);
         }
         if (data.functionBreakpoints) {
             this.setFunctionBreakpoints(data.functionBreakpoints);
@@ -253,7 +253,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         };
         const uris = this.getUris();
         for (const uri of uris) {
-            data.breakpoints[uri] = this.findMarkers({ uri: new URI(uri) }).map(marker => marker.data);
+            data.breakpoints[uri] = this.findMarkers({ uri: URI.parse(uri) }).map(marker => marker.data);
         }
         if (this.functionBreakpoints.length) {
             data.functionBreakpoints = this.functionBreakpoints;

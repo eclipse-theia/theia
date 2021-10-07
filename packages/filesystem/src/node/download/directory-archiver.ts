@@ -17,8 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { pack } from 'tar-fs';
-import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Path, Uri } from '@theia/core';
 
 @injectable()
 export class DirectoryArchiver {
@@ -33,7 +33,7 @@ export class DirectoryArchiver {
         const map = new Map<string, string[]>();
         for (const uri of uris) {
             // 1. Get the container if not the URI is not a directory.
-            const containerUri = (await this.isDir(uri)) ? uri : uri.parent;
+            const containerUri = (await this.isDir(uri)) ? uri : Uri.dirname(uri);
             let containerUriStr = this.toUriString(containerUri);
             // 2. If the container already registered, just append the current URI to it.
             if (map.has(containerUriStr)) {
@@ -60,8 +60,8 @@ export class DirectoryArchiver {
                         for (let j = i + 1; j < knownContainerUris.length; j++) {
                             const left = knownContainerUris[i];
                             const right = knownContainerUris[j];
-                            const commonParent = this.closestCommonParentUri(new URI(left), new URI(right));
-                            if (commonParent && !commonParent.path.isRoot) {
+                            const commonParent = this.closestCommonParentUri(URI.parse(left), URI.parse(right));
+                            if (commonParent && !Path.isRoot(commonParent.path)) {
                                 const leftEntries = map.get(left) || [];
                                 const rightEntries = map.get(right) || [];
                                 map.delete(left);
@@ -82,8 +82,8 @@ export class DirectoryArchiver {
         if (left.scheme !== right.scheme) {
             return undefined;
         }
-        const allLeft = left.allLocations;
-        const allRight = right.allLocations;
+        const allLeft = Uri.allLocations(left);
+        const allRight = Uri.allLocations(right);
         for (const leftUri of allLeft) {
             for (const rightUri of allRight) {
                 if (this.equal(leftUri, rightUri)) {
@@ -96,7 +96,7 @@ export class DirectoryArchiver {
 
     protected async isDir(uri: URI): Promise<boolean> {
         try {
-            const stat = await fs.stat(FileUri.fsPath(uri));
+            const stat = await fs.stat(uri.fsPath);
             return stat.isDirectory();
         } catch {
             return false;

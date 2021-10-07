@@ -16,12 +16,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter, Uri } from '@theia/core/lib/common';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmRepository, ScmProviderOptions } from './scm-repository';
 import { ScmCommand, ScmProvider } from './scm-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class ScmService {
@@ -79,7 +79,7 @@ export class ScmService {
         const reposSorted = this.repositories.sort(
             (ra: ScmRepository, rb: ScmRepository) => rb.provider.rootUri.length - ra.provider.rootUri.length
         );
-        return reposSorted.find(repo => new URI(repo.provider.rootUri).isEqualOrParent(uri));
+        return reposSorted.find(repo => Uri.isEqualOrParent(URI.parse(repo.provider.rootUri), uri));
     }
 
     registerScmProvider(provider: ScmProvider, options: ScmProviderOptions = {}): ScmRepository {

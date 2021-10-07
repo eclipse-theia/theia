@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GitResourceOpener } from './git-resource-opener';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class GitOpenerInPrimaryArea implements GitResourceOpener {

@@ -21,7 +21,8 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { Disposable, WebviewPanelTargetArea, URI } from './types-impl';
+import { Disposable, WebviewPanelTargetArea } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceExtImpl } from './workspace';
 import { PluginIconPath } from './plugin-icon-path';
 
@@ -239,7 +240,7 @@ export class WebviewImpl implements theia.Webview {
             ...options,
             localResourceRoots: options.localResourceRoots || [
                 ...(workspace.workspaceFolders || []).map(x => x.uri),
-                URI.file(plugin.pluginFolder)
+                URI.parse(plugin.pluginFolder)
             ]
         };
     }

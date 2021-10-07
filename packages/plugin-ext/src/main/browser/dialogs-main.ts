@@ -19,11 +19,12 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain, UploadDialogOptionsMain } from '../../common/plugin-api-rpc';
 import { OpenFileDialogProps, SaveFileDialogProps, FileDialogService } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { Uri } from '@theia/core';
 
 export class DialogsMainImpl implements DialogsMain {
 
@@ -48,16 +49,16 @@ export class DialogsMainImpl implements DialogsMain {
         // Try to use default URI as root
         if (defaultUri) {
             try {
-                rootStat = await this.fileService.resolve(new URI(defaultUri));
+                rootStat = await this.fileService.resolve(URI.parse(defaultUri));
             } catch {
                 rootStat = undefined;
             }
         }
 
         // Try to use as root the parent folder of existing file URI/non existing URI
-        if (rootStat && !rootStat.isDirectory || !rootStat) {
+        if (defaultUri && (rootStat && !rootStat.isDirectory || !rootStat)) {
             try {
-                rootStat = await this.fileService.resolve(new URI(defaultUri).parent);
+                rootStat = await this.fileService.resolve(Uri.dirname(URI.parse(defaultUri)));
             } catch {
                 rootStat = undefined;
             }
@@ -72,7 +73,7 @@ export class DialogsMainImpl implements DialogsMain {
         if (!rootStat) {
             const homeDirUri = await this.environments.getHomeDirUri();
             try {
-                rootStat = await this.fileService.resolve(new URI(homeDirUri));
+                rootStat = await this.fileService.resolve(URI.parse(homeDirUri));
             } catch { }
         }
 
@@ -136,10 +137,10 @@ export class DialogsMainImpl implements DialogsMain {
         if (options.defaultUri) {
             let defaultURIStat: FileStat | undefined;
             try {
-                defaultURIStat = await this.fileService.resolve(new URI(options.defaultUri));
+                defaultURIStat = await this.fileService.resolve(URI.parse(options.defaultUri));
             } catch { }
             if (defaultURIStat && !defaultURIStat.isDirectory || !defaultURIStat) {
-                fileNameValue = new URI(options.defaultUri).path.base;
+                fileNameValue = Uri.basename(URI.parse(options.defaultUri));
             }
         }
 

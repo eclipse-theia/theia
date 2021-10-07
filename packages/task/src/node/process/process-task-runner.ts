@@ -20,8 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { isWindows, isOSX, ILogger } from '@theia/core';
-import { FileUri } from '@theia/core/lib/node';
+import { isWindows, isOSX, ILogger, Uri } from '@theia/core';
 import {
     RawProcessFactory,
     ProcessErrorEvent,
@@ -336,7 +335,7 @@ export class ProcessTaskRunner implements TaskRunner {
 
     protected asFsPath(uriOrPath: string): string {
         return (uriOrPath.startsWith('file:'))
-            ? FileUri.fsPath(uriOrPath)
+            ? Uri.fsPath(uriOrPath)
             : uriOrPath;
     }
 

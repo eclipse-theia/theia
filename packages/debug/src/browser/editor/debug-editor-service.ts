@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';

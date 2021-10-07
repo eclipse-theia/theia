@@ -19,6 +19,7 @@ import { LabelProvider, LabelProviderContribution, DidChangeLabelEvent } from '@
 import { BulkEditInfoNode } from './bulk-edit-tree';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class BulkEditTreeLabelProvider implements LabelProviderContribution {
@@ -54,18 +55,18 @@ export class BulkEditTreeLabelProvider implements LabelProviderContribution {
             description.push(this.labelProvider.getName(rootUri));
         }
         // If the given resource is not at the workspace root, include the parent directory to the label.
-        if (rootUri?.toString() !== node.uri.parent.toString()) {
-            description.push(this.labelProvider.getLongName(node.uri.parent));
+        if (rootUri && Uri.isEqual(rootUri, Uri.dirname(node.uri))) {
+            description.push(this.labelProvider.getLongName(Uri.dirname(node.uri)));
         }
         return description.join(' ● ');
     }
 
     getDescription(node: BulkEditInfoNode): string {
-        return this.labelProvider.getLongName(node.uri.parent);
+        return this.labelProvider.getLongName(Uri.dirname(node.uri));
     }
 
     affects(node: BulkEditInfoNode, event: DidChangeLabelEvent): boolean {
-        return event.affects(node.uri) || event.affects(node.uri.parent);
+        return event.affects(node.uri) || event.affects(Uri.dirname(node.uri));
     }
 
 }

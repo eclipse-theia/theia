@@ -35,8 +35,8 @@ export class PluginVSCodeContribution implements FileServiceContribution {
                     const provider = await service.activateProvider(to);
                     service.registerProvider(from, new DelegatingFileSystemProvider(provider, {
                         uriConverter: {
-                            to: resource => resource.withScheme(to),
-                            from: resource => resource.withScheme(from)
+                            to: resource => resource.with({ scheme: to }),
+                            from: resource => resource.with({ scheme: from })
                         }
                     }));
                 })());

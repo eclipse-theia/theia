@@ -16,7 +16,7 @@
 
 import { Disposable, SelectionService, Event } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { TextEditor } from './editor';
 
 export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget {

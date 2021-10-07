@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService, Uri } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider,
@@ -28,7 +28,7 @@ import { THEIA_EXT, VSCODE_EXT } from '../common';
 import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspacePreferences } from './workspace-preferences';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8 } from '@theia/core/lib/common/encodings';
@@ -103,7 +103,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         this.toDisposeOnUpdateEncodingOverrides.dispose();
         for (const root of this.workspaceService.tryGetRoots()) {
             for (const configPath of this.preferenceConfigurations.getPaths()) {
-                const parent = root.resource.resolve(configPath);
+                const parent = Uri.joinPath(root.resource, configPath);
                 this.toDisposeOnUpdateEncodingOverrides.push(this.encodingRegistry.registerOverride({ encoding: UTF8, parent }));
             }
         }
@@ -395,9 +395,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
             });
             if (selected) {
-                const displayName = selected.displayName;
+                const displayName = Uri.displayName(selected);
                 if (!displayName.endsWith(`.${THEIA_EXT}`) && !displayName.endsWith(`.${VSCODE_EXT}`)) {
-                    selected = selected.parent.resolve(`${displayName}.${THEIA_EXT}`);
+                    selected = Uri.joinPath(Uri.dirname(selected), `${displayName}.${THEIA_EXT}`);
                 }
                 exist = await this.fileService.exists(selected);
                 if (exist) {
@@ -440,7 +440,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 {
                     title: WorkspaceCommands.SAVE_AS.label!,
                     filters: {},
-                    inputValue: uri.path.base
+                    inputValue: Uri.basename(uri)
                 }, stat);
             if (selected) {
                 exist = await this.fileService.exists(selected);
@@ -449,7 +449,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 }
             }
         } while (selected && exist && !overwrite);
-        if (selected && selected.isEqual(uri)) {
+        if (selected && Uri.isEqual(selected, uri)) {
             await this.commandRegistry.executeCommand(CommonCommands.SAVE.id);
         } else if (selected) {
             try {

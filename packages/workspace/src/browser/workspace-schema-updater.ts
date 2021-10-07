@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface SchemaUpdateMessage {
@@ -34,7 +34,7 @@ export namespace AddKeyMessage {
 @injectable()
 export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
 
-    protected readonly uri = new URI(workspaceSchemaId);
+    protected readonly uri = URI.parse(workspaceSchemaId);
     protected readonly editQueue: SchemaUpdateMessage[] = [];
     protected safeToHandleQueue = new Deferred();
 

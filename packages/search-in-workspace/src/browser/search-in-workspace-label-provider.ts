@@ -17,7 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import { SearchInWorkspaceRootFolderNode, SearchInWorkspaceFileNode } from './search-in-workspace-result-tree-widget';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class SearchInWorkspaceLabelProvider implements LabelProviderContribution {
@@ -31,18 +32,18 @@ export class SearchInWorkspaceLabelProvider implements LabelProviderContribution
 
     getIcon(node: SearchInWorkspaceRootFolderNode | SearchInWorkspaceFileNode): string {
         if (SearchInWorkspaceFileNode.is(node)) {
-            return this.labelProvider.getIcon(new URI(node.fileUri).withScheme('file'));
+            return this.labelProvider.getIcon(URI.parse(node.fileUri).with({ scheme: 'file' }));
         }
         return this.labelProvider.folderIcon;
     }
 
     getName(node: SearchInWorkspaceRootFolderNode | SearchInWorkspaceFileNode): string {
         const uri = SearchInWorkspaceFileNode.is(node) ? node.fileUri : node.folderUri;
-        return new URI(uri).displayName;
+        return Uri.displayName(URI.parse(uri));
     }
 
     affects(node: SearchInWorkspaceRootFolderNode | SearchInWorkspaceFileNode, event: DidChangeLabelEvent): boolean {
-        return SearchInWorkspaceFileNode.is(node) && event.affects(new URI(node.fileUri).withScheme('file'));
+        return SearchInWorkspaceFileNode.is(node) && event.affects(URI.parse(node.fileUri).with({ scheme: 'file' }));
     }
 
 }

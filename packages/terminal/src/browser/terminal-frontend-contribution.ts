@@ -25,7 +25,8 @@ import {
     isOSX,
     SelectionService,
     Emitter,
-    Event
+    Event,
+    Uri
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key,
@@ -39,7 +40,7 @@ import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -381,7 +382,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         }
 
         // Use folder if a file was selected
-        const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
+        const cwd = stat.isDirectory ? uri.toString() : Uri.dirname(uri).toString();
 
         // Open terminal
         const termWidget = await this.newTerminal({ cwd });

@@ -16,7 +16,7 @@
 
 import { Git, Repository } from '../common';
 import { Resource } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 

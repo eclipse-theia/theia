@@ -17,9 +17,9 @@
 import { injectable } from 'inversify';
 import { PreferenceService, PreferenceChange, OverridePreferenceName } from '../';
 import { Emitter, Event } from '../../../common';
-import URI from '../../../common/uri';
 import { PreferenceChanges, PreferenceInspection } from '../preference-service';
 import { PreferenceScope } from '../preference-scope';
+import { URI } from 'vscode-uri';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {

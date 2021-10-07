@@ -32,7 +32,7 @@ import { WebviewPanelViewState } from '../../../common/plugin-api-rpc';
 import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
@@ -48,6 +48,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
+import { Path } from '@theia/core';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -275,7 +276,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toHide.push(subscription);
 
         this.toHide.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
-        this.toHide.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
+        this.toHide.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(URI.parse(uri))));
         this.toHide.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
             this._state = state;
         }));
@@ -330,7 +331,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected async getRedirect(url: string): Promise<string | undefined> {
-        const uri = new URI(url);
+        const uri = URI.parse(url);
         const localhost = this.externalUriService.parseLocalhost(uri);
         if (!localhost) {
             return undefined;
@@ -341,7 +342,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                 if (mapping.webviewPort === localhost.port) {
                     if (mapping.webviewPort !== mapping.extensionHostPort) {
                         return this.toRemoteUrl(
-                            uri.withAuthority(`${localhost.address}:${mapping.extensionHostPort}`)
+                            uri.with({ authority: `${localhost.address}:${mapping.extensionHostPort}` })
                         );
                     }
                 }
@@ -455,7 +456,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         try {
             if (this.contentOptions.localResourceRoots) {
                 for (const root of this.contentOptions.localResourceRoots) {
-                    if (!new URI(root).path.isEqualOrParent(normalizedUri.path)) {
+                    if (!Path.isEqualOrParent(URI.parse(root).path, normalizedUri.path)) {
                         continue;
                     }
                     let cached = await this.resourceCache.match(cacheUrl);
@@ -493,19 +494,19 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected normalizeRequestUri(requestPath: string): URI {
         const normalizedPath = decodeURIComponent(requestPath);
-        const requestUri = new URI(normalizedPath.replace(/^\/([a-zA-Z0-9.\-+]+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
+        const requestUri = URI.parse(normalizedPath.replace(/^\/([a-zA-Z0-9.\-+]+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
         if (requestUri.scheme !== 'theia-resource' && requestUri.scheme !== 'vscode-resource') {
             return requestUri;
         }
 
         // Modern vscode-resources uris put the scheme of the requested resource as the authority
         if (requestUri.authority) {
-            return new URI(requestUri.authority + ':' + requestUri.path);
+            return URI.parse(requestUri.authority + ':' + requestUri.path);
         }
 
         // Old style vscode-resource uris lose the scheme of the resource which means they are unable to
         // load a mix of local and remote content properly.
-        return requestUri.withScheme('file');
+        return requestUri.with({ scheme: 'file' });
     }
 
     sendMessage(data: any): void {

@@ -20,6 +20,7 @@ describe('Saveable', function () {
 
     const { assert } = chai;
 
+    const { Uri } = require('@theia/core/lib/common/uri-utils');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const { EditorWidget } = require('@theia/editor/lib/browser/editor-widget');
     const { PreferenceService } = require('@theia/core/lib/browser/preferences/preference-service');
@@ -45,7 +46,7 @@ describe('Saveable', function () {
     let editor;
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
-    const fileUri = rootUri.resolve('.test/foo.txt');
+    const fileUri = Uri.joinPath(rootUri, '.test/foo.txt');
 
     const closeOnFileDelete = 'workbench.editor.closeOnFileDelete';
 
@@ -85,7 +86,7 @@ describe('Saveable', function () {
         // @ts-ignore
         widget = undefined;
         await editorManager.closeAll({ save: false });
-        await fileService.delete(fileUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
+        await fileService.delete(Uri.dirname(fileUri), { fromUserGesture: false, useTrash: false, recursive: true });
     });
 
     it('normal save', async function () {
@@ -333,7 +334,7 @@ describe('Saveable', function () {
     it('move file for saved', async function () {
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before move');
 
-        const targetUri = fileUri.parent.resolve('bar.txt');
+        const targetUri = Uri.joinPath(Uri.dirname(fileUri), 'bar.txt');
         await fileService.move(fileUri, targetUri, { overwrite: true });
         assert.isTrue(widget.isDisposed, 'old model should be disposed after move');
 
@@ -347,7 +348,7 @@ describe('Saveable', function () {
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before move');
 
-        const targetUri = fileUri.parent.resolve('bar.txt');
+        const targetUri = Uri.joinPath(Uri.dirname(fileUri), 'bar.txt');
 
         await fileService.move(fileUri, targetUri, { overwrite: true });
         assert.isTrue(widget.isDisposed, 'old model should be disposed after move');
@@ -362,7 +363,7 @@ describe('Saveable', function () {
     });
 
     it('fail to open invalid file', async function () {
-        const invalidFile = fileUri.parent.resolve('invalid_file.txt');
+        const invalidFile = Uri.joinPath(Uri.dirname(fileUri), 'invalid_file.txt');
         try {
             await editorManager.open(invalidFile, { mode: 'reveal' });
             assert.fail('should not be possible to open an editor for invalid file');

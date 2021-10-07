@@ -17,9 +17,10 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, WaitUntilEvent } from '@theia/core/lib/common/event';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FileChangeType, FileOperation } from '../common/files';
 import { FileService } from './file-service';
+import { Uri } from '@theia/core';
 
 export {
     FileChangeType
@@ -37,7 +38,7 @@ export namespace FileChange {
         return change.type === FileChangeType.ADDED && uri.toString() === change.uri.toString();
     }
     export function isDeleted(change: FileChange, uri: URI): boolean {
-        return change.type === FileChangeType.DELETED && change.uri.isEqualOrParent(uri);
+        return change.type === FileChangeType.DELETED && Uri.isEqualOrParent(change.uri, uri);
     }
     export function isAffected(change: FileChange, uri: URI): boolean {
         return isDeleted(change, uri) || uri.toString() === change.uri.toString();
@@ -78,7 +79,7 @@ export interface FileMoveEvent extends WaitUntilEvent {
 }
 export namespace FileMoveEvent {
     export function isRename({ sourceUri, targetUri }: FileMoveEvent): boolean {
-        return sourceUri.parent.toString() === targetUri.parent.toString();
+        return Uri.isEqual(Uri.dirname(sourceUri), Uri.dirname(targetUri));
     }
 }
 

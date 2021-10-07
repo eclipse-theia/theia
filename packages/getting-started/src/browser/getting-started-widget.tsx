@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
+import { CommandRegistry, isOSX, environment, Path, Uri } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands, LabelProvider, Key, KeyCode, codicon } from '@theia/core/lib/browser';
@@ -105,7 +105,7 @@ export class GettingStartedWidget extends ReactWidget {
 
         this.applicationInfo = await this.appServer.getApplicationInfo();
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
-        this.home = new URI(await this.environments.getHomeDirUri()).path.toString();
+        this.home = URI.parse(await this.environments.getHomeDirUri()).path;
         this.update();
     }
 
@@ -221,9 +221,9 @@ export class GettingStartedWidget extends ReactWidget {
                 <a
                     role={'button'}
                     tabIndex={0}
-                    onClick={() => this.open(new URI(items[index]))}
-                    onKeyDown={(e: React.KeyboardEvent) => this.openEnter(e, new URI(items[index]))}>
-                    {new URI(items[index]).path.base}
+                    onClick={() => this.open(URI.parse(items[index]))}
+                    onKeyDown={(e: React.KeyboardEvent) => this.openEnter(e, URI.parse(items[index]))}>
+                    {Uri.basename(URI.parse(items[index]))}
                 </a>
                 <span className='gs-action-details'>
                     {item}
@@ -340,7 +340,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected buildPaths(workspaces: string[]): string[] {
         const paths: string[] = [];
         workspaces.forEach(workspace => {
-            const uri = new URI(workspace);
+            const uri = URI.parse(workspace);
             const pathLabel = this.labelProvider.getLongName(uri);
             const path = this.home ? Path.tildify(pathLabel, this.home) : pathLabel;
             paths.push(path);

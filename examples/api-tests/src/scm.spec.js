@@ -19,7 +19,7 @@ describe('SCM', function () {
 
     const { assert } = chai;
 
-    const Uri = require('@theia/core/lib/common/uri');
+    const { URI } = require('vscode-uri');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { ContextKeyService } = require('@theia/core/lib/browser/context-key-service');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
@@ -122,13 +122,13 @@ describe('SCM', function () {
             const selectedRepository = scmService.selectedRepository;
             if (selectedRepository) {
                 const rootUri = selectedRepository.provider.rootUri;
-                const foundRepository = scmService.findRepository(new Uri.default(rootUri));
+                const foundRepository = scmService.findRepository(URI.parse(rootUri));
                 assert.notEqual(foundRepository, undefined);
             }
         });
 
         it('should not find a repository for an unknown uri', () => {
-            const mockUri = new Uri.default('foobar/foo/bar');
+            const mockUri = URI.file('foobar/foo/bar');
             const repo = scmService.findRepository(mockUri);
             assert.strictEqual(repo, undefined);
         });

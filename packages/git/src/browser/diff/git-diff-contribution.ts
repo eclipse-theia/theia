@@ -28,7 +28,7 @@ import { NavigatorContextMenu, FileNavigatorContribution } from '@theia/navigato
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { GitQuickOpenService } from '../git-quick-open-service';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { Git, Repository } from '../../common';
 import { WorkspaceRootUriAwareCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
@@ -134,7 +134,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                             if (fileStat.isDirectory) {
                                 this.showWidget({ rootUri: repository.localUri, diffOptions });
                             } else {
-                                const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
+                                const fromURI = fileUri.with({ scheme: GIT_RESOURCE_SCHEME, query: fromRevision });
                                 const toURI = fileUri;
                                 const diffUri = DiffUris.encode(fromURI, toURI);
                                 if (diffUri) {

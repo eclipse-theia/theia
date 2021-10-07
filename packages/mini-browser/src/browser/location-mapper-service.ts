@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Endpoint } from '@theia/core/lib/browser';
 import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
+import { Uri } from '@theia/core';
 
 /**
  * Contribution for the `LocationMapperService`.
@@ -113,7 +114,7 @@ export class HttpsLocationMapper implements LocationMapper {
 export class LocationWithoutSchemeMapper implements LocationMapper {
 
     canHandle(location: string): MaybePromise<number> {
-        return new URI(location).scheme === '' ? 1 : 0;
+        return URI.parse(location).scheme === '' ? 1 : 0;
     }
 
     map(location: string): MaybePromise<string> {
@@ -136,7 +137,7 @@ export class FileLocationMapper implements LocationMapper {
     }
 
     async map(location: string): Promise<string> {
-        const uri = new URI(location);
+        const uri = URI.parse(location);
         if (uri.scheme !== 'file') {
             throw new Error(`Only URIs with 'file' scheme can be mapped to an URL. URI was: ${uri}.`);
         }
@@ -144,7 +145,7 @@ export class FileLocationMapper implements LocationMapper {
         if (rawLocation.charAt(0) === '/') {
             rawLocation = rawLocation.substr(1);
         }
-        return this.miniBrowserEnvironment.getRandomEndpoint().getRestUrl().resolve(rawLocation).toString();
+        return Uri.joinPath(this.miniBrowserEnvironment.getRandomEndpoint().getRestUrl(), rawLocation).toString();
     }
 
 }

@@ -24,9 +24,10 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class KeymapsService {
@@ -57,7 +58,7 @@ export class KeymapsService {
      */
     @postConstruct()
     protected async init(): Promise<void> {
-        const reference = await this.textModelService.createModelReference(UserStorageUri.resolve('keymaps.json'));
+        const reference = await this.textModelService.createModelReference(Uri.joinPath(UserStorageUri, 'keymaps.json'));
         this.model = reference.object;
         this.deferredModel.resolve(this.model);
 
@@ -108,7 +109,7 @@ export class KeymapsService {
         if (!model.valid) {
             await model.save();
         }
-        await open(this.opener, new URI(model.uri), options);
+        await open(this.opener, URI.parse(model.uri), options);
     }
 
     /**

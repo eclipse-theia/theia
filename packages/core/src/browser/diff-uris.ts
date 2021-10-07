@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
+import { Uri } from '../common';
+import { URI } from 'vscode-uri';
 import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from './label-provider';
 import { codicon } from './widgets';
 
@@ -31,7 +32,11 @@ export namespace DiffUris {
 
         const diffUriStr = JSON.stringify(diffUris);
 
-        return new URI().withScheme(DIFF_SCHEME).withPath(label || '').withQuery(diffUriStr);
+        return URI.from({
+            scheme: DIFF_SCHEME,
+            path: label,
+            query: diffUriStr
+        });
     }
 
     export function decode(uri: URI): URI[] {
@@ -39,7 +44,7 @@ export namespace DiffUris {
             throw new Error((`The URI must have scheme "diff". The URI was: ${uri}.`));
         }
         const diffUris: string[] = JSON.parse(uri.query);
-        return diffUris.map(s => new URI(s));
+        return diffUris.map(s => URI.parse(s));
     }
 
     export function isDiffUri(uri: URI): boolean {
@@ -82,12 +87,12 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
         const [left, right] = DiffUris.decode(uri);
 
         if (left.path.toString() === right.path.toString() && left.query && right.query) {
-            const prefix = left.displayName ? `${left.displayName}: ` : '';
+            const prefix = Uri.displayName(left) ? `${Uri.displayName(left)}: ` : '';
             return `${prefix}${left.query} ⟷ ${right.query}`;
         } else {
             let title;
-            if (uri.displayName && left.path.toString() !== right.path.toString() && left.displayName !== uri.displayName) {
-                title = `${uri.displayName}: `;
+            if (Uri.displayName(uri) && left.path.toString() !== right.path.toString() && Uri.displayName(left) !== Uri.displayName(uri)) {
+                title = `${Uri.displayName(uri)}: `;
             } else {
                 title = '';
             }

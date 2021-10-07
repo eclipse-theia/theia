@@ -19,7 +19,7 @@ import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, R
 import { GitFileBlame } from '../../common';
 import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 @injectable()
 export class BlameDecorator implements monaco.languages.HoverProvider {
@@ -28,7 +28,7 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
     protected readonly editorManager: EditorManager;
 
     protected registerHoverProvider(uri: string): Disposable {
-        return monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
+        return monaco.languages.registerHoverProvider([{ pattern: URI.parse(uri).path }], this);
     }
 
     protected emptyHover: monaco.languages.Hover = {

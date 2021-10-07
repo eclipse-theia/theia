@@ -39,7 +39,7 @@ import { disposed } from '../../common/errors';
 import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
-import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
+import { UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
@@ -161,7 +161,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     protected toRemoteUri(uri?: UriComponents): UriComponents | undefined {
         if (uri && uri.scheme === 'file') {
-            return theiaUritoUriComponents(this.fileEndpoint.withQuery(URI.revive(uri).toString()));
+            return this.fileEndpoint.with({ query: URI.revive(uri).toString() }).toJSON();
         }
         return uri;
     }

@@ -22,7 +22,7 @@
 import debounce = require('p-debounce');
 import { visit, parse } from 'jsonc-parser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -37,6 +37,7 @@ import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { Uri } from '@theia/core';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -274,7 +275,7 @@ export class DebugConfigurationManager {
         }
         const settingsUri = this.preferences.getConfigUri(PreferenceScope.Folder, model.workspaceFolderUri);
         // Users may have placed their debug configurations in a `settings.json`, in which case we shouldn't modify the file.
-        if (settingsUri && !uri.isEqual(settingsUri)) {
+        if (settingsUri && !Uri.isEqual(uri, settingsUri)) {
             await this.ensureContent(uri, model);
         }
         return uri;

@@ -21,8 +21,8 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { json } from 'body-parser';
 import { Application, Router } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileDownloadHandler } from './file-download-handler';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class FileDownloadEndpoint implements BackendApplicationContribution {
@@ -55,7 +55,7 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
                 response.status(400).send('invalid uri');
                 return;
             }
-            const fsPath = FileUri.fsPath(decodeURIComponent(uri));
+            const fsPath = Uri.fsPath(decodeURIComponent(uri));
             response.sendFile(fsPath);
         });
     }

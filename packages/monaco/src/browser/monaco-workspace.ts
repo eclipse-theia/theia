@@ -18,7 +18,7 @@
 
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -133,7 +133,7 @@ export class MonacoWorkspace {
     protected fireDidOpen(model: MonacoEditorModel): void {
         this.doFireDidOpen(model);
         model.textEditorModel.onDidChangeLanguage(e => {
-            this.problems.cleanAllMarkers(new URI(model.uri));
+            this.problems.cleanAllMarkers(URI.parse(model.uri));
             model.setLanguageId(e.oldLanguage);
             try {
                 this.fireDidClose(model);
@@ -181,7 +181,7 @@ export class MonacoWorkspace {
             this.textModelService.createModelReference(model.textEditorModel.uri).then(ref => {
                 (
                     model.autoSave === 'on' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
-                        this.editorManager.open(new URI(model.uri), { mode: 'open' })
+                        this.editorManager.open(URI.parse(model.uri), { mode: 'open' })
                 ).then(
                     () => ref.dispose()
                 );
@@ -335,27 +335,27 @@ export class MonacoWorkspace {
             const options = edit.options || {};
             if (edit.newResource && edit.oldResource) {
                 // rename
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(edit.newResource)) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.move(new URI(edit.oldResource), new URI(edit.newResource), { overwrite: options.overwrite });
+                await this.fileService.move(edit.oldResource, edit.newResource, { overwrite: options.overwrite });
             } else if (!edit.newResource && edit.oldResource) {
                 // delete file
-                if (await this.fileService.exists(new URI(edit.oldResource))) {
+                if (await this.fileService.exists(edit.oldResource)) {
                     let useTrash = this.filePreferences['files.enableTrash'];
-                    if (useTrash && !(this.fileService.hasCapability(new URI(edit.oldResource), FileSystemProviderCapabilities.Trash))) {
+                    if (useTrash && !(this.fileService.hasCapability(edit.oldResource, FileSystemProviderCapabilities.Trash))) {
                         useTrash = false; // not supported by provider
                     }
-                    await this.fileService.delete(new URI(edit.oldResource), { useTrash, recursive: options.recursive });
+                    await this.fileService.delete(edit.oldResource, { useTrash, recursive: options.recursive });
                 } else if (!options.ignoreIfNotExists) {
                     throw new Error(`${edit.oldResource} does not exist and can not be deleted`);
                 }
             } else if (edit.newResource && !edit.oldResource) {
                 // create file
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(edit.newResource)) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.create(new URI(edit.newResource), undefined, { overwrite: options.overwrite });
+                await this.fileService.create(edit.newResource, undefined, { overwrite: options.overwrite });
             }
         }
     }

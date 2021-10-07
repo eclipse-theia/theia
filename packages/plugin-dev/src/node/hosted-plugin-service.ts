@@ -18,7 +18,7 @@ import { HostedPluginServer, HostedPluginClient } from '../common/plugin-dev-pro
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { HostedPluginReader } from './hosted-plugin-reader';
 import { HostedPluginsManager } from './hosted-plugins-manager';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
@@ -59,15 +59,15 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     isPluginValid(uri: string): Promise<boolean> {
-        return Promise.resolve(this.hostedInstanceManager.isPluginValid(new URI(uri)));
+        return Promise.resolve(this.hostedInstanceManager.isPluginValid(URI.parse(uri)));
     }
 
     runHostedPluginInstance(uri: string): Promise<string> {
-        return this.uriToStrPromise(this.hostedInstanceManager.run(new URI(uri)));
+        return this.uriToStrPromise(this.hostedInstanceManager.run(URI.parse(uri)));
     }
 
     runDebugHostedPluginInstance(uri: string, debugConfig: DebugPluginConfiguration): Promise<string> {
-        return this.uriToStrPromise(this.hostedInstanceManager.debug(new URI(uri), debugConfig));
+        return this.uriToStrPromise(this.hostedInstanceManager.debug(URI.parse(uri), debugConfig));
     }
 
     terminateHostedPluginInstance(): Promise<void> {

@@ -20,7 +20,7 @@
 
 import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
@@ -138,7 +138,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
      */
     protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
         try {
-            const resource = typeof uri === 'string' ? new URI(uri) : uri;
+            const resource = typeof uri === 'string' ? URI.parse(uri) : uri;
             const { value } = await this.fileService.read(resource);
             if (toDispose.disposed) {
                 return;

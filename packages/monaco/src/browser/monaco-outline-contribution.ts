@@ -25,7 +25,7 @@ import CancellationToken = monaco.CancellationToken;
 import { DisposableCollection, Disposable } from '@theia/core';
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoEditor } from './monaco-editor';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
@@ -133,7 +133,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             if (token.isCancellationRequested) {
                 return [];
             }
-            const uri = new URI(model.uri.toString());
+            const uri = model.uri;
             for (const provider of providers) {
                 try {
                     const symbols = await provider.provideDocumentSymbols(model, token);

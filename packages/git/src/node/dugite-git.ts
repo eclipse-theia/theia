@@ -24,7 +24,6 @@ import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
 import { stash } from 'dugite-extra/lib/command/stash';
 import { merge } from 'dugite-extra/lib/command/merge';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
@@ -35,7 +34,7 @@ import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-ext
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 import { Branch as DugiteBranch } from 'dugite-extra/lib/model/branch';
 import { Commit as DugiteCommit, CommitIdentity as DugiteCommitIdentity } from 'dugite-extra/lib/model/commit';
-import { ILogger } from '@theia/core';
+import { ILogger, Uri } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as strings from '@theia/core/lib/common/strings';
 import {
@@ -47,6 +46,7 @@ import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitExecProvider } from './git-exec-provider';
 import { GitEnvProvider } from './env/git-env-provider';
 import { GitInit } from './init/git-init';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 /**
  * Parsing and converting raw Git output into Git model instances.
@@ -62,7 +62,7 @@ export abstract class OutputParser<T> {
     abstract parse(repositoryUri: string, input: string | string[], delimiter?: string): T[];
 
     protected toUri(repositoryUri: string, pathSegment: string): string {
-        return FileUri.create(Path.join(FileUri.fsPath(repositoryUri), pathSegment)).toString();
+        return Uri.fsPath(Path.join(repositoryUri, pathSegment));
     }
 
     protected split(input: string | string[], delimiter: string): string[] {
@@ -379,7 +379,7 @@ export class DugiteGit implements Git {
 
     async add(repository: Repository, uri: string | string[]): Promise<void> {
         await this.ready.promise;
-        const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
+        const paths = (Array.isArray(uri) ? uri : [uri]).map(value => Uri.fsPath(value));
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
         return this.manager.run(repository, () =>
             stage(this.getFsPath(repository), paths, { exec, env })
@@ -388,7 +388,7 @@ export class DugiteGit implements Git {
 
     async unstage(repository: Repository, uri: string | string[], options?: Git.Options.Unstage): Promise<void> {
         await this.ready.promise;
-        const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
+        const paths = (Array.isArray(uri) ? uri : [uri]).map(value => Uri.fsPath(value));
         const treeish = options && options.treeish ? options.treeish : undefined;
         const where = options && options.reset ? options.reset : undefined;
         const [exec, env] = await Promise.all([this.execProvider.exec(), this.gitEnv.promise]);
@@ -436,7 +436,7 @@ export class DugiteGit implements Git {
                 return checkoutBranch(repositoryPath, options.branch, { exec, env });
             }
             if (GitUtils.isWorkingTreeFileCheckout(options)) {
-                const paths = (Array.isArray(options.paths) ? options.paths : [options.paths]).map(FileUri.fsPath);
+                const paths = (Array.isArray(options.paths) ? options.paths : [options.paths]).map(path => Uri.fsPath(path));
                 return checkoutPaths(repositoryPath, paths, { exec, env });
             }
             return this.fail(repository, `Unexpected git checkout options: ${options}.`);
@@ -930,11 +930,11 @@ export class DugiteGit implements Git {
 
     private getFsPath(repository: Repository | string): string {
         const uri = typeof repository === 'string' ? repository : repository.localUri;
-        return FileUri.fsPath(uri);
+        return Uri.fsPath(uri);
     }
 
     private getUri(path: string): string {
-        return FileUri.create(path).toString();
+        return URI.file(path).toString();
     }
 
     private fail(repository: Repository | string, message?: string): never {

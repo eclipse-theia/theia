@@ -16,14 +16,14 @@
 
 import { inject, injectable, named, postConstruct } from 'inversify';
 import * as fileIcons from 'file-icons-js';
-import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable } from '../common/types';
-import { Event, Emitter, Disposable, Path } from '../common';
+import { Event, Emitter, Disposable, Uri, Path } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
 import { EnvVariablesServer } from '../common/env-variables/env-variables-protocol';
 import { ResourceLabelFormatter, ResourceLabelFormatting } from '../common/label-protocol';
 import { codicon } from './widgets';
+import { URI } from 'vscode-uri';
 
 /**
  * @internal don't export it, use `LabelProvider.folderIcon` instead.
@@ -159,7 +159,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
     }
 
     protected getFileIcon(uri: URI): string | undefined {
-        const fileIcon = fileIcons.getClassWithColor(uri.displayName);
+        const fileIcon = fileIcons.getClassWithColor(Uri.displayName(uri));
         if (!fileIcon) {
             return undefined;
         }
@@ -168,7 +168,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 
     getName(element: URI | URIIconReference): string | undefined {
         const uri = this.getUri(element);
-        return uri && uri.displayName;
+        return uri && Uri.displayName(uri);
     }
 
     getLongName(element: URI | URIIconReference): string | undefined {

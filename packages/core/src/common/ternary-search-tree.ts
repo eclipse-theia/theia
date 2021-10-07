@@ -23,7 +23,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/tslint/config */
 
-import URI from './uri';
+import { URI } from 'vscode-uri';
 import { CharCode } from './char-code';
 import { compareSubstringIgnoreCase, compare, compareSubstring } from './strings';
 

@@ -17,11 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
+import { Uri } from '@theia/core';
 
 /**
  * Binds together preference section prefs providers for user-level preferences.
@@ -50,7 +51,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
 
     protected createProviders(): void {
         for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-            const sectionUri = UserStorageUri.resolve(configName + '.json');
+            const sectionUri = Uri.joinPath(UserStorageUri, configName + '.json');
             const sectionKey = sectionUri.toString();
             if (!this.providers.has(sectionKey)) {
                 const provider = this.createProvider(sectionUri, configName);

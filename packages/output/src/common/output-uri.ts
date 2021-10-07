@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export namespace OutputUri {
 
@@ -24,7 +24,7 @@ export namespace OutputUri {
         if (uri instanceof URI) {
             return uri.scheme === SCHEME;
         }
-        return is(new URI(uri));
+        return is(URI.parse(uri));
     }
 
     export function create(name: string): URI {
@@ -34,14 +34,14 @@ export namespace OutputUri {
         if (!name.trim().length) {
             throw new Error("'name' must contain at least one non-whitespace character.");
         }
-        return new URI(encodeURIComponent(name)).withScheme(SCHEME);
+        return URI.parse(encodeURIComponent(name)).with({ scheme: SCHEME });
     }
 
     export function channelName(uri: string | URI): string {
         if (!is(uri)) {
             throw new Error(`Expected '${OutputUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
         }
-        return (uri instanceof URI ? uri : new URI(uri)).toString(true).slice(`${OutputUri.SCHEME}:/`.length);
+        return (typeof uri === 'string' ? URI.parse(uri) : uri).toString(true).slice(`${OutputUri.SCHEME}:/`.length);
     }
 
 }

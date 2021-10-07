@@ -26,7 +26,7 @@ export * from './objects';
 export * from './os';
 export * from './resource';
 export * from './contribution-provider';
-export * from './path';
+export * from './uri-utils';
 export * from './logger';
 export * from './messaging';
 export * from './message-service';

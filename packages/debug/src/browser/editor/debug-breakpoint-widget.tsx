@@ -19,7 +19,7 @@ import * as ReactDOM from '@theia/core/shared/react-dom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -192,7 +192,7 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
     protected createInput(node: HTMLElement): Promise<MonacoEditor> {
-        return this.editorProvider.createInline(new URI().withScheme('breakpointinput').withPath(this.editor.getControl().getId()), node, {
+        return this.editorProvider.createInline(URI.from({ scheme: 'breakpointinput', path: this.editor.getControl().getId() }), node, {
             autoSizing: false
         });
     }

@@ -21,11 +21,12 @@
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/browser/textFileService.ts#L491
 
 import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
 import { Disposable } from '../common/disposable';
 import { CorePreferences } from './core-preferences';
 import { EncodingService as EncodingService } from '../common/encoding-service';
 import { UTF8 } from '../common/encodings';
+import { URI } from 'vscode-uri';
+import { Uri } from '../common/uri-utils';
 
 export interface EncodingOverride {
     parent?: URI;
@@ -77,11 +78,11 @@ export class EncodingRegistry {
     protected getEncodingOverride(resource: URI): string | undefined {
         if (this.encodingOverrides && this.encodingOverrides.length) {
             for (const override of this.encodingOverrides) {
-                if (override.parent && resource.isEqualOrParent(override.parent)) {
+                if (override.parent && Uri.isEqualOrParent(resource, override.parent)) {
                     return override.encoding;
                 }
 
-                if (override.extension && resource.path.ext === `.${override.extension}`) {
+                if (override.extension && Uri.extname(resource) === `.${override.extension}`) {
                     return override.encoding;
                 }
 

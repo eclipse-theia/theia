@@ -38,7 +38,7 @@ import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
-import { URI as Uri } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { SecretsExtImpl, SecretStorageExt } from '../plugin/secrets-ext';
 
 export interface PluginHost {
@@ -371,17 +371,17 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
-            extensionUri: Uri.file(plugin.pluginFolder),
+            extensionUri: URI.file(plugin.pluginFolder),
             globalState: new GlobalState(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
             asAbsolutePath: asAbsolutePath,
             logPath: logPath,
             storagePath: storagePath,
-            storageUri: storagePath ? Uri.file(storagePath) : undefined,
+            storageUri: storagePath ? URI.file(storagePath) : undefined,
             secrets,
             globalStoragePath: globalStoragePath,
-            globalStorageUri: Uri.file(globalStoragePath),
+            globalStorageUri: URI.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: 1 // @todo: implement proper `extensionMode`.
         };

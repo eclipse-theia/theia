@@ -23,7 +23,7 @@ import * as React from '@theia/core/shared/react';
 import { BulkEditInfoNode, BulkEditNode } from './bulk-edit-tree';
 import { BulkEditTreeModel } from './bulk-edit-tree-model';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
@@ -141,7 +141,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         const icon = this.toNodeIcon(node);
         const name = this.toNodeName(node);
         const description = this.toNodeDescription(node);
-        const path = this.labelProvider.getLongName(node.uri.withScheme('bulkedit'));
+        const path = this.labelProvider.getLongName(node.uri.with({ scheme: 'bulkedit' }));
         return <div title={path} className='bulkEditInfoNode'>
             {icon && <div className={icon + ' file-icon'}></div>}
             <div className='name'>{name}</div>
@@ -159,7 +159,7 @@ export class BulkEditTreeWidget extends TreeWidget {
                         (('resource' in element) && (element as monaco.editor.ResourceTextEdit).resource.path);
 
                     if (filePath && !fileContentMap.has(filePath)) {
-                        const fileUri = new URI(filePath).withScheme('file');
+                        const fileUri = URI.parse(filePath).with({ scheme: 'file' });
                         const resource = await this.fileResourceResolver.resolve(fileUri);
                         fileContentMap.set(filePath, await resource.readContents());
                     }
@@ -201,7 +201,10 @@ export class BulkEditTreeWidget extends TreeWidget {
             });
         }
 
-        return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
+        return fileUri.with({
+            scheme: MEMORY_TEXT,
+            query: lines.join('\n')
+        });
     }
 
     private getEditorOptions(node: BulkEditNode): EditorOpenerOptions {

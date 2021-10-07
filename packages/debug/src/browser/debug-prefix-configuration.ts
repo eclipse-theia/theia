@@ -22,7 +22,7 @@ import { DebugCommands } from './debug-frontend-application-contribution';
 import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
 import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
@@ -114,8 +114,8 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         for (const config of configurations) {
             items.push({
                 label: config.configuration.name,
-                description: this.workspaceService.isMultiRootWorkspaceOpened
-                    ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
+                description: this.workspaceService.isMultiRootWorkspaceOpened && config.workspaceFolderUri
+                    ? this.labelProvider.getName(URI.parse(config.workspaceFolderUri))
                     : '',
                 execute: () => this.runConfiguration(config)
             });
@@ -135,7 +135,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({configuration})
+                    execute: () => this.runConfiguration({ configuration })
                 });
             }
         }

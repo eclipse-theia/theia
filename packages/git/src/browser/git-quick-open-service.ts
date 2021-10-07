@@ -21,10 +21,11 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { GitErrorHandler } from './git-error-handler';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProvider, QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { Uri } from '@theia/core';
 
 export enum GitAction {
     PULL,
@@ -105,7 +106,7 @@ export class GitQuickOpenService {
 
     private buildDefaultProjectPath = this.doBuildDefaultProjectPath.bind(this);
     private async doBuildDefaultProjectPath(folderPath: string, gitURI: string): Promise<string> {
-        if (!(await this.fileService.exists(new URI(folderPath)))) {
+        if (!(await this.fileService.exists(URI.parse(folderPath)))) {
             // user specifies its own project path, doesn't want us to guess it
             return folderPath;
         }
@@ -475,7 +476,7 @@ export class GitQuickOpenService {
             const wsRoot = item.ref!.toString();
             this.doInitRepository(wsRoot);
         };
-        return new GitQuickPickItem<URI>(this.labelProvider.getName(rootUri), execute, rootUri, this.labelProvider.getLongName(rootUri.parent));
+        return new GitQuickPickItem<URI>(this.labelProvider.getName(rootUri), execute, rootUri, this.labelProvider.getLongName(Uri.dirname(rootUri)));
     }
 
     private getRepository(): Repository | undefined {

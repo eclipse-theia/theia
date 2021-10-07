@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoContextMenuService } from '@theia/monaco/lib/browser/monaco-context-menu';
@@ -35,7 +35,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
     readonly scheme: string = OutputUri.SCHEME;
 
     create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: monaco.editor.IEditorOverrideServices): MonacoEditor {
-        const uri = new URI(model.uri);
+        const uri = URI.parse(model.uri);
         const options = this.createOptions(model, defaultsOptions);
         const overrides = this.createOverrides(model, defaultOverrides);
         return new MonacoEditor(uri, model, document.createElement('div'), this.services, options, overrides);

@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService, OpenerOptions } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class DiffService {
@@ -44,9 +45,9 @@ export class DiffService {
                                 return 'Both resource were a directory.';
                             } else {
                                 if (leftStat.isDirectory) {
-                                    return `'${left.path.base}' was a directory.`;
+                                    return `'${Uri.basename(left)}' was a directory.`;
                                 } else {
-                                    return `'${right.path.base}' was a directory.`;
+                                    return `'${Uri.basename(right)}' was a directory.`;
                                 }
                             }
                         });

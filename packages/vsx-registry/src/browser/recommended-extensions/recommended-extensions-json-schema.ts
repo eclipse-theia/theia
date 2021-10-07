@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { InMemoryResources } from '@theia/core';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export const extensionsSchemaID = 'vscode://schemas/extensions';
@@ -53,7 +53,7 @@ export const extensionsConfigurationSchema: IJSONSchema = {
 
 @injectable()
 export class ExtensionSchemaContribution implements JsonSchemaContribution {
-    protected readonly uri = new URI(extensionsSchemaID);
+    protected readonly uri = URI.parse(extensionsSchemaID);
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 

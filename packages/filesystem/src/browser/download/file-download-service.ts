@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileDownloadData } from '../../common/download/file-download-data';

@@ -16,7 +16,7 @@
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmService } from './scm-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { QuickInputService } from '@theia/core/lib/browser';
@@ -33,7 +33,7 @@ export class ScmQuickOpenService {
         const repositories = this.scmService.repositories;
         if (repositories.length > 1) {
             const items = await Promise.all(repositories.map(async repository => {
-                const uri = new URI(repository.provider.rootUri);
+                const uri = URI.parse(repository.provider.rootUri);
                 return {
                     label: this.labelProvider.getName(uri),
                     description: this.labelProvider.getLongName(uri),

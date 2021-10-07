@@ -20,11 +20,12 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { Uri } from '@theia/core';
 
 export interface MonacoTheme {
     id?: string;
@@ -77,7 +78,7 @@ export class MonacoThemingService {
             if (toDispose.disposed) {
                 return;
             }
-            const label = theme.label || new URI(theme.uri).path.base;
+            const label = theme.label || Uri.basename(URI.parse(theme.uri));
             const { id, description, uiTheme } = theme;
             toDispose.push(MonacoThemingService.register({ id, label, description, uiTheme: uiTheme, json, includes }));
         } catch (e) {
@@ -91,13 +92,13 @@ export class MonacoThemingService {
         pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        const result = await this.fileService.read(new URI(uri));
+        const result = await this.fileService.read(URI.parse(uri));
         const content = result.value;
         if (toDispose.disposed) {
             return;
         }
-        const themeUri = new URI(uri);
-        if (themeUri.path.ext !== '.json') {
+        const themeUri = URI.parse(uri);
+        if (Uri.extname(themeUri) !== '.json') {
             const value = plistparser.parse(content);
             if (value && 'settings' in value && Array.isArray(value.settings)) {
                 return { tokenColors: value.settings };
@@ -129,7 +130,7 @@ export class MonacoThemingService {
         pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        const referencedUri = themeUri.parent.resolve(referencedPath).toString();
+        const referencedUri = Uri.joinPath(Uri.dirname(themeUri), referencedPath).toString();
         if (!pending[referencedUri]) {
             pending[referencedUri] = this.loadTheme(referencedUri, includes, pending, toDispose);
         }

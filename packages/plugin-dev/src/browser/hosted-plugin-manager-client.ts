@@ -15,9 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core/lib/common/path';
-import { MessageService, Command, Emitter, Event } from '@theia/core/lib/common';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { MessageService, Command, Emitter, Event, Path } from '@theia/core/lib/common';
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -130,7 +129,7 @@ export class HostedPluginManagerClient {
 
         // is needed for case when page is loaded when hosted instance is already running.
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
-            this.pluginLocation = new URI(await this.hostedPluginServer.getHostedPluginURI());
+            this.pluginLocation = URI.parse(await this.hostedPluginServer.getHostedPluginURI());
         }
     }
 
@@ -190,7 +189,7 @@ export class HostedPluginManagerClient {
             const fsPath = await this.fileService.fsPath(this.pluginLocation);
             if (fsPath) {
                 outFiles = this.hostedPluginPreferences['hosted-plugin.launchOutFiles'].map(outFile =>
-                    outFile.replace('${pluginPath}', new Path(fsPath).toString())
+                    outFile.replace('${pluginPath}', Path.normalize(fsPath))
                 );
             }
         }
@@ -267,7 +266,7 @@ export class HostedPluginManagerClient {
      * Creates directory choose dialog and set selected folder into pluginLocation field.
      */
     async selectPluginPath(): Promise<void> {
-        const workspaceFolder = (await this.workspaceService.roots)[0] || await this.fileService.resolve(new URI(await this.environments.getHomeDirUri()));
+        const workspaceFolder = (await this.workspaceService.roots)[0] || await this.fileService.resolve(URI.parse(await this.environments.getHomeDirUri()));
         if (!workspaceFolder) {
             throw new Error('Unable to find the root');
         }
@@ -358,7 +357,7 @@ export class HostedPluginManagerClient {
     private setDebugConfig(config?: DebugPluginConfiguration): DebugPluginConfiguration {
         config = Object.assign(config || {}, { debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
         if (config.pluginLocation) {
-            this.pluginLocation = new URI((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).withScheme('file');
+            this.pluginLocation = URI.parse((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).with({ scheme: 'file' });
         }
         return config;
     }

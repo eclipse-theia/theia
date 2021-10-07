@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationTokenSource, CancellationToken, checkCancelled, cancelled, isCancelled } from '@theia/core/lib/common/cancellation';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -27,6 +27,7 @@ import throttle = require('@theia/core/shared/lodash.throttle');
 import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 import { Semaphore } from 'async-mutex';
 import { FileSystemPreferences } from './filesystem-preferences';
+import { Uri } from '@theia/core';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -94,7 +95,7 @@ export class FileUploadService {
                 const source: FileUploadService.Source = new FormData(form);
                 // clean up to allow upload to the same folder twice
                 fileInput.value = '';
-                const targetUri = new URI(<string>source.get(FileUploadService.TARGET));
+                const targetUri = URI.parse(<string>source.get(FileUploadService.TARGET));
                 const { resolve, reject } = this.deferredUpload;
                 this.deferredUpload = undefined;
                 const { onDidUpload } = this.uploadForm;
@@ -112,7 +113,7 @@ export class FileUploadService {
         if (source) {
             return this.withProgress(
                 (progress, token) => this.uploadAll(
-                    typeof targetUri === 'string' ? new URI(targetUri) : targetUri,
+                    typeof targetUri === 'string' ? URI.parse(targetUri) : targetUri,
                     { source, progress, token, onDidUpload }
                 ),
                 params.progress,
@@ -393,7 +394,7 @@ export class FileUploadService {
 
     protected async indexFile(targetUri: URI, file: File, context: FileUploadService.Context): Promise<void> {
         await context.accept({
-            uri: targetUri.resolve(file.name),
+            uri: Uri.joinPath(targetUri, file.name),
             file
         });
     }
@@ -427,7 +428,7 @@ export class FileUploadService {
      */
     protected async indexDirectoryEntry(targetUri: URI, entry: WebKitDirectoryEntry, context: FileUploadService.Context): Promise<void> {
         checkCancelled(context.token);
-        const newTargetUri = targetUri.resolve(entry.name);
+        const newTargetUri = Uri.joinPath(targetUri, entry.name);
         return new Promise<void>(async (resolve, reject) => {
             const reader = entry.createReader();
             const getEntries = () => reader.readEntries(async results => {

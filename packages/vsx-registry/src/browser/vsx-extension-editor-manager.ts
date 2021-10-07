@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { WidgetOpenHandler } from '@theia/core/lib/browser';
 import { VSXExtensionOptions } from './vsx-extension';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';

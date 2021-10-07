@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
+import { Command, CommandContribution, CommandRegistry, Uri } from '@theia/core/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { KeybindingContribution, KeybindingRegistry, LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -94,7 +94,8 @@ export class ExternalTerminalFrontendContribution implements CommandContribution
             return;
         }
 
-        const fallbackUri = this.editorManager.activeEditor?.editor.uri.parent ?? await this.envVariablesServer.getHomeDirUri();
+        const activeEditor = this.editorManager.activeEditor;
+        const fallbackUri = activeEditor && Uri.dirname(activeEditor.editor.uri) || await this.envVariablesServer.getHomeDirUri();
         await this.externalTerminalService.openTerminal(configuration, fallbackUri.toString());
     }
 

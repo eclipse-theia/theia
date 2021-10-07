@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { TreeNode } from '@theia/core/lib/browser/tree';
 import { ScmFileChangeFolderNode, ScmFileChangeNode, ScmFileChangeGroupNode } from './scm-tree-model';
@@ -37,7 +37,7 @@ export class ScmTreeLabelProvider implements LabelProviderContribution {
             return node.path;
         }
         if (ScmFileChangeNode.is(node)) {
-            return this.labelProvider.getName(new URI(node.sourceUri));
+            return this.labelProvider.getName(URI.parse(node.sourceUri));
         }
         return '';
     }

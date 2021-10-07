@@ -19,7 +19,7 @@
 import { DisposableCollection, Emitter, Event, MessageService, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/browser/task-service';
@@ -154,7 +154,7 @@ export class DebugSessionManager {
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
         this.labelProvider.onDidChange(event => {
             for (const uriString of this.breakpoints.getUris()) {
-                const uri = new URI(uriString);
+                const uri = URI.parse(uriString);
                 if (event.affects(uri)) {
                     this.fireDidChangeBreakpoints({ uri });
                 }
@@ -166,8 +166,8 @@ export class DebugSessionManager {
         return this.state > DebugState.Inactive;
     }
 
-    isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
-        return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri)).toString();
+    isCurrentEditorFrame(uri: URI | string): boolean {
+        return this.currentFrame?.source?.uri.toString() === (typeof uri === 'string' ? URI.parse(uri) : uri).toString();
     }
 
     protected async saveAll(): Promise<boolean> {
@@ -227,7 +227,7 @@ export class DebugSessionManager {
         const { workspaceFolderUri } = options;
         let configuration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
         configuration = await this.variableResolver.resolve(configuration, {
-            context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
+            context: options.workspaceFolderUri ? URI.parse(options.workspaceFolderUri) : undefined,
             configurationSection: 'launch'
         });
         configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
@@ -373,7 +373,7 @@ export class DebugSessionManager {
                         affectedUri.add(uriString);
                         this.fireDidChangeBreakpoints({
                             session: current,
-                            uri: new URI(uriString)
+                            uri: URI.parse(uriString)
                         });
                     }
                 }

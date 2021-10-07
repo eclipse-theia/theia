@@ -20,13 +20,14 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { lookup } from 'mime-types';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -119,7 +120,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
-        const exists = await fs.pathExists(FileUri.fsPath(uri));
+        const exists = await fs.pathExists(Uri.fsPath(uri));
         if (!exists) {
             return this.missingResourceHandler()(uri, response);
         }
@@ -147,11 +148,11 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected getUri(request: Request): MaybePromise<string> {
-        return FileUri.create(request.path).toString(true);
+        return URI.parse(request.path).toString(true);
     }
 
     protected async readContent(uri: string): Promise<FileStatWithContent> {
-        const fsPath = FileUri.fsPath(uri);
+        const fsPath = Uri.fsPath(uri);
         const [stat, content] = await Promise.all([fs.stat(fsPath), fs.readFile(fsPath, 'utf8')]);
         return { stat: Object.assign(stat, { uri }), content };
     }
@@ -187,7 +188,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected defaultHandler(): (statWithContent: FileStatWithContent, response: Response) => MaybePromise<Response> {
         return async (statWithContent: FileStatWithContent, response: Response) => {
             const { content } = statWithContent;
-            const mimeType = lookup(FileUri.fsPath(statWithContent.stat.uri));
+            const mimeType = lookup(Uri.fsPath(statWithContent.stat.uri));
             if (!mimeType) {
                 this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
                 response.contentType('application/octet-stream');
@@ -249,7 +250,7 @@ export class ImageHandler implements MiniBrowserEndpointHandler {
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
-        fs.readFile(FileUri.fsPath(statWithContent.stat.uri), (error, data) => {
+        fs.readFile(Uri.fsPath(statWithContent.stat.uri), (error, data) => {
             if (error) {
                 throw error;
             }
@@ -285,8 +286,8 @@ export class PdfHandler implements MiniBrowserEndpointHandler {
                 // The following are not required for percent-encoding per RFC5987, so we can allow for a little better readability over the wire: |`^.
                 replace(/%(?:7C|60|5E)/g, unescape);
 
-        const fileName = FileUri.create(statWithContent.stat.uri).path.base;
-        fs.readFile(FileUri.fsPath(statWithContent.stat.uri), (error, data) => {
+        const fileName = Uri.basename(URI.parse(statWithContent.stat.uri));
+        fs.readFile(Uri.fsPath(statWithContent.stat.uri), (error, data) => {
             if (error) {
                 throw error;
             }

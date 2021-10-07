@@ -19,7 +19,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-session';
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -31,7 +31,7 @@ export type DebugConsoleSessionFactory = (debugSession: DebugSession) => DebugCo
 @injectable()
 export class DebugConsoleSession extends ConsoleSession {
 
-    static uri = new URI().withScheme('debugconsole');
+    static uri = URI.from({ scheme: 'debugconsole' });
 
     protected items: ConsoleItem[] = [];
 

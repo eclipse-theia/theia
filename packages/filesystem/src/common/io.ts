@@ -21,7 +21,7 @@
 
 /* eslint-disable max-len */
 
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { BinaryBuffer } from '@theia/core/lib/common//buffer';
 import { CancellationToken, cancelled as canceled } from '@theia/core/lib/common/cancellation';
 import { FileSystemProviderWithOpenReadWriteCloseCapability, FileReadStreamOptions, ensureFileSystemProviderError, createFileSystemProviderError, FileSystemProviderErrorCode } from './files';

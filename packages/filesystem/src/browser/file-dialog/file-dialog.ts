@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Disposable, MaybeArray } from '@theia/core/lib/common';
+import { Disposable, MaybeArray, Uri } from '@theia/core/lib/common';
 import { codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
@@ -24,7 +24,7 @@ import { LocationListRenderer, LocationListRendererFactory } from '../location';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFiltersRendererFactory } from './file-dialog-tree-filters-renderer';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Panel } from '@theia/core/shared/@phosphor/widgets';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
@@ -266,7 +266,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.addKeyListener(this.up, Key.ENTER, () => {
             this.addTransformEffectToIcon(this.up);
             if (this.model.location) {
-                this.model.location = this.model.location.parent;
+                this.model.location = Uri.dirname(this.model.location);
             }
         }, 'click');
         super.onAfterAttach(msg);
@@ -385,10 +385,10 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
             const node = this.widget.model.selectedFileStatNodes[0];
 
             if (node.fileStat.isDirectory) {
-                return node.uri.resolve(this.fileNameField.value);
+                return Uri.joinPath(node.uri, this.fileNameField.value);
             }
 
-            return node.uri.parent.resolve(this.fileNameField.value);
+            return Uri.joinPath(Uri.dirname(node.uri), this.fileNameField.value);
         }
 
         return undefined;

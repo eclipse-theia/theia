@@ -15,14 +15,14 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import * as types from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 describe('API Type Implementations:', () => {
 
     describe('URI:', () => {
-         it('should convert to string', () => {
+        it('should convert to string', () => {
             const uriString = 'scheme://authority.com/foo/bar/zoz?query#fragment';
-            const uri = types.URI.parse(uriString);
+            const uri = URI.parse(uriString);
             // when
             const result = uri.toString();
 

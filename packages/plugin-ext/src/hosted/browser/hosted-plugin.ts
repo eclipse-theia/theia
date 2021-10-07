@@ -33,7 +33,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService
+    CancellationTokenSource, JsonRpcProxy, ProgressService, Uri
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -57,7 +57,7 @@ import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
@@ -540,7 +540,7 @@ export class HostedPluginSupport {
 
     protected async getHostGlobalStoragePath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage');
+        const globalStorageFolderUri = Uri.joinPath(URI.parse(configDirUri), 'globalStorage');
 
         // Make sure that folder by the path exists
         if (!await this.fileService.exists(globalStorageFolderUri)) {

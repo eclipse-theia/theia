@@ -16,27 +16,19 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { remote, FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/shared/electron';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
 import { FileAccess } from '../../common/filesystem';
 import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
+import { Uri } from '@theia/core';
 
 // See https://github.com/electron/electron/blob/v9.0.2/docs/api/dialog.md
 // These properties get extended with newer versions of Electron
 type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles' |
     'createDirectory' | 'promptToCreate' | 'noResolveAliases' | 'treatPackageAsDirectory' | 'dontAddToRecent';
-
-//
-// We are OK to use this here because the electron backend and frontend are on the same host.
-// If required, we can move this single service (and its module) to a dedicated Theia extension,
-// and at packaging time, clients can decide whether they need the native or the browser-based
-// solution.
-//
-// eslint-disable-next-line @theia/runtime-import-check
-import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
@@ -53,7 +45,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 return undefined;
             }
 
-            const uris = filePaths.map(path => FileUri.create(path));
+            const uris = filePaths.map(path => URI.file(path));
             const canAccess = await this.canRead(uris);
             const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
             return result;
@@ -69,7 +61,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 return undefined;
             }
 
-            const uri = FileUri.create(filePath);
+            const uri = URI.file(filePath);
             const exists = await this.fileService.exists(uri);
             if (!exists) {
                 return uri;
@@ -107,7 +99,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
         const title = props.title || dialogTitle;
-        const defaultPath = FileUri.fsPath(uri);
+        const defaultPath = uri.fsPath;
         const filters: FileFilter[] = [{ name: 'All Files', extensions: ['*'] }];
         if (props.filters) {
             filters.unshift(...Object.keys(props.filters).map(key => ({ name: key, extensions: props.filters![key] })));
@@ -124,9 +116,9 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     protected toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
         const buttonLabel = props.saveLabel;
         if (props.inputValue) {
-            uri = uri.resolve(props.inputValue);
+            uri = Uri.joinPath(uri, props.inputValue);
         }
-        const defaultPath = FileUri.fsPath(uri);
+        const defaultPath = uri.fsPath;
         return { ...this.toDialogOptions(uri, props, 'Save'), buttonLabel, defaultPath };
     }
 

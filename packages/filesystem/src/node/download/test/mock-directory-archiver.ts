@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { DirectoryArchiver } from '../directory-archiver';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export class MockDirectoryArchiver extends DirectoryArchiver {
 

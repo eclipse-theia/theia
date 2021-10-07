@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, Uri } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -30,7 +30,6 @@ import {
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';
-import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager, EditorCommands } from '@theia/editor/lib/browser';
 import {
     CodeEditorWidgetUtil
@@ -156,7 +155,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             };
         }
 
-        const uri = new TheiaURI(resource);
+        const uri = resource;
         const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
 
         let opener: OpenHandler | undefined;
@@ -236,7 +235,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 } else {
                     options = { preserveWindow: !arg.forceNewWindow };
                 }
-                this.workspaceService.open(new TheiaURI(resource), options);
+                this.workspaceService.open(resource, options);
             }
         });
 
@@ -254,9 +253,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     throw new Error(`Invalid argument for ${VscodeCommands.DIFF.id} command with right argument. Expecting URI right type but found ${right}`);
                 }
 
-                const leftURI = new TheiaURI(left);
                 const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
-                await this.diffService.openDiffEditor(leftURI, new TheiaURI(right), label, editorOptions);
+                await this.diffService.openDiffEditor(left, right, label, editorOptions);
             }
         });
 
@@ -304,11 +302,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
         commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
-            execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
+            execute: async (vsixUriOrExtensionId: URI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
                     await this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
                 } else {
-                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
+                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? Uri.fsPath(URI.from(vsixUriOrExtensionId)) : await this.fileService.fsPath(vsixUriOrExtensionId);
                     await this.pluginServer.deploy(`local-file:${uriPath}`);
                 }
             }
@@ -471,7 +469,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
 
         commands.registerCommand({ id: 'openInTerminal' }, {
-            execute: (resource: URI) => this.terminalContribution.openInTerminal(new TheiaURI(resource.toString()))
+            execute: (resource: URI) => this.terminalContribution.openInTerminal(resource)
         });
 
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
@@ -728,7 +726,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
                 if (navigator instanceof FileNavigatorWidget) {
                     const model = navigator.model;
-                    const node = await model.revealFile(new TheiaURI(resource));
+                    const node = await model.revealFile(resource);
                     if (SelectableTreeNode.is(node)) {
                         model.selectNode(node);
                     }
@@ -739,9 +737,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
     protected async getCallHierarchyServiceForUri(resource: URI): Promise<CallHierarchyService | undefined> {
         const reference = await this.textModelService.createModelReference(resource);
-        const uri = new TheiaURI(resource);
         const languageId = reference.object.languageId;
         reference.dispose();
-        return this.callHierarchyProvider.get(languageId, uri);
+        return this.callHierarchyProvider.get(languageId, resource);
     }
 }

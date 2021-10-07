@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
@@ -56,7 +56,7 @@ export default new ContainerModule(bind => {
         async createWidget(options: NavigatableWidgetOptions): Promise<MiniBrowser> {
             const { container } = context;
             const child = container.createChild();
-            const uri = new URI(options.uri);
+            const uri = URI.parse(options.uri);
             child.bind(MiniBrowserOptions).toConstantValue({ uri });
             return child.get(MiniBrowser);
         }

@@ -25,7 +25,6 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
-import CoreURI from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -80,7 +79,7 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     // --- consumer fs, vscode.workspace.fs
 
     $stat(uri: UriComponents): Promise<Stat> {
-        return this._fileService.resolve(new CoreURI(URI.revive(uri)), { resolveMetadata: true }).then(stat => ({
+        return this._fileService.resolve(URI.revive(uri), { resolveMetadata: true }).then(stat => ({
             ctime: stat.ctime,
             mtime: stat.mtime,
             size: stat.size,
@@ -89,7 +88,7 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     }
 
     $readdir(uri: UriComponents): Promise<[string, FileType][]> {
-        return this._fileService.resolve(new CoreURI(URI.revive(uri)), { resolveMetadata: false }).then(stat => {
+        return this._fileService.resolve(URI.revive(uri), { resolveMetadata: false }).then(stat => {
             if (!stat.isDirectory) {
                 const err = new Error(stat.name);
                 err.name = FileSystemProviderErrorCode.FileNotADirectory;
@@ -100,35 +99,35 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     }
 
     $readFile(uri: UriComponents): Promise<BinaryBuffer> {
-        return this._fileService.readFile(new CoreURI(URI.revive(uri))).then(file => file.value).catch(FileSystemMainImpl._handleError);
+        return this._fileService.readFile(URI.revive(uri)).then(file => file.value).catch(FileSystemMainImpl._handleError);
     }
 
     $writeFile(uri: UriComponents, content: BinaryBuffer): Promise<void> {
-        return this._fileService.writeFile(new CoreURI(URI.revive(uri)), content)
+        return this._fileService.writeFile(URI.revive(uri), content)
             .then(() => undefined).catch(FileSystemMainImpl._handleError);
     }
 
     $rename(source: UriComponents, target: UriComponents, opts: FileOverwriteOptions): Promise<void> {
-        return this._fileService.move(new CoreURI(URI.revive(source)), new CoreURI(URI.revive(target)), {
+        return this._fileService.move(URI.revive(source), URI.revive(target), {
             ...opts,
             fromUserGesture: false
         }).then(() => undefined).catch(FileSystemMainImpl._handleError);
     }
 
     $copy(source: UriComponents, target: UriComponents, opts: FileOverwriteOptions): Promise<void> {
-        return this._fileService.copy(new CoreURI(URI.revive(source)), new CoreURI(URI.revive(target)), {
+        return this._fileService.copy(URI.revive(source), URI.revive(target), {
             ...opts,
             fromUserGesture: false
         }).then(() => undefined).catch(FileSystemMainImpl._handleError);
     }
 
     $mkdir(uri: UriComponents): Promise<void> {
-        return this._fileService.createFolder(new CoreURI(URI.revive(uri)))
+        return this._fileService.createFolder(URI.revive(uri))
             .then(() => undefined).catch(FileSystemMainImpl._handleError);
     }
 
     $delete(uri: UriComponents, opts: FileDeleteOptions): Promise<void> {
-        return this._fileService.delete(new CoreURI(URI.revive(uri)), opts).catch(FileSystemMainImpl._handleError);
+        return this._fileService.delete(URI.revive(uri), opts).catch(FileSystemMainImpl._handleError);
     }
 
     private static _handleError(err: any): never {
@@ -181,9 +180,9 @@ class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCap
         this._onDidChange.dispose();
     }
 
-    watch(resource: CoreURI, opts: WatchOptions) {
+    watch(resource: URI, opts: WatchOptions) {
         const session = Math.random();
-        this._proxy.$watch(this._handle, session, resource['codeUri'], opts);
+        this._proxy.$watch(this._handle, session, resource, opts);
         return Disposable.create(() => {
             this._proxy.$unwatch(this._handle, session);
         });
@@ -194,47 +193,47 @@ class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCap
     }
 
     private static _createFileChange(dto: IFileChangeDto): FileChange {
-        return { resource: new CoreURI(URI.revive(dto.resource)), type: dto.type };
+        return { resource: URI.revive(dto.resource), type: dto.type };
     }
 
     // --- forwarding calls
 
-    stat(resource: CoreURI): Promise<Stat> {
-        return this._proxy.$stat(this._handle, resource['codeUri']).then(undefined, err => {
+    stat(resource: URI): Promise<Stat> {
+        return this._proxy.$stat(this._handle, resource).then(undefined, err => {
             throw err;
         });
     }
 
-    readFile(resource: CoreURI): Promise<Uint8Array> {
-        return this._proxy.$readFile(this._handle, resource['codeUri']).then(buffer => buffer.buffer);
+    readFile(resource: URI): Promise<Uint8Array> {
+        return this._proxy.$readFile(this._handle, resource).then(buffer => buffer.buffer);
     }
 
-    writeFile(resource: CoreURI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
-        return this._proxy.$writeFile(this._handle, resource['codeUri'], BinaryBuffer.wrap(content), opts);
+    writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
+        return this._proxy.$writeFile(this._handle, resource, BinaryBuffer.wrap(content), opts);
     }
 
-    delete(resource: CoreURI, opts: FileDeleteOptions): Promise<void> {
-        return this._proxy.$delete(this._handle, resource['codeUri'], opts);
+    delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
+        return this._proxy.$delete(this._handle, resource, opts);
     }
 
-    mkdir(resource: CoreURI): Promise<void> {
-        return this._proxy.$mkdir(this._handle, resource['codeUri']);
+    mkdir(resource: URI): Promise<void> {
+        return this._proxy.$mkdir(this._handle, resource);
     }
 
-    readdir(resource: CoreURI): Promise<[string, FileType][]> {
-        return this._proxy.$readdir(this._handle, resource['codeUri']);
+    readdir(resource: URI): Promise<[string, FileType][]> {
+        return this._proxy.$readdir(this._handle, resource);
     }
 
-    rename(resource: CoreURI, target: CoreURI, opts: FileOverwriteOptions): Promise<void> {
-        return this._proxy.$rename(this._handle, resource['codeUri'], target['codeUri'], opts);
+    rename(resource: URI, target: URI, opts: FileOverwriteOptions): Promise<void> {
+        return this._proxy.$rename(this._handle, resource, target, opts);
     }
 
-    copy(resource: CoreURI, target: CoreURI, opts: FileOverwriteOptions): Promise<void> {
-        return this._proxy.$copy(this._handle, resource['codeUri'], target['codeUri'], opts);
+    copy(resource: URI, target: URI, opts: FileOverwriteOptions): Promise<void> {
+        return this._proxy.$copy(this._handle, resource, target, opts);
     }
 
-    open(resource: CoreURI, opts: FileOpenOptions): Promise<number> {
-        return this._proxy.$open(this._handle, resource['codeUri'], opts);
+    open(resource: URI, opts: FileOpenOptions): Promise<number> {
+        return this._proxy.$open(this._handle, resource, opts);
     }
 
     close(fd: number): Promise<void> {

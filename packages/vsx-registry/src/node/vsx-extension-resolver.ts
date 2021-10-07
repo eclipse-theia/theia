@@ -20,7 +20,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 import * as requestretry from 'requestretry';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
@@ -40,11 +40,11 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     accept(pluginId: string): boolean {
-        return !!VSXExtensionUri.toId(new URI(pluginId));
+        return !!VSXExtensionUri.toId(URI.parse(pluginId));
     }
 
     async resolve(context: PluginDeployerResolverContext): Promise<void> {
-        const id = VSXExtensionUri.toId(new URI(context.getOriginId()));
+        const id = VSXExtensionUri.toId(URI.parse(context.getOriginId()));
         if (!id) {
             return;
         }

@@ -17,13 +17,13 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginPaths } from './paths/const';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class PluginsKeyValueStorage {
@@ -40,7 +40,7 @@ export class PluginsKeyValueStorage {
     protected async init(): Promise<void> {
         try {
             const configDirUri = await this.envServer.getConfigDirUri();
-            const globalStorageFsPath = path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
+            const globalStorageFsPath = path.join(Uri.fsPath(configDirUri), PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR);
             const exists = await fs.pathExists(globalStorageFsPath);
             if (!exists) {
                 await fs.mkdirs(globalStorageFsPath);

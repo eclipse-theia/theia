@@ -20,13 +20,13 @@ import { ReactRenderer } from '../widgets';
 import { BreadcrumbsService } from './breadcrumbs-service';
 import { BreadcrumbRenderer } from './breadcrumb-renderer';
 import PerfectScrollbar from 'perfect-scrollbar';
-import URI from '../../common/uri';
-import { Emitter, Event } from '../../common';
+import { Emitter, Event, Uri } from '../../common';
 import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
 import { DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
 import { Breadcrumb, Styles } from './breadcrumbs-constants';
 import { LabelProvider } from '../label-provider';
+import { URI } from 'vscode-uri';
 
 interface Cancelable {
     canceled: boolean;
@@ -72,7 +72,7 @@ export class BreadcrumbsRenderer extends ReactRenderer {
     protected init(): void {
         this.toDispose.push(this.onDidChangeActiveStateEmitter);
         this.toDispose.push(this.breadcrumbsService.onDidChangeBreadcrumbs(uri => {
-            if (this.uri?.isEqual(uri)) {
+            if (this.uri && Uri.isEqual(this.uri, uri)) {
                 this.refresh(this.uri);
             }
         }));

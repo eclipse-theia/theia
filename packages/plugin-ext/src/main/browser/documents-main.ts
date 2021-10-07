@@ -22,8 +22,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
-import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from '@theia/core/shared/vscode-languageserver-types';
@@ -191,7 +190,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         //   - Uncaught (in promise) Error: Cannot read property 'message' of undefined.
         try {
             const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
-            const uriArg = new URI(CodeURI.revive(uri));
+            const uriArg = URI.revive(uri);
             const opener = await this.openerService.getOpener(uriArg, editorOptions);
             await opener.open(uriArg, editorOptions);
         } catch (err) {
@@ -200,7 +199,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
+        const widget = await this.editorManager.getByUri(URI.revive(uri));
         if (widget) {
             await Saveable.save(widget);
             return true;
@@ -210,7 +209,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
-        const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+        const ref = await this.modelService.createModelReference(URI.revive(uri));
         if (ref.object) {
             this.modelReferenceCache.add(ref);
             return true;
@@ -221,7 +220,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $tryCloseDocument(uri: UriComponents): Promise<boolean> {
-        const widget = await this.editorManager.getByUri(new URI(CodeURI.revive(uri)));
+        const widget = await this.editorManager.getByUri(URI.revive(uri));
         if (widget) {
             await Saveable.save(widget);
             widget.close();

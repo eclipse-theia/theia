@@ -16,7 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
+import { Uri } from '@theia/core';
 
 @injectable()
 export class PluginVSCodeEnvironment {
@@ -27,8 +28,8 @@ export class PluginVSCodeEnvironment {
     protected _extensionsDirUri: URI | undefined;
     async getExtensionsDirUri(): Promise<URI> {
         if (!this._extensionsDirUri) {
-            const configDir = new URI(await this.environments.getConfigDirUri());
-            this._extensionsDirUri = configDir.resolve('extensions');
+            const configDir = URI.parse(await this.environments.getConfigDirUri());
+            this._extensionsDirUri = Uri.joinPath(configDir, 'extensions');
         }
         return this._extensionsDirUri;
     }

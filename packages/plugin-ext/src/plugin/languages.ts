@@ -32,7 +32,8 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
-import { Disposable, URI } from './types-impl';
+import { Disposable } from './types-impl';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../common/uri-components';
 import {
     CompletionContext,

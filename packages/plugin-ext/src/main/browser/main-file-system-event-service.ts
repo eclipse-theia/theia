@@ -47,13 +47,13 @@ export class MainFileSystemEventService {
             for (const change of event.changes) {
                 switch (change.type) {
                     case FileChangeType.ADDED:
-                        events.created.push(change.resource['codeUri']);
+                        events.created.push(change.resource);
                         break;
                     case FileChangeType.UPDATED:
-                        events.changed.push(change.resource['codeUri']);
+                        events.changed.push(change.resource);
                         break;
                     case FileChangeType.DELETED:
-                        events.deleted.push(change.resource['codeUri']);
+                        events.deleted.push(change.resource);
                         break;
                 }
             }
@@ -66,11 +66,11 @@ export class MainFileSystemEventService {
 
         // BEFORE file operation
         fileService.addFileOperationParticipant({
-            participate: (target, source, operation, timeout, token) => proxy.$onWillRunFileOperation(operation, target['codeUri'], source?.['codeUri'], timeout, token)
+            participate: (target, source, operation, timeout, token) => proxy.$onWillRunFileOperation(operation, target, source, timeout, token)
         });
 
         // AFTER file operation
-        this.toDispose.push(fileService.onDidRunUserOperation(e => proxy.$onDidRunFileOperation(e.operation, e.target['codeUri'], e.source?.['codeUri'])));
+        this.toDispose.push(fileService.onDidRunUserOperation(e => proxy.$onDidRunFileOperation(e.operation, e.target, e.source)));
     }
 
     dispose(): void {

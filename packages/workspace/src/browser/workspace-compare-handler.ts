@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import URI from '@theia/core/lib/common/uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { DiffService } from './diff-service';
 

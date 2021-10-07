@@ -16,7 +16,6 @@
 
 import { injectable, inject, named } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import URI from '../common/uri';
 import { ContributionProvider } from './contribution-provider';
 import { Event, Emitter } from './event';
 import { Disposable } from './disposable';
@@ -25,6 +24,7 @@ import { CancellationToken } from './cancellation';
 import { ApplicationError } from './application-error';
 import { ReadableStream, Readable } from './stream';
 import { SyncReferenceCollection, Reference } from './reference';
+import { URI } from 'vscode-uri';
 
 export interface ResourceVersion {
 }
@@ -255,7 +255,7 @@ export class ReferenceMutableResource implements Resource {
 @injectable()
 export class InMemoryResources implements ResourceResolver {
 
-    protected readonly resources = new SyncReferenceCollection<string, MutableResource>(uri => new MutableResource(new URI(uri)));
+    protected readonly resources = new SyncReferenceCollection<string, MutableResource>(uri => new MutableResource(URI.parse(uri)));
 
     add(uri: URI, contents: string): Resource {
         const resourceUri = uri.toString();

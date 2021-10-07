@@ -16,7 +16,7 @@
 
 import * as cp from 'child_process';
 import { injectable } from '@theia/core/shared/inversify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { Uri } from '@theia/core';
 import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
 
 /*---------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ export class MacExternalTerminalService implements ExternalTerminalService {
     protected defaultTerminalApp = 'Terminal.app';
 
     async openTerminal(configuration: ExternalTerminalConfiguration, cwd: string): Promise<void> {
-        await this.spawnTerminal(configuration, FileUri.fsPath(cwd));
+        await this.spawnTerminal(configuration, Uri.fsPath(cwd));
     }
 
     async getDefaultExec(): Promise<string> {
