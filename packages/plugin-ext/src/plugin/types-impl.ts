@@ -2120,6 +2120,12 @@ export class DebugAdapterExecutable {
     }
 }
 
+export namespace DebugAdapterExecutable {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is theia.DebugAdapterExecutable {
+        return !!adapter && 'command' in adapter;
+    }
+}
+
 /**
  * Represents a debug adapter running as a socket based server.
  */
@@ -2144,6 +2150,52 @@ export class DebugAdapterServer {
         this.host = host;
     }
 }
+
+export namespace DebugAdapterServer {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterServer {
+        return !!adapter && 'port' in adapter;
+    }
+}
+
+/**
+ * Represents a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+ */
+@es5ClassCompat
+export class DebugAdapterNamedPipeServer {
+    /**
+     * Create a description for a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+     */
+    constructor(readonly path: string) { }
+}
+
+export namespace DebugAdapterNamedPipeServer {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterNamedPipeServer {
+        return !!adapter && 'path' in adapter;
+    }
+}
+
+/**
+ * A debug adapter descriptor for an inline implementation.
+ */
+@es5ClassCompat
+export class DebugAdapterInlineImplementation {
+    implementation: theia.DebugAdapter;
+
+    /**
+     * Create a descriptor for an inline implementation of a debug adapter.
+     */
+    constructor(impl: theia.DebugAdapter) {
+        this.implementation = impl;
+    }
+}
+
+export namespace DebugAdapterInlineImplementation {
+    export function is(adapter: theia.DebugAdapterDescriptor | undefined): adapter is DebugAdapterInlineImplementation {
+        return !!adapter && 'implementation' in adapter;
+    }
+}
+
+export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer | DebugAdapterNamedPipeServer | DebugAdapterInlineImplementation;
 
 export enum LogLevel {
     Trace = 1,

@@ -30,7 +30,7 @@ import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/brows
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 
 export class PluginDebugSession extends DebugSession {
     constructor(

@@ -37,9 +37,11 @@ import {
     DebugAdapterSessionFactory,
     DebugAdapterFactory,
     DebugAdapterForkExecutable
-} from '../common/debug-model';
+} from './debug-model';
 import { DebugAdapterSessionImpl } from './debug-adapter-session';
 import { environment } from '@theia/core/shared/@theia/application-package';
+import { StreamCommunicationProvider } from './stream-communication-provider';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -56,11 +58,9 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
         const process = this.childProcess(executable);
 
         // FIXME: propagate onError + onExit
-        return {
-            input: process.inputStream,
-            output: process.outputStream,
-            dispose: () => process.kill()
-        };
+        const provider = new StreamCommunicationProvider(process.outputStream, process.inputStream);
+        provider.push(Disposable.create(() => process.kill()));
+        return provider;
     }
 
     private childProcess(executable: DebugAdapterExecutable): RawProcess {
@@ -84,11 +84,10 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     connect(debugServerPort: number): CommunicationProvider {
         const socket = net.createConnection(debugServerPort);
         // FIXME: propagate socket.on('error', ...) + socket.on('close', ...)
-        return {
-            input: socket,
-            output: socket,
-            dispose: () => socket.end()
-        };
+
+        const provider = new StreamCommunicationProvider(socket, socket);
+        provider.push(Disposable.create(() => socket.end()));
+        return provider;
     }
 }
 

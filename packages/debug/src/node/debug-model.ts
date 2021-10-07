@@ -22,12 +22,12 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
-import * as stream from 'stream';
 import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
-import { DebugConfiguration } from './debug-configuration';
+import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { Event } from '@theia/core/lib/common/event';
 
 // FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
@@ -96,8 +96,10 @@ export type DebugAdapterExecutable = DebugAdapterSpawnExecutable | DebugAdapterF
  * TODO: the better name is DebugStreamConnection + handling on error and close
  */
 export interface CommunicationProvider extends Disposable {
-    output: stream.Readable;
-    input: stream.Writable;
+    onMessageReceived: Event<string>;
+    onError: Event<Error>;
+    onClose: Event<void>;
+    send(message: string): void;
 }
 
 /**

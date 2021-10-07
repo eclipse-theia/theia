@@ -9179,6 +9179,13 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A DebugProtocolMessage is an opaque stand-in type for the [ProtocolMessage](https://microsoft.github.io/debug-adapter-protocol/specification#Base_Protocol_ProtocolMessage) type defined in the Debug Adapter Protocol.
+     */
+    export interface DebugProtocolMessage {
+        // Properties: see details [here](https://microsoft.github.io/debug-adapter-protocol/specification#Base_Protocol_ProtocolMessage).
+    }
+
+    /**
      * Configuration for a debug session.
      */
     export interface DebugConfiguration {
@@ -9445,7 +9452,53 @@ declare module '@theia/plugin' {
         constructor(port: number, host?: string);
     }
 
-    export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer;
+    /**
+     * Represents a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+     */
+    export class DebugAdapterNamedPipeServer {
+        /**
+         * The path to the NamedPipe/UNIX Domain Socket.
+         */
+        readonly path: string;
+
+        /**
+         * Create a description for a debug adapter running as a Named Pipe (on Windows)/UNIX Domain Socket (on non-Windows) based server.
+         */
+        constructor(path: string);
+    }
+
+    /**
+     * A debug adapter that implements the Debug Adapter Protocol can be registered with the editor if it implements the DebugAdapter interface.
+     */
+    export interface DebugAdapter extends Disposable {
+
+        /**
+         * An event which fires after the debug adapter has sent a Debug Adapter Protocol message to the editor.
+         * Messages can be requests, responses, or events.
+         */
+        readonly onDidSendMessage: Event<DebugProtocolMessage>;
+
+        /**
+         * Handle a Debug Adapter Protocol message.
+         * Messages can be requests, responses, or events.
+         * Results or errors are returned via onSendMessage events.
+         * @param message A Debug Adapter Protocol message
+         */
+        handleMessage(message: DebugProtocolMessage): void;
+    }
+
+    /**
+     * A debug adapter descriptor for an inline implementation.
+     */
+    export class DebugAdapterInlineImplementation {
+
+        /**
+         * Create a descriptor for an inline implementation of a debug adapter.
+         */
+        constructor(implementation: DebugAdapter);
+    }
+
+    export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer | DebugAdapterNamedPipeServer | DebugAdapterInlineImplementation;
 
     export interface DebugAdapterDescriptorFactory {
         /**

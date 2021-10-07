@@ -15,15 +15,18 @@
  ********************************************************************************/
 
 import * as net from 'net';
-import * as theia from '@theia/plugin';
-import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
+import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
+import { StreamCommunicationProvider } from '@theia/debug/lib/node/stream-communication-provider';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { DebugAdapterExecutable, DebugAdapterInlineImplementation, DebugAdapterNamedPipeServer, DebugAdapterServer } from '../../types-impl';
+import { InlineCommunicationProvider } from '@theia/debug/lib/node/inline-communication-provider';
 const isElectron = require('is-electron');
 
 /**
  * Starts debug adapter process.
  */
-export function startDebugAdapter(executable: theia.DebugAdapterExecutable): CommunicationProvider {
+export function startDebugAdapter(executable: DebugAdapterExecutable): CommunicationProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = { stdio: ['pipe', 'pipe', 2] };
 
@@ -63,21 +66,28 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
         childProcess = spawn(command, args, options);
     }
 
-    return {
-        input: childProcess.stdin!,
-        output: childProcess.stdout!,
-        dispose: () => childProcess.kill()
-    };
+    const provider = new StreamCommunicationProvider(childProcess.stdout!, childProcess.stdin!);
+    provider.push(Disposable.create(() => childProcess.kill()));
+    return provider;
 }
 
 /**
  * Connects to a remote debug server.
  */
-export function connectDebugAdapter(server: theia.DebugAdapterServer): CommunicationProvider {
+export function connectSocketDebugAdapter(server: DebugAdapterServer): CommunicationProvider {
     const socket = net.createConnection(server.port, server.host);
-    return {
-        input: socket,
-        output: socket,
-        dispose: () => socket.end()
-    };
+    const provider = new StreamCommunicationProvider(socket, socket);
+    provider.push(Disposable.create(() => socket.end()));
+    return provider;
+}
+
+export function connectPipeDebugAdapter(adapter: DebugAdapterNamedPipeServer): CommunicationProvider {
+    const socket = net.createConnection(adapter.path);
+    const provider = new StreamCommunicationProvider(socket, socket);
+    provider.push(Disposable.create(() => socket.end()));
+    return provider;
+}
+
+export function connectInlineDebugAdapter(adapter: DebugAdapterInlineImplementation): CommunicationProvider {
+    return new InlineCommunicationProvider(adapter.implementation);
 }

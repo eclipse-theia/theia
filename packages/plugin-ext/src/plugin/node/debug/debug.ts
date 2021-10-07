@@ -15,7 +15,6 @@
  ********************************************************************************/
 import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
-import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint } from '../../../common/plugin-api-rpc-model';
@@ -25,12 +24,16 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginWebSocketChannel } from '../../../common/connection';
 import { CommandRegistryImpl } from '../../command-registry';
 import { ConnectionExtImpl } from '../../connection-ext';
-import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range } from '../../types-impl';
+import {
+    Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range,
+    DebugAdapterServer, DebugAdapterExecutable, DebugAdapterNamedPipeServer, DebugAdapterInlineImplementation
+} from '../../types-impl';
 import { resolveDebugAdapterExecutable } from './plugin-debug-adapter-executable-resolver';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
-import { connectDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
+import { connectInlineDebugAdapter, connectPipeDebugAdapter, connectSocketDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
+import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -423,16 +426,20 @@ export class DebugExtImpl implements DebugExt {
             //  @param executable The debug adapter's executable information as specified in the package.json (or undefined if no such information exists).
             const descriptor = await descriptorFactory.createDebugAdapterDescriptor(session, executable);
             if (descriptor) {
-                if ('port' in descriptor) {
-                    return connectDebugAdapter(descriptor);
-                } else {
+                if (DebugAdapterServer.is(descriptor)) {
+                    return connectSocketDebugAdapter(descriptor);
+                } else if (DebugAdapterExecutable.is(descriptor)) {
                     return startDebugAdapter(descriptor);
+                } else if (DebugAdapterNamedPipeServer.is(descriptor)) {
+                    return connectPipeDebugAdapter(descriptor);
+                } else if (DebugAdapterInlineImplementation.is(descriptor)) {
+                    return connectInlineDebugAdapter(descriptor);
                 }
             }
         }
 
         if ('debugServer' in debugConfiguration) {
-            return connectDebugAdapter({ port: debugConfiguration.debugServer });
+            return connectSocketDebugAdapter({ port: debugConfiguration.debugServer });
         } else {
             if (!executable) {
                 throw new Error('It is not possible to provide debug adapter executable.');

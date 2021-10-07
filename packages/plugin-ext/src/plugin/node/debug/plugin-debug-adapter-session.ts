@@ -14,23 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-session';
 import * as theia from '@theia/plugin';
 import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
+import { CommunicationProvider, DebugAdapterSession } from '@theia/debug/lib/node/debug-model';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Server debug adapter session.
  */
-export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession {
+export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession, DebugAdapterSession {
     readonly type: string;
     readonly name: string;
     readonly configuration: theia.DebugConfiguration;
 
     constructor(
-        protected readonly communicationProvider: CommunicationProvider,
+        readonly communicationProvider: CommunicationProvider,
         protected readonly tracker: theia.DebugAdapterTracker,
         protected readonly theiaSession: theia.DebugSession) {
 
