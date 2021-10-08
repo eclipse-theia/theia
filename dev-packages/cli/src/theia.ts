@@ -22,6 +22,7 @@ import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/applicat
 import checkHoisted from './check-hoisting';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
+import { extract } from '@theia/localization-manager';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
@@ -223,7 +224,52 @@ function theiaCli(): void {
             handler: async ({ packed }) => {
                 await downloadPlugins({ packed });
             },
-        }).command<{
+        })
+        .command<{
+            root: string,
+            output: string,
+            merge: boolean,
+            exclude?: string,
+            logs?: string,
+            pattern?: string
+        }>({
+            command: 'extract',
+            describe: 'Extract translation key/value pairs from source code',
+            builder: {
+                'output': {
+                    alias: 'o',
+                    describe: 'Output file for the extracted translations',
+                    demandOption: true
+                },
+                'root': {
+                    alias: 'r',
+                    describe: 'The directory which contains the source code',
+                    default: '.'
+                },
+                'merge': {
+                    alias: 'm',
+                    describe: 'Whether to merge new with existing translation values',
+                    boolean: true,
+                    default: false
+                },
+                'exclude': {
+                    alias: 'e',
+                    describe: 'Allows to exclude translation keys starting with this value'
+                },
+                'pattern': {
+                    alias: 'p',
+                    describe: 'A glob pattern for filtering the files used for extraction'
+                },
+                'logs': {
+                    alias: 'l',
+                    describe: 'File path to a log file'
+                }
+            },
+            handler: async options => {
+                await extract(options);
+            }
+        })
+        .command<{
             testInspect: boolean,
             testExtension: string[],
             testFile: string[],

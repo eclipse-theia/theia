@@ -1,0 +1,44 @@
+{
+  "name": "@theia/localization-manager",
+  "version": "1.18.0",
+  "description": "Theia localization manager API.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^4.0.2",
+    "deepmerge": "^4.2.2",
+    "fs-extra": "^4.0.2",
+    "glob": "^7.2.0",
+    "typescript": "^4.4.3"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.18.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

@@ -16,6 +16,9 @@
       "path": "../application-package"
     },
     {
+      "path": "../localization-manager"
+    },
+    {
       "path": "../ovsx-client"
     }
   ]
