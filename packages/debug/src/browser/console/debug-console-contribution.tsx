@@ -24,9 +24,8 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { DebugConsoleMode } from '../../common/debug-configuration';
 import { DebugSession } from '../debug-session';
-import { DebugSessionManager } from '../debug-session-manager';
+import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
@@ -71,9 +70,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     @postConstruct()
     protected init(): void {
         this.debugSessionManager.onDidCreateDebugSession(session => {
-            const topParent = this.findParentSession(session);
-            if (topParent) {
-                const parentConsoleSession = this.consoleSessionManager.get(topParent.id);
+            const consoleParent = session.findConsoleParent();
+            if (consoleParent) {
+                const parentConsoleSession = this.consoleSessionManager.get(consoleParent.id);
                 if (parentConsoleSession instanceof DebugConsoleSession) {
                     session.on('output', event => parentConsoleSession.logOutput(parentConsoleSession.debugSession, event));
                 }
@@ -83,20 +82,24 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 session.on('output', event => consoleSession.logOutput(session, event));
             }
         });
+        this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event));
         this.debugSessionManager.onDidDestroyDebugSession(session => {
             this.consoleSessionManager.delete(session.id);
         });
     }
 
-    protected findParentSession(session: DebugSession): DebugSession | undefined {
-        if (session.configuration.consoleMode !== DebugConsoleMode.MergeWithParent) {
-            return undefined;
+    protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
+        if (!event.current) {
+            this.consoleSessionManager.selectedSession = undefined;
+        } else {
+            const topSession = event.current.findConsoleParent() || event.current;
+            const consoleSession = topSession ? this.consoleSessionManager.get(topSession.id) : undefined;
+            this.consoleSessionManager.selectedSession = consoleSession;
+            const consoleSelector = document.getElementById('debugConsoleSelector');
+            if (consoleSession && consoleSelector instanceof HTMLSelectElement) {
+                consoleSelector.value = consoleSession.id;
+            }
         }
-        let debugSession: DebugSession | undefined = session;
-        do {
-            debugSession = debugSession.parentSession;
-        } while (debugSession?.parentSession && debugSession.configuration.consoleMode === DebugConsoleMode.MergeWithParent);
-        return debugSession;
     }
 
     registerCommands(commands: CommandRegistry): void {
