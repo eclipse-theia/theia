@@ -207,7 +207,7 @@ export class HostedPluginSupport {
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
         this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
-        this.webviewViewService.onNewResolverRegistered(event => this.activateByView(event.viewType));
+        this.webviewViewService.onDidRegisterResolver(event => this.activateByView(event.viewId));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {

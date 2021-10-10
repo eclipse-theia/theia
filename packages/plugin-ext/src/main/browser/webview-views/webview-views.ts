@@ -32,49 +32,43 @@ export interface WebviewView {
     description?: string;
     readonly webview: WebviewWidget;
     readonly onDidChangeVisibility: Event<boolean>;
-    readonly onDispose: Event<void>;
+    readonly onDidDispose: Event<void>;
 
     dispose(): void;
     show(preserveFocus: boolean): void;
 }
 
-export interface IWebviewViewResolver {
+export interface WebviewViewResolver {
     resolve(webviewView: WebviewView, cancellation: CancellationToken): Promise<void>;
 }
 
-export interface IWebviewViewService {
-    readonly onNewResolverRegistered: Event<{ readonly viewType: string }>;
-    register(type: string, resolver: IWebviewViewResolver): Disposable;
-    resolve(viewType: string, webview: WebviewView, cancellation: CancellationToken): Promise<void>;
-}
-
 @injectable()
-export class WebviewViewService implements IWebviewViewService {
+export class WebviewViewService {
 
-    private readonly resolvers = new Map<string, IWebviewViewResolver>();
+    private readonly resolvers = new Map<string, WebviewViewResolver>();
     private readonly awaitingRevival = new Map<string, { webview: WebviewView, resolve: () => void }>();
 
-    protected readonly onNewResolverRegisteredEmitter = new Emitter<{ readonly viewType: string }>();
-    readonly onNewResolverRegistered = this.onNewResolverRegisteredEmitter.event;
+    protected readonly onDidRegisterResolverEmitter = new Emitter<{ readonly viewId: string }>();
+    readonly onDidRegisterResolver = this.onDidRegisterResolverEmitter.event;
 
-    register(viewType: string, resolver: IWebviewViewResolver): Disposable {
-        if (this.resolvers.has(viewType)) {
-            throw new Error(`View resolver already registered for ${viewType}`);
+    register(viewId: string, resolver: WebviewViewResolver): Disposable {
+        if (this.resolvers.has(viewId)) {
+            throw new Error(`View resolver already registered for ${viewId}`);
         }
 
-        this.resolvers.set(viewType, resolver);
-        this.onNewResolverRegisteredEmitter.fire({ viewType: viewType });
+        this.resolvers.set(viewId, resolver);
+        this.onDidRegisterResolverEmitter.fire({ viewId: viewId });
 
-        const pending = this.awaitingRevival.get(viewType);
+        const pending = this.awaitingRevival.get(viewId);
         if (pending) {
             resolver.resolve(pending.webview, CancellationToken.None).then(() => {
-                this.awaitingRevival.delete(viewType);
+                this.awaitingRevival.delete(viewId);
                 pending.resolve();
             });
         }
 
         return Disposable.create(() => {
-            this.resolvers.delete(viewType);
+            this.resolvers.delete(viewId);
         });
     }
 
@@ -95,18 +89,19 @@ export class WebviewViewService implements IWebviewViewService {
     }
 }
 
-export class WebviewViewImpl implements WebviewView {
+export class WebviewViewWidget implements WebviewView {
 
     public webview: WebviewWidget;
 
     get onDidChangeVisibility(): Event<boolean> { return this.webview.onDidChangeVisibility; }
-    get onDispose(): Event<void> { return this.webview.onDidDispose; }
+    get onDidDispose(): Event<void> { return this.webview.onDidDispose; }
 
     get title(): string | undefined { return this.webview?.title.label; }
     set title(value: string | undefined) { this.webview.title.label = value || ''; }
 
-    get description(): string | undefined { return this.description; }
-    set description(value: string | undefined) { this.description = value; }
+    private _description: string | undefined;
+    get description(): string | undefined { return this._description; }
+    set description(value: string | undefined) { this._description = value; }
 
     protected readonly _ready = new Deferred<void>();
 

@@ -42,7 +42,7 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 
-import { WebviewViewImpl, WebviewViewService } from '../webview-views/webview-views';
+import { WebviewViewService, WebviewViewWidget } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
@@ -174,8 +174,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
 
-        this.webviewViewService.onNewResolverRegistered(e => {
-            this.registerWebviewView(e.viewType);
+        this.webviewViewService.onDidRegisterResolver(e => {
+            this.registerWebviewView(e.viewId);
         });
     }
 
@@ -331,7 +331,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected async registerWebviewView(viewId: string): Promise<void> {
-        const webviewView = new WebviewViewImpl(this.widgetManager);
+        const webviewView = new WebviewViewWidget(this.widgetManager);
         await webviewView.ready;
         const token = CancellationToken.None;
         this.getView(viewId).then(async view => {

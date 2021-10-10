@@ -85,7 +85,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                     this.proxy.$onDidChangeWebviewViewVisibility(handle, visible);
                 });
 
-                webviewView.onDispose(() => {
+                webviewView.onDidDispose(() => {
                     this.proxy.$disposeWebviewView(handle);
                     this.webviewViews.delete(handle);
                 });
@@ -102,7 +102,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
         this.webviewViewProviders.set(viewType, registration);
     }
 
-    protected getwebview(handle: string): Widget | undefined {
+    protected getWebview(handle: string): Widget | undefined {
         return this.widgetManager.tryGetWidget(handle);
     }
 

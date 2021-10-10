@@ -128,8 +128,8 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const customEditorsMain = new CustomEditorsMainImpl(rpc, container, webviewsMain);
     rpc.set(PLUGIN_RPC_CONTEXT.CUSTOM_EDITORS_MAIN, customEditorsMain);
 
-    const webViewViewsMain = new WebviewViewsMainImpl(rpc, container, webviewsMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webViewViewsMain);
+    const webviewViewsMain = new WebviewViewsMainImpl(rpc, container, webviewsMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.WEBVIEW_VIEWS_MAIN, webviewViewsMain);
 
     const storageMain = new StorageMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);

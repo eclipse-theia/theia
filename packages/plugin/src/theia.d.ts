@@ -4244,10 +4244,6 @@ declare module '@theia/plugin' {
          */
 
         /**
-         * webview based view.
-         */
-
-        /**
          * Additional information the webview view being resolved.
          *
          * @param T Type of the webview's state.
