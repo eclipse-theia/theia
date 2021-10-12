@@ -253,8 +253,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        const details = this.getData('readme') || this.description;
-        let md = `__${this.displayName}__ ${this.version}\n\n${details}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${this.version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
 
         if (this.license) {
             md += `  \rLicense: ${this.license}`;
