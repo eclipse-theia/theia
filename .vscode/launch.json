@@ -145,7 +145,7 @@
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:3000/",
-      "webRoot": "${workspaceFolder}"
+      "webRoot": "${workspaceRoot}"
     },
     {
       "type": "chrome",
@@ -185,16 +185,7 @@
       "name": "Launch Electron Backend & Frontend",
       "configurations": [
         "Launch Electron Backend",
-        "Attach to Plugin Host",
         "Attach to Electron Frontend"
-      ]
-    },
-    {
-      "name": "Launch Browser Backend & Frontend",
-      "configurations": [
-        "Launch Browser Backend",
-        "Attach to Plugin Host",
-        "Launch Browser Frontend"
       ]
     }
   ]
