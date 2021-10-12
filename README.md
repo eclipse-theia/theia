@@ -49,7 +49,7 @@
 
 ## Roadmap
 
-See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Roadmap) for an overview about the current project goals and the upcoming releases.
+See [our roadmap](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Roadmap) for an overview about the current project goals and the upcoming releases.
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
