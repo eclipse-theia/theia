@@ -25,9 +25,9 @@ import { v4 } from 'uuid';
 export const TooltipService = Symbol('TooltipService');
 
 export interface TooltipService {
-    attachTo(host: HTMLElement): void;
     tooltipId: string;
-    update(): void;
+    attachTo(host: HTMLElement): void;
+    update(fullRender?: boolean): void;
 }
 
 /**
@@ -68,8 +68,7 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
     protected init(): void {
         this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
             if (preference.preferenceName === DELAY_PREFERENCE) {
-                this.rendered = false;
-                this.update();
+                this.update(true);
             }
         }));
     }
@@ -78,8 +77,8 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
         host.appendChild(this.host);
     }
 
-    public update(): void {
-        if (!this.rendered) {
+    public update(fullRender = false): void {
+        if (fullRender || !this.rendered) {
             this.render();
             this.rendered = true;
         }
