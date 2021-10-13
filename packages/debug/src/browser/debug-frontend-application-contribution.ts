@@ -478,6 +478,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         this.watchManager.save();
     }
 
+    onWillStop(): boolean {
+        return this.preference['debug.confirmOnExit'] === 'always' && !!this.manager.currentSession;
+    }
+
     registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
@@ -1125,8 +1129,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     protected async openSession(
         session: DebugSession,
         options?: {
-            debugViewLocation?: DebugViewLocation
-            reveal?: boolean
+            debugViewLocation?: DebugViewLocation;
+            reveal?: boolean;
         }
     ): Promise<DebugWidget | DebugSessionWidget> {
         const { debugViewLocation, reveal } = {

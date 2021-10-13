@@ -49,6 +49,16 @@ export const debugPreferencesSchema: PreferenceSchema = {
             enum: ['never', 'always', 'onFirstSessionStart'],
             description: 'Controls when the debug status bar should be visible.',
             default: 'onFirstSessionStart'
+        },
+        'debug.confirmOnExit': {
+            description: 'Controls whether to confirm when the window closes if there are active debug sessions.',
+            type: 'string',
+            enum: ['never', 'always'],
+            enumDescriptions: [
+                'Never confirm.',
+                'Always confirm if there are debug sessions.',
+            ],
+            default: 'never'
         }
     }
 };
@@ -60,6 +70,7 @@ export class DebugConfiguration {
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
     'debug.inlineValues': boolean;
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
+    'debug.confirmOnExit': 'never' | 'always';
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');
