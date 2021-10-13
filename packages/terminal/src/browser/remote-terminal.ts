@@ -27,9 +27,9 @@ import * as rt from '../common/remote-terminal-protocol';
 export interface RemoteTerminal extends Disposable {
 
     /**
-     * Handle internal tracking id.
+     * Internal tracking id.
      */
-    readonly uuid: rt.RemoteTerminalConnectionId
+    readonly id: rt.RemoteTerminalConnectionId
 
     /**
      * Proxy to the remote `Terminal`.
@@ -61,7 +61,7 @@ export interface RemoteTerminal extends Disposable {
 export interface AttachedRemoteTerminal extends RemoteTerminal {
 
     /**
-     * Id of the remote `Terminal`.
+     * Id of the remote `Terminal`. Always positive.
      */
     readonly terminalId: number
 
@@ -73,27 +73,39 @@ export interface AttachedRemoteTerminal extends RemoteTerminal {
 
 export namespace RemoteTerminal {
 
+    /**
+     * Throws if `terminal` is not attached.
+     */
     export function ensureAttached(terminal: RemoteTerminal): AttachedRemoteTerminal {
         if (!terminal.isAttached()) {
-            throw new Error(`terminal is not attached, uuid ${terminal.uuid}`);
+            throw new Error(`terminal is not attached, uuid ${terminal.id}`);
         }
         return terminal;
     }
 
+    /**
+     * Throws if `terminal` is connected.
+     */
     export function ensureNotConnected(terminal: RemoteTerminal): RemoteTerminal {
         if (terminal.isConnected()) {
-            throw new Error(`terminal is already connected, uuid ${terminal.uuid}`);
+            throw new Error(`terminal is already connected, uuid ${terminal.id}`);
         }
         return terminal;
     }
 
+    /**
+     * Throws if `terminal` is attached.
+     */
     export function ensureNotAttached(terminal: RemoteTerminal): RemoteTerminal {
         if (terminal.isAttached()) {
-            throw new Error(`terminal is already attached, uuid ${terminal.uuid} terminalId ${terminal.terminalId}`);
+            throw new Error(`terminal is already attached, uuid ${terminal.id} terminalId ${terminal.terminalId}`);
         }
         return terminal;
     }
 
+    /**
+     * Throws if `terminal` is disposed.
+     */
     export function ensureNotDisposed(terminal: RemoteTerminal): RemoteTerminal {
         if (terminal.isDisposed()) {
             throw new Error('terminal is disposed');

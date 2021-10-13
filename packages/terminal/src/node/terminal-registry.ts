@@ -57,7 +57,10 @@ export interface TerminalRegistry extends Disposable {
  */
 @injectable()
 export class TerminalIdSequence {
-    protected sequence: number = 0;
+    /**
+     * Start at `1` because `0` is a special value that may mean "uninitialized" for clients.
+     */
+    protected sequence: number = 1;
     next(): number {
         return this.sequence++;
     }

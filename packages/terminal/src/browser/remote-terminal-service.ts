@@ -17,7 +17,7 @@
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
-import { TerminalExitEvent, TerminalProcessInfo, TerminalSpawnOptions } from '@theia/process/lib/node';
+import { TerminalExitEvent, TerminalProcessInfo } from '@theia/process/lib/node';
 import { v4 as uuid4 } from 'uuid';
 import * as rt from '../common/remote-terminal-protocol';
 import { RemoteTerminalProxyFactory } from '../common/remote-terminal-proxy-factory';
@@ -28,47 +28,56 @@ export interface RemoteTerminalService {
 
     create(): Promise<RemoteTerminal>;
 
-    spawn(terminal: RemoteTerminal, options: rt.RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminal & AttachedRemoteTerminal>
+    spawn(
+        terminal: RemoteTerminal,
+        spawn: (terminal: RemoteTerminal) => Promise<rt.RemoteTerminalSpawnResponse>
+    ): Promise<AttachedRemoteTerminal>
 
-    // fork(terminal: RemoteTerminal, options: RemoteTerminalOptions & TerminalForkOptions): Promise<RemoteTerminal & RemoteTerminalMetadata>
-
-    attach(terminal: RemoteTerminal, options: rt.RemoteTerminalAttachOptions): Promise<RemoteTerminal & AttachedRemoteTerminal>
+    attach(
+        terminalId: number,
+        terminal: RemoteTerminal,
+        attach: (terminalId: number, terminal: RemoteTerminal) => Promise<rt.RemoteTerminalAttachResponse>
+    ): Promise<AttachedRemoteTerminal>
 }
 
 @injectable()
 export class RemoteTerminalServiceImpl implements RemoteTerminalService {
 
-    @inject(rt.RemoteTerminalServer)
-    protected remoteTerminalServer: rt.RemoteTerminalServer;
-
     @inject(WebSocketConnectionProvider)
     protected connectionProvider: WebSocketConnectionProvider;
 
     async create(): Promise<RemoteTerminal> {
-        const uuid = this.getRemoteTerminalConnectionId();
+        const id = this.getRemoteTerminalConnectionId();
         const factory = new RemoteTerminalProxyFactory();
-        return new RemoteTerminalImpl(uuid, factory.proxy, {
-            onConnectCallback: connection => factory.listen(connection)
+        return new RemoteTerminalImpl(id, factory.proxy, {
+            onConnect: connection => factory.listen(connection)
         });
     }
 
-    async spawn(terminal: RemoteTerminal, options: rt.RemoteTerminalOptions & TerminalSpawnOptions): Promise<RemoteTerminal & AttachedRemoteTerminal> {
+    async spawn(
+        terminal: RemoteTerminal,
+        spawn: (terminal: RemoteTerminal) => Promise<rt.RemoteTerminalSpawnResponse>
+    ): Promise<AttachedRemoteTerminal> {
         RemoteTerminal.ensureNotDisposed(terminal);
         await this.connect(terminal);
-        const { terminalId, info } = await this.remoteTerminalServer.spawn(terminal.uuid, options);
+        const { terminalId, info } = await spawn(terminal);
         return terminal.attach(terminalId, info);
     }
 
-    async attach(terminal: RemoteTerminal, options: rt.RemoteTerminalAttachOptions): Promise<RemoteTerminal & AttachedRemoteTerminal> {
+    async attach(
+        terminalId: number,
+        terminal: RemoteTerminal,
+        attach: (terminalId: number, terminal: RemoteTerminal) => Promise<rt.RemoteTerminalAttachResponse>
+    ): Promise<AttachedRemoteTerminal> {
         RemoteTerminal.ensureNotDisposed(terminal);
         await this.connect(terminal);
-        const { info } = await this.remoteTerminalServer.attach(terminal.uuid, options);
-        return terminal.attach(options.terminalId, info);
+        const { info } = await attach(terminalId, terminal);
+        return terminal.attach(terminalId, info);
     }
 
     protected async connect(terminal: RemoteTerminal): Promise<void> {
         RemoteTerminal.ensureNotConnected(terminal);
-        const path = this.getRemoteTerminalPath(terminal.uuid);
+        const path = this.getRemoteTerminalPath(terminal.id);
         const connection = await this.createRemoteTerminalConnection(path);
         try {
             terminal.connect(connection);
@@ -82,9 +91,9 @@ export class RemoteTerminalServiceImpl implements RemoteTerminalService {
         return uuid4();
     }
 
-    protected getRemoteTerminalPath(uuid: rt.RemoteTerminalConnectionId): string {
-        return rt.REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE
-            .replace(':uuid', uuid.toString());
+    protected getRemoteTerminalPath(id: rt.RemoteTerminalConnectionId): string {
+        return rt.REMOTE_TERMINAL_NEW_CONNECTION_PATH_TEMPLATE
+            .replace(':id', id.toString());
     }
 
     protected async createRemoteTerminalConnection(path: string): Promise<MessageConnection> {
@@ -102,10 +111,10 @@ export class RemoteTerminalImpl implements RemoteTerminal {
     protected connection?: MessageConnection;
 
     constructor(
-        public uuid: rt.RemoteTerminalConnectionId,
+        public id: rt.RemoteTerminalConnectionId,
         public proxy: rt.RemoteTerminalProxy,
         protected options: {
-            onConnectCallback?: (connection: MessageConnection) => void
+            onConnect?: (connection: MessageConnection) => void
         } = {}
     ) {
         this.proxy.onExit(status => { this.exitStatus = status; });
@@ -115,7 +124,7 @@ export class RemoteTerminalImpl implements RemoteTerminal {
         RemoteTerminal.ensureNotDisposed(this);
         RemoteTerminal.ensureNotConnected(this);
         this.connection = connection;
-        this.options.onConnectCallback?.(connection);
+        this.options.onConnect?.(connection);
     }
 
     attach(terminalId: number, info: TerminalProcessInfo): AttachedRemoteTerminal {

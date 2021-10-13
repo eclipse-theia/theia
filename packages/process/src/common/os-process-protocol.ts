@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2021 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,28 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import * as chai from 'chai';
-import { createTerminalTestContainer } from './test/terminal-test-container';
-import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 
+export const OsProcessServerPath = '/services/os-process'
+export const OsProcessServer = Symbol('OsProcessServer');
 /**
- * Globals
+ * Utilities to query OS processes.
  */
+export interface OsProcessServer {
 
-const expect = chai.expect;
-
-describe('ShellServer', function (): void {
-
-    this.timeout(5000);
-    let shellTerminalServer: IShellTerminalServer;
-
-    beforeEach(() => {
-        shellTerminalServer = createTerminalTestContainer().get(IShellTerminalServer);
-    });
-
-    it('test shell terminal create', async function (): Promise<void> {
-        const createResult = shellTerminalServer.create({});
-
-        expect(await createResult).to.be.greaterThan(-1);
-    });
-});
+    hasChildProcesses(pid: number): Promise<boolean>
+}

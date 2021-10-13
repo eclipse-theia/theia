@@ -22,14 +22,14 @@ import { isWindows, isOSX, OS } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { parseArgs } from '@theia/process/lib/node/utils';
-import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
+import { ShellTerminalPreferences } from '../common/shell-terminal-protocol';
 
 export const ShellProcessFactory = Symbol('ShellProcessFactory');
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
 
 export const ShellProcessOptions = Symbol('ShellProcessOptions');
 export interface ShellProcessOptions {
-    shellPreferences?: IShellTerminalPreferences,
+    shellPreferences?: ShellTerminalPreferences,
     shell?: string,
     args?: string[],
     rootURI?: string,
@@ -74,7 +74,7 @@ export class ShellProcess extends NodePtyProcess {
         }, processManager, ringBuffer, logger);
     }
 
-    public static getShellExecutablePath(preferences?: IShellTerminalPreferences): string {
+    public static getShellExecutablePath(preferences?: ShellTerminalPreferences): string {
         const shell = process.env.THEIA_SHELL;
         if (shell) {
             return shell;
@@ -88,7 +88,7 @@ export class ShellProcess extends NodePtyProcess {
         }
     }
 
-    public static getShellExecutableArgs(preferences?: IShellTerminalPreferences): string[] {
+    public static getShellExecutableArgs(preferences?: ShellTerminalPreferences): string[] {
         const args = process.env.THEIA_SHELL_ARGS;
         if (args) {
             return parseArgs(args);
@@ -110,7 +110,7 @@ export class ShellProcess extends NodePtyProcess {
  *
  * @returns a merged record of valid environment variables.
  */
- export function mergeProcessEnv(env: Record<string, string | null> = {}): Record<string, string> {
+export function mergeProcessEnv(env: Record<string, string | null> = {}): Record<string, string> {
     // eslint-disable-next-line no-null/no-null
     const mergedEnv: Record<string, string> = Object.create(null);
     for (const [key, value] of Object.entries(process.env)) {

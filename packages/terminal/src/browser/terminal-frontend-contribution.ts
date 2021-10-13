@@ -43,17 +43,12 @@ import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import {
-    ENVIRONMENT_VARIABLE_COLLECTIONS_KEY,
-    SerializableExtensionEnvironmentVariableCollection
-} from '../common/base-terminal-protocol';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -141,132 +136,69 @@ export namespace TerminalCommands {
 @injectable()
 export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution {
 
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
-    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    protected _currentTerminal?: TerminalWidget;
+    protected terminalFocusContextKey: ContextKey<boolean>;
+    /**
+     * IDs of the most recently used terminals
+     */
+    protected mostRecentlyUsedTerminalEntries: { id: string, disposables: DisposableCollection }[] = [];
+    protected onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
+    protected onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
+
+    @inject(ApplicationShell)
+    protected shell: ApplicationShell;
+
+    @inject(ShellTerminalServerProxy)
+    protected shellTerminalServer: ShellTerminalServerProxy;
+
+    @inject(WidgetManager)
+    protected widgetManager: WidgetManager;
+
+    @inject(FileService)
+    protected fileService: FileService;
+
+    @inject(SelectionService)
+    protected selectionService: SelectionService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected labelProvider: LabelProvider;
 
     @inject(QuickPickService)
-    protected readonly quickPick: QuickPickService;
+    protected quickPick: QuickPickService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected workspaceService: WorkspaceService;
 
-    @inject(TerminalWatcher)
-    protected readonly terminalWatcher: TerminalWatcher;
     @inject(StorageService)
-    protected readonly storageService: StorageService;
-
-    protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
-    readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
-
-    protected readonly onDidChangeCurrentTerminalEmitter = new Emitter<TerminalWidget | undefined>();
-    readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidChangeCurrentTerminalEmitter.event;
+    protected storageService: StorageService;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected contextKeyService: ContextKeyService;
 
     @postConstruct()
     protected init(): void {
-        this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
-        this.widgetManager.onDidCreateWidget(({ widget }) => {
-            if (widget instanceof TerminalWidget) {
-                this.updateCurrentTerminal();
-                this.onDidCreateTerminalEmitter.fire(widget);
-                this.setLastUsedTerminal(widget);
-            }
-        });
-
-        const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
-        const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
-        updateFocusKey();
-        this.shell.activeChanged.connect(updateFocusKey);
-
-        this.terminalWatcher.onStoreTerminalEnvVariablesRequested(data => {
-            this.storageService.setData(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY, data);
-        });
-        this.terminalWatcher.onUpdateTerminalEnvVariablesRequested(() => {
-            this.storageService.getData<string>(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY).then(data => {
-                if (data) {
-                    const collectionsJson: SerializableExtensionEnvironmentVariableCollection[] = JSON.parse(data);
-                    collectionsJson.forEach(c => this.shellTerminalServer.setCollection(c.extensionIdentifier, true, c.collection));
-                }
-            });
-        });
+        this.terminalFocusContextKey = this.contextKeyService.createKey('terminalFocus', false);
+        this.widgetManager.onDidCreateWidget(e => this.onDidCreateWidget(e.widget));
+        this.shell.onDidChangeCurrentWidget(e => this.onDidChangeCurrentWidget(e.newValue ?? undefined));
+        this.shell.onDidChangeActiveWidget(e => this.onDidChangeActiveWidget(e.newValue ?? undefined));
     }
 
-    protected _currentTerminal: TerminalWidget | undefined;
+    get onDidCreateTerminal(): Event<TerminalWidget> {
+        return this.onDidCreateTerminalEmitter.event;
+    }
+
+    get onDidChangeCurrentTerminal(): Event<TerminalWidget | undefined> {
+        return this.onDidChangeCurrentTerminalEmitter.event;
+    }
+
     get currentTerminal(): TerminalWidget | undefined {
         return this._currentTerminal;
-    }
-    protected setCurrentTerminal(current: TerminalWidget | undefined): void {
-        if (this._currentTerminal !== current) {
-            this._currentTerminal = current;
-            this.onDidChangeCurrentTerminalEmitter.fire(this._currentTerminal);
-        }
-    }
-    protected updateCurrentTerminal(): void {
-        const widget = this.shell.currentWidget;
-        if (widget instanceof TerminalWidget) {
-            this.setCurrentTerminal(widget);
-        } else if (!this._currentTerminal || !this._currentTerminal.isVisible) {
-            this.setCurrentTerminal(undefined);
-        }
-    }
-
-    // IDs of the most recently used terminals
-    protected mostRecentlyUsedTerminalEntries: { id: string, disposables: DisposableCollection }[] = [];
-
-    protected getLastUsedTerminalId(): string | undefined {
-        const mostRecent = this.mostRecentlyUsedTerminalEntries[this.mostRecentlyUsedTerminalEntries.length - 1];
-        if (mostRecent) {
-            return mostRecent.id;
-        }
     }
 
     get lastUsedTerminal(): TerminalWidget | undefined {
         const id = this.getLastUsedTerminalId();
         if (id) {
             return this.getById(id);
-        }
-    }
-
-    protected setLastUsedTerminal(lastUsedTerminal: TerminalWidget): void {
-        const lastUsedTerminalId = lastUsedTerminal.id;
-        const entryIndex = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
-        let toDispose: DisposableCollection | undefined;
-        if (entryIndex >= 0) {
-            toDispose = this.mostRecentlyUsedTerminalEntries[entryIndex].disposables;
-            this.mostRecentlyUsedTerminalEntries.splice(entryIndex, 1);
-        } else {
-            toDispose = new DisposableCollection();
-            toDispose.push(
-                lastUsedTerminal.onDidChangeVisibility((isVisible: boolean) => {
-                    if (isVisible) {
-                        this.setLastUsedTerminal(lastUsedTerminal);
-                    }
-                })
-            );
-            toDispose.push(
-                lastUsedTerminal.onDidDispose(() => {
-                    const index = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
-                    if (index >= 0) {
-                        this.mostRecentlyUsedTerminalEntries[index].disposables.dispose();
-                        this.mostRecentlyUsedTerminalEntries.splice(index, 1);
-                    }
-                })
-            );
-        }
-
-        const newEntry = { id: lastUsedTerminalId, disposables: toDispose };
-        if (lastUsedTerminal.isVisible) {
-            this.mostRecentlyUsedTerminalEntries.push(newEntry);
-        } else {
-            this.mostRecentlyUsedTerminalEntries = [newEntry, ...this.mostRecentlyUsedTerminalEntries];
         }
     }
 
@@ -586,38 +518,6 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         }
     }
 
-    protected async selectTerminalCwd(): Promise<string | undefined> {
-        const roots = this.workspaceService.tryGetRoots();
-        return this.quickPick.show(roots.map(
-            ({ resource }) => ({ label: this.labelProvider.getName(resource), description: this.labelProvider.getLongName(resource), value: resource.toString() })
-        ), { placeholder: 'Select current working directory for new terminal' });
-    }
-
-    protected async splitTerminal(widget?: Widget): Promise<void> {
-        const ref = this.getTerminalRef(widget);
-        if (ref) {
-            await this.openTerminal({ ref, mode: 'split-right' });
-        }
-    }
-
-    protected getTerminalRef(widget?: Widget): TerminalWidget | undefined {
-        const ref = widget ? widget : this.shell.currentWidget;
-        return ref instanceof TerminalWidget ? ref : undefined;
-    }
-
-    protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const cwd = await this.selectTerminalCwd();
-        const termWidget = await this.newTerminal({ cwd });
-        termWidget.start();
-        this.open(termWidget, { widgetOptions: options });
-    }
-
-    protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
-        const termWidget = await this.newTerminal({});
-        termWidget.start();
-        this.open(termWidget, { widgetOptions: options });
-    }
-
     /**
      * It should be aligned with https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors
      */
@@ -678,4 +578,107 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         }
     }
 
+    protected onDidChangeCurrentWidget(widget?: Widget): void {
+        this.updateCurrentTerminal(widget);
+    }
+
+    protected onDidChangeActiveWidget(widget?: Widget): void {
+        this.terminalFocusContextKey.set(widget instanceof TerminalWidget);
+    }
+
+    protected onDidCreateWidget(widget: Widget): void {
+        if (widget instanceof TerminalWidget) {
+            this.updateCurrentTerminal(widget);
+            this.onDidCreateTerminalEmitter.fire(widget);
+            this.setLastUsedTerminal(widget);
+        }
+    }
+
+    protected setCurrentTerminal(current: TerminalWidget | undefined): void {
+        if (this._currentTerminal !== current) {
+            this._currentTerminal = current;
+            this.onDidChangeCurrentTerminalEmitter.fire(this._currentTerminal);
+        }
+    }
+    protected updateCurrentTerminal(widget?: Widget): void {
+        if (widget instanceof TerminalWidget) {
+            this.setCurrentTerminal(widget);
+        } else if (!this._currentTerminal || !this._currentTerminal.isVisible) {
+            this.setCurrentTerminal(undefined);
+        }
+    }
+
+    protected getLastUsedTerminalId(): string | undefined {
+        const mostRecent = this.mostRecentlyUsedTerminalEntries[this.mostRecentlyUsedTerminalEntries.length - 1];
+        if (mostRecent) {
+            return mostRecent.id;
+        }
+    }
+
+    protected setLastUsedTerminal(lastUsedTerminal: TerminalWidget): void {
+        const lastUsedTerminalId = lastUsedTerminal.id;
+        const entryIndex = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
+        let toDispose: DisposableCollection | undefined;
+        if (entryIndex >= 0) {
+            toDispose = this.mostRecentlyUsedTerminalEntries[entryIndex].disposables;
+            this.mostRecentlyUsedTerminalEntries.splice(entryIndex, 1);
+        } else {
+            toDispose = new DisposableCollection();
+            toDispose.push(
+                lastUsedTerminal.onDidChangeVisibility((isVisible: boolean) => {
+                    if (isVisible) {
+                        this.setLastUsedTerminal(lastUsedTerminal);
+                    }
+                })
+            );
+            toDispose.push(
+                lastUsedTerminal.onDidDispose(() => {
+                    const index = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
+                    if (index >= 0) {
+                        this.mostRecentlyUsedTerminalEntries[index].disposables.dispose();
+                        this.mostRecentlyUsedTerminalEntries.splice(index, 1);
+                    }
+                })
+            );
+        }
+
+        const newEntry = { id: lastUsedTerminalId, disposables: toDispose };
+        if (lastUsedTerminal.isVisible) {
+            this.mostRecentlyUsedTerminalEntries.push(newEntry);
+        } else {
+            this.mostRecentlyUsedTerminalEntries = [newEntry, ...this.mostRecentlyUsedTerminalEntries];
+        }
+    }
+
+    protected async selectTerminalCwd(): Promise<string | undefined> {
+        const roots = this.workspaceService.tryGetRoots();
+        return this.quickPick.show(roots.map(
+            ({ resource }) => ({ label: this.labelProvider.getName(resource), description: this.labelProvider.getLongName(resource), value: resource.toString() })
+        ), { placeholder: 'Select current working directory for new terminal' });
+    }
+
+    protected async splitTerminal(widget?: Widget): Promise<void> {
+        const ref = this.getTerminalRef(widget);
+        if (ref) {
+            await this.openTerminal({ ref, mode: 'split-right' });
+        }
+    }
+
+    protected getTerminalRef(widget?: Widget): TerminalWidget | undefined {
+        const ref = widget ? widget : this.shell.currentWidget;
+        return ref instanceof TerminalWidget ? ref : undefined;
+    }
+
+    protected async openTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
+        const cwd = await this.selectTerminalCwd();
+        const termWidget = await this.newTerminal({ cwd });
+        termWidget.start();
+        this.open(termWidget, { widgetOptions: options });
+    }
+
+    protected async openActiveWorkspaceTerminal(options?: ApplicationShell.WidgetOptions): Promise<void> {
+        const termWidget = await this.newTerminal({});
+        termWidget.start();
+        this.open(termWidget, { widgetOptions: options });
+    }
 }

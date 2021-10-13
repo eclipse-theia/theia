@@ -25,7 +25,7 @@ import { TerminalDataEvent, TerminalExitEvent, TerminalProcessInfo } from '@thei
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RendererType, Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
+import { ShellTerminalPreferences, ShellRemoteTerminalServer } from '../common/shell-terminal-protocol';
 import { TerminalService } from './base/terminal-service';
 import { TerminalDimensions, TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { AttachedRemoteTerminal, RemoteTerminal } from './remote-terminal';
@@ -35,6 +35,7 @@ import { TerminalContribution } from './terminal-contribution';
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 import { CursorStyle, DEFAULT_TERMINAL_RENDERER_TYPE, isTerminalRendererType, TerminalPreferences, TerminalRendererType } from './terminal-preferences';
 import { TerminalThemeService } from './terminal-theme-service';
+import { OsProcessServer } from '@theia/process/lib/common/os-process-protocol';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -81,18 +82,44 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected onDidSizeChangeEmitter = new Emitter<{ cols: number; rows: number; }>();
     protected onDataEmitter = new Emitter<string>();
 
-    @inject('terminal-dom-id') public id: string;
+    @inject('terminal-dom-id')
+    id: string;
 
-    @inject(WorkspaceService) protected workspaceService: WorkspaceService;
-    @inject(ILogger) @named('terminal') protected logger: ILogger;
-    @inject(TerminalPreferences) protected preferences: TerminalPreferences;
-    @inject(ContributionProvider) @named(TerminalContribution) protected terminalContributionProvider: ContributionProvider<TerminalContribution>;
-    @inject(TerminalService) protected terminalService: TerminalService;
-    @inject(TerminalSearchWidgetFactory) protected terminalSearchBoxFactory: TerminalSearchWidgetFactory;
-    @inject(TerminalCopyOnSelectionHandler) protected copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
-    @inject(TerminalThemeService) protected themeService: TerminalThemeService;
-    @inject(ShellCommandBuilder) protected shellCommandBuilder: ShellCommandBuilder;
-    @inject(RemoteTerminalService) protected remoteTerminalService: RemoteTerminalService;
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+
+    @inject(ILogger) @named('terminal')
+    protected logger: ILogger;
+
+    @inject(TerminalPreferences)
+    protected preferences: TerminalPreferences;
+
+    @inject(ContributionProvider) @named(TerminalContribution)
+    protected terminalContributionProvider: ContributionProvider<TerminalContribution>;
+
+    @inject(TerminalService)
+    protected terminalService: TerminalService;
+
+    @inject(TerminalSearchWidgetFactory)
+    protected terminalSearchBoxFactory: TerminalSearchWidgetFactory;
+
+    @inject(TerminalCopyOnSelectionHandler)
+    protected copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
+
+    @inject(TerminalThemeService)
+    protected themeService: TerminalThemeService;
+
+    @inject(ShellCommandBuilder)
+    protected shellCommandBuilder: ShellCommandBuilder;
+
+    @inject(RemoteTerminalService)
+    protected remoteTerminalService: RemoteTerminalService;
+
+    @inject(ShellRemoteTerminalServer)
+    protected shellRemoteTerminalServer: ShellRemoteTerminalServer;
+
+    @inject(OsProcessServer)
+    protected osProcessServer: OsProcessServer;
 
     @postConstruct()
     protected init(): void {
@@ -282,7 +309,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     async hasChildProcesses(): Promise<boolean> {
-        return this.shellTerminalServer.hasChildProcesses(await this.processId);
+        const terminal = await this.getAttachedRemoteTerminal();
+        return this.osProcessServer.hasChildProcesses(terminal.info.pid);
     }
 
     /**
@@ -308,7 +336,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         // that would kill the remote terminal when the current TerminalWidget
         // get disposed (like when a user manually closes its widget by hand).
         this.killOnDispose = false;
-        if (this.options.isPseudoTerminal || this._terminalId === undefined) {
+        if (this.options.isPseudoTerminal || this.terminalId === 0) {
             return;
         }
         return {
@@ -433,7 +461,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.preferences['terminal.enablePaste'];
     }
 
-    protected get shellPreferences(): IShellTerminalPreferences {
+    protected get shellPreferences(): ShellTerminalPreferences {
         return {
             shell: {
                 Windows: this.preferences['terminal.integrated.shell.windows'] ?? undefined,
@@ -494,18 +522,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             const root = (await this.workspaceService.roots)[0];
             rootURI = root?.resource?.toString();
         }
-        return this.remoteTerminalService.spawn(terminal, {
-            persist: true,
-            executable: 'bash',
-            shellPreferences: this.shellPreferences,
-            shell: this.options.shellPath,
-            args: this.options.shellArgs,
-            env: this.sanitizeEnv(this.options.env),
-            isPseudo: this.options.isPseudoTerminal,
-            rootURI,
-            cols: this.term.cols,
-            rows: this.term.rows
-        });
+        return this.remoteTerminalService.spawn(
+            terminal,
+            t => this.shellRemoteTerminalServer.spawn(t.id, {
+                persist: true,
+                executable: 'bash',
+                shellPreferences: this.shellPreferences,
+                shell: this.options.shellPath,
+                args: this.options.shellArgs,
+                env: this.sanitizeEnv(this.options.env),
+                isPseudo: this.options.isPseudoTerminal,
+                rootURI,
+                cols: this.term.cols,
+                rows: this.term.rows
+            })
+        );
     }
 
     protected async attachRemoteTerminal(terminalId: number): Promise<AttachedRemoteTerminal> {
@@ -513,7 +544,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             throw new Error('I don\'t understand this option...');
         }
         const terminal = await this.remoteTerminalPromise;
-        return this.remoteTerminalService.attach(terminal, { terminalId });
+        return this.remoteTerminalService.attach(
+            terminalId,
+            terminal,
+            (tid, t) => this.shellRemoteTerminalServer.attach(t.id, {
+                terminalId: tid,
+            })
+        );
     }
 
     protected sanitizeEnv(env?: Record<string, string | null | undefined>): Record<string, string> | undefined {

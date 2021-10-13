@@ -14,34 +14,31 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import '../../src/browser/style/terminal.css';
-import 'xterm/css/xterm.css';
-
-import { ContainerModule, Container } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { bindContributionProvider } from '@theia/core';
-import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext, QuickOpenContribution } from '@theia/core/lib/browser';
+import { KeybindingContext, KeybindingContribution, QuickOpenContribution, WebSocketConnectionProvider, WidgetFactory } from '@theia/core/lib/browser';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
-import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { RemoteTerminalServer, REMOTE_TERMINAL_PATH } from '../common/terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalActiveContext, TerminalSearchVisibleContext } from './terminal-keybinding-contexts';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import 'xterm/css/xterm.css';
+import '../../src/browser/style/terminal.css';
+import { RemoteTerminalServer, REMOTE_TERMINAL_PATH } from '../common/remote-terminal-protocol';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
-import { bindTerminalPreferences } from './terminal-preferences';
-import { URLMatcher, LocalhostMatcher } from './terminal-linkmatcher';
-import { TerminalContribution } from './terminal-contribution';
-import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
-import { TerminalLinkmatcherDiffPre, TerminalLinkmatcherDiffPost } from './terminal-linkmatcher-diff';
-import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
-import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
-import { createTerminalSearchFactory } from './search/terminal-search-container';
-import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
-import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { TerminalThemeService } from './terminal-theme-service';
+import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { RemoteTerminalService, RemoteTerminalServiceImpl } from './remote-terminal-service';
+import { bindTerminalSearchWidgetFactory } from './search/terminal-search-container';
+import { TerminalContribution } from './terminal-contribution';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
+import { TerminalFrontendContribution } from './terminal-frontend-contribution';
+import { TerminalActiveContext, TerminalSearchVisibleContext } from './terminal-keybinding-contexts';
+import { LocalhostMatcher, URLMatcher } from './terminal-linkmatcher';
+import { TerminalLinkmatcherDiffPost, TerminalLinkmatcherDiffPre } from './terminal-linkmatcher-diff';
+import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
+import { bindTerminalPreferences } from './terminal-preferences';
+import { TerminalQuickOpenContribution, TerminalQuickOpenService } from './terminal-quick-open-service';
+import { TerminalThemeService } from './terminal-theme-service';
+import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -49,14 +46,12 @@ export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalSearchVisibleContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
-    bind(TerminalWatcher).toSelf().inSingletonScope();
 
     let terminalNum = 0;
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: TERMINAL_WIDGET_FACTORY_ID,
         createWidget: (options: TerminalWidgetOptions) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
+            const child = ctx.container.createChild();
             const counter = terminalNum++;
             const domId = options.id || 'terminal-' + counter;
             const widgetOptions: TerminalWidgetOptions = {
@@ -65,11 +60,9 @@ export default new ContainerModule(bind => {
                 destroyTermOnClose: true,
                 ...options
             };
-            child.bind(TerminalWidgetOptions).toConstantValue(widgetOptions);
             child.bind('terminal-dom-id').toConstantValue(domId);
-
-            child.bind(TerminalSearchWidgetFactory).toDynamicValue(context => createTerminalSearchFactory(context.container));
-
+            child.bind(TerminalWidgetOptions).toConstantValue(widgetOptions);
+            bindTerminalSearchWidgetFactory(child);
             return child.get(TerminalWidget);
         }
     }));

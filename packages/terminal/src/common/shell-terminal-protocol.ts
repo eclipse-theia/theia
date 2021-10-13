@@ -14,36 +14,39 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { JsonRpcProxy } from '@theia/core';
-import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 import { OS } from '@theia/core/lib/common/os';
+import { TerminalSpawnOptions } from '@theia/process/lib/node';
+import * as rt from './remote-terminal-protocol';
 
-export const shellTerminalPath = '/services/shell-terminal';
+export const SHELL_REMOTE_TERMINAL_PATH = '/services/shell-remote-terminal';
 
-export const IShellTerminalServer = Symbol('IShellTerminalServer');
-export interface IShellTerminalServer extends IBaseTerminalServer {
-    hasChildProcesses(processId: number | undefined): Promise<boolean>;
+export const ShellRemoteTerminalServer = Symbol('ShellRemoteTerminalServer');
+export interface ShellRemoteTerminalServer {
+
+    spawn(id: rt.RemoteTerminalConnectionId, options: {}): Promise<rt.RemoteTerminalSpawnResponse>
+
+    attach(id: rt.RemoteTerminalConnectionId, options: {}): Promise<rt.RemoteTerminalAttachResponse>
 }
 
 export type ShellTerminalOSPreferences<T> = {
     [key in OS.Type]: T
 };
 
-export interface IShellTerminalPreferences {
-    shell: ShellTerminalOSPreferences<string | undefined>,
+export interface ShellTerminalPreferences {
+    shell: ShellTerminalOSPreferences<string | undefined>
     shellArgs: ShellTerminalOSPreferences<string[]>
 };
 
-export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions {
-    shellPreferences?: IShellTerminalPreferences,
-    shell?: string,
-    args?: string[],
-    rootURI?: string,
-    cols?: number,
-    rows?: number,
-    env?: { [key: string]: string | null };
-    isPseudo?: boolean,
-}
+export interface ShellRemoteTerminalSpawnOptions extends TerminalSpawnOptions {
 
-export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
-export type ShellTerminalServerProxy = JsonRpcProxy<IShellTerminalServer>;
+    shellPreferences?: ShellTerminalPreferences
+
+    shell?: string
+
+    shellArgs?: string[]
+
+    /**
+     * I still don't understand this option.
+     */
+    isPseudo?: boolean
+}

@@ -23,7 +23,7 @@ import * as rt from '../common/remote-terminal-protocol';
 
 export const RemoteTerminalConnectionHandler = Symbol('RemoteTerminalConnectionHandler');
 export interface RemoteTerminalConnectionHandler {
-    get(uuid: string): RemoteTerminalConnection
+    get(id: rt.RemoteTerminalConnectionId): RemoteTerminalConnection
 }
 
 export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnectionHandler, MessagingService.Contribution {
@@ -31,8 +31,8 @@ export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnec
     readonly connections = new Map<rt.RemoteTerminalConnectionId, RemoteTerminalConnection>();
 
     configure(service: MessagingService): void {
-        service.listen(rt.REMOTE_TERMINAL_CONNECTION_PATH_TEMPLATE, (params, connection) => {
-            this.createRemoteTerminalConnection(params.uuid, connection);
+        service.listen(rt.REMOTE_TERMINAL_NEW_CONNECTION_PATH_TEMPLATE, (params, connection) => {
+            this.createRemoteTerminalConnection(params.id, connection);
         });
     }
 
@@ -40,33 +40,34 @@ export class RemoteTerminalConnectionHandlerImpl implements RemoteTerminalConnec
      * Clients should create `RemoteTerminalConnection` instances
      * before trying to create or attach to terminals.
      */
-    get(uuid: rt.RemoteTerminalConnectionId): RemoteTerminalConnection {
-        const rtc = this.connections.get(uuid);
+    get(id: rt.RemoteTerminalConnectionId): RemoteTerminalConnection {
+        const rtc = this.connections.get(id);
         if (rtc === undefined) {
-            throw new Error(`unknown remote terminal connection uuid: ${uuid}`);
+            throw new Error(`unknown remote terminal connection id: ${id}`);
         }
-        if (rtc.isAttached) {
-            throw new Error(`remote terminal connection is already attached uuid: ${uuid}`);
+        if (rtc.isAttached()) {
+            throw new Error(`remote terminal connection is already attached id: ${id}`);
         }
-        if (rtc.isDisposed) {
-            throw new Error(`remote terminal connection is disposed uuid: ${uuid}`);
+        if (rtc.isDisposed()) {
+            throw new Error(`remote terminal connection is disposed id: ${id}`);
         }
         return rtc;
     }
 
-    protected createRemoteTerminalConnection(uuid: rt.RemoteTerminalConnectionId, connection: MessageConnection): RemoteTerminalConnection {
-        if (this.connections.has(uuid)) {
-            throw new Error(`RemoteTerminalConnection already exists uuid: ${uuid}`);
+    protected createRemoteTerminalConnection(id: rt.RemoteTerminalConnectionId, connection: MessageConnection): RemoteTerminalConnection {
+        if (this.connections.has(id)) {
+            throw new Error(`RemoteTerminalConnection already exists id: ${id}`);
         }
-        const rtc = new RemoteTerminalConnection(uuid, connection);
-        this.connections.set(uuid, rtc);
-        connection.onDispose(() => this.disposeRemoteTerminalConnection(rtc));
-        connection.onClose(() => this.disposeRemoteTerminalConnection(rtc));
+        const rtc = new RemoteTerminalConnection(id, connection);
+        this.connections.set(id, rtc);
+        connection.onDispose(() => this.disposeRemoteTerminalConnection(id));
         return rtc;
     }
 
-    protected disposeRemoteTerminalConnection(rtc: RemoteTerminalConnection): void {
-        if (this.connections.delete(rtc.uuid)) {
+    protected disposeRemoteTerminalConnection(id: rt.RemoteTerminalConnectionId): void {
+        const rtc = this.connections.get(id);
+        if (rtc) {
+            this.connections.delete(id);
             rtc.dispose();
         }
     }
@@ -89,23 +90,15 @@ export class RemoteTerminalConnection implements Disposable {
     protected toDispose = new DisposableCollection();
 
     constructor(
-        readonly uuid: rt.RemoteTerminalConnectionId,
+        readonly id: rt.RemoteTerminalConnectionId,
         readonly connection: MessageConnection
     ) {
         this.toDispose.push(this.connection);
     }
 
-    get isDisposed(): boolean {
-        return this.toDispose.disposed;
-    }
-
-    get isAttached(): boolean {
-        return this.terminal !== undefined;
-    }
-
     attach(terminal: Terminal): void {
-        this.checkNotDisposed();
-        this.checkNotAttached();
+        this.ensureNotDisposed();
+        this.ensureNotAttached();
         this.terminal = terminal;
         this.output = this.terminal.getOutputStream();
         this.output.on('data', data => this.connection.sendNotification('onData', data));
@@ -119,33 +112,53 @@ export class RemoteTerminalConnection implements Disposable {
         this.connection.onRequest('kill', () => { this.getAttachedTerminal().kill(); });
     }
 
+    isAttached(): boolean {
+        return this.terminal !== undefined;
+    }
+
+    isDisposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
     dispose(): void {
         if (!this.toDispose.disposed) {
             this.toDispose.dispose();
         }
     }
 
-    protected checkNotDisposed(): void {
-        if (this.isDisposed) {
+    /**
+     * Throws if disposed.
+     */
+    protected ensureNotDisposed(): void {
+        if (this.isDisposed()) {
             throw new Error('this RemoteTerminalConnection is disposed');
         }
     }
 
-    protected checkNotAttached(): void {
-        if (this.isAttached) {
+    /**
+     * Throws if attached.
+     */
+    protected ensureNotAttached(): void {
+        if (this.isAttached()) {
             throw new Error('this RemoteTerminalConnection is already attached');
         }
     }
 
-    protected checkAttached(): void {
-        if (!this.isAttached) {
+    /**
+     * Throws if not attached.
+     */
+    protected ensureAttached(): void {
+        if (!this.isAttached()) {
             throw new Error('this RemoteTerminalConnection is not attached');
         }
     }
 
+    /**
+     * Throws if not attached or disposed.
+     */
     protected getAttachedTerminal(): Terminal {
-        this.checkNotDisposed();
-        this.checkAttached();
+        this.ensureNotDisposed();
+        this.ensureAttached();
         return this.terminal!;
     }
 }

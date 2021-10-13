@@ -58,22 +58,6 @@ export class RemoteTerminalServerImpl implements rt.RemoteTerminalServer, Dispos
         };
     }
 
-    async getTerminals(): Promise<rt.RemoteTerminalGetTerminalsResponse[]> {
-        const terminals: rt.RemoteTerminalGetTerminalsResponse[] = [];
-        for (const terminalId of this.globalTerminalRegistry.ids()) {
-            terminals.push({ terminalId, persistent: true });
-        }
-        for (const terminalId of this.localTerminalRegistry.ids()) {
-            terminals.push({ terminalId, persistent: false });
-        }
-        return terminals;
-    }
-
-    async getTerminalProcessInfo(terminalId: number): Promise<rt.RemoteTerminalGetTerminalProcessInfoResponse> {
-        const { info } = this.getTerminal(terminalId);
-        return { info };
-    }
-
     dispose(): void {
         // Kill all non-persistent `Terminal` instances
         this.localTerminalRegistry.dispose();
@@ -82,7 +66,7 @@ export class RemoteTerminalServerImpl implements rt.RemoteTerminalServer, Dispos
     protected getTerminal(terminalId: number): Terminal {
         const terminal = this.localTerminalRegistry.get(terminalId) ?? this.globalTerminalRegistry.get(terminalId);
         if (terminal === undefined) {
-            throw new Error(`terminal not found terminalId: ${terminalId}`);
+            throw new Error(`terminal not found, terminalId: ${terminalId}`);
         }
         return terminal;
     }

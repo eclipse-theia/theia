@@ -18,8 +18,8 @@ import { Event } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
-import { TerminalProcessInfo } from '../../common/base-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
+import { TerminalProcessInfo } from '@theia/process/lib/node';
 
 export interface TerminalDimensions {
     cols: number;

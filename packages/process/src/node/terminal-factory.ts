@@ -27,13 +27,22 @@ export interface TerminalOptions /* extends Serializable */ {
     cwd?: string
 
     /**
-     * Definitive map of environment variables to use when spawning the terminal.
+     * Map of environment variables to use when spawning the terminal.
      *
-     * Will only set what is defined; it won't merge with anything else.
+     * See `mergeProcessEnv` for more details.
      *
      * Defaults to the current environment.
      */
-    env?: Record<string, string>
+    env?: Record<string, string | null>
+
+    /**
+     * When `true` it will append the contents of `env` to `process.env`.
+     *
+     * When `false` it will only use the variables defined in `env` when spawning the terminal.
+     *
+     * Defaults to `false`.
+     */
+    mergeProcessEnv?: boolean
 
     /**
      * Size of the terminal viewport in characters.

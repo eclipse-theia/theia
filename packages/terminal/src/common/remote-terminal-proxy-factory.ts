@@ -21,7 +21,7 @@ import { TerminalDataEvent, TerminalExitEvent } from '@theia/process/lib/node';
 import { RemoteTerminalProxy } from './remote-terminal-protocol';
 
 /**
- * This class supports `onEvent(callback)` APIs for `RemoteTerminalProxy` instances.
+ * This class supports `onEvent(callback)` APIs for `RemoteTerminalProxy` instances and can be disposed.
  */
 export class RemoteTerminalProxyFactory extends JsonRpcProxyFactory<RemoteTerminalProxy> {
 

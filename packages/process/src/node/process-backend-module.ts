@@ -20,6 +20,8 @@ import { NodePtyTerminalFactory } from './node-pty-terminal-factory';
 import { TerminalBufferFactory } from './terminal-buffer';
 import { TerminalFactory } from './terminal-factory';
 import { TerminalMultiRingBuffer } from './terminal-multi-ring-buffer';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
+import { OsProcessServerPath, OsProcessServer } from '../common/os-process-protocol';
 
 export default new ContainerModule(bind => {
     bind(MultiRingBuffer).toSelf().inTransientScope();
@@ -28,4 +30,10 @@ export default new ContainerModule(bind => {
     bind(TerminalMultiRingBuffer).toSelf().inTransientScope();
     bind(TerminalBufferFactory).toFactory(ctx => () => ctx.container.get(TerminalMultiRingBuffer));
     bind(TerminalFactory).to(NodePtyTerminalFactory).inSingletonScope();
+    bind(OsProcessServer).to(OsProcessServerImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(
+        ctx => new JsonRpcConnectionHandler(OsProcessServerPath,
+            () => ctx.container.get(OsProcessServer)
+        )
+    ).inSingletonScope();
 });

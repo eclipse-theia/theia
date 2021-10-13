@@ -18,11 +18,18 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { TerminalSearchWidget, TerminalSearchWidgetFactory } from './terminal-search-widget';
 import { Terminal } from 'xterm';
 
-export function createTerminalSearchFactory(container: interfaces.Container): TerminalSearchWidgetFactory {
+export function bindTerminalSearchWidgetFactory(container: interfaces.Container): void {
     container.bind(TerminalSearchWidget).toSelf().inSingletonScope();
+    container.bind(TerminalSearchWidgetFactory).toFactory(DynamicTerminalSearchWidgetFactory);
+}
 
-    return (terminal: Terminal) => {
-        container.bind(Terminal).toConstantValue(terminal);
-        return container.get(TerminalSearchWidget);
+/**
+ * `TerminalSearchWidget` must be bound.
+ */
+export function DynamicTerminalSearchWidgetFactory(ctx: interfaces.Context): TerminalSearchWidgetFactory {
+    return terminal => {
+        const child = ctx.container.createChild();
+        child.bind(Terminal).toConstantValue(terminal);
+        return child.get(TerminalSearchWidget);
     };
 }
