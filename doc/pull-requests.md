@@ -46,7 +46,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - Such PR should be marked as a draft or with the WIP prefix.
 
 <a name="fixups"></a>
-- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits while the review process is ongoing. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
+- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
 ## Requesting a Review
 
@@ -121,7 +121,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="dismissing-approve"></a>
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
 <a name="approval-finality"></a>
-- [3.](#approval-finality) Approval implies readiness to merge. A reviewer should only approve a pull request that they are prepared to merge. If a PR is under review by multiple reviewers, it should not be approved until all are satisfied.
+- [3.](#approval-finality) Approval implies readiness to merge. A reviewer should only approve a pull request that they are prepared to merge it. If a PR is under review by multiple reviewers, reviewers who are not satisfied with the state of the PR should block its merge, for example by marking their review 'request changes'.
 
 ### Collaborating
 
