@@ -121,7 +121,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="dismissing-approve"></a>
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
 <a name="approval-finality"></a>
-- [3.](#approval-finality) Approval implies readiness to merge. A reviewer should only approve a pull request that they are prepared to merge it. If a PR is under review by multiple reviewers, reviewers who are not satisfied with the state of the PR should block its merge, for example by marking their review 'request changes'.
+- [3.](#approval-finality) Approval of a PR implies that the reviewer is prepared to merge the PR. A reviewer should only approve a pull request that they are prepared to merge it. If a PR is under review by multiple reviewers, reviewers who are not satisfied with the state of the PR should block its merge, for example by marking their review 'request changes'.
 
 ### Collaborating
 
@@ -131,7 +131,7 @@ then a reviewer should be encouraged to open an alternative PR or collaborate on
 <a name="completing-pr"></a>
 - [2.](#completing-pr) If a PR is important, but an author cannot or does not want to address outstanding issues,
 then maintainers can complete the PR with additional commits
-provided that the original author accepted the [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement) and their commits are preserved ([signed-off](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work)).
+provided that the original author accepted the [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement) and their commits are preserved - the original author's work should not be squashed away.
 <a name="suggesting-help-on-pr"></a>
 - [3.](#suggesting-help-on-pr) Reviewers should offer their help via a comment to avoid intervening in an author's work.
 <a name="landing-stale-pr"></a>
