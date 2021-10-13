@@ -303,7 +303,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 pruneSiblings: true
             })) {
                 if (this.shouldDisplayNode(node)) {
-                    const parentDepth = depths.get(node.parent);
+                    const parentDepth = this.getParentDepth(node, depths);
                     const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
                     if (CompositeTreeNode.is(node)) {
                         depths.set(node, depth);
@@ -318,6 +318,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.rows = new Map(rowsToUpdate);
         this.updateScrollToRow();
+    }
+
+    protected getParentDepth(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number | undefined {
+        return depths.get(node.parent);
     }
 
     protected shouldDisplayNode(node: TreeNode): boolean {
@@ -600,6 +604,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 title: tooltip
             };
         }
+        const children = this.renderCaptionNode(node);
+        return React.createElement('div', attrs, ...children);
+    }
+
+    protected renderCaptionNode(node: TreeNode): React.ReactNode[] {
         const children: React.ReactNode[] = [];
         const caption = this.toNodeName(node);
         const highlight = this.getDecorationData(node, 'highlight')[0];
@@ -612,7 +621,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         } else if (!highlight) {
             children.push(caption);
         }
-        return React.createElement('div', attrs, ...children);
+        return children;
     }
 
     /**
@@ -848,10 +857,17 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
                 paddingLeft: `${paddingLeft}px`
             }} />);
-            current = current.parent;
+            // Indent need to be calculated according to the displayed rows, The direct parent might be hidden by the `shouldDisplayNode` condition.
+            current = this.getDisplayedParent(current.parent);
             depth--;
         }
         return indentDivs;
+    }
+
+    protected getDisplayedParent(parent: CompositeTreeNode | undefined): TreeNode | undefined {
+        if (parent) {
+            return this.shouldDisplayNode(parent) ? parent : this.getDisplayedParent(parent.parent);
+        }
     }
 
     protected needsActiveIndentGuideline(node: TreeNode): boolean {
@@ -1088,12 +1104,16 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addEventListener(this.node, 'focus', () => this.doFocus());
     }
 
+    protected isMutiSelectMaskEvent(event: KeyboardEvent): boolean {
+        return !!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event));
+    }
+
     /**
      * Handle the `left arrow` keyboard event.
      * @param event the `left arrow` keyboard event.
      */
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
-        if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
+        if (this.isMutiSelectMaskEvent(event)) {
             return;
         }
         if (! await this.model.collapseNode()) {
@@ -1106,7 +1126,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param event the `right arrow` keyboard event.
      */
     protected async handleRight(event: KeyboardEvent): Promise<void> {
-        if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
+        if (this.isMutiSelectMaskEvent(event)) {
             return;
         }
         if (! await this.model.expandNode()) {

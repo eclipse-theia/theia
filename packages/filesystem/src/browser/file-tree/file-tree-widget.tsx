@@ -20,12 +20,13 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, TreeViewWelcomeWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { FileStat, FileType } from '../../common/files';
+import { CompressibleTreeWidget } from '../compressible-tree';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -33,7 +34,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeViewWelcomeWidget {
+export class FileTreeWidget extends CompressibleTreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -99,6 +100,11 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected getNodeTooltip(node: TreeNode): string | undefined {
+        const items = this.getCompressedItems(node);
+        if (items.length > 0) {
+            const lastCompressedItem = items[items.length - 1];
+            node = lastCompressedItem;
+        }
         const uri = UriSelection.getUri(node);
         return uri ? uri.path.toString() : undefined;
     }
@@ -289,6 +295,19 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
             }
         }
         return inflated;
+    }
+
+    protected getCompressibleElement(node: TreeNode, compressedItem: TreeNode | undefined, index: number, children?: React.ReactNode[]): React.ReactElement {
+        const element = super.getCompressibleElement(node, compressedItem, index, children);
+        const currentItem = compressedItem || node;
+        const props = {
+            onDragStart: (event: React.DragEvent<Element>) => this.handleDragStartEvent(currentItem, event),
+            onDragEnter: (event: React.DragEvent<Element>) => this.handleDragEnterEvent(currentItem, event),
+            onDragOver: (event: React.DragEvent<Element>) => this.handleDragOverEvent(currentItem, event),
+            onDragLeave: (event: React.DragEvent<Element>) => this.handleDragLeaveEvent(currentItem, event),
+            onDrop: (event: React.DragEvent<Element>) => this.handleDropEvent(currentItem, event)
+        };
+        return React.cloneElement(element, props);
     }
 
 }

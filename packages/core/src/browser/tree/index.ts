@@ -25,3 +25,4 @@ export * from './tree-view-welcome-widget';
 export * from './tree-container';
 export * from './tree-decorator';
 export * from './tree-search';
+export * from './tree-compression';

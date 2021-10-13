@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { CompressibleTreeNode } from './tree-compression';
 import { Emitter, Event, Disposable } from '../../common';
 import { CompositeTreeNode, TreeNode, Tree } from './tree';
 
@@ -88,11 +89,15 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
     protected init(): void {
         this.tree.onNodeRefreshed(node => {
             for (const child of node.children) {
-                if (ExpandableTreeNode.isExpanded(child)) {
+                if (ExpandableTreeNode.is(child) && ((child.expanded || this.isNodeOrChildCompressed(child)))) {
                     node.waitUntil(this.tree.refresh(child));
                 }
             }
         });
+    }
+
+    protected isNodeOrChildCompressed(node: ExpandableTreeNode): boolean {
+        return CompressibleTreeNode.isCompressed(node) || CompressibleTreeNode.hasCompressedItem(node);
     }
 
     dispose(): void {
@@ -148,6 +153,10 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
     protected doCollapseNode(node: TreeNode | undefined): boolean {
         if (!ExpandableTreeNode.isExpanded(node)) {
             return false;
+        }
+        // Need to refresh compressed node tree in order to update the compressed caption view (in case of deletion).
+        if (CompressibleTreeNode.isCompressed(node)) {
+            this.tree.refresh(node);
         }
         node.expanded = false;
         this.fireExpansionChanged(node);

@@ -16,12 +16,12 @@
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
 import { Tree, TreeModel, TreeProps, defaultTreeProps, TreeDecoratorService } from '@theia/core/lib/browser';
-import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { FileNavigatorTree } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorWidget } from './navigator-widget';
 import { NAVIGATOR_CONTEXT_MENU } from './navigator-contribution';
 import { NavigatorDecoratorService } from './navigator-decorator-service';
+import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
 
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,

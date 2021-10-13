@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { CompressibleTreeNode } from './tree-compression';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
 
@@ -62,7 +63,8 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
         if (!CompositeTreeNode.is(node)) {
             return undefined;
         }
-        if (this.options.pruneCollapsed && this.isCollapsed(node)) {
+        // The node is considered as expanded if his child is compressed
+        if (this.options.pruneCollapsed && this.isCollapsed(node) && !this.hasCompressedItem(node)) {
             return undefined;
         }
         return node.children.slice();
@@ -70,6 +72,10 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
 
     protected isCollapsed(node: TreeNode): boolean {
         return ExpandableTreeNode.isCollapsed(node);
+    }
+
+    protected hasCompressedItem(node: TreeNode): boolean {
+        return CompressibleTreeNode.hasCompressedItem(node);
     }
 
     protected isEmpty(nodes: TreeNode[] | undefined): boolean {

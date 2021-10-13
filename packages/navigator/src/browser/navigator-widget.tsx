@@ -20,9 +20,9 @@ import URI from '@theia/core/lib/common/uri';
 import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
 import {
     CorePreferences, Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
-    TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode
+    TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode, CompressibleTreeNode
 } from '@theia/core/lib/browser';
-import { FileTreeWidget, FileNode, DirNode, FileStatNode } from '@theia/filesystem/lib/browser';
+import { FileNode, DirNode, FileStatNode, FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
@@ -76,6 +76,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
             this.model.onExpansionChanged(node => {
                 if (node.expanded && node.children.length === 1) {
                     const child = node.children[0];
+                    // A compressed child is treated in the super.super class implementation (`CompressibleTreeWidget#onExpansionChanged`)
+                    if (CompressibleTreeNode.isCompressed(child)) {
+                        return;
+                    }
                     if (ExpandableTreeNode.is(child) && !child.expanded) {
                         this.model.expandNode(child);
                     }

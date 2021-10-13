@@ -25,12 +25,19 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
             type: 'boolean',
             description: nls.localizeByDefault('Controls whether the explorer should automatically reveal and select files when opening them.'),
             default: true
+        },
+        'explorer.compactFolders': {
+            type: 'boolean',
+            description: `Controls whether the explorer should render folders in a compact form. In such a form, single child folders will be compressed in a combined tree element.
+             Useful for Java package structures, for example.`,
+            default: true
         }
     }
 };
 
 export interface FileNavigatorConfiguration {
     'explorer.autoReveal': boolean;
+    'explorer.compactFolders': boolean
 }
 
 export const FileNavigatorPreferenceContribution = Symbol('FileNavigatorPreferenceContribution');

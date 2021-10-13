@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { Mutable } from '@theia/core/lib/common/types';
 import { FileStat, Stat, FileType, FileOperationError, FileOperationResult } from '../../common/files';
 import { FileStat as DeprecatedFileStat } from '../../common/filesystem';
@@ -24,15 +24,35 @@ import { UriSelection } from '@theia/core/lib/common/selection';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSelection } from '../file-selection';
 import { FileService } from '../file-service';
+import { CompressibleTree } from '../compressible-tree';
 
 @injectable()
-export class FileTree extends TreeImpl {
+export class FileTree extends CompressibleTree {
 
     @inject(FileService)
     protected readonly fileService: FileService;
 
     @inject(MessageService)
     protected readonly messagingService: MessageService;
+
+    protected isCompressionEnabled = () => false;
+
+    protected shouldCompressNode(node: TreeNode): boolean {
+        if (!CompositeTreeNode.is(node)) {
+            return false;
+        }
+        const root = this.getRootNode(node);
+        // The tree root is always `WorkspaceNode`, its child is the main project folder - shouldn't be compressed,
+        // its grandchildren are the direct children of the main project folder - shouldn't be compressed either.
+        if (node.parent && (node.parent.id === root.id || (node.parent.parent && node.parent.parent.id === root.id))) {
+            return false;
+        }
+        return DirNode.is(node) && this.isSingleChild(node);
+    }
+
+    protected isSingleChild(node: CompositeTreeNode): boolean {
+        return !!node.parent && node.parent.children.length === 1;
+    }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
@@ -81,6 +101,7 @@ export class FileTree extends TreeImpl {
                 id, uri, fileStat, parent,
                 expanded: false,
                 selected: false,
+                compressed: false,
                 children: []
             };
         }

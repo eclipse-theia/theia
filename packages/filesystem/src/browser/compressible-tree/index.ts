@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,24 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import './file-dialog.css';
-@import './file-icons.css';
-@import './filepath-breadcrumbs.css';
-@import './compressible-tree.css';
-
-.theia-file-tree-drag-image {
-  position: absolute;
-  /*
-    make sure you don't see it flashing
-     */
-  top: -1000px;
-  font-size: var(--theia-ui-font-size1);
-  display: inline-block;
-  padding: 1px calc(var(--theia-ui-padding)*2);
-  border-radius: 10px;
-
-  background: var(--theia-list-activeSelectionBackground);
-  color: var(--theia-list-activeSelectionForeground);
-  outline: 1px solid var(--theia-contrastActiveBorder);
-  outline-offset: -1px;
-}
+export * from './compressible-tree';
+export * from './compressible-tree-model';
+export * from './compressible-tree-widget';
+export * from './compressible-tree-container';

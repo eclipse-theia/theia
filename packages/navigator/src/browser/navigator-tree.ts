@@ -15,21 +15,33 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
+import { DirNode, FileTree } from '@theia/filesystem/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
+import { FileNavigatorPreferences } from './navigator-preferences';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {
 
     @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter;
+    @inject(FileNavigatorPreferences) protected readonly navigatorPreferences: FileNavigatorPreferences;
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.filter.onFilterChanged(() => this.refresh()));
+        this.toDispose.pushAll([
+            this.filter.onFilterChanged(() => this.refresh()),
+            this.navigatorPreferences.onPreferenceChanged(e => {
+                if (e.preferenceName === 'explorer.compactFolders') {
+                    this.compressionService.reset();
+                    this.refresh();
+                }
+            })
+        ]);
     }
+
+    protected isCompressionEnabled = () => this.navigatorPreferences['explorer.compactFolders'];
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (WorkspaceNode.is(parent)) {
