@@ -14,10 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, optional } from 'inversify';
+import { injectable, inject, optional, postConstruct } from 'inversify';
 import * as React from 'react';
 import ReactTooltip from 'react-tooltip';
 import { ReactRenderer, RendererHost } from './widgets/react-renderer';
+import { CorePreferences } from './core-preferences';
+import { DisposableCollection } from '../common/disposable';
 import { v4 } from 'uuid';
 
 export const TooltipService = Symbol('TooltipService');
@@ -43,16 +45,33 @@ export interface TooltipAttributes {
     'data-for': string;
 }
 
+const DELAY_PREFERENCE = 'workbench.hover.delay';
+
 @injectable()
 export class TooltipServiceImpl extends ReactRenderer implements TooltipService {
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
+
     public readonly tooltipId: string;
     protected rendered = false;
+    protected toDispose: DisposableCollection = new DisposableCollection();
 
     constructor(
         @inject(RendererHost) @optional() host?: RendererHost
     ) {
         super(host);
         this.tooltipId = v4();
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === DELAY_PREFERENCE) {
+                this.rendered = false;
+                this.update();
+            }
+        }));
     }
 
     public attachTo(host: HTMLElement): void {
@@ -69,6 +88,12 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
     }
 
     protected doRender(): React.ReactNode {
-        return <ReactTooltip id={this.tooltipId} className='theia-tooltip' html={true} delayShow={1000} />;
+        let hoverDelay = this.corePreferences.get(DELAY_PREFERENCE);
+        return <ReactTooltip id={this.tooltipId} className='theia-tooltip' html={true} delayShow={hoverDelay} />;
+    }
+
+    public dispose(): void {
+        this.toDispose.dispose();
+        super.dispose();
     }
 }

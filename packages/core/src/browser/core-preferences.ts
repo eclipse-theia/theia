@@ -124,6 +124,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'onHover',
             description: 'Controls whether the tree should render indent guides.'
         },
+        'workbench.hover.delay': {
+            type: 'number',
+            default: isOSX ? 1500 : 500,
+            description: 'Controls the delay in milliseconds after which the hover is shown for workbench items (ex. some extension provided tree view items).'
+        },
     }
 };
 
@@ -142,6 +147,7 @@ export interface CoreConfiguration {
     'workbench.silentNotifications': boolean;
     'workbench.statusBar.visible': boolean;
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
+    'workbench.hover.delay': number;
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');
