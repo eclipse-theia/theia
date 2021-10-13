@@ -187,7 +187,14 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get version(): string | undefined {
-        return this.getData('version');
+        let version = this.getData('version');
+
+        // Ensure version begins with a 'v'
+        if (version && !version.startsWith('v')) {
+            version = `v${version}`;
+        }
+
+        return version;
     }
 
     get averageRating(): number | undefined {
