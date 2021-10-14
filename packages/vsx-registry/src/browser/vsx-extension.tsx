@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as markdownit from 'markdown-it';
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -28,7 +29,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { MenuPath } from '@theia/core/lib/common';
-import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, TooltipService } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
 export const EXTENSIONS_CONTEXT_MENU: MenuPath = ['extensions_context_menu'];
@@ -112,6 +113,9 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
 
+    @inject(TooltipService)
+    readonly tooltipService: TooltipService;
+
     protected readonly data: Partial<VSXExtensionData> = {};
 
     get uri(): URI {
@@ -183,7 +187,14 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get version(): string | undefined {
-        return this.getData('version');
+        let version = this.getData('version');
+
+        // Ensure version begins with a 'v'
+        if (version && !version.startsWith('v')) {
+            version = `v${version}`;
+        }
+
+        return version;
     }
 
     get averageRating(): number | undefined {
@@ -242,6 +253,28 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     get publishedBy(): VSXUser | undefined {
         return this.getData('publishedBy');
+    }
+
+    get tooltipId(): string {
+        return this.tooltipService.tooltipId;
+    }
+
+    get tooltip(): string {
+        let md = `__${this.displayName}__ ${this.version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+
+        if (this.license) {
+            md += `  \rLicense: ${this.license}`;
+        }
+
+        if (this.downloadCount) {
+            md += `  \rDownload count: ${downloadCompactFormatter.format(this.downloadCount)}`;
+        }
+
+        if (this.averageRating) {
+            md += `  \rAverage Rating: ${this.averageRating.toFixed(1)}`;
+        }
+
+        return markdownit().render(md);
     }
 
     protected _busy = 0;
@@ -316,7 +349,9 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     render(): React.ReactNode {
-        return <VSXExtensionComponent extension={this} />;
+        const node = <VSXExtensionComponent extension={this} />;
+        this.tooltipService.update();
+        return node;
     }
 }
 
@@ -379,8 +414,9 @@ const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'c
 
 export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating } = this.props.extension;
-        return <div className='theia-vsx-extension'>
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
+
+        return <div className='theia-vsx-extension' data-for={tooltipId} data-tip={tooltip}>
             {iconUrl ?
                 <img className='theia-vsx-extension-icon' src={iconUrl} /> :
                 <div className='theia-vsx-extension-icon placeholder' />}

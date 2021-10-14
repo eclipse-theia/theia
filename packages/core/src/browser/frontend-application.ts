@@ -25,6 +25,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
+import { TooltipService } from './tooltip-service';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -100,6 +101,9 @@ export class FrontendApplication {
     @inject(WindowService)
     protected readonly windowsService: WindowService;
 
+    @inject(TooltipService)
+    protected readonly tooltipService: TooltipService;
+
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
@@ -130,6 +134,7 @@ export class FrontendApplication {
 
         const host = await this.getHost();
         this.attachShell(host);
+        this.attachTooltip(host);
         await animationFrame();
         this.stateService.state = 'attached_shell';
 
@@ -219,6 +224,13 @@ export class FrontendApplication {
     protected attachShell(host: HTMLElement): void {
         const ref = this.getStartupIndicator(host);
         Widget.attach(this.shell, host, ref);
+    }
+
+    /**
+     * Attach the tooltip container to the host element.
+     */
+    protected attachTooltip(host: HTMLElement): void {
+        this.tooltipService.attachTo(host);
     }
 
     /**

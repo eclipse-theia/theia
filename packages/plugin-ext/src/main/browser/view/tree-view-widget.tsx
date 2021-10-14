@@ -29,7 +29,9 @@ import {
     TREE_NODE_SEGMENT_GROW_CLASS,
     TREE_NODE_TAIL_CLASS,
     TreeModelImpl,
-    TreeViewWelcomeWidget
+    TreeViewWelcomeWidget,
+    TooltipService,
+    TooltipAttributes
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../common/plugin-api-rpc';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
@@ -42,6 +44,8 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import * as markdownit from 'markdown-it';
+import { isMarkdownString } from '../../../plugin/markdown-string';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -245,6 +249,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(TooltipService)
+    protected readonly tooltipService: TooltipService;
+
     protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
@@ -274,13 +281,32 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             classes.push(TREE_NODE_SEGMENT_GROW_CLASS);
         }
         const className = classes.join(' ');
-        const title = node.tooltip ||
-            (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
-            || this.toNodeName(node);
-        const attrs = this.decorateCaption(node, {
-            className, id: node.id,
-            title
-        });
+
+        let attrs: React.HTMLAttributes<HTMLElement> & Partial<TooltipAttributes> = {
+            ...this.decorateCaption(node, {}),
+            className,
+            id: node.id
+        };
+
+        if (node.tooltip && isMarkdownString(node.tooltip)) {
+            // Render markdown in custom tooltip
+            const tooltip = markdownit().render(node.tooltip.value);
+
+            attrs = {
+                ...attrs,
+                'data-tip': tooltip,
+                'data-for': this.tooltipService.tooltipId
+            };
+        } else {
+            const title = node.tooltip ||
+                (node.resourceUri && this.labelProvider.getLongName(new CoreURI(node.resourceUri)))
+                || this.toNodeName(node);
+
+            attrs = {
+                ...attrs,
+                title
+            };
+        }
 
         const children: React.ReactNode[] = [];
         const caption = this.toNodeName(node);
@@ -444,7 +470,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     protected render(): React.ReactNode {
-        return React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
+        const node = React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
+        this.tooltipService.update();
+        return node;
     }
 
     protected renderSearchInfo(): React.ReactNode {

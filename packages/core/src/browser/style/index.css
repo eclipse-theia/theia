@@ -263,3 +263,4 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
 @import './quick-title-bar.css';
 @import './progress-bar.css';
 @import './breadcrumbs.css';
+@import './tooltip.css';
