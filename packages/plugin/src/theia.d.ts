@@ -25,7 +25,7 @@ import './theia-proposed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
 
     /**
      * The version of the Theia API.
@@ -11034,4 +11034,3 @@ declare module '@theia/plugin' {
         export const onDidChangeSessions: Event<AuthenticationSessionsChangeEvent>;
     }
 }
-

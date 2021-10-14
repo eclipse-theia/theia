@@ -2,7 +2,6 @@
   "emit": false,
   "exclude": [
     "+(dev-packages|examples|typings|scripts)",
-    "packages/plugin/src/theia-proposed.d.ts",
     "packages/*/lib",
     "**/node_modules",
     "**/*spec.ts"
