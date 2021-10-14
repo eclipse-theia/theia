@@ -72,7 +72,7 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
                     }
                 }
                 // Decorate the tabbar with the highest marker severity if available.
-                return maxSeverity ? [this.toDecorator(maxSeverity)] : [];
+                return maxSeverity ? [this.toDecorator(maxSeverity, markers.length)] : [];
             }
         }
         return [];
@@ -102,44 +102,25 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
      * @param {Marker<Diagnostic>} marker A diagnostic marker.
      * @returns {WidgetDecoration.Data} The decoration data.
      */
-    protected toDecorator(marker: Marker<Diagnostic>): WidgetDecoration.Data {
-        const position = WidgetDecoration.IconOverlayPosition.BOTTOM_RIGHT;
-        const icon = this.getOverlayIcon(marker);
-        const color = this.getOverlayIconColor(marker);
+    protected toDecorator(marker: Marker<Diagnostic>, count: number): WidgetDecoration.Data {
+        const color = this.getSeverityColor(marker);
         return {
-            iconOverlay: {
-                position,
-                icon,
-                color,
-                background: {
-                    shape: 'circle',
-                    color: 'transparent'
-                }
-            }
+            priority: 1000,
+            fontData: {
+                color
+            },
+            tailDecorations: [{
+                data: count >= 10 ? '9+' : count.toFixed(0)
+            }]
         };
     }
 
     /**
-     * Get the appropriate overlay icon for decoration.
-     * @param {Marker<Diagnostic>} marker A diagnostic marker.
-     * @returns {string} A string representing the overlay icon class.
-     */
-    protected getOverlayIcon(marker: Marker<Diagnostic>): string {
-        const { severity } = marker.data;
-        switch (severity) {
-            case 1: return 'times-circle';
-            case 2: return 'exclamation-circle';
-            case 3: return 'info-circle';
-            default: return 'hand-o-up';
-        }
-    }
-
-    /**
-     * Get the appropriate overlay icon color for decoration.
+     * Get the appropriate severity color for the decoration.
      * @param {Marker<Diagnostic>} marker A diagnostic marker.
      * @returns {WidgetDecoration.Color} The decoration color.
      */
-    protected getOverlayIconColor(marker: Marker<Diagnostic>): WidgetDecoration.Color {
+    protected getSeverityColor(marker: Marker<Diagnostic>): WidgetDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
             case 1: return 'var(--theia-editorError-foreground)';

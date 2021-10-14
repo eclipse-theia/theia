@@ -219,20 +219,30 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
             top = `${paddingTop + iconHeight}px`;
         }
-        const style: ElementInlineStyle = { width, height, top };
+
+        const style: ElementInlineStyle = {
+            color: this.getDecorationData(data.title, 'fontData')[0]?.color || 'unset',
+            height,
+            top,
+            width,
+        };
+
+        const tailDecorations = this.getTailDecorations(data.title);
+        const label = `${data.title.label}${tailDecorations !== '' ? ` ${tailDecorations}` : ''}`;
+
         // No need to check for duplicate labels if the tab is rendered in the side panel (title is not displayed),
         // or if there are less than two files in the tab bar.
         if (isInSidePanel || (this.tabBar && this.tabBar.titles.length < 2)) {
-            return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+            return h.div({ className: 'p-TabBar-tabLabel', style }, label);
         }
         const originalToDisplayedMap = this.findDuplicateLabels([...this.tabBar!.titles]);
         const labelDetails: string | undefined = originalToDisplayedMap.get(data.title.caption);
         if (labelDetails) {
             return h.div({ className: 'p-TabBar-tabLabelWrapper' },
-                h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label),
+                h.div({ className: 'p-TabBar-tabLabel', style }, label),
                 h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
         }
-        return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+        return h.div({ className: 'p-TabBar-tabLabel', style }, label);
     }
 
     renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
@@ -244,6 +254,21 @@ export class TabBarRenderer extends TabBar.Renderer {
         return isInSidePanel
             ? h.div({ className: 'theia-badge-decorator-sidebar' }, `${limitedBadge}`)
             : h.div({ className: 'theia-badge-decorator-horizontal' }, `${limitedBadge}`);
+    }
+
+    protected getTailDecorations(title: Title<Widget>): string {
+        const tailData: string[] = [];
+        const tailDecorations = this.getDecorationData(title, 'tailDecorations');
+        for (const decorations of tailDecorations) {
+            if (decorations) {
+                for (const decoration of decorations) {
+                    if ('data' in decoration && typeof decoration.data === 'string') {
+                        tailData.push(decoration.data);
+                    }
+                }
+            }
+        }
+        return tailData.join(', ');
     }
 
     protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();
@@ -280,12 +305,21 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     /**
-     * Get the decoration data given the tab URI and the decoration data type.
+     * Get the decoration data given the tab URI and the decoration data type sorted by priority.
      * @param {string} title The title.
      * @param {K} key The type of the decoration data.
      */
     protected getDecorationData<K extends keyof WidgetDecoration.Data>(title: Title<Widget>, key: K): WidgetDecoration.Data[K][] {
-        return this.getDecorations(title).filter(data => data[key] !== undefined).map(data => data[key]);
+        return this.getDecorations(title)
+            .filter(data => data[key] !== undefined)
+            .sort((a, b) => this.compareDecorators(a, b))
+            .map(data => data[key]);
+    }
+
+    protected compareDecorators(a: WidgetDecoration.Data, b: WidgetDecoration.Data): number {
+        const priorityA = a.priority || 0;
+        const priorityB = b.priority || 0;
+        return priorityB - priorityA;
     }
 
     /**
