@@ -87,7 +87,7 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
     }
 
     protected doRender(): React.ReactNode {
-        let hoverDelay = this.corePreferences.get(DELAY_PREFERENCE);
+        const hoverDelay = this.corePreferences.get(DELAY_PREFERENCE);
         return <ReactTooltip id={this.tooltipId} className='theia-tooltip' html={true} delayShow={hoverDelay} />;
     }
 
