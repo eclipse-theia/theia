@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { CommandRegistryImpl } from './command-registry';
 import { UriComponents } from '../common/uri-components';
-import { URI } from './types-impl';
+import { CommentThreadCollapsibleState, URI } from './types-impl';
 import {
     Range,
     Comment,
@@ -29,7 +29,6 @@ import { DocumentsExtImpl } from './documents';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { fromMarkdown, fromRange, toRange } from './type-converters';
-import { CommentThreadCollapsibleState } from './types-impl';
 import {
     CommentsCommandArg, CommentsContextCommandArg, CommentsEditCommandArg,
     CommentsExt,

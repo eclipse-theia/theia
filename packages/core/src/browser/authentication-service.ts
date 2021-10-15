@@ -23,10 +23,9 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Emitter, Event } from '../common/event';
 import { StorageService } from '../browser/storage-service';
-import { Disposable } from '../common/disposable';
+import { Disposable, DisposableCollection } from '../common/disposable';
 import { ACCOUNTS_MENU, ACCOUNTS_SUBMENU, MenuModelRegistry } from '../common/menu';
 import { Command, CommandRegistry } from '../common/command';
-import { DisposableCollection } from '../common/disposable';
 
 export interface AuthenticationSessionsChangeEvent {
     added: ReadonlyArray<string>;

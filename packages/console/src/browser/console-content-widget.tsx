@@ -18,8 +18,7 @@ import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { interfaces, Container, injectable } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
-import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
-import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
+import { SourceTreeWidget, TreeSourceNode, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { ConsoleItem } from './console-session';
 import { Severity } from '@theia/core/lib/common/severity';
 

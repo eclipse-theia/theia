@@ -20,6 +20,7 @@ import {
     TreeNode,
     NodeProps,
     SelectableTreeNode,
+    CompositeTreeNode,
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
@@ -29,7 +30,6 @@ import {
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Emitter, Mutable, UriSelection } from '@theia/core';
-import { CompositeTreeNode } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';

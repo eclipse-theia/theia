@@ -19,12 +19,11 @@ import { LocationService } from './location-service';
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
-import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter, Path } from '@theia/core/lib/common';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogModel } from '../file-dialog/file-dialog-model';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
-import { Path } from '@theia/core/lib/common';
 import { codicon } from '@theia/core/lib/browser';
 
 interface AutoSuggestDataEvent {

@@ -17,9 +17,8 @@
 import { inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ApplicationShell, OpenerOptions, OpenHandler, Widget, WidgetManager } from '@theia/core/lib/browser';
-import { CustomEditorPriority, CustomEditorSelector } from '../../../common';
+import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import * as glob from './glob';
-import { CustomEditor } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
 import { v4 } from 'uuid';
 import { Emitter } from '@theia/core';

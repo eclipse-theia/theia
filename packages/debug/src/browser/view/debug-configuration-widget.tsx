@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable } from '@theia/core/lib/common';
+import { CommandRegistry, Disposable } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -27,7 +27,6 @@ import { DebugAction } from './debug-action';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionOptions } from '../debug-session-options';
 import { DebugCommands } from '../debug-frontend-application-contribution';
-import { CommandRegistry } from '@theia/core/lib/common';
 
 @injectable()
 export class DebugConfigurationWidget extends ReactWidget {

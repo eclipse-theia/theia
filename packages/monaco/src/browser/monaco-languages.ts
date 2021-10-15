@@ -14,16 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
-import { Mutable } from '@theia/core/lib/common/types';
+import { MaybePromise, Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MaybePromise } from '@theia/core/lib/common/types';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
-import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';

@@ -17,8 +17,7 @@
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import * as chai from 'chai';
 import { WorkspaceExtImpl } from '../plugin/workspace';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { ProxyIdentifier } from '../common/rpc-protocol';
+import { ProxyIdentifier, RPCProtocol } from '../common/rpc-protocol';
 
 const expect = chai.expect;
 

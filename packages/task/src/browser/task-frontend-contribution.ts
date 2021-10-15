@@ -15,9 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ILogger, ContributionProvider } from '@theia/core/lib/common';
+import { ILogger, ContributionProvider, CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task';
-import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickAccessContribution,
     KeybindingRegistry, KeybindingContribution, StorageService, StatusBar, StatusBarAlignment

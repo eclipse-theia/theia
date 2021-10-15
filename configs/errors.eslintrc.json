@@ -41,6 +41,7 @@
         "code": 180
       }
     ],
+    "no-duplicate-imports": "error",
     "no-magic-numbers": "off",
     "no-multiple-empty-lines": [
       "error",

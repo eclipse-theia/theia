@@ -23,7 +23,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import URI from '@theia/core/lib/common/uri';
 import { Position } from '@theia/core/shared/vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
-import { PreviewHandlerProvider, } from './preview-handler';
+import { PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { PreviewPreferences } from './preview-preferences';
 

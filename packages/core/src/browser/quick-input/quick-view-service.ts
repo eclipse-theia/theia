@@ -18,8 +18,7 @@ import { inject, injectable } from 'inversify';
 import { filterItems, QuickPickItem, QuickPicks } from '..';
 import { CancellationToken, Disposable } from '../../common';
 import { ContextKeyService } from '../context-key-service';
-import { QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { QuickAccessContribution } from './quick-access';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
 
 export interface QuickViewItem {
     readonly label: string;

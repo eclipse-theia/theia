@@ -20,8 +20,10 @@ import {
     Command, CommandContribution, CommandRegistry,
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
-import { ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, PreferenceScope, Widget } from '../../browser';
-import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
+import {
+    ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
+    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus
+} from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../../electron-common/messaging/electron-messages';

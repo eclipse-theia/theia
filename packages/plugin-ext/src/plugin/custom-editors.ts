@@ -19,17 +19,15 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/workbench/api/common/extHostCustomEditors.ts
 
-import { CustomEditorsExt, CustomEditorsMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { CustomEditorsExt, CustomEditorsMain, Plugin, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Plugin } from '../common/plugin-api-rpc';
-import { URI } from './types-impl';
+import { Disposable, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { DocumentsExtImpl } from './documents';
 import { WebviewImpl, WebviewsExtImpl } from './webviews';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Disposable } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 import * as Converters from './type-converters';
 

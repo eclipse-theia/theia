@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { isWindows, isOSX, ILogger } from '@theia/core';
+import { deepClone, isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
     RawProcessFactory,
@@ -39,7 +39,6 @@ import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskError, CommandOptions } from '../../common/process/task-protocol';
 import * as fs from 'fs';
 import { ShellProcess } from '@theia/terminal/lib/node/shell-process';
-import { deepClone } from '@theia/core';
 
 /**
  * Task runner that runs a task as a process or a command inside a shell.
