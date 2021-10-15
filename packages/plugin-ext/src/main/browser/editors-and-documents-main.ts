@@ -29,8 +29,7 @@ import { EditorModelService } from './text-editor-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
-import { Emitter } from '@theia/core';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, Emitter } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 
 export class EditorsAndDocumentsMain implements Disposable {

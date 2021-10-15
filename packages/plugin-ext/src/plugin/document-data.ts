@@ -17,9 +17,8 @@
 import * as theia from '@theia/plugin';
 import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
 import { Range as ARange } from '../common/plugin-api-rpc-model';
-import { URI } from './types-impl';
+import { EndOfLine, Position, Range, URI } from './types-impl';
 import { ok } from '../common/assert';
-import { Range, Position, EndOfLine } from './types-impl';
 import { PrefixSumComputer } from './prefix-sum-computer';
 import { getWordAtText, ensureValidWordDefinition } from './word-helper';
 

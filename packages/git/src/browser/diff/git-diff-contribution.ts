@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageService } from '@theia/core/lib/common';
-import { FrontendApplication, AbstractViewContribution, codicon } from '@theia/core/lib/browser';
+import { FrontendApplication, AbstractViewContribution, codicon, open, OpenerService } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -23,7 +23,6 @@ import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { GitCommitDetailWidget } from '../history/git-commit-detail-widget';
 import { GitDiffTreeModel } from './git-diff-tree-model';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { open, OpenerService } from '@theia/core/lib/browser';
 import { NavigatorContextMenu, FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { GitQuickOpenService } from '../git-quick-open-service';

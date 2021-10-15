@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
 import {
-    ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
+    ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
     StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget, codicon, ViewContainerPart
 } from '@theia/core/lib/browser';
@@ -31,7 +31,6 @@ import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/d
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { QuickViewService } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ViewContextKeyService } from './view-context-key-service';

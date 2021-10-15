@@ -25,13 +25,12 @@ import {
     PanelLayout
 } from '@theia/core/lib/browser';
 import { TimelineTreeWidget } from './timeline-tree-widget';
-import { TimelineService } from './timeline-service';
+import { TimelineService, TimelineAggregate } from './timeline-service';
 import { CommandRegistry, SelectionService } from '@theia/core/lib/common';
 import { TimelineEmptyWidget } from './timeline-empty-widget';
 import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { TimelineAggregate } from './timeline-service';
 
 @injectable()
 export class TimelineWidget extends BaseWidget {

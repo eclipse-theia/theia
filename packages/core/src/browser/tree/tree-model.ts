@@ -19,7 +19,7 @@ import { Event, Emitter, WaitUntilEvent } from '../../common/event';
 import { DisposableCollection } from '../../common/disposable';
 import { CancellationToken } from '../../common/cancellation';
 import { ILogger } from '../../common/logger';
-import { SelectionProvider, } from '../../common/selection-service';
+import { SelectionProvider } from '../../common/selection-service';
 import { Tree, TreeNode, CompositeTreeNode } from './tree';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';

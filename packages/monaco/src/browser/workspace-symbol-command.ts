@@ -19,10 +19,7 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 import { KeybindingContribution, KeybindingRegistry, OpenerService, LabelProvider } from '@theia/core/lib/browser';
 
 import { QuickAccessContribution, QuickAccessProvider, QuickInputService, QuickAccessRegistry, QuickPicks, QuickPickItem, findMatches } from '@theia/core/lib/browser/quick-input';
-import {
-    CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken
-} from '@theia/core/lib/common';
-import { CommandContribution } from '@theia/core/lib/common';
+import { CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken, CommandContribution } from '@theia/core/lib/common';
 import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';

@@ -19,8 +19,7 @@ import { CancellationToken } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
-import { QuickAccessProvider, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
-import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
+import { QuickAccessProvider, QuickAccessRegistry, QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
 import { filterItems, QuickPickItem, QuickPickSeparator } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { EditorManager, EditorWidget } from '.';
 

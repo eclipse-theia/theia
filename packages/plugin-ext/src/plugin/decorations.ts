@@ -24,8 +24,7 @@ import {
     PLUGIN_RPC_CONTEXT, PluginInfo
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI } from './types-impl';
-import { Disposable, FileDecoration } from './types-impl';
+import { Disposable, FileDecoration, URI } from './types-impl';
 import { CancellationToken } from '@theia/core/lib/common';
 import { dirname } from 'path';
 

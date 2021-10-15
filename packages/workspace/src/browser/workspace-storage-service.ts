@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 

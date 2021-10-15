@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { JsonRpcProxy } from '@theia/core/lib/common/messaging/proxy-factory';
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { JsonRpcProxy, JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export const GitPromptServer = Symbol('GitPromptServer');

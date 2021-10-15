@@ -22,6 +22,7 @@ import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl, P
 import { QueryParameters } from './env';
 import { TextEditorCursorStyle } from './editor-options';
 import {
+    ConfigurationTarget,
     TextEditorLineNumbersStyle,
     EndOfLine,
     OverviewRulerLane,
@@ -29,7 +30,6 @@ import {
     FileOperationOptions
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
-import { ConfigurationTarget } from '../plugin/types-impl';
 import {
     SerializedDocumentFilter,
     CompletionContext,

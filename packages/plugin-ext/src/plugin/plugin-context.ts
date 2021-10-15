@@ -20,7 +20,7 @@
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
     MAIN_RPC_CONTEXT,
@@ -153,7 +153,6 @@ import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
-import { CancellationToken, CancellationError } from '@theia/core/lib/common/cancellation';
 import { score } from '@theia/callhierarchy/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
@@ -161,9 +160,8 @@ import { ConnectionExtImpl } from './connection-ext';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system-ext-impl';
-import { QuickPick, QuickPickItem, ResourceLabelFormatter } from '@theia/plugin';
+import { QuickPick, QuickPickItem, ResourceLabelFormatter, LineChange } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
-import { LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
 import { TextEditorExt } from './text-editor';
 import { ClipboardExt } from './clipboard-ext';

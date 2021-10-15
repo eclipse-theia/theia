@@ -19,9 +19,8 @@ import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise } from '@theia/core/lib/common';
 import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
-import { Range, Position, Location } from './editor';
+import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
-import { TextEditor } from './editor';
 
 export interface WidgetId {
     id: number;

@@ -20,7 +20,7 @@
 // some code copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/workbench/api/browser/mainThreadCustomEditors.ts
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities } from '../../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities, EditorPosition } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
@@ -43,7 +43,6 @@ import { ApplicationShell, DefaultUriLabelProviderContribution, Saveable, SaveOp
 import { WebviewOptions, WebviewPanelOptions, ViewColumn } from '@theia/plugin';
 import { WebviewWidgetIdentifier } from '../webview/webview';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-import { EditorPosition } from '../../../common/plugin-api-rpc';
 
 const enum CustomEditorModelType {
     Custom,

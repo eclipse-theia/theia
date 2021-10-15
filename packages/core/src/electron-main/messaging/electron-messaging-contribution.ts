@@ -22,10 +22,9 @@ import { ContributionProvider } from '../../common/contribution-provider';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { MessagingContribution } from '../../node/messaging/messaging-contribution';
 import { ConsoleLogger } from '../../node/messaging/logger';
-import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
+import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
-import { ElectronConnectionHandler } from '../../electron-common/messaging/electron-connection-handler';
 
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.

@@ -22,11 +22,10 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { codicon, Widget } from '@theia/core/lib/browser';
+import { AbstractViewContribution, codicon, Widget } from '@theia/core/lib/browser';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { KeymapsService } from './keymaps-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { AbstractViewContribution } from '@theia/core/lib/browser';
 import { KeybindingWidget } from './keybindings-widget';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 

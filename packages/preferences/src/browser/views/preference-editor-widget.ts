@@ -27,7 +27,7 @@ import {
     ExpandableTreeNode,
 } from '@theia/core/lib/browser';
 import { unreachable } from '@theia/core/lib/common';
-import { BaseWidget, DEFAULT_SCROLL_OPTIONS, } from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
 import { Preference } from '../util/preference-types';

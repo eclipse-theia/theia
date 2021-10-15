@@ -16,7 +16,7 @@
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import {
-    TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, TreeModel,
+    DiffUris, TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, TreeModel,
     CompositeTreeNode, NodeProps, QuickViewService
 } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
@@ -25,7 +25,6 @@ import { BulkEditTreeModel } from './bulk-edit-tree-model';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import { DiffUris } from '@theia/core/lib/browser';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
 
