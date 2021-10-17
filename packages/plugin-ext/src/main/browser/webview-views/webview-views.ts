@@ -19,13 +19,10 @@
 *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/a4a4cf5ace4472bc4f5176396bb290cafa15c518/src/vs/workbench/contrib/webviewView/browser/webviewViewService.ts
 
-import { WidgetManager } from '@theia/core/lib/browser';
 import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common';
-import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { v4 } from 'uuid';
-import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
+import { injectable } from '@theia/core/shared/inversify';
+import { WebviewWidget } from '../webview/webview';
 
 export interface WebviewView {
     title?: string;
@@ -89,38 +86,3 @@ export class WebviewViewService {
     }
 }
 
-export class WebviewViewWidget implements WebviewView {
-
-    public webview: WebviewWidget;
-
-    get onDidChangeVisibility(): Event<boolean> { return this.webview.onDidChangeVisibility; }
-    get onDidDispose(): Event<void> { return this.webview.onDidDispose; }
-
-    get title(): string | undefined { return this.webview?.title.label; }
-    set title(value: string | undefined) { this.webview.title.label = value || ''; }
-
-    private _description: string | undefined;
-    get description(): string | undefined { return this._description; }
-    set description(value: string | undefined) { this._description = value; }
-
-    protected readonly _ready = new Deferred<void>();
-
-    readonly ready: Promise<void> = this._ready.promise;
-
-    constructor(@inject(WidgetManager) protected widgetManager: WidgetManager) {
-        widgetManager.getOrCreateWidget<WebviewWidget>(
-            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: v4() }).then(webview => {
-                webview.setContentOptions({ allowScripts: true });
-                this.webview = webview;
-                this._ready.resolve();
-            });
-    }
-
-    dispose(): void {
-        this.webview.dispose();
-    }
-
-    show(preserveFocus: boolean): void {
-        this.webview.show();
-    }
-}

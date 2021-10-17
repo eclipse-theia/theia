@@ -32,7 +32,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { QuickViewService } from '@theia/core/lib/browser';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { SearchInWorkspaceWidget } from '@theia/search-in-workspace/lib/browser/search-in-workspace-widget';
 import { ViewContextKeyService } from './view-context-key-service';
@@ -42,9 +42,10 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 
-import { WebviewViewService, WebviewViewWidget } from '../webview-views/webview-views';
+import { WebviewView, WebviewViewService } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { v4 } from 'uuid';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -331,8 +332,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected async registerWebviewView(viewId: string): Promise<void> {
-        const webviewView = new WebviewViewWidget(this.widgetManager);
-        await webviewView.ready;
+        const webviewView = await this.createNewWebviewView();
         const token = CancellationToken.None;
         this.getView(viewId).then(async view => {
             if (view) {
@@ -353,6 +353,35 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         });
 
         this.webviewViewService.resolve(viewId, webviewView, token);
+    }
+
+    async createNewWebviewView(): Promise<WebviewView> {
+        const webview = await this.widgetManager.getOrCreateWidget<WebviewWidget>(
+            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: v4() });
+        webview.setContentOptions({ allowScripts: true });
+
+        let _description: string | undefined;
+
+        return {
+            webview: webview,
+
+            get onDidChangeVisibility(): Event<boolean> { return webview.onDidChangeVisibility; },
+            get onDidDispose(): Event<void> { return webview.onDidDispose; },
+
+            get title(): string | undefined { return webview?.title.label; },
+            set title(value: string | undefined) { webview.title.label = value || ''; },
+
+            get description(): string | undefined { return _description; },
+            set description(value: string | undefined) { _description = value; },
+
+            dispose(): void {
+                webview.dispose();
+            },
+
+            show(preserveFocus: boolean): void {
+                webview.show();
+            }
+        };
     }
 
     registerViewWelcome(viewWelcome: ViewWelcome): Disposable {
