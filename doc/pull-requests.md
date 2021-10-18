@@ -46,7 +46,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - Such PR should be marked as a draft or with the WIP prefix.
 
 <a name="fixups"></a>
-- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits while the review process is not finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
+- [3.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
 ## Requesting a Review
 
@@ -97,6 +97,8 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [3.](#reviewing-checklist) Reviewers should ensure that all checks from [the review checklist](#review-checklist) are successful.
 <a name="reviewing-share"></a>
 - [4.](#reviewing-share) A reviewer does not need to ensure everything but can verify a part of it and provide feedback as a comment.
+<a name="review-consultation"></a>
+- [5.](#review-consultation) For any change that substantially alters the behavior of the application or one of its components, reviews should be requested from representatives of several contributing organizations to ensure consistency with the goals of the project and compatibility with significant adopters' downstream products.
 
 ### Requesting Changes
 
@@ -118,6 +120,8 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [1.](#justifying-approve) Each approval should have supporting comments following these guidelines.
 <a name="dismissing-approve"></a>
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
+<a name="approval-finality"></a>
+- [3.](#approval-finality) Approval of a PR implies that the reviewer is prepared to merge the PR. A reviewer should only approve a pull request that they are prepared to merge it. If a PR is under review by multiple reviewers, reviewers who are not satisfied with the state of the PR should block its merge, for example by marking their review 'request changes'.
 
 ### Collaborating
 
@@ -127,9 +131,9 @@ then a reviewer should be encouraged to open an alternative PR or collaborate on
 <a name="completing-pr"></a>
 - [2.](#completing-pr) If a PR is important, but an author cannot or does not want to address outstanding issues,
 then maintainers can complete the PR with additional commits
-given that author commits are preserved, [signed-off](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work) and an author accepted the [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
+provided that the original author accepted the [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement) and their commits are preserved - the original author's work should not be squashed away.
 <a name="suggesting-help-on-pr"></a>
-- [3.](#suggesting-help-on-pr) Reviewers have to suggest his help via a comment to avoid intervening in an author work.
+- [3.](#suggesting-help-on-pr) Reviewers should offer their help via a comment to avoid intervening in an author's work.
 <a name="landing-stale-pr"></a>
 - [4.](#landing-stale-pr) Such comment is not required if an author is not responsive.
 
@@ -141,6 +145,11 @@ given that author commits are preserved, [signed-off](https://github.com/eclipse
   - The author has accepted the [Eclipse Contributor Agreement](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
   - All checks from [the review checklist](#pull-request-review-checklist) are approved by at least one reviewer.
   - There are no unresolved review comments.
+<a name="merging-pr"></a>
+- [2.](#merging-pr) Pull requests satisfying the criteria above should be merged in a timely fashion to avoid a buildup of approved PR's at release time. Responsibility for merging a PR falls to
+  - The author, if the author is a committer.
+  - A committer from the author's organization, if one is available.
+  - The approving reviewer, otherwise.
 
 ## Reverting
 
