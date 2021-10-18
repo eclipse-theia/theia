@@ -23,7 +23,6 @@ import debounce = require('p-debounce');
 import { visit, parse } from 'jsonc-parser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -82,20 +81,18 @@ export class DebugConfigurationManager {
 
     protected debugConfigurationTypeKey: ContextKey<string>;
 
-    protected readonly _initialized = new Deferred<void>();
-    get initialized(): Promise<void> {
-        return this._initialized.promise;
-    }
+    protected initialized: Promise<void>;
 
     @postConstruct()
     protected async init(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
-        await this.preferences.ready;
-        this.updateModels();
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'launch') {
-                this.updateModels();
-            }
+        this.initialized = this.preferences.ready.then(() => {
+            this.preferences.onPreferenceChanged(e => {
+                if (e.preferenceName === 'launch') {
+                    this.updateModels();
+                }
+            });
+            return this.updateModels();
         });
     }
 
@@ -120,7 +117,6 @@ export class DebugConfigurationManager {
             }
         }
         this.updateCurrent();
-        this._initialized.resolve();
     }, 500);
 
     get all(): IterableIterator<DebugSessionOptions> {
