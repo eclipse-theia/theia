@@ -69,6 +69,11 @@ export namespace EditorCommands {
         category: EDITOR_CATEGORY,
         label: 'Change File Encoding'
     };
+    export const REVERT_EDITOR: Command = {
+        id: 'workbench.action.files.revert',
+        category: 'File',
+        label: 'Revert File',
+    };
     export const REVERT_AND_CLOSE: Command = {
         id: 'workbench.action.revertAndCloseActiveEditor',
         category: 'View',
@@ -234,6 +239,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.CONFIG_EOL);
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
+        registry.registerCommand(EditorCommands.REVERT_EDITOR);
         registry.registerCommand(EditorCommands.REVERT_AND_CLOSE);
         registry.registerCommand(EditorCommands.CHANGE_LANGUAGE, {
             isEnabled: () => this.canConfigureLanguage(),

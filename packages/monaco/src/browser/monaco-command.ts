@@ -18,7 +18,7 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { Position, Location } from '@theia/core/shared/vscode-languageserver-types';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
-import { EditorCommands, EditorManager } from '@theia/editor/lib/browser';
+import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import { MonacoEditorService } from './monaco-editor-service';
@@ -191,6 +191,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         this.monacoCommandRegistry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
         this.monacoCommandRegistry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
         this.monacoCommandRegistry.registerHandler(EditorCommands.INDENT_USING_TABS.id, this.newConfigTabSizeHandler(false));
+        this.monacoCommandRegistry.registerHandler(EditorCommands.REVERT_EDITOR.id, this.newRevertActiveEditorHandler());
         this.monacoCommandRegistry.registerHandler(EditorCommands.REVERT_AND_CLOSE.id, this.newRevertAndCloseActiveEditorHandler());
     }
 
@@ -272,23 +273,36 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         }
     }
 
-    protected newRevertAndCloseActiveEditorHandler(): MonacoEditorCommandHandler {
+    protected newRevertActiveEditorHandler(): MonacoEditorCommandHandler {
         return {
-            execute: async () => this.revertAndCloseActiveEditor()
+            execute: () => this.revertEditor(this.getActiveEditor().editor),
         };
     }
 
-    protected async revertAndCloseActiveEditor(): Promise<void> {
-        const editor = this.editorManager.currentEditor;
+    protected newRevertAndCloseActiveEditorHandler(): MonacoEditorCommandHandler {
+        return {
+            execute: async () => this.revertAndCloseActiveEditor(this.getActiveEditor())
+        };
+    }
+
+    protected getActiveEditor(): { widget?: EditorWidget, editor?: MonacoEditor } {
+        const widget = this.editorManager.currentEditor;
+        return { widget, editor: widget && MonacoEditor.getCurrent(this.editorManager) };
+    }
+
+    protected async revertEditor(editor?: MonacoEditor): Promise<void> {
         if (editor) {
-            const monacoEditor = MonacoEditor.getCurrent(this.editorManager);
-            if (monacoEditor) {
-                try {
-                    await monacoEditor.document.revert();
-                    editor.close();
-                } catch (error) {
-                    await this.shell.closeWidget(editor.id, { save: false });
-                }
+            return editor.document.revert();
+        }
+    }
+
+    protected async revertAndCloseActiveEditor(current: { widget?: EditorWidget, editor?: MonacoEditor }): Promise<void> {
+        if (current.editor && current.widget) {
+            try {
+                await this.revertEditor(current.editor);
+                current.widget.close();
+            } catch (error) {
+                await this.shell.closeWidget(current.widget.id, { save: false });
             }
         }
     }
