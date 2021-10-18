@@ -82,15 +82,17 @@ export class DebugConfigurationManager {
     protected debugConfigurationTypeKey: ContextKey<string>;
 
     protected initialized: Promise<void>;
+
     @postConstruct()
     protected async init(): Promise<void> {
         this.debugConfigurationTypeKey = this.contextKeyService.createKey<string>('debugConfigurationType', undefined);
-        await this.preferences.ready;
-        this.initialized = this.updateModels();
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'launch') {
-                this.updateModels();
-            }
+        this.initialized = this.preferences.ready.then(() => {
+            this.preferences.onPreferenceChanged(e => {
+                if (e.preferenceName === 'launch') {
+                    this.updateModels();
+                }
+            });
+            return this.updateModels();
         });
     }
 
