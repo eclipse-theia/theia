@@ -34,6 +34,17 @@ export enum ExtensionKind {
 }
 
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
+    pluginsApiImpl.set(plugin.model.id, createVSCodeAPI(apiFactory, plugin));
+    plugins.push(plugin);
+    pluginApiFactory = apiFactory;
+
+    if (!isLoadOverride) {
+        overrideInternalLoad();
+        isLoadOverride = true;
+    }
+};
+
+function createVSCodeAPI(apiFactory: PluginAPIFactory, plugin: Plugin): typeof theia {
     const vscode = Object.assign(apiFactory(plugin), { ExtensionKind });
 
     // use Theia plugin api instead vscode extensions
@@ -51,16 +62,8 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 
     // override the version for vscode to be a VSCode version
     (<any>vscode).version = process.env['VSCODE_API_VERSION'] || VSCODE_DEFAULT_API_VERSION;
-
-    pluginsApiImpl.set(plugin.model.id, vscode);
-    plugins.push(plugin);
-    pluginApiFactory = apiFactory;
-
-    if (!isLoadOverride) {
-        overrideInternalLoad();
-        isLoadOverride = true;
-    }
-};
+    return vscode;
+}
 
 function overrideInternalLoad(): void {
     const module = require('module');
@@ -83,7 +86,7 @@ function overrideInternalLoad(): void {
 
         if (!defaultApi) {
             console.warn(`Could not identify plugin for 'Theia' require call from ${parent.filename}`);
-            defaultApi = pluginApiFactory(emptyPlugin);
+            defaultApi = createVSCodeAPI(pluginApiFactory, emptyPlugin);
         }
 
         return defaultApi;
