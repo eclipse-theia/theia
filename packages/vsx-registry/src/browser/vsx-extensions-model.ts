@@ -210,7 +210,7 @@ export class VSXExtensionsModel {
             }
             for (const id of this._installed) {
                 const extension = this.getExtension(id);
-                if (!extension) continue;
+                if (!extension) {continue; }
                 refreshing.push(this.refresh(id, extension.version));
             }
             Promise.all(refreshing);

@@ -24,7 +24,7 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
-import { MenuModelRegistry, MessageService } from '@theia/core/lib/common';
+import { MenuModelRegistry, MessageService, nls } from '@theia/core/lib/common';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { LabelProvider, PreferenceService, QuickPickItem, QuickInputService } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
@@ -33,8 +33,9 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
-import { VSXExtensionRaw, OVSXClient } from '@theia/ovsx-client';
+import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { PluginServer } from '@theia/plugin-ext';
+import { OVSXClientProvider } from '../common/ovsx-client-provider';
 
 /**
  * @deprecated since 1.17.0. - Moved to `vsx-extension-commands.ts` to avoid circular dependencies. Import from there, instead.
@@ -52,9 +53,9 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(OVSXClient) protected readonly client: OVSXClient;
+    @inject(OVSXClientProvider) protected readonly clientProvider: OVSXClientProvider;
     @inject(PluginServer) protected readonly pluginServer: PluginServer;
-    @inject(QuickInputService) protected readonly quickInput: QuickInputService
+    @inject(QuickInputService) protected readonly quickInput: QuickInputService;
 
     constructor() {
         super({
@@ -95,6 +96,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         commands.registerCommand({ id: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id }, {
             execute: async (extension: VSXExtension) => this.installAnotherVersion(extension),
+            // Check downloadUrl to ensure we have an idea of where to look for other versions.
             isEnabled: (extension: VSXExtension) => !extension.builtin && !!extension.downloadUrl
         });
 
@@ -133,7 +135,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         });
         menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {
             commandId: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id,
-            label: 'Install Another Version...'
+            label: nls.localizeByDefault('Install Another Version...'),
         });
     }
 
@@ -189,15 +191,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     }
 
     /**
- * Given an extension, displays a quick pick of other compatible versions and installs the selected version.
- *
- * @param extension a VSX extension.
- */
+     * Given an extension, displays a quick pick of other compatible versions and installs the selected version.
+     *
+     * @param extension a VSX extension.
+     */
     protected async installAnotherVersion(extension: VSXExtension): Promise<void> {
         const extensionId = extension.id;
         const currentVersion = extension.version;
-        const extensions = await this.client.getAllVersions(extensionId);
-        const latestCompatible = await this.client.getLatestCompatibleExtensionVersion(extensionId);
+        const client = await this.clientProvider();
+        const extensions = await client.getAllVersions(extensionId);
+        const latestCompatible = await client.getLatestCompatibleExtensionVersion(extensionId);
         let compatibleExtensions: VSXExtensionRaw[] = [];
         if (latestCompatible) {
             compatibleExtensions = extensions.slice(extensions.findIndex(ext => ext.version === latestCompatible.version));
@@ -206,14 +209,16 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         compatibleExtensions.forEach(ext => {
             let publishedDate = moment(ext.timestamp).fromNow();
             if (currentVersion === ext.version) {
-                publishedDate += ' (Current)';
+                publishedDate += ` (${nls.localizeByDefault('Current')})`;
             }
             items.push({
                 label: ext.version,
                 description: publishedDate
             });
         });
-        const selectedItem = await this.quickInput.showQuickPick(items, { placeholder: 'Select Version to Install', runIfSingle: false });
+        const selectedItem = await this.quickInput.showQuickPick(items, {
+            placeholder: nls.localizeByDefault('Select Version to Install'), runIfSingle: false
+        });
         if (selectedItem && currentVersion && selectedItem.label !== currentVersion) {
             const selectedExtension = this.model.getExtension(extensionId);
             if (selectedExtension) {
@@ -241,12 +246,20 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         try {
             await extension.uninstall();
         } catch {
+            this.messageService.warn(nls.localizeByDefault('Failed to uninstall existing plugin version.'));
             return;
         }
         try {
             await extension.install({ version: updateToVersion });
         } catch {
-            await extension.install({ version: revertToVersion });
+            await extension.install({ version: revertToVersion })
+                .then(() => this.messageService.warn(
+                    nls.localizeByDefault('Failed to update {0} to {1}. Now on {2}.', extension.displayName, updateToVersion, revertToVersion)
+                ))
+                .catch(() => this.messageService.warn(nls.localizeByDefault(
+                    'Failed to update {0} or restore previous version. The plugin has been uninstalled',
+                    extension.displayName
+                )));
         }
     }
 

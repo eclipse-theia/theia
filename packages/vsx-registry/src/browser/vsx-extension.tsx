@@ -89,6 +89,15 @@ export type VSXExtensionFactory = (options: VSXExtensionOptions) => VSXExtension
 
 @injectable()
 export class VSXExtension implements VSXExtensionData, TreeElement {
+    /**
+     * Ensure the version string begins with `'v'`.
+     */
+    static formatVersion(version: string | undefined): string | undefined {
+        if (version && !version.startsWith('v')) {
+            return `v${version}`;
+        }
+        return version;
+    }
 
     @inject(VSXExtensionOptions)
     protected readonly options: VSXExtensionOptions;
@@ -191,14 +200,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get version(): string | undefined {
-        let version = this.getData('version');
-
-        // Ensure version begins with a 'v'
-        if (version && !version.startsWith('v')) {
-            version = `v${version}`;
-        }
-
-        return version;
+        return this.getData('version');
     }
 
     get averageRating(): number | undefined {
@@ -264,7 +266,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${this.version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${VSXExtension.formatVersion(this.version)}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
 
         if (this.license) {
             md += `  \rLicense: ${this.license}`;
@@ -427,7 +429,7 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span> <span className='version'>{version}</span>
+                        <span className='name'>{displayName}</span> <span className='version'>{VSXExtension.formatVersion(version)}</span>
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
@@ -484,7 +486,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
-                        {version && <span className='version'>{version}</span>}
+                        {version && <span className='version'>{VSXExtension.formatVersion(version)}</span>}
                     </div>
                     <div className='description noWrapInfo'>{description}</div>
                     {this.renderAction()}

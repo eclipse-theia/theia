@@ -49,30 +49,22 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (!id) {
             return;
         }
-        let extensionVersion: string | undefined;
         let extension: VSXExtensionRaw | undefined;
         const client = await this.clientProvider();
         if (options) {
-            extensionVersion = options.version;
-            console.log(`[${id}]: trying to resolve version ${extensionVersion}...`);
-            extension = await client.getExtension(id, { extensionVersion: extensionVersion });
-            if (!extension) {
-                return;
-            }
-            if (extension.error) {
-                throw new Error(extension.error);
-            }
+            console.log(`[${id}]: trying to resolve version ${options.version}...`);
+            extension = await client.getExtension(id, { extensionVersion: options.version });
         } else {
             console.log(`[${id}]: trying to resolve latest version...`);
             extension = await client.getLatestCompatibleExtensionVersion(id);
-            if (!extension) {
-                return;
-            }
-            if (extension.error) {
-                throw new Error(extension.error);
-            }
-            extensionVersion = extension.version;
         }
+        if (!extension) {
+            return;
+        }
+        if (extension.error) {
+            throw new Error(extension.error);
+        }
+        const extensionVersion = extension.version;
         const resolvedId = id + '-' + extensionVersion;
         const downloadUrl = extension.files.download;
         console.log(`[${id}]: resolved to '${resolvedId}'`);
