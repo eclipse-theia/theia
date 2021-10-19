@@ -144,7 +144,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     }
 
     /**
-     * Perform deletion of a given URI and closes all open editors without saving if necessary.
+     * Perform deletion of a given URI.
      *
      * @param uri URI of selected resource.
      * @param options deletion options.
@@ -160,27 +160,15 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         }
     }
 
-    /**
-     * Permanently deletes the given resource from the file system.
-     *
-     * @param uri URI of selected resource.
-     * @param options deletion options.
-     */
     protected async deleteFilePermanently(uri: URI, options: FileDeleteOptions): Promise<void> {
         this.fileService.delete(uri, { ...options, useTrash: false });
     }
 
-    /**
-     * Moves the given resource to the Trash of the file system.
-     *
-     * @param uri URI of selected resource.
-     * @param options deletion options.
-     */
     protected async moveFileToTrash(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
             this.fileService.delete(uri, { ...options, useTrash: true });
         } catch (error) {
-            if (await this.confirmDeletePermanently(uri, error)) {
+            if (await this.confirmDeletePermanently(uri)) {
                 return this.deleteFilePermanently(uri, options);
             }
             throw error;
@@ -191,10 +179,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * Display dialog to confirm the permanent deletion of a file.
      *
      * @param uri URI of selected resource.
-     * @param error error caused during Trash deletion.
      */
-    protected async confirmDeletePermanently(uri: URI, error?: Error): Promise<boolean> {
-        const title = `Move File to Trash ${error?.message || 'Error'}`;
+    protected async confirmDeletePermanently(uri: URI): Promise<boolean> {
+        const title = 'Move File to Trash';
 
         const msg = document.createElement('div');
 
