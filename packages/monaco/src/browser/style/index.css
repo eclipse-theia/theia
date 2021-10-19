@@ -228,3 +228,11 @@
 .monaco-editor .find-widget .matchesCount {
   font-family: var(--theia-ui-font-family);
 }
+
+.monaco-editor .monaco-action-bar .action-label.codicon {
+  color: var(--theia-foreground);
+}
+
+.monaco-editor .monaco-action-bar .action-item.active {
+	transform: none;
+}
