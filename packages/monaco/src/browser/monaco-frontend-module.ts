@@ -86,7 +86,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoLanguages).toSelf().inSingletonScope();
     rebind(LanguageService).toService(MonacoLanguages);
     bind(WorkspaceSymbolCommand).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, KeybindingContribution, QuickAccessContribution]) {
+    for (const identifier of [CommandContribution, KeybindingContribution, MenuContribution, QuickAccessContribution]) {
         bind(identifier).toService(WorkspaceSymbolCommand);
     }
 

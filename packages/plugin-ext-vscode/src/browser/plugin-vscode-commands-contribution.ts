@@ -290,7 +290,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand(WorkspaceCommands.ADD_FOLDER.id)
         });
         commands.registerCommand({ id: 'workbench.action.gotoLine' }, {
-            execute: () => commands.executeCommand('editor.action.gotoLine')
+            execute: () => commands.executeCommand(EditorCommands.GOTO_LINE_COLUMN.id)
         });
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
             execute: (prefix?: unknown) => this.quickInput.open(typeof prefix === 'string' ? prefix : '')

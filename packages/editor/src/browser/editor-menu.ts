@@ -42,10 +42,24 @@ export namespace EditorMainMenu {
     export const GO = [...MAIN_MENU_BAR, '5_go'];
 
     /**
-     * Navigation menu group in the `Go` menu.
+     * Navigation menu group in the `Go` main-menu.
      */
     export const NAVIGATION_GROUP = [...GO, '1_navigation_group'];
 
+    /**
+     * Workspace menu group in the `Go` main-menu.
+     */
+    export const WORKSPACE_GROUP = [...GO, '2_workspace_group'];
+
+    /**
+     * Language features menu group in the `Go` main-menu.
+     */
+    export const LANGUAGE_FEATURES_GROUP = [...GO, '3_language_features_group'];
+
+    /**
+     * Location menu group in the `Go` main-menu.
+     */
+    export const LOCATION_GROUP = [...GO, '4_locations'];
 }
 
 @injectable()
@@ -76,15 +90,23 @@ export class EditorMenuContribution implements MenuContribution {
         registry.registerSubmenu(EditorMainMenu.GO, nls.localize('vscode/menubar/mGoto', 'Go'));
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_BACK.id,
-            label: EditorCommands.GO_BACK.label
+            label: EditorCommands.GO_BACK.label,
+            order: '1'
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_FORWARD.id,
-            label: EditorCommands.GO_FORWARD.label
+            label: EditorCommands.GO_FORWARD.label,
+            order: '2'
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_LAST_EDIT.id,
-            label: EditorCommands.GO_LAST_EDIT.label
+            label: nls.localize('vscode/editor.contribution/miLastEditLocation', 'Last Edit Location'),
+            order: '3'
+        });
+
+        registry.registerMenuAction(EditorMainMenu.LOCATION_GROUP, {
+            commandId: EditorCommands.GOTO_LINE_COLUMN.id,
+            order: '1'
         });
 
         // Toggle Commands.
