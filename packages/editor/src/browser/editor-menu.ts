@@ -105,7 +105,7 @@ export class EditorMenuContribution implements MenuContribution {
         registry.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: CommonCommands.CLOSE_MAIN_TAB.id,
             label: 'Close Editor',
-            order: '0'
+            order: '1'
         });
     }
 
