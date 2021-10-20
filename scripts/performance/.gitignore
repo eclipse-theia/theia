@@ -1,2 +1,5 @@
 profiles
 workspace
+*.csv
+*.json
+!base-package.json
