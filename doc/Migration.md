@@ -3,7 +3,7 @@
 ## Description
 
 The following guide highlights potential migration steps necessary during `theia` upgrades discovered when adopting the framework.
-Please see the latest version (`master`) for the most up-to-date information.
+Please see the latest version (`master`) for the most up-to-date information. Please contribute any issues you experienced when upgrading to a newer version of Theia to this document, even for previous releases.
 
 ## Guide
 
