@@ -236,3 +236,10 @@
 .monaco-editor .monaco-action-bar .action-item.active {
 	transform: none;
 }
+
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .label-name,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .label-description,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .monaco-highlighted-label,
+.monaco-editor .peekview-widget .monaco-list-row.focused.selected .codicon {
+  color: var(--theia-list-activeSelectionForeground) !important;
+}
