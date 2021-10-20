@@ -113,7 +113,13 @@ In order to create a new release, one must:
    ```md
    [Release Changelog](https://github.com/eclipse-theia/theia/blob/2aa2fa1ab091ec36ef851c4e364b322301cddb40/CHANGELOG.md#v120)
    ```
-
+   
+- include a reference to the migration guide in the release description:
+   
+   ```md
+   [Migration Guide](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md)
+   ```
+    
 - select _"Publish Release"_ bottom at the bottom of the page.
 
 For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
