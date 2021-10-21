@@ -29,7 +29,9 @@ export class CallHierarchyAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    async provideRootDefinition(resource: URI, position: rpc.Position, token: theia.CancellationToken): Promise<model.CallHierarchyDefinition | undefined> {
+    async provideRootDefinition(
+        resource: URI, position: rpc.Position, token: theia.CancellationToken
+    ): Promise<model.CallHierarchyDefinition | model.CallHierarchyDefinition[] | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -40,12 +42,14 @@ export class CallHierarchyAdapter {
                 position.lineNumber,
                 position.column
             ),
-            token);
+            token
+        );
+
         if (!definition) {
             return undefined;
         }
 
-        return this.fromCallHierarchyItem(definition);
+        return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item)) : this.fromCallHierarchyItem(definition);
     }
 
     async provideCallers(definition: model.CallHierarchyDefinition, token: theia.CancellationToken): Promise<model.CallHierarchyReference[] | undefined> {

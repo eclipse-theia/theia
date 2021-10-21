@@ -583,7 +583,9 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
 
-    $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken): Promise<CallHierarchyDefinition | undefined> {
+    $provideRootDefinition(
+        handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken
+    ): Promise<CallHierarchyDefinition | CallHierarchyDefinition[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token), undefined);
     }
 

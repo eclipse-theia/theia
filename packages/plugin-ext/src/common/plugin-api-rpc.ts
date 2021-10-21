@@ -1459,7 +1459,7 @@ export interface LanguagesExt {
     $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: CancellationToken): Promise<BinaryBuffer | null>;
     $releaseDocumentSemanticTokens(handle: number, semanticColoringResultId: number): void;
     $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: CancellationToken): Promise<BinaryBuffer | null>;
-    $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: CancellationToken): Promise<CallHierarchyDefinition | undefined>;
+    $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: CancellationToken): Promise<CallHierarchyDefinition | CallHierarchyDefinition[] | undefined>;
     $provideCallers(handle: number, definition: CallHierarchyDefinition, token: CancellationToken): Promise<CallHierarchyReference[] | undefined>;
     $provideCallees(handle: number, definition: CallHierarchyDefinition, token: CancellationToken): Promise<CallHierarchyReference[] | undefined>;
 }

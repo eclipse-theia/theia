@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
+import { CompositeTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
 import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
 import { CallHierarchyServiceProvider } from '../callhierarchy-service';
 import { Position } from '@theia/core/shared/vscode-languageserver-types';
@@ -48,7 +48,15 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
                 this.tree.callHierarchyService = callHierarchyService;
                 const cancellationSource = new CancellationTokenSource();
                 const rootDefinition = await callHierarchyService.getRootDefinition(uri, position, cancellationSource.token);
-                if (rootDefinition) {
+                if (Array.isArray(rootDefinition)) {
+                    const root: CompositeTreeNode = {
+                        id: 'call-hierarchy-tree-root',
+                        parent: undefined,
+                        children: [],
+                    };
+                    rootDefinition.forEach(definition => CompositeTreeNode.addChild(root, DefinitionNode.create(definition, root)));
+                    this.tree.root = root;
+                } else if (rootDefinition) {
                     const rootNode = DefinitionNode.create(rootDefinition, undefined);
                     this.tree.root = rootNode;
                 }
