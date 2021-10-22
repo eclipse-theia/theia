@@ -168,10 +168,10 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         try {
             this.fileService.delete(uri, { ...options, useTrash: true });
         } catch (error) {
+            console.error('Error deleting with trash:', error);
             if (await this.confirmDeletePermanently(uri)) {
                 return this.deleteFilePermanently(uri, options);
             }
-            throw error;
         }
     }
 
@@ -181,7 +181,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * @param uri URI of selected resource.
      */
     protected async confirmDeletePermanently(uri: URI): Promise<boolean> {
-        const title = 'Move File to Trash';
+        const title = 'Error deleting file';
 
         const msg = document.createElement('div');
 
@@ -190,7 +190,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
         msg.append(question);
 
         const info = document.createElement('p');
-        info.textContent = 'You can disable the usage of Trash in the preferences.';
+        info.textContent = 'You can disable the use of Trash in the preferences.';
         msg.append(info);
 
         const response = await new ConfirmDialog({ title, msg }).open();
