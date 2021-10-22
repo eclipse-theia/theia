@@ -1022,7 +1022,7 @@ const codeEditorPreferenceProperties = {
             'none',
             'boundary',
             'selection',
-            'trailin',
+            'trailing',
             'all'
         ],
         'default': 'none'
