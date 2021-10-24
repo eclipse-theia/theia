@@ -90,67 +90,67 @@ export namespace CommonMenus {
 
 export namespace CommonCommands {
 
-    export const FILE_CATEGORY_KEY = 'vscode/menubarControl/mFile';
-    export const VIEW_CATEGORY_KEY = 'vscode/menubarControl/mView';
-    export const PREFERENCES_CATEGORY_KEY = 'vscode/actions/preferences';
     export const FILE_CATEGORY = 'File';
     export const VIEW_CATEGORY = 'View';
     export const PREFERENCES_CATEGORY = 'Preferences';
+    export const FILE_CATEGORY_KEY = nls.getDefaultKey(FILE_CATEGORY);
+    export const VIEW_CATEGORY_KEY = nls.getDefaultKey(VIEW_CATEGORY);
+    export const PREFERENCES_CATEGORY_KEY = nls.getDefaultKey(PREFERENCES_CATEGORY);
 
     export const OPEN: Command = {
         id: 'core.open',
     };
 
-    export const CUT = Command.toLocalizedCommand({
+    export const CUT = Command.toDefaultLocalizedCommand({
         id: 'core.cut',
         label: 'Cut'
-    }, 'vscode/fileActions.contribution/cut');
-    export const COPY = Command.toLocalizedCommand({
+    });
+    export const COPY = Command.toDefaultLocalizedCommand({
         id: 'core.copy',
         label: 'Copy'
-    }, 'vscode/fileActions/copyFile');
-    export const PASTE = Command.toLocalizedCommand({
+    });
+    export const PASTE = Command.toDefaultLocalizedCommand({
         id: 'core.paste',
         label: 'Paste'
-    }, 'vscode/fileActions/pasteFile');
+    });
 
-    export const COPY_PATH = Command.toLocalizedCommand({
+    export const COPY_PATH = Command.toDefaultLocalizedCommand({
         id: 'core.copy.path',
         label: 'Copy Path'
-    }, 'vscode/fileActions.contribution/copyPath');
+    });
 
-    export const UNDO = Command.toLocalizedCommand({
+    export const UNDO = Command.toDefaultLocalizedCommand({
         id: 'core.undo',
         label: 'Undo'
-    }, 'vscode/textInputActions/undo');
-    export const REDO = Command.toLocalizedCommand({
+    });
+    export const REDO = Command.toDefaultLocalizedCommand({
         id: 'core.redo',
         label: 'Redo'
-    }, 'vscode/textInputActions/redo');
-    export const SELECT_ALL = Command.toLocalizedCommand({
+    });
+    export const SELECT_ALL = Command.toDefaultLocalizedCommand({
         id: 'core.selectAll',
         label: 'Select All'
-    }, 'vscode/textInputActions/selectAll');
+    });
 
-    export const FIND = Command.toLocalizedCommand({
+    export const FIND = Command.toDefaultLocalizedCommand({
         id: 'core.find',
         label: 'Find'
-    }, 'vscode/simpleFindReplaceWidget/label.find');
-    export const REPLACE = Command.toLocalizedCommand({
+    });
+    export const REPLACE = Command.toDefaultLocalizedCommand({
         id: 'core.replace',
         label: 'Replace'
-    }, 'vscode/simpleFindReplaceWidget/label.replace');
+    });
 
-    export const NEXT_TAB = Command.toLocalizedCommand({
+    export const NEXT_TAB = Command.toDefaultLocalizedCommand({
         id: 'core.nextTab',
         category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab'
-    }, 'vscode/menubar/mShowNextTab', VIEW_CATEGORY_KEY);
-    export const PREVIOUS_TAB = Command.toLocalizedCommand({
+        label: 'Show Next Tab'
+    });
+    export const PREVIOUS_TAB = Command.toDefaultLocalizedCommand({
         id: 'core.previousTab',
         category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab'
-    }, 'vscode/menubar/mShowPreviousTab', VIEW_CATEGORY_KEY);
+        label: 'Show Previous Tab'
+    });
     export const NEXT_TAB_IN_GROUP = Command.toLocalizedCommand({
         id: 'core.nextTabInGroup',
         category: VIEW_CATEGORY,
@@ -221,70 +221,70 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     }, 'theia/core/common/collapseBottomPanel', VIEW_CATEGORY_KEY);
-    export const TOGGLE_STATUS_BAR = Command.toLocalizedCommand({
+    export const TOGGLE_STATUS_BAR = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.toggleStatusbarVisibility',
         category: VIEW_CATEGORY,
         label: 'Toggle Status Bar Visibility'
-    }, 'vscode/layoutActions/toggleStatusbar');
+    });
     export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
         label: 'Toggle Maximized'
     }, 'theia/core/common/toggleMaximized', VIEW_CATEGORY_KEY);
-    export const OPEN_VIEW = Command.toLocalizedCommand({
+    export const OPEN_VIEW = Command.toDefaultLocalizedCommand({
         id: 'core.openView',
         category: VIEW_CATEGORY,
         label: 'Open View...'
-    }, 'vscode/quickAccess.contribution/miOpenView', VIEW_CATEGORY_KEY);
+    });
 
-    export const SAVE = Command.toLocalizedCommand({
+    export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
         category: FILE_CATEGORY,
         label: 'Save',
-    }, 'vscode/fileCommands/save', FILE_CATEGORY_KEY);
-    export const SAVE_WITHOUT_FORMATTING = Command.toLocalizedCommand({
+    });
+    export const SAVE_WITHOUT_FORMATTING = Command.toDefaultLocalizedCommand({
         id: 'core.saveWithoutFormatting',
         category: FILE_CATEGORY,
         label: 'Save without Formatting',
-    }, 'vscode/fileCommands/saveWithoutFormatting', FILE_CATEGORY_KEY);
-    export const SAVE_ALL = Command.toLocalizedCommand({
+    });
+    export const SAVE_ALL = Command.toDefaultLocalizedCommand({
         id: 'core.saveAll',
         category: FILE_CATEGORY,
         label: 'Save All',
-    }, 'vscode/fileCommands/saveAll', FILE_CATEGORY_KEY);
+    });
 
-    export const AUTO_SAVE = Command.toLocalizedCommand({
+    export const AUTO_SAVE = Command.toDefaultLocalizedCommand({
         id: 'textEditor.commands.autosave',
         category: FILE_CATEGORY,
         label: 'Auto Save',
-    }, 'vscode/fileActions.contribution/miAutoSave', FILE_CATEGORY_KEY);
+    });
 
-    export const ABOUT_COMMAND = Command.toLocalizedCommand({
+    export const ABOUT_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'core.about',
         label: 'About'
-    }, 'vscode/windowActions/about');
+    });
 
-    export const OPEN_PREFERENCES = Command.toLocalizedCommand({
+    export const OPEN_PREFERENCES = Command.toDefaultLocalizedCommand({
         id: 'preferences:open',
         category: PREFERENCES_CATEGORY,
-        label: 'Open Preferences',
-    }, 'vscode/preferences.contribution/preferences', PREFERENCES_CATEGORY_KEY);
+        label: 'Open Settings (UI)',
+    });
 
-    export const SELECT_COLOR_THEME = Command.toLocalizedCommand({
+    export const SELECT_COLOR_THEME = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.selectTheme',
         label: 'Color Theme',
         category: PREFERENCES_CATEGORY
-    }, 'vscode/themes.contribution/selectTheme.label', PREFERENCES_CATEGORY_KEY);
-    export const SELECT_ICON_THEME = Command.toLocalizedCommand({
+    });
+    export const SELECT_ICON_THEME = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.selectIconTheme',
         label: 'File Icon Theme',
         category: PREFERENCES_CATEGORY
-    }, 'vscode/themes.contribution/selectIconTheme.label', PREFERENCES_CATEGORY_KEY);
+    });
 
-    export const CONFIGURE_DISPLAY_LANGUAGE = Command.toLocalizedCommand({
+    export const CONFIGURE_DISPLAY_LANGUAGE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.configureLanguage',
         label: 'Configure Display Language'
-    }, 'vscode/localizationsActions/configureLocale');
+    });
 
 }
 
@@ -374,14 +374,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         app.shell.leftPanelHandler.addBottomMenu({
             id: 'settings-menu',
             iconClass: 'codicon codicon-settings-gear',
-            title: nls.localize(CommonCommands.PREFERENCES_CATEGORY_KEY, CommonCommands.PREFERENCES_CATEGORY),
+            title: nls.localizeByDefault(CommonCommands.PREFERENCES_CATEGORY),
             menuPath: SETTINGS_MENU,
             order: 0,
         });
         const accountsMenu = {
             id: 'accounts-menu',
             iconClass: 'codicon codicon-person',
-            title: nls.localize('vscode/activitybarPart/accounts', 'Accounts'),
+            title: nls.localizeByDefault('Accounts'),
             menuPath: ACCOUNTS_MENU,
             order: 1,
         };
@@ -446,7 +446,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
                         iconClass: 'codicon codicon-menu',
-                        title: nls.localize('vscode/menubar/mAppMenu', 'Application Menu'),
+                        title: nls.localizeByDefault('Application Menu'),
                         menuPath: ['menubar'],
                         order: 0,
                     });
@@ -479,10 +479,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(CommonMenus.FILE, nls.localize('vscode/menubarControl/mFile', 'File'));
-        registry.registerSubmenu(CommonMenus.EDIT, nls.localize('vscode/menubarControl/mEdit', 'Edit'));
-        registry.registerSubmenu(CommonMenus.VIEW, nls.localize('vscode/menubarControl/mView', 'View'));
-        registry.registerSubmenu(CommonMenus.HELP, nls.localize('vscode/menubarControl/mHelp', 'Help'));
+        registry.registerSubmenu(CommonMenus.FILE, nls.localizeByDefault('File'));
+        registry.registerSubmenu(CommonMenus.EDIT, nls.localizeByDefault('Edit'));
+        registry.registerSubmenu(CommonMenus.VIEW, nls.localizeByDefault('View'));
+        registry.registerSubmenu(CommonMenus.HELP, nls.localizeByDefault('Help'));
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
@@ -495,7 +495,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.AUTO_SAVE.id
         });
 
-        registry.registerSubmenu(CommonMenus.FILE_SETTINGS_SUBMENU, nls.localize(CommonCommands.PREFERENCES_CATEGORY_KEY, CommonCommands.PREFERENCES_CATEGORY));
+        registry.registerSubmenu(CommonMenus.FILE_SETTINGS_SUBMENU, nls.localizeByDefault(CommonCommands.PREFERENCES_CATEGORY));
 
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.UNDO.id,
@@ -548,22 +548,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
-            label: nls.localize('vscode/editor.contribution/close', 'Close'),
+            label: nls.localizeByDefault('Close'),
             order: '0'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
-            label: nls.localize('vscode/editor.contribution/closeOthers', 'Close Others'),
+            label: nls.localizeByDefault('Close Others'),
             order: '1'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
-            label: nls.localize('vscode/editor.contribution/closeRight', 'Close to the Right'),
+            label: nls.localizeByDefault('Close to the Right'),
             order: '2'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
-            label: nls.localize('vscode/editor.contribution/closeAll', 'Close All'),
+            label: nls.localizeByDefault('Close All'),
             order: '3'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
@@ -1076,7 +1076,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         this.quickInputService?.showQuickPick(items,
             {
-                placeholder: nls.localize('vscode/extensionsActions/select file icon theme', 'Select File Icon Theme'),
+                placeholder: nls.localizeByDefault('Select File Icon Theme'),
                 activeItem: items.find(item => item.id === resetTo),
                 onDidChangeSelection: (quickPick: QuickPick<QuickPickItem>, selectedItems: Array<QuickPickItem>) => {
                     resetTo = undefined;
@@ -1115,7 +1115,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         const items = [...itemsByTheme.light, ...itemsByTheme.dark, ...itemsByTheme.hc];
         this.quickInputService?.showQuickPick(items,
             {
-                placeholder: nls.localize('vscode/extensionActions/select color theme', 'Select Color Theme (Up/Down Keys to Preview)'),
+                placeholder: nls.localizeByDefault('Select Color Theme (Up/Down Keys to Preview)'),
                 activeItem: items.find((item: QuickPickItem) => item.id === resetTo),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onDidChangeSelection: (quickPick: any, selectedItems: Array<QuickPickItem>) => {

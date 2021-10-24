@@ -59,13 +59,13 @@ export class DebugToolBar extends ReactWidget {
         const { state } = this.model;
         return <React.Fragment>
             {this.renderContinue()}
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localize('vscode/debugCommands/stepOverDebug', 'Step Over')}
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localizeByDefault('Step Over')}
                 iconClass='debug-step-over' ref={this.setStepRef} />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepIn} label={nls.localize('vscode/debugCommands/stepIntoDebug', 'Step Into')}
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepIn} label={nls.localizeByDefault('Step Into')}
                 iconClass='debug-step-into' />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOut} label={nls.localize('vscode/debugCommands/stepOutDebug', 'Step Out')}
+            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOut} label={nls.localizeByDefault('Step Out')}
                 iconClass='debug-step-out' />
-            <DebugAction enabled={state !== DebugState.Inactive} run={this.restart} label={nls.localize('vscode/debugCommands/restartDebug', 'Restart')}
+            <DebugAction enabled={state !== DebugState.Inactive} run={this.restart} label={nls.localizeByDefault('Restart')}
                 iconClass='debug-restart' />
             {this.renderStart()}
         </React.Fragment>;
@@ -73,16 +73,16 @@ export class DebugToolBar extends ReactWidget {
     protected renderStart(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Inactive && this.model.sessionCount === 1) {
-            return <DebugAction run={this.start} label={nls.localize('vscode/debugCommands/startDebug', 'Start')} iconClass='debug-start' />;
+            return <DebugAction run={this.start} label={nls.localizeByDefault('Start')} iconClass='debug-start' />;
         }
-        return <DebugAction enabled={state !== DebugState.Inactive} run={this.stop} label={nls.localize('vscode/debugCommands/stop', 'Stop')} iconClass='debug-stop' />;
+        return <DebugAction enabled={state !== DebugState.Inactive} run={this.stop} label={nls.localizeByDefault('Stop')} iconClass='debug-stop' />;
     }
     protected renderContinue(): React.ReactNode {
         const { state } = this.model;
         if (state === DebugState.Stopped) {
-            return <DebugAction run={this.continue} label={nls.localize('vscode/debugCommands/continueDebug', 'Continue')} iconClass='debug-continue' />;
+            return <DebugAction run={this.continue} label={nls.localizeByDefault('Continue')} iconClass='debug-continue' />;
         }
-        return <DebugAction enabled={state === DebugState.Running} run={this.pause} label={nls.localize('vscode/debugCommands/pauseDebug', 'Pause')} iconClass='debug-pause' />;
+        return <DebugAction enabled={state === DebugState.Running} run={this.pause} label={nls.localizeByDefault('Pause')} iconClass='debug-pause' />;
     }
 
     protected start = () => this.model.start();

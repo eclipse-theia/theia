@@ -67,11 +67,11 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     protected computeTitle(): string {
         switch (this.options.id) {
             case VSXExtensionsSourceOptions.INSTALLED:
-                return nls.localize('vscode/extensions.contribution/installed filter', 'Installed');
+                return nls.localizeByDefault('Installed');
             case VSXExtensionsSourceOptions.BUILT_IN:
-                return nls.localize('vscode/extensions.contribution/builtin filter', 'Built-in');
+                return nls.localizeByDefault('Built-in');
             case VSXExtensionsSourceOptions.RECOMMENDED:
-                return nls.localize('vscode/extensions.contribution/most popular recommended', 'Recommended');
+                return nls.localizeByDefault('Recommended');
             case VSXExtensionsSourceOptions.SEARCH_RESULT:
                 return nls.localize('theia/vsx-registry/openVSX', 'Open VSX Registry');
             default:

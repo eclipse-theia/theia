@@ -65,78 +65,77 @@ export namespace TerminalMenus {
 }
 
 export namespace TerminalCommands {
-    const TERMINAL_CATEGORY_KEY = 'vscode/settingsLayout/terminal';
     const TERMINAL_CATEGORY = 'Terminal';
-    export const NEW = Command.toLocalizedCommand({
+    export const NEW = Command.toDefaultLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
-        label: 'Open New Terminal'
-    }, 'vscode/terminalActions/workbench.action.terminal.new', TERMINAL_CATEGORY_KEY);
-    export const NEW_ACTIVE_WORKSPACE = Command.toLocalizedCommand({
+        label: 'Create New Integrated Terminal'
+    });
+    export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
-        label: 'Open New Terminal (In Active Workspace)'
-    }, 'vscode/terminalActions/workbench.action.terminal.newInActiveWorkspace', TERMINAL_CATEGORY_KEY);
-    export const TERMINAL_CLEAR = Command.toLocalizedCommand({
+        label: 'Create New Integrated Terminal (In Active Workspace)'
+    });
+    export const TERMINAL_CLEAR = Command.toDefaultLocalizedCommand({
         id: 'terminal:clear',
         category: TERMINAL_CATEGORY,
-        label: 'Clear Terminal'
-    }, 'vscode/terminalActions/workbench.action.terminal.clear', TERMINAL_CATEGORY_KEY);
-    export const TERMINAL_CONTEXT = Command.toLocalizedCommand({
+        label: 'Clear'
+    });
+    export const TERMINAL_CONTEXT = Command.toDefaultLocalizedCommand({
         id: 'terminal:context',
         category: TERMINAL_CATEGORY,
         label: 'Open in Terminal'
-    }, 'vscode/scm.contribution/open in terminal', TERMINAL_CATEGORY_KEY);
-    export const SPLIT = Command.toLocalizedCommand({
+    });
+    export const SPLIT = Command.toDefaultLocalizedCommand({
         id: 'terminal:split',
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
-    }, 'vscode/terminalActions/workbench.action.terminal.split', TERMINAL_CATEGORY_KEY);
-    export const TERMINAL_FIND_TEXT = Command.toLocalizedCommand({
+    });
+    export const TERMINAL_FIND_TEXT = Command.toDefaultLocalizedCommand({
         id: 'terminal:find',
         category: TERMINAL_CATEGORY,
         label: 'Find'
-    }, 'vscode/findController/startFindAction', TERMINAL_CATEGORY_KEY);
-    export const TERMINAL_FIND_TEXT_CANCEL = Command.toLocalizedCommand({
+    });
+    export const TERMINAL_FIND_TEXT_CANCEL = Command.toDefaultLocalizedCommand({
         id: 'terminal:find:cancel',
         category: TERMINAL_CATEGORY,
-        label: 'Hide find widget'
-    }, 'vscode/terminalActions/workbench.action.terminal.hideFind', TERMINAL_CATEGORY_KEY);
+        label: 'Hide Find'
+    });
 
-    export const SCROLL_LINE_UP = Command.toLocalizedCommand({
+    export const SCROLL_LINE_UP = Command.toDefaultLocalizedCommand({
         id: 'terminal:scroll:line:up',
         category: TERMINAL_CATEGORY,
-        label: 'Scroll line up'
-    }, 'vscode/terminalActions/workbench.action.terminal.scrollUp', TERMINAL_CATEGORY_KEY);
-    export const SCROLL_LINE_DOWN = Command.toLocalizedCommand({
+        label: 'Scroll Up (Line)'
+    });
+    export const SCROLL_LINE_DOWN = Command.toDefaultLocalizedCommand({
         id: 'terminal:scroll:line:down',
         category: TERMINAL_CATEGORY,
-        label: 'Scroll line down'
-    }, 'vscode/terminalActions/workbench.action.terminal.scrollDown', TERMINAL_CATEGORY_KEY);
-    export const SCROLL_TO_TOP = Command.toLocalizedCommand({
+        label: 'Scroll Down (Line)'
+    });
+    export const SCROLL_TO_TOP = Command.toDefaultLocalizedCommand({
         id: 'terminal:scroll:top',
         category: TERMINAL_CATEGORY,
-        label: 'Scroll to top'
-    }, 'vscode/terminalActions/workbench.action.terminal.scrollToTop', TERMINAL_CATEGORY_KEY);
-    export const SCROLL_PAGE_UP = Command.toLocalizedCommand({
+        label: 'Scroll to Top'
+    });
+    export const SCROLL_PAGE_UP = Command.toDefaultLocalizedCommand({
         id: 'terminal:scroll:page:up',
         category: TERMINAL_CATEGORY,
-        label: 'Scroll page up'
-    }, 'vscode/terminalActions/workbench.action.terminal.scrollUpPage', TERMINAL_CATEGORY_KEY);
-    export const SCROLL_PAGE_DOWN = Command.toLocalizedCommand({
+        label: 'Scroll Up (Page)'
+    });
+    export const SCROLL_PAGE_DOWN = Command.toDefaultLocalizedCommand({
         id: 'terminal:scroll:page:down',
         category: TERMINAL_CATEGORY,
-        label: 'Scroll page down'
-    }, 'vscode/terminalActions/workbench.action.terminal.scrollDownPage', TERMINAL_CATEGORY_KEY);
+        label: 'Scroll Down (Page)'
+    });
 
     /**
      * Command that displays all terminals that are currently opened
      */
-    export const SHOW_ALL_OPENED_TERMINALS = Command.toLocalizedCommand({
+    export const SHOW_ALL_OPENED_TERMINALS = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.showAllTerminals',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Show All Opened Terminals'
-    }, 'vscode/terminal.contribution/tasksQuickAccessHelp', CommonCommands.VIEW_CATEGORY_KEY);
+    });
 }
 
 @injectable()
@@ -394,7 +393,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         menus.registerSubmenu(TerminalMenus.TERMINAL, TerminalWidgetImpl.LABEL);
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
             commandId: TerminalCommands.NEW.id,
-            label: nls.localize('vscode/terminalActions/workbench.action.terminal.new.short', 'New Terminal'),
+            label: nls.localizeByDefault('New Terminal'),
             order: '0'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
@@ -600,7 +599,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                     resource
                 }));
                 const selectedItem = await this.quickInputService?.showQuickPick(items, {
-                    placeholder: nls.localize('vscode/terminalActions/workbench.action.terminal.newWorkspacePlaceholder', 'Select current working directory for new terminal')
+                    placeholder: nls.localizeByDefault('Select current working directory for new terminal')
                 });
                 resolve(selectedItem?.resource?.toString());
             }

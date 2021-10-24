@@ -28,11 +28,11 @@ import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
 import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 
-export const quickFileOpen = Command.toLocalizedCommand({
+export const quickFileOpen = Command.toDefaultLocalizedCommand({
     id: 'file-search.openFile',
     category: CommonCommands.FILE_CATEGORY,
     label: 'Open File...'
-}, 'vscode/workspaceActions/openFile', CommonCommands.FILE_CATEGORY_KEY);
+});
 export interface FilterAndRange {
     filter: string;
     range?: Range;

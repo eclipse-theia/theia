@@ -76,7 +76,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
         toolbar.registerItem({
             id: OutlineViewCommands.COLLAPSE_ALL.id,
             command: OutlineViewCommands.COLLAPSE_ALL.id,
-            tooltip: nls.localize('vscode/outlinePane/collapse', 'Collapse All'),
+            tooltip: nls.localizeByDefault('Collapse All'),
             priority: 0
         });
     }

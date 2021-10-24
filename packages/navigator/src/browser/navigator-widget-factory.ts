@@ -28,7 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 export const EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: nls.localize('vscode/settingsLayout/fileExplorer', 'Explorer'),
+    label: nls.localizeByDefault('Explorer'),
     iconClass: codicon('files'),
     closeable: true
 };

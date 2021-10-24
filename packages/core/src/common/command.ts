@@ -64,6 +64,16 @@ export namespace Command {
         };
     }
 
+    export function toDefaultLocalizedCommand(command: Command): Command {
+        return {
+            ...command,
+            label: command.label && nls.localizeByDefault(command.label),
+            originalLabel: command.label,
+            category: command.category && nls.localizeByDefault(command.category),
+            originalCategory: command.category,
+        };
+    }
+
     /** Comparator function for when sorting commands */
     export function compareCommands(a: Command, b: Command): number {
         if (a.label && b.label) {

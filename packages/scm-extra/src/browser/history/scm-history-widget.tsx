@@ -264,7 +264,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         } else {
             this.status = {
                 state: 'error',
-                errorMessage: <React.Fragment>{nls.localize('vscode/scm.contribution/no open repo', 'There is no repository selected in this workspace.')}</React.Fragment>
+                errorMessage: <React.Fragment>{nls.localizeByDefault('There is no repository selected in this workspace.')}</React.Fragment>
             };
         }
     }

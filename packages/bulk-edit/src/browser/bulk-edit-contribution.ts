@@ -63,13 +63,13 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
         toolbarRegistry.registerItem({
             id: BulkEditCommands.APPLY.id,
             command: BulkEditCommands.APPLY.id,
-            tooltip: nls.localize('vscode/bulkEdit.contribution/apply', 'Apply Refactoring'),
+            tooltip: nls.localizeByDefault('Apply Refactoring'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: BulkEditCommands.DISCARD.id,
             command: BulkEditCommands.DISCARD.id,
-            tooltip: nls.localize('vscode/bulkEdit.contribution/Discard', 'Discard Refactoring'),
+            tooltip: nls.localizeByDefault('Discard Refactoring'),
             priority: 1,
         });
     }

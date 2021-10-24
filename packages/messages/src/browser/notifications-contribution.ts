@@ -63,13 +63,13 @@ export class NotificationsContribution implements FrontendApplicationContributio
     }
     protected getStatusBarItemTooltip(count: number): string {
         if (this.manager.centerVisible) {
-            return nls.localize('vscode/notificationsCommands/hideNotifications', 'Hide Notifications');
+            return nls.localizeByDefault('Hide Notifications');
         }
         return count === 0
-            ? nls.localize('vscode/notificationsStatus/zeroNotifications', 'No Notifications')
+            ? nls.localizeByDefault('No Notifications')
             : count === 1
-                ? nls.localize('vscode/notificationsStatus/oneNotification', '1 Notification')
-                : nls.localize('vscode/notificationsStatus/notifications', '{0} Notifications', count.toString());
+                ? nls.localizeByDefault('1 New Notification')
+                : nls.localizeByDefault('{0} New Notifications', count.toString());
     }
 
     registerCommands(commands: CommandRegistry): void {

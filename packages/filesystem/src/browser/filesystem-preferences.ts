@@ -39,7 +39,8 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'files.watcherExclude': {
-            description: nls.localize('vscode/files.contribution/watcherExclude', 'List of paths to exclude from the filesystem watcher'),
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('Configure glob patterns of file paths to exclude from file watching. Patterns must match on absolute paths (i.e. prefix with ** or the full path to match properly). Changing this setting requires a restart. When you experience Code consuming lots of CPU time on startup, you can exclude large folders to reduce the initial load.'),
             additionalProperties: {
                 type: 'boolean'
             },
@@ -53,29 +54,25 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.exclude': {
             type: 'object',
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
-            description: nls.localize('vscode/files.contribution/exclude', 'Configure glob patterns for excluding files and folders.'),
+            // eslint-disable-next-line max-len
+            description: nls.localize('theia/filesystem/filesExclude', 'Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting. Refer to the `#search.exclude#` setting to define search specific excludes.'),
             scope: 'resource'
         },
         'files.enableTrash': {
             type: 'boolean',
             default: true,
-            description: nls.localize(
-                'vscode/files.contribution/useTrash',
-                'Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.'
-            )
+            description: nls.localizeByDefault('Moves files/folders to the OS trash (recycle bin on Windows) when deleting. Disabling this will delete files/folders permanently.')
         },
         'files.associations': {
             type: 'object',
-            description: nls.localize(
-                'vscode/files.contribution/associations',
-                'Configure file associations to languages (e.g. \"*.extension\": \"html\"). These have precedence over the default associations of the languages installed.'
+            description: nls.localizeByDefault(
+                'Configure file associations to languages (e.g. `\"*.extension\": \"html\"`). These have precedence over the default associations of the languages installed.'
             )
         },
         'files.autoGuessEncoding': {
             type: 'boolean',
             default: false,
-            description: nls.localize(
-                'vscode/files.contribution/autoGuessEncoding',
+            description: nls.localizeByDefault(
                 'When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language.'
             ),
             scope: 'language-overridable',
@@ -84,8 +81,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.participants.timeout': {
             type: 'number',
             default: 5000,
-            markdownDescription: nls.localize(
-                'vscode/mainThreadFileSystemEventService/files.participants.timeout',
+            markdownDescription: nls.localizeByDefault(
                 'Timeout in milliseconds after which file participants for create, rename, and delete are cancelled. Use `0` to disable participants.'
             )
         },
@@ -97,7 +93,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         'files.trimTrailingWhitespace': {
             type: 'boolean',
             default: false,
-            description: nls.localize('vscode/files.contribution/trimTrailingWhitespace', 'When enabled, will trim trailing whitespace when saving a file.'),
+            description: nls.localizeByDefault('When enabled, will trim trailing whitespace when saving a file.'),
             scope: 'language-overridable'
         },
         'files.maxConcurrentUploads': {

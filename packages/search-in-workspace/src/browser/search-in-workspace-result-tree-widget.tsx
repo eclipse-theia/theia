@@ -740,8 +740,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <span className={isResultLineNode ? 'replace-result' : 'replace-all-result'}
             onClick={e => this.doReplace(node, e)}
             title={isResultLineNode
-                ? nls.localize('vscode/findWidget/label.replaceButton', 'Replace')
-                : nls.localize('vscode/findWidget/label.replaceAllButton', 'Replace All')
+                ? nls.localizeByDefault('Replace')
+                : nls.localizeByDefault('Replace All')
             }></span>;
     }
 
@@ -786,7 +786,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected confirmReplaceAll(resultNumber: number, fileNumber: number): Promise<boolean | undefined> {
         return new ConfirmDialog({
-            title: nls.localize('vscode/findWidget/label.replaceAllButton', 'Replace All'),
+            title: nls.localizeByDefault('Replace All'),
             msg: this.buildReplaceAllConfirmationMessage(resultNumber, fileNumber, this._replaceTerm)
         }).open();
     }
@@ -795,39 +795,39 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         if (occurrences === 1) {
             if (fileCount === 1) {
                 if (replaceValue) {
-                    return nls.localize('vscode/searchView/removeAll.occurrence.file.confirmation.message',
+                    return nls.localizeByDefault(
                         "Replace {0} occurrence across {1} file with '{2}'?", occurrences, fileCount, replaceValue);
                 }
 
-                return nls.localize('vscode/searchView/replaceAll.occurrence.file.confirmation.message',
+                return nls.localizeByDefault(
                     'Replace {0} occurrence across {1} file?', occurrences, fileCount);
             }
 
             if (replaceValue) {
-                return nls.localize('vscode/searchView/removeAll.occurrence.files.confirmation.message',
+                return nls.localizeByDefault(
                     "Replace {0} occurrence across {1} files with '{2}'?", occurrences, fileCount, replaceValue);
             }
 
-            return nls.localize('vscode/searchView/replaceAll.occurrence.files.confirmation.message',
+            return nls.localizeByDefault(
                 'Replace {0} occurrence across {1} files?', occurrences, fileCount);
         }
 
         if (fileCount === 1) {
             if (replaceValue) {
-                return nls.localize('vscode/searchView/removeAll.occurrences.file.confirmation.message',
+                return nls.localizeByDefault(
                     "Replace {0} occurrences across {1} file with '{2}'?", occurrences, fileCount, replaceValue);
             }
 
-            return nls.localize('vscode/searchView/replaceAll.occurrences.file.confirmation.message',
+            return nls.localizeByDefault(
                 'Replace {0} occurrences across {1} file?', occurrences, fileCount);
         }
 
         if (replaceValue) {
-            return nls.localize('vscode/searchView/removeAll.occurrences.files.confirmation.message',
+            return nls.localizeByDefault(
                 "Replace {0} occurrences across {1} files with '{2}'?", occurrences, fileCount, replaceValue);
         }
 
-        return nls.localize('vscode/searchView/replaceAll.occurrences.files.confirmation.message',
+        return nls.localizeByDefault(
             'Replace {0} occurrences across {1} files?', occurrences, fileCount);
     }
 

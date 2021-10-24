@@ -20,6 +20,7 @@ import { FunctionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
+import { nls } from '@theia/core';
 
 export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint> implements TreeElement {
 
@@ -63,7 +64,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
 
     protected doGetDecoration(): DebugBreakpointDecoration {
         if (!this.isSupported()) {
-            return this.getDisabledBreakpointDecoration('Function breakpoints are not supported by this debug type');
+            return this.getDisabledBreakpointDecoration(nls.localizeByDefault('Function breakpoints are not supported by this debug type'));
         }
         return super.doGetDecoration();
     }
@@ -71,13 +72,13 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {
         return {
             className: 'theia-debug-function',
-            message: message || ['Function Breakpoint']
+            message: message || [nls.localizeByDefault('Function Breakpoint')]
         };
     }
 
     async open(): Promise<void> {
         const input = new SingleTextInputDialog({
-            title: 'Add Function Breakpoint',
+            title: nls.localizeByDefault('Add Function Breakpoint'),
             initialValue: this.name
         });
         const newValue = await input.open();

@@ -22,7 +22,7 @@ import {
     QuickAccessRegistry,
     QuickInputService
 } from '@theia/core/lib/browser';
-import { CancellationToken, CommandContribution, CommandRegistry, CommandService } from '@theia/core/lib/common';
+import { CancellationToken, CommandContribution, CommandRegistry, CommandService, nls } from '@theia/core/lib/common';
 import { TerminalWidget } from './base/terminal-widget';
 import { TerminalService } from './base/terminal-service';
 import { TerminalCommands } from './terminal-frontend-contribution';
@@ -60,7 +60,7 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
         }
         // Append a quick open item to create a new terminal.
         items.push({
-            label: 'Open New Terminal',
+            label: nls.localizeByDefault('Create New Integrated Terminal'),
             iconClasses: codiconArray('add'),
             execute: () => this.doCreateNewTerminal()
         });
@@ -73,7 +73,7 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
             getInstance: () => this,
             prefix: TerminalQuickOpenService.PREFIX,
             placeholder: '',
-            helpEntries: [{ description: 'Show All Opened Terminals', needsEditor: false }]
+            helpEntries: [{ description: nls.localizeByDefault('Show All Opened Terminals'), needsEditor: false }]
         });
     }
 

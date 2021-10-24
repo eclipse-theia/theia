@@ -32,10 +32,10 @@ import { EditorMainMenu } from '@theia/editor/lib/browser';
 export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContribution, KeybindingContribution, MenuContribution, CommandHandler, QuickAccessContribution {
     public static readonly PREFIX = '#';
 
-    private command = Command.toLocalizedCommand({
+    private command = Command.toDefaultLocalizedCommand({
         id: 'languages.workspace.symbol',
         label: 'Go to Symbol in Workspace...'
-    }, 'vscode/search.contribution/showTriggerActions');
+    });
 
     @inject(MonacoLanguages) protected readonly languages: MonacoLanguages;
     @inject(OpenerService) protected readonly openerService: OpenerService;
@@ -79,7 +79,7 @@ export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContr
             getInstance: () => this,
             prefix: WorkspaceSymbolCommand.PREFIX,
             placeholder: '',
-            helpEntries: [{ description: nls.localize('vscode/search.contribution/symbolsQuickAccess', 'Go to Symbol in Workspace'), needsEditor: false }]
+            helpEntries: [{ description: nls.localizeByDefault('Go to Symbol in Workspace'), needsEditor: false }]
         });
     }
 

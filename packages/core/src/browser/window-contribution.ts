@@ -23,10 +23,10 @@ import { CommonMenus } from '../browser/common-frontend-contribution';
 
 export namespace WindowCommands {
 
-    export const NEW_WINDOW = Command.toLocalizedCommand({
+    export const NEW_WINDOW = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.newWindow',
         label: 'New Window'
-    }, 'vscode/windowActions/newWindow');
+    });
 }
 
 @injectable()

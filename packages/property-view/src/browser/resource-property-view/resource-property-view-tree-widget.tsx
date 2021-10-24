@@ -93,7 +93,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     protected fillPropertiesTree(fileStatObject?: FileStat): void {
         if (fileStatObject) {
             this.propertiesTree.clear();
-            const infoNode = this.createCategoryNode('info', nls.localize('vscode/logsActions/info', 'Info'));
+            const infoNode = this.createCategoryNode('info', nls.localizeByDefault('Info'));
             this.propertiesTree.set('info', infoNode);
 
             infoNode.children.push(this.createResultLineNode('isDirectory', nls.localize('theia/property-view/directory', 'Directory'), fileStatObject.isDirectory, infoNode));
@@ -134,7 +134,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     }
 
     protected getSizeString(fileStat: FileStat): string {
-        return fileStat.size ? nls.localize('vscode/files/sizeB', '{0} B', fileStat.size.toString()) : '';
+        return fileStat.size ? nls.localizeByDefault('{0} B', fileStat.size.toString()) : '';
     }
 
     /*

@@ -23,7 +23,7 @@ export const ProblemConfigSchema: PreferenceSchema = {
     'properties': {
         'problems.decorations.enabled': {
             'type': 'boolean',
-            'description': nls.localize('vscode/markersFileDecorations/markers.showOnFile', 'Show Errors & Warnings on files and folder.'),
+            'description': nls.localizeByDefault('Show Errors & Warnings on files and folder.'),
             'default': true,
         },
         'problems.decorations.tabbar.enabled': {
@@ -33,7 +33,7 @@ export const ProblemConfigSchema: PreferenceSchema = {
         },
         'problems.autoReveal': {
             'type': 'boolean',
-            'description': nls.localize('vscode/messages/problems.panel.configuration.autoreveal', 'Controls whether Problems view should reveal markers when file is opened.'),
+            'description': nls.localizeByDefault('Controls whether Problems view should automatically reveal files when opening them.'),
             'default': true
         }
     }

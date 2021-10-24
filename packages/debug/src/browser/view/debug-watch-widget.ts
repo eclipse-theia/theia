@@ -52,7 +52,7 @@ export class DebugWatchWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:watch:' + this.viewModel.id;
-        this.title.label = nls.localize('vscode/debug.contribution/watch', 'Watch');
+        this.title.label = nls.localizeByDefault('Watch');
         this.toDispose.push(this.variables);
         this.source = this.variables;
     }

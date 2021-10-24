@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command } from '@theia/core';
+import { Command, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 
 export namespace NotificationsCommands {
 
-    const NOTIFICATIONS_CATEGORY_KEY = 'vscode/notificationsCommands/notifications';
     const NOTIFICATIONS_CATEGORY = 'Notifications';
+    const NOTIFICATIONS_CATEGORY_KEY = nls.getDefaultKey(NOTIFICATIONS_CATEGORY);
 
     export const TOGGLE = Command.toLocalizedCommand({
         id: 'notifications.commands.toggle',
@@ -29,22 +29,22 @@ export namespace NotificationsCommands {
         label: 'Toggle Notifications'
     }, 'theia/messages/toggleNotifications', NOTIFICATIONS_CATEGORY_KEY);
 
-    export const SHOW = Command.toLocalizedCommand({
+    export const SHOW = Command.toDefaultLocalizedCommand({
         id: 'notifications.commands.show',
         category: NOTIFICATIONS_CATEGORY,
         label: 'Show Notifications'
-    }, 'vscode/notificationsCommands/showNotifications', NOTIFICATIONS_CATEGORY_KEY);
+    });
 
-    export const HIDE = Command.toLocalizedCommand({
+    export const HIDE = Command.toDefaultLocalizedCommand({
         id: 'notifications.commands.hide',
         category: NOTIFICATIONS_CATEGORY,
         label: 'Hide Notifications'
-    }, 'vscode/notificationsCommands/hideNotifications', NOTIFICATIONS_CATEGORY_KEY);
+    });
 
-    export const CLEAR_ALL = Command.toLocalizedCommand({
+    export const CLEAR_ALL = Command.toDefaultLocalizedCommand({
         id: 'notifications.commands.clearAll',
         category: NOTIFICATIONS_CATEGORY,
         iconClass: codicon('clear-all'),
         label: 'Clear All Notifications'
-    }, 'vscode/notificationsCommands/clearAllNotifications', NOTIFICATIONS_CATEGORY_KEY);
+    });
 }

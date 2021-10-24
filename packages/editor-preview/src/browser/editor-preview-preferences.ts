@@ -23,7 +23,8 @@ export const EditorPreviewConfigSchema: PreferenceSchema = {
     properties: {
         'editor.enablePreview': {
             type: 'boolean',
-            description: nls.localize('vscode/workbench.contribution/enablePreview', 'Controls whether editors are opened as previews when selected or single-clicked.'),
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('Controls whether opened editors show as preview. Preview editors do not keep open and are reused until explicitly set to be kept open (e.g. via double click or editing) and show up with an italic font style.'),
             default: true
         },
     }

@@ -498,8 +498,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }
         // Prompt users for confirmation before overwriting.
         const confirmed = await new ConfirmDialog({
-            title: nls.localize('vscode/textFileSaveErrorHandler/overwrite', 'Overwrite'),
-            msg: nls.localize('vscode/simpleFileDialog/remoteFileDialog.validateExisting', 'Do you really want to overwrite "{0}"?', uri.toString())
+            title: nls.localizeByDefault('Overwrite'),
+            msg: nls.localizeByDefault('Do you really want to overwrite "{0}"?', uri.toString())
         }).open();
         return !!confirmed;
     }

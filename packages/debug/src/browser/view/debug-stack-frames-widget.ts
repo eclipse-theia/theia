@@ -56,7 +56,7 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:frames:' + this.viewModel.id;
-        this.title.label = nls.localize('vscode/debug.contribution/callStack', 'Call Stack');
+        this.title.label = nls.localizeByDefault('Call Stack');
         this.toDispose.push(this.frames);
         this.source = this.frames;
 

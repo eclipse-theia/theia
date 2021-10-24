@@ -224,15 +224,15 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
         });
         registry.registerMenuAction(OutputContextMenu.TEXT_EDIT_GROUP, {
             commandId: OutputCommands.COPY_ALL.id,
-            label: nls.localize('vscode/search.contribution/copyAllLabel', 'Copy All')
+            label: nls.localizeByDefault('Copy All')
         });
         registry.registerMenuAction(OutputContextMenu.COMMAND_GROUP, {
             commandId: quickCommand.id,
-            label: nls.localize('vscode/quickAccess.contribution/commandsQuickAccess', 'Find Command...')
+            label: nls.localizeByDefault('Command Palette...')
         });
         registry.registerMenuAction(OutputContextMenu.WIDGET_GROUP, {
             commandId: OutputCommands.CLEAR__WIDGET.id,
-            label: nls.localize('vscode/output.contribution/clearOutput.label', 'Clear Output')
+            label: nls.localizeByDefault('Clear Output')
         });
     }
 

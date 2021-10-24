@@ -26,10 +26,7 @@ export const launchPreferencesSchema: PreferenceSchema = {
     properties: {
         'launch': {
             $ref: launchSchemaId,
-            description: nls.localize(
-                'vscode/debug.contribution/launch',
-                "Global debug launch configuration. Should be used as an alternative to 'launch.json' that is shared across workspaces"
-            ),
+            description: nls.localizeByDefault("Global debug launch configuration. Should be used as an alternative to 'launch.json' that is shared across workspaces."),
             defaultValue: { configurations: [], compounds: [] }
         }
     }

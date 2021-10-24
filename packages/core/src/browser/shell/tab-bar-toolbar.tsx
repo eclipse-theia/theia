@@ -405,7 +405,7 @@ export class TabBarToolbar extends ReactWidget {
     protected renderMore(): React.ReactNode {
         return !!this.more.size && <div key='__more__' className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled'}>
             <div id='__more__' className={codicon('ellipsis', true)} onClick={this.showMoreContextMenu}
-                title={nls.localize('vscode/compositePart/viewsAndMoreActions', 'More Actions...')} />
+                title={nls.localizeByDefault('More Actions...')} />
         </div>;
     }
 

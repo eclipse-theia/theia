@@ -48,7 +48,7 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localize('vscode/gettingStarted.contribution/Getting Started', 'Getting Started');
+    static readonly LABEL = nls.localizeByDefault('Getting Started');
 
     /**
      * The `ApplicationInfo` for the application if available.
@@ -168,7 +168,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpen}
                 onKeyDown={this.doOpenEnter}>
-                {nls.localize('vscode/dialogMainService/open', 'Open')}
+                {nls.localizeByDefault('Open')}
             </a>
         </div>;
 
@@ -178,7 +178,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenFile}
                 onKeyDown={this.doOpenFileEnter}>
-                {nls.localize('vscode/dialogMainService/openFile', 'Open File')}
+                {nls.localizeByDefault('Open File')}
             </a>
         </div>;
 
@@ -188,7 +188,7 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenFolder}
                 onKeyDown={this.doOpenFolderEnter}>
-                {nls.localize('vscode/dialogMainService/openFolder', 'Open Folder')}
+                {nls.localizeByDefault('Open Folder')}
             </a>
         </div>;
 
@@ -198,12 +198,12 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenWorkspace}
                 onKeyDown={this.doOpenWorkspaceEnter}>
-                {nls.localize('vscode/dialogMainService/openWorkspaceTitle', 'Open Workspace')}
+                {nls.localizeByDefault('Open Workspace')}
             </a>
         );
 
         return <div className='gs-section'>
-            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localize('vscode/dialogMainService/open', 'Open')}</h3>
+            <h3 className='gs-section-header'><i className={codicon('folder-opened')}></i>{nls.localizeByDefault('Open')}</h3>
             {open}
             {openFile}
             {openFolder}
@@ -238,14 +238,14 @@ export class GettingStartedWidget extends ReactWidget {
                 tabIndex={0}
                 onClick={this.doOpenRecentWorkspace}
                 onKeyDown={this.doOpenRecentWorkspaceEnter}>
-                {nls.localize('vscode/vs_code_welcome_page/welcomePage.moreRecent', 'More...')}
+                {nls.localizeByDefault('More...')}
             </a>
         </div>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
-                <i className={codicon('history')}></i>{nls.localize('vscode/vs_code_welcome_page/welcomePage.recent', 'Recently opened')}
+                <i className={codicon('history')}></i>{nls.localizeByDefault('Recent')}
             </h3>
-            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localize('vscode/vs_code_welcome_page/welcomePage.noRecentFolders', 'No Recent Workspaces')}</p>}
+            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localizeByDefault('No Recent Workspaces')}</p>}
             {more}
         </div>;
     }
@@ -258,7 +258,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className={codicon('settings-gear')}></i>
-                {nls.localize('vscode/preferences.contribution/settings', 'Settings')}
+                {nls.localizeByDefault('Settings')}
             </h3>
             <div className='gs-action-container'>
                 <a
@@ -266,7 +266,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={this.doOpenPreferences}
                     onKeyDown={this.doOpenPreferencesEnter}>
-                    {nls.localize('vscode/menubarControl/goToSetting', 'Open Preferences')}
+                    {nls.localizeByDefault('Open Settings')}
                 </a>
             </div>
             <div className='gs-action-container'>
@@ -275,7 +275,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={this.doOpenKeyboardShortcuts}
                     onKeyDown={this.doOpenKeyboardShortcutsEnter}>
-                    {nls.localize('vscode/preferences.contribution/openGlobalKeybindings', 'Open Keyboard Shortcuts')}
+                    {nls.localizeByDefault('Open Keyboard Shortcuts')}
                 </a>
             </div>
         </div>;
@@ -288,7 +288,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className={codicon('question')}></i>
-                {nls.localize('vscode/gettingStarted.contribution/help', 'Help')}
+                {nls.localizeByDefault('Help')}
             </h3>
             <div className='gs-action-container'>
                 <a
@@ -296,7 +296,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.documentationUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.documentationUrl)}>
-                    {nls.localize('vscode/helpActions/openDocumentationUrl', 'Documentation')}
+                    {nls.localizeByDefault('Documentation')}
                 </a>
             </div>
             <div className='gs-action-container'>
@@ -327,7 +327,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-section'>
             <div className='gs-action-container'>
                 <p className='gs-sub-header' >
-                    {this.applicationInfo ? nls.localize('vscode/extensions.contribution/extensionInfoVersion', 'Version: {0}', this.applicationInfo.version) : ''}
+                    {this.applicationInfo ? nls.localizeByDefault('Version: {0}', this.applicationInfo.version) : ''}
                 </p>
             </div>
         </div>;

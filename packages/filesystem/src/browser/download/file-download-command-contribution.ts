@@ -68,11 +68,11 @@ export class FileDownloadCommandContribution implements CommandContribution {
 
 export namespace FileDownloadCommands {
 
-    export const DOWNLOAD = Command.toLocalizedCommand({
+    export const DOWNLOAD = Command.toDefaultLocalizedCommand({
         id: 'file.download',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Download'
-    }, 'vscode/fileActions/downloadButton', CommonCommands.FILE_CATEGORY_KEY);
+    });
 
     export const COPY_DOWNLOAD_LINK = Command.toLocalizedCommand({
         id: 'file.copyDownloadLink',

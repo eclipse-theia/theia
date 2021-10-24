@@ -41,7 +41,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: nls.localize('vscode/scm.contribution/source control', 'Source Control'),
+    label: nls.localizeByDefault('Source Control'),
     iconClass: codicon('source-control'),
     closeable: true
 };
@@ -57,24 +57,24 @@ export namespace SCM_COMMANDS {
     };
     export const TREE_VIEW_MODE = {
         id: 'scm.viewmode.tree',
-        tooltip: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View'),
+        tooltip: nls.localizeByDefault('View as Tree'),
         iconClass: codicon('list-tree'),
-        originalLabel: 'Toggle to Tree View',
-        label: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View')
+        originalLabel: 'View as Tree',
+        label: nls.localizeByDefault('View as Tree')
     };
     export const LIST_VIEW_MODE = {
         id: 'scm.viewmode.list',
-        tooltip: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View'),
+        tooltip: nls.localizeByDefault('View as List'),
         iconClass: codicon('list-flat'),
-        originalLabel: 'Toggle to List View',
-        label: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View')
+        originalLabel: 'View as List',
+        label: nls.localizeByDefault('View as List')
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
         category: 'SCM',
-        tooltip: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
+        tooltip: nls.localizeByDefault('Collapse All'),
         iconClass: codicon('collapse-all'),
-        label: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
+        label: nls.localizeByDefault('Collapse All'),
         originalLabel: 'Collapse All'
     };
 }

@@ -23,7 +23,7 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
     properties: {
         'explorer.autoReveal': {
             type: 'boolean',
-            description: nls.localize('vscode/files.contribution/autoReveal', 'Selects file under editing in the explorer.'),
+            description: nls.localizeByDefault('Controls whether the explorer should automatically reveal and select files when opening them.'),
             default: true
         }
     }

@@ -49,7 +49,7 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    static LABEL = nls.localize('vscode/settingsLayout/terminal', 'Terminal');
+    static LABEL = nls.localizeByDefault('Terminal');
     protected terminalKind = 'user';
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
@@ -249,7 +249,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     static getFollowLinkHover(): string {
         const cmdCtrl = isOSX ? 'Cmd' : 'Ctrl';
-        return nls.localize('vscode/terminalLinkManager/followLink', 'Follow link') + ' (' +
+        return nls.localizeByDefault('Follow link') + ' (' +
             nls.localize(`vscode/terminalLinkManager/terminalLinkHandler.followLink${cmdCtrl}`, `${cmdCtrl} + Click`) + ')';
     }
 
