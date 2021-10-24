@@ -24,7 +24,64 @@ export namespace nls {
 
     export const locale = typeof window === 'object' && window && window.localStorage.getItem(localeId) || undefined;
 
+    let keyProvider: LocalizationKeyProvider | undefined;
+
+    /**
+     * Automatically localizes a text if that text also exists in the vscode repository.
+     */
+    export function localizeByDefault(defaultValue: string, ...args: FormatType[]): string {
+        if (localization) {
+            if (!keyProvider) {
+                keyProvider = new LocalizationKeyProvider();
+            }
+            const key = keyProvider.get(defaultValue);
+            if (key) {
+                return localize(key, defaultValue, ...args);
+            }
+        }
+        return Localization.format(defaultValue, args);
+    }
+
     export function localize(key: string, defaultValue: string, ...args: FormatType[]): string {
         return Localization.localize(localization, key, defaultValue, ...args);
+    }
+}
+
+interface NlsKeys {
+    [key: string]: (string | NlsInfo)[]
+}
+
+interface NlsInfo {
+    key: string
+    comment: string[]
+}
+
+class LocalizationKeyProvider {
+
+    private data = this.buildData();
+
+    get(defaultValue: string): string | undefined {
+        return this.data.get(defaultValue);
+    }
+
+    private buildData(): Map<string, string> {
+        const bundles = require('../../src/common/i18n/nls.metadata.json');
+        const keys: NlsKeys = bundles.keys;
+        const messages: Record<string, string[]> = bundles.messages;
+        const data = new Map<string, string>();
+        for (const [fileKey, messageBundle] of Object.entries(messages)) {
+            const keyBundle = keys[fileKey];
+            for (let i = 0; i < messageBundle.length; i++) {
+                const message = messageBundle[i].replace(/&&/g, '');
+                const key = keyBundle[i];
+                const localizationKey = this.buildKey(typeof key === 'string' ? key : key.key, fileKey);
+                data.set(message, localizationKey);
+            }
+        }
+        return data;
+    }
+
+    private buildKey(key: string, filepath: string): string {
+        return `vscode/${Localization.transformKey(filepath)}/${key}`;
     }
 }

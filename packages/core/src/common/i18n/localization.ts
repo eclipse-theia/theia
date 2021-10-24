@@ -36,7 +36,7 @@ export type FormatType = string | number | boolean | undefined;
 
 export namespace Localization {
 
-    function format(message: string, args: FormatType[]): string {
+    export function format(message: string, args: FormatType[]): string {
         let result = message;
         if (args.length > 0) {
             result = message.replace(/\{(\d+)\}/g, (match, rest) => {
