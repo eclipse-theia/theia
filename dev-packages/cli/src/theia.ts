@@ -231,9 +231,9 @@ function theiaCli(): void {
             merge: boolean,
             exclude?: string,
             logs?: string,
-            pattern?: string
+            files?: string[]
         }>({
-            command: 'extract',
+            command: 'nls-extract',
             describe: 'Extract translation key/value pairs from source code',
             builder: {
                 'output': {
@@ -256,9 +256,10 @@ function theiaCli(): void {
                     alias: 'e',
                     describe: 'Allows to exclude translation keys starting with this value'
                 },
-                'pattern': {
-                    alias: 'p',
-                    describe: 'A glob pattern for filtering the files used for extraction'
+                'files': {
+                    alias: 'f',
+                    describe: 'Glob pattern matching the files to extract from (starting from --root).',
+                    array: true
                 },
                 'logs': {
                     alias: 'l',

@@ -18,8 +18,11 @@ import * as fs from 'fs-extra';
 import * as ts from 'typescript';
 import * as os from 'os';
 import * as path from 'path';
-import { glob, IOptions } from 'glob';
+import { glob } from 'glob';
+import { promisify } from 'util';
 import deepmerge = require('deepmerge');
+
+const globPromise = promisify(glob);
 
 export interface Localization {
     [key: string]: string | Localization
@@ -30,7 +33,8 @@ export interface ExtractionOptions {
     output: string
     exclude?: string
     logs?: string
-    pattern?: string
+    /** List of globs matching the files to extract from. */
+    files?: string[]
     merge: boolean
 }
 
@@ -69,31 +73,22 @@ const tsOptions: ts.CompilerOptions = {
     allowJs: true
 };
 
-function globPromise(pattern: string, options: IOptions): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-        glob(pattern, options, (err, matches) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(matches);
-            }
-        });
-    });
-}
-
 export async function extract(options: ExtractionOptions): Promise<void> {
     const cwd = path.resolve(process.cwd(), options.root);
-    const files = await globPromise(options.pattern || '**/src/**/*.ts', { cwd });
+    const files: string[] = [];
+    await Promise.all((options.files ?? ['**/src/**/*.ts']).map(
+        async pattern => files.push(...await globPromise(pattern, { cwd }))
+    ));
     let localization: Localization = {};
     const errors: string[] = [];
     for (const file of files) {
         const filePath = path.resolve(cwd, file);
-        const content = await fs.promises.readFile(filePath, { encoding: 'utf8' });
+        const content = await fs.readFile(filePath, 'utf8');
         const fileLocalization = await extractFromFile(file, content, errors, options);
         localization = deepmerge(localization, fileLocalization);
     }
     if (errors.length > 0 && options.logs) {
-        await fs.promises.writeFile(options.logs, errors.join(os.EOL));
+        await fs.writeFile(options.logs, errors.join(os.EOL));
     }
     const output = path.resolve(process.cwd(), options.output);
     if (options.merge && await fs.pathExists(output)) {
