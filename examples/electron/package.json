@@ -11,6 +11,11 @@
       "config": {
         "applicationName": "Theia Electron Example"
       }
+    },
+    "backend": {
+      "config": {
+        "resolveSystemPlugins": false
+      }
     }
   },
   "dependencies": {
