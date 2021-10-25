@@ -31,6 +31,8 @@ import {
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { DisposableCollection } from '@theia/core/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+
 export interface OpenEditorNode extends FileStatNode {
     widget: Widget;
 };
@@ -60,6 +62,8 @@ export class OpenEditorsModel extends FileTreeModel {
     // Last collection of editors before a layout modification, used to detect changes in widget ordering
     protected _lastEditorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
 
+    protected cachedFileStats = new Map<string, FileStat>();
+
     get editorWidgets(): NavigatableWidget[] {
         const editorWidgets: NavigatableWidget[] = [];
         this._editorWidgetsByArea.forEach(widgets => editorWidgets.push(...widgets));
@@ -84,7 +88,15 @@ export class OpenEditorsModel extends FileTreeModel {
                 this.selectNode(nodeToSelect);
             }
         }));
-        this.toDispose.push(this.applicationShell.onDidAddWidget(() => this.updateOpenWidgets()));
+        this.toDispose.push(this.applicationShell.onDidAddWidget(async () => {
+            await this.updateOpenWidgets();
+            const existingWidgetIds = new Set(this.editorWidgets.map(widget => widget.id));
+            this.cachedFileStats.forEach((_fileStat, id) => {
+                if (!existingWidgetIds.has(id)) {
+                    this.cachedFileStats.delete(id);
+                }
+            });
+        }));
         this.toDispose.push(this.applicationShell.onDidRemoveWidget(() => this.updateOpenWidgets()));
         // Check for tabs rearranged in main and bottom
         this.applicationShell.mainPanel.layoutModified.connect(() => this.doUpdateOpenWidgets('main'));
@@ -187,7 +199,19 @@ export class OpenEditorsModel extends FileTreeModel {
             for (const widget of widgetsInArea) {
                 const uri = widget.getResourceUri();
                 if (uri) {
-                    const fileStat = await this.fileService.resolve(uri);
+                    let fileStat: FileStat;
+                    try {
+                        fileStat = await this.fileService.resolve(uri);
+                        this.cachedFileStats.set(widget.id, fileStat);
+                    } catch {
+                        const cachedStat = this.cachedFileStats.get(widget.id);
+                        if (cachedStat) {
+                            fileStat = cachedStat;
+                        } else {
+                            continue;
+                        }
+                    }
+
                     const openEditorNode: OpenEditorNode = {
                         id: widget.id,
                         fileStat,
