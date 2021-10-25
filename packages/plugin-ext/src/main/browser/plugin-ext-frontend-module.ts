@@ -76,7 +76,6 @@ import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
-import { WebviewViewService } from './webview-views/webview-views';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -170,8 +169,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewWidget).toSelf();
     bind(WebviewWidgetFactory).toDynamicValue(ctx => new WebviewWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(WebviewWidgetFactory);
-
-    bind(WebviewViewService).toSelf().inSingletonScope();
 
     bind(CustomEditorContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(CustomEditorContribution);

@@ -23,10 +23,11 @@ import { inject, interfaces } from '@theia/core/shared/inversify';
 import { WebviewViewsMain, MAIN_RPC_CONTEXT, WebviewViewsExt } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { Disposable, DisposableCollection, ILogger } from '@theia/core';
-import { WebviewView, WebviewViewService } from './webview-views';
+import { WebviewView } from './webview-views';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { WebviewsMainImpl } from '../webviews-main';
 import { Widget, WidgetManager } from '@theia/core/lib/browser';
+import { PluginViewRegistry } from '../view/plugin-view-registry';
 
 export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
 
@@ -37,8 +38,8 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
 
     protected readonly webviewViews = new Map<string, WebviewView>();
     protected readonly webviewViewProviders = new Map<string, Disposable>();
-    protected readonly webviewViewService: WebviewViewService;
     protected readonly widgetManager: WidgetManager;
+    protected readonly pluginViewRegistry: PluginViewRegistry;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -48,21 +49,21 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
         readonly webviewsMain: WebviewsMainImpl
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT);
-        this.webviewViewService = container.get(WebviewViewService);
         this.widgetManager = container.get(WidgetManager);
+        this.pluginViewRegistry = container.get(PluginViewRegistry);
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    $registerWebviewViewProvider(viewType: string, options: { retainContextWhenHidden?: boolean, serializeBuffersForPostMessage: boolean }): void {
+    async $registerWebviewViewProvider(viewType: string, options: { retainContextWhenHidden?: boolean, serializeBuffersForPostMessage: boolean }): Promise<void> {
 
         if (this.webviewViewProviders.has(viewType)) {
             throw new Error(`View provider for ${viewType} already registered`);
         }
 
-        const registration = this.webviewViewService.register(viewType, {
+        const registration = await this.pluginViewRegistry.registerWebviewView(viewType, {
             resolve: async (webviewView: WebviewView, cancellation: CancellationToken) => {
                 const handle = webviewView.webview.identifier.id;
                 this.webviewViews.set(handle, webviewView);

@@ -19,9 +19,7 @@
 *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/a4a4cf5ace4472bc4f5176396bb290cafa15c518/src/vs/workbench/contrib/webviewView/browser/webviewViewService.ts
 
-import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
-import { Disposable } from '@theia/core/lib/common';
-import { injectable } from '@theia/core/shared/inversify';
+import { CancellationToken, Event } from '@theia/core/lib/common';
 import { WebviewWidget } from '../webview/webview';
 
 export interface WebviewView {
@@ -38,51 +36,3 @@ export interface WebviewView {
 export interface WebviewViewResolver {
     resolve(webviewView: WebviewView, cancellation: CancellationToken): Promise<void>;
 }
-
-@injectable()
-export class WebviewViewService {
-
-    private readonly resolvers = new Map<string, WebviewViewResolver>();
-    private readonly awaitingRevival = new Map<string, { webview: WebviewView, resolve: () => void }>();
-
-    protected readonly onDidRegisterResolverEmitter = new Emitter<{ readonly viewId: string }>();
-    readonly onDidRegisterResolver = this.onDidRegisterResolverEmitter.event;
-
-    register(viewId: string, resolver: WebviewViewResolver): Disposable {
-        if (this.resolvers.has(viewId)) {
-            throw new Error(`View resolver already registered for ${viewId}`);
-        }
-
-        this.resolvers.set(viewId, resolver);
-        this.onDidRegisterResolverEmitter.fire({ viewId: viewId });
-
-        const pending = this.awaitingRevival.get(viewId);
-        if (pending) {
-            resolver.resolve(pending.webview, CancellationToken.None).then(() => {
-                this.awaitingRevival.delete(viewId);
-                pending.resolve();
-            });
-        }
-
-        return Disposable.create(() => {
-            this.resolvers.delete(viewId);
-        });
-    }
-
-    resolve(viewType: string, webview: WebviewView, cancellation: CancellationToken): Promise<void> {
-        const resolver = this.resolvers.get(viewType);
-        if (!resolver) {
-            if (this.awaitingRevival.has(viewType)) {
-                throw new Error('View already awaiting revival');
-            }
-
-            let resolve: () => void;
-            const p = new Promise<void>(r => resolve = r);
-            this.awaitingRevival.set(viewType, { webview, resolve: resolve! });
-            return p;
-        }
-
-        return resolver.resolve(webview, cancellation);
-    }
-}
-

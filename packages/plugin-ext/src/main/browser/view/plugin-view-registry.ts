@@ -42,7 +42,7 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 
-import { WebviewView, WebviewViewService } from '../webview-views/webview-views';
+import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { v4 } from 'uuid';
@@ -89,9 +89,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
 
-    @inject(WebviewViewService)
-    protected readonly webviewViewService: WebviewViewService;
-
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
 
@@ -103,6 +100,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
+
+    private readonly webviewViewResolvers = new Map<string, WebviewViewResolver>();
 
     @postConstruct()
     protected init(): void {
@@ -173,10 +172,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                     }
                 }
             }
-        });
-
-        this.webviewViewService.onDidRegisterResolver(e => {
-            this.registerWebviewView(e.viewId);
         });
     }
 
@@ -331,7 +326,12 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
-    protected async registerWebviewView(viewId: string): Promise<void> {
+    public async registerWebviewView(viewId: string, resolver: WebviewViewResolver): Promise<Disposable> {
+        if (this.webviewViewResolvers.has(viewId)) {
+            throw new Error(`View resolver already registered for ${viewId}`);
+        }
+        this.webviewViewResolvers.set(viewId, resolver);
+
         const webviewView = await this.createNewWebviewView();
         const token = CancellationToken.None;
         this.getView(viewId).then(async view => {
@@ -352,7 +352,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         });
 
-        this.webviewViewService.resolve(viewId, webviewView, token);
+        resolver.resolve(webviewView, token);
+
+        return Disposable.create(() => {
+            this.webviewViewResolvers.delete(viewId);
+        });
     }
 
     async createNewWebviewView(): Promise<WebviewView> {
