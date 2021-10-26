@@ -48,17 +48,16 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
                 this.tree.callHierarchyService = callHierarchyService;
                 const cancellationSource = new CancellationTokenSource();
                 const rootDefinition = await callHierarchyService.getRootDefinition(uri, position, cancellationSource.token);
-                if (Array.isArray(rootDefinition)) {
+                const definitions = rootDefinition && (Array.isArray(rootDefinition) ? rootDefinition : [rootDefinition]);
+                if (definitions) {
                     const root: CompositeTreeNode = {
                         id: 'call-hierarchy-tree-root',
                         parent: undefined,
                         children: [],
+                        visible: false,
                     };
-                    rootDefinition.forEach(definition => CompositeTreeNode.addChild(root, DefinitionNode.create(definition, root)));
+                    definitions.forEach(definition => CompositeTreeNode.addChild(root, DefinitionNode.create(definition, root)));
                     this.tree.root = root;
-                } else if (rootDefinition) {
-                    const rootNode = DefinitionNode.create(rootDefinition, undefined);
-                    this.tree.root = rootNode;
                 }
             }
         }
