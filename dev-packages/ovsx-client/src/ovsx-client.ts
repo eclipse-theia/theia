@@ -34,6 +34,10 @@ export interface OVSXClientOptions {
     apiVersion: string
     apiUrl: string
 }
+
+export const OVSXClientProvider = Symbol('OVSXClientProvider');
+export type OVSXClientProvider = () => Promise<OVSXClient>;
+
 export class OVSXClient {
 
     constructor(readonly options: OVSXClientOptions) { }
