@@ -29,10 +29,6 @@ import {
 
 const fetchText = bent('GET', 'string', 200);
 const fetchJson = bent('GET', { 'Accept': 'application/json' }, 'json', 200);
-const postJson = bent('POST', {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-}, 'json', 200);
 
 export interface OVSXClientOptions {
     apiVersion: string
@@ -48,43 +44,37 @@ export class OVSXClient {
     }
 
     protected async buildSearchUri(param?: VSXSearchParam): Promise<string> {
+        return this.buildUri('api/-/search', param);
+    }
+
+    protected buildQueryUri(param?: VSXQueryParam): string {
+        return this.buildUri('api/-/query', param);
+    }
+
+    protected buildUri(url: string, param?: Object): string {
         let searchUri = '';
         if (param) {
             const query: string[] = [];
-            if (param.query) {
-                query.push('query=' + encodeURIComponent(param.query));
-            }
-            if (param.category) {
-                query.push('category=' + encodeURIComponent(param.category));
-            }
-            if (param.size) {
-                query.push('size=' + param.size);
-            }
-            if (param.offset) {
-                query.push('offset=' + param.offset);
-            }
-            if (param.sortOrder) {
-                query.push('sortOrder=' + encodeURIComponent(param.sortOrder));
-            }
-            if (param.sortBy) {
-                query.push('sortBy=' + encodeURIComponent(param.sortBy));
-            }
-            if (param.includeAllVersions) {
-                query.push('includeAllVersions=' + param.includeAllVersions);
+            for (const [key, value] of Object.entries(param)) {
+                if (typeof value === 'string') {
+                    query.push(`${key}=${encodeURIComponent(value)}`);
+                } else if (typeof value === 'boolean' || typeof value === 'number') {
+                    query.push(`${key}=${String(value)}`);
+                }
             }
             if (query.length > 0) {
                 searchUri += '?' + query.join('&');
             }
         }
-        return new URL(`api/-/search${searchUri}`, this.options!.apiUrl).toString();
+        return new URL(`${url}${searchUri}`, this.options!.apiUrl).toString();
     }
 
     async getExtension(id: string): Promise<VSXExtensionRaw> {
-        const apiUri = new URL('api/-/query', this.options!.apiUrl);
         const param: VSXQueryParam = {
             extensionId: id
         };
-        const result = await this.postJson<VSXQueryParam, VSXQueryResult>(apiUri.toString(), param);
+        const apiUri = this.buildQueryUri(param);
+        const result = await this.fetchJson<VSXQueryResult>(apiUri);
         if (result.extensions && result.extensions.length > 0) {
             return result.extensions[0];
         }
@@ -96,12 +86,12 @@ export class OVSXClient {
      * @param id the requested extension id.
      */
     async getAllVersions(id: string): Promise<VSXExtensionRaw[]> {
-        const apiUri = new URL('api/-/query', this.options!.apiUrl);
         const param: VSXQueryParam = {
             extensionId: id,
             includeAllVersions: true,
         };
-        const result = await this.postJson<VSXQueryParam, VSXQueryResult>(apiUri.toString(), param);
+        const apiUri = this.buildQueryUri(param);
+        const result = await this.fetchJson<VSXQueryResult>(apiUri);
         if (result.extensions && result.extensions.length > 0) {
             return result.extensions;
         }
@@ -110,10 +100,6 @@ export class OVSXClient {
 
     protected fetchJson<R>(url: string): Promise<R> {
         return fetchJson(url) as Promise<R>;
-    }
-
-    protected postJson<P, R>(url: string, payload: P): Promise<R> {
-        return postJson(url, JSON.stringify(payload)) as Promise<R>;
     }
 
     fetchText(url: string): Promise<string> {

@@ -20,6 +20,7 @@
   - renamed `createMenuBar` to `createElectronMenuBar`
 - [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
+- [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
 
 ## v1.18.0 - 9/30/2021
 
