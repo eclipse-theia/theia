@@ -77,7 +77,8 @@ export class CallHierarchyAdapter {
             selectionRange: this.fromRange(item.selectionRange),
             name: item.name,
             kind: item.kind,
-            tags: item.tags
+            tags: item.tags,
+            data: item.data,
         };
     }
 
@@ -100,7 +101,7 @@ export class CallHierarchyAdapter {
     }
 
     private toCallHierarchyItem(definition: model.CallHierarchyDefinition): theia.CallHierarchyItem {
-        return new types.CallHierarchyItem(
+        const item = new types.CallHierarchyItem(
             Converter.SymbolKind.toSymbolKind(definition.kind),
             definition.name,
             definition.detail ? definition.detail : '',
@@ -108,6 +109,9 @@ export class CallHierarchyAdapter {
             this.toRange(definition.range),
             this.toRange(definition.selectionRange),
         );
+        item.tags = definition.tags;
+        item.data = definition.data;
+        return item;
     }
 
     private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): model.CallHierarchyReference {

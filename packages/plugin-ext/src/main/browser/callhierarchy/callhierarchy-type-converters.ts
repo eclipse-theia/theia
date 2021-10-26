@@ -152,7 +152,8 @@ export function toDefinition(definition: model.CallHierarchyDefinition | undefin
         symbolName: definition.name,
         symbolKind: SymbolKindConverter.toSymbolKind(definition.kind),
         containerName: undefined,
-        tags: definition.tags
+        tags: definition.tags,
+        data: definition.data,
     };
 }
 
@@ -162,7 +163,9 @@ export function fromDefinition(definition: CallHierarchyDefinition): model.CallH
         range: fromRange(definition.location.range),
         selectionRange: fromRange(definition.selectionRange),
         name: definition.symbolName,
-        kind: SymbolKindConverter.fromSymbolKind(definition.symbolKind)
+        kind: SymbolKindConverter.fromSymbolKind(definition.symbolKind),
+        tags: definition.tags,
+        data: definition.data,
     };
 }
 

@@ -524,6 +524,7 @@ export interface CallHierarchyDefinition {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
+    data: unknown;
 }
 
 export interface CallHierarchyReference {
@@ -542,6 +543,7 @@ export interface CallHierarchyItem {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
+    data: unknown;
 }
 
 export interface CallHierarchyIncomingCall {
