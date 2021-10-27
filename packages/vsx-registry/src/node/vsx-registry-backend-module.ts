@@ -17,17 +17,21 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { createOVSXClient, OVSXClientProvider } from '../common/ovsx-client-provider';
+import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
+import { OVSXClient } from '@theia/ovsx-client';
 
 export default new ContainerModule(bind => {
+    bind(OVSXClientProvider).toDynamicValue(ctx => {
+        const clientPromise: Promise<OVSXClient> = createOVSXClient(ctx.container.get(VSXEnvironment));
+        return () => clientPromise;
+    }).inSingletonScope();
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
         ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment))
     ).inSingletonScope();
-    bind(OVSXClientProvider).toProvider(ctx => () => createOVSXClient(ctx.container.get(VSXEnvironment)));
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
 });

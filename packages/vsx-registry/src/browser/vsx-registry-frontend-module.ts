@@ -33,14 +33,18 @@ import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
-import { createOVSXClient, OVSXClientProvider } from '../common/ovsx-client-provider';
+import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { OVSXClient } from '@theia/ovsx-client';
 
 export default new ContainerModule((bind, unbind) => {
+    bind(OVSXClientProvider).toDynamicValue(ctx => {
+        const clientPromise: Promise<OVSXClient> = createOVSXClient(ctx.container.get(VSXEnvironment));
+        return () => clientPromise;
+    }).inSingletonScope();
     bind(VSXEnvironment).toDynamicValue(
         ctx => WebSocketConnectionProvider.createProxy(ctx.container, VSX_ENVIRONMENT_PATH)
     ).inSingletonScope();
-    bind(OVSXClientProvider).toProvider(ctx => () => createOVSXClient(ctx.container.get(VSXEnvironment)));
 
     bind(VSXExtension).toSelf();
     bind(VSXExtensionFactory).toFactory(ctx => (option: VSXExtensionOptions) => {
