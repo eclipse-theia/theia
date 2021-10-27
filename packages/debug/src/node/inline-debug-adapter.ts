@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { CommunicationProvider } from './debug-model';
+import { DebugAdapter } from './debug-model';
 import * as theia from '@theia/plugin';
 
 /**
- * A communication provider for using the inline implementation of a debug adapter.
+ * A debug adapter for using the inline implementation from a plugin.
  */
-export class InlineCommunicationProvider implements CommunicationProvider {
+export class InlineDebugAdapter implements DebugAdapter {
     private messageReceivedEmitter = new Emitter<string>();
     onMessageReceived: Event<string> = this.messageReceivedEmitter.event;
     onError: Event<Error> = Event.None;
@@ -34,11 +34,14 @@ export class InlineCommunicationProvider implements CommunicationProvider {
         });
     }
 
+    async start(): Promise<void> {
+    }
+
     send(message: string): void {
         this.debugAdapter.handleMessage(JSON.parse(message));
     }
 
-    dispose(): void {
+    async stop(): Promise<void> {
         this.debugAdapter.dispose();
     }
 }

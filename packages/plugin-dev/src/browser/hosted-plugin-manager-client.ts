@@ -340,7 +340,7 @@ export class HostedPluginManagerClient {
            and new ones will be created by running `startDebugSessionManager()`
          */
         if (sessions.length > 0) {
-            sessions.forEach(session => session.terminate(false));
+            sessions.forEach(session => this.debugSessionManager.terminateSession(session));
             await this.startDebugSessionManager();
             instanceURI = this.pluginInstanceURL;
         } else {

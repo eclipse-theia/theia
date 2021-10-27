@@ -28,7 +28,8 @@ import {
     PluginManager,
     PluginAPIFactory,
     MainMessageType,
-    DebugConfigurationProviderTriggerKind
+    DebugConfigurationProviderTriggerKind,
+    PLUGIN_RPC_CONTEXT
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
@@ -156,7 +157,7 @@ import { NotificationExtImpl } from './notification';
 import { score } from '@theia/callhierarchy/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
-import { ConnectionExtImpl } from './connection-ext';
+import { ConnectionImpl } from '../common/connection';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system-ext-impl';
@@ -200,7 +201,7 @@ export function createAPIFactory(
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc, terminalExt));
-    const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
+    const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionImpl(rpc.getProxy(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN)));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc, languagesExt));
     const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt));
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
