@@ -123,8 +123,8 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             text: nls.localize('vscode/editorStatus/singleSelection', 'Ln {0}, Col {1}', (cursor.line + 1).toString(), editor.getVisibleColumn(cursor).toString()),
             alignment: StatusBarAlignment.RIGHT,
             priority: 100,
-            tooltip: nls.localize('vscode/editorStatus/gotoLine', 'Go To Line'),
-            command: 'editor.action.gotoLine'
+            tooltip: EditorCommands.GOTO_LINE_COLUMN.label,
+            command: EditorCommands.GOTO_LINE_COLUMN.id
         });
     }
 

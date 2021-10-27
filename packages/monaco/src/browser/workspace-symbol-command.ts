@@ -17,16 +17,19 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { KeybindingContribution, KeybindingRegistry, OpenerService, LabelProvider } from '@theia/core/lib/browser';
-
 import { QuickAccessContribution, QuickAccessProvider, QuickInputService, QuickAccessRegistry, QuickPicks, QuickPickItem, findMatches } from '@theia/core/lib/browser/quick-input';
-import { CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken, CommandContribution, nls } from '@theia/core/lib/common';
+import {
+    CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken,
+    CommandContribution, MenuContribution, MenuModelRegistry, nls
+} from '@theia/core/lib/common';
 import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';
 import URI from '@theia/core/lib/common/uri';
+import { EditorMainMenu } from '@theia/editor/lib/browser';
 
 @injectable()
-export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContribution, KeybindingContribution, CommandHandler, QuickAccessContribution {
+export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContribution, KeybindingContribution, MenuContribution, CommandHandler, QuickAccessContribution {
     public static readonly PREFIX = '#';
 
     private command = Command.toLocalizedCommand({
@@ -51,6 +54,13 @@ export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContr
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(this.command, this);
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(EditorMainMenu.WORKSPACE_GROUP, {
+            commandId: this.command.id,
+            order: '2'
+        });
     }
 
     private isElectron(): boolean {

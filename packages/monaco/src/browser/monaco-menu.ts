@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
-import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
+import { EditorMainMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { nls } from '@theia/core/lib/common/nls';
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -28,6 +28,7 @@ export interface MonacoActionGroup {
 export namespace MonacoMenus {
     export const SELECTION = [...MAIN_MENU_BAR, '3_selection'];
     export const PEEK_CONTEXT_SUBMENU: MenuPath = [...EDITOR_CONTEXT_MENU, 'navigation', 'peek_submenu'];
+    export const MARKERS_GROUP = [...EditorMainMenu.GO, '5_markers_group'];
 }
 
 @injectable()
@@ -65,6 +66,50 @@ export class MonacoEditorMenuContribution implements MenuContribution {
                 registry.registerMenuAction(menuPath, { commandId, order, label });
             }
         }
+
+        // Builtin monaco language features commands.
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.quickOutline',
+            label: nls.localize('vscode/gotoSymbolQuickAccess/gotoSymbol', 'Go to Symbol in Editor...'),
+            order: '1'
+        });
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.revealDefinition',
+            order: '2'
+        });
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.revealDeclaration',
+            order: '3'
+        });
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.goToTypeDefinition',
+            order: '4'
+        });
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.goToImplementation',
+            order: '5'
+        });
+        registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
+            commandId: 'editor.action.goToReferences',
+            order: '6'
+        });
+
+        registry.registerMenuAction(EditorMainMenu.LOCATION_GROUP, {
+            commandId: 'editor.action.jumpToBracket',
+            order: '2'
+        });
+
+        // Builtin monaco problem commands.
+        registry.registerMenuAction(MonacoMenus.MARKERS_GROUP, {
+            commandId: 'editor.action.marker.nextInFiles',
+            label: nls.localize('vscode/gotoError/miGotoNextProblem', 'Next Problem'),
+            order: '1'
+        });
+        registry.registerMenuAction(MonacoMenus.MARKERS_GROUP, {
+            commandId: 'editor.action.marker.prevInFiles',
+            label: nls.localize('vscode/gotoError/miGotoPreviousProblem', 'Previous Problem'),
+            order: '2'
+        });
     }
 
     protected registerPeekSubmenu(registry: MenuModelRegistry): void {

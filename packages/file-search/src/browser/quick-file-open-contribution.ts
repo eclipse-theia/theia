@@ -17,11 +17,13 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
-import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
+import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution } from '@theia/core/lib/browser';
+import { EditorMainMenu } from '@theia/editor/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
-export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution {
+export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(QuickFileOpenService)
     protected readonly quickFileOpenService: QuickFileOpenService;
@@ -47,6 +49,14 @@ export class QuickFileOpenFrontendContribution implements QuickAccessContributio
         keybindings.registerKeybinding({
             command: quickFileOpen.id,
             keybinding: 'ctrlcmd+p'
+        });
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
+        menus.registerMenuAction(EditorMainMenu.WORKSPACE_GROUP, {
+            commandId: quickFileOpen.id,
+            label: nls.localize('vscode/quickAccessActions/quickOpen', 'Go to File...'),
+            order: '1',
         });
     }
 
