@@ -36,7 +36,7 @@ import { Channel } from '../common/debug-service';
 export const DebugAdapterSession = Symbol('DebugAdapterSession');
 
 /**
- * The debug adapter session. The debug adapter session manages the lifecycle of a 
+ * The debug adapter session. The debug adapter session manages the lifecycle of a
  * debug session: the debug session should be discarded if and only if the debug adapter
  * session is stopped.
  */
@@ -96,7 +96,7 @@ export type DebugAdapterExecutable = DebugAdapterSpawnExecutable | DebugAdapterF
 
 export interface DebugAdapter {
     /**
-     * A DAP protocol message has been received from the debug adapter 
+     * A DAP protocol message has been received from the debug adapter
      */
     onMessageReceived: Event<string>;
     /**
