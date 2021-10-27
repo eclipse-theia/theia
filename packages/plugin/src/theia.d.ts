@@ -10808,6 +10808,12 @@ declare module '@theia/plugin' {
         tags?: readonly SymbolTag[];
 
         /**
+         * A data entry field that is preserved between a call hierarchy prepare and
+         * incoming calls or outgoing calls requests.
+         */
+        data?: unknown;
+
+        /**
          * Creates a new call hierarchy item.
          */
         constructor(kind: SymbolKind, name: string, detail: string, uri: Uri, range: Range, selectionRange: Range);
@@ -10882,7 +10888,7 @@ declare module '@theia/plugin' {
          * @returns A call hierarchy item or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
          */
-        prepareCallHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CallHierarchyItem>;
+        prepareCallHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CallHierarchyItem | CallHierarchyItem[]>;
 
         /**
          * Provide all incoming calls for an item, e.g all callers for a method. In graph terms this describes directed

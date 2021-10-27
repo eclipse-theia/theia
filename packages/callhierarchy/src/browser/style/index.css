@@ -45,6 +45,7 @@
 
 .theia-CallHierarchyTree .definitionNode .referenceCount {
     color: var(--theia-badge-background);
+    padding-right: 4px;
 }
 
 .theia-CallHierarchyTree .definitionNode .container {

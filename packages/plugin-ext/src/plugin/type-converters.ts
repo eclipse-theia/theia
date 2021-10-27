@@ -683,18 +683,23 @@ export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.Call
         uri: item.uri,
         range: fromRange(item.range),
         selectionRange: fromRange(item.selectionRange),
-        tags: item.tags
+        tags: item.tags,
+        data: item.data,
     };
 }
 
 export function toCallHierarchyItem(value: model.CallHierarchyItem): types.CallHierarchyItem {
-    return new types.CallHierarchyItem(
+    const item = new types.CallHierarchyItem(
         SymbolKind.toSymbolKind(value.kind),
         value.name,
         value.detail ? value.detail : '',
         URI.revive(value.uri),
         toRange(value.range),
-        toRange(value.selectionRange));
+        toRange(value.selectionRange),
+    );
+    item.tags = value.tags;
+    item.data = value.data;
+    return item;
 }
 
 export function toCallHierarchyIncomingCall(value: model.CallHierarchyIncomingCall): types.CallHierarchyIncomingCall {

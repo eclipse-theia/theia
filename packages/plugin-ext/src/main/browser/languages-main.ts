@@ -774,7 +774,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             selector: language,
             getRootDefinition: (uri: DocumentUri, position: Position, cancellationToken: CancellationToken) =>
                 this.proxy.$provideRootDefinition(handle, toUriComponents(uri), fromPosition(position), cancellationToken)
-                    .then(def => toDefinition(def)),
+                    .then(def => Array.isArray(def) ? def.map(item => toDefinition(item)) : toDefinition(def)),
             getCallers: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
                 .then(result => {
                     if (!result) {

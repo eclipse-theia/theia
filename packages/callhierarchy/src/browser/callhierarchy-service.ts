@@ -28,7 +28,7 @@ export interface CallHierarchyService {
 
     readonly selector: LanguageSelector;
 
-    getRootDefinition(uri: DocumentUri, position: Position, cancellationToken: CancellationToken): Promise<Definition | undefined>
+    getRootDefinition(uri: DocumentUri, position: Position, cancellationToken: CancellationToken): Promise<Definition | Definition[] | undefined>
     getCallers(definition: Definition, cancellationToken: CancellationToken): Promise<Caller[] | undefined>
     getCallees?(definition: Definition, cancellationToken: CancellationToken): Promise<Callee[] | undefined>
 }

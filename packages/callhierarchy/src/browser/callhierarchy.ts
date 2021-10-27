@@ -25,6 +25,7 @@ export interface Definition {
     symbolKind: SymbolKind,
     containerName: string | undefined,
     tags?: readonly SymbolTag[];
+    data?: unknown,
 }
 
 export interface Caller {

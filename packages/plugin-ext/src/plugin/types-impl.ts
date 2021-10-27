@@ -2419,6 +2419,7 @@ export class CallHierarchyItem {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
+    data?: unknown;
 
     constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
         this.kind = kind;
