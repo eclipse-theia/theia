@@ -43,7 +43,6 @@ export class PluginVsCodeCliContribution implements CliContribution, PluginHostE
         conf.option(PluginVsCodeCliContribution.VSCODE_API_VERSION, {
             // eslint-disable-next-line max-len
             description: `Overrides the version returned by VSCode API 'vscode.version'. Example: --${PluginVsCodeCliContribution.VSCODE_API_VERSION}=<Wanted Version>. Default [${VSCODE_DEFAULT_API_VERSION}]`,
-            default: VSCODE_DEFAULT_API_VERSION,
             type: 'string',
             nargs: 1
         });
@@ -51,7 +50,7 @@ export class PluginVsCodeCliContribution implements CliContribution, PluginHostE
 
     setArguments(args: Arguments): void {
         const arg = args[PluginVsCodeCliContribution.VSCODE_API_VERSION] as string | undefined;
-        this.vsCodeApiVersion = arg?.trim() || VSCODE_DEFAULT_API_VERSION;
+        this.vsCodeApiVersion = arg?.trim() || process.env['VSCODE_API_VERSION']?.trim() || VSCODE_DEFAULT_API_VERSION;
         process.env['VSCODE_API_VERSION'] = this.vsCodeApiVersion;
         this.vsCodeApiVersionDeferred.resolve(this.vsCodeApiVersion);
     }
