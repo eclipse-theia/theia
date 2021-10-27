@@ -21,11 +21,10 @@ import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-prov
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
-import { OVSXClient } from '@theia/ovsx-client';
 
 export default new ContainerModule(bind => {
-    bind(OVSXClientProvider).toDynamicValue(ctx => {
-        const clientPromise: Promise<OVSXClient> = createOVSXClient(ctx.container.get(VSXEnvironment));
+    bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
+        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment));
         return () => clientPromise;
     }).inSingletonScope();
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
