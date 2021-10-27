@@ -97,6 +97,13 @@ export class TasksMainImpl implements TasksMain, Disposable {
                 this.proxy.$onDidEndTaskProcess(event.code, event.taskId);
             }
         }));
+
+        // Inform proxy about running tasks form previous session
+        this.$taskExecutions().then(executions => {
+            if (executions.length > 0) {
+                this.proxy.$initLoadedTasks(executions);
+            }
+        });
     }
 
     dispose(): void {

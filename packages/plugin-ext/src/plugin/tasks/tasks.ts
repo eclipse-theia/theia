@@ -24,7 +24,7 @@ import {
 import * as theia from '@theia/plugin';
 import * as converter from '../type-converters';
 import { CustomExecution, Disposable } from '../types-impl';
-import { RPCProtocol, ConnectionClosedError } from '../../common/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TerminalServiceExtImpl } from '../terminal-ext';
@@ -49,15 +49,8 @@ export class TasksExtImpl implements TasksExt {
     private readonly onDidExecuteTaskProcess: Emitter<theia.TaskProcessStartEvent> = new Emitter<theia.TaskProcessStartEvent>();
     private readonly onDidTerminateTaskProcess: Emitter<theia.TaskProcessEndEvent> = new Emitter<theia.TaskProcessEndEvent>();
 
-    private disposed = false;
-
     constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
-        this.fetchTaskExecutions();
-    }
-
-    dispose(): void {
-        this.disposed = true;
     }
 
     get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
@@ -216,16 +209,9 @@ export class TasksExtImpl implements TasksExt {
         });
     }
 
-    private async fetchTaskExecutions(): Promise<void> {
-        try {
-            const taskExecutions = await this.proxy.$taskExecutions();
-            taskExecutions.forEach(execution => this.getTaskExecution(execution));
-        } catch (error) {
-            if (this.disposed && ConnectionClosedError.is(error)) {
-                return;
-            }
-            console.error(`Can not fetch running tasks: ${error}`);
-        }
+    // Initial `this.executions` map with the running tasks from the previous session
+    async $initLoadedTasks(taskExecutions: TaskExecutionDto[]): Promise<void> {
+        taskExecutions.forEach(execution => this.getTaskExecution(execution));
     }
 
     private getTaskExecution(execution: TaskExecutionDto): theia.TaskExecution {
