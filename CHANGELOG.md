@@ -7,6 +7,7 @@
 - [plugin-ext] add additional startup logging for plugin starting and application loading [#10116](https://github.com/eclipse-theia/theia/pull/10116) - Contributed on behalf of STMicroelectronics
 - [scripts] added startup performance measurement script [#9777](https://github.com/eclipse-theia/theia/pull/9777) - Contributed on behalf of STMicroelectronics
 - [scripts] added extension impact script [#10192](https://github.com/eclipse-theia/theia/pull/10192) - Contributed on behalf of STMicroelectronics
+- [callhierarchy, plugin-ext] `prepareCallHierarchy` types brought closer to VSCode / LSP expectations; optional `data` field added to `CallHierarchyItem` and related types. [#10310](https://github.com/eclipse-theia/theia/pull/10310)
 
 <a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
 
@@ -21,6 +22,7 @@
 - [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
+- [callhierarchy, plugin-ext] Call hierarchy methods `getRootDefinition`, `$provideRootDefinition`, `provideRootDefinition`, and `prepareCallHierarchy` retyped to allow a return of an item or an array of items. [#10310](https://github.com/eclipse-theia/theia/pull/10310)
 
 ## v1.18.0 - 9/30/2021
 
