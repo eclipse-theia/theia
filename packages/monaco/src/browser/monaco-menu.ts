@@ -67,7 +67,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             }
         }
 
-        // Builtin monaco language-features commands.
+        // Builtin monaco language features commands.
         registry.registerMenuAction(EditorMainMenu.LANGUAGE_FEATURES_GROUP, {
             commandId: 'editor.action.quickOutline',
             label: nls.localize('vscode/gotoSymbolQuickAccess/gotoSymbol', 'Go to Symbol in Editor...'),
