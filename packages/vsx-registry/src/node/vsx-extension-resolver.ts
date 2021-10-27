@@ -23,7 +23,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
-import { OVSXClientProvider } from '@theia/ovsx-client';
+import { OVSXClientProvider } from '../common/ovsx-client-provider';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {

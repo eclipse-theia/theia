@@ -322,7 +322,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
      * @returns the registry link for the given extension at the path.
      */
     async getRegistryLink(path = ''): Promise<URI> {
-        const uri = await this.environment.getRegistryUri();
+        const uri = new URI(await this.environment.getRegistryUri());
         return uri.resolve('extension/' + this.id.replace('.', '/')).resolve(path);
     }
 

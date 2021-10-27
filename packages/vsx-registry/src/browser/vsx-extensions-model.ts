@@ -30,7 +30,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { VSXResponseError, VSXSearchParam } from '@theia/ovsx-client/lib/ovsx-types';
-import { OVSXClientProvider } from '@theia/ovsx-client';
+import { OVSXClientProvider } from '../common/ovsx-client-provider';
 
 @injectable()
 export class VSXExtensionsModel {

@@ -17,10 +17,17 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { bindOVSXClientProvider } from '../common/ovsx-client-provider';
+import { createOVSXClient, OVSXClientProvider } from '../common/ovsx-client-provider';
+import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { VSXEnvironmentImpl } from './vsx-environment-impl';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bindOVSXClientProvider(bind);
+    bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(
+        ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment))
+    ).inSingletonScope();
+    bind(OVSXClientProvider).toProvider(ctx => () => createOVSXClient(ctx.container.get(VSXEnvironment)));
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
 });
