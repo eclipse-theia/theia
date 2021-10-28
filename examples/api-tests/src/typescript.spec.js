@@ -21,6 +21,7 @@ describe('TypeScript', function () {
     const { assert } = chai;
 
     const Uri = require('@theia/core/lib/common/uri');
+    const { TODO_FIX_FLAKY_TEST } = require('@theia/core/lib/common/test-utils');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { BrowserMainMenuFactory } = require('@theia/core/lib/browser/menu/browser-menu-plugin');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -683,7 +684,7 @@ DIV {
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
     });
 
-    it('run reference code lens', async function () {
+    it('run reference code lens', TODO_FIX_FLAKY_TEST(async function () {
         // @ts-ignore
         const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
         toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
@@ -741,7 +742,7 @@ SPAN {
         } else {
             assert.isDefined(node);
         }
-    });
+    }));
 
     it('editor.action.quickFix', async function () {
         const column = 29;
