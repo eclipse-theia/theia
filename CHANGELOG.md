@@ -4,26 +4,62 @@
 
 [1.19.0 Milestone](https://github.com/eclipse-theia/theia/milestone/25)
 
-- [plugin-ext] add additional startup logging for plugin starting and application loading [#10116](https://github.com/eclipse-theia/theia/pull/10116) - Contributed on behalf of STMicroelectronics
-- [scripts] added startup performance measurement script [#9777](https://github.com/eclipse-theia/theia/pull/9777) - Contributed on behalf of STMicroelectronics
+- [callhierarchy] updated `callhierarchy` support [#10310](https://github.com/eclipse-theia/theia/pull/10310):
+  - `prepareCallHierarchy` types brought closer to VSCode / LSP expectations.
+  - optional `data` field added to `CallHierarchyItem` and related type.
+- [cli] added localization extraction to the cli [#10247](https://github.com/eclipse-theia/theia/pull/10247)
+- [core] added support for `window.menuBarVisibility` [#10044](https://github.com/eclipse-theia/theia/pull/10044)
+- [core] added support for richer tooltip overlays [#10108](https://github.com/eclipse-theia/theia/pull/10108)
+- [core] added support to drag-and-drop individual sections across view containers [#9644](https://github.com/eclipse-theia/theia/pull/9644)
+- [core] fixed regressions when using `svg` icons causing them not to display [#10232](https://github.com/eclipse-theia/theia/pull/10232)
+- [debug] added support for `debug.confirmOnExit` [#10270](https://github.com/eclipse-theia/theia/pull/10270)
+- [debug] fixed an issue preventing `.theia/launch.json` from being re-created [#10222](https://github.com/eclipse-theia/theia/pull/10222)
+- [debug] fixed the restoration of the selected configuration across application restarts [#10287](https://github.com/eclipse-theia/theia/pull/10287)
+- [editor] added `close editor` command to the file main-menu [#10193](https://github.com/eclipse-theia/theia/pull/10193)
+- [editor] added additional commands to the `go` main-menu [#10299](https://github.com/eclipse-theia/theia/pull/10299)
+- [editor] added support for the `workbench.action.files.revert` command [#10294](https://github.com/eclipse-theia/theia/pull/10294)
+- [editor] updated editor tooltips to display their full path [#10238](https://github.com/eclipse-theia/theia/pull/10238)
+- [eslint-plugin] added a new rule to warn against the usage of `src` imports over `lib` [#10234](https://github.com/eclipse-theia/theia/pull/10234)
+- [filesystem] added better support when uploading with existing files [#10216](https://github.com/eclipse-theia/theia/pull/10216)
+- [filesystem] fixed an issue causing the open dialog not to open when a workspace is deleted [#10171](https://github.com/eclipse-theia/theia/pull/10171)
+- [markers] added better ordering support for markers [#9691](https://github.com/eclipse-theia/theia/pull/9691)
+- [monaco] added better theming support for label colors in the action bar [#10301](https://github.com/eclipse-theia/theia/pull/10301)
+- [monaco] added support for monaco editor localizations [#10084](https://github.com/eclipse-theia/theia/pull/10084)
+- [monaco] fixed styling in the monaco suggestion overlay [#10241](https://github.com/eclipse-theia/theia/pull/10241)
+- [ovsx-client] fixed a mismatch in the default supported api version [#10229](https://github.com/eclipse-theia/theia/pull/10229)
+- [plugin-ext] added additional startup logging for plugin starting and application loading [#10116](https://github.com/eclipse-theia/theia/pull/10116) - Contributed on behalf of STMicroelectronics
+- [plugin] added `LocationLink` and `Declaration` typings [#10139](https://github.com/eclipse-theia/theia/pull/10139)
+- [plugin] added localization support for plugins through language packs [#10087](https://github.com/eclipse-theia/theia/pull/10087)
+- [plugin] added support for `DebugAdapterNamedPipeServer` and `DebugAdapterInlineImplementation` [#10163](https://github.com/eclipse-theia/theia/pull/10163)
+- [plugin] added support for descriptions in tree-views [#10253](https://github.com/eclipse-theia/theia/pull/10253)
+- [plugin] aligned the behavior of the command `workbench.action.closeActiveEditor` closer to vscode [#10193](https://github.com/eclipse-theia/theia/pull/10193)
+- [plugin] fixed a `webview` regression due to `postMessage` [#10336](https://github.com/eclipse-theia/theia/pull/10336)
+- [plugin] fixed a potential JSON RPC error in the `quick-open` API [#10230](https://github.com/eclipse-theia/theia/pull/10230)
+- [plugin] improved display of modal dialogs [#10245](https://github.com/eclipse-theia/theia/pull/10245)
+- [plugin] updated api to default to vscode over theia [#10199](https://github.com/eclipse-theia/theia/pull/10199)
+- [repo] added localization support for the entire framework [#10106](https://github.com/eclipse-theia/theia/pull/10106)
 - [scripts] added extension impact script [#10192](https://github.com/eclipse-theia/theia/pull/10192) - Contributed on behalf of STMicroelectronics
-- [callhierarchy, plugin-ext] `prepareCallHierarchy` types brought closer to VSCode / LSP expectations; optional `data` field added to `CallHierarchyItem` and related types. [#10310](https://github.com/eclipse-theia/theia/pull/10310)
+- [scripts] added startup performance measurement script [#9777](https://github.com/eclipse-theia/theia/pull/9777) - Contributed on behalf of STMicroelectronics
+- [search-in-workspace] added support for the `replace in files` command [#10242](https://github.com/eclipse-theia/theia/pull/10242)
+- [task] added handling to fill task options explicitly if `problemMatchers` is set [#10166](https://github.com/eclipse-theia/theia/pull/10166)
+- [task] updated duplicated task configurations from `workspace` and `folder` scopes [#10335](https://github.com/eclipse-theia/theia/pull/10335)
 
 <a name="breaking_changes_1.19.0">[Breaking Changes:](#breaking_changes_1.19.0)</a>
 
+- [callhierarchy][plugin] retyped `callhierarchy` methods `getRootDefinition`, `$provideRootDefinition`, `provideRootDefinition`, and `prepareCallHierarchy` to allow a return of an item or an array of items [#10310](https://github.com/eclipse-theia/theia/pull/10310)
+- [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
+- [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [core] moved `nls` localization namespace from `browser` to `common`. [#10153](https://github.com/eclipse-theia/theia/pull/10153)
-- [output] moved `output-channel` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
-- [output] moved `output-preferences` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
-- [view-container] `ViewContainerPart` constructor takes new 2 parameters: `originalContainerId` and `originalContainerTitle`. The existing `viewContainerId` parameter has been renamed to `currentContainerId` to enable drag & drop views. [#9644](https://github.com/eclipse-theia/theia/pull/9644)
 - [electron] `ElectronMainMenuFactory` now inherits from `BrowserMainMenuFactory` and its methods have been renamed. [#10044](https://github.com/eclipse-theia/theia/pull/10044)
   - renamed `handleDefault` to `handleElectronDefault`
   - renamed `createContextMenu` to `createElectronContextMenu`
   - renamed `createMenuBar` to `createElectronMenuBar`
-- [plugin-ext] removed unnecessary function `getCaption` [#10253](https://github.com/eclipse-theia/theia/pull/10253)
-- [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
-- [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
+- [output] moved `output-channel` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
+- [output] moved `output-preferences` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
 - [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
-- [callhierarchy, plugin-ext] Call hierarchy methods `getRootDefinition`, `$provideRootDefinition`, `provideRootDefinition`, and `prepareCallHierarchy` retyped to allow a return of an item or an array of items. [#10310](https://github.com/eclipse-theia/theia/pull/10310)
+- [plugin] removed unnecessary function `getCaption` [#10253](https://github.com/eclipse-theia/theia/pull/10253)
+- [view-container] updated the `ViewContainerPart` constructor to take two new parameters: `originalContainerId` and `originalContainerTitle` [#9644](https://github.com/eclipse-theia/theia/pull/9644)
+  - the existing `viewContainerId` parameter has been renamed to `currentContainerId` to enable drag & drop views.
 - [vsx-registry] removed `OVSXAsyncClient` [#10327](https://github.com/eclipse-theia/theia/pull/10327)
 - [vsx-registry] updated `VSXEnvironment` from a class to an interface and symbol implemented in both `browser` and `node` [#10327](https://github.com/eclipse-theia/theia/pull/10327)
 
