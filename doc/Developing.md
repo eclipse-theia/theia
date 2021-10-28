@@ -52,8 +52,9 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
- - Node.js `>= 12.14.1` **AND** `< 13`.
-   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/), as it is the recommended minimum version according to the framework's supported `electron` version.
+ - Node.js `>= 12.14.1`.
+   - Preferably, **use** Node's [Active LTS version](https://nodejs.org/en/about/releases/).
+   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install)  `>= 1.7.0` **AND** `< 2.x.x`.
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
