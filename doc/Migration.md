@@ -7,6 +7,27 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ## Guide
 
+### v1.19.0
+
+#### Runtime System Plugin Resolvement
+
+Introduced in `v1.19.0` was the feature to better support extension-packs which both contribute functionality and reference plugins (by `id`).
+The feature works best when there is no runtime plugin resolvement for system (builtin) plugins as it should be done at build time instead.
+In order not to change behavior today, the feature is behind an application prop (acting as a flag). If you want to enable better support for
+extension-packs and extension-dependencies as builtins the property should be turned off. You can disable the resolvement in your application's 
+`package.json` like so:
+
+
+```json
+"theia": {
+  "backend": {
+    "config": {
+      "resolveSystemPlugins": false
+    }
+  }
+}
+```
+
 ### v1.17.0
 
 #### ES2017

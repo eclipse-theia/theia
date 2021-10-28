@@ -26,7 +26,7 @@ declare global {
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
 import { green, red, yellow } from 'colors/safe';
 import * as decompress from 'decompress';
-import { createWriteStream, existsSync, promises as fs } from 'fs';
+import { createWriteStream, promises as fs } from 'fs';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import fetch, { RequestInit, Response } from 'node-fetch';
 import * as path from 'path';
@@ -39,8 +39,6 @@ import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/ap
 const pipelineAsPromised = promisify(stream.pipeline);
 
 temp.track();
-
-export const extensionPackCacheName = '.packs';
 
 /**
  * Available options when downloading.
@@ -97,32 +95,22 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         return;
     }
     try {
-        // Retrieve the cached extension-packs in order to not re-download them.
-        const extensionPackCachePath = path.resolve(pluginsDir, extensionPackCacheName);
-        const cachedExtensionPacks = new Set<string>(
-            existsSync(extensionPackCachePath)
-                ? await fs.readdir(extensionPackCachePath)
-                : []
-        );
         console.warn('--- downloading plugins ---');
         // Download the raw plugins defined by the `theiaPlugins` property.
         // This will include both "normal" plugins as well as "extension packs".
         const downloads = [];
         for (const [plugin, pluginUrl] of Object.entries(pck.theiaPlugins)) {
-            // Skip extension packs that were moved to `.packs`:
-            if (cachedExtensionPacks.has(plugin) || typeof pluginUrl !== 'string') {
+            if (typeof pluginUrl !== 'string') {
                 continue;
             }
             downloads.push(downloadPluginAsync(failures, plugin, pluginUrl, pluginsDir, packed));
         }
         await Promise.all(downloads);
+
         console.warn('--- collecting extension-packs ---');
         const extensionPacks = await collectExtensionPacks(pluginsDir, excludedIds);
         if (extensionPacks.size > 0) {
-            console.warn(`--- found ${extensionPacks.size} extension-packs ---`);
-            // Move extension-packs to `.packs`
-            await cacheExtensionPacks(pluginsDir, extensionPacks);
-            console.warn('--- resolving extension-packs ---');
+            console.warn(`--- resolving ${extensionPacks.size} extension-packs ---`);
             const client = new OVSXClient({ apiVersion, apiUrl });
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(Array.from(extensionPacks.values()).flat());
@@ -134,6 +122,23 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
                 }
             }));
         }
+
+        console.warn('--- collecting extension dependencies ---');
+        const pluginDependencies = await collectPluginDependencies(pluginsDir, excludedIds);
+        if (pluginDependencies.length > 0) {
+            console.warn(`--- resolving ${pluginDependencies.length} extension dependencies ---`);
+            const client = new OVSXClient({ apiVersion, apiUrl });
+            // De-duplicate extension ids to only download each once:
+            const ids = new Set<string>(pluginDependencies);
+            await Promise.all(Array.from(ids, async id => {
+                const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const downloadUrl = extension?.files.download;
+                if (downloadUrl) {
+                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
+                }
+            }));
+        }
+
     } finally {
         temp.cleanupSync();
     }
@@ -260,8 +265,7 @@ async function collectPackageJsonPaths(pluginDir: string): Promise<string[]> {
     // Recursively fetch the list of extension `package.json` files.
     for (const file of files) {
         const filePath = path.join(pluginDir, file);
-        // Exclude the `.packs` folder used to store extension-packs after being resolved.
-        if (!filePath.startsWith(extensionPackCacheName) && (await fs.stat(filePath)).isDirectory()) {
+        if ((await fs.stat(filePath)).isDirectory()) {
             packageJsonPathList.push(...await collectPackageJsonPaths(filePath));
         } else if (path.basename(filePath) === 'package.json' && !path.dirname(filePath).includes('node_modules')) {
             packageJsonPathList.push(filePath);
@@ -283,7 +287,7 @@ async function collectExtensionPacks(pluginDir: string, excludedIds: Set<string>
     await Promise.all(packageJsonPaths.map(async packageJsonPath => {
         const json = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
         const extensionPack: unknown = json.extensionPack;
-        if (extensionPack && Array.isArray(extensionPack)) {
+        if (Array.isArray(extensionPack)) {
             extensionPackPaths.set(packageJsonPath, extensionPack.filter(id => {
                 if (excludedIds.has(id)) {
                     console.log(yellow(`'${id}' referenced by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
@@ -297,50 +301,27 @@ async function collectExtensionPacks(pluginDir: string, excludedIds: Set<string>
 }
 
 /**
- * Move extension-packs downloaded from `pluginsDir/x` to `pluginsDir/.packs/x`.
- *
- * The issue we are trying to solve is the following:
- * We may skip some extensions declared in a pack due to the `theiaPluginsExcludeIds` list. But once we start
- * a Theia application the plugin system will detect the pack and install the missing extensions.
- *
- * By moving the packs to a subdirectory it should make it invisible to the plugin system, only leaving
- * the plugins that were installed under `pluginsDir` directly.
- *
- * @param extensionPacksPaths the list of extension-pack paths.
+ * Get the mapping of  paths and their included plugin ids.
+ * - If an extension-pack references an explicitly excluded `id` the `id` will be omitted.
+ * @param pluginDir the plugin directory.
+ * @param excludedIds the list of plugin ids to exclude.
+ * @returns the mapping of extension-pack paths and their included plugin ids.
  */
-async function cacheExtensionPacks(pluginsDir: string, extensionPacks: Map<string, unknown>): Promise<void> {
-    const packsFolderPath = path.resolve(pluginsDir, extensionPackCacheName);
-    await fs.mkdir(packsFolderPath, { recursive: true });
-    await Promise.all(Array.from(extensionPacks.entries(), async ([extensionPackPath, value]) => {
-        extensionPackPath = path.resolve(extensionPackPath);
-        // Skip entries found in `.packs`
-        if (extensionPackPath.startsWith(packsFolderPath)) {
-            return; // skip
-        }
-        try {
-            const oldPath = getExtensionRoot(pluginsDir, extensionPackPath);
-            const newPath = path.resolve(packsFolderPath, path.basename(oldPath));
-            if (!existsSync(newPath)) {
-                await fs.rename(oldPath, newPath);
+async function collectPluginDependencies(pluginDir: string, excludedIds: Set<string>): Promise<string[]> {
+    const dependencyIds: string[] = [];
+    const packageJsonPaths = await collectPackageJsonPaths(pluginDir);
+    await Promise.all(packageJsonPaths.map(async packageJsonPath => {
+        const json = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+        const extensionDependencies: unknown = json.extensionDependencies;
+        if (Array.isArray(extensionDependencies)) {
+            for (const dependency of extensionDependencies) {
+                if (excludedIds.has(dependency)) {
+                    console.log(yellow(`'${dependency}' referenced by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
+                } else {
+                    dependencyIds.push(dependency);
+                }
             }
-        } catch (error) {
-            console.error(error);
         }
     }));
-}
-
-/**
- * Walk back to the root of an extension starting from its `package.json`. e.g.
- *
- * ```ts
- * getExtensionRoot('/a/b/c', '/a/b/c/EXT/d/e/f/package.json') === '/a/b/c/EXT'
- * ```
- */
-function getExtensionRoot(root: string, packageJsonPath: string): string {
-    root = path.resolve(root);
-    packageJsonPath = path.resolve(packageJsonPath);
-    if (!packageJsonPath.startsWith(root)) {
-        throw new Error(`unexpected paths:\n root: ${root}\n package.json: ${packageJsonPath}`);
-    }
-    return packageJsonPath.substr(0, packageJsonPath.indexOf(path.sep, root.length + 1));
+    return dependencyIds;
 }

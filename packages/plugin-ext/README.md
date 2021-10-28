@@ -33,6 +33,11 @@ The implementation is inspired from: https://blog.mattbierner.com/vscode-webview
   When you change the host pattern via the `THEIA_WEBVIEW_ENDPOINT_PATTERN` environment variable warning will be emitted both from the frontend and from the backend.
   You can disable those warnings by setting `warnOnPotentiallyInsecureHostPattern: false` in the appropriate application configurations in your application's `package.json`.
 
+## Runtime System Plugin Resolvement
+
+The backend application property `resolveSystemPlugins` is used to control the resolvement behavior for system plugins (builtins).
+The property is used to control whether or not extension-packs and extension-dependencies are resolved at runtime.
+
 ## Additional Information
 
 - [API documentation for `@theia/plugin-ext`](https://eclipse-theia.github.io/theia/docs/next/modules/plugin_ext.html)
