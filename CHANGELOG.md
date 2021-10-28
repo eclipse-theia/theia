@@ -24,6 +24,8 @@
 - [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
 - [callhierarchy, plugin-ext] Call hierarchy methods `getRootDefinition`, `$provideRootDefinition`, `provideRootDefinition`, and `prepareCallHierarchy` retyped to allow a return of an item or an array of items. [#10310](https://github.com/eclipse-theia/theia/pull/10310)
+- [vsx-registry] removed `OVSXAsyncClient` [#10327](https://github.com/eclipse-theia/theia/pull/10327)
+- [vsx-registry] updated `VSXEnvironment` from a class to an interface and symbol implemented in both `browser` and `node` [#10327](https://github.com/eclipse-theia/theia/pull/10327)
 
 ## v1.18.0 - 9/30/2021
 
