@@ -240,7 +240,7 @@ export class TaskConfigurationManager {
                 }));
             }
             this.models.set(TaskScope.Workspace, workspaceModel);
-            this.onDidChangeTaskConfigEmitter.fire({ scope: TaskScope.Workspace, type: FileChangeType.UPDATED });
+            this.onDidChangeTaskConfigEmitter.fire({ scope: effectiveScope, type: FileChangeType.UPDATED });
         }
     }
 }
