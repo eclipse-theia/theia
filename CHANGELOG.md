@@ -8,7 +8,7 @@
   - `prepareCallHierarchy` types brought closer to VSCode / LSP expectations.
   - optional `data` field added to `CallHierarchyItem` and related type.
 - [cli] added localization extraction to the cli [#10247](https://github.com/eclipse-theia/theia/pull/10247)
-- [core] added support for `window.menuBarVisibility` [#10044](https://github.com/eclipse-theia/theia/pull/10044)
+- [core] added support for `window.titleBarStyle` [#10044](https://github.com/eclipse-theia/theia/pull/10044)
 - [core] added support for richer tooltip overlays [#10108](https://github.com/eclipse-theia/theia/pull/10108)
 - [core] added support to drag-and-drop individual sections across view containers [#9644](https://github.com/eclipse-theia/theia/pull/9644)
 - [core] fixed regressions when using `svg` icons causing them not to display [#10232](https://github.com/eclipse-theia/theia/pull/10232)
