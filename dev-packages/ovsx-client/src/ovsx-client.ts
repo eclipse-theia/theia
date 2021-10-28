@@ -34,6 +34,7 @@ export interface OVSXClientOptions {
     apiVersion: string
     apiUrl: string
 }
+
 export class OVSXClient {
 
     constructor(readonly options: OVSXClientOptions) { }

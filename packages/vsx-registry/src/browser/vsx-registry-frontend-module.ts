@@ -17,7 +17,9 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager } from '@theia/core/lib/browser';
+import {
+    WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager, WebSocketConnectionProvider
+} from '@theia/core/lib/browser';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
@@ -28,24 +30,20 @@ import { VSXExtensionFactory, VSXExtension, VSXExtensionOptions } from './vsx-ex
 import { VSXExtensionEditor } from './vsx-extension-editor';
 import { VSXExtensionEditorManager } from './vsx-extension-editor-manager';
 import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
-import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
-import { OVSXAsyncClient } from './ovsx-async-client';
+import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
+import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 
 export default new ContainerModule((bind, unbind) => {
-    bind(VSXEnvironment).toSelf().inSingletonScope();
-    bind(OVSXAsyncClient).toDynamicValue(ctx => {
-        const vsxEnvironment = ctx.container.get(VSXEnvironment);
-        return new OVSXAsyncClient(Promise.all([
-            vsxEnvironment.getVscodeApiVersion(),
-            vsxEnvironment.getRegistryApiUri()
-        ]).then(([apiVersion, apiUri]) => ({
-            apiVersion,
-            apiUrl: apiUri.toString()
-        })));
+    bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
+        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment));
+        return () => clientPromise;
     }).inSingletonScope();
+    bind(VSXEnvironment).toDynamicValue(
+        ctx => WebSocketConnectionProvider.createProxy(ctx.container, VSX_ENVIRONMENT_PATH)
+    ).inSingletonScope();
 
     bind(VSXExtension).toSelf();
     bind(VSXExtensionFactory).toFactory(ctx => (option: VSXExtensionOptions) => {

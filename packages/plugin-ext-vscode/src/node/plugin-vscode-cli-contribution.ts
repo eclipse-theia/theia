@@ -19,6 +19,7 @@ import { Argv, Arguments } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**
  * CLI Contribution allowing to override the VS Code API version which is returned by `vscode.version` API call.
@@ -26,9 +27,17 @@ import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
 @injectable()
 export class PluginVsCodeCliContribution implements CliContribution, PluginHostEnvironmentVariable {
 
+    /**
+     * CLI argument name to define the supported VS Code API version.
+     */
     static VSCODE_API_VERSION = 'vscode-api-version';
 
-    protected vsCodeApiVersion: string | undefined;
+    protected vsCodeApiVersion?: string;
+    protected vsCodeApiVersionDeferred = new Deferred<string>();
+
+    get vsCodeApiVersionPromise(): Promise<string> {
+        return this.vsCodeApiVersionDeferred.promise;
+    }
 
     configure(conf: Argv): void {
         conf.option(PluginVsCodeCliContribution.VSCODE_API_VERSION, {
@@ -40,11 +49,10 @@ export class PluginVsCodeCliContribution implements CliContribution, PluginHostE
     }
 
     setArguments(args: Arguments): void {
-        const arg = args[PluginVsCodeCliContribution.VSCODE_API_VERSION] as string;
-        if (arg) {
-            this.vsCodeApiVersion = arg;
-            this.process(process.env);
-        }
+        const arg = args[PluginVsCodeCliContribution.VSCODE_API_VERSION] as string | undefined;
+        this.vsCodeApiVersion = arg?.trim() || process.env['VSCODE_API_VERSION']?.trim() || VSCODE_DEFAULT_API_VERSION;
+        process.env['VSCODE_API_VERSION'] = this.vsCodeApiVersion;
+        this.vsCodeApiVersionDeferred.resolve(this.vsCodeApiVersion);
     }
 
     process(env: NodeJS.ProcessEnv): void {

@@ -17,18 +17,20 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSCODE_DEFAULT_API_VERSION, VSX_REGISTRY_URL_DEFAULT } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-types';
-import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
+import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
+import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { VSXEnvironmentImpl } from './vsx-environment-impl';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bind(OVSXClient).toConstantValue(new OVSXClient({
-        apiVersion: process.env['VSCODE_API_VERSION'] || VSCODE_DEFAULT_API_VERSION,
-        apiUrl: resolveRegistryUrl()
-    }));
+    bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
+        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment));
+        return () => clientPromise;
+    }).inSingletonScope();
+    bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(
+        ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment))
+    ).inSingletonScope();
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
 });
-
-function resolveRegistryUrl(): string {
-   return process.env['VSX_REGISTRY_URL'] || VSX_REGISTRY_URL_DEFAULT;
-}
