@@ -20,6 +20,8 @@ import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { DebugVariablesSource } from './debug-variables-source';
 import { DebugViewModel } from './debug-view-model';
 import { nls } from '@theia/core/lib/common/nls';
+import { DebugVariablesSourceTree } from '../debug-variables-source-tree';
+import { Tree } from '@theia/core/lib/browser';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {
@@ -36,6 +38,8 @@ export class DebugVariablesWidget extends SourceTreeWidget {
         child.bind(DebugVariablesSource).toSelf();
         child.unbind(SourceTreeWidget);
         child.bind(DebugVariablesWidget).toSelf();
+        child.bind(DebugVariablesSourceTree).toSelf();
+        child.rebind(Tree).toService(DebugVariablesSourceTree);
         return child;
     }
     static createWidget(parent: interfaces.Container): DebugVariablesWidget {

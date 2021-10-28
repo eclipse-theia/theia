@@ -172,8 +172,11 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.toDispose.dispose();
     }
 
-    protected handleExpansion(node: Readonly<ExpandableTreeNode>): void {
+    handleExpansion(node: Readonly<ExpandableTreeNode>): void {
         this.selectIfAncestorOfSelected(node);
+        if (this.tree.handleExpansion) {
+            this.tree.handleExpansion(node);
+        }
     }
 
     /**
