@@ -19,6 +19,7 @@
   - renamed `handleDefault` to `handleElectronDefault`
   - renamed `createContextMenu` to `createElectronContextMenu`
   - renamed `createMenuBar` to `createElectronMenuBar`
+- [plugin-ext] removed unnecessary function `getCaption` [#10253](https://github.com/eclipse-theia/theia/pull/10253)
 - [core] moved `DEFAULT_WINDOW_HASH` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [core] moved `NewWindowOptions` to `common/window.ts` [#10291](https://github.com/eclipse-theia/theia/pull/10291)
 - [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
