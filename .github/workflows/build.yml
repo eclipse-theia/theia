@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-18.04, macos-10.15]
-        node: ['12.x']
+        node: ['12.x', '14.x']
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -28,8 +28,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
 
       - name: Use Node.js ${{ matrix.node }}
         uses: actions/setup-node@v1
@@ -45,7 +43,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          yarn --skip-integrity-check --network-timeout 100000
+          yarn --skip-integrity-check --network-timeout 100000 --ignore-engines
           yarn lint
           npx electron-replace-ffmpeg
           npx electron-codecs-test
