@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { injectable } from 'inversify';
 import { MaybePromise } from '../../common/types';
 import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '../tree';
@@ -67,15 +69,15 @@ export class SourceTree extends TreeImpl {
             } as TreeElementNode;
         }
         if (CompositeTreeElementNode.is(updated)) {
-            delete updated.expanded;
-            delete updated.children;
+            delete (updated as any).expanded;
+            delete (updated as any).children;
         }
         if (updated) {
             if (ExpandableTreeNode.is(updated)) {
-                delete updated.expanded;
+                delete (updated as any).expanded;
             }
             if (CompositeTreeNode.is(updated)) {
-                delete updated.children;
+                delete (updated as any).children;
             }
             return updated;
         }

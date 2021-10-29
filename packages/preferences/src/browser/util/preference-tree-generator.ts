@@ -195,7 +195,8 @@ export class PreferenceTreeGenerator {
         };
         const isTopLevel = Preference.TreeNode.isTopLevel(newNode);
         if (!isTopLevel) {
-            delete newNode.expanded;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            delete (newNode as any).expanded;
         }
         newNode.depth = isTopLevel ? 0 : 1;
         CompositeTreeNode.addChild(root, newNode);

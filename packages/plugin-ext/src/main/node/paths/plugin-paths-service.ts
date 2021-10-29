@@ -142,7 +142,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
         // @ts-ignore - fs-extra types (Even latest version) is not updated with the `withFileTypes` option.
-        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true });
+        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true }) as string[];
         // `Dirent` type is defined in @types/node since 10.10.0
         // However, upgrading the @types/node in theia to 10.11 (as defined in engine field)
         // Causes other packages to break in compilation, so we are using the infamous `any` type...
