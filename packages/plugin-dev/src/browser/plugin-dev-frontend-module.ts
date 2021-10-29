@@ -23,8 +23,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
-import { HostedPluginServer, hostedServicePath } from '../common/plugin-dev-protocol';
-import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
+import { PluginDevServer, pluginDevServicePath } from '../common/plugin-dev-protocol';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -39,9 +38,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(HostedPluginFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(HostedPluginFrontendContribution);
 
-    bind(HostedPluginServer).toDynamicValue(ctx => {
+    bind(PluginDevServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        const hostedWatcher = ctx.container.get(HostedPluginWatcher);
-        return connection.createProxy<HostedPluginServer>(hostedServicePath, hostedWatcher.getHostedPluginClient());
+        return connection.createProxy<PluginDevServer>(pluginDevServicePath);
     }).inSingletonScope();
 });

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { HostedPluginServer, HostedPluginClient } from '../common/plugin-dev-protocol';
+import { PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -26,7 +26,7 @@ import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-pl
 import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contribution';
 
 @injectable()
-export class HostedPluginServerImpl implements HostedPluginServer {
+export class PluginDevServerImpl implements PluginDevServer {
 
     @inject(HostedPluginsManager)
     protected readonly hostedPluginsManager: HostedPluginsManager;
@@ -46,7 +46,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             this.hostedInstanceManager.terminate();
         }
     }
-    setClient(client: HostedPluginClient): void {
+    setClient(client: PluginDevClient): void {
 
     }
 
