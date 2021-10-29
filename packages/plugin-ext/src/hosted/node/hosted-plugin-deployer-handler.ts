@@ -86,7 +86,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const metadata = this.reader.readMetadata(manifest);
             const dependencies: PluginDependencies = { metadata };
             // Do not resolve system (aka builtin) plugins because it should be done statically at build time.
-            const { resolveSystemPlugins = true } = BackendApplicationConfigProvider.get();
+            const { resolveSystemPlugins = false } = BackendApplicationConfigProvider.get();
             if (resolveSystemPlugins || entry.type !== PluginType.System) {
                 dependencies.mapping = this.reader.readDependencies(manifest);
             }

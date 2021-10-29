@@ -31,9 +31,9 @@ You can delete this whole block and replace it by the following:
 
 Introduced in `v1.19.0` was the feature to better support extension-packs which both contribute functionality and reference plugins (by `id`).
 The feature works best when there is no runtime plugin resolvement for system (builtin) plugins as it should be done at build time instead.
-In order not to change behavior today, the feature is behind an application prop (acting as a flag). If you want to enable better support for
-extension-packs and extension-dependencies as builtins the property should be turned off. You can disable the resolvement in your application's
-`package.json` like so:
+The feature is behind an application property, acting as a flag to enable/disable the feature. If you want to enable better support for
+extension-packs and extension-dependencies as builtins the property should be turned off (default). You can enable/disable the resolution of system
+plugin dependencies in your application's `package.json` like so:
 
 
 ```json
