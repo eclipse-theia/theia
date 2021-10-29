@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceServer, THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '../common';
+import { WorkspaceServer, THEIA_EXT, VSCODE_EXT } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
@@ -297,9 +297,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
         let title: string | undefined;
         if (this._workspace) {
             const displayName = this._workspace.name;
-            if (!this._workspace.isDirectory &&
-                (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
-                title = displayName.slice(0, displayName.lastIndexOf('.'));
+            if (this.isWorkspaceFile(this._workspace)) {
+                title = this.isUntitledWorkspace(this._workspace.resource) ? 'Untitled (Workspace)' : displayName.slice(0, displayName.lastIndexOf('.'));
             } else {
                 title = displayName;
             }
@@ -353,12 +352,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.doOpen(uri, options);
     }
 
-    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
-        const rootUri = uri.toString();
-        const stat = await this.toFileStat(rootUri);
+    protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<URI | undefined> {
+        const stat = await this.toFileStat(uri);
         if (stat) {
             if (!stat.isDirectory && !this.isWorkspaceFile(stat)) {
-                const message = `Not a valid workspace file: ${uri}`;
+                const message = `Not a valid workspace: ${uri.path.toString()}`;
                 this.messageService.error(message);
                 throw new Error(message);
             }
@@ -369,14 +367,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !this.opened,
                 ...options
             };
-            await this.server.setMostRecentlyUsedWorkspace(rootUri);
+            await this.server.setMostRecentlyUsedWorkspace(uri.toString());
             if (preserveWindow) {
                 this._workspace = stat;
             }
             this.openWindow(stat, { preserveWindow });
             return;
         }
-        throw new Error('Invalid workspace root URI. Expected an existing directory location.');
+        throw new Error('Invalid workspace root URI. Expected an existing directory or workspace file.');
     }
 
     /**
@@ -409,7 +407,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
         if (!this._workspace) {
-            throw new Error('There is not active workspace');
+            throw new Error('There is no active workspace');
         }
         const dedup = new Set<string>();
         const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
@@ -437,7 +435,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     async getUntitledWorkspace(): Promise<URI> {
-        return getTemporaryWorkspaceFileUri(this.envVariableServer);
+        const configDirURI = await this.envVariableServer.getConfigDirUri();
+        const semiRandomID = (Date.now() + Math.floor(Math.random() * 1000)).toString();
+        return new URI(configDirURI).resolve(`workspaces/Untitled-${semiRandomID}.${THEIA_EXT}`);
     }
 
     protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
@@ -666,8 +666,13 @@ export class WorkspaceService implements FrontendApplicationContribution {
      *
      * Example: We should not try to read the contents of an .exe file.
      */
-    protected isWorkspaceFile(fileStat: FileStat): boolean {
-        return fileStat.resource.path.ext === `.${THEIA_EXT}` || fileStat.resource.path.ext === `.${VSCODE_EXT}`;
+    protected isWorkspaceFile(candidate: FileStat | URI): boolean {
+        const uri = FileStat.is(candidate) ? candidate.resource : candidate;
+        return uri.path.ext === `.${THEIA_EXT}` || uri.path.ext === `.${VSCODE_EXT}`;
+    }
+
+    isUntitledWorkspace(candidate: URI): boolean {
+        return this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
     }
 
     /**
@@ -746,7 +751,10 @@ export namespace WorkspaceData {
                 if (path.startsWith('file:///')) {
                     folders.push(path);
                 } else {
-                    folders.push(workspaceFile.resource.withScheme('file').parent.resolve(path).toString());
+                    const absolutePath = workspaceFile.resource.withScheme('file').parent.resolveToAbsolute(path)?.toString();
+                    if (absolutePath) {
+                        folders.push(absolutePath.toString());
+                    }
                 }
 
             }

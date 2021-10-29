@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import * as chai from 'chai';
+import { Path } from './path';
 import URI from './uri';
 
 const expect = chai.expect;
@@ -260,6 +261,18 @@ describe('uri', () => {
             const b = new URI('b:///C:/projects/theia/foo/a.ts');
             expect(a.isEqual(b)).equals(false);
         });
+    });
+
+    describe('#resolveToAbsolute', () => {
+        function checkResolution(original: string, segments: Array<Path | string>, expected: string | undefined): void {
+            it.only(`should resolve ${original.toString()} and ${segments.map(segment => segment.toString()).join(', ')} to ${expected}`, () => {
+                const start = new URI(original);
+                const result = start.resolveToAbsolute(...segments);
+                expect(result?.toString()).equals(expected);
+            });
+        }
+        checkResolution('file:///home/hello/', ['some-segment'], 'file:///home/hello/some-segment');
+        checkResolution('file:///home/hello', ['/this/is-already/absolute'], 'file:///this/is-already/absolute');
     });
 
 });

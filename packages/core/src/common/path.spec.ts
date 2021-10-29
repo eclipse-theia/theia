@@ -356,4 +356,16 @@ describe('Path', () => {
         });
 
     });
+
+    function checkResolution(original: string, segments: string[], expected: string | undefined): void {
+        it(`should resolve ${original} and ${segments.join(', ')} to ${expected}`, () => {
+            const start = new Path(original);
+            const result = start.resolve(...segments);
+            expect(result?.toString()).eq(expected);
+        });
+    }
+
+    checkResolution('a/b/c', ['/d/e/f'], '/d/e/f');
+    checkResolution('a/b/c', ['../d/e/f'], undefined);
+    checkResolution('/a/b/c', ['../d', 'e', './f'], '/a/b/d/e/f');
 });
