@@ -176,7 +176,6 @@ export class MonacoEditorProvider {
         return editor;
     }
 
-
     protected addDynamicKeybindings(editor: MonacoEditor, standaloneCommandService: monaco.services.StandaloneCommandService, scope: KeybindingScope): void {
         const keybindings = this.keybindingRegistry.getKeybindingsByScope(scope);
         if (keybindings.length > 0) {
