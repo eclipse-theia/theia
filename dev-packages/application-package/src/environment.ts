@@ -44,7 +44,7 @@ class ElectronEnv {
         return this.is()
             && typeof process !== 'undefined'
             // `defaultApp` does not exist on the Node.js API, but on electron (`electron.d.ts`).
-            && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // eslint-disable-line @typescript-eslint/no-explicit-any
+            && ((process as any).defaultApp || /node_modules[/\\]electron[/\\]/.test(process.execPath)); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 
     /**
