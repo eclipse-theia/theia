@@ -684,6 +684,7 @@ DIV {
     });
 
     it('run reference code lens', async function () {
+        this.timeout(300_000); // 5 min (give time to `tsserver` to initialize and then respond to make this test pass.)
         // @ts-ignore
         const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
         toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
