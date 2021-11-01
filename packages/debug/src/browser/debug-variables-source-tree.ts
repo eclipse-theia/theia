@@ -15,62 +15,109 @@
  ********************************************************************************/
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
-import { SourceTree, TreeElementNode, TreeElementNodeParent } from '@theia/core/lib/browser/source-tree';
+import { CompositeTreeNode, ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
+import { SourceTree, TreeElement, TreeElementNode, TreeElementNodeParent } from '@theia/core/lib/browser/source-tree';
 import { Disposable } from '@theia/core';
 import { DebugScope, DebugVariable } from './console/debug-console-items';
 
 @injectable()
 export class DebugVariablesSourceTree extends SourceTree {
 
-    protected readonly ttl = 5 * 60 * 1000;
-
     constructor() {
         super();
         this.toDispose.push(Disposable.create(() => this.expanded.clear()));
-
-        setInterval(() => {
-            this.expanded.forEach((value, key) => {
-                if (Date.now() > value + this.ttl) {
-                    this.expanded.delete(key);
-                }
-            });
-        }, 1000);
     }
 
-    private readonly expanded = new Map<string, number>();
+    protected readonly expanded = new Set<string>();
 
     async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
         const nodes = await super.resolveChildren(parent);
         nodes.forEach(node => {
-            if (!TreeElementNode.is(node)
-                || !ExpandableTreeNode.is(node)
-                || !(node.element instanceof DebugScope
-                || node.element instanceof DebugVariable)) {
+            if (!ExpandableTreeNode.is(node)
+            || !TreeElementNode.is(node)
+            || !this.isDebugScopeOrVariable(node.element)) {
                 return;
             }
-            const name = node.element.name;
-            if (this.expanded.has(name)) {
-                Object.assign(node, { expanded: true });
-                this.expanded.set(name, Date.now());
+            const id = this.getNodeId(node);
+            if (this.expanded.has(id)) {
+                node.expanded = true;
             }
         });
         return nodes;
     }
 
+    async refresh(raw?: CompositeTreeNode): Promise<Readonly<CompositeTreeNode> | undefined> {
+        const refreshedNode = await super.refresh(raw);
+        this.updateExpanded();
+        return refreshedNode;
+    }
+
     handleExpansion(node: Readonly<ExpandableTreeNode>): void {
-        if (!TreeElementNode.is(node)
-            || !ExpandableTreeNode.is(node)
-            || !(node.element instanceof DebugScope
-            || node.element instanceof DebugVariable)) {
+        if (!TreeElementNode.is(node) || !this.isDebugScopeOrVariable(node.element)) {
             return;
         }
-        const name = node.element.name;
+        const id = this.getNodeId(node);
         if (node.expanded) {
-            this.expanded.set(name, Date.now());
+            this.expanded.add(id);
         } else {
-            this.expanded.delete(name);
+            this.expanded.delete(id);
         }
+    }
+
+    protected updateExpanded(): void {
+        if (!CompositeTreeNode.is(this.root)) {
+            return;
+        }
+        const expandableNodes: Array<ExpandableTreeNode> = [];
+        for (const n of this.root.children) {
+            if (!ExpandableTreeNode.is(n)) {
+                continue;
+            }
+            expandableNodes.push(n);
+        }
+        if (!expandableNodes.length) {
+            return;
+        }
+        this.expanded.clear();
+        while (expandableNodes.length) {
+            const n = expandableNodes.pop()!;
+            if (n.expanded) {
+                if (!TreeElementNode.is(n) || !this.isDebugScopeOrVariable(n.element)) {
+                    continue;
+                }
+                const id = this.getNodeId(n);
+                this.expanded.add(id);
+                for (const node of n.children) {
+                    if (!ExpandableTreeNode.is(node)) {
+                        continue;
+                    }
+                    expandableNodes.push(node);
+                }
+            }
+        }
+    }
+
+    protected getNodeId(node: Readonly<TreeElementNode>): string {
+        if (!this.isDebugScopeOrVariable(node.element)) {
+            return node.id;
+        }
+        let n = node;
+        let id = node.element.name;
+        while (n) {
+            if (!TreeElementNode.is(n.parent)) {
+                return id;
+            }
+            n = n.parent;
+            if (!this.isDebugScopeOrVariable(n.element)) {
+                return id;
+            }
+            id = n.element.name + '|' + id;
+        }
+        return id;
+    }
+
+    protected isDebugScopeOrVariable(element: TreeElement): element is (DebugScope | DebugVariable) {
+        return element instanceof DebugScope || element instanceof DebugVariable;
     }
 
 }
