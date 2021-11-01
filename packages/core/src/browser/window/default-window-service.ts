@@ -50,7 +50,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     }
 
     openNewDefaultWindow(): void {
-        this.openNewWindow(DEFAULT_WINDOW_HASH);
+        this.openNewWindow(`#${DEFAULT_WINDOW_HASH}`);
     }
 
     canUnload(): boolean {
