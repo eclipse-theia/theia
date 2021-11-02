@@ -1004,7 +1004,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             after = node.lineText.text.substr(node.lineText.character + node.length);
             title = node.lineText.text.trim();
         }
-        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`} title={title}>
+        return <div className={`resultLine noWrapInfo noselect ${node.selected ? 'selected' : ''}`} title={title}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
                 {before}
