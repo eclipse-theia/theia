@@ -416,7 +416,7 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
         const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
 
-        return <div className='theia-vsx-extension' data-for={tooltipId} data-tip={tooltip}>
+        return <div className='theia-vsx-extension noselect' data-for={tooltipId} data-tip={tooltip}>
             {iconUrl ?
                 <img className='theia-vsx-extension-icon' src={iconUrl} /> :
                 <div className='theia-vsx-extension-icon placeholder' />}
