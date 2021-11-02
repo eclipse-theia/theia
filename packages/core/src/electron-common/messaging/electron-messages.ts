@@ -18,3 +18,32 @@ export const RequestTitleBarStyle = 'requestTitleBarStyle';
 export const TitleBarStyleChanged = 'titleBarStyleChanged';
 export const TitleBarStyleAtStartup = 'titleBarStyleAtStartup';
 export const Restart = 'restart';
+/**
+ * Emitted by main when close requested.
+ */
+export const CLOSE_REQUESTED_SIGNAL = 'close-requested';
+/**
+ * Emitted by window when a reload is requested.
+ */
+export const RELOAD_REQUESTED_SIGNAL = 'reload-requested';
+
+export enum StopReason {
+    /**
+     * Closing the window with no prospect of restart.
+     */
+    Close,
+    /**
+     * Reload without closing the window.
+     */
+    Reload,
+    /**
+     * Reload that includes closing the window.
+     */
+    Restart, // eslint-disable-line @typescript-eslint/no-shadow
+}
+
+export interface CloseRequestArguments {
+    confirmChannel: string;
+    cancelChannel: string;
+    reason: StopReason;
+}

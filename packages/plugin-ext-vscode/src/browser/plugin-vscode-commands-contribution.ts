@@ -78,6 +78,7 @@ import {
 } from '@theia/plugin-ext/lib/main/browser/callhierarchy/callhierarchy-type-converters';
 import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 import { nls } from '@theia/core/lib/common/nls';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -137,6 +138,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly callHierarchyProvider: CallHierarchyServiceProvider;
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -477,7 +480,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
             execute: () => {
-                window.location.reload();
+                this.windowService.reload();
             }
         });
 

@@ -51,7 +51,7 @@ describe('DefaultWindowService', () => {
         ];
         const windowService = setupWindowService('never', frontendContributions);
         assert(frontendContributions.every(contribution => !contribution.onWillStopCalled), 'contributions should not be called yet');
-        assert(windowService.canUnload(), 'canUnload should return true');
+        assert(windowService['collectContributionUnloadVetoes']().length === 0, 'there should be no vetoes');
         assert(frontendContributions.every(contribution => contribution.onWillStopCalled), 'contributions should have been called');
     });
     it('onWillStop should be called on every contribution (ifRequired)', () => {
@@ -62,7 +62,7 @@ describe('DefaultWindowService', () => {
         ];
         const windowService = setupWindowService('ifRequired', frontendContributions);
         assert(frontendContributions.every(contribution => !contribution.onWillStopCalled), 'contributions should not be called yet');
-        assert(!windowService.canUnload(), 'canUnload should return false');
+        assert(windowService['collectContributionUnloadVetoes']().length > 0, 'There should be vetoes');
         assert(frontendContributions.every(contribution => contribution.onWillStopCalled), 'contributions should have been called');
     });
     it('onWillStop should be called on every contribution (always)', () => {
@@ -72,7 +72,7 @@ describe('DefaultWindowService', () => {
         ];
         const windowService = setupWindowService('always', frontendContributions);
         assert(frontendContributions.every(contribution => !contribution.onWillStopCalled), 'contributions should not be called yet');
-        assert(!windowService.canUnload(), 'canUnload should return false');
+        assert(windowService['collectContributionUnloadVetoes']().length > 0, 'there should be vetoes');
         assert(frontendContributions.every(contribution => contribution.onWillStopCalled), 'contributions should have been called');
     });
 });
