@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon, CommonCommands
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService, codicon, CommonCommands, FrontendApplicationContribution
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -53,6 +53,7 @@ import {
     SerializableExtensionEnvironmentVariableCollection
 } from '../common/base-terminal-protocol';
 import { nls } from '@theia/core/lib/common/nls';
+import { TerminalPreferences } from './terminal-preferences';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -139,7 +140,8 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution {
+export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution, MenuContribution,
+    KeybindingContribution, TabBarToolbarContribution, ColorContribution {
 
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
@@ -158,8 +160,12 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     @inject(TerminalWatcher)
     protected readonly terminalWatcher: TerminalWatcher;
+
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(TerminalPreferences)
+    protected terminalPreferences: TerminalPreferences;
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
@@ -197,6 +203,13 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 }
             });
         });
+    }
+
+    onWillStop(): boolean {
+        return (
+            this.terminalPreferences['terminal.integrated.confirmOnExit'] !== 'never' &&
+            this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID).length > 0
+        );
     }
 
     protected _currentTerminal: TerminalWidget | undefined;

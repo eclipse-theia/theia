@@ -166,8 +166,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 } else if (preferenceName === 'cursorStyle') {
                     preferenceValue = this.getCursorStyle();
                 }
-
-                this.term.setOption(preferenceName, preferenceValue);
+                try {
+                    this.term.setOption(preferenceName, preferenceValue);
+                } catch (e) {
+                    console.debug(`xterm configuration: '${preferenceName}' with value '${preferenceValue}' is not valid.`);
+                }
                 this.needsResize = true;
                 this.update();
             }
