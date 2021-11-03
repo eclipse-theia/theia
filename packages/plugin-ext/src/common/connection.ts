@@ -18,7 +18,7 @@ import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
 import { Emitter } from '@theia/core/lib/common/event';
 
 /**
- * [IWebSocket](#IWebSocket) implementation over RPC.
+ * A channel communicating with a counterpart in a plugin host.
  */
 export class PluginChannel implements Channel {
     private messageEmitter: Emitter<string> = new Emitter();
