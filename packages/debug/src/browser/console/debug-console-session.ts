@@ -72,13 +72,13 @@ export class DebugConsoleSession extends ConsoleSession {
         this.completionKinds.set('file', monaco.languages.CompletionItemKind.File);
         this.completionKinds.set('reference', monaco.languages.CompletionItemKind.Reference);
         this.completionKinds.set('customcolor', monaco.languages.CompletionItemKind.Color);
-        monaco.languages.registerCompletionItemProvider({
+        this.toDispose.push(monaco.languages.registerCompletionItemProvider({
             scheme: DebugConsoleSession.uri.scheme,
             hasAccessToAllModels: true
         }, {
             triggerCharacters: ['.'],
             provideCompletionItems: (model, position) => this.completions(model, position),
-        });
+        }));
     }
 
     getElements(): IterableIterator<ConsoleItem> {
