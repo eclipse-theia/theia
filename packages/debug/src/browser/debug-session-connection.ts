@@ -288,17 +288,13 @@ export class DebugSessionConnection implements Disposable {
     }
 
     protected handleEvent(event: DebugProtocol.Event): void {
-        if ('event' in event) {
-            if (event.event === 'continued') {
-                this.allThreadsContinued = (<DebugProtocol.ContinuedEvent>event).body.allThreadsContinued === false ? false : true;
-            }
-            if (DebugEventTypes.isStandardEvent(event.event)) {
-                this.doFire(event.event, event);
-            } else {
-                this.onDidCustomEventEmitter.fire(event);
-            }
+        if (event.event === 'continued') {
+            this.allThreadsContinued = (<DebugProtocol.ContinuedEvent>event).body.allThreadsContinued === false ? false : true;
+        }
+        if (DebugEventTypes.isStandardEvent(event.event)) {
+            this.doFire(event.event, event);
         } else {
-            this.fire('exited', event);
+            this.onDidCustomEventEmitter.fire(event);
         }
     }
 
