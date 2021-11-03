@@ -45,6 +45,7 @@ import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import * as markdownit from 'markdown-it';
 import { isMarkdownString } from '../../../plugin/markdown-string';
+import debounce = require('p-debounce');
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -359,8 +360,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected hoverNodeId: string | undefined;
     protected setHoverNodeId(hoverNodeId: string | undefined): void {
         this.hoverNodeId = hoverNodeId;
-        this.update();
+        this.forceUpdateGrid();
     }
+
+    protected forceUpdateGrid = debounce(() => this.view?.list?.forceUpdateGrid(), 1);
 
     protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         return {
