@@ -193,6 +193,7 @@
 .t-siw-search-container .result {
     overflow: hidden;
     width: 100%;
+    flex: 1;
 }
 
 .t-siw-search-container .result .result-head {
@@ -266,7 +267,6 @@
 .theia-TreeNode:hover .result-node-buttons {
     display: flex;
     justify-content: flex-end;
-    flex: 1;
     align-items: center;
     align-self: center;
 }
