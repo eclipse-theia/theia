@@ -39,7 +39,7 @@ export class DebugVariablesSourceTree extends SourceTree {
                 return;
             }
             const id = this.getNodeId(node);
-            if (this.expanded.has(id)) {
+            if (this.expanded.has(id) || node.id === '__source__:0') {
                 node.expanded = true;
             }
         });
