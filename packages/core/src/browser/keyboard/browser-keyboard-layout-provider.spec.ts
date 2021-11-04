@@ -37,9 +37,8 @@ describe('browser keyboard layout provider', function (): void {
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;
 
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
     const setup = (system: 'mac' | 'win' | 'linux') => {
         switch (system) {
