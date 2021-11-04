@@ -22,7 +22,7 @@ import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService
+    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, QuickPickResourceService
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
@@ -66,6 +66,7 @@ import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access'
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
+import { MonacoQuickPickResourceService } from './monaco-quick-pick-resource-service';
 
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
@@ -148,6 +149,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(GotoSymbolQuickAccessContribution).toSelf().inSingletonScope();
     bind(QuickAccessContribution).toService(GotoSymbolQuickAccessContribution);
+
+    bind(MonacoQuickPickResourceService).toSelf().inSingletonScope();
+    bind(QuickPickResourceService).toService(MonacoQuickPickResourceService);
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
 

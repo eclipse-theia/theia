@@ -221,6 +221,10 @@ export class Path {
         return new Path(relativePath);
     }
 
+    isEqual(path: Path): boolean {
+        return this.raw === path.raw;
+    }
+
     isEqualOrParent(path: Path): boolean {
         return !!this.relative(path);
     }

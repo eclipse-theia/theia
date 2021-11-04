@@ -266,9 +266,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             } else {
                 await open(this.openerService, destinationUri);
             }
-            return destinationUri;
         }
-        return undefined;
+        return destinationUri;
     }
 
     /**
@@ -440,8 +439,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             selected = await this.fileDialogService.showSaveDialog(
                 {
                     title: WorkspaceCommands.SAVE_AS.label!,
-                    filters: {},
-                    inputValue: uri.path.base
+                    inputValue: uri.path.base,
+                    defaultUri: uri
                 }, stat);
             if (selected) {
                 exist = await this.fileService.exists(selected);

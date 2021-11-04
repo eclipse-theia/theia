@@ -154,7 +154,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             title: VSXExtensionsCommands.INSTALL_FROM_VSIX.dialogLabel,
             openLabel: 'Install',
             filters: { 'VSIX Extensions (*.vsix)': ['vsix'] },
-            canSelectMany: false
+            canSelectFiles: true,
+            canSelectFolders: false
         };
         const extensionUri = await this.fileDialogService.showOpenDialog(props);
         if (extensionUri) {

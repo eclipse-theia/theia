@@ -81,6 +81,11 @@ export class OpenFileDialogProps extends FileDialogProps {
     openLabel?: string;
 
     /**
+     * The resource the dialog shows when opened.
+     */
+    defaultUri?: URI;
+
+    /**
      * Allow to select files, defaults to `true`.
      */
     canSelectFiles?: boolean;
@@ -109,6 +114,11 @@ export class SaveFileDialogProps extends FileDialogProps {
      * A human-readable value for the input.
      */
     inputValue?: string;
+
+    /**
+     * The resource the dialog shows when opened.
+     */
+    defaultUri?: URI;
 
 }
 

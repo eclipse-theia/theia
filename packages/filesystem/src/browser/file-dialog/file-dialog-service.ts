@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MaybeArray } from '@theia/core/lib/common';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, QuickPickResourceService } from '@theia/core/lib/browser';
 import { FileStat } from '../../common/files';
 import { DirNode } from '../file-tree';
 import { OpenFileDialogFactory, OpenFileDialogProps, SaveFileDialogFactory, SaveFileDialogProps } from './file-dialog';
@@ -44,6 +44,9 @@ export class DefaultFileDialogService implements FileDialogService {
     @inject(FileService)
     protected readonly fileService: FileService;
 
+    @inject(QuickPickResourceService) @optional()
+    protected readonly quickPickResourceService: QuickPickResourceService;
+
     @inject(OpenFileDialogFactory) protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(SaveFileDialogFactory) protected readonly saveFileDialogFactory: SaveFileDialogFactory;
@@ -51,6 +54,28 @@ export class DefaultFileDialogService implements FileDialogService {
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
+        if (this.quickPickResourceService) {
+            if (!props.defaultUri) {
+                props.defaultUri = folder?.resource;
+            }
+            return this.quickPickResourceService.open(props);
+        } else {
+            return this.legacyOpenDialog(props, folder);
+        }
+    }
+
+    async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
+        if (this.quickPickResourceService) {
+            if (!props.defaultUri) {
+                props.defaultUri = folder?.resource;
+            }
+            return this.quickPickResourceService.save(props);
+        } else {
+            return this.legacySaveDialog(props, folder);
+        }
+    }
+
+    protected async legacyOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const title = props.title || 'Open';
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
@@ -67,7 +92,7 @@ export class DefaultFileDialogService implements FileDialogService {
         return undefined;
     }
 
-    async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
+    protected async legacySaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const title = props.title || 'Save';
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {

@@ -199,7 +199,7 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
+        return new Promise<T>(resolve => {
             const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
             const wrapped = this.wrapQuickPick(quickPick);
 
@@ -211,7 +211,17 @@ export class MonacoQuickInputService implements QuickInputService {
                 wrapped.ignoreFocusOut = !!options.ignoreFocusOut;
                 wrapped.matchOnDescription = options.matchOnDescription ?? true;
                 wrapped.matchOnDetail = options.matchOnDetail ?? true;
+                wrapped.matchOnLabel = options.matchOnLabel ?? true;
+                wrapped.sortByLabel = options.sortByLabel ?? true;
+                wrapped.autoFocusOnList = options.autoFocusOnList ?? false;
+                wrapped.customButton = options.customButton ?? false;
+                wrapped.customLabel = options.customLabel;
+                wrapped.customHover = options.customHover;
                 wrapped.placeholder = options.placeholder;
+                wrapped.buttons = options.buttons ?? [];
+                wrapped.ok = options.ok ?? false;
+                wrapped.valueSelection = options.valueSelection;
+                wrapped.validationMessage = options.validationMessage;
                 wrapped.step = options.step;
                 wrapped.title = options.title;
                 wrapped.totalSteps = options.totalSteps;
@@ -228,6 +238,11 @@ export class MonacoQuickInputService implements QuickInputService {
                     resolve(wrapped.selectedItems[0]);
                 });
 
+                wrapped.onDidCustom(() => {
+                    if (options.onDidCustom) {
+                        options.onDidCustom();
+                    }
+                });
                 wrapped.onDidHide(() => {
                     if (options.onDidHide) {
                         options.onDidHide();
@@ -414,6 +429,86 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         this.wrapped.matchOnDetail = v;
     }
 
+    get matchOnLabel(): boolean {
+        return this.wrapped.matchOnLabel;
+    }
+
+    set matchOnLabel(v: boolean) {
+        this.wrapped.matchOnLabel = v;
+    }
+
+    get sortByLabel(): boolean {
+        return this.wrapped.sortByLabel;
+    }
+
+    set sortByLabel(v: boolean) {
+        this.wrapped.sortByLabel = v;
+    }
+
+    get autoFocusOnList(): boolean {
+        return this.wrapped.autoFocusOnList;
+    }
+
+    set autoFocusOnList(v: boolean) {
+        this.wrapped.autoFocusOnList = v;
+    }
+
+    get customButton(): boolean {
+        return this.wrapped.customButton;
+    }
+
+    set customButton(v: boolean) {
+        this.wrapped.customButton = v;
+    }
+
+    get customLabel(): string | undefined {
+        return this.wrapped.customLabel;
+    }
+
+    set customLabel(v: string | undefined) {
+        this.wrapped.customLabel = v;
+    }
+
+    get customHover(): string | undefined {
+        return this.wrapped.customHover;
+    }
+
+    set customHover(v: string | undefined) {
+        this.wrapped.customHover = v;
+    }
+
+    get buttons(): ReadonlyArray<QuickInputButton> {
+        return this.wrapped.buttons;
+    }
+
+    set buttons(v: ReadonlyArray<QuickInputButton>) {
+        this.wrapped.buttons = v;
+    }
+
+    get ok(): boolean | 'default' {
+        return this.wrapped.ok;
+    }
+
+    set ok(v: boolean | 'default') {
+        this.wrapped.ok = v;
+    }
+
+    get valueSelection(): readonly [number, number] | undefined {
+        return this.wrapped.valueSelection;
+    }
+
+    set valueSelection(selection: readonly [number, number] | undefined) {
+        this.wrapped.valueSelection = selection;
+    }
+
+    get validationMessage(): string | undefined {
+        return this.wrapped.validationMessage;
+    }
+
+    set validationMessage(value: string | undefined) {
+        this.wrapped.validationMessage = value;
+    }
+
     get items(): readonly (T | QuickPickSeparator)[] {
         return this.wrapped.items.map(item => QuickPickSeparator.is(item) ? item : item.item);
     }
@@ -423,7 +518,7 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set activeItems(itms: readonly T[]) {
-        this.wrapped.activeItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.activeItems = findActualItems(this.wrapped.items, itms);
     }
 
     get activeItems(): readonly (T)[] {
@@ -431,13 +526,14 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
     }
 
     set selectedItems(itms: readonly T[]) {
-        this.wrapped.selectedItems = itms.map(item => new MonacoQuickPickItem<T>(item, this.keybindingRegistry));
+        this.wrapped.selectedItems = findActualItems(this.wrapped.items, itms);
     }
 
     get selectedItems(): readonly (T)[] {
         return this.wrapped.selectedItems.map(item => item.item);
     }
 
+    readonly onDidCustom: Event<void> = this.wrapped.onDidCustom;
     readonly onDidAccept: Event<void> = this.wrapped.onDidAccept;
     readonly onDidChangeValue: Event<string> = this.wrapped.onDidChangeValue;
     readonly onDidTriggerButton: Event<QuickInputButton> = this.wrapped.onDidTriggerButton;
@@ -448,6 +544,19 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         }));
     readonly onDidChangeActive: Event<T[]> = Event.map(this.wrapped.onDidChangeActive, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
     readonly onDidChangeSelection: Event<T[]> = Event.map(this.wrapped.onDidChangeSelection, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+}
+
+function findActualItems<T extends QuickPickItem>(source: readonly (MonacoQuickPickItem<T> | monaco.quickInput.IQuickPickSeparator)[], items: readonly QuickPickItem[]):
+    MonacoQuickPickItem<T>[] {
+    const actualItems: MonacoQuickPickItem<T>[] = [];
+    for (const item of items) {
+        for (const wrappedItem of source) {
+            if (!QuickPickSeparator.is(wrappedItem) && wrappedItem.item === item) {
+                actualItems.push(wrappedItem);
+            }
+        }
+    }
+    return actualItems;
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements monaco.quickInput.IQuickPickItem {
