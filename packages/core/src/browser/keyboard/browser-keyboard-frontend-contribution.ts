@@ -23,8 +23,8 @@ import { nls } from '../../common/nls';
 
 export namespace KeyboardCommands {
 
-    const KEYBOARD_CATEGORY_KEY = 'vscode/settingsLayout/keyboard';
     const KEYBOARD_CATEGORY = 'Keyboard';
+    const KEYBOARD_CATEGORY_KEY = nls.getDefaultKey(KEYBOARD_CATEGORY);
 
     export const CHOOSE_KEYBOARD_LAYOUT = Command.toLocalizedCommand({
         id: 'core.keyboard.choose',
@@ -52,7 +52,7 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
     protected async chooseLayout(): Promise<KeyboardLayoutData | undefined> {
         const current = this.layoutProvider.currentLayoutData;
         const autodetect: QuickPickValue<'autodetect'> = {
-            label: nls.localize('vscode/editorStatus/autoDetect', 'Auto-detect'),
+            label: nls.localizeByDefault('Auto-detect'),
             description: this.layoutProvider.currentLayoutSource !== 'user-choice' ? nls.localize('theia/core/keyboard/current', '(current: {0})', current.name) : undefined,
             detail: nls.localize('theia/core/keyboard/tryDetect', 'Try to detect the keyboard layout from browser information and pressed keys.'),
             value: 'autodetect'

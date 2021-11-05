@@ -20,18 +20,17 @@ import { Command } from '@theia/core/lib/common';
 
 export namespace VSXExtensionsCommands {
 
-    const EXTENSIONS_CATEGORY_KEY = 'vscode/settingsLayout/extensions';
     const EXTENSIONS_CATEGORY = 'Extensions';
 
-    export const CLEAR_ALL = Command.toLocalizedCommand({
+    export const CLEAR_ALL = Command.toDefaultLocalizedCommand({
         id: 'vsxExtensions.clearAll',
         category: EXTENSIONS_CATEGORY,
         label: 'Clear Search Results',
         iconClass: codicon('clear-all')
-    }, 'vscode/search.contribution/ClearSearchResultsAction.label', EXTENSIONS_CATEGORY_KEY);
+    });
     export const INSTALL_FROM_VSIX: Command & { dialogLabel: string } = {
         id: 'vsxExtensions.installFromVSIX',
-        category: nls.localize(EXTENSIONS_CATEGORY_KEY, EXTENSIONS_CATEGORY),
+        category: nls.localizeByDefault(EXTENSIONS_CATEGORY),
         originalCategory: EXTENSIONS_CATEGORY,
         originalLabel: 'Install from VSIX...',
         label: nls.localize('theia/vsx-registry/installFromVSIX', 'Install from VSIX') + '...',
@@ -43,19 +42,19 @@ export namespace VSXExtensionsCommands {
     export const COPY_EXTENSION_ID: Command = {
         id: 'vsxExtensions.copyExtensionId'
     };
-    export const SHOW_BUILTINS = Command.toLocalizedCommand({
+    export const SHOW_BUILTINS = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.showBuiltins',
         label: 'Show Built-in Extensions',
         category: EXTENSIONS_CATEGORY,
-    }, 'vscode/extensions.contribution/showBuiltInExtensions', EXTENSIONS_CATEGORY_KEY);
-    export const SHOW_INSTALLED = Command.toLocalizedCommand({
+    });
+    export const SHOW_INSTALLED = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.showInstalled',
         label: 'Show Installed Extensions',
         category: EXTENSIONS_CATEGORY,
-    }, 'vscode/extensions.contribution/showInstalledExtensions', EXTENSIONS_CATEGORY_KEY);
-    export const SHOW_RECOMMENDATIONS = Command.toLocalizedCommand({
+    });
+    export const SHOW_RECOMMENDATIONS = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.showRecommendations',
         label: 'Show Recommended Extensions',
         category: EXTENSIONS_CATEGORY,
-    }, 'vscode/extensions.contribution/showRecommendedExtensions', EXTENSIONS_CATEGORY_KEY);
+    });
 }

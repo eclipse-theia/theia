@@ -34,26 +34,26 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.openDebug': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart', 'openOnDebugBreak'],
             default: 'openOnSessionStart',
-            description: nls.localize('vscode/debug.contribution/openDebug', 'Controls when the debug view should open.')
+            description: nls.localizeByDefault('Controls when the debug view should open.')
         },
         'debug.internalConsoleOptions': {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
             default: 'openOnFirstSessionStart',
-            description: nls.localize('vscode/debug/internalConsoleOptions', 'Controls when the internal debug console should open.')
+            description: nls.localizeByDefault('Controls when the internal debug console should open.')
         },
         'debug.inlineValues': {
             type: 'boolean',
             default: false,
-            description: nls.localize('vscode/debug.contribution/inlineValues', 'Show variable values inline in editor while debugging.')
+            description: nls.localizeByDefault('Show variable values inline in editor while debugging.')
         },
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
             enumDescriptions: [
-                nls.localize('vscode/debug.contribution/never', 'Never show debug in status bar'),
-                nls.localize('vscode/debug.contribution/always', 'Always show debug in status bar'),
-                nls.localize('vscode/debug.contribution/onFirstSessionStart', 'Show debug in status bar only after debug was started for the first time')
+                nls.localizeByDefault('Never show debug in status bar'),
+                nls.localizeByDefault('Always show debug in status bar'),
+                nls.localizeByDefault('Show debug in status bar only after debug was started for the first time')
             ],
-            description: nls.localize('vscode/debug.contribution/showInStatusBar', 'Controls when the debug status bar should be visible.'),
+            description: nls.localizeByDefault('Controls when the debug status bar should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {

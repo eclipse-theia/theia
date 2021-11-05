@@ -41,36 +41,35 @@ export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF = Command.toLocalizedCommand({
         id: 'git-diff:open-file-diff',
         category: 'Git Diff',
-        originalLabel: 'Compare With...',
-        label: nls.localize('vscode/fileActions/globalCompareFile', 'Compare With...')
-    });
+        label: 'Compare With...'
+    }, 'theia/git/compareWith');
     export const TREE_VIEW_MODE = {
         id: 'git.viewmode.tree',
-        tooltip: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View'),
+        tooltip: nls.localizeByDefault('View as Tree'),
         iconClass: codicon('list-tree'),
-        originalLabel: 'Toggle to Tree View',
-        label: nls.localize('vscode/scmViewPane/viewModeTree', 'Toggle to Tree View')
+        originalLabel: 'View as Tree',
+        label: nls.localizeByDefault('View as Tree')
     };
     export const LIST_VIEW_MODE = {
         id: 'git.viewmode.list',
-        tooltip: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View'),
+        tooltip: nls.localizeByDefault('View as List'),
         iconClass: codicon('list-flat'),
-        originalLabel: 'Toggle to List View',
-        label: nls.localize('vscode/scmViewPane/viewModeList', 'Toggle to List View')
+        originalLabel: 'View as List',
+        label: nls.localizeByDefault('View as List')
     };
     export const PREVIOUS_CHANGE = {
         id: 'git.navigate-changes.previous',
-        tooltip: nls.localize('vscode/editor.contribution/navigate.prev.label', 'Previous Change'),
+        tooltip: nls.localizeByDefault('Previous Change'),
         iconClass: codicon('arrow-left'),
         originalLabel: 'Previous Change',
-        label: nls.localize('vscode/editor.contribution/navigate.prev.label', 'Previous Change')
+        label: nls.localizeByDefault('Previous Change')
     };
     export const NEXT_CHANGE = {
         id: 'git.navigate-changes.next',
-        tooltip: nls.localize('vscode/editor.contribution/navigate.next.label', 'Next Change'),
+        tooltip: nls.localizeByDefault('Next Change'),
         iconClass: codicon('arrow-right'),
         originalLabel: 'Next Change',
-        label: nls.localize('vscode/editor.contribution/navigate.next.label', 'Next Change')
+        label: nls.localizeByDefault('Next Change')
     };
 }
 

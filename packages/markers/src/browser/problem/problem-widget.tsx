@@ -51,7 +51,7 @@ export class ProblemWidget extends TreeWidget {
         super(treeProps, model, contextMenuRenderer);
 
         this.id = PROBLEMS_WIDGET_ID;
-        this.title.label = nls.localize('vscode/settingsLayout/problems', 'Problems');
+        this.title.label = nls.localizeByDefault('Problems');
         this.title.caption = this.title.label;
         this.title.iconClass = codicon('warning');
         this.title.closable = true;

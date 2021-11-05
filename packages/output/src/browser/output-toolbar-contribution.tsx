@@ -62,20 +62,20 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         toolbarRegistry.registerItem({
             id: OutputCommands.CLEAR__WIDGET.id,
             command: OutputCommands.CLEAR__WIDGET.id,
-            tooltip: nls.localize('vscode/output.contribution/clearOutput.label', 'Clear Output'),
+            tooltip: nls.localizeByDefault('Clear Output'),
             priority: 1,
         });
         toolbarRegistry.registerItem({
             id: OutputCommands.LOCK__WIDGET.id,
             command: OutputCommands.LOCK__WIDGET.id,
-            tooltip: nls.localize('vscode/output.contribution/outputScrollOff', 'Turn Auto Scrolling Off'),
+            tooltip: nls.localizeByDefault('Turn Auto Scrolling Off'),
             onDidChange: this.onOutputWidgetStateChanged,
             priority: 2
         });
         toolbarRegistry.registerItem({
             id: OutputCommands.UNLOCK__WIDGET.id,
             command: OutputCommands.UNLOCK__WIDGET.id,
-            tooltip: nls.localize('vscode/output.contribution/outputScrollOn', 'Turn Auto Scrolling On'),
+            tooltip: nls.localizeByDefault('Turn Auto Scrolling On'),
             onDidChange: this.onOutputWidgetStateChanged,
             priority: 2
         });

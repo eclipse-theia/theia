@@ -104,7 +104,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : nls.localize('vscode/scm.contribution/no open repo', 'No repository found');
+        this.title.label = repository ? repository.provider.label : nls.localize('theia/scm/noRepositoryFound', 'No repository found');
         this.title.caption = this.title.label;
         this.update();
         if (repository) {

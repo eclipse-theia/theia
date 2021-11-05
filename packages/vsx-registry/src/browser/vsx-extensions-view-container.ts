@@ -28,7 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class VSXExtensionsViewContainer extends ViewContainer {
 
     static ID = 'vsx-extensions-view-container';
-    static LABEL = nls.localize('vscode/settingsLayout/extensions', 'Extensions');
+    static LABEL = nls.localizeByDefault('Extensions');
 
     disableDNDBetweenContainers = true;
 
@@ -166,7 +166,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     protected getToggleVisibilityGroupLabel(): string {
-        return 'a/' + nls.localize('vscode/viewPaneContainer/views', 'Views');
+        return 'a/' + nls.localizeByDefault('Views');
     }
 }
 export namespace VSXExtensionsViewContainer {

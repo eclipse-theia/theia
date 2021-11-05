@@ -87,7 +87,7 @@ export class EditorMenuContribution implements MenuContribution {
         });
 
         // Editor navigation. Go > Back and Go > Forward.
-        registry.registerSubmenu(EditorMainMenu.GO, nls.localize('vscode/menubar/mGoto', 'Go'));
+        registry.registerSubmenu(EditorMainMenu.GO, nls.localizeByDefault('Go'));
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_BACK.id,
             label: EditorCommands.GO_BACK.label,
@@ -100,7 +100,7 @@ export class EditorMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_LAST_EDIT.id,
-            label: nls.localize('vscode/editor.contribution/miLastEditLocation', 'Last Edit Location'),
+            label: nls.localizeByDefault('Last Edit Location'),
             order: '3'
         });
 
@@ -127,7 +127,7 @@ export class EditorMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(CommonMenus.FILE_CLOSE, {
             commandId: CommonCommands.CLOSE_MAIN_TAB.id,
-            label: nls.localize('vscode/editor.contribution/closeEditor', 'Close Editor'),
+            label: nls.localizeByDefault('Close Editor'),
             order: '1'
         });
     }

@@ -31,10 +31,10 @@ export const scmPreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['tree', 'list'],
             enumDescriptions: [
-                nls.localize('vscode/scm.contribution/scm.defaultViewMode.tree', 'Show the repository changes as a tree.'),
-                nls.localize('vscode/scm.contribution/scm.defaultViewMode.list', 'Show the repository changes as a list.')
+                nls.localizeByDefault('Show the repository changes as a tree.'),
+                nls.localizeByDefault('Show the repository changes as a list.')
             ],
-            description: nls.localize('vscode/scm.contribution/scm.defaultViewMode', 'Controls the default source control view mode.'),
+            description: nls.localizeByDefault('Controls the default Source Control repository view mode.'),
             default: 'list'
         }
     }

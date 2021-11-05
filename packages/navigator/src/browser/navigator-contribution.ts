@@ -99,29 +99,29 @@ export namespace FileNavigatorCommands {
         label: 'Refresh in Explorer',
         iconClass: codicon('refresh')
     }, 'theia/navigator/refresh', CommonCommands.FILE_CATEGORY_KEY);
-    export const COLLAPSE_ALL = Command.toLocalizedCommand({
+    export const COLLAPSE_ALL = Command.toDefaultLocalizedCommand({
         id: 'navigator.collapse.all',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Collapse Folders in Explorer',
         iconClass: codicon('collapse-all')
-    }, 'vscode/explorerView/collapseExplorerFolders', CommonCommands.FILE_CATEGORY_KEY);
+    });
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'
     };
-    export const FOCUS = Command.toLocalizedCommand({
+    export const FOCUS = Command.toDefaultLocalizedCommand({
         id: 'workbench.files.action.focusFilesExplorer',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Focus on Files Explorer'
-    }, 'vscode/fileActions/focusFilesExplorer', CommonCommands.FILE_CATEGORY_KEY);
-    export const COPY_RELATIVE_FILE_PATH = Command.toLocalizedCommand({
+    });
+    export const COPY_RELATIVE_FILE_PATH = Command.toDefaultLocalizedCommand({
         id: 'navigator.copyRelativeFilePath',
         label: 'Copy Relative Path'
-    }, 'vscode/fileActions.contribution/copyRelativePath');
-    export const OPEN = Command.toLocalizedCommand({
+    });
+    export const OPEN = Command.toDefaultLocalizedCommand({
         id: 'navigator.open',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Open'
-    }, 'vscode/dialogMainService/open', CommonCommands.FILE_CATEGORY_KEY);
+    });
 }
 
 /**
@@ -431,7 +431,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             commandId: FileNavigatorCommands.OPEN.id,
             label: FileNavigatorCommands.OPEN.label
         });
-        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, nls.localize('vscode/fileActions.contribution/explorerOpenWith', 'Open With...'));
+        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, nls.localizeByDefault('Open With...'));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
@@ -500,7 +500,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
-            label: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
+            label: nls.localizeByDefault('Collapse All'),
             order: 'z2'
         });
 
@@ -589,13 +589,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
-            tooltip: nls.localize('vscode/explorerView/refreshExplorer', 'Refresh Explorer'),
+            tooltip: nls.localizeByDefault('Refresh Explorer'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
-            tooltip: nls.localize('vscode/treeView/collapseAll', 'Collapse All'),
+            tooltip: nls.localizeByDefault('Collapse All'),
             priority: 1,
         });
         this.registerMoreToolbarItem({

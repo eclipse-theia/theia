@@ -245,9 +245,9 @@ export class FileUploadService {
 
     protected async confirmOverwrite(fileUri: URI): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: nls.localize('vscode/findWidget/label.replace', 'Replace file'),
-            msg: nls.localize('vscode/explorerViewer/confirmOverwrite', 'File "{0}" already exists in the destination folder. Do you want to replace it?', fileUri.path.base),
-            ok: nls.localize('vscode/findWidget/label.replace', 'Replace file'),
+            title: nls.localizeByDefault('Replace file'),
+            msg: nls.localizeByDefault('File "{0}" already exists in the destination folder. Do you want to replace it?', fileUri.path.base),
+            ok: nls.localizeByDefault('Replace file'),
             cancel: Dialog.CANCEL
         });
         return !!await dialog.open();

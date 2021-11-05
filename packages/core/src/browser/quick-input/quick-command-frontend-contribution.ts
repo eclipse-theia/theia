@@ -43,7 +43,7 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.VIEW_PRIMARY, {
             commandId: quickCommand.id,
-            label: nls.localize('vscode/quickAccess.contribution/commandsQuickAccess', 'Find Command...')
+            label: nls.localizeByDefault('Command Palette...')
         });
     }
 

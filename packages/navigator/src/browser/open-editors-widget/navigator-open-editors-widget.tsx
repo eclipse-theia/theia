@@ -52,7 +52,7 @@ export interface OpenEditorsNodeRow extends TreeWidget.NodeRow {
 @injectable()
 export class OpenEditorsWidget extends FileTreeWidget {
     static ID = 'theia-open-editors-widget';
-    static LABEL = nls.localize('vscode/openEditorsView/openEditors', 'Open Editors');
+    static LABEL = nls.localizeByDefault('Open Editors');
 
     @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
     @inject(CommandService) protected readonly commandService: CommandService;

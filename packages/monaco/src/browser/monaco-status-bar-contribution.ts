@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, nls } from '@theia/core';
 import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
@@ -66,13 +66,15 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         if (editor && editorModel) {
             const modelOptions = editorModel.getOptions();
             const tabSize = modelOptions.tabSize;
-            const useSpaceOrTab = modelOptions.insertSpaces ? 'Spaces' : 'Tab Size';
+            const useSpaceOrTab = modelOptions.insertSpaces
+                ? nls.localizeByDefault('Spaces: {0}', tabSize)
+                : nls.localizeByDefault('Tab Size: {0}', tabSize);
             this.statusBar.setElement('editor-status-tabbing-config', {
                 text: `${useSpaceOrTab}: ${tabSize}`,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 10,
                 command: EditorCommands.CONFIG_INDENTATION.id,
-                tooltip: 'Select Indentation'
+                tooltip: nls.localizeByDefault('Select Indentation')
             });
         }
     }
@@ -91,7 +93,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 11,
                 command: EditorCommands.CONFIG_EOL.id,
-                tooltip: 'Select End Of Line Sequence'
+                tooltip: nls.localizeByDefault('Select End of Line Sequence')
             });
         }
     }

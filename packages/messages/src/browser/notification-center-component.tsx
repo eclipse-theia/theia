@@ -58,17 +58,17 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
     render(): React.ReactNode {
         const empty = this.state.notifications.length === 0;
         const title = empty
-            ? nls.localize('vscode/notificationsStatus/noNotifications', 'NO NEW NOTIFICATIONS')
-            : nls.localize('vscode/notificationsStatus/status.notifications', 'NOTIFICATIONS');
+            ? nls.localizeByDefault('No New Notifications')
+            : nls.localizeByDefault('Notifications');
         return (
             <div className={`theia-notifications-container theia-notification-center ${this.state.visibilityState === 'center' ? 'open' : 'closed'}`}>
                 <div className='theia-notification-center-header'>
                     <div className='theia-notification-center-header-title'>{title}</div>
                     <div className='theia-notification-center-header-actions'>
                         <ul className='theia-notification-actions'>
-                            <li className={codicon('clear-all', true)} title={nls.localize('vscode/notificationsCommands/clearAllNotifications', 'Clear All Notifications')}
+                            <li className={codicon('clear-all', true)} title={nls.localizeByDefault('Clear All Notifications')}
                                 onClick={this.onClearAll} />
-                            <li className={codicon('chevron-down', true)} title={nls.localize('vscode/notificationsCommands/hideNotifications', 'Hide Notifications')}
+                            <li className={codicon('chevron-down', true)} title={nls.localizeByDefault('Hide Notifications')}
                                 onClick={this.onHide} />
                         </ul>
                     </div>

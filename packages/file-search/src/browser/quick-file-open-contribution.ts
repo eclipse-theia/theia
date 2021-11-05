@@ -55,7 +55,7 @@ export class QuickFileOpenFrontendContribution implements QuickAccessContributio
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EditorMainMenu.WORKSPACE_GROUP, {
             commandId: quickFileOpen.id,
-            label: nls.localize('vscode/quickAccessActions/quickOpen', 'Go to File...'),
+            label: nls.localizeByDefault('Go to File...'),
             order: '1',
         });
     }

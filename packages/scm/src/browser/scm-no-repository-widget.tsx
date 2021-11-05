@@ -34,7 +34,7 @@ export class ScmNoRepositoryWidget extends ReactWidget {
     protected render(): React.ReactNode {
         return <AlertMessage
             type='WARNING'
-            header={nls.localize('vscode/scm.contribution/no open repo', 'No repository found')}
+            header={nls.localize('theia/scm/noRepositoryFound', 'No repository found')}
         />;
     }
 

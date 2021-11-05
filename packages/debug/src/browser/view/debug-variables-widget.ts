@@ -52,7 +52,7 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:variables:' + this.viewModel.id;
-        this.title.label = nls.localize('vscode/debug.contribution/variables', 'Variables');
+        this.title.label = nls.localizeByDefault('Variables');
         this.toDispose.push(this.variables);
         this.source = this.variables;
     }

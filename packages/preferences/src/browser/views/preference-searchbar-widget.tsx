@@ -88,11 +88,11 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
     protected renderResultsCountOption(): React.ReactNode {
         let resultsFound: string;
         if (this.resultsCount === 0) {
-            resultsFound = nls.localize('vscode/settingsEditor2/noResults', 'No Settings Found');
+            resultsFound = nls.localizeByDefault('No Settings Found');
         } else if (this.resultsCount === 1) {
-            resultsFound = nls.localize('vscode/settingsEditor2/oneResult', '1 Setting Found');
+            resultsFound = nls.localizeByDefault('1 Setting Found');
         } else {
-            resultsFound = nls.localize('vscode/settingsEditor2/moreThanOneResult', '{0} Settings Found', this.resultsCount.toFixed(0));
+            resultsFound = nls.localizeByDefault('{0} Settings Found', this.resultsCount.toFixed(0));
         }
         return this.searchTermExists() ?
             (<span
@@ -109,7 +109,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
     protected renderClearAllOption(): React.ReactNode {
         return <span
             className={`${codicon('clear-all')} option ${(this.searchTermExists() ? 'enabled' : '')}`}
-            title={nls.localize('vscode/settingsEditor2/clearInput', 'Clear Search Results')}
+            title={nls.localizeByDefault('Clear Search Results')}
             onClick={this.clearSearchResults}
         />;
     }
@@ -146,7 +146,7 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
                         type="text"
                         id={PreferencesSearchbarWidget.SEARCHBAR_ID}
                         spellCheck={false}
-                        placeholder={nls.localize('vscode/settingsEditor2/SearchSettings.AriaLabel', 'Search Settings')}
+                        placeholder={nls.localizeByDefault('Search Settings')}
                         className="settings-search-input theia-input"
                         onChange={this.handleSearch}
                         ref={this.searchbarRef}

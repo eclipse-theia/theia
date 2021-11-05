@@ -34,35 +34,35 @@ import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plug
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
 export namespace ElectronCommands {
-    export const TOGGLE_DEVELOPER_TOOLS = Command.toLocalizedCommand({
+    export const TOGGLE_DEVELOPER_TOOLS = Command.toDefaultLocalizedCommand({
         id: 'theia.toggleDevTools',
         label: 'Toggle Developer Tools'
-    }, 'vscode/developerActions/toggleDevTools');
-    export const RELOAD = Command.toLocalizedCommand({
+    });
+    export const RELOAD = Command.toDefaultLocalizedCommand({
         id: 'view.reload',
         label: 'Reload Window'
-    }, 'vscode/windowActions/reloadWindow');
-    export const ZOOM_IN = Command.toLocalizedCommand({
+    });
+    export const ZOOM_IN = Command.toDefaultLocalizedCommand({
         id: 'view.zoomIn',
         label: 'Zoom In'
-    }, 'vscode/windowActions/zoomIn');
-    export const ZOOM_OUT = Command.toLocalizedCommand({
+    });
+    export const ZOOM_OUT = Command.toDefaultLocalizedCommand({
         id: 'view.zoomOut',
         label: 'Zoom Out'
-    }, 'vscode/windowActions/zoomOut');
-    export const RESET_ZOOM = Command.toLocalizedCommand({
+    });
+    export const RESET_ZOOM = Command.toDefaultLocalizedCommand({
         id: 'view.resetZoom',
         label: 'Reset Zoom'
-    }, 'vscode/windowActions/zoomReset');
-    export const CLOSE_WINDOW = Command.toLocalizedCommand({
+    });
+    export const CLOSE_WINDOW = Command.toDefaultLocalizedCommand({
         id: 'close.window',
         label: 'Close Window'
-    }, 'vscode/windowActions/close');
-    export const TOGGLE_FULL_SCREEN = Command.toLocalizedCommand({
+    });
+    export const TOGGLE_FULL_SCREEN = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.toggleFullScreen',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Full Screen'
-    }, 'vscode/windowActions/toggleFullScreen', CommonCommands.VIEW_CATEGORY_KEY);
+    });
 }
 
 export namespace ElectronMenus {
@@ -228,12 +228,12 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected async handleRequiredRestart(): Promise<void> {
         const msgNode = document.createElement('div');
         const message = document.createElement('p');
-        message.textContent = nls.localize('vscode/relauncher.contribution/relaunchSettingMessage', 'A setting has changed that requires a restart to take effect');
+        message.textContent = nls.localizeByDefault('A setting has changed that requires a restart to take effect');
         const detail = document.createElement('p');
-        detail.textContent = nls.localize('vscode/relauncher.contribution/relaunchSettingDetail',
+        detail.textContent = nls.localizeByDefault(
             'Press the restart button to restart {0} and enable the setting.', FrontendApplicationConfigProvider.get().applicationName);
         msgNode.append(message, detail);
-        const restart = nls.localize('vscode/relauncher.contribution/restart', 'Restart');
+        const restart = nls.localizeByDefault('Restart');
         const dialog = new ConfirmDialog({
             title: restart,
             msg: msgNode,

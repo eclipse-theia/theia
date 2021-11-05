@@ -58,7 +58,7 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
     protected init(): void {
         super.init();
         this.id = 'debug:breakpoints:' + this.viewModel.id;
-        this.title.label = nls.localize('vscode/debug.contribution/breakpoints', 'Breakpoints');
+        this.title.label = nls.localizeByDefault('Breakpoints');
         this.toDispose.push(this.breakpointsSource);
         this.source = this.breakpointsSource;
     }

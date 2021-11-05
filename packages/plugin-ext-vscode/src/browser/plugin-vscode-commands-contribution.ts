@@ -379,13 +379,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand({
             id: 'workbench.action.closeEditorsInGroup',
-            label: nls.localize('vscode/editor.contribution/closeEditorsInGroup', 'Close All Editors in Group')
+            label: nls.localizeByDefault('Close All Editors in Group')
         }, {
             execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.closeTabs, uri)
         });
         commands.registerCommand({
             id: 'workbench.files.saveAllInGroup',
-            label: nls.localize('vscode/fileActions.contribution/saveAllInGroup', 'Save All in Group')
+            label: nls.localizeByDefault('Save All in Group')
         }, {
             execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.saveTabs, uri)
         });

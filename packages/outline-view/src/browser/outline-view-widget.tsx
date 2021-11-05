@@ -74,7 +74,7 @@ export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
 @injectable()
 export class OutlineViewWidget extends TreeWidget {
 
-    static LABEL = nls.localize('vscode/outline.contribution/name', 'Outline');
+    static LABEL = nls.localizeByDefault('Outline');
 
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
@@ -180,7 +180,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     protected renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
-            return <div className='theia-widget-noInfo no-outline'>{nls.localize('vscode/outlinePane/no-editor', 'No outline information available.')}</div>;
+            return <div className='theia-widget-noInfo no-outline'>{nls.localizeByDefault('No outline information available.')}</div>;
         }
         return super.renderTree(model);
     }

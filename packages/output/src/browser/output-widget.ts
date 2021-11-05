@@ -33,7 +33,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     static readonly ID = 'outputView';
-    static readonly LABEL = nls.localize('vscode/settingsLayout/output', 'Output');
+    static readonly LABEL = nls.localizeByDefault('Output');
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;

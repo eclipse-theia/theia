@@ -39,7 +39,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
     }
 
     static ID = 'debug';
-    static LABEL = nls.localize('vscode/settingsLayout/debug', 'Debug');
+    static LABEL = nls.localizeByDefault('Debug');
 
     @inject(DebugViewModel)
     readonly model: DebugViewModel;

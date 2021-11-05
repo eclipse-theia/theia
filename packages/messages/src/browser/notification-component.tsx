@@ -87,7 +87,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
                             <li className={codicon('chevron-down') + collapsed ? ' expand' : ' collapse'} title={collapsed ? 'Expand' : 'Collapse'}
                                 data-message-id={messageId} onClick={this.onToggleExpansion} />
                         )}
-                        {!isProgress && (<li className={codicon('close', true)} title={nls.localize('vscode/abstractTree/clear', 'Clear')} data-message-id={messageId}
+                        {!isProgress && (<li className={codicon('close', true)} title={nls.localizeByDefault('Clear')} data-message-id={messageId}
                             onClick={this.onClear} />)}
                     </ul>
                 </div>

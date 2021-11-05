@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { codicon } from '@theia/core/lib/browser';
-import { Command } from '@theia/core/lib/common';
+import { Command, nls } from '@theia/core/lib/common';
 
 export namespace OutputCommands {
 
-    const OUTPUT_CATEGORY_KEY = 'vscode/outputView/output';
     const OUTPUT_CATEGORY = 'Output';
+    const OUTPUT_CATEGORY_KEY = nls.getDefaultKey(OUTPUT_CATEGORY);
 
     /* #region VS Code `OutputChannel` API */
     // Based on: https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/vscode.d.ts#L4692-L4745

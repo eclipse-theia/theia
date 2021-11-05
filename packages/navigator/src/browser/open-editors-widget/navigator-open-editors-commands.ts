@@ -18,31 +18,31 @@ import { CommonCommands } from '@theia/core/lib/browser';
 import { Command } from '@theia/core/lib/common';
 
 export namespace OpenEditorsCommands {
-    export const CLOSE_ALL_TABS_FROM_TOOLBAR = Command.toLocalizedCommand({
+    export const CLOSE_ALL_TABS_FROM_TOOLBAR = Command.toDefaultLocalizedCommand({
         id: 'navigator.close.all.editors.toolbar',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Close All Editors',
         iconClass: 'codicon codicon-close-all'
-    }, 'vscode/editorActions/closeAllEditors', CommonCommands.FILE_CATEGORY_KEY);
+    });
 
-    export const SAVE_ALL_TABS_FROM_TOOLBAR = Command.toLocalizedCommand({
+    export const SAVE_ALL_TABS_FROM_TOOLBAR = Command.toDefaultLocalizedCommand({
         id: 'navigator.save.all.editors.toolbar',
         category: CommonCommands.FILE_CATEGORY,
-        label: 'Save All Editors',
+        label: 'Save All',
         iconClass: 'codicon codicon-save-all'
-    }, 'vscode/fileActions.contribution/saveFiles', CommonCommands.FILE_CATEGORY_KEY);
+    });
 
-    export const CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON = Command.toLocalizedCommand({
+    export const CLOSE_ALL_EDITORS_IN_GROUP_FROM_ICON = Command.toDefaultLocalizedCommand({
         id: 'navigator.close.all.in.area.icon',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Close Group',
         iconClass: 'codicon codicon-close-all'
-    }, 'vscode/fileActions/closeGroup', CommonCommands.VIEW_CATEGORY_KEY);
+    });
 
-    export const SAVE_ALL_IN_GROUP_FROM_ICON = Command.toLocalizedCommand({
+    export const SAVE_ALL_IN_GROUP_FROM_ICON = Command.toDefaultLocalizedCommand({
         id: 'navigator.save.all.in.area.icon',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Save All in Group',
         iconClass: 'codicon codicon-save-all'
-    }, 'vscode/fileActions.contribution/saveAllInGroup', CommonCommands.FILE_CATEGORY_KEY);
+    });
 }

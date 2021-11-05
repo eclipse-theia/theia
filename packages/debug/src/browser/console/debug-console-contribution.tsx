@@ -34,15 +34,14 @@ export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
 
 export namespace DebugConsoleCommands {
 
-    export const DEBUG_CATEGORY_KEY = 'vscode/debugCommands/debug';
     export const DEBUG_CATEGORY = 'Debug';
 
-    export const CLEAR = Command.toLocalizedCommand({
+    export const CLEAR = Command.toDefaultLocalizedCommand({
         id: 'debug.console.clear',
         category: DEBUG_CATEGORY,
         label: 'Clear Console',
         iconClass: codicon('clear-all')
-    }, 'vscode/repl/clearRepl', DEBUG_CATEGORY_KEY);
+    });
 }
 
 @injectable()
@@ -136,7 +135,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     static options: ConsoleOptions = {
         id: 'debug-console',
         title: {
-            label: nls.localize('vscode/repl/debugConsole', 'Debug Console'),
+            label: nls.localizeByDefault('Debug Console'),
             iconClass: codicon('debug-console')
         },
         input: {

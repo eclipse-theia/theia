@@ -61,11 +61,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     readonly statusBarId = 'select-run-debug-statusbar-item';
 
-    private readonly command = Command.toLocalizedCommand({
+    private readonly command = Command.toDefaultLocalizedCommand({
         id: 'select.debug.configuration',
         category: DebugCommands.DEBUG_CATEGORY,
         label: 'Select and Start Debugging'
-    }, 'vscode/debugCommands/selectAndStartDebugging', DebugCommands.DEBUG_CATEGORY_KEY);
+    });
 
     @postConstruct()
     protected initialize(): void {
@@ -135,7 +135,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({configuration})
+                    execute: () => this.runConfiguration({ configuration })
                 });
             }
         }

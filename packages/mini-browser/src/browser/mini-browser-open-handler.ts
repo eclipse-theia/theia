@@ -35,23 +35,23 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export namespace MiniBrowserCommands {
 
-    export const PREVIEW_CATEGORY_KEY = 'vscode/extensionEditor/preview';
     export const PREVIEW_CATEGORY = 'Preview';
+    export const PREVIEW_CATEGORY_KEY = nls.getDefaultKey(PREVIEW_CATEGORY);
 
     export const PREVIEW = Command.toLocalizedCommand({
         id: 'mini-browser.preview',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
-    }, 'vscode/mainThreadFileSystemEventService/preview');
+    }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'mini-browser.open.source',
         iconClass: codicon('go-to-file')
     };
-    export const OPEN_URL = Command.toLocalizedCommand({
+    export const OPEN_URL = Command.toDefaultLocalizedCommand({
         id: 'mini-browser.openUrl',
         category: PREVIEW_CATEGORY,
         label: 'Open URL'
-    }, 'vscode/url.contribution/openUrl', PREVIEW_CATEGORY_KEY);
+    });
 }
 
 /**
@@ -220,12 +220,12 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         toolbar.registerItem({
             id: MiniBrowserCommands.PREVIEW.id,
             command: MiniBrowserCommands.PREVIEW.id,
-            tooltip: nls.localize('theia/preview/openPreviewSide', 'Open Preview to the Side')
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.previewSide.title', 'Open Preview to the Side')
         });
         toolbar.registerItem({
             id: MiniBrowserCommands.OPEN_SOURCE.id,
             command: MiniBrowserCommands.OPEN_SOURCE.id,
-            tooltip: nls.localize('theia/preview/openSource', 'Open Source')
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.showSource.title', 'Open Source')
         });
     }
 
@@ -281,7 +281,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     protected async openUrl(arg?: string): Promise<void> {
         const url = arg ? arg : await this.quickInputService?.input({
-            prompt: nls.localize('vscode/url.contribution/urlToOpen', 'URL to open'),
+            prompt: nls.localizeByDefault('URL to open'),
             placeHolder: nls.localize('theia/mini-browser/typeUrl', 'Type a URL')
         });
         if (url) {

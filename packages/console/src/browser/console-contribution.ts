@@ -102,12 +102,12 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
         });
         menus.registerMenuAction(ConsoleContextMenu.CLIPBOARD, {
             commandId: ConsoleCommands.COLLAPSE_ALL.id,
-            label: nls.localize('vscode/repl/collapse', 'Collapse All'),
+            label: nls.localizeByDefault('Collapse All'),
             order: 'a3'
         });
         menus.registerMenuAction(ConsoleContextMenu.CLEAR, {
             commandId: ConsoleCommands.CLEAR.id,
-            label: nls.localize('vscode/repl/clearRepl', 'Clear Console')
+            label: nls.localizeByDefault('Clear Console')
         });
     }
 

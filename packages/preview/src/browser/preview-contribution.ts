@@ -40,7 +40,7 @@ export namespace PreviewCommands {
         id: 'preview:open',
         label: 'Open Preview',
         iconClass: codicon('open-preview')
-    }, 'vscode/mainThreadFileSystemEventService/preview');
+    }, 'vscode.markdown-language-features/package/markdown.preview.title');
     export const OPEN_SOURCE: Command = {
         id: 'preview.open.source',
         iconClass: codicon('go-to-file')
@@ -229,12 +229,12 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         registry.registerItem({
             id: PreviewCommands.OPEN.id,
             command: PreviewCommands.OPEN.id,
-            tooltip: nls.localize('theia/preview/openPreviewSide', 'Open Preview to the Side')
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.previewSide.title', 'Open Preview to the Side')
         });
         registry.registerItem({
             id: PreviewCommands.OPEN_SOURCE.id,
             command: PreviewCommands.OPEN_SOURCE.id,
-            tooltip: nls.localize('theia/preview/openSource', 'Open Source')
+            tooltip: nls.localize('vscode.markdown-language-features/package/markdown.showSource.title', 'Open Source')
         });
     }
 

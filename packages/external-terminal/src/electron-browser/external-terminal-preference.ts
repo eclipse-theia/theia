@@ -87,17 +87,17 @@ export async function getExternalTerminalSchema(externalTerminalService: Externa
         properties: {
             'terminal.external.windowsExec': {
                 type: 'string',
-                description: nls.localize('vscode/externalTerminal.contribution/terminal.external.windowsExec', 'Customizes which terminal to run on Windows.'),
+                description: nls.localizeByDefault('Customizes which terminal to run on Windows.'),
                 default: `${isWindows ? hostExec : 'C:\\WINDOWS\\System32\\cmd.exe'}`
             },
             'terminal.external.osxExec': {
                 type: 'string',
-                description: nls.localize('vscode/externalTerminal.contribution/terminal.external.osxExec', 'Customizes which terminal to run on macOS.'),
+                description: nls.localizeByDefault('Customizes which terminal to run on macOS.'),
                 default: `${isOSX ? hostExec : 'Terminal.app'}`
             },
             'terminal.external.linuxExec': {
                 type: 'string',
-                description: nls.localize('vscode/externalTerminal.contribution/terminal.external.linuxExec', 'Customizes which terminal to run on Linux.'),
+                description: nls.localizeByDefault('Customizes which terminal to run on Linux.'),
                 default: `${!(isWindows || isOSX) ? hostExec : 'xterm'}`
             }
         }

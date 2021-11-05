@@ -95,7 +95,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             alignment: StatusBarAlignment.RIGHT,
             priority: 1,
             command: EditorCommands.CHANGE_LANGUAGE.id,
-            tooltip: nls.localize('vscode/editorStatus/selectLanguageMode', 'Select Language Mode')
+            tooltip: nls.localizeByDefault('Select Language Mode')
         });
     }
 
@@ -109,7 +109,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             alignment: StatusBarAlignment.RIGHT,
             priority: 10,
             command: EditorCommands.CHANGE_ENCODING.id,
-            tooltip: nls.localize('vscode/editorStatus/selectEncoding', 'Select Encoding')
+            tooltip: nls.localizeByDefault('Select Encoding')
         });
     }
 
@@ -120,7 +120,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         }
         const { cursor } = editor;
         this.statusBar.setElement('editor-status-cursor-position', {
-            text: nls.localize('vscode/editorStatus/singleSelection', 'Ln {0}, Col {1}', (cursor.line + 1).toString(), editor.getVisibleColumn(cursor).toString()),
+            text: nls.localizeByDefault('Ln {0}, Col {1}', cursor.line + 1, editor.getVisibleColumn(cursor)),
             alignment: StatusBarAlignment.RIGHT,
             priority: 100,
             tooltip: EditorCommands.GOTO_LINE_COLUMN.label,

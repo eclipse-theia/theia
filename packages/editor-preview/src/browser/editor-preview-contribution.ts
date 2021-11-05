@@ -21,11 +21,11 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorPreviewWidget } from './editor-preview-widget';
 
 export namespace EditorPreviewCommands {
-    export const PIN_PREVIEW_COMMAND = Command.toLocalizedCommand({
+    export const PIN_PREVIEW_COMMAND = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.keepEditor',
         category: CommonCommands.VIEW_CATEGORY,
         label: 'Keep Editor',
-    }, 'vscode/editor.contribution/keepEditor', CommonCommands.VIEW_CATEGORY_KEY);
+    });
 }
 
 @injectable()
@@ -62,7 +62,7 @@ export class EditorPreviewContribution implements CommandContribution, MenuContr
     registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: EditorPreviewCommands.PIN_PREVIEW_COMMAND.id,
-            label: nls.localize('vscode/editor.contribution/keepOpen', 'Keep Open'),
+            label: nls.localizeByDefault('Keep Open'),
             order: '6',
         });
     }

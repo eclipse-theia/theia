@@ -36,7 +36,7 @@ export type FormatType = string | number | boolean | undefined;
 
 export namespace Localization {
 
-    function format(message: string, args: FormatType[]): string {
+    export function format(message: string, args: FormatType[]): string {
         let result = message;
         if (args.length > 0) {
             result = message.replace(/\{(\d+)\}/g, (match, rest) => {
@@ -59,11 +59,21 @@ export namespace Localization {
         if (localization) {
             const translation = localization.translations[key];
             if (translation) {
-                // vscode's localizations often contain additional '&&' symbols, which we simply ignore
-                value = translation.replace(/&&/g, '');
+                value = normalize(translation);
             }
         }
         return format(value, args);
+    }
+
+    /**
+     * This function normalizes values from VSCode's localizations, which often contain additional mnemonics (`&&`).
+     * The normalization removes the mnemonics from the input string.
+     *
+     * @param value Localization value coming from VSCode
+     * @returns A normalized localized value
+     */
+    export function normalize(value: string): string {
+        return value.replace(/&&/g, '');
     }
 
     export function transformKey(key: string): string {

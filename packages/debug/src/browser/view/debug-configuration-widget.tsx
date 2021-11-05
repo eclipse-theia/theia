@@ -79,15 +79,15 @@ export class DebugConfigurationWidget extends ReactWidget {
     render(): React.ReactNode {
         const { options } = this;
         return <React.Fragment>
-            <DebugAction run={this.start} label={nls.localize('vscode/debugCommands/startDebug', 'Start Debugging')} iconClass='debug-start' ref={this.setStepRef} />
+            <DebugAction run={this.start} label={nls.localizeByDefault('Start Debugging')} iconClass='debug-start' ref={this.setStepRef} />
             <select className='theia-select debug-configuration' value={this.currentValue} onChange={this.setCurrentConfiguration}>
-                {options.length ? options : <option value='__NO_CONF__'>{nls.localize('vscode/debugActionViewItems/noConfigurations', 'No Configurations')}</option>}
+                {options.length ? options : <option value='__NO_CONF__'>{nls.localizeByDefault('No Configurations')}</option>}
                 <option disabled>{'Add Configuration...'.replace(/./g, '-')}</option>
-                <option value='__ADD_CONF__'>{nls.localize('vscode/debugActionViewItems/addConfiguration', 'Add Configuration...')}</option>
+                <option value='__ADD_CONF__'>{nls.localizeByDefault('Add Configuration...')}</option>
             </select>
-            <DebugAction run={this.openConfiguration} label={nls.localize('vscode/debugCommands/openLaunchJson', 'Open "launch.json"', '"launch.json"')}
+            <DebugAction run={this.openConfiguration} label={nls.localizeByDefault('Open {0}', '"launch.json"')}
                 iconClass='settings-gear' />
-            <DebugAction run={this.openConsole} label={nls.localize('vscode/repl/debugConsole', 'Debug Console')} iconClass='terminal' />
+            <DebugAction run={this.openConsole} label={nls.localizeByDefault('Debug Console')} iconClass='terminal' />
         </React.Fragment>;
     }
     protected get currentValue(): string {

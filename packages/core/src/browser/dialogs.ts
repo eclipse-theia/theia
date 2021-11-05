@@ -67,10 +67,10 @@ export namespace DialogError {
 }
 
 export namespace Dialog {
-    export const YES = nls.localize('vscode/extensionsUtils/yes', 'Yes');
-    export const NO = nls.localize('vscode/extensionsUtils/no', 'No');
-    export const OK = nls.localize('vscode/dialog/ok', 'OK');
-    export const CANCEL = nls.localize('vscode/explorerViewer/cancel', 'Cancel');
+    export const YES = nls.localizeByDefault('Yes');
+    export const NO = nls.localizeByDefault('No');
+    export const OK = nls.localizeByDefault('OK');
+    export const CANCEL = nls.localizeByDefault('Cancel');
 }
 
 @injectable()

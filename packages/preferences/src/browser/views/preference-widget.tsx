@@ -39,7 +39,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
     /**
      * The widget `label` which is used for display purposes.
      */
-    static readonly LABEL = nls.localize('vscode/actions/preferences', 'Preferences');
+    static readonly LABEL = nls.localizeByDefault('Preferences');
 
     @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
     @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;

@@ -31,16 +31,16 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace KeymapsCommands {
-    export const OPEN_KEYMAPS = Command.toLocalizedCommand({
+    export const OPEN_KEYMAPS = Command.toDefaultLocalizedCommand({
         id: 'keymaps:open',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts',
-    }, 'vscode/preferences.contribution/openGlobalKeybindings', CommonCommands.PREFERENCES_CATEGORY_KEY);
-    export const OPEN_KEYMAPS_JSON = Command.toLocalizedCommand({
+    });
+    export const OPEN_KEYMAPS_JSON = Command.toDefaultLocalizedCommand({
         id: 'keymaps:openJson',
         category: CommonCommands.PREFERENCES_CATEGORY,
         label: 'Open Keyboard Shortcuts (JSON)',
-    }, 'vscode/preferences.contribution/openGlobalKeybindingsFile', CommonCommands.PREFERENCES_CATEGORY_KEY);
+    });
     export const OPEN_KEYMAPS_JSON_TOOLBAR: Command = {
         id: 'keymaps:openJson.toolbar',
         iconClass: codicon('json')
@@ -112,13 +112,13 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         toolbar.registerItem({
             id: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
             command: KeymapsCommands.OPEN_KEYMAPS_JSON_TOOLBAR.id,
-            tooltip: nls.localize('vscode/preferences.contribution/openGlobalKeybindingsFile', 'Open Keyboard Shortcuts in JSON'),
+            tooltip: nls.localizeByDefault('Open Keyboard Shortcuts (JSON)'),
             priority: 0,
         });
         toolbar.registerItem({
             id: KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH.id,
             command: KeymapsCommands.CLEAR_KEYBINDINGS_SEARCH.id,
-            tooltip: nls.localize('vscode/preferences.contribution/clear', 'Clear Keybindings Search Input'),
+            tooltip: nls.localizeByDefault('Clear Keybindings Search Input'),
             priority: 1,
             onDidChange,
         });

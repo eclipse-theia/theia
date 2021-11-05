@@ -55,7 +55,7 @@ export namespace ProblemsCommands {
         category: 'Problems',
         label: 'Clear All',
         iconClass: codicon('clear-all')
-    }, 'theia/markers/clearAll', 'vscode/markers.contribution/problems');
+    }, 'theia/markers/clearAll', nls.getDefaultKey('Problems'));
 }
 
 @injectable()
@@ -68,7 +68,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     constructor() {
         super({
             widgetId: PROBLEMS_WIDGET_ID,
-            widgetName: nls.localize('vscode/markers.contribution/problems', 'Problems'),
+            widgetName: nls.localizeByDefault('Problems'),
             defaultWidgetOptions: {
                 area: 'bottom'
             },
@@ -110,7 +110,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
      */
     protected getStatusBarTooltip(stat: ProblemStat): string {
         if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
-            return nls.localize('vscode/markers.contribution/noProblems', 'No Problems');
+            return nls.localizeByDefault('No Problems');
         }
         const localize = (text: string, value: number): string => nls.localize(`vscode/markers.contribution/total${text}`, `{0} ${text}`, value.toString());
         const tooltip: string[] = [];
@@ -164,17 +164,17 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY.id,
-            label: nls.localize('vscode/markers.contribution/copyMarker', 'Copy'),
+            label: nls.localizeByDefault('Copy'),
             order: '0'
         });
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY_MESSAGE.id,
-            label: nls.localize('vscode/markers.contribution/copyMessage', 'Copy Message'),
+            label: nls.localizeByDefault('Copy Message'),
             order: '1'
         });
         menus.registerMenuAction(ProblemsMenu.PROBLEMS, {
             commandId: ProblemsCommands.COLLAPSE_ALL.id,
-            label: nls.localize('vscode/markers.contribution/collapseAll', 'Collapse All'),
+            label: nls.localizeByDefault('Collapse All'),
             order: '2'
         });
     }
@@ -183,7 +183,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         toolbarRegistry.registerItem({
             id: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
-            tooltip: nls.localize('vscode/markers.contribution/collapseAll', 'Collapse All'),
+            tooltip: nls.localizeByDefault('Collapse All'),
             priority: 0,
         });
         toolbarRegistry.registerItem({
