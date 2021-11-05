@@ -58,7 +58,7 @@ const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
-const CompressionPlugin = require('@theia/compression-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 
 const outputPath = path.resolve(__dirname, 'lib');
 const { mode, staticCompression }  = yargs.option('mode', {
@@ -88,10 +88,7 @@ const plugins = [
 ];
 // it should go after copy-plugin in order to compress monaco as well
 if (staticCompression) {
-    plugins.push(new CompressionPlugin({
-        // enable reuse of compressed artifacts for incremental development
-        cache: development
-    }));
+    plugins.push(new CompressionPlugin({}));
 }
 plugins.push(new CircularDependencyPlugin({
     exclude: /(node_modules|examples)[\\\\|\/]./,
@@ -108,6 +105,7 @@ module.exports = {
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
+    cache: staticCompression,
     module: {
         rules: [
             {
