@@ -42,7 +42,7 @@ export class QuickOpenWorkspace {
 
     protected readonly removeRecentWorkspaceButton: QuickInputButton = {
         iconClass: 'codicon-remove-close',
-        tooltip: nls.localize('vscode/windowActions/remove', 'Remove from Recently Opened')
+        tooltip: nls.localizeByDefault('Remove from Recently Opened')
     };
 
     async open(workspaces: string[]): Promise<void> {
@@ -55,12 +55,12 @@ export class QuickOpenWorkspace {
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push({
-                label: nls.localize('vscode/windowActions/noRecentWorkSpaces', 'No Recent Workspaces')
+                label: nls.localize('theia/windowActions/noRecentWorkSpaces', 'No Recent Workspaces')
             });
         }
         this.items.push({
             type: 'separator',
-            label: nls.localize('vscode/windowActions/workspacesAndFolders', 'folders & workspaces')
+            label: nls.localizeByDefault('folders & workspaces')
         });
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
@@ -95,7 +95,7 @@ export class QuickOpenWorkspace {
         }
         this.quickInputService?.showQuickPick(this.items, {
             placeholder: nls.localize(
-                'vscode/windowActions/openRecentPlaceholder',
+                'theia/windowActions/openRecentPlaceholder',
                 'Type the name of the workspace you want to open'),
             onDidTriggerItemButton: async context => {
                 const resource = context.item.resource;
