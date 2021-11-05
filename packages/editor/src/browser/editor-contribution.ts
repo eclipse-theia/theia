@@ -18,9 +18,12 @@ import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { FrontendApplicationContribution, DiffUris, DockLayout, QuickInputService, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, DiffUris, DockLayout,
+    QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT
+} from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { CommandHandler, DisposableCollection } from '@theia/core';
+import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { EditorCommands } from './editor-command';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
@@ -28,7 +31,7 @@ import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
-export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution {
+export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
@@ -165,6 +168,29 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         keybindings.registerKeybinding({
             command: EditorCommands.SPLIT_EDITOR_VERTICAL.id,
             keybinding: 'ctrlcmd+k ctrlcmd+\\',
+        });
+    }
+
+    registerMenus(registry: MenuModelRegistry): void {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_UP.id,
+            label: nls.localizeByDefault('Split Up'),
+            order: '1',
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_DOWN.id,
+            label: nls.localizeByDefault('Split Down'),
+            order: '2',
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_LEFT.id,
+            label: nls.localizeByDefault('Split Left'),
+            order: '3',
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
+            commandId: EditorCommands.SPLIT_EDITOR_RIGHT.id,
+            label: nls.localizeByDefault('Split Right'),
+            order: '4',
         });
     }
 }

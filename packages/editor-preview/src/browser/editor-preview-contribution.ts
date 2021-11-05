@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingRegistry, SHELL_TABBAR_CONTEXT_MENU, Widget } from '@theia/core/lib/browser';
+import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingRegistry, SHELL_TABBAR_CONTEXT_PIN, Widget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -60,7 +60,7 @@ export class EditorPreviewContribution implements CommandContribution, MenuContr
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: EditorPreviewCommands.PIN_PREVIEW_COMMAND.id,
             label: nls.localizeByDefault('Keep Open'),
             order: '6',

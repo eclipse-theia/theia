@@ -35,10 +35,11 @@ import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { WorkspaceInputDialog } from './workspace-input-dialog';
-import { Emitter, Event, OS } from '@theia/core/lib/common';
+import { Emitter, Event, isWindows, OS } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { nls } from '@theia/core/lib/common/nls';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -146,6 +147,10 @@ export namespace WorkspaceCommands {
         category: CommonCommands.FILE_CATEGORY,
         label: 'Save As...',
     });
+    export const COPY_RELATIVE_FILE_PATH = Command.toDefaultLocalizedCommand({
+        id: 'navigator.copyRelativeFilePath',
+        label: 'Copy Relative Path'
+    });
 }
 
 @injectable()
@@ -206,6 +211,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
     @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
     private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
@@ -316,6 +322,20 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.FILE_DUPLICATE, this.newMultiUriAwareCommandHandler(this.duplicateHandler));
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler(this.deleteHandler));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler(this.compareHandler));
+        registry.registerCommand(WorkspaceCommands.COPY_RELATIVE_FILE_PATH, UriAwareCommandHandler.MultiSelect(this.selectionService, {
+            isEnabled: uris => !!uris.length,
+            isVisible: uris => !!uris.length,
+            execute: async uris => {
+                const lineDelimiter = isWindows ? '\r\n' : '\n';
+                const text = uris.map((uri: URI) => {
+                    const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
+                    if (workspaceRoot) {
+                        return workspaceRoot.relative(uri);
+                    }
+                }).join(lineDelimiter);
+                await this.clipboardService.writeText(text);
+            }
+        }));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,

@@ -69,7 +69,7 @@ export default new ContainerModule(bind => {
 
     bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
 
-    [CommandContribution, KeybindingContribution].forEach(serviceIdentifier => {
+    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier => {
         bind(serviceIdentifier).toService(EditorContribution);
     });
     bind(QuickEditorService).toSelf().inSingletonScope();

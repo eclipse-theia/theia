@@ -37,6 +37,11 @@ const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
 
 /** Menu path for tab bars used throughout the application shell. */
 export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu'];
+export const SHELL_TABBAR_CONTEXT_CLOSE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '0_close'];
+export const SHELL_TABBAR_CONTEXT_COPY: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '1_copy'];
+// Kept here in anticipation of tab pinning behavior implemented in tab-bars.ts
+export const SHELL_TABBAR_CONTEXT_PIN: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '4_pin'];
+export const SHELL_TABBAR_CONTEXT_SPLIT: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '5_split'];
 
 export const TabBarRendererFactory = Symbol('TabBarRendererFactory');
 

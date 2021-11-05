@@ -28,7 +28,7 @@ import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
+import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
@@ -51,7 +51,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
-import { FormatType } from './saveable';
+import { FormatType, Saveable } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
@@ -181,6 +181,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Close Other Tabs'
     }, 'theia/core/common/closeOthers', VIEW_CATEGORY_KEY);
+    export const CLOSE_SAVED_TABS = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.closeUnmodifiedEditors',
+        category: VIEW_CATEGORY,
+        label: 'Close Saved Editors in Group',
+    });
     export const CLOSE_RIGHT_TABS = Command.toLocalizedCommand({
         id: 'core.close.right.tabs',
         category: VIEW_CATEGORY,
@@ -546,35 +551,45 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: '2'
         });
 
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_CLOSE, {
             commandId: CommonCommands.CLOSE_TAB.id,
             label: nls.localizeByDefault('Close'),
             order: '0'
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_CLOSE, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
             label: nls.localizeByDefault('Close Others'),
             order: '1'
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_CLOSE, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
             label: nls.localizeByDefault('Close to the Right'),
             order: '2'
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_CLOSE, {
+            commandId: CommonCommands.CLOSE_SAVED_TABS.id,
+            label: nls.localizeByDefault('Close Saved'),
+            order: '3',
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_CLOSE, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
             label: nls.localizeByDefault('Close All'),
-            order: '3'
-        });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
-            commandId: CommonCommands.COLLAPSE_PANEL.id,
-            label: CommonCommands.COLLAPSE_PANEL.label,
             order: '4'
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
+            commandId: CommonCommands.COLLAPSE_PANEL.id,
+            label: CommonCommands.COLLAPSE_PANEL.label,
+            order: '5'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_SPLIT, {
             commandId: CommonCommands.TOGGLE_MAXIMIZED.id,
             label: CommonCommands.TOGGLE_MAXIMIZED.label,
-            order: '5'
+            order: '6'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_COPY, {
+            commandId: CommonCommands.COPY_PATH.id,
+            label: CommonCommands.COPY_PATH.label,
+            order: '1',
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
@@ -713,6 +728,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 const tabBar = this.shell.findTabBar(event)!;
                 const currentTitle = this.shell.findTitle(tabBar, event);
                 this.shell.closeTabs(tabBar, title => title !== currentTitle && title.closable);
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_SAVED_TABS, {
+            isEnabled: (event?: Event) => !!this.shell.findTabBar(event),
+            execute: (event?: Event) => {
+                const tabBar = this.shell.findTabBar(event);
+                if (tabBar) {
+                    this.shell.closeTabs(tabBar, title => title.closable && !Saveable.isDirty(title.owner));
+                }
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
