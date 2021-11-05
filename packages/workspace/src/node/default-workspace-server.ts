@@ -102,10 +102,10 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         const index = recentRoots.indexOf(uri);
         if (index !== -1) {
             recentRoots.splice(index, 1);
+            this.writeToUserHome({
+                recentRoots
+            });
         }
-        this.writeToUserHome({
-            recentRoots
-        });
     }
 
     async getRecentWorkspaces(): Promise<string[]> {

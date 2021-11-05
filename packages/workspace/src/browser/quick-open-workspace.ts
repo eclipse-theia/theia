@@ -53,11 +53,6 @@ export class QuickOpenWorkspace {
         ]);
         const home = new URI(homeDirUri).path.toString();
         await this.preferences.ready;
-        if (!workspaces.length) {
-            this.items.push({
-                label: nls.localize('theia/windowActions/noRecentWorkSpaces', 'No Recent Workspaces')
-            });
-        }
         this.items.push({
             type: 'separator',
             label: nls.localizeByDefault('folders & workspaces')
@@ -95,7 +90,7 @@ export class QuickOpenWorkspace {
         }
         this.quickInputService?.showQuickPick(this.items, {
             placeholder: nls.localize(
-                'theia/windowActions/openRecentPlaceholder',
+                'vscode/windowActions/openRecentPlaceholder',
                 'Type the name of the workspace you want to open'),
             onDidTriggerItemButton: async context => {
                 const resource = context.item.resource;
