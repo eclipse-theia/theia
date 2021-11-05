@@ -261,7 +261,7 @@ export class MonacoQuickInputService implements QuickInputService {
                                     if (index !== -1) {
                                         const filteredItems = wrapped.items.slice();
                                         const removed = filteredItems.splice(index, 1);
-                                        const activeFilteredItems = wrapped.activeItems.filter(ai => ai !== removed[0]);
+                                        const activeFilteredItems = wrapped.activeItems.filter(item => item !== removed[0]);
                                         wrapped.items = filteredItems;
                                         if (activeFilteredItems) {
                                             wrapped.activeItems = activeFilteredItems;
