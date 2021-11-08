@@ -30,6 +30,7 @@ import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
+import { MaybePromise } from '@theia/core/lib/common/types';
 
 const canceledName = 'Canceled';
 /**
@@ -64,7 +65,7 @@ export function getDarkIconUri(iconPath: URI | { light: URI; dark: URI; }): URI 
 export class QuickOpenExtImpl implements QuickOpenExt {
     private proxy: QuickOpenMain;
     private onDidSelectItem: undefined | ((handle: number) => void);
-    private validateInputHandler: (input: string) => Promise<string | null | undefined> | undefined;
+    private validateInputHandler?: (input: string) => MaybePromise<string | null | undefined>;
     private _sessions = new Map<number, QuickInputExt>(); // Each quickinput will have a number so that we know where to fire events
     private _instances = 0;
 
@@ -143,17 +144,13 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     // ---- input
 
     showInput(options?: InputBoxOptions, token: theia.CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
-        if (options?.validateInput) {
-            this.validateInputHandler = options.validateInput;
-        }
-
+        this.validateInputHandler = options?.validateInput;
         if (!options) { options = { placeHolder: '' }; }
         return this.proxy.$input(options, typeof this.validateInputHandler === 'function', token);
     }
 
     async showInputBox(options: TransferInputBox): Promise<string | undefined> {
-        this.validateInputHandler = options && options.validateInput;
-
+        this.validateInputHandler = typeof options.validateInput === 'function' ? options.validateInput : undefined;
         return this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }
 
