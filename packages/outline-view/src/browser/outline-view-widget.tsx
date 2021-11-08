@@ -180,7 +180,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     protected renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
-            return <div className='theia-widget-noInfo no-outline'>{nls.localizeByDefault('No outline information available.')}</div>;
+            return <div className='theia-widget-noInfo no-outline'>{nls.localizeByDefault('The active editor cannot provide outline information.')}</div>;
         }
         return super.renderTree(model);
     }

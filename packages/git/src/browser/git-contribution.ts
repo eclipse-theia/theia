@@ -897,7 +897,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         } catch (e) {
             scmRepository.input.issue = {
                 type: ScmInputIssueType.Warning,
-                message: nls.localizeByDefault('Make sure you configure your \'user.name\' and \'user.email\' in git.')
+                message: nls.localize('theia/git/missingUserInfo', 'Make sure you configure your \'user.name\' and \'user.email\' in git.')
             };
         }
 

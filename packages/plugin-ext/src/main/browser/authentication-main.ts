@@ -210,7 +210,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
 
     protected async loginPrompt(providerName: string, extensionName: string, recreatingSession: boolean, _detail?: string): Promise<boolean> {
         const message = recreatingSession
-            ? nls.localizeByDefault("The extension '{0}' wants you to sign in again using {1}.", extensionName, providerName)
+            ? nls.localize('theia/plugin-ext/signInAgain', "The extension '{0}' wants you to sign in again using {1}.", extensionName, providerName)
             : nls.localizeByDefault("The extension '{0}' wants to sign in using {1}.", extensionName, providerName);
         const choice = await this.messageService.info(message, 'Allow', 'Cancel');
         return choice === 'Allow';
@@ -306,9 +306,9 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         const accountUsages = await readAccountUsages(this.storageService, this.id, accountName);
         const sessionsForAccount = this.accounts.get(accountName);
         const result = await this.messageService.info(accountUsages.length
-            ? nls.localizeByDefault("The account '{0}' has been used by: \n\n{1}\n\n Sign out from these extensions?", accountName,
+            ? nls.localizeByDefault('The account {0} has been used by: \n\n{1}\n\n Sign out of these features?', accountName,
                 accountUsages.map(usage => usage.extensionName).join(', '))
-            : nls.localizeByDefault("Sign out of '{0}'?", accountName),
+            : nls.localizeByDefault('Sign out of {0}?', accountName),
             nls.localizeByDefault('Sign Out'),
             Dialog.CANCEL);
 

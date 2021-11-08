@@ -97,12 +97,12 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
             this.propertiesTree.set('info', infoNode);
 
             infoNode.children.push(this.createResultLineNode('isDirectory', nls.localize('theia/property-view/directory', 'Directory'), fileStatObject.isDirectory, infoNode));
-            infoNode.children.push(this.createResultLineNode('isFile', nls.localize('theia/property-view/file', 'File'), fileStatObject.isFile, infoNode));
+            infoNode.children.push(this.createResultLineNode('isFile', nls.localizeByDefault('File'), fileStatObject.isFile, infoNode));
             infoNode.children.push(this.createResultLineNode('isSymbolicLink', nls.localize('theia/property-view/symbolicLink', 'Symbolic link'),
                 fileStatObject.isSymbolicLink, infoNode));
             infoNode.children.push(this.createResultLineNode('location', nls.localize('theia/property-view/location', 'Location'),
                 this.getLocationString(fileStatObject), infoNode));
-            infoNode.children.push(this.createResultLineNode('name', nls.localize('theia/property-view/name', 'Name'), this.getFileName(fileStatObject), infoNode));
+            infoNode.children.push(this.createResultLineNode('name', nls.localizeByDefault('Name'), this.getFileName(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('path', nls.localize('theia/property-view/path', 'Path'), this.getFilePath(fileStatObject), infoNode));
             infoNode.children.push(this.createResultLineNode('lastModification', nls.localize('theia/property-view/lastModified', 'Last modified'),
                 this.getLastModificationString(fileStatObject), infoNode));
@@ -134,7 +134,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     }
 
     protected getSizeString(fileStat: FileStat): string {
-        return fileStat.size ? nls.localizeByDefault('{0} B', fileStat.size.toString()) : '';
+        return fileStat.size ? nls.localizeByDefault('{0}B', fileStat.size.toString()) : '';
     }
 
     /*

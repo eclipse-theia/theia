@@ -421,21 +421,21 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // do not allow recursive rename
         if (!allowNested && !validFilename(name)) {
-            return nls.localizeByDefault('Invalid file or folder name');
+            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.');
         }
         if (name.startsWith('/')) {
-            return nls.localizeByDefault('Absolute paths or names that starts with / are not allowed');
+            return nls.localizeByDefault('A file or folder name cannot start with a slash.');
         } else if (name.startsWith(' ') || name.endsWith(' ')) {
-            return nls.localizeByDefault('Names with leading or trailing whitespaces are not allowed');
+            return nls.localizeByDefault('Leading or trailing whitespace detected in file or folder name.');
         }
         // check and validate each sub-paths
         if (name.split(/[\\/]/).some(file => !file || !validFilename(file) || /^\s+$/.test(file))) {
-            return nls.localizeByDefault('The name "{0}" is not a valid file or folder name.', this.trimFileName(name));
+            return nls.localizeByDefault('\'{0}\' is not a valid file name', this.trimFileName(name));
         }
         const childUri = parent.resource.resolve(name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
-            return nls.localizeByDefault('A file or folder "{0}" already exists at this location.', this.trimFileName(name));
+            return nls.localizeByDefault('A file or folder **{0}** already exists at this location. Please choose a different name.', this.trimFileName(name));
         }
         return '';
     }

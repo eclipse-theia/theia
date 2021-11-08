@@ -19,7 +19,7 @@ import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProv
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import { CancellationToken, Command, MAX_SAFE_INTEGER } from '@theia/core/lib/common';
+import { CancellationToken, Command, nls, MAX_SAFE_INTEGER } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
@@ -328,10 +328,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
     }
 
     private getPlaceHolder(): string {
-        let placeholder = 'File name to search (append : to go to line).';
+        let placeholder = nls.localizeByDefault('Search files by name (append {0} to go to line or {1} to go to symbol)', ':', '@');
         const keybinding = this.getKeyCommand();
         if (keybinding) {
-            placeholder += ` (Press ${keybinding} to show/hide ignored files)`;
+            placeholder += nls.localize('theia/file-search/toggleIgnoredFiles', ' (Press {0} to show/hide ignored files)', keybinding);
         }
         return placeholder;
     }

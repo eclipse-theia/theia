@@ -568,7 +568,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         // Prompt users for confirmation before overwriting.
         const confirmed = await new ConfirmDialog({
             title: nls.localizeByDefault('Overwrite'),
-            msg: nls.localizeByDefault('Do you really want to overwrite "{0}"?', uri.toString())
+            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', uri.toString())
         }).open();
         return !!confirmed;
     }

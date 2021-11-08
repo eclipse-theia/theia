@@ -95,7 +95,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         if (CompositeTreeNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
-        return <div className='theia-widget-noInfo noEdits'>{nls.localizeByDefault('No edits have been detected in the workspace so far.')}</div>;
+        return <div className='theia-widget-noInfo noEdits'>{nls.localizeByDefault('Made no edits')}</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

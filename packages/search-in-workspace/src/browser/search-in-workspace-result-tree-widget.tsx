@@ -125,7 +125,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected readonly toDisposeOnActiveEditorChanged = new DisposableCollection();
 
     // The default root name to add external search results in the case that a workspace is opened.
-    protected readonly defaultRootName = nls.localize('theia/searchResultsView/searchFolderMatch.other.label', 'Other files');
+    protected readonly defaultRootName = nls.localizeByDefault('Other files');
     protected forceVisibleRootNode = false;
 
     protected appliedDecorations = new Map<string, string[]>();

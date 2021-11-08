@@ -190,6 +190,7 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
         const saveAndRetry = nls.localizeByDefault('Save and Retry');
         const open = nls.localizeByDefault('Open File');
         const msg = await this.messageService.error(
+            // eslint-disable-next-line @theia/localization-check
             nls.localizeByDefault('Unable to write into {0} settings because the file has unsaved changes. Please save the {0} settings file first and then try again.',
                 nls.localizeByDefault(PreferenceScope[this.context.getScope()].toLocaleLowerCase())
             ),
