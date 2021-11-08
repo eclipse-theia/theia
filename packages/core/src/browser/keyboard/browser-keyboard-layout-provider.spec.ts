@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '../test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
 import { Container, injectable } from 'inversify';
 import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
@@ -26,11 +30,15 @@ import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 import { Key } from './keys';
 
+disableJSDOM();
+
 describe('browser keyboard layout provider', function (): void {
 
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;
-    let stubNavigator: sinon.SinonStub;
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
     const setup = (system: 'mac' | 'win' | 'linux') => {
         switch (system) {
@@ -47,7 +55,6 @@ describe('browser keyboard layout provider', function (): void {
                 stubWindows = sinon.stub(os, 'isWindows').value(false);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stubNavigator = sinon.stub(global, 'navigator' as any).value({});
         const container = new Container();
         container.bind(BrowserKeyboardLayoutProvider).toSelf();
         container.bind(ILogger).to(MockLogger);
@@ -61,7 +68,6 @@ describe('browser keyboard layout provider', function (): void {
     afterEach(() => {
         stubOSX.restore();
         stubWindows.restore();
-        stubNavigator.restore();
     });
 
     it('detects German Mac layout', async () => {
@@ -83,7 +89,7 @@ describe('browser keyboard layout provider', function (): void {
             currentLayout = l;
         });
 
-        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.US');
+        chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.German');
         service.validateKey({ code: Key.SEMICOLON.code, character: 'm' });
         chai.expect((currentLayout.info as IMacKeyboardLayoutInfo).id).to.equal('com.apple.keylayout.French');
     });

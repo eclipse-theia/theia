@@ -34,7 +34,7 @@ import URI from '@theia/core/lib/common/uri';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { WaitUntilEvent, Emitter, AsyncEmitter } from '@theia/core/lib/common/event';
+import { WaitUntilEvent, Emitter, AsyncEmitter, Event } from '@theia/core/lib/common/event';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { TernarySearchTree } from '@theia/core/lib/common/ternary-search-tree';
 import {
@@ -1371,7 +1371,9 @@ export class FileService {
     /**
      * An event that is emitted when files are changed on the disk.
      */
-    readonly onDidFilesChange = this.onDidFilesChangeEmitter.event;
+    get onDidFilesChange(): Event<FileChangesEvent> {
+        return this.onDidFilesChangeEmitter.event;
+    }
 
     private activeWatchers = new Map<string, { disposable: Disposable, count: number }>();
 

@@ -49,7 +49,9 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
     protected readonly channels = new Map<number, WebSocketChannel>();
 
     protected readonly onIncomingMessageActivityEmitter: Emitter<void> = new Emitter();
-    public onIncomingMessageActivity: Event<void> = this.onIncomingMessageActivityEmitter.event;
+    get onIncomingMessageActivity(): Event<void> {
+        return this.onIncomingMessageActivityEmitter.event;
+    }
 
     /**
      * Create a proxy object to remote interface of T type

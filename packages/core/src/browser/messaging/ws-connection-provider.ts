@@ -59,13 +59,19 @@ export const DEFAULT_HTTP_FALLBACK_OPTIONS: HttpFallbackOptions = {
 export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebSocketOptions> {
 
     protected readonly onSocketDidOpenEmitter: Emitter<void> = new Emitter();
-    readonly onSocketDidOpen: Event<void> = this.onSocketDidOpenEmitter.event;
+    get onSocketDidOpen(): Event<void> {
+        return this.onSocketDidOpenEmitter.event;
+    }
 
     protected readonly onSocketDidCloseEmitter: Emitter<void> = new Emitter();
-    readonly onSocketDidClose: Event<void> = this.onSocketDidCloseEmitter.event;
+    get onSocketDidClose(): Event<void> {
+        return this.onSocketDidCloseEmitter.event;
+    }
 
     protected readonly onHttpFallbackDidActivateEmitter: Emitter<void> = new Emitter();
-    readonly onHttpFallbackDidActivate: Event<void> = this.onHttpFallbackDidActivateEmitter.event;
+    get onHttpFallbackDidActivate(): Event<void> {
+        return this.onHttpFallbackDidActivateEmitter.event;
+    }
 
     static createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);

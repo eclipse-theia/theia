@@ -34,7 +34,7 @@ before(() => {
         MockLogger since it does what we need but this is there as a demo of
         sinon for other uses-cases. We can remove this once this technique is
         more generally used. */
-        sinon.stub(logger, 'warn').callsFake(() => { });
+        sinon.stub(logger, 'warn').callsFake(async () => { });
         return logger;
     });
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
