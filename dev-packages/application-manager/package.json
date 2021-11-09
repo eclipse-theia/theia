@@ -42,7 +42,6 @@
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.2.0",
     "electron-rebuild": "^1.8.6",
-    "font-awesome-webpack": "0.0.5-beta.2",
     "fs-extra": "^4.0.2",
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
