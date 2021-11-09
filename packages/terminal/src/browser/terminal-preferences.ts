@@ -141,6 +141,17 @@ export const TerminalConfigSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/terminal/shellArgsLinux', 'The command line arguments to use when on the Linux terminal.'),
             default: []
         },
+        'terminal.integrated.confirmOnExit': {
+            type: 'string',
+            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions'),
+            enum: ['never', 'always', 'hasChildProcesses'],
+            enumDescriptions: [
+                nls.localizeByDefault('Never confirm.'),
+                nls.localizeByDefault('Always confirm if there are terminals.'),
+                nls.localizeByDefault('Confirm if there are any terminals that have child processes.'),
+            ],
+            default: 'never'
+        }
     }
 };
 
@@ -168,6 +179,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.shellArgs.windows': string[],
     'terminal.integrated.shellArgs.osx': string[],
     'terminal.integrated.shellArgs.linux': string[],
+    'terminal.integrated.confirmOnExit': ConfirmOnExitType
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
@@ -175,6 +187,7 @@ export type CursorStyle = 'block' | 'underline' | 'bar';
 // VS Code uses 'line' to represent 'bar'. The following conversion is necessary to support their preferences.
 export type CursorStyleVSCode = CursorStyle | 'line';
 export type TerminalRendererType = 'canvas' | 'dom';
+export type ConfirmOnExitType = 'never' | 'always' | 'hasChildProcesses';
 export const DEFAULT_TERMINAL_RENDERER_TYPE = 'canvas';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isTerminalRendererType(arg: any): arg is TerminalRendererType {

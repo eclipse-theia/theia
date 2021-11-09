@@ -20,7 +20,7 @@ import 'xterm/css/xterm.css';
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { bindContributionProvider } from '@theia/core';
-import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
+import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
@@ -122,4 +122,6 @@ export default new ContainerModule(bind => {
 
     bind(TerminalLinkmatcherDiffPost).toSelf().inSingletonScope();
     bind(TerminalContribution).toService(TerminalLinkmatcherDiffPost);
+
+    bind(FrontendApplicationContribution).to(TerminalFrontendContribution);
 });
