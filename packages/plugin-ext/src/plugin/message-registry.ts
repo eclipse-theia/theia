@@ -55,12 +55,11 @@ export class MessageRegistryExt {
                     }
                 }
             }
-            for (const item of rest) {
-                pushItem(item);
-            }
-            const actionHandle = await this.proxy.$showMessage(type, message, options, actions);
-            return actionHandle !== undefined ? items[actionHandle] : undefined;
         }
-
+        for (const item of rest) {
+            pushItem(item);
+        }
+        const actionHandle = await this.proxy.$showMessage(type, message, options, actions);
+        return actionHandle !== undefined ? items[actionHandle] : undefined;
     }
 }
