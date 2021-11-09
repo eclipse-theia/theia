@@ -30,22 +30,22 @@ import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 export class CommonVariableContribution implements VariableContribution {
 
     @inject(EnvVariablesServer)
-    protected readonly env: EnvVariablesServer;
+    protected readonly env!: EnvVariablesServer;
 
     @inject(CommandService)
-    protected readonly commands: CommandService;
+    protected readonly commands!: CommandService;
 
     @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    protected readonly preferences!: PreferenceService;
 
     @inject(ResourceContextKey)
-    protected readonly resourceContextKey: ResourceContextKey;
+    protected readonly resourceContextKey!: ResourceContextKey;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(ApplicationServer)
-    protected readonly appServer: ApplicationServer;
+    protected readonly appServer!: ApplicationServer;
 
     async registerVariables(variables: VariableRegistry): Promise<void> {
         const [execPath, backendOS] = await Promise.all([

@@ -31,13 +31,13 @@ export const SectionPreferenceProviderSection = Symbol('SectionPreferenceProvide
 export abstract class SectionPreferenceProvider extends AbstractResourcePreferenceProvider {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
     @inject(SectionPreferenceProviderUri)
-    protected readonly uri: URI;
+    protected readonly uri!: URI;
     @inject(SectionPreferenceProviderSection)
-    protected readonly section: string;
+    protected readonly section!: string;
     @inject(PreferenceConfigurations)
-    protected readonly preferenceConfigurations: PreferenceConfigurations;
+    protected readonly preferenceConfigurations!: PreferenceConfigurations;
 
     private _isSection?: boolean;
 

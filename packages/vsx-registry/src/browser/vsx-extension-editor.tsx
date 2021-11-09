@@ -27,10 +27,10 @@ export class VSXExtensionEditor extends ReactWidget {
     static ID = 'vsx-extension-editor';
 
     @inject(VSXExtension)
-    protected readonly extension: VSXExtension;
+    protected readonly extension!: VSXExtension;
 
     @inject(VSXExtensionsModel)
-    protected readonly model: VSXExtensionsModel;
+    protected readonly model!: VSXExtensionsModel;
 
     protected readonly deferredScrollContainer = new Deferred<HTMLElement>();
 

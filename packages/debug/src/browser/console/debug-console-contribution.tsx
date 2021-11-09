@@ -48,13 +48,13 @@ export namespace DebugConsoleCommands {
 export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution {
 
     @inject(ConsoleSessionManager)
-    protected consoleSessionManager: ConsoleSessionManager;
+    protected consoleSessionManager!: ConsoleSessionManager;
 
     @inject(DebugConsoleSessionFactory)
-    protected debugConsoleSessionFactory: DebugConsoleSessionFactory;
+    protected debugConsoleSessionFactory!: DebugConsoleSessionFactory;
 
     @inject(DebugSessionManager)
-    protected debugSessionManager: DebugSessionManager;
+    protected debugSessionManager!: DebugSessionManager;
 
     constructor() {
         super({

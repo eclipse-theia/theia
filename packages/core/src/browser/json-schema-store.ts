@@ -39,7 +39,7 @@ export interface JsonSchemaContribution {
 export class JsonSchemaStore implements FrontendApplicationContribution {
 
     @inject(ContributionProvider) @named(JsonSchemaContribution)
-    protected readonly contributions: ContributionProvider<JsonSchemaContribution>;
+    protected readonly contributions!: ContributionProvider<JsonSchemaContribution>;
 
     protected readonly _schemas = new Deferred<JsonSchemaConfiguration[]>();
     get schemas(): Promise<JsonSchemaConfiguration[]> {
@@ -120,4 +120,3 @@ export namespace DefaultJsonSchemaContribution {
         schema: any;
     }
 }
-

@@ -24,7 +24,7 @@ import { PluginInfo } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 export class PluginMetricsOutputChannelRegistry extends OutputChannelRegistryMainImpl {
 
     @inject(PluginMetricsCreator)
-    protected readonly pluginMetricsCreator: PluginMetricsCreator;
+    protected readonly pluginMetricsCreator!: PluginMetricsCreator;
 
     $append(channelName: string, errorOrValue: string, pluginInfo: PluginInfo): PromiseLike<void> {
         if (errorOrValue.startsWith('[Error')) {

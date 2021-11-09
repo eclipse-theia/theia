@@ -64,10 +64,10 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected root: Deferred<string | undefined> = new Deferred();
 
     @inject(WorkspaceCliContribution)
-    protected readonly cliParams: WorkspaceCliContribution;
+    protected readonly cliParams!: WorkspaceCliContribution;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    protected readonly envServer!: EnvVariablesServer;
 
     @postConstruct()
     protected async init(): Promise<void> {

@@ -33,7 +33,7 @@ export class ScmTabBarDecorator implements TabBarDecorator {
     private readonly toDisposeOnDidChange = new DisposableCollection();
 
     @inject(ScmService)
-    protected readonly scmService: ScmService;
+    protected readonly scmService!: ScmService;
 
     @postConstruct()
     protected init(): void {

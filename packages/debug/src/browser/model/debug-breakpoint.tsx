@@ -29,15 +29,15 @@ export class DebugBreakpointData {
 }
 
 export class DebugBreakpointOptions {
-    readonly labelProvider: LabelProvider;
-    readonly breakpoints: BreakpointManager;
-    readonly editorManager: EditorManager;
+    readonly labelProvider!: LabelProvider;
+    readonly breakpoints!: BreakpointManager;
+    readonly editorManager!: EditorManager;
     readonly session?: DebugSession;
 }
 
 export class DebugBreakpointDecoration {
-    readonly className: string;
-    readonly message: string[];
+    readonly className!: string;
+    readonly message!: string[];
 }
 
 export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint> extends DebugBreakpointOptions implements TreeElement {

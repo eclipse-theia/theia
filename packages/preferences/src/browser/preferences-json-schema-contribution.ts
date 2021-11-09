@@ -31,16 +31,16 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     private serializeSchema = (scope: PreferenceScope) => JSON.stringify(this.schemaProvider.getSchema(scope));
 
     @inject(PreferenceSchemaProvider)
-    protected readonly schemaProvider: PreferenceSchemaProvider;
+    protected readonly schemaProvider!: PreferenceSchemaProvider;
 
     @inject(InMemoryResources)
-    protected readonly inmemoryResources: InMemoryResources;
+    protected readonly inmemoryResources!: InMemoryResources;
 
     @inject(PreferenceConfigurations)
-    protected readonly preferenceConfigurations: PreferenceConfigurations;
+    protected readonly preferenceConfigurations!: PreferenceConfigurations;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
         this.registerSchema(PreferenceScope.Default, context);

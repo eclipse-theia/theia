@@ -101,12 +101,13 @@ export interface BackendApplicationContribution {
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
 
-    port: number;
-    hostname: string | undefined;
-    ssl: boolean | undefined;
-    cert: string | undefined;
-    certkey: string | undefined;
-    projectPath: string;
+    projectPath: string = this.appProjectPath();
+
+    port?: number;
+    hostname?: string;
+    ssl?: boolean;
+    cert?: string;
+    certkey?: string;
 
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: DEFAULT_PORT });
@@ -114,7 +115,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: DEFAULT_SSL });
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
-        conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory', default: this.appProjectPath() });
+        conf.option(APP_PROJECT_PATH, { description: 'Sets the application project directory' });
     }
 
     setArguments(args: yargs.Arguments): void {
@@ -123,7 +124,10 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.ssl = args.ssl as boolean;
         this.cert = args.cert as string;
         this.certkey = args.certkey as string;
-        this.projectPath = args[APP_PROJECT_PATH] as string;
+        const projectPath = args[APP_PROJECT_PATH] as string | undefined;
+        if (projectPath) {
+            this.projectPath = projectPath;
+        }
     }
 
     protected appProjectPath(): string {
@@ -147,10 +151,10 @@ export class BackendApplication {
     protected readonly app: express.Application = express();
 
     @inject(ApplicationPackage)
-    protected readonly applicationPackage: ApplicationPackage;
+    protected readonly applicationPackage!: ApplicationPackage;
 
     @inject(ProcessUtils)
-    protected readonly processUtils: ProcessUtils;
+    protected readonly processUtils!: ProcessUtils;
 
     private readonly _performanceObserver: PerformanceObserver;
 

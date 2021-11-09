@@ -51,37 +51,37 @@ export type ViewDataProvider = (params: { state?: object, viewInfo: View }) => P
 export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(PluginSharedStyle)
-    protected readonly style: PluginSharedStyle;
+    protected readonly style!: PluginSharedStyle;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     @inject(ScmContribution)
-    protected readonly scm: ScmContribution;
+    protected readonly scm!: ScmContribution;
 
     @inject(FileNavigatorContribution)
-    protected readonly explorer: FileNavigatorContribution;
+    protected readonly explorer!: FileNavigatorContribution;
 
     @inject(DebugFrontendApplicationContribution)
-    protected readonly debug: DebugFrontendApplicationContribution;
+    protected readonly debug!: DebugFrontendApplicationContribution;
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(MenuModelRegistry)
-    protected readonly menus: MenuModelRegistry;
+    protected readonly menus!: MenuModelRegistry;
 
     @inject(QuickViewService) @optional()
-    protected readonly quickView: QuickViewService;
+    protected readonly quickView?: QuickViewService;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(ViewContextKeyService)
-    protected readonly viewContextKeys: ViewContextKeyService;
+    protected readonly viewContextKeys!: ViewContextKeyService;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -259,15 +259,17 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             commandId: toggleCommandId,
             label: options.label
         }));
-        toDispose.push(this.quickView?.registerItem({
-            label: options.label,
-            open: async () => {
-                const widget = await this.openViewContainer(id);
-                if (widget) {
-                    this.shell.activateWidget(widget.id);
+        if (this.quickView) {
+            toDispose.push(this.quickView.registerItem({
+                label: options.label,
+                open: async () => {
+                    const widget = await this.openViewContainer(id);
+                    if (widget) {
+                        this.shell.activateWidget(widget.id);
+                    }
                 }
-            }
-        }));
+            }));
+        }
         toDispose.push(Disposable.create(async () => {
             const widget = await this.getPluginViewContainer(id);
             if (widget) {
@@ -309,11 +311,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
             }
         }
-        toDispose.push(this.quickView?.registerItem({
-            label: view.name,
-            when: view.when,
-            open: () => this.openView(view.id, { activate: true })
-        }));
+        if (this.quickView) {
+            toDispose.push(this.quickView.registerItem({
+                label: view.name,
+                when: view.when,
+                open: () => this.openView(view.id, { activate: true })
+            }));
+        }
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
             execute: async () => { await this.openView(view.id, { activate: true }); }
         }));

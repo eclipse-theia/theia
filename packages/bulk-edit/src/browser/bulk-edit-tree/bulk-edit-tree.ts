@@ -39,7 +39,7 @@ export class BulkEditTree extends TreeImpl {
             bulkEditInfos = edits
                 .map(edit => this.getResourcePath(edit))
                 .filter((path, index, arr) => path && arr.indexOf(path) === index)
-                .map((path: string) => this.createBulkEditInfo(path, new URI(path), fileContentsMap.get(path)))
+                .map(path => this.createBulkEditInfo(path as string, new URI(path), fileContentsMap.get(path as string)))
                 .filter(Boolean);
 
             if (bulkEditInfos.length > 0) {

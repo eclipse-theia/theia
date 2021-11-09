@@ -31,10 +31,10 @@ export class ScmNavigatorDecorator implements TreeDecorator {
     readonly id = 'theia-scm-decorator';
     private decorationsMap: Map<string, Decoration> | undefined;
 
-    @inject(ILogger) protected readonly logger: ILogger;
+    @inject(ILogger) protected readonly logger!: ILogger;
 
     @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
+    protected readonly colors!: ColorRegistry;
 
     constructor(@inject(DecorationsService) protected readonly decorationsService: DecorationsService) {
         this.decorationsService.onDidChangeDecorations(data => {

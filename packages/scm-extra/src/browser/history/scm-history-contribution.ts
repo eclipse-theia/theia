@@ -49,9 +49,9 @@ export interface ScmHistoryOpenViewArguments extends OpenViewArguments {
 export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryWidget> {
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
     @inject(ScmService)
-    protected readonly scmService: ScmService;
+    protected readonly scmService!: ScmService;
 
     constructor() {
         super({

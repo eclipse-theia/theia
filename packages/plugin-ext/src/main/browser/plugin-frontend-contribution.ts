@@ -24,10 +24,10 @@ import URI from '@theia/core/lib/common/uri';
 export class PluginApiFrontendContribution implements CommandContribution {
 
     @inject(PluginExtDeployCommandService)
-    protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
+    protected readonly pluginExtDeployCommandService!: PluginExtDeployCommandService;
 
     @inject(OpenUriCommandHandler)
-    protected readonly openUriCommandHandler: OpenUriCommandHandler;
+    protected readonly openUriCommandHandler!: OpenUriCommandHandler;
 
     registerCommands(commands: CommandRegistry): void {
 

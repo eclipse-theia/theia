@@ -48,9 +48,9 @@ export class OpenEditorsModel extends FileTreeModel {
     static GROUP_NODE_ID_PREFIX = 'group-node';
     static AREA_NODE_ID_PREFIX = 'area-node';
 
-    @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(ApplicationShell) protected readonly applicationShell!: ApplicationShell;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
 
     protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
     // Returns the collection of editors belonging to a tabbar group in the main area

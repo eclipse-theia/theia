@@ -30,10 +30,10 @@ export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'press
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(LocalStorageService)
-    protected readonly storageService: LocalStorageService;
+    protected readonly storageService!: LocalStorageService;
 
     protected readonly initialized = new Deferred();
     protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();

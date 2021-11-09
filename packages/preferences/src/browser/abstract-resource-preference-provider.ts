@@ -38,18 +38,18 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected readonly loading = new Deferred();
     protected modelInitialized = false;
 
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
-    @inject(FileService) protected readonly fileService: FileService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider!: PreferenceSchemaProvider;
+    @inject(FileService) protected readonly fileService!: FileService;
 
     @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
+    protected readonly configurations!: PreferenceConfigurations;
 
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService!: MonacoTextModelService;
 
     @inject(MonacoWorkspace)
-    protected readonly workspace: MonacoWorkspace;
+    protected readonly workspace!: MonacoWorkspace;
 
     @postConstruct()
     protected async init(): Promise<void> {

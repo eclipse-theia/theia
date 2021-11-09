@@ -411,43 +411,43 @@ ThemeService.get().onDidColorThemeChange(() => updateTheme());
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {
 
     @inject(DebugService)
-    protected readonly debug: DebugService;
+    protected readonly debug!: DebugService;
 
     @inject(DebugSessionManager)
-    protected readonly manager: DebugSessionManager;
+    protected readonly manager!: DebugSessionManager;
 
     @inject(DebugConfigurationManager)
-    protected readonly configurations: DebugConfigurationManager;
+    protected readonly configurations!: DebugConfigurationManager;
 
     @inject(BreakpointManager)
-    protected readonly breakpointManager: BreakpointManager;
+    protected readonly breakpointManager!: BreakpointManager;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(DebugSessionWidgetFactory)
-    protected readonly sessionWidgetFactory: DebugSessionWidgetFactory;
+    protected readonly sessionWidgetFactory!: DebugSessionWidgetFactory;
 
     @inject(DebugEditorService)
-    protected readonly editors: DebugEditorService;
+    protected readonly editors!: DebugEditorService;
 
     @inject(DebugConsoleContribution)
-    protected readonly console: DebugConsoleContribution;
+    protected readonly console!: DebugConsoleContribution;
 
     @inject(DebugSchemaUpdater)
-    protected readonly schemaUpdater: DebugSchemaUpdater;
+    protected readonly schemaUpdater!: DebugSchemaUpdater;
 
     @inject(DebugPreferences)
-    protected readonly preference: DebugPreferences;
+    protected readonly preference!: DebugPreferences;
 
     @inject(DebugWatchManager)
-    protected readonly watchManager: DebugWatchManager;
+    protected readonly watchManager!: DebugWatchManager;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     constructor() {
         super({

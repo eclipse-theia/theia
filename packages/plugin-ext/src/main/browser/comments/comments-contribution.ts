@@ -40,10 +40,10 @@ export class CommentsContribution {
     private commentInfos: CommentInfoMain[];
     private emptyThreadsToAddQueue: [number, EditorMouseEvent | undefined][] = [];
 
-    @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
-    @inject(CommentsContextKeyService) protected readonly commentsContextKeyService: CommentsContextKeyService;
-    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
-    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menus!: MenuModelRegistry;
+    @inject(CommentsContextKeyService) protected readonly commentsContextKeyService!: CommentsContextKeyService;
+    @inject(ContextKeyService) protected readonly contextKeyService!: ContextKeyService;
+    @inject(CommandRegistry) protected readonly commands!: CommandRegistry;
 
     constructor(@inject(CommentingRangeDecorator) protected readonly rangeDecorator: CommentingRangeDecorator,
         @inject(CommentsService) protected readonly commentService: CommentsService,

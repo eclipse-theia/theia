@@ -22,7 +22,7 @@ import { ConsoleWidget } from './console-widget';
 export class ConsoleManager {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     get activeConsole(): ConsoleWidget | undefined {
         const widget = this.shell.activeWidget;

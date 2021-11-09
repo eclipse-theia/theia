@@ -25,7 +25,7 @@ export class ExtensionMetricsContribution implements MetricsContribution {
     private metrics: string = '';
 
     @inject(ApplicationPackage)
-    protected readonly applicationPackage: ApplicationPackage;
+    protected readonly applicationPackage!: ApplicationPackage;
 
     getMetrics(): string {
         return this.metrics;

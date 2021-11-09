@@ -192,7 +192,7 @@ class TreeViewExtImpl<T> implements Disposable {
         this.toDispose.push(Disposable.create(() => this.proxy.$unregisterTreeDataProvider(treeViewId)));
 
         if (treeDataProvider.onDidChangeTreeData) {
-            treeDataProvider.onDidChangeTreeData((e: T) => {
+            treeDataProvider.onDidChangeTreeData(e => {
                 this.pendingRefresh = proxy.$refresh(treeViewId);
             });
         }

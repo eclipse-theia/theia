@@ -23,7 +23,7 @@ import { ResourcePropertyViewTreeWidget } from './resource-property-view-tree-wi
 @injectable()
 export class ResourcePropertyViewWidgetProvider extends DefaultPropertyViewWidgetProvider {
 
-    @inject(ResourcePropertyViewTreeWidget) protected treeWidget: ResourcePropertyViewTreeWidget;
+    @inject(ResourcePropertyViewTreeWidget) protected treeWidget!: ResourcePropertyViewTreeWidget;
 
     readonly id = 'resources';
     readonly label = 'ResourcePropertyViewWidgetProvider';

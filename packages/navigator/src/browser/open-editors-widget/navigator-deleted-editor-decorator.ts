@@ -24,9 +24,9 @@ import { FileChangeType, FileStatNode } from '@theia/filesystem/lib/browser';
 export class NavigatorDeletedEditorDecorator implements TreeDecorator {
 
     @inject(FileSystemFrontendContribution)
-    protected readonly fileSystemContribution: FileSystemFrontendContribution;
+    protected readonly fileSystemContribution!: FileSystemFrontendContribution;
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     readonly id = 'theia-deleted-editor-decorator';
     protected readonly onDidChangeDecorationsEmitter = new Emitter();

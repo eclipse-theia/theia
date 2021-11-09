@@ -30,10 +30,10 @@ export interface IconThemeContribution {
 export class IconThemeApplicationContribution implements FrontendApplicationContribution {
 
     @inject(IconThemeService)
-    protected readonly iconThemes: IconThemeService;
+    protected readonly iconThemes!: IconThemeService;
 
     @inject(ContributionProvider) @named(IconThemeContribution)
-    protected readonly iconThemeContributions: ContributionProvider<IconThemeContribution>;
+    protected readonly iconThemeContributions!: ContributionProvider<IconThemeContribution>;
 
     async onStart(): Promise<void> {
         for (const contribution of this.iconThemeContributions.getContributions()) {

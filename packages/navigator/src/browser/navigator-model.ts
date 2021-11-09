@@ -28,13 +28,13 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FrontendApplicationStateService) protected readonly applicationState: FrontendApplicationStateService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
+    @inject(FileNavigatorTree) protected readonly tree!: FileNavigatorTree;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(FrontendApplicationStateService) protected readonly applicationState!: FrontendApplicationStateService;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @postConstruct()
     protected init(): void {

@@ -34,15 +34,15 @@ import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 export class TimelineContribution implements CommandContribution, TabBarToolbarContribution {
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
     @inject(TimelineService)
-    protected readonly timelineService: TimelineService;
+    protected readonly timelineService!: TimelineService;
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
     @inject(TabBarToolbarRegistry)
-    protected readonly tabBarToolbar: TabBarToolbarRegistry;
+    protected readonly tabBarToolbar!: TabBarToolbarRegistry;
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     public static readonly LOAD_MORE_COMMAND: Command = {
         id: 'timeline-load-more'

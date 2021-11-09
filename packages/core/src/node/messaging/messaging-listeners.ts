@@ -41,7 +41,7 @@ export interface MessagingListenerContribution {
 export class MessagingListener {
 
     @inject(ContributionProvider) @named(MessagingListenerContribution)
-    protected readonly messagingListenerContributions: ContributionProvider<MessagingListenerContribution>;
+    protected readonly messagingListenerContributions!: ContributionProvider<MessagingListenerContribution>;
 
     /**
      * Notify all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.

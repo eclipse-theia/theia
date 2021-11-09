@@ -111,7 +111,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected _showReplaceButtons = false;
     protected _replaceTerm = '';
     protected searchTerm = '';
-    protected searchOptions: SearchInWorkspaceOptions;
+    protected searchOptions: SearchInWorkspaceOptions = {};
 
     protected readonly startSearchOnModification = (activeEditor: EditorWidget) => debounce(
         () => this.searchActiveEditor(activeEditor, this.searchTerm, this.searchOptions),
@@ -137,17 +137,17 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected focusInputEmitter = new Emitter<any>();
 
-    @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(FileResourceResolver) protected readonly fileResourceResolver: FileResourceResolver;
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
-    @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
-    @inject(ProgressService) protected readonly progressService: ProgressService;
-    @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
-    @inject(FileSystemPreferences) protected readonly filesystemPreferences: FileSystemPreferences;
-    @inject(FileService) protected readonly fileService: FileService;
+    @inject(SearchInWorkspaceService) protected readonly searchService!: SearchInWorkspaceService;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+    @inject(FileResourceResolver) protected readonly fileResourceResolver!: FileResourceResolver;
+    @inject(ApplicationShell) protected readonly shell!: ApplicationShell;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(TreeExpansionService) protected readonly expansionService!: TreeExpansionService;
+    @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences!: SearchInWorkspacePreferences;
+    @inject(ProgressService) protected readonly progressService!: ProgressService;
+    @inject(ColorRegistry) protected readonly colorRegistry!: ColorRegistry;
+    @inject(FileSystemPreferences) protected readonly filesystemPreferences!: FileSystemPreferences;
+    @inject(FileService) protected readonly fileService!: FileService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

@@ -193,24 +193,26 @@ export interface DidCreateNewResourceEvent {
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(FrontendApplication) protected readonly app: FrontendApplication;
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences;
-    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
-    @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
-    @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
-    @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer;
+    openers: OpenHandler[] = [];
+
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(FileService) protected readonly fileService!: FileService;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
+    @inject(FrontendApplication) protected readonly app!: FrontendApplication;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(WorkspacePreferences) protected readonly preferences!: WorkspacePreferences;
+    @inject(FileDialogService) protected readonly fileDialogService!: FileDialogService;
+    @inject(WorkspaceDeleteHandler) protected readonly deleteHandler!: WorkspaceDeleteHandler;
+    @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler!: WorkspaceDuplicateHandler;
+    @inject(WorkspaceCompareHandler) protected readonly compareHandler!: WorkspaceCompareHandler;
+    @inject(ApplicationServer) protected readonly applicationServer!: ApplicationServer;
 
     private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
     private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
 
-    protected backendOS: Promise<OS.Type>;
+    protected backendOS!: Promise<OS.Type>;
 
     @postConstruct()
     async init(): Promise<void> {
@@ -355,7 +357,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
         });
     }
 
-    openers: OpenHandler[];
     protected async registerOpenWith(registry: CommandRegistry): Promise<void> {
         if (this.openerService.onDidChangeOpeners) {
             this.openerService.onDidChangeOpeners(async e => {

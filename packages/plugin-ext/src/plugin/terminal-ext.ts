@@ -265,7 +265,7 @@ export class EnvironmentVariableCollection implements theia.EnvironmentVariableC
 
 export class TerminalExtImpl implements Terminal {
 
-    name: string;
+    name: string = 'unnamed';
 
     readonly id = new Deferred<string>();
 

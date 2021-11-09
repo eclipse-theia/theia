@@ -49,13 +49,13 @@ export function bindExternalTerminalPreferences(bind: interfaces.Bind): void {
 export class ExternalTerminalPreferenceService {
 
     @inject(ExternalTerminalPreferences)
-    protected readonly preferences: ExternalTerminalPreferences;
+    protected readonly preferences!: ExternalTerminalPreferences;
 
     @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchemaProvider: PreferenceSchemaProvider;
+    protected readonly preferenceSchemaProvider!: PreferenceSchemaProvider;
 
     @inject(ExternalTerminalSchemaPromise)
-    protected readonly promisedSchema: ExternalTerminalSchemaPromise;
+    protected readonly promisedSchema!: ExternalTerminalSchemaPromise;
 
     @postConstruct()
     protected init(): void {

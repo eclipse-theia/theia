@@ -128,7 +128,7 @@ export class TopDownTreeIterator extends AbstractTreeIterator {
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
         return (function* (): IterableIterator<TreeNode> {
-            let next = root;
+            let next: TreeNode | undefined = root;
             while (next) {
                 yield next;
                 next = doNext(next);
@@ -168,7 +168,7 @@ export class BottomUpTreeIterator extends AbstractTreeIterator {
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
         return (function* (): IterableIterator<TreeNode> {
-            let next = root;
+            let next: TreeNode | undefined = root;
             while (next) {
                 yield next;
                 next = doNext(next);

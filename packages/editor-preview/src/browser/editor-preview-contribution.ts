@@ -30,7 +30,7 @@ export namespace EditorPreviewCommands {
 
 @injectable()
 export class EditorPreviewContribution implements CommandContribution, MenuContribution, KeybindingContribution {
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(ApplicationShell) protected readonly shell!: ApplicationShell;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorPreviewCommands.PIN_PREVIEW_COMMAND, {

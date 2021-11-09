@@ -40,12 +40,12 @@ export const CLASS = 'theia-Files';
 @injectable()
 export class FileNavigatorWidget extends FileTreeWidget {
 
-    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
+    @inject(CorePreferences) protected readonly corePreferences!: CorePreferences;
 
     @inject(NavigatorContextKeyService)
-    protected readonly contextKeyService: NavigatorContextKeyService;
+    protected readonly contextKeyService!: NavigatorContextKeyService;
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

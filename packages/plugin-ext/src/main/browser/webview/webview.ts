@@ -77,8 +77,8 @@ export interface WebviewContentOptions {
 }
 
 @injectable()
-export class WebviewWidgetIdentifier {
-    id: string;
+export abstract class WebviewWidgetIdentifier {
+    abstract id: string;
 }
 
 export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
@@ -100,46 +100,46 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     // eslint-disable-next-line max-len
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets.
     // On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
-    protected transparentOverlay: HTMLElement;
+    protected transparentOverlay!: HTMLElement;
 
     @inject(WebviewWidgetIdentifier)
-    readonly identifier: WebviewWidgetIdentifier;
+    readonly identifier!: WebviewWidgetIdentifier;
 
     @inject(WebviewWidgetExternalEndpoint)
-    readonly externalEndpoint: string;
+    readonly externalEndpoint!: string;
 
     @inject(ApplicationShellMouseTracker)
-    protected readonly mouseTracker: ApplicationShellMouseTracker;
+    protected readonly mouseTracker!: ApplicationShellMouseTracker;
 
     @inject(WebviewEnvironment)
-    protected readonly environment: WebviewEnvironment;
+    protected readonly environment!: WebviewEnvironment;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindings: KeybindingRegistry;
+    protected readonly keybindings!: KeybindingRegistry;
 
     @inject(PluginSharedStyle)
-    protected readonly sharedStyle: PluginSharedStyle;
+    protected readonly sharedStyle!: PluginSharedStyle;
 
     @inject(WebviewThemeDataProvider)
-    protected readonly themeDataProvider: WebviewThemeDataProvider;
+    protected readonly themeDataProvider!: WebviewThemeDataProvider;
 
     @inject(ExternalUriService)
-    protected readonly externalUriService: ExternalUriService;
+    protected readonly externalUriService!: ExternalUriService;
 
     @inject(OutputChannelManager)
-    protected readonly outputManager: OutputChannelManager;
+    protected readonly outputManager!: OutputChannelManager;
 
     @inject(WebviewPreferences)
-    protected readonly preferences: WebviewPreferences;
+    protected readonly preferences!: WebviewPreferences;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(WebviewResourceCache)
-    protected readonly resourceCache: WebviewResourceCache;
+    protected readonly resourceCache!: WebviewResourceCache;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -159,8 +159,20 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         return this._state;
     }
 
-    viewType: string;
-    viewColumn: ViewColumn;
+    protected _viewType?: string;
+
+    get viewType(): string {
+        if (this._viewType === undefined) {
+            throw new Error('WebviewWidget._viewType is not set');
+        }
+        return this._viewType;
+    }
+
+    set viewType(value) {
+        this._viewType = value;
+    }
+
+    viewColumn?: ViewColumn;
     options: WebviewPanelOptions = {};
 
     protected ready = new Deferred<void>();
@@ -537,7 +549,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     restoreState(oldState: WebviewWidget.State): void {
         const { viewType, title, iconUrl, options, contentOptions, state } = oldState;
-        this.viewType = viewType;
+        this._viewType = viewType;
         this.title.label = title;
         this.setIconUrl(iconUrl);
         this.options = options;

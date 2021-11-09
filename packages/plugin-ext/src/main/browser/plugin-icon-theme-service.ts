@@ -83,14 +83,14 @@ export const PluginIconThemeFactory = Symbol('PluginIconThemeFactory');
 export type PluginIconThemeFactory = (definition: PluginIconThemeDefinition) => PluginIconTheme;
 
 @injectable()
-export class PluginIconThemeDefinition implements IconThemeDefinition, IconThemeContribution {
-    id: string;
-    label: string;
+export abstract class PluginIconThemeDefinition implements IconThemeDefinition, IconThemeContribution {
+    abstract id: string;
+    abstract label: string;
     description?: string;
-    uri: string;
+    abstract uri: string;
     uiTheme?: UiTheme;
-    pluginId: string;
-    packageUri: string;
+    abstract pluginId: string;
+    abstract packageUri: string;
     hasFileIcons?: boolean;
     hasFolderIcons?: boolean;
     hidesExplorerArrows?: boolean;
@@ -99,17 +99,24 @@ export class PluginIconThemeDefinition implements IconThemeDefinition, IconTheme
 @injectable()
 export class PluginIconTheme extends PluginIconThemeDefinition implements IconTheme, Disposable {
 
+    // The following fields should be set in the `postConstruct` method.
+    id!: string;
+    label!: string;
+    uri!: string;
+    pluginId!: string;
+    packageUri!: string;
+
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(PluginIconThemeDefinition)
-    protected readonly definition: PluginIconThemeDefinition;
+    protected readonly definition!: PluginIconThemeDefinition;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -121,8 +128,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         this.toDeactivate, this.toDisposeStyleElement, this.toUnload, this.onDidChangeEmitter
     );
 
-    protected packageRootUri: URI;
-    protected locationUri: URI;
+    protected packageRootUri!: URI;
+    protected locationUri!: URI;
 
     protected styleSheetContent: string | undefined;
     protected readonly icons = new Set<string>();
@@ -531,10 +538,10 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
 export class PluginIconThemeService implements LabelProviderContribution {
 
     @inject(IconThemeService)
-    protected readonly iconThemeService: IconThemeService;
+    protected readonly iconThemeService!: IconThemeService;
 
     @inject(PluginIconThemeFactory)
-    protected readonly iconThemeFactory: PluginIconThemeFactory;
+    protected readonly iconThemeFactory!: PluginIconThemeFactory;
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;

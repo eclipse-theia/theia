@@ -23,10 +23,10 @@ import { ILogger } from '@theia/core';
 export class PluginDeployerContribution implements BackendApplicationContribution {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(PluginDeployer)
-    protected pluginDeployer: PluginDeployer;
+    protected pluginDeployer!: PluginDeployer;
 
     initialize(): void {
         this.pluginDeployer.start();

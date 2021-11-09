@@ -24,9 +24,9 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 @injectable()
 export class DiffService {
 
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(FileService) protected readonly fileService!: FileService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     public async openDiffEditor(left: URI, right: URI, label?: string, options?: OpenerOptions): Promise<void> {
         if (left.scheme === 'file' && right.scheme === 'file') {

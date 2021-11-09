@@ -36,25 +36,25 @@ export namespace ExternalTerminalCommands {
 export class ExternalTerminalFrontendContribution implements CommandContribution, KeybindingContribution {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(EnvVariablesServer)
-    protected readonly envVariablesServer: EnvVariablesServer;
+    protected readonly envVariablesServer!: EnvVariablesServer;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+    protected readonly quickPickService!: QuickPickService;
 
     @inject(ExternalTerminalService)
-    protected readonly externalTerminalService: ExternalTerminalService;
+    protected readonly externalTerminalService!: ExternalTerminalService;
 
     @inject(ExternalTerminalPreferenceService)
-    protected readonly externalTerminalPreferences: ExternalTerminalPreferenceService;
+    protected readonly externalTerminalPreferences!: ExternalTerminalPreferenceService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ExternalTerminalCommands.OPEN_NATIVE_CONSOLE, {

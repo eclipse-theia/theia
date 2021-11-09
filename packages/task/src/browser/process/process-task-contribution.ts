@@ -22,7 +22,7 @@ import { TaskContribution, TaskResolverRegistry } from '../task-contribution';
 export class ProcessTaskContribution implements TaskContribution {
 
     @inject(ProcessTaskResolver)
-    protected readonly processTaskResolver: ProcessTaskResolver;
+    protected readonly processTaskResolver!: ProcessTaskResolver;
 
     registerResolvers(resolvers: TaskResolverRegistry): void {
         resolvers.registerExecutionResolver('process', this.processTaskResolver);

@@ -25,8 +25,8 @@ import { MiniBrowserProps, MiniBrowserContentFactory } from './mini-browser-cont
 export { MiniBrowserProps };
 
 @injectable()
-export class MiniBrowserOptions {
-    uri: URI;
+export abstract class MiniBrowserOptions {
+    abstract uri: URI;
 }
 
 @injectable()
@@ -36,10 +36,10 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
     static ICON = codicon('globe');
 
     @inject(MiniBrowserOptions)
-    protected readonly options: MiniBrowserOptions;
+    protected readonly options!: MiniBrowserOptions;
 
     @inject(MiniBrowserContentFactory)
-    protected readonly createContent: MiniBrowserContentFactory;
+    protected readonly createContent!: MiniBrowserContentFactory;
 
     @postConstruct()
     protected init(): void {

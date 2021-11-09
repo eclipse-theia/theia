@@ -38,19 +38,19 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     static PREFIX = '>';
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(QuickAccessRegistry)
-    protected readonly quickAccessRegistry: QuickAccessRegistry;
+    protected readonly quickAccessRegistry!: QuickAccessRegistry;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
+    protected readonly keybindingRegistry!: KeybindingRegistry;
 
     // The list of exempted commands not to be displayed in the recently used list.
     readonly exemptedCommands: Command[] = [

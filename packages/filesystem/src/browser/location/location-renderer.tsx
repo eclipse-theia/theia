@@ -80,15 +80,15 @@ export interface LocationListRendererOptions {
 @injectable()
 export class LocationListRenderer extends ReactRenderer {
 
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(EnvVariablesServer) protected readonly variablesServer: EnvVariablesServer;
+    @inject(FileService) protected readonly fileService!: FileService;
+    @inject(EnvVariablesServer) protected readonly variablesServer!: EnvVariablesServer;
 
-    protected directoryCache: ResolvedDirectoryCache;
+    protected directoryCache?: ResolvedDirectoryCache;
     protected service: LocationService;
     protected toDisposeOnNewCache = new DisposableCollection();
     protected _drives: URI[] | undefined;
     protected _doShowTextInput = false;
-    protected homeDir: string;
+    protected homeDir!: string;
 
     get doShowTextInput(): boolean {
         return this._doShowTextInput;
@@ -100,7 +100,7 @@ export class LocationListRenderer extends ReactRenderer {
         }
     }
     protected lastUniqueTextInputLocation: URI | undefined;
-    protected previousAutocompleteMatch: string;
+    protected previousAutocompleteMatch?: string;
     protected doAttemptAutocomplete = true;
 
     constructor(
@@ -304,7 +304,7 @@ export class LocationListRenderer extends ReactRenderer {
     }
 
     protected trySuggestDirectory(e: React.ChangeEvent<HTMLInputElement>): void {
-        if (this.doAttemptAutocomplete) {
+        if (this.directoryCache && this.doAttemptAutocomplete) {
             const inputElement = e.currentTarget;
             const { value } = inputElement;
             if ((value.startsWith('/') || value.startsWith('~/')) && value.slice(-1) !== '/') {

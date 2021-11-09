@@ -32,7 +32,7 @@ export function bindPreferenceConfigurations(bind: interfaces.Bind): void {
 export class PreferenceConfigurations {
 
     @inject(ContributionProvider) @named(PreferenceConfiguration)
-    protected readonly provider: ContributionProvider<PreferenceConfiguration>;
+    protected readonly provider!: ContributionProvider<PreferenceConfiguration>;
 
     /* prefer Theia over VS Code by default */
     getPaths(): string[] {

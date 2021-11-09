@@ -31,7 +31,7 @@ export class DebugTabBarDecorator implements TabBarDecorator {
     protected toDispose = new DisposableCollection();
 
     @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
+    protected readonly debugSessionManager!: DebugSessionManager;
 
     @postConstruct()
     protected init(): void {

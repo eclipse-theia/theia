@@ -23,7 +23,7 @@ import { EditorManager } from './editor-manager';
 export class EditorVariableContribution implements VariableContribution {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     registerVariables(variables: VariableRegistry): void {
         variables.registerVariable({

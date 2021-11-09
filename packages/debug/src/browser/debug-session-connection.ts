@@ -115,6 +115,10 @@ export class DebugSessionConnection implements Disposable {
 
     private sequence = 1;
 
+    protected allThreadsContinued = true;
+
+    protected readonly emitters = new Map<string, Emitter<any>>();
+
     protected readonly pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
     protected readonly connection: Promise<IWebSocket>;
 
@@ -164,7 +168,6 @@ export class DebugSessionConnection implements Disposable {
         }
     }
 
-    protected allThreadsContinued = true;
     async sendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0]): Promise<DebugRequestTypes[K][1]> {
         const result = await this.doSendRequest(command, args);
         if (command === 'next' || command === 'stepIn' ||
@@ -209,12 +212,12 @@ export class DebugSessionConnection implements Disposable {
                 });
             }
         }));
-        this.pendingRequests.set(request.seq, (response: K) => {
+        this.pendingRequests.set(request.seq, response => {
             onDispose.dispose();
             if (!response.success) {
                 result.reject(response);
             } else {
-                result.resolve(response);
+                result.resolve(response as K);
             }
         });
 
@@ -284,7 +287,7 @@ export class DebugSessionConnection implements Disposable {
             if (event.event === 'continued') {
                 this.allThreadsContinued = (<DebugProtocol.ContinuedEvent>event).body.allThreadsContinued === false ? false : true;
             }
-            if (standardDebugEvents.has(event.event)) {
+            if (this.isDebugEvent(event.event)) {
                 this.doFire(event.event, event);
             } else {
                 this.onDidCustomEventEmitter.fire(event);
@@ -294,22 +297,25 @@ export class DebugSessionConnection implements Disposable {
         }
     }
 
-    protected readonly emitters = new Map<string, Emitter<DebugProtocol.Event | DebugExitEvent>>();
-    on<K extends keyof DebugEventTypes>(kind: K, listener: (e: DebugEventTypes[K]) => any): Disposable {
+    on<K extends keyof DebugEventTypes>(kind: K, listener: (e: DebugEventTypes[K]) => void): Disposable {
         return this.getEmitter(kind).event(listener);
     }
+
     protected fire<K extends keyof DebugEventTypes>(kind: K, e: DebugEventTypes[K]): void {
         this.doFire(kind, e);
     }
-    protected doFire(kind: string, e: DebugProtocol.Event | DebugExitEvent): void {
+
+    protected doFire<K extends keyof DebugEventTypes>(kind: K, e: DebugEventTypes[K]): void {
         this.getEmitter(kind).fire(e);
     }
-    protected getEmitter(kind: string): Emitter<DebugProtocol.Event | DebugExitEvent> {
-        const emitter = this.emitters.get(kind) || this.newEmitter();
+
+    protected getEmitter<K extends keyof DebugEventTypes>(kind: K): Emitter<DebugEventTypes[K]> {
+        const emitter = this.emitters.get(kind) || this.newEmitter<K>();
         this.emitters.set(kind, emitter);
         return emitter;
     }
-    protected newEmitter(): Emitter<DebugProtocol.Event | DebugExitEvent> {
+
+    protected newEmitter<K extends keyof DebugEventTypes = any>(): Emitter<DebugEventTypes[K]> {
         const emitter = new Emitter();
         this.checkDisposed();
         this.toDispose.push(emitter);
@@ -328,4 +334,7 @@ export class DebugSessionConnection implements Disposable {
         });
     }
 
+    protected isDebugEvent(event: string): event is keyof DebugEventTypes {
+        return standardDebugEvents.has(event);
+    }
 }

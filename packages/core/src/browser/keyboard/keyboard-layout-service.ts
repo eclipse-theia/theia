@@ -40,10 +40,10 @@ export interface KeyboardLayout {
 export class KeyboardLayoutService {
 
     @inject(KeyboardLayoutProvider)
-    protected readonly layoutProvider: KeyboardLayoutProvider;
+    protected readonly layoutProvider!: KeyboardLayoutProvider;
 
     @inject(KeyboardLayoutChangeNotifier)
-    protected readonly layoutChangeNotifier: KeyboardLayoutChangeNotifier;
+    protected readonly layoutChangeNotifier!: KeyboardLayoutChangeNotifier;
 
     @inject(KeyValidator) @optional()
     protected readonly keyValidator?: KeyValidator;

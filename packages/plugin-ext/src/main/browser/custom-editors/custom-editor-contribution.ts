@@ -23,7 +23,7 @@ import { CustomEditorWidget } from './custom-editor-widget';
 export class CustomEditorContribution implements CommandContribution {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerHandler(CommonCommands.UNDO.id, {

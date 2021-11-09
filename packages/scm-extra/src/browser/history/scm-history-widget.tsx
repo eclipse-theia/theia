@@ -19,7 +19,7 @@ import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, codicon } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
+import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
 import URI from '@theia/core/lib/common/uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
@@ -66,21 +66,23 @@ export type ScmHistoryListNode = (ScmCommitNode | ScmFileChangeNode);
 
 @injectable()
 export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode> implements StatefulWidget {
-    protected options: HistoryWidgetOptions;
-    protected singleFileMode: boolean;
+    protected options: HistoryWidgetOptions = {};
+    protected singleFileMode: boolean = false;
     private cancelIndicator: CancellationTokenSource;
     protected listView: ScmHistoryList | undefined;
-    protected hasMoreCommits: boolean;
-    protected allowScrollToSelected: boolean;
+    protected hasMoreCommits: boolean = false;
+    protected allowScrollToSelected: boolean = false;
 
     protected status: {
-        state: 'loading',
+        state: 'loading'
     } | {
-        state: 'ready',
-        commits: ScmCommitNode[];
+        state: 'ready'
+        commits: ScmCommitNode[]
     } | {
-        state: 'error',
+        state: 'error'
         errorMessage: React.ReactNode
+    } = {
+        state: 'loading'
     };
 
     protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
@@ -200,8 +202,8 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }
     }
 
-    protected resetState(options?: HistoryWidgetOptions): void {
-        this.options = options || {};
+    protected resetState(options: HistoryWidgetOptions = {}): void {
+        this.options = options;
         this.status = { state: 'loading' };
         this.scmNodes = [];
         this.hasMoreCommits = true;
@@ -392,8 +394,8 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         return list;
     }
 
-    protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
-    protected doHandleScroll(info: ScrollParams): void {
+    protected readonly handleScroll = (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => this.doHandleScroll(info);
+    protected doHandleScroll(info: { clientHeight: number; scrollHeight: number; scrollTop: number }): void {
         this.node.scrollTop = info.scrollTop;
     }
 

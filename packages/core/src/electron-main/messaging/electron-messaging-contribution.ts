@@ -38,10 +38,10 @@ import { ElectronMessagingService } from './electron-messaging-service';
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {
 
     @inject(ContributionProvider) @named(ElectronMessagingService.Contribution)
-    protected readonly messagingContributions: ContributionProvider<ElectronMessagingService.Contribution>;
+    protected readonly messagingContributions!: ContributionProvider<ElectronMessagingService.Contribution>;
 
     @inject(ContributionProvider) @named(ElectronConnectionHandler)
-    protected readonly connectionHandlers: ContributionProvider<ElectronConnectionHandler>;
+    protected readonly connectionHandlers!: ContributionProvider<ElectronConnectionHandler>;
 
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
     protected readonly windowChannels = new Map<number, Map<number, WebSocketChannel>>();

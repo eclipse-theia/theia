@@ -65,7 +65,7 @@ export interface PropertyViewWidgetProvider {
 export abstract class DefaultPropertyViewWidgetProvider implements PropertyViewWidgetProvider {
 
     @inject(ContributionProvider) @named(PropertyDataService)
-    protected readonly contributions: ContributionProvider<PropertyDataService>;
+    protected readonly contributions!: ContributionProvider<PropertyDataService>;
 
     protected propertyDataServices: PropertyDataService[] = [];
 

@@ -23,10 +23,10 @@ import { ProgressBarOptions } from './progress-bar-factory';
 export class ProgressBar implements Disposable {
 
     @inject(ProgressLocationService)
-    protected readonly progressLocationService: ProgressLocationService;
+    protected readonly progressLocationService!: ProgressLocationService;
 
     @inject(ProgressBarOptions)
-    protected readonly options: ProgressBarOptions;
+    protected readonly options!: ProgressBarOptions;
 
     protected readonly toDispose = new DisposableCollection();
     dispose(): void {

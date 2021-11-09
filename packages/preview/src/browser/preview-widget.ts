@@ -48,7 +48,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
     protected firstUpdate: (() => void) | undefined = undefined;
     protected readonly onDidScrollEmitter = new Emitter<number>();
     protected readonly onDidDoubleClickEmitter = new Emitter<Location>();
-    protected scrollBeyondLastLine: boolean;
+    protected scrollBeyondLastLine!: boolean;
 
     constructor(
         @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
@@ -114,7 +114,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
 
     protected preventScrollNotification: boolean = false;
     protected startScrollSync(): Disposable {
-        return addEventListener(this.node, 'scroll', throttle((event: UIEvent) => {
+        return addEventListener(this.node, 'scroll', throttle(event => {
             if (this.preventScrollNotification) {
                 return;
             }
@@ -124,7 +124,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
     }
 
     protected startDoubleClickListener(): Disposable {
-        return addEventListener(this.node, 'dblclick', (event: MouseEvent) => {
+        return addEventListener(this.node, 'dblclick', event => {
             if (!(event.target instanceof HTMLElement)) {
                 return;
             }

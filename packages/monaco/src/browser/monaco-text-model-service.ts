@@ -52,23 +52,23 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     );
 
     @inject(ResourceProvider)
-    protected readonly resourceProvider: ResourceProvider;
+    protected readonly resourceProvider!: ResourceProvider;
 
     @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
+    protected readonly editorPreferences!: EditorPreferences;
 
     @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
+    protected readonly m2p!: MonacoToProtocolConverter;
 
     @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
+    protected readonly p2m!: ProtocolToMonacoConverter;
 
     @inject(ContributionProvider)
     @named(MonacoEditorModelFactory)
-    protected readonly factories: ContributionProvider<MonacoEditorModelFactory>;
+    protected readonly factories!: ContributionProvider<MonacoEditorModelFactory>;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(ApplicationServer)
     protected readonly applicationServer!: ApplicationServer;

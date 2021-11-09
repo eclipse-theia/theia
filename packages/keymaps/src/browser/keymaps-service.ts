@@ -32,19 +32,19 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 export class KeymapsService {
 
     @inject(MonacoWorkspace)
-    protected readonly workspace: MonacoWorkspace;
+    protected readonly workspace!: MonacoWorkspace;
 
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService!: MonacoTextModelService;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
+    protected readonly keybindingRegistry!: KeybindingRegistry;
 
     @inject(OpenerService)
-    protected readonly opener: OpenerService;
+    protected readonly opener!: OpenerService;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     protected readonly changeKeymapEmitter = new Emitter<void>();
     readonly onDidChangeKeymaps = this.changeKeymapEmitter.event;

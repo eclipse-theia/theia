@@ -37,22 +37,22 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
 
     public static readonly DEVELOPMENT_HOST_OFFLINE = 'development-host-offline';
 
-    private entry: StatusBarEntry;
+    private entry?: StatusBarEntry;
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    protected readonly hostedPluginServer!: HostedPluginServer;
 
     @inject(ConnectionStatusService)
-    protected readonly connectionStatusService: ConnectionStatusService;
+    protected readonly connectionStatusService!: ConnectionStatusService;
 
     @inject(FrontendApplicationStateService)
-    protected readonly frontendApplicationStateService: FrontendApplicationStateService;
+    protected readonly frontendApplicationStateService!: FrontendApplicationStateService;
 
     public initialize(): void {
         this.workspaceService.roots.then(roots => {
@@ -79,6 +79,9 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     }
 
     private updateStatusBarElement(): void {
+        if (!this.entry) {
+            throw new Error('HostedPluginInformer.entry is not set');
+        }
         if (this.connectionStatusService.currentStatus === ConnectionStatus.OFFLINE) {
             this.entry.className = HostedPluginInformer.DEVELOPMENT_HOST_OFFLINE;
         } else {

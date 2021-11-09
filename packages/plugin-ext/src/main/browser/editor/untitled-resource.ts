@@ -28,7 +28,7 @@ let index = 0;
 export class UntitledResourceResolver implements ResourceResolver {
 
     @inject(FileResourceResolver)
-    protected readonly fileResourceResolver: FileResourceResolver;
+    protected readonly fileResourceResolver!: FileResourceResolver;
 
     protected readonly resources = new Map<string, UntitledResource>();
 

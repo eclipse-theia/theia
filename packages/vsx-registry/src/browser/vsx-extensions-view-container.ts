@@ -33,10 +33,10 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     disableDNDBetweenContainers = true;
 
     @inject(VSXExtensionsSearchBar)
-    protected readonly searchBar: VSXExtensionsSearchBar;
+    protected readonly searchBar!: VSXExtensionsSearchBar;
 
     @inject(VSXExtensionsModel)
-    protected readonly model: VSXExtensionsModel;
+    protected readonly model!: VSXExtensionsModel;
 
     @postConstruct()
     protected init(): void {

@@ -25,7 +25,7 @@ import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
     @inject(MonacoCommandRegistry)
-    protected readonly commands: MonacoCommandRegistry;
+    protected readonly commands!: MonacoCommandRegistry;
 
     registerKeybindings(registry: KeybindingRegistry): void {
         const defaultKeybindings = monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings();

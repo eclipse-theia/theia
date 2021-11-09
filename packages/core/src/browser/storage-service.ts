@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { WindowService } from './window/window-service';
@@ -47,17 +47,16 @@ interface LocalStorage {
 export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
 
-    @inject(ILogger) protected logger: ILogger;
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(WindowService) protected readonly windowService: WindowService;
+    @inject(ILogger) protected logger!: ILogger;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(WindowService) protected readonly windowService!: WindowService;
 
-    @postConstruct()
-    protected init(): void {
+    constructor() {
         if (typeof window !== 'undefined' && window.localStorage) {
             this.storage = window.localStorage;
             this.testLocalStorage();
         } else {
-            this.logger.warn(log => log("The browser doesn't support localStorage. state will not be persisted across sessions."));
+            console.warn("The browser doesn't support localStorage. state will not be persisted across sessions.");
             this.storage = {};
         }
     }

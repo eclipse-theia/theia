@@ -23,7 +23,7 @@ import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, Qu
 export class QuickPickServiceImpl implements QuickPickService {
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     private readonly onDidHideEmitter = new Emitter<void>();
     readonly onDidHide = this.onDidHideEmitter.event;
@@ -44,9 +44,12 @@ export class QuickPickServiceImpl implements QuickPickService {
     readonly onDidTriggerButton = this.onDidTriggerButtonEmitter.event;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private items: Array<any> = [];
+    private items: any[] = [];
 
-    async show<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T> {
+    async show<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
+        if (!this.quickInputService) {
+            throw new Error('QuickPickServiceImpl.quickInputServiceImpl is not set');
+        }
         this.items = items;
         const opts = Object.assign({}, options, {
             onDidAccept: () => this.onDidAcceptEmitter.fire(),
@@ -56,7 +59,7 @@ export class QuickPickServiceImpl implements QuickPickService {
             onDidHide: () => this.onDidHideEmitter.fire(),
             onDidTriggerButton: (btn: QuickInputButtonHandle) => this.onDidTriggerButtonEmitter.fire(btn),
         });
-        return this.quickInputService?.showQuickPick(this.items, opts);
+        return this.quickInputService.showQuickPick(this.items, opts);
     }
 
     hide(): void {

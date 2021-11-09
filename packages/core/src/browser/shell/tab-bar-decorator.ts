@@ -51,7 +51,7 @@ export class TabBarDecoratorService implements FrontendApplicationContribution {
     readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
 
     @inject(ContributionProvider) @named(TabBarDecorator)
-    protected readonly contributions: ContributionProvider<TabBarDecorator>;
+    protected readonly contributions!: ContributionProvider<TabBarDecorator>;
 
     initialize(): void {
         this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));

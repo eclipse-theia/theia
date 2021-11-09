@@ -25,24 +25,24 @@ import { HostedPluginLocalizationService } from './hosted-plugin-localization-se
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(HostedPluginDeployerHandler)
-    protected readonly deployerHandler: HostedPluginDeployerHandler;
+    protected readonly deployerHandler!: HostedPluginDeployerHandler;
 
     @inject(PluginDeployer)
-    protected readonly pluginDeployer: PluginDeployerImpl;
+    protected readonly pluginDeployer!: PluginDeployerImpl;
 
     @inject(HostedPluginLocalizationService)
-    protected readonly localizationService: HostedPluginLocalizationService;
+    protected readonly localizationService!: HostedPluginLocalizationService;
 
     @inject(ContributionProvider)
     @named(Symbol.for(ExtPluginApiProvider))
-    protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
+    protected readonly extPluginAPIContributions!: ContributionProvider<ExtPluginApiProvider>;
 
     protected client: HostedPluginClient | undefined;
 
-    protected deployedListener: Disposable;
+    protected deployedListener!: Disposable;
 
     constructor(
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {

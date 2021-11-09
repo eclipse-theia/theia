@@ -28,10 +28,10 @@ import { CommonCommands } from '@theia/core/lib/browser';
 export class FileDownloadCommandContribution implements CommandContribution {
 
     @inject(FileDownloadService)
-    protected readonly downloadService: FileDownloadService;
+    protected readonly downloadService!: FileDownloadService;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(

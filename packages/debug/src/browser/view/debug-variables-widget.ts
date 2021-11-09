@@ -43,10 +43,10 @@ export class DebugVariablesWidget extends SourceTreeWidget {
     }
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    protected readonly viewModel!: DebugViewModel;
 
     @inject(DebugVariablesSource)
-    protected readonly variables: DebugVariablesSource;
+    protected readonly variables!: DebugVariablesSource;
 
     @postConstruct()
     protected init(): void {

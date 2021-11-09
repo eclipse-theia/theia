@@ -37,10 +37,10 @@ export interface VSCodeNlsConfig {
 export class HostedPluginLocalizationService {
 
     @inject(LocalizationProvider)
-    protected readonly localizationProvider: LocalizationProvider;
+    protected readonly localizationProvider!: LocalizationProvider;
 
     @inject(EnvVariablesServer)
-    protected readonly envVariables: EnvVariablesServer;
+    protected readonly envVariables!: EnvVariablesServer;
 
     protected translationConfigFiles: Map<string, string> = new Map();
 

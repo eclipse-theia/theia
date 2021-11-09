@@ -33,13 +33,13 @@ export class NotificationsContribution implements FrontendApplicationContributio
     protected readonly id = 'theia-notification-center';
 
     @inject(NotificationManager)
-    protected readonly manager: NotificationManager;
+    protected readonly manager!: NotificationManager;
 
     @inject(NotificationsRenderer)
-    protected readonly notificationsRenderer: NotificationsRenderer; // required for initialization
+    protected readonly notificationsRenderer!: NotificationsRenderer; // required for initialization
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     onStart(_app: FrontendApplication): void {
         this.createStatusBarItem();
@@ -179,7 +179,7 @@ export class NotificationsContribution implements FrontendApplicationContributio
 export class NotificationsKeybindingContext implements KeybindingContext {
 
     @inject(NotificationManager)
-    protected readonly manager: NotificationManager;
+    protected readonly manager!: NotificationManager;
 
     readonly id = NotificationsKeybindingContext.notificationsVisible;
     isEnabled(_arg: Keybinding): boolean {

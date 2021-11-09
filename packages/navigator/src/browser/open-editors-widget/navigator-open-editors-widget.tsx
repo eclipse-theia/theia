@@ -54,8 +54,8 @@ export class OpenEditorsWidget extends FileTreeWidget {
     static ID = 'theia-open-editors-widget';
     static LABEL = nls.localizeByDefault('Open Editors');
 
-    @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
-    @inject(CommandService) protected readonly commandService: CommandService;
+    @inject(ApplicationShell) protected readonly applicationShell!: ApplicationShell;
+    @inject(CommandService) protected readonly commandService!: CommandService;
 
     static createContainer(parent: interfaces.Container): Container {
         const child = createFileTreeContainer(parent);

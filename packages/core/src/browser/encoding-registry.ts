@@ -40,10 +40,10 @@ export class EncodingRegistry {
     protected readonly encodingOverrides: EncodingOverride[] = [];
 
     @inject(CorePreferences)
-    protected readonly preferences: CorePreferences;
+    protected readonly preferences!: CorePreferences;
 
     @inject(EncodingService)
-    protected readonly encodingService: EncodingService;
+    protected readonly encodingService!: EncodingService;
 
     registerOverride(override: EncodingOverride): Disposable {
         this.encodingOverrides.push(override);

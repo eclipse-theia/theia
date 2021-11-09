@@ -29,9 +29,9 @@ export class DebugSchemaUpdater implements JsonSchemaContribution {
 
     protected readonly uri = new URI(launchSchemaId);
 
-    @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(DebugService) protected readonly debug: DebugService;
+    @inject(InMemoryResources) protected readonly inmemoryResources!: InMemoryResources;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(DebugService) protected readonly debug!: DebugService;
 
     @postConstruct()
     protected init(): void {

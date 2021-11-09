@@ -273,25 +273,25 @@ export class FileService {
     private readonly BUFFER_SIZE = 64 * 1024;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(FileSystemPreferences)
-    protected readonly preferences: FileSystemPreferences;
+    protected readonly preferences!: FileSystemPreferences;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @inject(EncodingRegistry)
-    protected readonly encodingRegistry: EncodingRegistry;
+    protected readonly encodingRegistry!: EncodingRegistry;
 
     @inject(EncodingService)
-    protected readonly encodingService: EncodingService;
+    protected readonly encodingService!: EncodingService;
 
     @inject(ContributionProvider) @named(FileServiceContribution)
-    protected readonly contributions: ContributionProvider<FileServiceContribution>;
+    protected readonly contributions!: ContributionProvider<FileServiceContribution>;
 
     @inject(FileSystemWatcherErrorHandler)
-    protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
+    protected readonly watcherErrorHandler!: FileSystemWatcherErrorHandler;
 
     @postConstruct()
     protected init(): void {

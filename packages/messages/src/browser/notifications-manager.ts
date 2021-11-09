@@ -52,16 +52,16 @@ export namespace Notification {
 export class NotificationManager extends MessageClient {
 
     @inject(NotificationPreferences)
-    protected readonly preferences: NotificationPreferences;
+    protected readonly preferences!: NotificationPreferences;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(NotificationContentRenderer)
-    protected readonly contentRenderer: NotificationContentRenderer;
+    protected readonly contentRenderer!: NotificationContentRenderer;
 
     protected readonly onUpdatedEmitter = new Emitter<NotificationUpdateEvent>();
     readonly onUpdated = this.onUpdatedEmitter.event;
@@ -80,8 +80,8 @@ export class NotificationManager extends MessageClient {
     protected readonly notifications = new Map<string, Notification>();
     protected readonly toasts = new Map<string, Notification>();
 
-    protected notificationToastsVisibleKey: ContextKey<boolean>;
-    protected notificationCenterVisibleKey: ContextKey<boolean>;
+    protected notificationToastsVisibleKey!: ContextKey<boolean>;
+    protected notificationCenterVisibleKey!: ContextKey<boolean>;
 
     @postConstruct()
     protected async init(): Promise<void> {

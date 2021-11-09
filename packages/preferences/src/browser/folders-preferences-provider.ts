@@ -28,13 +28,13 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 export class FoldersPreferencesProvider extends PreferenceProvider {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(FolderPreferenceProviderFactory)
-    protected readonly folderPreferenceProviderFactory: FolderPreferenceProviderFactory;
+    protected readonly folderPreferenceProviderFactory!: FolderPreferenceProviderFactory;
 
     @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
+    protected readonly configurations!: PreferenceConfigurations;
 
     protected readonly providers = new Map<string, FolderPreferenceProvider>();
 

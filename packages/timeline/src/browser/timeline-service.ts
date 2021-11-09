@@ -100,9 +100,9 @@ export class TimelineService {
 export class TimelineAggregate {
     readonly items: TimelineItem[];
     readonly source: string;
-    readonly uri: string;
 
     private _cursor?: string;
+
     get cursor(): string | undefined {
         return this._cursor;
     }

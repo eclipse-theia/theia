@@ -28,7 +28,7 @@ export const DEFAULT_HTTP_WEBSOCKET_ADAPTER_TIMEOUT = 4000;
 export class HttpWebsocketAdapter {
 
     @inject(HttpWebsocketAdapterTimeout)
-    protected readonly adapterTimeout: number;
+    protected readonly adapterTimeout!: number;
 
     readyState: number = ws.OPEN;
     alive: boolean = true;
@@ -52,28 +52,22 @@ export class HttpWebsocketAdapter {
         return this.deferredMessageHandler.promise;
     }
 
-    protected _onerror: (error: Error) => void;
-    protected _onclose: (code?: number, reason?: string) => void;
-    protected _onmessage: (data: string) => void;
+    protected _onerror?: (error: Error) => void;
+    protected _onclose?: (code?: number, reason?: string) => void;
+    protected _onmessage?: (data: string) => void;
 
     onerror(error: Error): void {
-        if (this._onerror) {
-            this._onerror(error);
-        }
+        this._onerror?.(error);
     }
 
     onclose(code?: number, reason?: string): void {
         this.readyState = ws.CLOSING;
-        if (this._onclose) {
-            this._onclose(code, reason);
-        }
+        this._onclose?.(code, reason);
         this.readyState = ws.CLOSED;
     }
 
     onmessage(data: string): void {
-        if (this._onmessage) {
-            this._onmessage(data);
-        }
+        this._onmessage?.(data);
     }
 
     send(data: unknown): void {

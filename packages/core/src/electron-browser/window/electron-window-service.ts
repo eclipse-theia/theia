@@ -35,10 +35,10 @@ export class ElectronWindowService extends DefaultWindowService {
     protected closeOnUnload: boolean = false;
 
     @inject(ElectronMainWindowService)
-    protected readonly delegate: ElectronMainWindowService;
+    protected readonly delegate!: ElectronMainWindowService;
 
     @inject(ElectronWindowPreferences)
-    protected readonly electronWindowPreferences: ElectronWindowPreferences;
+    protected readonly electronWindowPreferences!: ElectronWindowPreferences;
 
     openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });

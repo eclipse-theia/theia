@@ -90,7 +90,7 @@ export class IconThemeService {
     }
 
     @inject(NoneIconTheme)
-    protected readonly noneIconTheme: NoneIconTheme;
+    protected readonly noneIconTheme!: NoneIconTheme;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;

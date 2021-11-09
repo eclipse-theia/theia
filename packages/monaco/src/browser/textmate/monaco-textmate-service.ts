@@ -37,28 +37,35 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
     protected readonly _activatedLanguages = new Set<string>();
 
-    protected grammarRegistry: Registry;
+    protected _grammarRegistry?: Registry;
 
     @inject(ContributionProvider) @named(LanguageGrammarDefinitionContribution)
-    protected readonly grammarProviders: ContributionProvider<LanguageGrammarDefinitionContribution>;
+    protected readonly grammarProviders!: ContributionProvider<LanguageGrammarDefinitionContribution>;
 
     @inject(TextmateRegistry)
-    protected readonly textmateRegistry: TextmateRegistry;
+    protected readonly textmateRegistry!: TextmateRegistry;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(OnigasmPromise)
-    protected readonly onigasmPromise: OnigasmPromise;
+    protected readonly onigasmPromise!: OnigasmPromise;
 
     @inject(ThemeService)
-    protected readonly themeService: ThemeService;
+    protected readonly themeService!: ThemeService;
 
     @inject(MonacoThemeRegistry)
-    protected readonly monacoThemeRegistry: MonacoThemeRegistry;
+    protected readonly monacoThemeRegistry!: MonacoThemeRegistry;
 
     @inject(EditorPreferences)
-    protected readonly preferences: EditorPreferences;
+    protected readonly preferences!: EditorPreferences;
+
+    get grammarRegistry(): Registry {
+        if (!this._grammarRegistry) {
+            throw new Error('MonacoTextmateService._grammarRegistry is not set');
+        }
+        return this._grammarRegistry;
+    }
 
     initialize(): void {
         if (!isBasicWasmSupported) {
@@ -74,7 +81,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         }
 
-        this.grammarRegistry = new Registry({
+        this._grammarRegistry = new Registry({
             getOnigLib: () => this.onigasmPromise,
             theme: this.monacoThemeRegistry.getThemeData(this.currentEditorTheme),
             loadGrammar: async (scopeName: string) => {

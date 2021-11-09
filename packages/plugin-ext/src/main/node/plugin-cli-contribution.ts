@@ -31,7 +31,7 @@ export class PluginCliContribution implements CliContribution {
     static DEFAULT_PLUGIN_MAX_SESSION_LOGS_FOLDERS = 10;
 
     protected _localDir: string | undefined;
-    protected _maxSessionLogsFolders: number;
+    protected _maxSessionLogsFolders: number = PluginCliContribution.DEFAULT_PLUGIN_MAX_SESSION_LOGS_FOLDERS;
 
     configure(conf: Argv): void {
         conf.option(PluginCliContribution.PLUGINS, {

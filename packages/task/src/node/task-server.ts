@@ -46,13 +46,13 @@ export class TaskServerImpl implements TaskServer, Disposable {
     protected readonly backgroundTaskStatusMap = new Map<number, { 'isActive': boolean }>();
 
     @inject(ILogger) @named('task')
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(TaskManager)
-    protected readonly taskManager: TaskManager;
+    protected readonly taskManager!: TaskManager;
 
     @inject(TaskRunnerRegistry)
-    protected readonly runnerRegistry: TaskRunnerRegistry;
+    protected readonly runnerRegistry!: TaskRunnerRegistry;
 
     /** task context - {task id - problem collector} */
     private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();

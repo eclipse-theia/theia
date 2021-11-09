@@ -81,28 +81,28 @@ export namespace CompositeTreeViewNode {
 }
 
 @injectable()
-export class TreeViewWidgetIdentifier {
-    id: string;
+export abstract class TreeViewWidgetIdentifier {
+    abstract id: string;
 }
 
 @injectable()
 export class PluginTree extends TreeImpl {
 
     @inject(PluginSharedStyle)
-    protected readonly sharedStyle: PluginSharedStyle;
+    protected readonly sharedStyle!: PluginSharedStyle;
 
     @inject(TreeViewWidgetIdentifier)
-    protected readonly identifier: TreeViewWidgetIdentifier;
+    protected readonly identifier!: TreeViewWidgetIdentifier;
 
     @inject(MessageService)
-    protected readonly notification: MessageService;
+    protected readonly notification!: MessageService;
 
     protected readonly onDidChangeWelcomeStateEmitter: Emitter<void> = new Emitter<void>();
     readonly onDidChangeWelcomeState = this.onDidChangeWelcomeStateEmitter.event;
 
     private _proxy: TreeViewsExt | undefined;
     private _viewInfo: View | undefined;
-    private _isEmpty: boolean;
+    private _isEmpty: boolean = false;
 
     set proxy(proxy: TreeViewsExt | undefined) {
         this._proxy = proxy;
@@ -205,7 +205,7 @@ export class PluginTree extends TreeImpl {
 export class PluginTreeModel extends TreeModelImpl {
 
     @inject(PluginTree)
-    protected readonly tree: PluginTree;
+    protected readonly tree!: PluginTree;
 
     set proxy(proxy: TreeViewsExt | undefined) {
         this.tree.proxy = proxy;
@@ -234,22 +234,22 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected _contextSelection = false;
 
     @inject(MenuModelRegistry)
-    protected readonly menus: MenuModelRegistry;
+    protected readonly menus!: MenuModelRegistry;
 
     @inject(ViewContextKeyService)
-    protected readonly contextKeys: ViewContextKeyService;
+    protected readonly contextKeys!: ViewContextKeyService;
 
     @inject(TreeViewWidgetIdentifier)
-    readonly identifier: TreeViewWidgetIdentifier;
+    readonly identifier!: TreeViewWidgetIdentifier;
 
     @inject(PluginTreeModel)
-    readonly model: PluginTreeModel;
+    readonly model!: PluginTreeModel;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(TooltipService)
-    protected readonly tooltipService: TooltipService;
+    protected readonly tooltipService!: TooltipService;
 
     protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;

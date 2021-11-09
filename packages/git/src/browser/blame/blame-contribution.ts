@@ -40,13 +40,13 @@ export namespace BlameCommands {
 export class BlameContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(BlameDecorator)
-    protected readonly decorator: BlameDecorator;
+    protected readonly decorator!: BlameDecorator;
 
     @inject(BlameManager)
-    protected readonly blameManager: BlameManager;
+    protected readonly blameManager!: BlameManager;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(BlameCommands.TOGGLE_GIT_ANNOTATIONS, {
@@ -160,10 +160,10 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
 export class BlameAnnotationsKeybindingContext extends EditorTextFocusContext {
 
     @inject(BlameContribution)
-    protected readonly blameContribution: BlameContribution;
+    protected readonly blameContribution!: BlameContribution;
 
     @inject(StrictEditorTextFocusContext)
-    protected readonly base: StrictEditorTextFocusContext;
+    protected readonly base!: StrictEditorTextFocusContext;
 
     id = BlameAnnotationsKeybindingContext.showsBlameAnnotations;
 

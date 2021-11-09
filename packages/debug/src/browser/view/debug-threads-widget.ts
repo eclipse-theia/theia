@@ -48,13 +48,13 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     }
 
     @inject(DebugThreadsSource)
-    protected readonly threads: DebugThreadsSource;
+    protected readonly threads!: DebugThreadsSource;
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    protected readonly viewModel!: DebugViewModel;
 
     @inject(DebugCallStackItemTypeKey)
-    protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
+    protected readonly debugCallStackItemTypeKey!: DebugCallStackItemTypeKey;
 
     @postConstruct()
     protected init(): void {

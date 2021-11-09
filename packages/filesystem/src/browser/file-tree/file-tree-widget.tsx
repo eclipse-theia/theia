@@ -38,10 +38,10 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
     @inject(FileUploadService)
-    protected readonly uploadService: FileUploadService;
+    protected readonly uploadService!: FileUploadService;
 
     @inject(IconThemeService)
-    protected readonly iconThemeService: IconThemeService;
+    protected readonly iconThemeService!: IconThemeService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

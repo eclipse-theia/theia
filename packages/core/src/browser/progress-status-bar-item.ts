@@ -27,7 +27,7 @@ export class ProgressStatusBarItem implements ProgressClient {
     protected readonly id = 'theia-progress-status-bar-item';
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     protected messagesByProgress = new Map<string, string | undefined>();
 

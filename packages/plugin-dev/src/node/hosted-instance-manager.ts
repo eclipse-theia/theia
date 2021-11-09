@@ -98,20 +98,20 @@ const PROCESS_OPTIONS = {
 
 @injectable()
 export abstract class AbstractHostedInstanceManager implements HostedInstanceManager {
-    protected hostedInstanceProcess: cp.ChildProcess;
+    protected hostedInstanceProcess?: cp.ChildProcess;
     protected isPluginRunning: boolean = false;
-    protected instanceUri: URI;
-    protected pluginUri: URI;
-    protected instanceOptions: object;
+    protected instanceUri?: URI;
+    protected pluginUri?: URI;
+    protected instanceOptions?: object;
 
     @inject(HostedPluginSupport)
-    protected readonly hostedPluginSupport: HostedPluginSupport;
+    protected readonly hostedPluginSupport!: HostedPluginSupport;
 
     @inject(MetadataScanner)
-    protected readonly metadata: MetadataScanner;
+    protected readonly metadata!: MetadataScanner;
 
     @inject(HostedPluginProcess)
-    protected readonly hostedPluginProcess: HostedPluginProcess;
+    protected readonly hostedPluginProcess!: HostedPluginProcess;
 
     isRunning(): boolean {
         return this.isPluginRunning;
@@ -158,7 +158,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     terminate(): void {
-        if (this.isPluginRunning) {
+        if (this.checkPluginRunning()) {
             this.hostedPluginProcess.killProcessTree(this.hostedInstanceProcess.pid);
             this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
             this.isPluginRunning = false;
@@ -168,14 +168,14 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     getInstanceURI(): URI {
-        if (this.isPluginRunning) {
+        if (this.checkPluginRunning()) {
             return this.instanceUri;
         }
         throw new Error('Hosted plugin instance is not running.');
     }
 
     getPluginURI(): URI {
-        if (this.isPluginRunning) {
+        if (this.checkPluginRunning()) {
             return this.pluginUri;
         }
         throw new Error('Hosted plugin instance is not running.');
@@ -194,9 +194,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
      * @param resolve resolve function if ok
      * @param reject reject function if error
      */
-    private async pingLoop(remainingCount: number,
-        resolve: (value?: void | PromiseLike<void> | undefined | Error) => void,
-        reject: (value?: void | PromiseLike<void> | undefined | Error) => void): Promise<void> {
+    private async pingLoop(remainingCount: number, resolve: () => void, reject: (value: Error) => void): Promise<void> {
         const isOK = await this.ping();
         if (isOK) {
             resolve();
@@ -214,7 +212,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
      */
     private async ping(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            const url = this.instanceUri.toString();
+            const url = this.instanceUri!.toString();
             request.head(url, this.instanceOptions).on('response', res => {
                 // Wait that the status is OK
                 resolve(res.statusCode === 200);
@@ -287,7 +285,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    this.hostedInstanceProcess.stdout!.removeListener('data', outputListener);
+                    this.hostedInstanceProcess!.stdout!.removeListener('data', outputListener);
                     started = true;
                     resolve(new URI(match[1]));
                 }
@@ -339,12 +337,20 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         });
     }
 
+    protected checkPluginRunning(): this is this & {
+        hostedInstanceProcess: cp.ChildProcess
+        instanceUri: URI
+        pluginUri: URI
+        instanceOptions: object
+    } {
+        return this.isPluginRunning;
+    }
 }
 
 @injectable()
 export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
     @inject(ContributionProvider) @named(Symbol.for(HostedPluginUriPostProcessorSymbolName))
-    protected readonly uriPostProcessors: ContributionProvider<HostedPluginUriPostProcessor>;
+    protected readonly uriPostProcessors!: ContributionProvider<HostedPluginUriPostProcessor>;
 
     protected async postProcessInstanceUri(uri: URI): Promise<URI> {
         for (const uriPostProcessor of this.uriPostProcessors.getContributions()) {

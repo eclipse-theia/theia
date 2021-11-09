@@ -68,22 +68,22 @@ export namespace TaskTerminalWidgetOpenerOptions {
 export class TaskTerminalWidgetManager {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    protected readonly terminalService!: TerminalService;
 
     @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
+    protected readonly taskWatcher!: TaskWatcher;
 
     @inject(TaskServer)
-    protected readonly taskServer: TaskServer;
+    protected readonly taskServer!: TaskServer;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected init(): void {

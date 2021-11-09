@@ -56,11 +56,11 @@ export interface PreferenceFilterChangeEvent {
 @injectable()
 export class PreferenceTreeModel extends TreeModelImpl {
 
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
-    @inject(PreferencesSearchbarWidget) protected readonly filterInput: PreferencesSearchbarWidget;
-    @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
-    @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider!: PreferenceSchemaProvider;
+    @inject(PreferencesSearchbarWidget) protected readonly filterInput!: PreferencesSearchbarWidget;
+    @inject(PreferenceTreeGenerator) protected readonly treeGenerator!: PreferenceTreeGenerator;
+    @inject(PreferencesScopeTabBar) protected readonly scopeTracker!: PreferencesScopeTabBar;
+    @inject(PreferenceService) protected readonly preferenceService!: PreferenceService;
 
     protected readonly onTreeFilterChangedEmitter = new Emitter<PreferenceFilterChangeEvent>();
     readonly onFilterChanged = this.onTreeFilterChangedEmitter.event;

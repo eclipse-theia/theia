@@ -151,7 +151,7 @@ export class Emitter<T = any> {
 
     private static _noop = function (): void { };
 
-    private _event: Event<T>;
+    private _event?: Event<T>;
     protected _callbacks: CallbackList | undefined;
     private _disposed = false;
 
@@ -176,7 +176,7 @@ export class Emitter<T = any> {
                     this._options.onFirstListenerAdd(this);
                 }
                 this._callbacks.add(listener, thisArgs);
-                const removeMaxListenersCheck = this.checkMaxListeners(this._event.maxListeners);
+                const removeMaxListenersCheck = this.checkMaxListeners(this._event!.maxListeners);
 
                 const result: Disposable = {
                     dispose: () => {

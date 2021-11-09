@@ -41,7 +41,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 @injectable()
 export class ElectronFileDialogService extends DefaultFileDialogService {
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;

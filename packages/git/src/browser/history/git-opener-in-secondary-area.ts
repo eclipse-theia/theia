@@ -22,14 +22,16 @@ import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class GitOpenerInSecondaryArea implements GitResourceOpener {
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
-    protected refWidget: Widget;
+    protected ref: Widget | undefined;
+    protected refWidget?: Widget;
+
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+
     setRefWidget(refWidget: Widget): void {
         this.refWidget = refWidget;
     }
 
-    protected ref: Widget | undefined;
     async open(changeUri: URI): Promise<void> {
         const ref = this.ref;
         const widget = await this.editorManager.open(changeUri, {

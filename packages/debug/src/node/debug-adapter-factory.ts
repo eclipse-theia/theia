@@ -50,9 +50,9 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 @injectable()
 export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     @inject(RawProcessFactory)
-    protected readonly processFactory: RawProcessFactory;
+    protected readonly processFactory!: RawProcessFactory;
     @inject(ProcessManager)
-    protected readonly processManager: ProcessManager;
+    protected readonly processManager!: ProcessManager;
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
         const process = this.childProcess(executable);

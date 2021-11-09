@@ -27,24 +27,41 @@ import { CustomEditorModel } from './custom-editors-main';
 export class CustomEditorWidget extends WebviewWidget implements SaveableSource, NavigatableWidget {
     static FACTORY_ID = 'plugin-custom-editor';
 
-    id: string;
-    resource: URI;
+    id!: string;
 
-    protected _modelRef: Reference<CustomEditorModel>;
+    protected _resource?: URI;
+    protected _modelRef?: Reference<CustomEditorModel>;
+
+    get resource(): URI {
+        if (!this._resource) {
+            throw new Error('CustomEditorWidget._resource is not set');
+        }
+        return this._resource;
+    }
+
+    set resource(value) {
+        this._resource = value;
+    }
+
     get modelRef(): Reference<CustomEditorModel> {
+        if (!this._modelRef) {
+            throw new Error('CustomEditorWidget._modelRef is not set');
+        }
         return this._modelRef;
     }
+
     set modelRef(modelRef: Reference<CustomEditorModel>) {
         this._modelRef = modelRef;
         this.doUpdateContent();
         Saveable.apply(this);
     }
+
     get saveable(): Saveable {
-        return this._modelRef.object;
+        return this.modelRef.object;
     }
 
     @inject(UndoRedoService)
-    protected readonly undoRedoService: UndoRedoService;
+    protected readonly undoRedoService!: UndoRedoService;
 
     @postConstruct()
     protected init(): void {
@@ -66,11 +83,11 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     }
 
     async save(options?: SaveOptions): Promise<void> {
-        await this._modelRef.object.saveCustomEditor(options);
+        await this.modelRef.object.saveCustomEditor(options);
     }
 
     async saveAs(source: URI, target: URI, options?: SaveOptions): Promise<void> {
-        const result = await this._modelRef.object.saveCustomEditorAs(source, target, options);
+        const result = await this.modelRef.object.saveCustomEditorAs(source, target, options);
         this.doMove(target);
         return result;
     }

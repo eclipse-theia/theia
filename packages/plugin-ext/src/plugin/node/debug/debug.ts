@@ -60,8 +60,8 @@ export class DebugExtImpl implements DebugExt {
     private trackerFactories: [string, theia.DebugAdapterTrackerFactory][] = [];
     private contributionPaths = new Map<string, string>();
 
-    private connectionExt: ConnectionExtImpl;
-    private commandRegistryExt: CommandRegistryImpl;
+    private connectionExt?: ConnectionExtImpl;
+    private commandRegistryExt?: CommandRegistryImpl;
 
     private proxy: DebugMain;
 
@@ -449,6 +449,9 @@ export class DebugExtImpl implements DebugExt {
     }
 
     protected async resolveDebugAdapterExecutable(debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugAdapterExecutable | undefined> {
+        if (!this.commandRegistryExt) {
+            throw new Error('DebugExtImpl.commandRegistryExt is not set');
+        }
         const { type } = debugConfiguration;
         const contribution = this.debuggersContributions.get(type);
         if (contribution) {

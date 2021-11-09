@@ -34,19 +34,19 @@ import { nls } from '@theia/core/lib/common/nls';
 export class OutputContribution extends AbstractViewContribution<OutputWidget> implements OpenHandler {
 
     @inject(ClipboardService)
-    protected readonly clipboardService: ClipboardService;
+    protected readonly clipboardService!: ClipboardService;
 
     @inject(CommandService)
-    protected readonly commandService: CommandService;
+    protected readonly commandService!: CommandService;
 
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected readonly outputChannelManager!: OutputChannelManager;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+    protected readonly quickPickService!: QuickPickService;
 
     readonly id: string = `${OutputWidget.ID}-opener`;
 

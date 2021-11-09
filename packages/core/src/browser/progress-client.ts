@@ -25,10 +25,10 @@ import { ProgressLocationService } from './progress-location-service';
 export class DispatchingProgressClient implements ProgressClient {
 
     @inject(ProgressStatusBarItem)
-    protected statusBarItem: ProgressStatusBarItem;
+    protected statusBarItem!: ProgressStatusBarItem;
 
     @inject(ProgressLocationService)
-    protected locationService: ProgressLocationService;
+    protected locationService!: ProgressLocationService;
 
     showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         const locationId = this.getLocationId(message);

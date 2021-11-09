@@ -82,7 +82,7 @@ export namespace ElectronMenus {
 export class ElectronMenuContribution extends BrowserMenuBarContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
 
     @inject(FrontendApplicationStateService)
-    protected readonly stateService: FrontendApplicationStateService;
+    protected readonly stateService!: FrontendApplicationStateService;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;

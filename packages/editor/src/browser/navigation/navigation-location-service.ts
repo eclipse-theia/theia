@@ -34,16 +34,16 @@ export class NavigationLocationService {
     private static readonly MAX_RECENTLY_CLOSED_EDITORS = 20;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(NavigationLocationUpdater)
-    protected readonly updater: NavigationLocationUpdater;
+    protected readonly updater!: NavigationLocationUpdater;
 
     @inject(NavigationLocationSimilarity)
-    protected readonly similarity: NavigationLocationSimilarity;
+    protected readonly similarity!: NavigationLocationSimilarity;
 
     protected pointer = -1;
     protected stack: NavigationLocation[] = [];

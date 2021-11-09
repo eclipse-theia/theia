@@ -46,7 +46,7 @@ export namespace ElectronTextInputContextMenu {
 export class ElectronTextInputContextMenuContribution implements FrontendApplicationContribution, MenuContribution {
 
     @inject(ContextMenuRenderer)
-    protected readonly contextMenuRenderer: ContextMenuRenderer;
+    protected readonly contextMenuRenderer!: ContextMenuRenderer;
 
     onStart(): void {
         window.document.addEventListener('contextmenu', event => {
@@ -80,10 +80,10 @@ export class ElectronTextInputContextMenuContribution implements FrontendApplica
 export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
 
     @inject(ContextMenuContext)
-    protected readonly context: ContextMenuContext;
+    protected readonly context!: ContextMenuContext;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     protected useNativeStyle: boolean = true;
 

@@ -46,10 +46,10 @@ export interface WidgetOpenerOptions extends OpenerOptions {
 export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHandler {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     protected readonly onCreatedEmitter = new Emitter<W>();
     /**

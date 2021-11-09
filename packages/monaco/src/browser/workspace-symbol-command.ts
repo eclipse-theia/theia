@@ -37,12 +37,12 @@ export class WorkspaceSymbolCommand implements QuickAccessProvider, CommandContr
         label: 'Go to Symbol in Workspace...'
     });
 
-    @inject(MonacoLanguages) protected readonly languages: MonacoLanguages;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(QuickInputService) protected quickInputService: QuickInputService;
-    @inject(QuickAccessRegistry) protected quickAccessRegistry: QuickAccessRegistry;
-    @inject(SelectionService) protected selectionService: SelectionService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(MonacoLanguages) protected readonly languages!: MonacoLanguages;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
+    @inject(QuickInputService) protected quickInputService!: QuickInputService;
+    @inject(QuickAccessRegistry) protected quickAccessRegistry!: QuickAccessRegistry;
+    @inject(SelectionService) protected selectionService!: SelectionService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
 
     isEnabled(): boolean {
         return this.languages.workspaceSymbolProviders !== undefined;

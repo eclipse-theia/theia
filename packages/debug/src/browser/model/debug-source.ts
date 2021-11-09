@@ -21,8 +21,8 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 
-export class DebugSourceData {
-    readonly raw: DebugProtocol.Source;
+export abstract class DebugSourceData {
+    readonly raw: DebugProtocol.Source = {};
 }
 
 export class DebugSource extends DebugSourceData {

@@ -36,16 +36,16 @@ interface Cancelable {
 export class BreadcrumbsRenderer extends ReactRenderer {
 
     @inject(BreadcrumbsService)
-    protected readonly breadcrumbsService: BreadcrumbsService;
+    protected readonly breadcrumbsService!: BreadcrumbsService;
 
     @inject(BreadcrumbRenderer)
-    protected readonly breadcrumbRenderer: BreadcrumbRenderer;
+    protected readonly breadcrumbRenderer!: BreadcrumbRenderer;
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     protected readonly onDidChangeActiveStateEmitter = new Emitter<boolean>();
     get onDidChangeActiveState(): Event<boolean> {

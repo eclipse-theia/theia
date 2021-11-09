@@ -26,7 +26,7 @@ import { DebugSource } from './debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointData, DebugBreakpointDecoration } from './debug-breakpoint';
 
 export class DebugSourceBreakpointData extends DebugBreakpointData {
-    readonly origins: SourceBreakpoint[];
+    readonly origins: SourceBreakpoint[] = [];
 }
 
 export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> implements TreeElement {

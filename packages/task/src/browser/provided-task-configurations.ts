@@ -29,10 +29,10 @@ export class ProvidedTaskConfigurations {
     protected tasksMap = new Map<string, Map<string, Map<string | undefined, TaskConfiguration>>>();
 
     @inject(TaskProviderRegistry)
-    protected readonly taskProviderRegistry: TaskProviderRegistry;
+    protected readonly taskProviderRegistry!: TaskProviderRegistry;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     private currentToken: number = 0;
     private nextToken = 1;

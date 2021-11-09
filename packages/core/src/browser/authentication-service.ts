@@ -117,9 +117,9 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         new Emitter<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }>();
     readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }> = this.onDidChangeSessionsEmitter.event;
 
-    @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
-    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
-    @inject(StorageService) protected readonly storageService: StorageService;
+    @inject(MenuModelRegistry) protected readonly menus!: MenuModelRegistry;
+    @inject(CommandRegistry) protected readonly commands!: CommandRegistry;
+    @inject(StorageService) protected readonly storageService!: StorageService;
 
     @postConstruct()
     init(): void {
@@ -160,7 +160,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             }
         });
         this.commands.registerCommand(this.noAccountsCommand, {
-            execute: () => {},
+            execute: () => { },
             isEnabled: () => false
         });
     }

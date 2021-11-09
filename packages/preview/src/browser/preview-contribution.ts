@@ -59,13 +59,13 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
     readonly label = nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY);
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(PreviewHandlerProvider)
-    protected readonly previewHandlerProvider: PreviewHandlerProvider;
+    protected readonly previewHandlerProvider!: PreviewHandlerProvider;
 
     @inject(PreviewPreferences)
-    protected readonly preferences: PreviewPreferences;
+    protected readonly preferences!: PreviewPreferences;
 
     protected readonly synchronizedUris = new Set<string>();
 

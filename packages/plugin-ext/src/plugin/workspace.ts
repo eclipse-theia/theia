@@ -168,7 +168,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number,
-        token: CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
+        token: theia.CancellationToken = CancellationToken.None): PromiseLike<URI[]> {
         let includePattern: string;
         let includeFolderUri: string | undefined;
         if (include) {
@@ -204,7 +204,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
-        callbackOrToken?: CancellationToken | ((result: theia.TextSearchResult) => void), token?: CancellationToken): Promise<theia.TextSearchComplete> {
+        callbackOrToken?: theia.CancellationToken | ((result: theia.TextSearchResult) => void), token?: theia.CancellationToken): Promise<theia.TextSearchComplete> {
         let options: theia.FindTextInFilesOptions;
         let callback: (result: theia.TextSearchResult) => void;
 

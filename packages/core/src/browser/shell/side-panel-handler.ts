@@ -66,33 +66,33 @@ export class SidePanelHandler {
      * accordingly in the tab bar, and the panel is hidden by setting that property to `null`. The
      * tab bar itself remains visible as long as there is at least one widget.
      */
-    tabBar: SideTabBar;
+    tabBar!: SideTabBar;
     /**
      * The menu placed on the sidebar top.
      * Displayed as icons.
      * Open menus when on clicks.
      */
-    topMenu: SidebarMenuWidget;
+    topMenu!: SidebarMenuWidget;
     /**
      * The menu placed on the sidebar bottom.
      * Displayed as icons.
      * Open menus when on clicks.
      */
-    bottomMenu: SidebarMenuWidget;
+    bottomMenu!: SidebarMenuWidget;
     /**
      * A tool bar, which displays a title and widget specific command buttons.
      */
-    toolBar: SidePanelToolbar;
+    toolBar!: SidePanelToolbar;
     /**
      * The widget container is a dock panel in `single-document` mode, which means that the panel
      * cannot be split.
      */
-    dockPanel: TheiaDockPanel;
+    dockPanel!: TheiaDockPanel;
     /**
      * The panel that contains the tab bar and the dock panel. This one is hidden whenever the dock
      * panel is empty.
      */
-    container: Panel;
+    container!: Panel;
     /**
      * The current state of the side panel.
      */
@@ -106,22 +106,22 @@ export class SidePanelHandler {
      * The shell area where the panel is placed. This property should not be modified directly, but
      * only by calling `create`.
      */
-    protected side: 'left' | 'right';
+    protected side!: 'left' | 'right';
     /**
      * Options that control the behavior of the side panel.
      */
-    protected options: SidePanel.Options;
+    protected options!: SidePanel.Options;
 
-    @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
-    @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
-    @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
-    @inject(SidebarTopMenuWidgetFactory) protected sidebarTopWidgetFactory: () => SidebarTopMenuWidget;
-    @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory: () => SidebarBottomMenuWidget;
-    @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
-    @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
+    @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry!: TabBarToolbarRegistry;
+    @inject(TabBarToolbarFactory) protected tabBarToolBarFactory!: () => TabBarToolbar;
+    @inject(TabBarRendererFactory) protected tabBarRendererFactory!: () => TabBarRenderer;
+    @inject(SidebarTopMenuWidgetFactory) protected sidebarTopWidgetFactory!: () => SidebarTopMenuWidget;
+    @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory!: () => SidebarBottomMenuWidget;
+    @inject(SplitPositionHandler) protected splitPositionHandler!: SplitPositionHandler;
+    @inject(FrontendApplicationStateService) protected readonly applicationStateService!: FrontendApplicationStateService;
 
     @inject(ContextMenuRenderer)
-    protected readonly contextMenuRenderer: ContextMenuRenderer;
+    protected readonly contextMenuRenderer!: ContextMenuRenderer;
 
     /**
      * Create the side bar and dock panel widgets.

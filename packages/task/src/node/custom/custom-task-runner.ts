@@ -33,13 +33,13 @@ import {
 export class CustomTaskRunner implements TaskRunner {
 
     @inject(ILogger) @named('task')
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    protected readonly terminalProcessFactory!: TerminalProcessFactory;
 
     @inject(TaskFactory)
-    protected readonly taskFactory: TaskFactory;
+    protected readonly taskFactory!: TaskFactory;
 
     async run(taskConfig: TaskConfiguration, ctx?: string): Promise<Task> {
         try {

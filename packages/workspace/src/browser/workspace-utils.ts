@@ -29,7 +29,7 @@ import { WorkspaceService } from './workspace-service';
 export class WorkspaceUtils {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     /**
      * Determine if root directory exists

@@ -28,7 +28,7 @@ export class ResourcePropertyDataService implements PropertyDataService {
     readonly id = 'resources';
     readonly label = 'ResourcePropertyDataService';
 
-    @inject(FileService) protected readonly fileService: FileService;
+    @inject(FileService) protected readonly fileService!: FileService;
 
     canHandleSelection(selection: Object | undefined): number {
         return (this.isFileSelection(selection) || this.isNavigatableSelection(selection)) ? 1 : 0;

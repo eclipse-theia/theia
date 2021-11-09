@@ -22,10 +22,10 @@ import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider'
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
 
     @inject(MonacoSnippetSuggestProvider)
-    protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
+    protected readonly snippetSuggestProvider!: MonacoSnippetSuggestProvider;
 
     @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchema: PreferenceSchemaProvider;
+    protected readonly preferenceSchema!: PreferenceSchemaProvider;
 
     async initialize(): Promise<void> {
         monaco.suggest.setSnippetSuggestSupport(this.snippetSuggestProvider);

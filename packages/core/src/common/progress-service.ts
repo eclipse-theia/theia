@@ -27,8 +27,8 @@ import { MessageService } from './message-service';
 @injectable()
 export class ProgressService {
 
-    @inject(ProgressClient) protected readonly client: ProgressClient;
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(ProgressClient) protected readonly client!: ProgressClient;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     async showProgress(message: ProgressMessage, onDidCancel?: () => void): Promise<Progress> {
         if (this.shouldDelegate(message)) {

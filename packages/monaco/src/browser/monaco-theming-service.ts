@@ -59,7 +59,7 @@ export interface MonacoThemeJson {
 export class MonacoThemingService {
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));

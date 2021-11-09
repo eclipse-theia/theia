@@ -79,7 +79,7 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly fileService: FileService,
         protected readonly debugContributionProvider: ContributionProvider<DebugContribution>
     ) {
-        this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
+        this.connection.onRequest('runInTerminal', request => this.runInTerminal(request as DebugProtocol.RunInTerminalRequest));
         this.registerDebugContributions(options.configuration.type, this.connection);
 
         if (parentSession) {

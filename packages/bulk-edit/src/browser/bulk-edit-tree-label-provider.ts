@@ -24,13 +24,13 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 export class BulkEditTreeLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(TreeLabelProvider)
-    protected readonly treeLabelProvider: TreeLabelProvider;
+    protected readonly treeLabelProvider!: TreeLabelProvider;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     canHandle(element: object): number {
         return BulkEditInfoNode.is(element) ?

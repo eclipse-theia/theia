@@ -103,49 +103,49 @@ export class DebugSessionManager {
     }
 
     @inject(DebugSessionFactory)
-    protected readonly debugSessionFactory: DebugSessionFactory;
+    protected readonly debugSessionFactory!: DebugSessionFactory;
 
     @inject(DebugService)
-    protected readonly debug: DebugService;
+    protected readonly debug!: DebugService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
+    protected readonly breakpoints!: BreakpointManager;
 
     @inject(VariableResolverService)
-    protected readonly variableResolver: VariableResolverService;
+    protected readonly variableResolver!: VariableResolverService;
 
     @inject(DebugSessionContributionRegistry)
-    protected readonly sessionContributionRegistry: DebugSessionContributionRegistry;
+    protected readonly sessionContributionRegistry!: DebugSessionContributionRegistry;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(TaskService)
-    protected readonly taskService: TaskService;
+    protected readonly taskService!: TaskService;
 
     @inject(DebugConfigurationManager)
-    protected readonly debugConfigurationManager: DebugConfigurationManager;
+    protected readonly debugConfigurationManager!: DebugConfigurationManager;
 
     @inject(QuickOpenTask)
-    protected readonly quickOpenTask: QuickOpenTask;
+    protected readonly quickOpenTask!: QuickOpenTask;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
-    protected debugTypeKey: ContextKey<string>;
-    protected inDebugModeKey: ContextKey<boolean>;
+    protected debugTypeKey!: ContextKey<string>;
+    protected inDebugModeKey!: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {

@@ -79,8 +79,8 @@ export class VSXExtensionData {
 }
 
 @injectable()
-export class VSXExtensionOptions {
-    readonly id: string;
+export abstract class VSXExtensionOptions {
+    abstract readonly id: string;
 }
 
 export const VSXExtensionFactory = Symbol('VSXExtensionFactory');
@@ -90,31 +90,31 @@ export type VSXExtensionFactory = (options: VSXExtensionOptions) => VSXExtension
 export class VSXExtension implements VSXExtensionData, TreeElement {
 
     @inject(VSXExtensionOptions)
-    protected readonly options: VSXExtensionOptions;
+    protected readonly options!: VSXExtensionOptions;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(HostedPluginSupport)
-    protected readonly pluginSupport: HostedPluginSupport;
+    protected readonly pluginSupport!: HostedPluginSupport;
 
     @inject(PluginServer)
-    protected readonly pluginServer: PluginServer;
+    protected readonly pluginServer!: PluginServer;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @inject(ContextMenuRenderer)
-    protected readonly contextMenuRenderer: ContextMenuRenderer;
+    protected readonly contextMenuRenderer!: ContextMenuRenderer;
 
     @inject(VSXEnvironment)
-    readonly environment: VSXEnvironment;
+    readonly environment!: VSXEnvironment;
 
     @inject(VSXExtensionsSearchModel)
-    readonly search: VSXExtensionsSearchModel;
+    readonly search!: VSXExtensionsSearchModel;
 
     @inject(TooltipService)
-    readonly tooltipService: TooltipService;
+    readonly tooltipService!: TooltipService;
 
     protected readonly data: Partial<VSXExtensionData> = {};
 

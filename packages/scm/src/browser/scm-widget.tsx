@@ -33,16 +33,16 @@ import { nls } from '@theia/core/lib/common/nls';
 @injectable()
 export class ScmWidget extends BaseWidget implements StatefulWidget {
 
-    protected panel: Panel;
+    protected panel!: Panel;
 
     static ID = 'scm-view';
 
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(ScmCommitWidget) protected readonly commitWidget: ScmCommitWidget;
-    @inject(ScmTreeWidget) readonly resourceWidget: ScmTreeWidget;
-    @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
-    @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget: ScmNoRepositoryWidget;
-    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(ScmCommitWidget) protected readonly commitWidget!: ScmCommitWidget;
+    @inject(ScmTreeWidget) readonly resourceWidget!: ScmTreeWidget;
+    @inject(ScmAmendWidget) protected readonly amendWidget!: ScmAmendWidget;
+    @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget!: ScmNoRepositoryWidget;
+    @inject(ScmPreferences) protected readonly scmPreferences!: ScmPreferences;
 
     set viewMode(mode: 'tree' | 'list') {
         this.resourceWidget.viewMode = mode;

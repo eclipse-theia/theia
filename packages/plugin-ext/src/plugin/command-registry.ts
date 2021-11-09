@@ -78,7 +78,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
         this.proxy.$registerHandler(commandId);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.handlers.set(commandId, (...args: any[]) => handler.apply(thisArg, args));
+        this.handlers.set(commandId, (...args: any[]) => handler.apply(thisArg, args) as any);
         return Disposable.create(() => {
             this.handlers.delete(commandId);
             this.proxy.$unregisterHandler(commandId);
@@ -197,8 +197,7 @@ export class CommandsConverter {
         // we're deprecating Command.id, so it has to be optional.
         // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
-        ({
+        return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId, mappedArgs = []) => ({
             id: mappedId,
             title: external.title || external.label || ' ',
             tooltip: external.tooltip,

@@ -141,7 +141,7 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
         CommitPlaceholders.BODY];
 
     @inject(NameStatusParser)
-    protected readonly nameStatusParser: NameStatusParser;
+    protected readonly nameStatusParser!: NameStatusParser;
 
     parse(repositoryUri: string, input: string | string[], delimiter: string = CommitDetailsParser.COMMIT_CHUNK_DELIMITER): CommitWithChanges[] {
         const chunks = this.split(input, delimiter);
@@ -289,31 +289,31 @@ export class DugiteGit implements Git {
     protected readonly limit = 1000;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(GitLocator)
-    protected readonly locator: GitLocator;
+    protected readonly locator!: GitLocator;
 
     @inject(GitRepositoryManager)
-    protected readonly manager: GitRepositoryManager;
+    protected readonly manager!: GitRepositoryManager;
 
     @inject(NameStatusParser)
-    protected readonly nameStatusParser: NameStatusParser;
+    protected readonly nameStatusParser!: NameStatusParser;
 
     @inject(CommitDetailsParser)
-    protected readonly commitDetailsParser: CommitDetailsParser;
+    protected readonly commitDetailsParser!: CommitDetailsParser;
 
     @inject(GitBlameParser)
-    protected readonly blameParser: GitBlameParser;
+    protected readonly blameParser!: GitBlameParser;
 
     @inject(GitExecProvider)
-    protected readonly execProvider: GitExecProvider;
+    protected readonly execProvider!: GitExecProvider;
 
     @inject(GitEnvProvider)
-    protected readonly envProvider: GitEnvProvider;
+    protected readonly envProvider!: GitEnvProvider;
 
     @inject(GitInit)
-    protected readonly gitInit: GitInit;
+    protected readonly gitInit!: GitInit;
 
     protected ready: Deferred<void> = new Deferred();
     protected gitEnv: Deferred<Object> = new Deferred();

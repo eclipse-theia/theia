@@ -25,19 +25,19 @@ import { GitErrorHandler } from './git-error-handler';
 export class GitSyncService {
 
     @inject(Git)
-    protected readonly git: Git;
+    protected readonly git!: Git;
 
     @inject(GitRepositoryTracker)
-    protected readonly repositoryTracker: GitRepositoryTracker;
+    protected readonly repositoryTracker!: GitRepositoryTracker;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(GitErrorHandler)
-    protected readonly gitErrorHandler: GitErrorHandler;
+    protected readonly gitErrorHandler!: GitErrorHandler;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -121,12 +121,9 @@ export class GitSyncService {
             warning: `This action will override commits in '${upstreamBranch}'.`,
             detail: 'force-push'
         }];
-
         const selectedCWD = await this.quickInputService?.showQuickPick(methods, { placeholder: 'Select current working directory for new terminal' });
-        if (await this.confirm('Synchronize Changes', methods.find(({ detail }) => detail === selectedCWD.detail)!.warning)) {
-            return (selectedCWD.detail as GitSyncService.SyncMethod);
-        } else {
-            return (undefined);
+        if (selectedCWD && await this.confirm('Synchronize Changes', methods.find(({ detail }) => detail === selectedCWD.detail)!.warning)) {
+            return selectedCWD.detail as GitSyncService.SyncMethod;
         }
     }
 
@@ -158,13 +155,16 @@ export class GitSyncService {
         }
     }
     protected async getRemote(repository: Repository, branch: string): Promise<string | undefined> {
+        if (!this.quickInputService) {
+            return;
+        }
         const remotes = await this.git.remote(repository);
         if (remotes.length === 0) {
             this.messageService.warn('Your repository has no remotes configured to publish to.');
         }
-
-        const selectedRemote = await this.quickInputService?.showQuickPick(remotes.map(remote => ({ label: remote })),
-            { placeholder: `Pick a remote to publish the branch ${branch} to:` });
+        const selectedRemote = await this.quickInputService.showQuickPick(remotes.map(remote => ({ label: remote })), {
+            placeholder: `Pick a remote to publish the branch ${branch} to:`
+        });
         return selectedRemote.label;
     }
 

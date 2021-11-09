@@ -18,7 +18,7 @@ import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-r
 
 export class OutputChannelImpl implements theia.OutputChannel {
 
-    private disposed: boolean;
+    private disposed: boolean = false;
 
     constructor(readonly name: string, private proxy: OutputChannelRegistryMain, private readonly pluginInfo: PluginInfo) {
     }

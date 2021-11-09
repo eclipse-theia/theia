@@ -29,19 +29,19 @@ import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 export class DebugEditorService {
 
     @inject(EditorManager)
-    protected readonly editors: EditorManager;
+    protected readonly editors!: EditorManager;
 
     @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
+    protected readonly breakpoints!: BreakpointManager;
 
     @inject(DebugSessionManager)
-    protected readonly sessionManager: DebugSessionManager;
+    protected readonly sessionManager!: DebugSessionManager;
 
     @inject(ContextMenuRenderer)
-    protected readonly contextMenu: ContextMenuRenderer;
+    protected readonly contextMenu!: ContextMenuRenderer;
 
     @inject(DebugEditorModelFactory)
-    protected readonly factory: DebugEditorModelFactory;
+    protected readonly factory!: DebugEditorModelFactory;
 
     protected readonly models = new Map<string, DebugEditorModel>();
 

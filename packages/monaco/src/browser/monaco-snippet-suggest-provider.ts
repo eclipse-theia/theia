@@ -31,7 +31,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     private static readonly _maxPrefix = 10000;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();

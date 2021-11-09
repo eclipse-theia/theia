@@ -30,10 +30,10 @@ import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-pr
 export class UserConfigsPreferenceProvider extends PreferenceProvider {
 
     @inject(UserPreferenceProviderFactory)
-    protected readonly providerFactory: UserPreferenceProviderFactory;
+    protected readonly providerFactory!: UserPreferenceProviderFactory;
 
     @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
+    protected readonly configurations!: PreferenceConfigurations;
 
     protected readonly providers = new Map<string, UserPreferenceProvider>();
 

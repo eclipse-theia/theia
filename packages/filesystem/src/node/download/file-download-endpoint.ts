@@ -31,15 +31,15 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
 
     @inject(FileDownloadHandler)
     @named(FileDownloadHandler.SINGLE)
-    protected readonly singleFileDownloadHandler: FileDownloadHandler;
+    protected readonly singleFileDownloadHandler!: FileDownloadHandler;
 
     @inject(FileDownloadHandler)
     @named(FileDownloadHandler.MULTI)
-    protected readonly multiFileDownloadHandler: FileDownloadHandler;
+    protected readonly multiFileDownloadHandler!: FileDownloadHandler;
 
     @inject(FileDownloadHandler)
     @named(FileDownloadHandler.DOWNLOAD_LINK)
-    protected readonly downloadLinkHandler: FileDownloadHandler;
+    protected readonly downloadLinkHandler!: FileDownloadHandler;
 
     configure(app: Application): void {
         const router = Router();

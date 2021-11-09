@@ -26,7 +26,7 @@ export class GitLocatorClient implements GitLocator {
     protected readonly toDispose = new DisposableCollection();
 
     @inject(IPCConnectionProvider)
-    protected readonly ipcConnectionProvider: IPCConnectionProvider;
+    protected readonly ipcConnectionProvider!: IPCConnectionProvider;
 
     dispose(): void {
         this.toDispose.dispose();

@@ -25,7 +25,7 @@ export class VSXEnvironmentImpl implements VSXEnvironment {
     protected _registryUri = new URI(process.env['VSX_REGISTRY_URL']?.trim() || 'https://open-vsx.org');
 
     @inject(PluginVsCodeCliContribution)
-    protected readonly pluginVscodeCli: PluginVsCodeCliContribution;
+    protected readonly pluginVscodeCli!: PluginVsCodeCliContribution;
 
     async getRegistryUri(): Promise<string> {
         return this._registryUri.toString(true);

@@ -27,9 +27,26 @@ export class MessageRegistryExt {
         this.proxy = rpc.getProxy(Ext.MESSAGE_REGISTRY_MAIN);
     }
 
-    async showMessage(type: MainMessageType, message: string,
+    showMessage(
+        type: MainMessageType,
+        message: string,
+        optionsOrFirstItem?: MessageOptions | string,
+        ...rest: string[]
+    ): Promise<string | undefined>
+
+    showMessage<T extends MessageItem>(
+        type: MainMessageType,
+        message: string,
+        optionsOrFirstItem?: MessageOptions | T,
+        ...rest: T[]
+    ): Promise<T | undefined>
+
+    async showMessage(
+        type: MainMessageType,
+        message: string,
         optionsOrFirstItem?: MessageOptions | string | MessageItem,
-        ...rest: (string | MessageItem)[]): Promise<string | MessageItem | undefined> {
+        ...rest: (string | MessageItem)[]
+    ): Promise<string | MessageItem | undefined> {
         const options: MainMessageOptions = {};
         const actions: MessageItem[] = [];
         const items: (string | MessageItem)[] = [];

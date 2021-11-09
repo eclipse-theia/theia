@@ -59,16 +59,16 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     protected readonly toDispose = new DisposableCollection();
 
     @inject(DebugEditor)
-    protected readonly editor: DebugEditor;
+    protected readonly editor!: DebugEditor;
 
     @inject(DebugSessionManager)
-    protected readonly sessions: DebugSessionManager;
+    protected readonly sessions!: DebugSessionManager;
 
     @inject(DebugHoverSource)
-    protected readonly hoverSource: DebugHoverSource;
+    protected readonly hoverSource!: DebugHoverSource;
 
     @inject(DebugExpressionProvider)
-    protected readonly expressionProvider: DebugExpressionProvider;
+    protected readonly expressionProvider!: DebugExpressionProvider;
 
     allowEditorOverflow = true;
 

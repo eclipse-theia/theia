@@ -28,7 +28,7 @@ import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
 export class MiniBrowserElectronMainContribution implements ElectronMainApplicationContribution {
 
     @inject(ElectronSecurityTokenService)
-    protected readonly electronSecurityTokenService: ElectronSecurityTokenService;
+    protected readonly electronSecurityTokenService!: ElectronSecurityTokenService;
 
     async onStart(app: ElectronMainApplication): Promise<void> {
         const url = this.getMiniBrowserEndpoint(await app.backendPort);

@@ -63,13 +63,13 @@ export class DebugViewModel implements Disposable {
     );
 
     @inject(DebugViewOptions)
-    protected readonly options: DebugViewOptions;
+    protected readonly options!: DebugViewOptions;
 
     @inject(DebugSessionManager)
-    protected readonly manager: DebugSessionManager;
+    protected readonly manager!: DebugSessionManager;
 
     @inject(DebugWatchManager)
-    protected readonly watch: DebugWatchManager;
+    protected readonly watch!: DebugWatchManager;
 
     protected readonly _sessions = new Set<DebugSession>();
     get sessions(): IterableIterator<DebugSession> {

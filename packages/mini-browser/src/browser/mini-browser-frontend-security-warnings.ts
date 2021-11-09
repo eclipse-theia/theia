@@ -27,13 +27,13 @@ import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
 export class MiniBrowserFrontendSecurityWarnings implements FrontendApplicationContribution {
 
     @inject(WindowService)
-    protected windowService: WindowService;
+    protected windowService!: WindowService;
 
     @inject(MessageService)
-    protected messageService: MessageService;
+    protected messageService!: MessageService;
 
     @inject(MiniBrowserEnvironment)
-    protected miniBrowserEnvironment: MiniBrowserEnvironment;
+    protected miniBrowserEnvironment!: MiniBrowserEnvironment;
 
     initialize(): void {
         this.checkHostPattern();

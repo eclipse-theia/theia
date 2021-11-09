@@ -33,7 +33,7 @@ export interface PluginIcon extends Disposable {
 @injectable()
 export class PluginSharedStyle {
 
-    protected style: HTMLStyleElement;
+    protected style!: HTMLStyleElement;
     protected readonly rules: {
         selector: string;
         body: (theme: Theme) => string

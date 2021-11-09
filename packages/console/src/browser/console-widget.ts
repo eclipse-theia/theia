@@ -60,21 +60,21 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     @inject(ConsoleOptions)
-    protected readonly options: ConsoleOptions;
+    protected readonly options!: ConsoleOptions;
 
     @inject(ConsoleContentWidget)
-    readonly content: ConsoleContentWidget;
+    readonly content!: ConsoleContentWidget;
 
     @inject(ConsoleHistory)
-    protected readonly history: ConsoleHistory;
+    protected readonly history!: ConsoleHistory;
 
     @inject(ConsoleSessionManager)
-    protected readonly sessionManager: ConsoleSessionManager;
+    protected readonly sessionManager!: ConsoleSessionManager;
 
     @inject(MonacoEditorProvider)
-    protected readonly editorProvider: MonacoEditorProvider;
+    protected readonly editorProvider!: MonacoEditorProvider;
 
-    protected _input: MonacoEditor;
+    protected _input!: MonacoEditor;
 
     constructor() {
         super();

@@ -55,12 +55,12 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
 
     // maps session and contribution
     protected readonly sessionId2contrib = new Map<string, PluginDebugAdapterContribution>();
-    protected delegated: DebugService;
+    protected delegated!: DebugService;
 
     @inject(WebSocketConnectionProvider)
-    protected readonly connectionProvider: WebSocketConnectionProvider;
+    protected readonly connectionProvider!: WebSocketConnectionProvider;
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected init(): void {

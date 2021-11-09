@@ -84,7 +84,7 @@ export class NpmRegistryOptions {
     /**
      * Default: false.
      */
-    readonly watchChanges: boolean;
+    readonly watchChanges: boolean = false;
 }
 
 export class NpmRegistry {

@@ -26,13 +26,13 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(WorkspaceUtils)
-    protected readonly workspaceUtils: WorkspaceUtils;
+    protected readonly workspaceUtils!: WorkspaceUtils;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     /**
      * Determine if the command is visible.

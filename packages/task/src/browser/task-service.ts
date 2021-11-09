@@ -104,88 +104,88 @@ export class TaskService implements TaskConfigurationClient {
     protected taskStartingLock: Mutex = new Mutex();
 
     @inject(FrontendApplication)
-    protected readonly app: FrontendApplication;
+    protected readonly app!: FrontendApplication;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(TaskServer)
-    protected readonly taskServer: TaskServer;
+    protected readonly taskServer!: TaskServer;
 
     @inject(ILogger) @named('task')
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
+    protected readonly taskWatcher!: TaskWatcher;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(TaskConfigurations)
-    protected readonly taskConfigurations: TaskConfigurations;
+    protected readonly taskConfigurations!: TaskConfigurations;
 
     @inject(ProvidedTaskConfigurations)
-    protected readonly providedTaskConfigurations: ProvidedTaskConfigurations;
+    protected readonly providedTaskConfigurations!: ProvidedTaskConfigurations;
 
     @inject(VariableResolverService)
-    protected readonly variableResolverService: VariableResolverService;
+    protected readonly variableResolverService!: VariableResolverService;
 
     @inject(TaskResolverRegistry)
-    protected readonly taskResolverRegistry: TaskResolverRegistry;
+    protected readonly taskResolverRegistry!: TaskResolverRegistry;
 
     @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    protected readonly terminalService!: TerminalService;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(ProblemManager)
-    protected readonly problemManager: ProblemManager;
+    protected readonly problemManager!: ProblemManager;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(ProblemMatcherRegistry)
-    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+    protected readonly problemMatcherRegistry!: ProblemMatcherRegistry;
 
     @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+    protected readonly quickPickService!: QuickPickService;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(ShellTerminalServerProxy)
-    protected readonly shellTerminalServer: ShellTerminalServerProxy;
+    protected readonly shellTerminalServer!: ShellTerminalServerProxy;
 
     @inject(TaskNameResolver)
-    protected readonly taskNameResolver: TaskNameResolver;
+    protected readonly taskNameResolver!: TaskNameResolver;
 
     @inject(TaskSourceResolver)
-    protected readonly taskSourceResolver: TaskSourceResolver;
+    protected readonly taskSourceResolver!: TaskSourceResolver;
 
     @inject(TaskSchemaUpdater)
-    protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+    protected readonly taskSchemaUpdater!: TaskSchemaUpdater;
 
     @inject(TaskConfigurationManager)
-    protected readonly taskConfigurationManager: TaskConfigurationManager;
+    protected readonly taskConfigurationManager!: TaskConfigurationManager;
 
     @inject(CommandService)
-    protected readonly commands: CommandService;
+    protected readonly commands!: CommandService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(MonacoWorkspace)
-    protected monacoWorkspace: MonacoWorkspace;
+    protected monacoWorkspace!: MonacoWorkspace;
 
     @inject(TaskTerminalWidgetManager)
-    protected readonly taskTerminalWidgetManager: TaskTerminalWidgetManager;
+    protected readonly taskTerminalWidgetManager!: TaskTerminalWidgetManager;
 
     @postConstruct()
     protected init(): void {
@@ -1028,11 +1028,11 @@ export class TaskService implements TaskConfigurationClient {
 
         const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
         items.push(...registeredProblemMatchers.map(matcher =>
-        ({
-            label: matcher.label,
-            value: { problemMatchers: [matcher] },
-            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
-        })
+            ({
+                label: matcher.label,
+                value: { problemMatchers: [matcher] },
+                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+            })
         ));
         return items;
     }

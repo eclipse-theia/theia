@@ -27,7 +27,7 @@ import * as cp from 'child_process';
 @injectable()
 export class ShellTerminalServer extends BaseTerminalServer {
 
-    @inject(EnvironmentUtils) protected environmentUtils: EnvironmentUtils;
+    @inject(EnvironmentUtils) protected environmentUtils!: EnvironmentUtils;
 
     constructor(
         @inject(ShellProcessFactory) protected readonly shellFactory: ShellProcessFactory,

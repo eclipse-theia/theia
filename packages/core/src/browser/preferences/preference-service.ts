@@ -286,16 +286,16 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected readonly toDispose = new DisposableCollection(this.onPreferenceChangedEmitter, this.onPreferencesChangedEmitter);
 
     @inject(PreferenceSchemaProvider)
-    protected readonly schema: PreferenceSchemaProvider;
+    protected readonly schema!: PreferenceSchemaProvider;
 
     @inject(PreferenceProviderProvider)
-    protected readonly providerProvider: PreferenceProviderProvider;
+    protected readonly providerProvider!: PreferenceProviderProvider;
 
     @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
+    protected readonly configurations!: PreferenceConfigurations;
 
     @inject(PreferenceLanguageOverrideService)
-    protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+    protected readonly preferenceOverrideService!: PreferenceLanguageOverrideService;
 
     protected readonly preferenceProviders = new Map<PreferenceScope, PreferenceProvider>();
 

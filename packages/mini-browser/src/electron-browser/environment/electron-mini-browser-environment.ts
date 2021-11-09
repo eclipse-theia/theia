@@ -24,7 +24,7 @@ import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-e
 export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
 
     @inject(ElectronSecurityToken)
-    protected readonly electronSecurityToken: ElectronSecurityToken;
+    protected readonly electronSecurityToken!: ElectronSecurityToken;
 
     getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);

@@ -29,10 +29,10 @@ import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-r
 export class DebugServiceImpl implements DebugService {
 
     @inject(DebugAdapterSessionManager)
-    protected readonly sessionManager: DebugAdapterSessionManager;
+    protected readonly sessionManager!: DebugAdapterSessionManager;
 
     @inject(DebugAdapterContributionRegistry)
-    protected readonly registry: DebugAdapterContributionRegistry;
+    protected readonly registry!: DebugAdapterContributionRegistry;
 
     dispose(): void {
         this.terminateDebugSession();

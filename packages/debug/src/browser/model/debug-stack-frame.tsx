@@ -31,17 +31,30 @@ import { RecursivePartial } from '@theia/core';
 import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
 
-export class DebugStackFrameData {
-    readonly raw: DebugProtocol.StackFrame;
+export abstract class DebugStackFrameData {
+    abstract readonly raw: DebugProtocol.StackFrame;
 }
 
 export class DebugStackFrame extends DebugStackFrameData implements TreeElement {
+
+    protected _raw?: DebugProtocol.StackFrame;
 
     constructor(
         readonly thread: DebugThread,
         readonly session: DebugSession
     ) {
         super();
+    }
+
+    get raw(): DebugProtocol.StackFrame {
+        if (this._raw === undefined) {
+            throw new Error('DebugStackFrame._raw is not set');
+        }
+        return this._raw;
+    }
+
+    set raw(value) {
+        this._raw = value;
     }
 
     get id(): string {

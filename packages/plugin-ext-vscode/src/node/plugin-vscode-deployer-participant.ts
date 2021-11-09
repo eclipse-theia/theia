@@ -22,7 +22,7 @@ import { PluginDeployerParticipant, PluginDeployerStartContext } from '@theia/pl
 export class PluginVSCodeDeployerParticipant implements PluginDeployerParticipant {
 
     @inject(PluginVSCodeEnvironment)
-    protected readonly environments: PluginVSCodeEnvironment;
+    protected readonly environments!: PluginVSCodeEnvironment;
 
     async onWillStart(context: PluginDeployerStartContext): Promise<void> {
         const extensionsDirUri = await this.environments.getExtensionsDirUri();

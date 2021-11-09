@@ -22,10 +22,10 @@ import { TaskConfigurations } from './task-configurations';
 @injectable()
 export class TaskNameResolver {
     @inject(TaskDefinitionRegistry)
-    protected taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(TaskConfigurations)
-    protected readonly taskConfigurations: TaskConfigurations;
+    protected readonly taskConfigurations!: TaskConfigurations;
 
     /**
      * Returns task name to display.

@@ -22,11 +22,11 @@ import { v4 } from 'uuid';
 
 export abstract class EnvExtImpl {
     private proxy: EnvMain;
-    private queryParameters: QueryParameters;
-    private lang: string;
-    private applicationName: string;
-    private defaultShell: string;
-    private ui: theia.UIKind;
+    private queryParameters?: QueryParameters;
+    private lang?: string;
+    private applicationName?: string;
+    private defaultShell?: string;
+    private ui?: theia.UIKind;
     private envMachineId: string;
     private envSessionId: string;
 
@@ -46,10 +46,16 @@ export abstract class EnvExtImpl {
     }
 
     getQueryParameter(queryParamName: string): string | string[] | undefined {
+        if (!this.queryParameters) {
+            throw new Error('EnvExtImpl.queryParameters is not set');
+        }
         return this.queryParameters[queryParamName];
     }
 
     getQueryParameters(): QueryParameters {
+        if (!this.queryParameters) {
+            throw new Error('EnvExtImpl.queryParameters is not set');
+        }
         return this.queryParameters;
     }
 
@@ -78,12 +84,18 @@ export abstract class EnvExtImpl {
     }
 
     get appName(): string {
+        if (!this.applicationName) {
+            throw new Error('EnvExtImpl.applicationName is not set');
+        }
         return this.applicationName;
     }
 
     abstract get appRoot(): string;
 
     get language(): string {
+        if (!this.lang) {
+            throw new Error('EnvExtImpl.lang is not set');
+        }
         return this.lang;
     }
     get machineId(): string {
@@ -96,9 +108,15 @@ export abstract class EnvExtImpl {
         return 'theia';
     }
     get shell(): string {
+        if (!this.defaultShell) {
+            throw new Error('EnvExtImpl.defaultShell is not set');
+        }
         return this.defaultShell;
     }
     get uiKind(): theia.UIKind {
+        if (!this.ui) {
+            throw new Error('EnvExtImpl.ui is not set');
+        }
         return this.ui;
     }
 }

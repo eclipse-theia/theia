@@ -37,13 +37,13 @@ export class BulkEditTreeWidget extends TreeWidget {
     private editorWidgets: EditorWidget[] = [];
 
     @inject(FileResourceResolver)
-    protected readonly fileResourceResolver: FileResourceResolver;
+    protected readonly fileResourceResolver!: FileResourceResolver;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(QuickViewService) @optional()
-    protected readonly quickView: QuickViewService;
+    protected readonly quickView?: QuickViewService;
 
     constructor(
         @inject(TreeProps) readonly treeProps: TreeProps,
@@ -185,7 +185,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         let lines: string[] = [];
         if (bulkEditInfoNode?.fileContents) {
             lines = bulkEditInfoNode.fileContents.split('\n');
-            bulkEditInfoNode.children.map((node: BulkEditNode) => {
+            (bulkEditInfoNode.children as BulkEditNode[]).map(node => {
                 if (node.bulkEdit && ('textEdit' in node.bulkEdit)) {
                     const startLineNum = node.bulkEdit.textEdit.range.startLineNumber;
                     if (lines.length > startLineNum) {

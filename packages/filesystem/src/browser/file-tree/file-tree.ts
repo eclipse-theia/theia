@@ -29,10 +29,10 @@ import { FileService } from '../file-service';
 export class FileTree extends TreeImpl {
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(MessageService)
-    protected readonly messagingService: MessageService;
+    protected readonly messagingService!: MessageService;
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {

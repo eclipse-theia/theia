@@ -30,9 +30,9 @@ export const FOLDER_SCOPE_MENU_PATH = PreferenceMenus.FOLDER_SCOPE_MENU_PATH;
  */
 @injectable()
 export class PreferenceScopeCommandManager {
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(CommandRegistry) protected readonly commandRegistry!: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry!: MenuModelRegistry;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
 
     protected foldersAsCommands: Command[] = [];
 

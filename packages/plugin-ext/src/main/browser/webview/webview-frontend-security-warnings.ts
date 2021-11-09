@@ -27,13 +27,13 @@ import { WebviewEnvironment } from './webview-environment';
 export class WebviewFrontendSecurityWarnings implements FrontendApplicationContribution {
 
     @inject(WindowService)
-    protected windowService: WindowService;
+    protected windowService!: WindowService;
 
     @inject(MessageService)
-    protected messageService: MessageService;
+    protected messageService!: MessageService;
 
     @inject(WebviewEnvironment)
-    protected webviewEnvironment: WebviewEnvironment;
+    protected webviewEnvironment!: WebviewEnvironment;
 
     initialize(): void {
         this.checkHostPattern();

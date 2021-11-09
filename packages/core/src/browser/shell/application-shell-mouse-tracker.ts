@@ -33,7 +33,7 @@ import { addEventListener, Widget } from '../widgets';
 export class ApplicationShellMouseTracker implements FrontendApplicationContribution {
 
     @inject(ApplicationShell)
-    protected readonly applicationShell: ApplicationShell;
+    protected readonly applicationShell!: ApplicationShell;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnActiveChange = new DisposableCollection();

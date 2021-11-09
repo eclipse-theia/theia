@@ -81,7 +81,7 @@ export namespace ExpandableTreeNode {
 @injectable()
 export class TreeExpansionServiceImpl implements TreeExpansionService {
 
-    @inject(Tree) protected readonly tree: Tree;
+    @inject(Tree) protected readonly tree!: Tree;
     protected readonly onExpansionChangedEmitter = new Emitter<ExpandableTreeNode>();
 
     @postConstruct()

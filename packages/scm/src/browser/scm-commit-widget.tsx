@@ -30,8 +30,8 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     static ID = 'scm-commit-widget';
 
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(KeybindingRegistry) protected readonly keybindings!: KeybindingRegistry;
 
     protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 

@@ -102,10 +102,10 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     protected readonly folderSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
 
     @inject(ContributionProvider) @named(PreferenceContribution)
-    protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
+    protected readonly preferenceContributions!: ContributionProvider<PreferenceContribution>;
 
     @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
+    protected readonly configurations!: PreferenceConfigurations;
 
     protected readonly onDidPreferenceSchemaChangedEmitter = new Emitter<void>();
     readonly onDidPreferenceSchemaChanged: Event<void> = this.onDidPreferenceSchemaChangedEmitter.event;

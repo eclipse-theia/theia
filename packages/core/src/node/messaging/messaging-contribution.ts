@@ -43,24 +43,24 @@ export const MessagingContainer = Symbol('MessagingContainer');
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {
 
     @inject(MessagingContainer)
-    protected readonly container: interfaces.Container;
+    protected readonly container!: interfaces.Container;
 
     @inject(ContributionProvider) @named(ConnectionContainerModule)
-    protected readonly connectionModules: ContributionProvider<interfaces.ContainerModule>;
+    protected readonly connectionModules!: ContributionProvider<interfaces.ContainerModule>;
 
     @inject(ContributionProvider) @named(MessagingService.Contribution)
-    protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
+    protected readonly contributions!: ContributionProvider<MessagingService.Contribution>;
 
     @inject(WsRequestValidator)
-    protected readonly wsRequestValidator: WsRequestValidator;
+    protected readonly wsRequestValidator!: WsRequestValidator;
 
     @inject(MessagingListener)
-    protected readonly messagingListener: MessagingListener;
+    protected readonly messagingListener!: MessagingListener;
 
     @inject(HttpWebsocketAdapterFactory)
-    protected readonly httpWebsocketAdapterFactory: () => HttpWebsocketAdapter;
+    protected readonly httpWebsocketAdapterFactory!: () => HttpWebsocketAdapter;
 
-    protected webSocketServer: ws.Server | undefined;
+    protected webSocketServer?: ws.Server;
     protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws | HttpWebsocketAdapter>();
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
     protected readonly httpWebsocketAdapters = new Map<string, HttpWebsocketAdapter>();
@@ -92,7 +92,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     ws(spec: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void {
-        this.wsHandlers.push(spec, callback);
+        this.wsHandlers.push(spec, (params, connection) => callback(params, connection as ws));
     }
 
     protected checkAliveTimeout = 30000;
@@ -114,22 +114,22 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             this.handleConnection(socket, request);
         });
         setInterval(() => {
-            this.webSocketServer!.clients.forEach((socket: CheckAliveWS) => {
+            for (const socket of this.webSocketServer!.clients as Set<CheckAliveWS>) {
                 if (socket.alive === false) {
                     socket.terminate();
                     return;
                 }
                 socket.alive = false;
                 socket.ping();
-            });
-            this.httpWebsocketAdapters.forEach((adapter, id) => {
+            };
+            for (const [id, adapter] of this.httpWebsocketAdapters) {
                 if (adapter.alive === false) {
                     this.httpWebsocketAdapters.delete(id);
                     adapter.onclose();
                     return;
                 }
                 adapter.alive = false;
-            });
+            };
         }, this.checkAliveTimeout);
     }
 

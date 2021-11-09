@@ -42,10 +42,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     static ID = 'search-in-workspace';
     static LABEL = nls.localizeByDefault('Search');
 
-    protected matchCaseState: SearchFieldState;
-    protected wholeWordState: SearchFieldState;
-    protected regExpState: SearchFieldState;
-    protected includeIgnoredState: SearchFieldState;
+    protected matchCaseState!: SearchFieldState;
+    protected wholeWordState!: SearchFieldState;
+    protected regExpState!: SearchFieldState;
+    protected includeIgnoredState!: SearchFieldState;
 
     protected showSearchDetails = false;
     protected _hasResults = false;
@@ -60,7 +60,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected searchFieldContainerIsFocused = false;
 
-    protected searchInWorkspaceOptions: SearchInWorkspaceOptions;
+    protected searchInWorkspaceOptions!: SearchInWorkspaceOptions;
 
     protected searchTerm = '';
     protected replaceTerm = '';
@@ -79,26 +79,25 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this._showReplaceField = showReplaceField;
     }
 
-    protected contentNode: HTMLElement;
-    protected searchFormContainer: HTMLElement;
-    protected resultContainer: HTMLElement;
+    protected contentNode!: HTMLElement;
+    protected searchFormContainer!: HTMLElement;
 
     protected readonly onDidUpdateEmitter = new Emitter<void>();
     readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
 
-    @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget!: SearchInWorkspaceResultTreeWidget;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
 
     @inject(SearchInWorkspaceContextKeyService)
-    protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
+    protected readonly contextKeyService!: SearchInWorkspaceContextKeyService;
 
     @inject(ProgressBarFactory)
-    protected readonly progressBarFactory: ProgressBarFactory;
+    protected readonly progressBarFactory!: ProgressBarFactory;
 
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
     @inject(SearchInWorkspacePreferences)
-    protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
+    protected readonly searchInWorkspacePreferences!: SearchInWorkspacePreferences;
 
     @postConstruct()
     protected init(): void {
@@ -419,7 +418,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.doBlurSearchFieldContainer();
     }
 
-    private _searchTimeout: number;
+    private _searchTimeout?: number;
     protected readonly search = (e: React.KeyboardEvent) => {
         e.persist();
         const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];

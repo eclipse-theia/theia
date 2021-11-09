@@ -27,7 +27,7 @@ import * as theia from '@theia/plugin';
 export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
 
     @inject(PluginMetricsResolver)
-    private pluginMetricsResolver: PluginMetricsResolver;
+    private pluginMetricsResolver!: PluginMetricsResolver;
 
     // Map of handle to extension id
     protected readonly handleToExtensionID = new Map<number, string>();

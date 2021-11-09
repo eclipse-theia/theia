@@ -25,7 +25,7 @@ import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
 import PerfectScrollbar from 'perfect-scrollbar';
 
 decorate(injectable(), Widget);
-decorate(unmanaged(), Widget, 0);
+decorate(unmanaged() as ParameterDecorator, Widget, 0);
 
 export * from '@phosphor/widgets';
 export * from '@phosphor/messaging';
@@ -254,10 +254,11 @@ export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventM
 export function addEventListener<K extends keyof HTMLElementEventMap>(
     element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean
 ): Disposable {
-    element.addEventListener(type, listener, useCapture);
-    return Disposable.create(() =>
-        element.removeEventListener(type, listener, useCapture)
-    );
+    // The DOM API typings don't seem to take a specific listener as described in this function.
+    element.addEventListener(type, listener as EventListenerOrEventListenerObject<any>, useCapture);
+    return Disposable.create(() => {
+        element.removeEventListener(type, listener as EventListenerOrEventListenerObject<any>, useCapture);
+    });
 }
 
 export function addKeyListener<K extends keyof HTMLElementEventMap>(

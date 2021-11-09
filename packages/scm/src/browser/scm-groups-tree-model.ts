@@ -23,7 +23,7 @@ import { ScmResourceGroup, ScmProvider } from './scm-provider';
 @injectable()
 export class ScmGroupsTreeModel extends ScmTreeModel {
 
-    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(ScmService) protected readonly scmService!: ScmService;
 
     protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 

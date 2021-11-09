@@ -48,15 +48,15 @@ export class ScmTreeWidget extends TreeWidget {
     static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
 
-    @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
-    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
-    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
-    @inject(ScmContextKeyService) protected readonly contextKeys: ScmContextKeyService;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
-    @inject(IconThemeService) protected readonly iconThemeService: IconThemeService;
-    @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
-    @inject(ColorRegistry) protected readonly colors: ColorRegistry;
+    @inject(MenuModelRegistry) protected readonly menus!: MenuModelRegistry;
+    @inject(CommandRegistry) protected readonly commands!: CommandRegistry;
+    @inject(CorePreferences) protected readonly corePreferences!: CorePreferences;
+    @inject(ScmContextKeyService) protected readonly contextKeys!: ScmContextKeyService;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+    @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider!: DiffNavigatorProvider;
+    @inject(IconThemeService) protected readonly iconThemeService!: IconThemeService;
+    @inject(DecorationsService) protected readonly decorationsService!: DecorationsService;
+    @inject(ColorRegistry) protected readonly colors!: ColorRegistry;
 
     model: ScmTreeModel;
 

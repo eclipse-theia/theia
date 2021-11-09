@@ -27,8 +27,8 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 export class EditorPreviewManager extends EditorManager {
     readonly id = EditorPreviewWidgetFactory.ID;
 
-    @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
-    @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
+    @inject(EditorPreviewPreferences) protected readonly preferences!: EditorPreviewPreferences;
+    @inject(FrontendApplicationStateService) protected readonly stateService!: FrontendApplicationStateService;
 
     protected currentPreview: EditorPreviewWidget | undefined;
     protected toDisposeOnPreviewChange = new DisposableCollection();
@@ -41,7 +41,8 @@ export class EditorPreviewManager extends EditorManager {
     protected init(): void {
         super.init();
         // All editors are created, but not all are opened. This sets up the logic to swap previews when the editor is attached.
-        this.onCreated((widget: EditorPreviewWidget) => {
+        this.onCreated(created => {
+            const widget = created as EditorPreviewWidget;
             if (this.layoutIsSet && widget.isPreview) {
                 const oneTimeDisposable = widget.onDidChangeVisibility(() => {
                     const { currentPreview } = this;

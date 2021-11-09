@@ -23,7 +23,7 @@ import { GitRepositoryWatcher, GitRepositoryWatcherFactory } from './git-reposit
 export class GitRepositoryManager {
 
     @inject(GitRepositoryWatcherFactory)
-    protected readonly watcherFactory: GitRepositoryWatcherFactory;
+    protected readonly watcherFactory!: GitRepositoryWatcherFactory;
     protected readonly watchers = new ReferenceCollection<Repository, GitRepositoryWatcher>(
         repository => this.watcherFactory({ repository })
     );

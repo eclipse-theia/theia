@@ -30,7 +30,7 @@ export interface GitPromptServerProxy extends JsonRpcProxy<GitPromptServer> {
 export class GitPrompt implements GitPromptClient, Disposable {
 
     @inject(GitPromptServer)
-    protected readonly server: GitPromptServer;
+    protected readonly server!: GitPromptServer;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -160,7 +160,7 @@ export interface GitPromptClient {
 export class GitPromptServerImpl implements GitPromptServer {
 
     @inject(GitPromptServerProxy)
-    protected readonly proxy: GitPromptServerProxy;
+    protected readonly proxy!: GitPromptServerProxy;
 
     setClient(client: GitPromptClient): void {
         this.proxy.setClient(client);

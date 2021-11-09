@@ -40,13 +40,13 @@ interface PrepareDownloadOptions {
 export abstract class FileDownloadHandler {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(DirectoryArchiver)
-    protected readonly directoryArchiver: DirectoryArchiver;
+    protected readonly directoryArchiver!: DirectoryArchiver;
 
     @inject(FileDownloadCache)
-    protected readonly fileDownloadCache: FileDownloadCache;
+    protected readonly fileDownloadCache!: FileDownloadCache;
 
     public abstract handle(request: Request, response: Response): Promise<void>;
 

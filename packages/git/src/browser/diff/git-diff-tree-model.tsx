@@ -28,11 +28,11 @@ import { GitResourceOpener } from './git-resource-opener';
 @injectable()
 export class GitDiffTreeModel extends ScmTreeModel {
 
-    @inject(Git) protected readonly git: Git;
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(GitResourceOpener) protected readonly resourceOpener: GitResourceOpener;
+    @inject(Git) protected readonly git!: Git;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(GitResourceOpener) protected readonly resourceOpener!: GitResourceOpener;
 
-    protected diffOptions: Git.Options.Diff;
+    protected diffOptions: Git.Options.Diff = {};
 
     protected _groups: ScmResourceGroup[] = [];
 

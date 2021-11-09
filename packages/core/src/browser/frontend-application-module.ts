@@ -257,8 +257,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(QuickHelpService).toSelf().inSingletonScope();
     bind(QuickAccessContribution).toService(QuickHelpService);
 
-    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
-        WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
+    bind<QuickPickService>(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation((ctx, quickPickService) => {
+        WebSocketConnectionProvider.createProxy(ctx.container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
 

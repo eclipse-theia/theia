@@ -41,7 +41,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     protected readonly owner = 'breakpoint';
 
     @inject(StorageService)
-    protected readonly storage: StorageService;
+    protected readonly storage!: StorageService;
 
     getKind(): string {
         return BREAKPOINT_KIND;

@@ -55,7 +55,7 @@ export namespace KeymapsCommands {
 export class KeymapsFrontendContribution extends AbstractViewContribution<KeybindingWidget> implements CommandContribution, MenuContribution, TabBarToolbarContribution {
 
     @inject(KeymapsService)
-    protected readonly keymaps: KeymapsService;
+    protected readonly keymaps!: KeymapsService;
 
     constructor() {
         super({

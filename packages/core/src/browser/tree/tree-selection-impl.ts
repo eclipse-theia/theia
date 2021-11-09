@@ -24,10 +24,10 @@ import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-
 export class TreeSelectionServiceImpl implements TreeSelectionService {
 
     @inject(Tree)
-    protected readonly tree: Tree;
+    protected readonly tree!: Tree;
     protected readonly onSelectionChangedEmitter = new Emitter<ReadonlyArray<Readonly<SelectableTreeNode>>>();
 
-    protected state: TreeSelectionState;
+    protected state!: TreeSelectionState;
 
     @postConstruct()
     protected init(): void {

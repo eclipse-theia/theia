@@ -26,7 +26,7 @@ import { DisposableCollection } from '@theia/core';
 export class KeybindingsContributionPointHandler {
 
     @inject(KeybindingRegistry)
-    private readonly keybindingRegistry: KeybindingRegistry;
+    private readonly keybindingRegistry!: KeybindingRegistry;
 
     handle(contributions: PluginContribution): Disposable {
         if (!contributions || !contributions.keybindings) {

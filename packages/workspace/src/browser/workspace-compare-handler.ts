@@ -22,7 +22,7 @@ import { DiffService } from './diff-service';
 @injectable()
 export class WorkspaceCompareHandler implements UriCommandHandler<URI[]> {
 
-    @inject(DiffService) protected readonly diffService: DiffService;
+    @inject(DiffService) protected readonly diffService!: DiffService;
 
     /**
      * Determine if the command is visible.

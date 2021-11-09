@@ -56,7 +56,7 @@ export const FILENAME_TEXTFIELD_CLASS = 'theia-FileNameTextField';
 export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
 export const TOOLBAR_ITEM_TRANSFORM_TIMEOUT = 100;
 
-export class FileDialogProps extends DialogProps {
+export abstract class FileDialogProps extends DialogProps {
 
     /**
      * A set of file filters that are used by the dialog. Each entry is a human readable label,
@@ -73,7 +73,7 @@ export class FileDialogProps extends DialogProps {
 }
 
 @injectable()
-export class OpenFileDialogProps extends FileDialogProps {
+export abstract class OpenFileDialogProps extends FileDialogProps {
 
     /**
      * A human-readable string for the accept button.
@@ -98,7 +98,7 @@ export class OpenFileDialogProps extends FileDialogProps {
 }
 
 @injectable()
-export class SaveFileDialogProps extends FileDialogProps {
+export abstract class SaveFileDialogProps extends FileDialogProps {
 
     /**
      * A human-readable string for the accept button.
@@ -114,17 +114,17 @@ export class SaveFileDialogProps extends FileDialogProps {
 
 export abstract class FileDialog<T> extends AbstractDialog<T> {
 
-    protected back: HTMLSpanElement;
-    protected forward: HTMLSpanElement;
-    protected home: HTMLSpanElement;
-    protected up: HTMLSpanElement;
-    protected locationListRenderer: LocationListRenderer;
-    protected treeFiltersRenderer: FileDialogTreeFiltersRenderer | undefined;
-    protected treePanel: Panel;
+    protected back!: HTMLSpanElement;
+    protected forward!: HTMLSpanElement;
+    protected home!: HTMLSpanElement;
+    protected up!: HTMLSpanElement;
+    protected locationListRenderer!: LocationListRenderer;
+    protected treePanel!: Panel;
+    protected treeFiltersRenderer?: FileDialogTreeFiltersRenderer;
 
-    @inject(FileDialogWidget) readonly widget: FileDialogWidget;
-    @inject(LocationListRendererFactory) readonly locationListFactory: LocationListRendererFactory;
-    @inject(FileDialogTreeFiltersRendererFactory) readonly treeFiltersFactory: FileDialogTreeFiltersRendererFactory;
+    @inject(FileDialogWidget) readonly widget!: FileDialogWidget;
+    @inject(LocationListRendererFactory) readonly locationListFactory!: LocationListRendererFactory;
+    @inject(FileDialogTreeFiltersRendererFactory) readonly treeFiltersFactory!: FileDialogTreeFiltersRendererFactory;
 
     constructor(
         @inject(FileDialogProps) readonly props: FileDialogProps
@@ -338,7 +338,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
     protected fileNameField: HTMLInputElement | undefined;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     constructor(@inject(SaveFileDialogProps) readonly props: SaveFileDialogProps) {
         super(props);

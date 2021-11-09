@@ -20,17 +20,17 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 @injectable()
 export class ViewContextKeyService {
 
-    protected _view: ContextKey<string>;
+    protected _view!: ContextKey<string>;
     get view(): ContextKey<string> {
         return this._view;
     }
 
-    protected _viewItem: ContextKey<string>;
+    protected _viewItem!: ContextKey<string>;
     get viewItem(): ContextKey<string> {
         return this._viewItem;
     }
 
-    protected _activeViewlet: ContextKey<string>;
+    protected _activeViewlet!: ContextKey<string>;
     /**
      * Viewlet is a tab in the left area in VS Code. Active means visible in this context.
      *
@@ -42,7 +42,7 @@ export class ViewContextKeyService {
         return this._activeViewlet;
     }
 
-    protected _activePanel: ContextKey<string>;
+    protected _activePanel!: ContextKey<string>;
     /**
      * Panel is a tab in the bottom area in VS Code. Active means visible in this context.
      *
@@ -54,13 +54,13 @@ export class ViewContextKeyService {
         return this._activePanel;
     }
 
-    protected _focusedView: ContextKey<string>;
+    protected _focusedView!: ContextKey<string>;
     get focusedView(): ContextKey<string> {
         return this._focusedView;
     }
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @postConstruct()
     protected init(): void {

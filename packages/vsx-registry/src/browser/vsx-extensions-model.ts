@@ -39,25 +39,25 @@ export class VSXExtensionsModel {
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     @inject(OVSXClientProvider)
-    protected clientProvider: OVSXClientProvider;
+    protected clientProvider!: OVSXClientProvider;
 
     @inject(HostedPluginSupport)
-    protected readonly pluginSupport: HostedPluginSupport;
+    protected readonly pluginSupport!: HostedPluginSupport;
 
     @inject(VSXExtensionFactory)
-    protected readonly extensionFactory: VSXExtensionFactory;
+    protected readonly extensionFactory!: VSXExtensionFactory;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
+    protected readonly preferences!: PreferenceService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(VSXExtensionsSearchModel)
-    readonly search: VSXExtensionsSearchModel;
+    readonly search!: VSXExtensionsSearchModel;
 
     protected readonly initialized = new Deferred<void>();
 

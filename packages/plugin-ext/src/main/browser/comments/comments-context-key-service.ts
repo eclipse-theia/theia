@@ -22,13 +22,13 @@ import { Emitter } from '@theia/core/lib/common';
 export class CommentsContextKeyService {
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
     protected readonly contextKeys: Set<string> = new Set();
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
-    protected _commentIsEmpty: ContextKey<boolean>;
-    protected _commentController: ContextKey<string | undefined>;
-    protected _comment: ContextKey<string | undefined>;
+    protected _commentIsEmpty!: ContextKey<boolean>;
+    protected _commentController!: ContextKey<string | undefined>;
+    protected _comment!: ContextKey<string | undefined>;
 
     get commentController(): ContextKey<string | undefined> {
         return this._commentController;

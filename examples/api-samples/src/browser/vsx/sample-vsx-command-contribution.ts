@@ -22,10 +22,10 @@ import { Command, CommandContribution, CommandRegistry, MessageService } from '@
 export class VSXCommandContribution implements CommandContribution {
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(VSXEnvironment)
-    protected readonly environment: VSXEnvironment;
+    protected readonly environment!: VSXEnvironment;
 
     protected readonly command: Command = {
         id: 'vsx.echo-api-version',

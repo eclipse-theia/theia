@@ -28,7 +28,7 @@ import { ElectronTokenValidator } from './electron-token-validator';
 export class ElectronMessagingContribution extends MessagingContribution {
 
     @inject(ElectronTokenValidator)
-    protected readonly tokenValidator: ElectronTokenValidator;
+    protected readonly tokenValidator!: ElectronTokenValidator;
 
     /**
      * Only allow token-bearers.

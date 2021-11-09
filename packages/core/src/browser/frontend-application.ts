@@ -96,13 +96,13 @@ export abstract class DefaultFrontendApplicationContribution implements Frontend
 export class FrontendApplication {
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(WindowService)
-    protected readonly windowsService: WindowService;
+    protected readonly windowsService!: WindowService;
 
     @inject(TooltipService)
-    protected readonly tooltipService: TooltipService;
+    protected readonly tooltipService!: TooltipService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,

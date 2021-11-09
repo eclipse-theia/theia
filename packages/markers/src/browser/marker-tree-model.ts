@@ -21,7 +21,7 @@ import { TreeModelImpl, OpenerService, open, TreeNode, OpenerOptions } from '@th
 @injectable()
 export class MarkerTreeModel extends TreeModelImpl {
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
 
     protected doOpenNode(node: TreeNode): void {
         if (MarkerNode.is(node)) {

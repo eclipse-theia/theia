@@ -29,10 +29,10 @@ import { codicon } from '@theia/core/lib/browser';
 export class PluginWidget extends ReactWidget {
 
     @inject(HostedPluginSupport)
-    protected readonly pluginService: HostedPluginSupport;
+    protected readonly pluginService!: HostedPluginSupport;
 
     @inject(ProgressBarFactory)
-    protected readonly progressBarFactory: ProgressBarFactory;
+    protected readonly progressBarFactory!: ProgressBarFactory;
 
     constructor() {
         super();

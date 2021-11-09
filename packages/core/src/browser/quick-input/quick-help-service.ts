@@ -24,10 +24,10 @@ export class QuickHelpService implements QuickAccessProvider, QuickAccessContrib
     static PREFIX = '?';
 
     @inject(QuickAccessRegistry)
-    protected quickAccessRegistry: QuickAccessRegistry;
+    protected quickAccessRegistry!: QuickAccessRegistry;
 
     @inject(QuickInputService)
-    protected quickInputService: QuickInputService;
+    protected quickInputService!: QuickInputService;
 
     getPicks(filter: string, token: CancellationToken): (QuickPickItem | QuickPickSeparator)[] {
         const { editorProviders, globalProviders } = this.getQuickAccessProviders();

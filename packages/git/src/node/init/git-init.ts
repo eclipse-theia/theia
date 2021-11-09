@@ -46,10 +46,10 @@ export class DefaultGitInit implements GitInit {
     protected readonly toDispose = new DisposableCollection();
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(MessageService)
-    protected readonly messages: MessageService;
+    protected readonly messages!: MessageService;
 
     async init(): Promise<void> {
         const { env } = process;

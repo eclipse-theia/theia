@@ -114,7 +114,7 @@ export class Path {
     readonly name: string;
     readonly ext: string;
 
-    private _dir: Path;
+    private _dir?: Path;
     private readonly raw: string;
 
     /**

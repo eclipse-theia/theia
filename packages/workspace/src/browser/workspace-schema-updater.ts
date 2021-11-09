@@ -38,7 +38,7 @@ export class WorkspaceSchemaUpdater implements JsonSchemaContribution {
     protected readonly editQueue: SchemaUpdateMessage[] = [];
     protected safeToHandleQueue = new Deferred();
 
-    @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
+    @inject(InMemoryResources) protected readonly inmemoryResources!: InMemoryResources;
 
     @postConstruct()
     protected init(): void {

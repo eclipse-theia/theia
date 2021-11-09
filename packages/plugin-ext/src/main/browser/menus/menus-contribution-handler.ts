@@ -61,37 +61,37 @@ export class CodeEditorWidgetUtil {
 export class MenusContributionPointHandler {
 
     @inject(MenuModelRegistry)
-    protected readonly menuRegistry: MenuModelRegistry;
+    protected readonly menuRegistry!: MenuModelRegistry;
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(ScmService)
-    protected readonly scmService: ScmService;
+    protected readonly scmService!: ScmService;
 
     @inject(QuickCommandService) @optional()
-    protected readonly quickCommandService: QuickCommandService;
+    protected readonly quickCommandService?: QuickCommandService;
 
     @inject(TabBarToolbarRegistry)
-    protected readonly tabBarToolbar: TabBarToolbarRegistry;
+    protected readonly tabBarToolbar!: TabBarToolbarRegistry;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     @inject(ResourceContextKey)
-    protected readonly resourceContextKey: ResourceContextKey;
+    protected readonly resourceContextKey!: ResourceContextKey;
 
     @inject(ViewContextKeyService)
-    protected readonly viewContextKeys: ViewContextKeyService;
+    protected readonly viewContextKeys!: ViewContextKeyService;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(CodeEditorWidgetUtil)
-    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
+    protected readonly codeEditorWidgetUtil!: CodeEditorWidgetUtil;
 
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes && plugin.contributes.menus;
@@ -226,6 +226,10 @@ export class MenusContributionPointHandler {
     }
 
     protected registerCommandPaletteAction(menu: Menu): Disposable {
+        if (!this.quickCommandService) {
+
+            throw new Error('MenusContributionPointHandler.quickCommandService is not set');
+        }
         if (menu.command && menu.when) {
             return this.quickCommandService.pushCommandContext(menu.command, menu.when);
         }
@@ -524,14 +528,18 @@ export class MenusContributionPointHandler {
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
         toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
-        toDispose.push(this.quickCommandService?.pushCommandContext(commandId, 'false'));
+        if (this.quickCommandService) {
+            toDispose.push(this.quickCommandService.pushCommandContext(commandId, 'false'));
+        }
 
         let altId: string | undefined;
         if (menu.alt) {
             altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
             const alt: Command = { id: altId };
             toDispose.push(this.commands.registerCommand(alt, handler(menu.alt)));
-            toDispose.push(this.quickCommandService?.pushCommandContext(altId, 'false'));
+            if (this.quickCommandService) {
+                toDispose.push(this.quickCommandService.pushCommandContext(altId, 'false'));
+            }
             toDispose.push(this.onDidRegisterCommand(menu.alt, pluginCommand => {
                 alt.category = pluginCommand.category;
                 alt.label = pluginCommand.label;

@@ -54,25 +54,25 @@ export class MonacoEditorProvider {
 
     @inject(ContributionProvider)
     @named(MonacoEditorFactory)
-    protected readonly factories: ContributionProvider<MonacoEditorFactory>;
+    protected readonly factories!: ContributionProvider<MonacoEditorFactory>;
 
     @inject(MonacoBulkEditService)
-    protected readonly bulkEditService: MonacoBulkEditService;
+    protected readonly bulkEditService!: MonacoBulkEditService;
 
     @inject(MonacoEditorServices)
-    protected readonly services: MonacoEditorServices;
+    protected readonly services!: MonacoEditorServices;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
+    protected readonly keybindingRegistry!: KeybindingRegistry;
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(FileSystemPreferences)
-    protected readonly filePreferences: FileSystemPreferences;
+    protected readonly filePreferences!: FileSystemPreferences;
 
     @inject(MonacoQuickInputImplementation)
-    protected readonly quickInputService: MonacoQuickInputImplementation;
+    protected readonly quickInputService!: MonacoQuickInputImplementation;
 
     protected _current: MonacoEditor | undefined;
     /**

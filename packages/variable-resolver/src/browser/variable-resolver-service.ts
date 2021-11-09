@@ -37,7 +37,7 @@ export class VariableResolverService {
 
     protected static VAR_REGEXP = /\$\{(.*?)\}/g;
 
-    @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry;
+    @inject(VariableRegistry) protected readonly variableRegistry!: VariableRegistry;
 
     /**
      * Resolve the variables in the given string array.

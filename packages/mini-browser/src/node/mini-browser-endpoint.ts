@@ -80,14 +80,14 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
      */
     static HANDLE_PATH = '/mini-browser/';
 
-    private attachRequestHandlerPromise: Promise<void>;
+    private attachRequestHandlerPromise?: Promise<void>;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(ContributionProvider)
     @named(MiniBrowserEndpointHandler)
-    protected readonly contributions: ContributionProvider<MiniBrowserEndpointHandler>;
+    protected readonly contributions!: ContributionProvider<MiniBrowserEndpointHandler>;
 
     protected readonly handlers: Map<string, MiniBrowserEndpointHandler> = new Map();
 
@@ -105,6 +105,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
                 }
             }
         }));
+        // Assumes `configure` was called before.
         await this.attachRequestHandlerPromise;
     }
 

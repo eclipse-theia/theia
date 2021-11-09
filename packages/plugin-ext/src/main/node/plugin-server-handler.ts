@@ -25,10 +25,10 @@ import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 export class PluginServerHandler implements PluginServer {
 
     @inject(PluginDeployer)
-    protected readonly pluginDeployer: PluginDeployerImpl;
+    protected readonly pluginDeployer!: PluginDeployerImpl;
 
     @inject(PluginsKeyValueStorage)
-    protected readonly pluginsKeyValueStorage: PluginsKeyValueStorage;
+    protected readonly pluginsKeyValueStorage!: PluginsKeyValueStorage;
 
     deploy(pluginEntry: string, arg2?: PluginType | CancellationToken): Promise<void> {
         const type = typeof arg2 === 'number' ? arg2 as PluginType : undefined;

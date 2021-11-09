@@ -47,7 +47,7 @@ export class DebugResource implements Resource {
 export class DebugResourceResolver implements ResourceResolver {
 
     @inject(DebugSessionManager)
-    protected readonly manager: DebugSessionManager;
+    protected readonly manager!: DebugSessionManager;
 
     resolve(uri: URI): DebugResource {
         if (uri.scheme !== DebugSource.SCHEME) {

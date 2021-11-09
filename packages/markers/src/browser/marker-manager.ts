@@ -117,7 +117,7 @@ export abstract class MarkerManager<D extends object> {
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @postConstruct()
     protected init(): void {

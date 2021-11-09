@@ -24,12 +24,12 @@ import deepmerge = require('deepmerge');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
-export class ApplicationPackageOptions {
-    readonly projectPath: string;
-    readonly log?: ApplicationLog;
-    readonly error?: ApplicationLog;
-    readonly registry?: NpmRegistry;
-    readonly appTarget?: ApplicationProps.Target;
+export interface ApplicationPackageOptions {
+    readonly projectPath: string
+    readonly log?: ApplicationLog
+    readonly error?: ApplicationLog
+    readonly registry?: NpmRegistry
+    readonly appTarget?: ApplicationProps.Target
 }
 
 export type ApplicationModuleResolver = (modulePath: string) => string;

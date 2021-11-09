@@ -29,12 +29,12 @@ export class PropertyViewWidget extends BaseWidget {
     static readonly ID = 'property-view';
     static readonly LABEL = nls.localize('theia/property-view/properties', 'Properties');
 
-    protected contentWidget: PropertyViewContentWidget;
+    protected contentWidget?: PropertyViewContentWidget;
 
     protected toDisposeOnDetach = new DisposableCollection();
 
-    @inject(PropertyViewService) protected readonly propertyViewService: PropertyViewService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(PropertyViewService) protected readonly propertyViewService!: PropertyViewService;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
 
     @postConstruct()
     init(): void {
@@ -71,7 +71,7 @@ export class PropertyViewWidget extends BaseWidget {
     }
 
     protected replaceContentWidget(newContentWidget: PropertyViewContentWidget): void {
-        if (this.contentWidget.id !== newContentWidget.id) {
+        if (!this.contentWidget || this.contentWidget.id !== newContentWidget.id) {
             if (this.contentWidget) {
                 Widget.detach(this.contentWidget);
             }

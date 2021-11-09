@@ -103,28 +103,28 @@ export class KeybindingRegistry {
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(KeyboardLayoutService)
-    protected readonly keyboardLayoutService: KeyboardLayoutService;
+    protected readonly keyboardLayoutService!: KeyboardLayoutService;
 
     @inject(ContributionProvider) @named(KeybindingContext)
-    protected readonly contextProvider: ContributionProvider<KeybindingContext>;
+    protected readonly contextProvider!: ContributionProvider<KeybindingContext>;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(ContributionProvider) @named(KeybindingContribution)
-    protected readonly contributions: ContributionProvider<KeybindingContribution>;
+    protected readonly contributions!: ContributionProvider<KeybindingContribution>;
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(ContextKeyService)
-    protected readonly whenContextService: ContextKeyService;
+    protected readonly whenContextService!: ContextKeyService;
 
     async onStart(): Promise<void> {
         await this.keyboardLayoutService.initialize();

@@ -40,19 +40,19 @@ export const taskSchemaId = 'vscode://schemas/tasks';
 export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     @inject(InMemoryResources)
-    protected readonly inmemoryResources: InMemoryResources;
+    protected readonly inmemoryResources!: InMemoryResources;
 
     @inject(ProblemMatcherRegistry)
-    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+    protected readonly problemMatcherRegistry!: ProblemMatcherRegistry;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(TaskServer)
-    protected readonly taskServer: TaskServer;
+    protected readonly taskServer!: TaskServer;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;

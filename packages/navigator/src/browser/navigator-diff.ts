@@ -41,16 +41,16 @@ export namespace NavigatorDiffCommands {
 @injectable()
 export class NavigatorDiff {
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(OpenerService)
-    protected openerService: OpenerService;
+    protected openerService!: OpenerService;
 
     @inject(MessageService)
-    protected readonly notifications: MessageService;
+    protected readonly notifications!: MessageService;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     constructor(
     ) {
@@ -65,7 +65,7 @@ export class NavigatorDiff {
         this._isFirstFileSelected = true;
     }
 
-    protected _isFirstFileSelected: boolean;
+    protected _isFirstFileSelected!: boolean;
     get isFirstFileSelected(): boolean {
         return this._isFirstFileSelected;
     }

@@ -29,7 +29,7 @@ import { MaybePromise } from '@theia/core/lib/common';
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
 
-    protected webviewExternalEndpointRegExp: RegExp;
+    protected webviewExternalEndpointRegExp!: RegExp;
 
     protected serveSameOrigin: boolean = false;
 

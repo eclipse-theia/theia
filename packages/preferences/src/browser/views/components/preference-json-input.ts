@@ -22,7 +22,7 @@ import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 @injectable()
 export class PreferenceJSONLinkRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLAnchorElement> {
-    @inject(CommandService) protected readonly commandService: CommandService;
+    @inject(CommandService) protected readonly commandService!: CommandService;
 
     protected createInteractable(parent: HTMLElement): void {
         const message = 'Edit in settings.json';

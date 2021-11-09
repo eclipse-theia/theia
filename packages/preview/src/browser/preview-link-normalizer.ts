@@ -24,7 +24,7 @@ export class PreviewLinkNormalizer {
     protected urlScheme = new RegExp('^[a-z][a-z|0-9|\+|\-|\.]*:', 'i');
 
     @inject(MiniBrowserEnvironment)
-    protected readonly miniBrowserEnvironment: MiniBrowserEnvironment;
+    protected readonly miniBrowserEnvironment!: MiniBrowserEnvironment;
 
     normalizeLink(documentUri: URI, link: string): string {
         try {

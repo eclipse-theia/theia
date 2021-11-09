@@ -27,7 +27,7 @@ import { UserStorageUri } from './user-storage-uri';
 export class UserStorageContribution implements FileServiceContribution {
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     registerFileSystemProviders(service: FileService): void {
         service.onWillActivateFileSystemProvider(event => {

@@ -52,17 +52,17 @@ export class FileUploadService {
     static TARGET = 'target';
     static UPLOAD = 'upload';
 
-    protected uploadForm: FileUploadService.Form;
+    protected uploadForm!: FileUploadService.Form;
     protected deferredUpload?: Deferred<FileUploadResult>;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(FileSystemPreferences)
-    protected fileSystemPreferences: FileSystemPreferences;
+    protected fileSystemPreferences!: FileSystemPreferences;
 
     @inject(FileService)
-    protected fileService: FileService;
+    protected fileService!: FileService;
 
     get maxConcurrentUploads(): number {
         const maxConcurrentUploads = this.fileSystemPreferences['files.maxConcurrentUploads'];
@@ -284,7 +284,8 @@ export class FileUploadService {
         token.onCancellationRequested(() => xhr.abort());
         const upload = new Promise<void>((resolve, reject) => {
             this.registerEvents(xhr.upload, unregister => ({
-                progress: (event: ProgressEvent<XMLHttpRequestEventTarget>) => {
+                progress: e => {
+                    const event = e as ProgressEvent<XMLHttpRequestEventTarget>;
                     if (event.total === event.loaded) {
                         unregister();
                         resolve();

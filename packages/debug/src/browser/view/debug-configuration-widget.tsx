@@ -33,22 +33,22 @@ import { nls } from '@theia/core/lib/common/nls';
 export class DebugConfigurationWidget extends ReactWidget {
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    protected readonly viewModel!: DebugViewModel;
 
     @inject(DebugConfigurationManager)
-    protected readonly manager: DebugConfigurationManager;
+    protected readonly manager!: DebugConfigurationManager;
 
     @inject(DebugSessionManager)
-    protected readonly sessionManager: DebugSessionManager;
+    protected readonly sessionManager!: DebugSessionManager;
 
     @inject(DebugConsoleContribution)
-    protected readonly debugConsole: DebugConsoleContribution;
+    protected readonly debugConsole!: DebugConsoleContribution;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected init(): void {

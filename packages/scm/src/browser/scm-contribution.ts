@@ -88,16 +88,16 @@ export namespace ScmColors {
 @injectable()
 export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution, TabBarToolbarContribution, ColorContribution {
 
-    @inject(StatusBar) protected readonly statusBar: StatusBar;
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(CommandService) protected readonly commands: CommandService;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
-    @inject(ScmDecorationsService) protected readonly scmDecorationsService: ScmDecorationsService;
+    @inject(StatusBar) protected readonly statusBar!: StatusBar;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(ScmQuickOpenService) protected readonly scmQuickOpenService!: ScmQuickOpenService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(CommandService) protected readonly commands!: CommandService;
+    @inject(CommandRegistry) protected readonly commandRegistry!: CommandRegistry;
+    @inject(ContextKeyService) protected readonly contextKeys!: ContextKeyService;
+    @inject(ScmDecorationsService) protected readonly scmDecorationsService!: ScmDecorationsService;
 
-    protected scmFocus: ContextKey<boolean>;
+    protected scmFocus!: ContextKey<boolean>;
 
     constructor() {
         super({

@@ -45,7 +45,7 @@ export class PluginDebugSessionContributionRegistry implements DebugSessionContr
     protected readonly contribs = new Map<string, DebugSessionContribution>();
 
     @inject(ContributionProvider) @named(DebugSessionContribution)
-    protected readonly contributions: ContributionProvider<DebugSessionContribution>;
+    protected readonly contributions!: ContributionProvider<DebugSessionContribution>;
 
     @postConstruct()
     protected init(): void {

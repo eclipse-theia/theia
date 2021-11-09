@@ -84,7 +84,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private client: SearchInWorkspaceClient | undefined;
 
     @inject(RgPath)
-    protected readonly rgPath: string;
+    protected readonly rgPath!: string;
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,

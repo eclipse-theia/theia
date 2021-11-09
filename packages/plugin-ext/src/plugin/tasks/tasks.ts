@@ -39,7 +39,7 @@ export class TasksExtImpl implements TasksExt {
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
     protected callbackIdBase: string = UUID.uuid4();
-    protected callbackId: number;
+    protected callbackId: number = 0;
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected lastStartedTask: number | undefined;

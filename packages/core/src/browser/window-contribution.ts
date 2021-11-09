@@ -33,7 +33,7 @@ export namespace WindowCommands {
 export class WindowContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(WindowService)
-    protected windowService: WindowService;
+    protected windowService!: WindowService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(WindowCommands.NEW_WINDOW, {

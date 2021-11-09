@@ -27,16 +27,16 @@ const PREFERENCE_NAME = 'editor.defaultFormatter';
 export class MonacoFormattingConflictsContribution implements FrontendApplicationContribution {
 
     @inject(MonacoQuickInputService)
-    protected readonly monacoQuickInputService: MonacoQuickInputService;
+    protected readonly monacoQuickInputService!: MonacoQuickInputService;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     @inject(PreferenceLanguageOverrideService)
-    protected readonly preferenceSchema: PreferenceLanguageOverrideService;
+    protected readonly preferenceSchema!: PreferenceLanguageOverrideService;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     async initialize(): Promise<void> {
         monaco.format.FormattingConflicts.setFormatterSelector(<T extends FormattingEditProvider>(

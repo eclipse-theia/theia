@@ -22,7 +22,7 @@ import { RemoteFileSystemProvider } from '../common/remote-file-system-provider'
 export class RemoteFileServiceContribution implements FileServiceContribution {
 
     @inject(RemoteFileSystemProvider)
-    protected readonly provider: RemoteFileSystemProvider;
+    protected readonly provider!: RemoteFileSystemProvider;
 
     registerFileSystemProviders(service: FileService): void {
         const registering = this.provider.ready.then(() =>

@@ -28,7 +28,7 @@ export class ExtensionPackageCollector {
         protected readonly resolveModule: (modulePath: string) => string
     ) { }
 
-    protected root: NodePackage;
+    protected root?: NodePackage;
     collect(pck: NodePackage): ReadonlyArray<ExtensionPackage> {
         this.root = pck;
         this.collectPackages(pck);
@@ -73,7 +73,7 @@ export class ExtensionPackageCollector {
         if (RawExtensionPackage.is(pck)) {
             const parent = this.parent;
             const version = pck.version;
-            const transitive = !(name in this.root.dependencies!);
+            const transitive = !(name in this.root!.dependencies!);
             pck.installed = { packagePath, version, parent, transitive };
             pck.version = versionRange;
             const extensionPackage = this.extensionPackageFactory(pck, { alias: name });

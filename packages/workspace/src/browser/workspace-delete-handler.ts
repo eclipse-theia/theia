@@ -28,19 +28,19 @@ import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesy
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(WorkspaceUtils)
-    protected readonly workspaceUtils: WorkspaceUtils;
+    protected readonly workspaceUtils!: WorkspaceUtils;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
+    protected readonly fsPreferences!: FileSystemPreferences;
 
     /**
      * Determine if the command is visible.

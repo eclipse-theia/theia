@@ -28,7 +28,7 @@ import { Askpass } from '../askpass/askpass';
 export class ElectronGitEnvProvider extends DefaultGitEnvProvider {
 
     @inject(Askpass)
-    protected readonly askpass: Askpass;
+    protected readonly askpass!: Askpass;
     protected _env: Object | undefined;
 
     @postConstruct()

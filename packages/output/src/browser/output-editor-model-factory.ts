@@ -26,10 +26,10 @@ import { ProtocolToMonacoConverter } from '@theia/monaco/lib/browser/protocol-to
 export class OutputEditorModelFactory implements MonacoEditorModelFactory {
 
     @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
+    protected readonly m2p!: MonacoToProtocolConverter;
 
     @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
+    protected readonly p2m!: ProtocolToMonacoConverter;
 
     readonly scheme: string = OutputUri.SCHEME;
 

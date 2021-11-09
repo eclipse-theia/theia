@@ -25,12 +25,12 @@ import { environment } from '@theia/core/shared/@theia/application-package/lib/e
 @injectable()
 export class WebviewEnvironment {
 
-    protected _hostPatternPromise: Promise<string>;
+    protected _hostPatternPromise!: Promise<string>;
 
     protected readonly externalEndpointHost = new Deferred<string>();
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     @postConstruct()
     protected async init(): Promise<void> {

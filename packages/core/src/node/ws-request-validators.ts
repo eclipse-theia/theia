@@ -38,7 +38,7 @@ export interface WsRequestValidatorContribution {
 export class WsRequestValidator {
 
     @inject(ContributionProvider) @named(WsRequestValidatorContribution)
-    protected readonly requestValidators: ContributionProvider<WsRequestValidatorContribution>;
+    protected readonly requestValidators!: ContributionProvider<WsRequestValidatorContribution>;
 
     /**
      * Ask all bound `WsRequestValidatorContributions` if the WebSocket connection should be allowed or not.

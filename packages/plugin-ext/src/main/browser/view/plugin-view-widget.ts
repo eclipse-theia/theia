@@ -26,25 +26,25 @@ import { DescriptionWidget } from '@theia/core/lib/browser/view-container';
 import { Emitter } from '@theia/core/lib/common';
 
 @injectable()
-export class PluginViewWidgetIdentifier {
-    id: string;
-    viewId: string;
+export abstract class PluginViewWidgetIdentifier {
+    abstract id: string;
+    abstract viewId: string;
 }
 
 @injectable()
 export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget {
 
     @inject(MenuModelRegistry)
-    protected readonly menus: MenuModelRegistry;
+    protected readonly menus!: MenuModelRegistry;
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(ViewContextKeyService)
-    protected readonly contextKeys: ViewContextKeyService;
+    protected readonly contextKeys!: ViewContextKeyService;
 
     @inject(PluginViewWidgetIdentifier)
-    readonly options: PluginViewWidgetIdentifier;
+    readonly options!: PluginViewWidgetIdentifier;
 
     currentViewContainerId: string | undefined;
 

@@ -34,7 +34,7 @@ export class DocumentDataExt {
 
     private disposed = false;
     private dirty: boolean;
-    private _document: theia.TextDocument;
+    private _document?: theia.TextDocument;
     private textLines = new Array<theia.TextLine>();
     private lineStarts: PrefixSumComputer | undefined;
 

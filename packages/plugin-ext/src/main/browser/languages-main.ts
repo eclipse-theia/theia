@@ -63,13 +63,13 @@ import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(MonacoLanguages)
-    private readonly monacoLanguages: MonacoLanguages;
+    private readonly monacoLanguages!: MonacoLanguages;
 
     @inject(ProblemManager)
-    private readonly problemManager: ProblemManager;
+    private readonly problemManager!: ProblemManager;
 
     @inject(CallHierarchyServiceProvider)
-    private readonly callHierarchyServiceContributionRegistry: CallHierarchyServiceProvider;
+    private readonly callHierarchyServiceContributionRegistry!: CallHierarchyServiceProvider;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();

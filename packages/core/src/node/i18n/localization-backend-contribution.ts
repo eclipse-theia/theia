@@ -24,10 +24,10 @@ import { LocalizationProvider } from './localization-provider';
 export class LocalizationBackendContribution implements BackendApplicationContribution {
 
     @inject(LocalizationRegistry)
-    protected readonly localizationRegistry: LocalizationRegistry;
+    protected readonly localizationRegistry!: LocalizationRegistry;
 
     @inject(LocalizationProvider)
-    protected readonly localizationProvider: LocalizationProvider;
+    protected readonly localizationProvider!: LocalizationProvider;
 
     async initialize(): Promise<void> {
         await this.localizationRegistry.initialize();

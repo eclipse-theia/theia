@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 export class PluginVSCodeEnvironment {
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     protected _extensionsDirUri: URI | undefined;
     async getExtensionsDirUri(): Promise<URI> {

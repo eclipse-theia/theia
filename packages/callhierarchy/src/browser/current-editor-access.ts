@@ -24,7 +24,7 @@ import { Location } from '@theia/core/shared/vscode-languageserver-types';
 @injectable()
 export class CurrentEditorAccess {
 
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
     getSelection(): Location | undefined {
         const activeEditor = this.getCurrentEditor();

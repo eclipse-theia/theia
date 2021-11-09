@@ -22,7 +22,7 @@ import { AnalyticsFromRequests, DataFromRequest, createRequestData, createDefaul
 export class PluginMetricsCreator {
 
     @inject(PluginMetrics)
-    private pluginMetrics: PluginMetrics;
+    private pluginMetrics!: PluginMetrics;
 
     private _extensionIDAnalytics: MetricsMap;
 

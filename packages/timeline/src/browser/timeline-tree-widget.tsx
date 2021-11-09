@@ -32,8 +32,8 @@ export class TimelineTreeWidget extends TreeWidget {
     static ID = 'timeline-tree-widget';
     static PAGE_SIZE = 20;
 
-    @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
-    @inject(TimelineContextKeyService) protected readonly contextKeys: TimelineContextKeyService;
+    @inject(MenuModelRegistry) protected readonly menus!: MenuModelRegistry;
+    @inject(TimelineContextKeyService) protected readonly contextKeys!: TimelineContextKeyService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

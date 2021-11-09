@@ -25,7 +25,7 @@ import { DEFAULT_WINDOW_HASH } from '../../common/window';
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {
 
-    protected frontendApplication: FrontendApplication;
+    protected frontendApplication?: FrontendApplication;
 
     protected onUnloadEmitter = new Emitter<void>();
     get onUnload(): Event<void> {
@@ -33,11 +33,11 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     }
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(ContributionProvider)
     @named(FrontendApplicationContribution)
-    protected readonly contributions: ContributionProvider<FrontendApplicationContribution>;
+    protected readonly contributions!: ContributionProvider<FrontendApplicationContribution>;
 
     onStart(app: FrontendApplication): void {
         this.frontendApplication = app;
@@ -54,6 +54,9 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     }
 
     canUnload(): boolean {
+        if (!this.frontendApplication) {
+            throw new Error('DefaultWindowService.frontendApplication is not set');
+        }
         const confirmExit = this.corePreferences['application.confirmExit'];
         let preventUnload = confirmExit === 'always';
         for (const contribution of this.contributions.getContributions()) {

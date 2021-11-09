@@ -33,7 +33,8 @@ export namespace MonacoDiffEditor {
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
-    protected _diffEditor: IStandaloneDiffEditor;
+    // Assigned when `MonacoEditor` calls `create`.
+    protected _diffEditor!: IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
 
     constructor(

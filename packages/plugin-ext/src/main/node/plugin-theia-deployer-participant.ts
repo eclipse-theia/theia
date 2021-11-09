@@ -22,7 +22,7 @@ import { PluginDeployerParticipant, PluginDeployerStartContext } from '../../com
 export class PluginTheiaDeployerParticipant implements PluginDeployerParticipant {
 
     @inject(PluginTheiaEnvironment)
-    protected readonly environments: PluginTheiaEnvironment;
+    protected readonly environments!: PluginTheiaEnvironment;
 
     async onWillStart(context: PluginDeployerStartContext): Promise<void> {
         const pluginsDirUri = await this.environments.getPluginsDirUri();

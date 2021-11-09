@@ -67,7 +67,7 @@ export class DebugSessionContributionRegistryImpl implements DebugSessionContrib
     protected readonly contribs = new Map<string, DebugSessionContribution>();
 
     @inject(ContributionProvider) @named(DebugSessionContribution)
-    protected readonly contributions: ContributionProvider<DebugSessionContribution>;
+    protected readonly contributions!: ContributionProvider<DebugSessionContribution>;
 
     @postConstruct()
     protected init(): void {
@@ -96,25 +96,25 @@ export interface DebugSessionFactory {
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
     @inject(WebSocketConnectionProvider)
-    protected readonly connectionProvider: WebSocketConnectionProvider;
+    protected readonly connectionProvider!: WebSocketConnectionProvider;
     @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    protected readonly terminalService!: TerminalService;
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
     @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
+    protected readonly breakpoints!: BreakpointManager;
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
     @inject(MessageClient)
-    protected readonly messages: MessageClient;
+    protected readonly messages!: MessageClient;
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected readonly outputChannelManager!: OutputChannelManager;
     @inject(DebugPreferences)
-    protected readonly debugPreferences: DebugPreferences;
+    protected readonly debugPreferences!: DebugPreferences;
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
     @inject(ContributionProvider) @named(DebugContribution)
-    protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+    protected readonly debugContributionProvider!: ContributionProvider<DebugContribution>;
 
     get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(

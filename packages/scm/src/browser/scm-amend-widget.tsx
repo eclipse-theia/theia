@@ -29,12 +29,12 @@ export class ScmAmendWidget extends ReactWidget {
 
     static ID = 'scm-amend-widget';
 
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService;
-    @inject(StorageService) protected readonly storageService: StorageService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(ScmAvatarService) protected readonly avatarService!: ScmAvatarService;
+    @inject(StorageService) protected readonly storageService!: StorageService;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(KeybindingRegistry) protected readonly keybindings!: KeybindingRegistry;
 
     protected shouldScrollToRow = true;
 

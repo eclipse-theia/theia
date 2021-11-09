@@ -588,6 +588,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
 
     if (!parsedPatterns.some(parsedPattern => (<ParsedExpressionPattern>parsedPattern).requiresSiblings!)) {
         if (n === 1) {
+            // @ts-expect-error TS2322
             return <ParsedStringPattern>parsedPatterns[0];
         }
 
@@ -618,6 +619,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
             resultExpression.allPaths = allPaths;
         }
 
+        // @ts-expect-error TS2322
         return resultExpression;
     }
 
@@ -655,6 +657,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
         resultExpression.allPaths = allPaths;
     }
 
+    // @ts-expect-error TS2322
     return resultExpression;
 }
 

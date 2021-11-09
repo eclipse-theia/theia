@@ -45,49 +45,49 @@ export interface TasksChange {
 export class TaskConfigurationManager {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+    protected readonly quickPickService!: QuickPickService;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     @inject(TaskSchemaUpdater)
-    protected readonly taskSchemaProvider: TaskSchemaUpdater;
+    protected readonly taskSchemaProvider!: TaskSchemaUpdater;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
-    protected readonly folderPreferences: PreferenceProvider;
+    protected readonly folderPreferences!: PreferenceProvider;
 
     @inject(PreferenceProvider) @named(PreferenceScope.User)
-    protected readonly userPreferences: PreferenceProvider;
+    protected readonly userPreferences!: PreferenceProvider;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
-    protected readonly workspacePreferences: PreferenceProvider;
+    protected readonly workspacePreferences!: PreferenceProvider;
 
     @inject(PreferenceConfigurations)
-    protected readonly preferenceConfigurations: PreferenceConfigurations;
+    protected readonly preferenceConfigurations!: PreferenceConfigurations;
 
     @inject(WorkspaceVariableContribution)
-    protected readonly workspaceVariables: WorkspaceVariableContribution;
+    protected readonly workspaceVariables!: WorkspaceVariableContribution;
 
     @inject(TaskTemplateSelector)
-    protected readonly taskTemplateSelector: TaskTemplateSelector;
+    protected readonly taskTemplateSelector!: TaskTemplateSelector;
 
     protected readonly onDidChangeTaskConfigEmitter = new Emitter<TasksChange>();
     readonly onDidChangeTaskConfig: Event<TasksChange> = this.onDidChangeTaskConfigEmitter.event;
 
     protected readonly models = new Map<TaskConfigurationScope, TaskConfigurationModel>();
-    protected workspaceDelegate: PreferenceProvider;
+    protected workspaceDelegate?: PreferenceProvider;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.createModels();
         this.folderPreferences.onDidPreferencesChanged(e => {
             if (e['tasks']) {

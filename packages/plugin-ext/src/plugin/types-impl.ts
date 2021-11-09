@@ -809,9 +809,9 @@ export enum IndentAction {
 @es5ClassCompat
 export class TextEdit {
 
-    protected _range: Range;
-    protected _newText: string;
-    protected _newEol: EndOfLine;
+    protected _range!: Range;
+    protected _newText!: string;
+    protected _newEol: EndOfLine = EndOfLine.LF;
 
     get range(): Range {
         return this._range;
@@ -923,16 +923,16 @@ export class CompletionItem implements theia.CompletionItem {
     label: string;
     kind?: CompletionItemKind;
     tags?: CompletionItemTag[];
-    detail: string;
-    documentation: string | MarkdownString;
-    sortText: string;
-    filterText: string;
-    preselect: boolean;
-    insertText: string | SnippetString;
-    range: Range;
-    textEdit: TextEdit;
-    additionalTextEdits: TextEdit[];
-    command: theia.Command;
+    detail?: string;
+    documentation?: string | MarkdownString;
+    sortText?: string;
+    filterText?: string;
+    preselect?: boolean;
+    insertText?: string | SnippetString;
+    range?: Range;
+    textEdit?: TextEdit;
+    additionalTextEdits?: TextEdit[];
+    command?: theia.Command;
 
     constructor(label: string, kind?: CompletionItemKind) {
         this.label = label;
@@ -976,6 +976,8 @@ export class Location {
             this.range = rangeOrPosition;
         } else if (rangeOrPosition instanceof Position) {
             this.range = new Range(rangeOrPosition, rangeOrPosition);
+        } else {
+            throw illegalArgument('rangeOrPosition');
         }
     }
 
@@ -1072,13 +1074,9 @@ export enum SignatureHelpTriggerKind {
 
 @es5ClassCompat
 export class SignatureHelp {
-    signatures: SignatureInformation[];
-    activeSignature: number;
-    activeParameter: number;
-
-    constructor() {
-        this.signatures = [];
-    }
+    signatures: SignatureInformation[] = [];
+    activeSignature: number = 0;
+    activeParameter: number = 0;
 }
 
 @es5ClassCompat
@@ -1444,6 +1442,7 @@ export class SymbolInformation {
     kind: SymbolKind;
     tags?: SymbolTag[];
     containerName: undefined | string;
+
     constructor(name: string, kind: SymbolKind, containerName: string, location: Location);
     constructor(name: string, kind: SymbolKind, range: Range, uri?: URI, containerName?: string);
     constructor(name: string, kind: SymbolKind, rangeOrContainer: string | Range, locationOrUri?: Location | URI, containerName?: string) {
@@ -1459,6 +1458,8 @@ export class SymbolInformation {
             this.location = locationOrUri;
         } else if (rangeOrContainer instanceof Range) {
             this.location = new Location(locationOrUri!, rangeOrContainer);
+        } else {
+            throw illegalArgument('locationOrUri');
         }
 
         SymbolInformation.validate(this);
@@ -1679,7 +1680,7 @@ export enum ProgressLocation {
 @es5ClassCompat
 export class ProcessExecution {
     private executionProcess: string;
-    private arguments: string[];
+    private arguments: string[] = [];
     private executionOptions: theia.ProcessExecutionOptions | undefined;
 
     constructor(process: string, options?: theia.ProcessExecutionOptions);
@@ -1696,9 +1697,6 @@ export class ProcessExecution {
             } else {
                 this.executionOptions = varg1;
             }
-        }
-        if (this.arguments === undefined) {
-            this.arguments = [];
         }
     }
 
@@ -1758,9 +1756,9 @@ export enum TaskRevealKind {
 
 @es5ClassCompat
 export class ShellExecution {
-    private shellCommandLine: string;
-    private shellCommand: string | theia.ShellQuotedString;
-    private arguments: (string | theia.ShellQuotedString)[];
+    private shellCommandLine!: string;
+    private shellCommand!: string | theia.ShellQuotedString;
+    private arguments!: (string | theia.ShellQuotedString)[];
     private shellOptions: theia.ShellExecutionOptions | undefined;
 
     constructor(commandLine: string, options?: theia.ShellExecutionOptions);
@@ -1897,16 +1895,16 @@ export enum TaskScope {
 
 @es5ClassCompat
 export class Task {
-    private taskDefinition: theia.TaskDefinition;
+    private taskDefinition!: theia.TaskDefinition;
     private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
-    private taskName: string;
+    private taskName!: string;
     private taskExecution: ProcessExecution | ShellExecution | CustomExecution | undefined;
     private taskProblemMatchers: string[];
     private hasTaskProblemMatchers: boolean;
     private isTaskBackground: boolean;
-    private taskSource: string;
+    private taskSource!: string;
     private taskGroup: TaskGroup | undefined;
-    private taskPresentationOptions: theia.TaskPresentationOptions;
+    private taskPresentationOptions!: theia.TaskPresentationOptions;
     constructor(
         taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,

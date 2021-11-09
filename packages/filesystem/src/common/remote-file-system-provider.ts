@@ -153,7 +153,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
      * Wrapped remote filesystem.
      */
     @inject(RemoteFileSystemServer)
-    protected readonly server: JsonRpcProxy<RemoteFileSystemServer>;
+    protected readonly server!: JsonRpcProxy<RemoteFileSystemServer>;
 
     @postConstruct()
     protected init(): void {
@@ -350,7 +350,7 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
      * Wrapped file system provider.
      */
     @inject(FileSystemProvider)
-    protected readonly provider: FileSystemProvider & Partial<Disposable>;
+    protected readonly provider!: FileSystemProvider & Partial<Disposable>;
 
     @postConstruct()
     protected init(): void {

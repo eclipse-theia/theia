@@ -24,10 +24,10 @@ import { QuickInputService } from './quick-input-service';
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(QuickCommandService) @optional()
-    protected readonly quickCommandService: QuickCommandService;
+    protected readonly quickCommandService?: QuickCommandService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {

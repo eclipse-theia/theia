@@ -32,7 +32,7 @@ export namespace ExampleLabelProviderCommands {
 export class SampleDynamicLabelProviderCommandContribution implements FrontendApplicationContribution, CommandContribution {
 
     @inject(SampleDynamicLabelProviderContribution)
-    protected readonly labelProviderContribution: SampleDynamicLabelProviderContribution;
+    protected readonly labelProviderContribution!: SampleDynamicLabelProviderContribution;
 
     initialize(): void { }
 

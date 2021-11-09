@@ -36,7 +36,7 @@ export class InDebugModeContext implements KeybindingContext {
     readonly id: string = DebugKeybindingContexts.inDebugMode;
 
     @inject(DebugSessionManager)
-    protected readonly manager: DebugSessionManager;
+    protected readonly manager!: DebugSessionManager;
 
     isEnabled(): boolean {
         return this.manager.inDebugMode;
@@ -50,7 +50,7 @@ export class BreakpointWidgetInputFocusContext implements KeybindingContext {
     readonly id: string = DebugKeybindingContexts.breakpointWidgetInputFocus;
 
     @inject(DebugEditorService)
-    protected readonly editors: DebugEditorService;
+    protected readonly editors!: DebugEditorService;
 
     isEnabled(): boolean {
         const model = this.editors.model;

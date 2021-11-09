@@ -34,10 +34,10 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     private hiddenItemLabels = new Set<string | undefined>();
 
     @inject(QuickAccessRegistry)
-    protected readonly quickAccessRegistry: QuickAccessRegistry;
+    protected readonly quickAccessRegistry!: QuickAccessRegistry;
 
     @inject(ContextKeyService)
-    protected readonly contextKexService: ContextKeyService;
+    protected readonly contextKexService!: ContextKeyService;
 
     registerItem(item: QuickViewItem): Disposable {
         const quickOpenItem = {

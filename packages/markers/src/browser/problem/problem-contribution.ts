@@ -61,9 +61,9 @@ export namespace ProblemsCommands {
 @injectable()
 export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
-    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
-    @inject(StatusBar) protected readonly statusBar: StatusBar;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(ProblemManager) protected readonly problemManager!: ProblemManager;
+    @inject(StatusBar) protected readonly statusBar!: StatusBar;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
 
     constructor() {
         super({

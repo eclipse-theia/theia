@@ -24,7 +24,7 @@ import { BackendApplicationHosts } from './backend-application-hosts';
 export class WsOriginValidator implements WsRequestValidatorContribution {
 
     @inject(BackendApplicationHosts)
-    protected readonly backendApplicationHosts: BackendApplicationHosts;
+    protected readonly backendApplicationHosts!: BackendApplicationHosts;
 
     allowWsUpgrade(request: http.IncomingMessage): boolean {
         if (!this.backendApplicationHosts.hasKnownHosts() || !request.headers.origin) {

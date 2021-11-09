@@ -34,8 +34,8 @@ import { EditorPreviewManager } from './editor-preview-manager';
 
 @injectable()
 export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplicationContribution {
-    @inject(EditorPreviewManager) protected readonly editorPreviewManager: EditorPreviewManager;
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(EditorPreviewManager) protected readonly editorPreviewManager!: EditorPreviewManager;
+    @inject(ApplicationShell) protected readonly shell!: ApplicationShell;
 
     readonly id = 'theia-open-editors-file-decorator';
     protected decorationsMap = new Map<string, TreeDecoration.Data>();

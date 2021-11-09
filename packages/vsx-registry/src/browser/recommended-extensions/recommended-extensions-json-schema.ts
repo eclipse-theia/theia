@@ -54,8 +54,8 @@ export const extensionsConfigurationSchema: IJSONSchema = {
 @injectable()
 export class ExtensionSchemaContribution implements JsonSchemaContribution {
     protected readonly uri = new URI(extensionsSchemaID);
-    @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(InMemoryResources) protected readonly inmemoryResources!: InMemoryResources;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected init(): void {

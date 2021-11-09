@@ -171,31 +171,31 @@ export const FILE_NAVIGATOR_TOGGLE_COMMAND_ID = 'fileNavigator:toggle';
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(ClipboardService)
-    protected readonly clipboardService: ClipboardService;
+    protected readonly clipboardService!: ClipboardService;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(TabBarToolbarRegistry)
-    protected readonly tabbarToolbarRegistry: TabBarToolbarRegistry;
+    protected readonly tabbarToolbarRegistry!: TabBarToolbarRegistry;
 
     @inject(NavigatorContextKeyService)
-    protected readonly contextKeyService: NavigatorContextKeyService;
+    protected readonly contextKeyService!: NavigatorContextKeyService;
 
     @inject(MenuModelRegistry)
-    protected readonly menuRegistry: MenuModelRegistry;
+    protected readonly menuRegistry!: MenuModelRegistry;
 
     @inject(NavigatorDiff)
-    protected readonly navigatorDiff: NavigatorDiff;
+    protected readonly navigatorDiff!: NavigatorDiff;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     @inject(WorkspaceCommandContribution)
-    protected readonly workspaceCommandContribution: WorkspaceCommandContribution;
+    protected readonly workspaceCommandContribution!: WorkspaceCommandContribution;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,

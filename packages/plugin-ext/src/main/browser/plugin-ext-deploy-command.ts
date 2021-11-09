@@ -28,10 +28,10 @@ export class PluginExtDeployCommandService /* implements QuickOpenModel */ {
     };
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(PluginServer)
-    protected readonly pluginServer: PluginServer;
+    protected readonly pluginServer!: PluginServer;
 
     deploy(): void {
         this.quickInputService?.showQuickPick([],

@@ -310,43 +310,43 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     ) { }
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @inject(ResourceContextKey)
-    protected readonly resourceContextKey: ResourceContextKey;
+    protected readonly resourceContextKey!: ResourceContextKey;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(StorageService)
-    protected readonly storageService: StorageService;
+    protected readonly storageService!: StorageService;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(IconThemeService)
-    protected readonly iconThemes: IconThemeService;
+    protected readonly iconThemes!: IconThemeService;
 
     @inject(ThemeService)
-    protected readonly themeService: ThemeService;
+    protected readonly themeService!: ThemeService;
 
     @inject(CorePreferences)
-    protected readonly preferences: CorePreferences;
+    protected readonly preferences!: CorePreferences;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     @inject(ClipboardService)
-    protected readonly clipboardService: ClipboardService;
+    protected readonly clipboardService!: ClipboardService;
 
     @inject(EncodingRegistry)
-    protected readonly encodingRegistry: EncodingRegistry;
+    protected readonly encodingRegistry!: EncodingRegistry;
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     @inject(AuthenticationService)
-    protected readonly authenticationService: AuthenticationService;
+    protected readonly authenticationService!: AuthenticationService;
 
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();

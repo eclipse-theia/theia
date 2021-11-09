@@ -44,14 +44,14 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
 
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-    @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
+    @inject(FileService) protected readonly fileService!: FileService;
+    @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider!: WorkspacePreferenceProvider;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+    @inject(PreferenceService) protected readonly preferenceService!: PreferenceService;
+    @inject(ClipboardService) protected readonly clipboardService!: ClipboardService;
+    @inject(PreferencesWidget) protected readonly scopeTracker!: PreferencesWidget;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService?: QuickInputService;
 
     constructor() {
         super({

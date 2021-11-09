@@ -70,7 +70,7 @@ function lookUp(tree: any, key: string): any {
 
 export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
     private proxy: PreferenceRegistryMain;
-    private _preferences: Configuration;
+    private _preferences!: Configuration;
     private readonly _onDidChangeConfiguration = new Emitter<theia.ConfigurationChangeEvent>();
 
     readonly onDidChangeConfiguration: Event<theia.ConfigurationChangeEvent> = this._onDidChangeConfiguration.event;

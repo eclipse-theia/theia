@@ -27,13 +27,13 @@ import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider
 export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(WorkspaceFilePreferenceProviderFactory)
-    protected readonly workspaceFileProviderFactory: WorkspaceFilePreferenceProviderFactory;
+    protected readonly workspaceFileProviderFactory!: WorkspaceFilePreferenceProviderFactory;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
-    protected readonly folderPreferenceProvider: PreferenceProvider;
+    protected readonly folderPreferenceProvider!: PreferenceProvider;
 
     protected readonly toDisposeOnEnsureDelegateUpToDate = new DisposableCollection();
 

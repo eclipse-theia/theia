@@ -23,7 +23,7 @@ export const DEFAULT_INFO_ICON = codicon('info');
 @injectable()
 export class ResourcePropertiesLabelProvider implements LabelProviderContribution {
 
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
 
     canHandle(element: TreeNode): number {
         return (ResourcePropertiesCategoryNode.is(element) || ResourcePropertiesItemNode.is(element)) ? 75 : 0;

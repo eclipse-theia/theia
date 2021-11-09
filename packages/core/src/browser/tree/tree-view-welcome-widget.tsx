@@ -52,13 +52,13 @@ type LinkedTextItem = string | ILink;
 export class TreeViewWelcomeWidget extends TreeWidget {
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(ContextKeyService)
-    protected readonly contextService: ContextKeyService;
+    protected readonly contextService!: ContextKeyService;
 
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
 
     protected viewWelcomeNodes: React.ReactNode[] = [];
     protected defaultItem: IItem | undefined;

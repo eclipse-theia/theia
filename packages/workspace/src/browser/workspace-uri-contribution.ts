@@ -24,7 +24,7 @@ import { WorkspaceVariableContribution } from './workspace-variable-contribution
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
     @inject(WorkspaceVariableContribution)
-    protected readonly workspaceVariable: WorkspaceVariableContribution;
+    protected readonly workspaceVariable!: WorkspaceVariableContribution;
 
     @postConstruct()
     async init(): Promise<void> {

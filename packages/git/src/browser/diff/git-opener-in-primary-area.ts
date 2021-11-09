@@ -21,7 +21,7 @@ import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class GitOpenerInPrimaryArea implements GitResourceOpener {
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
     async open(changeUri: URI): Promise<void> {
         await this.editorManager.open(changeUri, { mode: 'reveal' });

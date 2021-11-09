@@ -76,8 +76,8 @@ export class KeyValueStorageProxy implements StorageExt {
 
     private readonly proxy: StorageMain;
 
-    private globalDataCache: KeysToKeysToAnyValue;
-    private workspaceDataCache: KeysToKeysToAnyValue;
+    private globalDataCache!: KeysToKeysToAnyValue;
+    private workspaceDataCache!: KeysToKeysToAnyValue;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy<StorageMain>(PLUGIN_RPC_CONTEXT.STORAGE_MAIN);

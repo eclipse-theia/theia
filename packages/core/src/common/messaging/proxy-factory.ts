@@ -100,8 +100,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected readonly onDidOpenConnectionEmitter = new Emitter<void>();
     protected readonly onDidCloseConnectionEmitter = new Emitter<void>();
 
-    protected connectionPromiseResolve: (connection: MessageConnection) => void;
-    protected connectionPromise: Promise<MessageConnection>;
+    protected connectionPromiseResolve!: (connection: MessageConnection) => void;
+    protected connectionPromise!: Promise<MessageConnection>;
 
     /**
      * Build a new JsonRpcProxyFactory.

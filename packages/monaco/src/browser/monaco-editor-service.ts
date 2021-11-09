@@ -34,19 +34,19 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     public static readonly ENABLE_PREVIEW_PREFERENCE: string = 'editor.enablePreview';
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
+    protected readonly m2p!: MonacoToProtocolConverter;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(EditorManager)
-    protected readonly editors: EditorManager;
+    protected readonly editors!: EditorManager;
 
     @inject(PreferenceService)
-    protected readonly preferencesService: PreferenceService;
+    protected readonly preferencesService!: PreferenceService;
 
     constructor() {
         super(undefined, monaco.services.StaticServices.standaloneThemeService.get());

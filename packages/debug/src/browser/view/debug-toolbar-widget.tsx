@@ -27,7 +27,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class DebugToolBar extends ReactWidget {
 
     @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    protected readonly model!: DebugViewModel;
 
     @postConstruct()
     protected init(): void {

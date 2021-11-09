@@ -23,7 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 export class SearchInWorkspaceLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     canHandle(element: object): number {
         return SearchInWorkspaceRootFolderNode.is(element) || SearchInWorkspaceFileNode.is(element) ? 100 : 0;

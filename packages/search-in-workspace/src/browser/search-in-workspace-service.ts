@@ -32,17 +32,25 @@ import { ILogger } from '@theia/core';
 
 @injectable()
 export class SearchInWorkspaceClientImpl implements SearchInWorkspaceClient {
-    private service: SearchInWorkspaceClient;
+    private _service?: SearchInWorkspaceClient;
+
+    private get service(): SearchInWorkspaceClient {
+        if (!this._service) {
+            throw new Error('SearchInWorkspaceClientImpl._service is not set');
+        }
+        return this._service;
+    }
 
     onResult(searchId: number, result: SearchInWorkspaceResult): void {
         this.service.onResult(searchId, result);
     }
+
     onDone(searchId: number, error?: string): void {
         this.service.onDone(searchId, error);
     }
 
     setService(service: SearchInWorkspaceClient): void {
-        this.service = service;
+        this._service = service;
     }
 }
 
@@ -68,10 +76,10 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
 
     private lastKnownSearchId: number = -1;
 
-    @inject(SearchInWorkspaceServer) protected readonly searchServer: SearchInWorkspaceServer;
-    @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(ILogger) protected readonly logger: ILogger;
+    @inject(SearchInWorkspaceServer) protected readonly searchServer!: SearchInWorkspaceServer;
+    @inject(SearchInWorkspaceClientImpl) protected readonly client!: SearchInWorkspaceClientImpl;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(ILogger) protected readonly logger!: ILogger;
 
     @postConstruct()
     protected init(): void {

@@ -61,10 +61,26 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         return Object.freeze(this._providers.slice());
     }
 
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: string[],
-                     options: theia.AuthenticationGetSessionOptions & { createIfNone: true }): Promise<theia.AuthenticationSession>;
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: string[],
-                     options: theia.AuthenticationGetSessionOptions = {}): Promise<theia.AuthenticationSession | undefined> {
+    async getSession(
+        requestingExtension: InternalPlugin,
+        providerId: string,
+        scopes: string[],
+        options?: theia.AuthenticationGetSessionOptions & { createIfNone: true }
+    ): Promise<theia.AuthenticationSession>;
+
+    async getSession(
+        requestingExtension: InternalPlugin,
+        providerId: string,
+        scopes: string[],
+        options?: theia.AuthenticationGetSessionOptions
+    ): Promise<theia.AuthenticationSession | undefined>;
+
+    async getSession(
+        requestingExtension: InternalPlugin,
+        providerId: string,
+        scopes: string[],
+        options: theia.AuthenticationGetSessionOptions = {}
+    ): Promise<theia.AuthenticationSession | undefined> {
         const extensionName = requestingExtension.model.displayName || requestingExtension.model.name;
         const extensionId = requestingExtension.model.id.toLowerCase();
 
@@ -163,7 +179,7 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         return Promise.resolve();
     }
 
-   async $onDidChangeAuthenticationProviders(added: theia.AuthenticationProviderInformation[], removed: theia.AuthenticationProviderInformation[]): Promise<void> {
+    async $onDidChangeAuthenticationProviders(added: theia.AuthenticationProviderInformation[], removed: theia.AuthenticationProviderInformation[]): Promise<void> {
         added.forEach(id => {
             if (this._providers.indexOf(id) === -1) {
                 this._providers.push(id);

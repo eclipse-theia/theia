@@ -28,7 +28,7 @@ import { createRequestData } from '../common/plugin-metrics-types';
 export class PluginMetricsResolver {
 
     @inject(PluginMetricsCreator)
-    private metricsCreator: PluginMetricsCreator;
+    private metricsCreator!: PluginMetricsCreator;
 
     /**
      * Resolve a request for pluginID and create a metric based on whether or not

@@ -55,16 +55,16 @@ export interface TaskRunner {
 @injectable()
 export class TaskRunnerRegistry {
 
-    protected runners: Map<string, TaskRunner>;
+    protected runners = new Map<string, TaskRunner>();
+
     /** A Task Runner that will be used for executing a Task without an associated Runner. */
-    protected defaultRunner: TaskRunner;
+    protected defaultRunner!: TaskRunner;
 
     @inject(ProcessTaskRunner)
-    protected readonly processTaskRunner: ProcessTaskRunner;
+    protected readonly processTaskRunner!: ProcessTaskRunner;
 
     @postConstruct()
     protected init(): void {
-        this.runners = new Map();
         this.defaultRunner = this.processTaskRunner;
     }
     /**

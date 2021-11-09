@@ -116,55 +116,55 @@ const TASKS_STORAGE_KEY = 'tasks';
 @injectable()
 export class TaskFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, QuickAccessContribution {
     @inject(QuickOpenTask)
-    protected readonly quickOpenTask: QuickOpenTask;
+    protected readonly quickOpenTask!: QuickOpenTask;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(FrontendApplication)
-    protected readonly app: FrontendApplication;
+    protected readonly app!: FrontendApplication;
 
     @inject(ILogger) @named('task')
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     @inject(ContributionProvider) @named(TaskContribution)
-    protected readonly contributionProvider: ContributionProvider<TaskContribution>;
+    protected readonly contributionProvider!: ContributionProvider<TaskContribution>;
 
     @inject(TaskProviderRegistry)
-    protected readonly taskProviderRegistry: TaskProviderRegistry;
+    protected readonly taskProviderRegistry!: TaskProviderRegistry;
 
     @inject(TaskResolverRegistry)
-    protected readonly taskResolverRegistry: TaskResolverRegistry;
+    protected readonly taskResolverRegistry!: TaskResolverRegistry;
 
     @inject(TaskService)
-    protected readonly taskService: TaskService;
+    protected readonly taskService!: TaskService;
 
     @inject(TaskSchemaUpdater)
-    protected readonly schemaUpdater: TaskSchemaUpdater;
+    protected readonly schemaUpdater!: TaskSchemaUpdater;
 
     @inject(StorageService)
-    protected readonly storageService: StorageService;
+    protected readonly storageService!: StorageService;
 
     @inject(TaskRunningQuickOpen)
-    protected readonly taskRunningQuickOpen: TaskRunningQuickOpen;
+    protected readonly taskRunningQuickOpen!: TaskRunningQuickOpen;
 
     @inject(TaskTerminateQuickOpen)
-    protected readonly taskTerminateQuickOpen: TaskTerminateQuickOpen;
+    protected readonly taskTerminateQuickOpen!: TaskTerminateQuickOpen;
 
     @inject(TaskRestartRunningQuickOpen)
-    protected readonly taskRestartRunningQuickOpen: TaskRestartRunningQuickOpen;
+    protected readonly taskRestartRunningQuickOpen!: TaskRestartRunningQuickOpen;
 
     @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
+    protected readonly taskWatcher!: TaskWatcher;
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected async init(): Promise<void> {

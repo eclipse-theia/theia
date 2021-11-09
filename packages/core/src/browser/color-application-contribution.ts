@@ -34,10 +34,10 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
+    protected readonly colors!: ColorRegistry;
 
     @inject(ContributionProvider) @named(ColorContribution)
-    protected readonly colorContributions: ContributionProvider<ColorContribution>;
+    protected readonly colorContributions!: ContributionProvider<ColorContribution>;
 
     private static themeBackgroundId = 'theme.background';
 

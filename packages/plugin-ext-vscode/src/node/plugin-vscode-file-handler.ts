@@ -27,7 +27,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
 
     @inject(PluginVSCodeEnvironment)
-    protected readonly environment: PluginVSCodeEnvironment;
+    protected readonly environment!: PluginVSCodeEnvironment;
 
     private readonly systemExtensionsDirUri = FileUri.create(getTempDir('vscode-unpacked'));
 

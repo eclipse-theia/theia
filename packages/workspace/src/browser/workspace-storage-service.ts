@@ -25,11 +25,11 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 @injectable()
 export class WorkspaceStorageService implements StorageService {
 
-    private prefix: string;
-    private initialized: Promise<void>;
+    private prefix?: string;
+    private initialized!: Promise<void>;
 
-    @inject(LocalStorageService) protected storageService: StorageService;
-    @inject(WorkspaceService) protected workspaceService: WorkspaceService;
+    @inject(LocalStorageService) protected storageService!: StorageService;
+    @inject(WorkspaceService) protected workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected init(): void {

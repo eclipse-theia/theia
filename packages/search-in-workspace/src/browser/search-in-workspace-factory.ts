@@ -42,8 +42,8 @@ export class SearchInWorkspaceFactory implements WidgetFactory {
     };
 
     @inject(ViewContainer.Factory)
-    protected readonly viewContainerFactory: ViewContainer.Factory;
-    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
+    protected readonly viewContainerFactory!: ViewContainer.Factory;
+    @inject(WidgetManager) protected readonly widgetManager!: WidgetManager;
 
     async createWidget(): Promise<ViewContainer> {
         const viewContainer = this.viewContainerFactory({

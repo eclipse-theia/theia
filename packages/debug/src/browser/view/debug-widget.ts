@@ -42,19 +42,19 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
     static LABEL = nls.localizeByDefault('Debug');
 
     @inject(DebugViewModel)
-    readonly model: DebugViewModel;
+    readonly model!: DebugViewModel;
 
     @inject(DebugSessionManager)
-    readonly sessionManager: DebugSessionManager;
+    readonly sessionManager!: DebugSessionManager;
 
     @inject(DebugConfigurationWidget)
-    protected readonly toolbar: DebugConfigurationWidget;
+    protected readonly toolbar!: DebugConfigurationWidget;
 
     @inject(DebugSessionWidget)
-    protected readonly sessionWidget: DebugSessionWidget;
+    protected readonly sessionWidget!: DebugSessionWidget;
 
     @inject(ProgressBarFactory)
-    protected readonly progressBarFactory: ProgressBarFactory;
+    protected readonly progressBarFactory!: ProgressBarFactory;
 
     @postConstruct()
     protected init(): void {

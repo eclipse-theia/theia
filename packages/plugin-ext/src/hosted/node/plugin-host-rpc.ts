@@ -40,9 +40,9 @@ import { BackendInitializationFn } from '../../common';
  */
 export class PluginHostRPC {
 
-    private apiFactory: PluginAPIFactory;
+    private apiFactory!: PluginAPIFactory;
 
-    private pluginManager: PluginManagerExtImpl;
+    private pluginManager!: PluginManagerExtImpl;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(protected readonly rpc: any) {
@@ -83,10 +83,16 @@ export class PluginHostRPC {
         );
     }
 
+    /**
+     * `initialize` must have been called before.
+     */
     async terminate(): Promise<void> {
         await this.pluginManager.terminate();
     }
 
+    /**
+     * `initialize` must have been called before.
+     */
     initContext(contextPath: string, plugin: Plugin): void {
         const { name, version } = plugin.rawModel;
         console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');

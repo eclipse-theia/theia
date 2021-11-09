@@ -44,13 +44,13 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     }
 
     @inject(DebugStackFramesSource)
-    protected readonly frames: DebugStackFramesSource;
+    protected readonly frames!: DebugStackFramesSource;
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    protected readonly viewModel!: DebugViewModel;
 
     @inject(DebugCallStackItemTypeKey)
-    protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
+    protected readonly debugCallStackItemTypeKey!: DebugCallStackItemTypeKey;
 
     @postConstruct()
     protected init(): void {

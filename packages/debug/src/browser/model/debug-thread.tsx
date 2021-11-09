@@ -26,9 +26,9 @@ export type StoppedDetails = DebugProtocol.StoppedEvent['body'] & {
     totalFrames?: number
 };
 
-export class DebugThreadData {
-    readonly raw: DebugProtocol.Thread;
-    readonly stoppedDetails: StoppedDetails | undefined;
+export abstract class DebugThreadData {
+    abstract readonly raw: DebugProtocol.Thread;
+    readonly stoppedDetails?: StoppedDetails;
 }
 
 export interface DebugExceptionInfo {
@@ -39,6 +39,8 @@ export interface DebugExceptionInfo {
 
 export class DebugThread extends DebugThreadData implements TreeElement {
 
+    protected _raw?: DebugProtocol.Thread;
+
     protected readonly onDidChangedEmitter = new Emitter<void>();
     readonly onDidChanged: Event<void> = this.onDidChangedEmitter.event;
 
@@ -46,6 +48,13 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         readonly session: DebugSession
     ) {
         super();
+    }
+
+    get raw(): DebugProtocol.Thread {
+        if (this._raw === undefined) {
+            throw new Error('DebugThread._raw is not set');
+        }
+        return this._raw;
     }
 
     get id(): string {

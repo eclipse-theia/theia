@@ -29,16 +29,16 @@ import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contrib
 export class HostedPluginServerImpl implements HostedPluginServer {
 
     @inject(HostedPluginsManager)
-    protected readonly hostedPluginsManager: HostedPluginsManager;
+    protected readonly hostedPluginsManager!: HostedPluginsManager;
 
     @inject(HostedInstanceManager)
-    protected readonly hostedInstanceManager: HostedInstanceManager;
+    protected readonly hostedInstanceManager!: HostedInstanceManager;
 
     @inject(HostedPluginReader)
-    private readonly reader: HostedPluginReader;
+    private readonly reader!: HostedPluginReader;
 
     @inject(HostedPluginSupport)
-    private readonly hostedPlugin: HostedPluginSupport;
+    private readonly hostedPlugin!: HostedPluginSupport;
 
     dispose(): void {
         // Terminate the hosted instance if it is currently running.

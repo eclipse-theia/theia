@@ -53,7 +53,7 @@ export class DebugEditorModel implements Disposable {
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnUpdate = new DisposableCollection();
 
-    protected uri: URI;
+    protected uri!: URI;
 
     protected breakpointDecorations: string[] = [];
     protected breakpointRanges = new Map<string, monaco.Range>();
@@ -66,31 +66,31 @@ export class DebugEditorModel implements Disposable {
     protected updatingDecorations = false;
 
     @inject(DebugHoverWidget)
-    readonly hover: DebugHoverWidget;
+    readonly hover!: DebugHoverWidget;
 
     @inject(DebugEditor)
-    readonly editor: DebugEditor;
+    readonly editor!: DebugEditor;
 
     @inject(BreakpointManager)
-    readonly breakpoints: BreakpointManager;
+    readonly breakpoints!: BreakpointManager;
 
     @inject(DebugSessionManager)
-    readonly sessions: DebugSessionManager;
+    readonly sessions!: DebugSessionManager;
 
     @inject(ContextMenuRenderer)
-    readonly contextMenu: ContextMenuRenderer;
+    readonly contextMenu!: ContextMenuRenderer;
 
     @inject(DebugBreakpointWidget)
-    readonly breakpointWidget: DebugBreakpointWidget;
+    readonly breakpointWidget!: DebugBreakpointWidget;
 
     @inject(DebugExceptionWidget)
-    readonly exceptionWidget: DebugExceptionWidget;
+    readonly exceptionWidget!: DebugExceptionWidget;
 
     @inject(DebugInlineValueDecorator)
-    readonly inlineValueDecorator: DebugInlineValueDecorator;
+    readonly inlineValueDecorator!: DebugInlineValueDecorator;
 
     @inject(MonacoConfigurationService)
-    readonly configurationService: monaco.services.IConfigurationService;
+    readonly configurationService!: monaco.services.IConfigurationService;
 
     @postConstruct()
     protected init(): void {

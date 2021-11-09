@@ -39,10 +39,10 @@ const SampleQuickInputCommand: Command = {
 export class SampleCommandContribution implements CommandContribution {
 
     @inject(QuickInputService)
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService!: QuickInputService;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SampleCommand, {

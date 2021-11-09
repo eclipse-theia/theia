@@ -43,10 +43,10 @@ export class DebugWatchWidget extends SourceTreeWidget {
     }
 
     @inject(DebugViewModel)
-    readonly viewModel: DebugViewModel;
+    readonly viewModel!: DebugViewModel;
 
     @inject(DebugWatchSource)
-    protected readonly variables: DebugWatchSource;
+    protected readonly variables!: DebugWatchSource;
 
     @postConstruct()
     protected init(): void {

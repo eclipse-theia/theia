@@ -29,13 +29,13 @@ import { ScmFileChangeNode } from './scm-file-change-node';
 @injectable()
 export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
-    protected scmNodes: T[];
-    private _scrollContainer: string;
+    protected scmNodes: T[] = [];
+    private _scrollContainer?: string;
 
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
     @inject(ScmFileChangeLabelProvider)
-    protected readonly scmLabelProvider: ScmFileChangeLabelProvider;
+    protected readonly scmLabelProvider!: ScmFileChangeLabelProvider;
 
     constructor() {
         super();
@@ -53,6 +53,9 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected get scrollContainer(): string {
+        if (!this._scrollContainer) {
+            throw new Error('ScmNavigableListWidget._scrollContainer is not set');
+        }
         return this._scrollContainer;
     }
 
@@ -123,7 +126,7 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected getSelected(): T | undefined {
-        return this.scmNodes ? this.scmNodes.find(c => c.selected || false) : undefined;
+        return this.scmNodes.find(c => c.selected || false);
     }
 
     protected selectNode(node: T): void {
@@ -152,7 +155,7 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected get indexOfSelected(): number {
-        if (this.scmNodes && this.scmNodes.length > 0) {
+        if (this.scmNodes.length > 0) {
             return this.scmNodes.findIndex(c => c.selected || false);
         }
         return -1;

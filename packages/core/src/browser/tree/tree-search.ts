@@ -27,13 +27,13 @@ import { LabelProvider } from '../label-provider';
 export class TreeSearch implements Disposable {
 
     @inject(Tree)
-    protected readonly tree: Tree;
+    protected readonly tree!: Tree;
 
     @inject(FuzzySearch)
-    protected readonly fuzzySearch: FuzzySearch;
+    protected readonly fuzzySearch!: FuzzySearch;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     protected readonly disposables = new DisposableCollection();
     protected readonly filteredNodesEmitter = new Emitter<ReadonlyArray<Readonly<TreeNode>>>();

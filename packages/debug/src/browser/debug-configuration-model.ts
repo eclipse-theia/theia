@@ -22,7 +22,7 @@ import { PreferenceService } from '@theia/core/lib/browser/preferences/preferenc
 
 export class DebugConfigurationModel implements Disposable {
 
-    protected json: DebugConfigurationModel.JsonContent;
+    protected json!: DebugConfigurationModel.JsonContent;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;

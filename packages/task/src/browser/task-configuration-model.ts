@@ -26,7 +26,7 @@ import { PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderDa
  */
 export class TaskConfigurationModel implements Disposable {
 
-    protected json: TaskConfigurationModel.JsonContent;
+    protected json!: TaskConfigurationModel.JsonContent;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;

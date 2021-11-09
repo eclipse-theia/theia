@@ -56,10 +56,10 @@ const enum StandardTokenType {
 export class DebugInlineValueDecorator implements FrontendApplicationContribution {
 
     @inject(MonacoEditorService)
-    protected readonly editorService: MonacoEditorService;
+    protected readonly editorService!: MonacoEditorService;
 
     @inject(DebugPreferences)
-    protected readonly preferences: DebugPreferences;
+    protected readonly preferences!: DebugPreferences;
 
     protected enabled = false;
     protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map(); // TODO: can we get rid of this field?

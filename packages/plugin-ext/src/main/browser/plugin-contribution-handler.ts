@@ -47,64 +47,64 @@ export class PluginContributionHandler {
     private injections = new Map<string, string[]>();
 
     @inject(TextmateRegistry)
-    private readonly grammarsRegistry: TextmateRegistry;
+    private readonly grammarsRegistry!: TextmateRegistry;
 
     @inject(PluginViewRegistry)
-    private readonly viewRegistry: PluginViewRegistry;
+    private readonly viewRegistry!: PluginViewRegistry;
 
     @inject(PluginCustomEditorRegistry)
-    private readonly customEditorRegistry: PluginCustomEditorRegistry;
+    private readonly customEditorRegistry!: PluginCustomEditorRegistry;
 
     @inject(MenusContributionPointHandler)
-    private readonly menusContributionHandler: MenusContributionPointHandler;
+    private readonly menusContributionHandler!: MenusContributionPointHandler;
 
     @inject(PreferenceSchemaProvider)
-    private readonly preferenceSchemaProvider: PreferenceSchemaProvider;
+    private readonly preferenceSchemaProvider!: PreferenceSchemaProvider;
 
     @inject(PreferenceLanguageOverrideService)
-    private readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+    private readonly preferenceOverrideService!: PreferenceLanguageOverrideService;
 
     @inject(MonacoTextmateService)
-    private readonly monacoTextmateService: MonacoTextmateService;
+    private readonly monacoTextmateService!: MonacoTextmateService;
 
     @inject(KeybindingsContributionPointHandler)
-    private readonly keybindingsContributionHandler: KeybindingsContributionPointHandler;
+    private readonly keybindingsContributionHandler!: KeybindingsContributionPointHandler;
 
     @inject(MonacoSnippetSuggestProvider)
-    protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
+    protected readonly snippetSuggestProvider!: MonacoSnippetSuggestProvider;
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(PluginSharedStyle)
-    protected readonly style: PluginSharedStyle;
+    protected readonly style!: PluginSharedStyle;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(ProblemMatcherRegistry)
-    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+    protected readonly problemMatcherRegistry!: ProblemMatcherRegistry;
 
     @inject(ProblemPatternRegistry)
-    protected readonly problemPatternRegistry: ProblemPatternRegistry;
+    protected readonly problemPatternRegistry!: ProblemPatternRegistry;
 
     @inject(PluginDebugService)
-    protected readonly debugService: PluginDebugService;
+    protected readonly debugService!: PluginDebugService;
 
     @inject(DebugSchemaUpdater)
-    protected readonly debugSchema: DebugSchemaUpdater;
+    protected readonly debugSchema!: DebugSchemaUpdater;
 
     @inject(MonacoThemingService)
-    protected readonly monacoThemingService: MonacoThemingService;
+    protected readonly monacoThemingService!: MonacoThemingService;
 
     @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
+    protected readonly colors!: ColorRegistry;
 
     @inject(PluginIconThemeService)
-    protected readonly iconThemeService: PluginIconThemeService;
+    protected readonly iconThemeService!: PluginIconThemeService;
 
     @inject(ContributionProvider) @named(LabelProviderContribution)
-    protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
+    protected readonly contributionProvider!: ContributionProvider<LabelProviderContribution>;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 

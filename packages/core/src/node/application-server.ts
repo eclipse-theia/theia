@@ -23,7 +23,7 @@ import { OS } from '../common/os';
 export class ApplicationServerImpl implements ApplicationServer {
 
     @inject(ApplicationPackage)
-    protected readonly applicationPackage: ApplicationPackage;
+    protected readonly applicationPackage!: ApplicationPackage;
 
     getExtensionsInfos(): Promise<ExtensionInfo[]> {
         const extensions = this.applicationPackage.extensionPackages;

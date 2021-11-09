@@ -22,7 +22,7 @@ import { StorageService } from '@theia/core/lib/browser/storage-service';
 export class DebugWatchManager {
 
     @inject(StorageService)
-    protected readonly storage: StorageService;
+    protected readonly storage!: StorageService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;

@@ -57,7 +57,7 @@ export enum ConnectionStatus {
 }
 
 @injectable()
-export class ConnectionStatusOptions {
+export abstract class ConnectionStatusOptions {
 
     static DEFAULT: ConnectionStatusOptions = {
         offlineTimeout: 5000,
@@ -66,7 +66,7 @@ export class ConnectionStatusOptions {
     /**
      * Timeout in milliseconds before the application is considered offline. Must be a positive integer.
      */
-    readonly offlineTimeout: number;
+    abstract readonly offlineTimeout: number;
 
 }
 
@@ -83,7 +83,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
     protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
 
@@ -119,8 +119,8 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     private scheduledPing: number | undefined;
 
-    @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider;
-    @inject(PingService) protected readonly pingService: PingService;
+    @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider!: WebSocketConnectionProvider;
+    @inject(PingService) protected readonly pingService!: PingService;
 
     constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) {
         super(options);

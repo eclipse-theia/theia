@@ -28,10 +28,10 @@ import { nls } from '@theia/core/lib/common/nls';
 export class OutputToolbarContribution implements TabBarToolbarContribution {
 
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected readonly outputChannelManager!: OutputChannelManager;
 
     @inject(OutputContribution)
-    protected readonly outputContribution: OutputContribution;
+    protected readonly outputContribution!: OutputContribution;
 
     protected readonly onOutputWidgetStateChangedEmitter = new Emitter<void>();
     protected readonly onOutputWidgetStateChanged = this.onOutputWidgetStateChangedEmitter.event;

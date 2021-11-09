@@ -35,10 +35,10 @@ export interface NavigatorPermissions {
 export class BrowserClipboardService implements ClipboardService {
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     async readText(): Promise<string> {
         let permission;

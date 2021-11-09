@@ -292,10 +292,10 @@ export class FileResource implements Resource {
 export class FileResourceResolver implements ResourceResolver {
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     async resolve(uri: URI): Promise<FileResource> {
         let stat;

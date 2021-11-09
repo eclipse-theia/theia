@@ -77,7 +77,7 @@ export interface WorkspaceFolder {
 @injectable()
 export class MonacoWorkspace {
 
-    protected resolveReady: () => void;
+    protected resolveReady!: () => void;
     readonly ready = new Promise<void>(resolve => {
         this.resolveReady = resolve;
     });
@@ -98,19 +98,19 @@ export class MonacoWorkspace {
     readonly onDidSaveTextDocument = this.onDidSaveTextDocumentEmitter.event;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(FileSystemPreferences)
-    protected readonly filePreferences: FileSystemPreferences;
+    protected readonly filePreferences!: FileSystemPreferences;
 
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService!: MonacoTextModelService;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(ProblemManager)
-    protected readonly problems: ProblemManager;
+    protected readonly problems!: ProblemManager;
 
     @postConstruct()
     protected init(): void {

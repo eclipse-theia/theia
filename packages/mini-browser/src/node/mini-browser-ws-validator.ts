@@ -26,7 +26,7 @@ import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
 @injectable()
 export class MiniBrowserWsRequestValidator implements WsRequestValidatorContribution {
 
-    protected miniBrowserHostRe: RegExp;
+    protected miniBrowserHostRe!: RegExp;
 
     protected serveSameOrigin: boolean = false;
 

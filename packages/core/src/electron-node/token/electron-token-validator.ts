@@ -28,7 +28,7 @@ import { WsRequestValidatorContribution } from '../../node/ws-request-validators
 @injectable()
 export class ElectronTokenValidator implements WsRequestValidatorContribution {
 
-    protected electronSecurityToken: ElectronSecurityToken;
+    protected electronSecurityToken!: ElectronSecurityToken;
 
     @postConstruct()
     protected postConstruct(): void {

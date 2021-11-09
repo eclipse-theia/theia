@@ -33,10 +33,10 @@ export const GettingStartedCommand = {
 export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution {
 
     @inject(FrontendApplicationStateService)
-    protected readonly stateService: FrontendApplicationStateService;
+    protected readonly stateService!: FrontendApplicationStateService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     constructor() {
         super({

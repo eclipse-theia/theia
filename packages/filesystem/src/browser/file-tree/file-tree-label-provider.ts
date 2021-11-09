@@ -23,10 +23,10 @@ import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provi
 export class FileTreeLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(TreeLabelProvider)
-    protected readonly treeLabelProvider: TreeLabelProvider;
+    protected readonly treeLabelProvider!: TreeLabelProvider;
 
     canHandle(element: object): number {
         return FileStatNode.is(element) ?

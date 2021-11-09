@@ -50,19 +50,19 @@ const FileWatchingPreferencesSchema: PreferenceSchema = {
 @injectable()
 class SampleFileWatchingContribution implements FrontendApplicationContribution {
 
-    protected verbose: boolean;
+    protected verbose: boolean = false;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(FileWatchingPreferences)
-    protected readonly fileWatchingPreferences: FileWatchingPreferences;
+    protected readonly fileWatchingPreferences!: FileWatchingPreferences;
 
     @postConstruct()
     protected postConstruct(): void {

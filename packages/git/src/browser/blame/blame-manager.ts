@@ -23,10 +23,10 @@ import URI from '@theia/core/lib/common/uri';
 export class BlameManager {
 
     @inject(Git)
-    protected readonly git: Git;
+    protected readonly git!: Git;
 
     @inject(GitRepositoryTracker)
-    protected readonly repositoryTracker: GitRepositoryTracker;
+    protected readonly repositoryTracker!: GitRepositoryTracker;
 
     isBlameable(uri: string): boolean {
         return !!this.repositoryTracker.getPath(new URI(uri));

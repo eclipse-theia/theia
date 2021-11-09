@@ -21,7 +21,7 @@ import { MonacoWorkspace } from './monaco-workspace';
 export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
 
     @inject(MonacoWorkspace)
-    protected readonly workspace: MonacoWorkspace;
+    protected readonly workspace!: MonacoWorkspace;
 
     private _previewHandler?: monaco.editor.IBulkEditPreviewHandler;
 

@@ -25,7 +25,7 @@ import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-
 @injectable()
 export class NavigatorTabBarDecorator implements TabBarDecorator, FrontendApplicationContribution {
     readonly id = 'theia-navigator-tabbar-decorator';
-    protected applicationShell: ApplicationShell;
+    protected applicationShell?: ApplicationShell;
 
     protected readonly emitter = new Emitter<void>();
     private readonly toDispose = new DisposableCollection();
@@ -58,6 +58,9 @@ export class NavigatorTabBarDecorator implements TabBarDecorator, FrontendApplic
     }
 
     protected getDirtyEditorsCount(): number {
+        if (!this.applicationShell) {
+            throw new Error('NavigatorTabBarDecorator.applicationShell is not set');
+        }
         return this.applicationShell.widgets.filter(widget => Saveable.isDirty(widget)).length;
     }
 

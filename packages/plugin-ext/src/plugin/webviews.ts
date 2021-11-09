@@ -156,7 +156,7 @@ export class WebviewsExtImpl implements WebviewsExt {
 
 export class WebviewImpl implements theia.Webview {
     private isDisposed = false;
-    private _html: string;
+    private _html?: string;
     private _options: theia.WebviewOptions;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,6 +199,9 @@ export class WebviewImpl implements theia.Webview {
 
     get html(): string {
         this.checkIsDisposed();
+        if (!this._html) {
+            throw new Error('WebviewImpl._html is not set');
+        }
         return this._html;
     }
 

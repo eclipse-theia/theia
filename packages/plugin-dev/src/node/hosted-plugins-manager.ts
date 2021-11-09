@@ -53,7 +53,7 @@ export interface HostedPluginsManager {
 export class HostedPluginsManagerImpl implements HostedPluginsManager {
 
     @inject(HostedPluginSupport)
-    protected readonly hostedPluginSupport: HostedPluginSupport;
+    protected readonly hostedPluginSupport!: HostedPluginSupport;
 
     protected watchCompilationRegistry: Map<string, cp.ChildProcess>;
 
@@ -80,11 +80,15 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
     }
 
     private killProcessTree(parentPid: number): void {
-        processTree(parentPid, (err: Error, childProcesses: Array<processTree.PS>) => {
-            childProcesses.forEach((p: processTree.PS) => {
-                process.kill(parseInt(p.PID));
-            });
-            process.kill(parentPid);
+        processTree(parentPid, (err, childProcesses) => {
+            if (err) {
+                console.error(err);
+            } else {
+                for (const p of childProcesses) {
+                    process.kill(parseInt(p.PID));
+                }
+                process.kill(parentPid);
+            }
         });
     }
 

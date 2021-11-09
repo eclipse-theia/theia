@@ -123,7 +123,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration)
-    protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
+    protected readonly migrations!: ContributionProvider<ApplicationShellLayoutMigration>;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,

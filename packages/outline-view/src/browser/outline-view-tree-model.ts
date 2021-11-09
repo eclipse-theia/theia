@@ -20,7 +20,7 @@ import { CompositeTreeNode, TreeModelImpl, TreeExpansionService, ExpandableTreeN
 @injectable()
 export class OutlineViewTreeModel extends TreeModelImpl {
 
-    @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
+    @inject(TreeExpansionService) protected readonly expansionService!: TreeExpansionService;
 
     /**
      * Handle the expansion of the tree node.

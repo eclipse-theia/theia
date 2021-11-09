@@ -38,7 +38,7 @@ export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
 export class IPCConnectionProvider {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         return this.doListen({

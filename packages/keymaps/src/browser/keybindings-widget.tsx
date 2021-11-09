@@ -61,13 +61,13 @@ export interface CellData {
 export class KeybindingWidget extends ReactWidget {
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
+    protected readonly keybindingRegistry!: KeybindingRegistry;
 
     @inject(KeymapsService)
-    protected readonly keymapsService: KeymapsService;
+    protected readonly keymapsService!: KeymapsService;
 
     static readonly ID = 'keybindings.view.widget';
     static readonly LABEL = 'Keyboard Shortcuts';

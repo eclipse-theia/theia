@@ -20,11 +20,11 @@ import { isFirefox } from '@theia/core/lib/browser';
 @injectable()
 export class TerminalCopyOnSelectionHandler {
 
-    private textToCopy: string;
-    private interceptCopy: boolean;
+    private textToCopy?: string;
+    private interceptCopy: boolean = false;
 
     private copyListener = (ev: ClipboardEvent) => {
-        if (this.interceptCopy && ev.clipboardData) {
+        if (this.textToCopy && this.interceptCopy && ev.clipboardData) {
             ev.clipboardData.setData('text/plain', this.textToCopy);
             ev.preventDefault();
         }

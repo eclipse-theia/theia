@@ -23,7 +23,7 @@ import { AbstractConnectionProvider } from '../../common/messaging/abstract-conn
 import { v4 as uuid } from 'uuid';
 
 decorate(injectable(), JsonRpcProxyFactory);
-decorate(unmanaged(), JsonRpcProxyFactory, 0);
+decorate(unmanaged() as ParameterDecorator, JsonRpcProxyFactory, 0);
 
 export interface WebSocketOptions {
     /**
@@ -78,10 +78,10 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 
     @inject(MessageServiceFactory)
-    protected readonly messageService: () => MessageService;
+    protected readonly messageService!: () => MessageService;
 
     @inject(HttpFallbackOptions) @optional()
-    protected readonly httpFallbackOptions: HttpFallbackOptions | undefined;
+    protected readonly httpFallbackOptions?: HttpFallbackOptions | undefined;
 
     protected readonly socket: ReconnectingWebSocket;
     protected useHttpFallback = false;

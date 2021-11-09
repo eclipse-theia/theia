@@ -267,9 +267,9 @@ export class TextEditorExt implements theia.TextEditor {
 
 export class TextEditorOptionsExt implements theia.TextEditorOptions {
     private _tabSize?: number;
-    private _insertSpace: boolean;
-    private _cursorStyle: TextEditorCursorStyle;
-    private _lineNumbers: TextEditorLineNumbersStyle;
+    private _insertSpace!: boolean;
+    private _cursorStyle!: TextEditorCursorStyle;
+    private _lineNumbers!: TextEditorLineNumbersStyle;
     constructor(private readonly proxy: TextEditorsMain,
         private readonly id: string,
         source: TextEditorConfiguration) {

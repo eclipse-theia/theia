@@ -41,26 +41,26 @@ export interface HostedPluginProcessConfiguration {
 export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(HostedPluginProcessConfiguration)
-    protected configuration: HostedPluginProcessConfiguration;
+    protected configuration!: HostedPluginProcessConfiguration;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(HostedPluginCliContribution)
-    protected readonly cli: HostedPluginCliContribution;
+    protected readonly cli!: HostedPluginCliContribution;
 
     @inject(ContributionProvider)
     @named(PluginHostEnvironmentVariable)
-    protected readonly pluginHostEnvironmentVariables: ContributionProvider<PluginHostEnvironmentVariable>;
+    protected readonly pluginHostEnvironmentVariables!: ContributionProvider<PluginHostEnvironmentVariable>;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(HostedPluginLocalizationService)
-    protected readonly localizationService: HostedPluginLocalizationService;
+    protected readonly localizationService!: HostedPluginLocalizationService;
 
     private childProcess: cp.ChildProcess | undefined;
-    private client: HostedPluginClient;
+    private client?: HostedPluginClient;
 
     private terminatingPluginServer = false;
 

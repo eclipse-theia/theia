@@ -32,7 +32,7 @@ interface PreferenceNumberInputValidation {
 export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<number, HTMLInputElement> {
 
     protected _errorMessage: HTMLElement | undefined;
-    protected interactableWrapper: HTMLElement;
+    protected interactableWrapper?: HTMLElement;
 
     get errorMessage(): HTMLElement {
         if (!this._errorMessage) {
@@ -119,7 +119,7 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
 
     protected showErrorMessage(message: string): void {
         this.errorMessage.textContent = message;
-        this.interactableWrapper.appendChild(this.errorMessage);
+        this.interactableWrapper?.appendChild(this.errorMessage);
     }
 
     protected hideErrorMessage(): void {

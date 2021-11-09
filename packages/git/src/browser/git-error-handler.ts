@@ -20,7 +20,7 @@ import { MessageService } from '@theia/core';
 @injectable()
 export class GitErrorHandler {
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public handleError(error: any): void {

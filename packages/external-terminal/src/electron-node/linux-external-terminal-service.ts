@@ -29,7 +29,7 @@ import { ExternalTerminalService, ExternalTerminalConfiguration } from '../commo
 
 @injectable()
 export class LinuxExternalTerminalService implements ExternalTerminalService {
-    protected DEFAULT_TERMINAL_LINUX_READY: Promise<string>;
+    protected DEFAULT_TERMINAL_LINUX_READY?: Promise<string>;
 
     async openTerminal(configuration: ExternalTerminalConfiguration, cwd: string): Promise<void> {
         await this.spawnTerminal(configuration, FileUri.fsPath(cwd));

@@ -35,17 +35,17 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
 
     protected readonly GIT_DIFF_TITLE = 'Diff';
 
-    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
-    @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
-    @inject(GitDiffHeaderWidget) protected readonly diffHeaderWidget: GitDiffHeaderWidget;
-    @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
-    @inject(GitDiffTreeModel) protected readonly model: GitDiffTreeModel;
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+    @inject(GitRepositoryProvider) protected readonly repositoryProvider!: GitRepositoryProvider;
+    @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider!: DiffNavigatorProvider;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+    @inject(GitWatcher) protected readonly gitWatcher!: GitWatcher;
+    @inject(GitDiffHeaderWidget) protected readonly diffHeaderWidget!: GitDiffHeaderWidget;
+    @inject(ScmTreeWidget) protected readonly resourceWidget!: ScmTreeWidget;
+    @inject(GitDiffTreeModel) protected readonly model!: GitDiffTreeModel;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(ScmPreferences) protected readonly scmPreferences!: ScmPreferences;
 
-    protected panel: Panel;
+    protected panel!: Panel;
 
     constructor() {
         super();

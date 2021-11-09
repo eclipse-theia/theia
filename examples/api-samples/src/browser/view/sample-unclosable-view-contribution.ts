@@ -33,7 +33,7 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
 
     protected toolbarItemState = false;
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     constructor() {
         super({

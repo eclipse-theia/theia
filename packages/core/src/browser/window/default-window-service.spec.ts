@@ -17,7 +17,7 @@
 import { Container } from 'inversify';
 import { ContributionProvider } from '../../common';
 import { CorePreferences } from '../core-preferences';
-import { FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplication, FrontendApplicationContribution } from '../frontend-application';
 import { DefaultWindowService } from './default-window-service';
 import assert = require('assert');
 
@@ -32,7 +32,9 @@ describe('DefaultWindowService', () => {
     }
     function setupWindowService(confirmExit: CorePreferences['application.confirmExit'], frontendContributions: FrontendApplicationContribution[]): DefaultWindowService {
         const container = new Container();
-        container.bind(DefaultWindowService).toSelf().inSingletonScope();
+        container.bind(DefaultWindowService).to(class extends DefaultWindowService {
+            registerUnloadListeners(): void { /** Don't call the DOM APIs in the tests */ }
+        }).inSingletonScope();
         container.bind<Partial<ContributionProvider<FrontendApplicationContribution>>>(ContributionProvider)
             .toConstantValue({
                 getContributions: () => frontendContributions,
@@ -42,7 +44,16 @@ describe('DefaultWindowService', () => {
             .toConstantValue({
                 'application.confirmExit': confirmExit,
             });
-        return container.get(DefaultWindowService);
+        const windowService = container.get(DefaultWindowService);
+        // Quick hack here: Instead of providing a fully mocked FrontendApplication,
+        // we'll pass a pseudo object that throws if you try to access fields on it.
+        // eslint-disable-next-line no-null/no-null
+        windowService.onStart(new Proxy<FrontendApplication>(Object.create(null), {
+            get: (target, property, receiver) => {
+                throw new Error(`${property.toString()} is not implemented`);
+            }
+        }));
+        return windowService;
     }
     it('onWillStop should be called on every contribution (never)', () => {
         const frontendContributions: TestFrontendApplicationContribution[] = [

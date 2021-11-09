@@ -27,7 +27,7 @@ import { ElectronTokenValidator } from './electron-token-validator';
 export class ElectronTokenBackendContribution implements BackendApplicationContribution {
 
     @inject(ElectronTokenValidator)
-    protected readonly tokenValidator: ElectronTokenValidator;
+    protected readonly tokenValidator!: ElectronTokenValidator;
 
     configure(app: express.Application): void {
         app.use(this.expressMiddleware.bind(this));

@@ -53,7 +53,7 @@ export namespace ConsoleContextMenu {
 export class ConsoleContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(ConsoleManager)
-    protected readonly manager: ConsoleManager;
+    protected readonly manager!: ConsoleManager;
 
     initialize(): void { }
 

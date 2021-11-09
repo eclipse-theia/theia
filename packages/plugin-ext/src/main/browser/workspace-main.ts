@@ -44,7 +44,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private searchInWorkspaceService: SearchInWorkspaceService;
 
-    private roots: string[];
+    private roots: string[] = [];
 
     private resourceResolver: TextContentResourceResolver;
 
@@ -98,7 +98,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     private isAnyRootChanged(roots: string[]): boolean {
-        if (!this.roots || this.roots.length !== roots.length) {
+        if (this.roots.length !== roots.length) {
             return true;
         }
 
@@ -110,10 +110,10 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined> {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             // Return undefined if workspace root is not set
-            if (!this.roots || !this.roots.length) {
-                resolve(undefined);
+            if (this.roots.length === 0) {
+                resolve();
                 return;
             }
 

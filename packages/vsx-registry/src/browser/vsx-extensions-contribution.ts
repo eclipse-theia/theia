@@ -42,13 +42,13 @@ export { VSXExtensionsCommands };
 export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer>
     implements ColorContribution, FrontendApplicationContribution {
 
-    @inject(VSXExtensionsModel) protected readonly model: VSXExtensionsModel;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(VSXExtensionsModel) protected readonly model!: VSXExtensionsModel;
+    @inject(CommandRegistry) protected readonly commandRegistry!: CommandRegistry;
+    @inject(FileDialogService) protected readonly fileDialogService!: FileDialogService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(ClipboardService) protected readonly clipboardService!: ClipboardService;
+    @inject(PreferenceService) protected readonly preferenceService!: PreferenceService;
 
     constructor() {
         super({

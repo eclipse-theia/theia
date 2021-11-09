@@ -51,18 +51,18 @@ export interface PreferencesScopeTabBarState {
 export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWidget {
 
     static ID = 'preferences-scope-tab-bar';
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory: PreferenceScopeCommandManager;
-    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory!: PreferenceScopeCommandManager;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer!: ContextMenuRenderer;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(CommandRegistry) protected readonly commandRegistry!: CommandRegistry;
+    @inject(MenuModelRegistry) protected readonly menuModelRegistry!: MenuModelRegistry;
 
     protected readonly onScopeChangedEmitter = new Emitter<Preference.SelectedScopeDetails>();
     readonly onScopeChanged = this.onScopeChangedEmitter.event;
 
     protected toDispose = new DisposableCollection();
-    protected folderTitle: Title<Widget>;
+    protected folderTitle?: Title<Widget>;
     protected currentWorkspaceRoots: FileStat[] = [];
     protected currentSelection: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
     protected editorScrollAtTop = true;
@@ -215,6 +215,9 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
     }
 
     protected setFolderTitleProperties(multipleFolderRootsAreAvailable: boolean): void {
+        if (!this.folderTitle) {
+            throw new Error('PreferencesScopeTabBawr.folderTitle is not set');
+        }
         this.folderTitle.iconClass = multipleFolderRootsAreAvailable ? FOLDER_DROPDOWN_ICON_CLASSNAME : '';
         if (this.currentSelection.scope === FOLDER_TAB_INDEX) {
             this.folderTitle.label = this.labelProvider.getName(new URI(this.currentSelection.uri));

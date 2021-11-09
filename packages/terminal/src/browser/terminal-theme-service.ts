@@ -157,7 +157,7 @@ export const terminalAnsiColorMap: { [key: string]: { index: number, defaults: C
 export class TerminalThemeService {
 
     @inject(ColorRegistry)
-    protected readonly colorRegistry: ColorRegistry;
+    protected readonly colorRegistry!: ColorRegistry;
 
     readonly onDidChange = ThemeService.get().onDidColorThemeChange;
 

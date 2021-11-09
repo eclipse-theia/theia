@@ -205,30 +205,30 @@ export class EditorCommandContribution implements CommandContribution {
     public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(PreferenceService)
-    protected readonly preferencesService: PreferenceService;
+    protected readonly preferencesService!: PreferenceService;
 
     @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
+    protected readonly editorPreferences!: EditorPreferences;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(LanguageService)
-    protected readonly languages: LanguageService;
+    protected readonly languages!: LanguageService;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(ResourceProvider)
-    protected readonly resourceProvider: ResourceProvider;
+    protected readonly resourceProvider!: ResourceProvider;
 
     @postConstruct()
     protected init(): void {

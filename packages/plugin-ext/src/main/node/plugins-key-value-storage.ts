@@ -31,10 +31,10 @@ export class PluginsKeyValueStorage {
     private readonly deferredGlobalDataPath = new Deferred<string | undefined>();
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    private readonly pluginPathsService!: PluginPathsService;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    protected readonly envServer!: EnvVariablesServer;
 
     @postConstruct()
     protected async init(): Promise<void> {

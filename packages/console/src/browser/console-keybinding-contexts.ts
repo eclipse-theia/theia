@@ -49,7 +49,7 @@ export class ConsoleInputFocusContext implements KeybindingContext {
     readonly id: string = ConsoleKeybindingContexts.consoleInputFocus;
 
     @inject(ConsoleManager)
-    protected readonly manager: ConsoleManager;
+    protected readonly manager!: ConsoleManager;
 
     isEnabled(): boolean {
         const console = this.manager.activeConsole;

@@ -23,7 +23,7 @@ import { QuickAccessContribution } from './quick-access';
 export class QuickInputFrontendContribution implements FrontendApplicationContribution {
 
     @inject(ContributionProvider) @named(QuickAccessContribution)
-    protected readonly contributionProvider: ContributionProvider<QuickAccessContribution>;
+    protected readonly contributionProvider!: ContributionProvider<QuickAccessContribution>;
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib => {

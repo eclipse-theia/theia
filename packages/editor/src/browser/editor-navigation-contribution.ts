@@ -38,22 +38,22 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     protected readonly toDisposePerCurrentEditor = new DisposableCollection();
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(NavigationLocationService)
-    protected readonly locationStack: NavigationLocationService;
+    protected readonly locationStack!: NavigationLocationService;
 
     @inject(StorageService)
-    protected readonly storageService: StorageService;
+    protected readonly storageService!: StorageService;
 
     @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
+    protected readonly preferenceService!: PreferenceService;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @postConstruct()
     protected init(): void {

@@ -65,22 +65,22 @@ export class TaskConfigurations implements Disposable {
     private rawTaskConfigurations = new Map<string, TaskCustomization[]>();
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(ProvidedTaskConfigurations)
-    protected readonly providedTaskConfigurations: ProvidedTaskConfigurations;
+    protected readonly providedTaskConfigurations!: ProvidedTaskConfigurations;
 
     @inject(TaskConfigurationManager)
-    protected readonly taskConfigurationManager: TaskConfigurationManager;
+    protected readonly taskConfigurationManager!: TaskConfigurationManager;
 
     @inject(TaskSchemaUpdater)
-    protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+    protected readonly taskSchemaUpdater!: TaskSchemaUpdater;
 
     @inject(TaskSourceResolver)
-    protected readonly taskSourceResolver: TaskSourceResolver;
+    protected readonly taskSourceResolver!: TaskSourceResolver;
 
     constructor() {
         this.toDispose.push(Disposable.create(() => {

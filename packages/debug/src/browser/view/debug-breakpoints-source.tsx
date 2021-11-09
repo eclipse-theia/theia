@@ -24,10 +24,10 @@ import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
 export class DebugBreakpointsSource extends TreeSource {
 
     @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    protected readonly model!: DebugViewModel;
 
     @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
+    protected readonly breakpoints!: BreakpointManager;
 
     @postConstruct()
     protected init(): void {

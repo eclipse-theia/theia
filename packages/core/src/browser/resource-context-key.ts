@@ -24,18 +24,18 @@ import { LanguageService } from './language-service';
 export class ResourceContextKey {
 
     @inject(LanguageService)
-    protected readonly languages: LanguageService;
+    protected readonly languages!: LanguageService;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
-    protected resource: ContextKey<Uri>;
-    protected resourceSchemeKey: ContextKey<string>;
-    protected resourceFileName: ContextKey<string>;
-    protected resourceExtname: ContextKey<string>;
-    protected resourceLangId: ContextKey<string>;
-    protected resourceDirName: ContextKey<string>;
-    protected resourcePath: ContextKey<string>;
+    protected resource!: ContextKey<Uri>;
+    protected resourceSchemeKey!: ContextKey<string>;
+    protected resourceFileName!: ContextKey<string>;
+    protected resourceExtname!: ContextKey<string>;
+    protected resourceLangId!: ContextKey<string>;
+    protected resourceDirName!: ContextKey<string>;
+    protected resourcePath!: ContextKey<string>;
 
     @postConstruct()
     protected init(): void {

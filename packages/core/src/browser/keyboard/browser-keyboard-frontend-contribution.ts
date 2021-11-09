@@ -38,10 +38,10 @@ export namespace KeyboardCommands {
 export class BrowserKeyboardFrontendContribution implements CommandContribution {
 
     @inject(BrowserKeyboardLayoutProvider)
-    protected readonly layoutProvider: BrowserKeyboardLayoutProvider;
+    protected readonly layoutProvider!: BrowserKeyboardLayoutProvider;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     registerCommands(commandRegistry: CommandRegistry): void {
         commandRegistry.registerCommand(KeyboardCommands.CHOOSE_KEYBOARD_LAYOUT, {

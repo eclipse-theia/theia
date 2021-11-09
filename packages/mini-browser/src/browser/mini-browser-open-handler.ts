@@ -86,19 +86,19 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     readonly label = nls.localize(MiniBrowserCommands.PREVIEW_CATEGORY_KEY, MiniBrowserCommands.PREVIEW_CATEGORY);
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(MiniBrowserService)
-    protected readonly miniBrowserService: MiniBrowserService;
+    protected readonly miniBrowserService!: MiniBrowserService;
 
     @inject(LocationMapperService)
-    protected readonly locationMapperService: LocationMapperService;
+    protected readonly locationMapperService!: LocationMapperService;
 
     onStart(): void {
         this.miniBrowserService.supportedFileExtensions().then(entries => {

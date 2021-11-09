@@ -21,7 +21,7 @@ import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-k
 export class MonacoContextKeyService extends ContextKeyService {
 
     @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+    protected readonly contextKeyService!: monaco.contextKeyService.ContextKeyService;
 
     @postConstruct()
     protected init(): void {

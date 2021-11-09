@@ -28,11 +28,11 @@ import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
 @injectable()
 export class MiniBrowserEnvironment implements FrontendApplicationContribution {
 
-    protected _hostPatternPromise: Promise<string>;
+    protected _hostPatternPromise!: Promise<string>;
     protected _hostPattern?: string;
 
     @inject(EnvVariablesServer)
-    protected environment: EnvVariablesServer;
+    protected environment!: EnvVariablesServer;
 
     @postConstruct()
     protected postConstruct(): void {

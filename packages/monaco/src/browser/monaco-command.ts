@@ -50,31 +50,31 @@ export namespace MonacoCommands {
 export class MonacoEditorCommandHandlers implements CommandContribution {
 
     @inject(MonacoCommandRegistry)
-    protected readonly monacoCommandRegistry: MonacoCommandRegistry;
+    protected readonly monacoCommandRegistry!: MonacoCommandRegistry;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
+    protected readonly p2m!: ProtocolToMonacoConverter;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(MonacoEditorService)
-    protected readonly codeEditorService: MonacoEditorService;
+    protected readonly codeEditorService!: MonacoEditorService;
 
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService!: MonacoTextModelService;
 
     @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+    protected readonly contextKeyService!: monaco.contextKeyService.ContextKeyService;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(EditorManager)
-    protected editorManager: EditorManager;
+    protected editorManager!: EditorManager;
 
     registerCommands(): void {
         this.registerMonacoCommands();
@@ -230,10 +230,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected configureEol(editor: MonacoEditor): void {
         const items = ['LF', 'CRLF'].map(lineEnding =>
-        ({
-            label: lineEnding,
-            execute: () => this.setEol(editor, lineEnding)
-        })
+            ({
+                label: lineEnding,
+                execute: () => this.setEol(editor, lineEnding)
+            })
         );
         this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select End of Line Sequence') });
     }
@@ -260,14 +260,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             const { tabSize } = model.getOptions();
             const sizes = Array.from(Array(8), (_, x) => x + 1);
             const tabSizeOptions = sizes.map(size =>
-            ({
-                label: size === tabSize ? size + '   ' + nls.localizeByDefault('Configured Tab Size') : size.toString(),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: () => model.updateOptions({
-                    tabSize: size || tabSize,
-                    insertSpaces: useSpaces
+                ({
+                    label: size === tabSize ? size + '   ' + nls.localizeByDefault('Configured Tab Size') : size.toString(),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    execute: () => model.updateOptions({
+                        tabSize: size || tabSize,
+                        insertSpaces: useSpaces
+                    })
                 })
-            })
             );
             this.quickInputService?.showQuickPick(tabSizeOptions, { placeholder: nls.localizeByDefault('Select Tab Size for Current File') });
         }

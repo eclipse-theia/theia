@@ -24,7 +24,7 @@ import debounce = require('p-debounce');
 export class DebugVariablesSource extends TreeSource {
 
     @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    protected readonly model!: DebugViewModel;
 
     @postConstruct()
     protected init(): void {

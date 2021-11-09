@@ -8,7 +8,7 @@
     "noEmitOnError": false,
     "noImplicitThis": true,
     "noUnusedLocals": true,
-    "strictNullChecks": true,
+    "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "downlevelIteration": true,

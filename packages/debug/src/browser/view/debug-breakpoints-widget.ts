@@ -46,13 +46,13 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
     }
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    protected readonly viewModel!: DebugViewModel;
 
     @inject(BreakpointManager)
-    protected readonly breakpoints: BreakpointManager;
+    protected readonly breakpoints!: BreakpointManager;
 
     @inject(DebugBreakpointsSource)
-    protected readonly breakpointsSource: DebugBreakpointsSource;
+    protected readonly breakpointsSource!: DebugBreakpointsSource;
 
     @postConstruct()
     protected init(): void {

@@ -37,10 +37,10 @@ export class ProblemWidget extends TreeWidget {
     protected readonly toDisposeOnCurrentWidgetChanged = new DisposableCollection();
 
     @inject(ProblemPreferences)
-    protected readonly preferences: ProblemPreferences;
+    protected readonly preferences!: ProblemPreferences;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,

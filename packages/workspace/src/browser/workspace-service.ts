@@ -47,42 +47,42 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(WorkspaceServer)
-    protected readonly server: WorkspaceServer;
+    protected readonly server!: WorkspaceServer;
 
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
 
     @inject(ILogger)
-    protected logger: ILogger;
+    protected logger!: ILogger;
 
     @inject(WorkspacePreferences)
-    protected preferences: WorkspacePreferences;
+    protected preferences!: WorkspacePreferences;
 
     @inject(PreferenceServiceImpl)
-    protected readonly preferenceImpl: PreferenceServiceImpl;
+    protected readonly preferenceImpl!: PreferenceServiceImpl;
 
     @inject(PreferenceSchemaProvider)
-    protected readonly schemaProvider: PreferenceSchemaProvider;
+    protected readonly schemaProvider!: PreferenceSchemaProvider;
 
     @inject(EnvVariablesServer)
-    protected readonly envVariableServer: EnvVariablesServer;
+    protected readonly envVariableServer!: EnvVariablesServer;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(FileSystemPreferences)
-    protected readonly fsPreferences: FileSystemPreferences;
+    protected readonly fsPreferences!: FileSystemPreferences;
 
     @inject(WorkspaceSchemaUpdater)
-    protected readonly schemaUpdater: WorkspaceSchemaUpdater;
+    protected readonly schemaUpdater!: WorkspaceSchemaUpdater;
 
-    protected applicationName: string;
+    protected applicationName!: string;
 
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {

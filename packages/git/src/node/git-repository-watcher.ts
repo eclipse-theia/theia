@@ -24,8 +24,8 @@ export const GitRepositoryWatcherFactory = Symbol('GitRepositoryWatcherFactory')
 export type GitRepositoryWatcherFactory = (options: GitRepositoryWatcherOptions) => GitRepositoryWatcher;
 
 @injectable()
-export class GitRepositoryWatcherOptions {
-    readonly repository: Repository;
+export abstract class GitRepositoryWatcherOptions {
+    abstract readonly repository: Repository;
 }
 
 @injectable()
@@ -35,13 +35,13 @@ export class GitRepositoryWatcher implements Disposable {
     readonly onGitStatusChanged: Event<GitStatusChangeEvent> = this.onGitStatusChangedEmitter.event;
 
     @inject(Git)
-    protected readonly git: Git;
+    protected readonly git!: Git;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(GitRepositoryWatcherOptions)
-    protected readonly options: GitRepositoryWatcherOptions;
+    protected readonly options!: GitRepositoryWatcherOptions;
 
     @postConstruct()
     protected init(): void {

@@ -22,7 +22,7 @@ import { HostedPluginManagerClient, HostedPluginCommands } from './hosted-plugin
 export class HostedPluginFrontendContribution implements CommandContribution {
 
     @inject(HostedPluginManagerClient)
-    protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
+    protected readonly hostedPluginManagerClient!: HostedPluginManagerClient;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(HostedPluginCommands.START, {

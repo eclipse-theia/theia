@@ -44,7 +44,7 @@ export class EditorTextFocusContext implements KeybindingContext {
     readonly id: string = EditorKeybindingContexts.editorTextFocus;
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     isEnabled(): boolean {
         return !!this.getEditor();

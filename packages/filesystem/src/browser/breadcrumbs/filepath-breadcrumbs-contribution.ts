@@ -34,13 +34,13 @@ export interface FilepathBreadcrumbClassNameFactory {
 export class FilepathBreadcrumbsContribution implements BreadcrumbsContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(FileService)
-    protected readonly fileSystem: FileService;
+    protected readonly fileSystem!: FileService;
 
     @inject(BreadcrumbsFileTreeWidget)
-    protected readonly breadcrumbsFileTreeWidget: BreadcrumbsFileTreeWidget;
+    protected readonly breadcrumbsFileTreeWidget!: BreadcrumbsFileTreeWidget;
 
     protected readonly onDidChangeBreadcrumbsEmitter = new Emitter<URI>();
     get onDidChangeBreadcrumbs(): Event<URI> {

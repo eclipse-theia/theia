@@ -26,12 +26,11 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 @injectable()
 export class ProblemPatternRegistry {
     private readonly patterns = new Map<string, NamedProblemPattern | NamedProblemPattern[]>();
-    private readyPromise: Promise<void>;
+    private readyPromise = Promise.resolve();
 
     @postConstruct()
     protected init(): void {
         this.fillDefaults();
-        this.readyPromise = new Promise<void>((res, rej) => res(undefined));
     }
 
     onReady(): Promise<void> {

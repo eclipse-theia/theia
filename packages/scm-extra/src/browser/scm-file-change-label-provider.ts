@@ -24,10 +24,10 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 export class ScmFileChangeLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(ScmService)
-    protected readonly scmService: ScmService;
+    protected readonly scmService!: ScmService;
 
     canHandle(element: object): number {
         return ScmFileChangeNode.is(element) ? 100 : 0;

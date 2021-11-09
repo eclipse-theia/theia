@@ -26,7 +26,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(QuickFileOpenService)
-    protected readonly quickFileOpenService: QuickFileOpenService;
+    protected readonly quickFileOpenService!: QuickFileOpenService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {

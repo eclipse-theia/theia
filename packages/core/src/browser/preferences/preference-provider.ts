@@ -57,7 +57,7 @@ export interface PreferenceResolveResult<T> {
 @injectable()
 export abstract class PreferenceProvider implements Disposable {
 
-    @inject(PreferenceLanguageOverrideService) protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+    @inject(PreferenceLanguageOverrideService) protected readonly preferenceOverrideService!: PreferenceLanguageOverrideService;
 
     protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges>();
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges> = this.onDidPreferencesChangedEmitter.event;

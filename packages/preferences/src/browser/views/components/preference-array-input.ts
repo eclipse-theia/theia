@@ -21,8 +21,8 @@ import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
 @injectable()
 export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<string[], HTMLInputElement> {
     existingValues = new Map<string, { node: HTMLElement, index: number }>();
-    wrapper: HTMLElement;
-    inputWrapper: HTMLElement;
+    wrapper?: HTMLElement;
+    inputWrapper?: HTMLElement;
 
     protected createInteractable(parent: HTMLElement): void {
         const wrapper = document.createElement('ul');
@@ -109,7 +109,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
                 this.existingValues.set(value, row);
             }
 
-            if (this.wrapper.children[index] !== row.node) {
+            if (this.wrapper && this.wrapper.children[index] !== row.node) {
                 this.wrapper.children[index].insertAdjacentElement('beforebegin', row.node);
             }
         }
@@ -134,7 +134,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
 
     protected addItem(): void {
         const newItem = this.interactable.value;
-        if (newItem && !this.existingValues.has(newItem)) {
+        if (this.inputWrapper && newItem && !this.existingValues.has(newItem)) {
             const node = this.createExistingValue(newItem);
             this.inputWrapper.insertAdjacentElement('beforebegin', node);
             this.existingValues.set(newItem, { node, index: this.existingValues.size });

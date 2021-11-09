@@ -143,29 +143,29 @@ export namespace TerminalCommands {
 export class TerminalFrontendContribution implements FrontendApplicationContribution, TerminalService, CommandContribution, MenuContribution,
     KeybindingContribution, TabBarToolbarContribution, ColorContribution {
 
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
-    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(ApplicationShell) protected readonly shell!: ApplicationShell;
+    @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer!: ShellTerminalServerProxy;
+    @inject(WidgetManager) protected readonly widgetManager!: WidgetManager;
+    @inject(FileService) protected readonly fileService!: FileService;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(TerminalWatcher)
-    protected readonly terminalWatcher: TerminalWatcher;
+    protected readonly terminalWatcher!: TerminalWatcher;
 
     @inject(StorageService)
-    protected readonly storageService: StorageService;
+    protected readonly storageService!: StorageService;
 
     @inject(TerminalPreferences)
-    protected terminalPreferences: TerminalPreferences;
+    protected terminalPreferences!: TerminalPreferences;
 
     protected readonly onDidCreateTerminalEmitter = new Emitter<TerminalWidget>();
     readonly onDidCreateTerminal: Event<TerminalWidget> = this.onDidCreateTerminalEmitter.event;
@@ -174,7 +174,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined> = this.onDidChangeCurrentTerminalEmitter.event;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     @postConstruct()
     protected init(): void {

@@ -27,7 +27,7 @@ import URI from '@theia/core/lib/common/uri';
 export class ScmService {
 
     @inject(ScmContextKeyService)
-    protected readonly contextKeys: ScmContextKeyService;
+    protected readonly contextKeys!: ScmContextKeyService;
 
     protected readonly _repositories = new Map<string, ScmRepository>();
     protected _selectedRepository: ScmRepository | undefined;

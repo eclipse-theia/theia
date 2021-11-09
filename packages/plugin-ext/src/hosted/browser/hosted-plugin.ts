@@ -73,88 +73,88 @@ export class HostedPluginSupport {
 
     protected readonly clientId = UUID.uuid4();
 
-    protected container: interfaces.Container;
+    protected container!: interfaces.Container;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(HostedPluginServer)
-    private readonly server: JsonRpcProxy<HostedPluginServer>;
+    private readonly server!: JsonRpcProxy<HostedPluginServer>;
 
     @inject(HostedPluginWatcher)
-    private readonly watcher: HostedPluginWatcher;
+    private readonly watcher!: HostedPluginWatcher;
 
     @inject(PluginContributionHandler)
-    private readonly contributionHandler: PluginContributionHandler;
+    private readonly contributionHandler!: PluginContributionHandler;
 
     @inject(ContributionProvider)
     @named(MainPluginApiProvider)
-    protected readonly mainPluginApiProviders: ContributionProvider<MainPluginApiProvider>;
+    protected readonly mainPluginApiProviders!: ContributionProvider<MainPluginApiProvider>;
 
     @inject(PluginServer)
-    protected readonly pluginServer: PluginServer;
+    protected readonly pluginServer!: PluginServer;
 
     @inject(PreferenceProviderProvider)
-    protected readonly preferenceProviderProvider: PreferenceProviderProvider;
+    protected readonly preferenceProviderProvider!: PreferenceProviderProvider;
 
     @inject(PreferenceServiceImpl)
-    private readonly preferenceServiceImpl: PreferenceServiceImpl;
+    private readonly preferenceServiceImpl!: PreferenceServiceImpl;
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    private readonly pluginPathsService!: PluginPathsService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
+    protected readonly commands!: CommandRegistry;
 
     @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
+    protected readonly debugSessionManager!: DebugSessionManager;
 
     @inject(DebugConfigurationManager)
-    protected readonly debugConfigurationManager: DebugConfigurationManager;
+    protected readonly debugConfigurationManager!: DebugConfigurationManager;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(FileSearchService)
-    protected readonly fileSearchService: FileSearchService;
+    protected readonly fileSearchService!: FileSearchService;
 
     @inject(FrontendApplicationStateService)
-    protected readonly appState: FrontendApplicationStateService;
+    protected readonly appState!: FrontendApplicationStateService;
 
     @inject(PluginViewRegistry)
-    protected readonly viewRegistry: PluginViewRegistry;
+    protected readonly viewRegistry!: PluginViewRegistry;
 
     @inject(TaskProviderRegistry)
-    protected readonly taskProviderRegistry: TaskProviderRegistry;
+    protected readonly taskProviderRegistry!: TaskProviderRegistry;
 
     @inject(TaskResolverRegistry)
-    protected readonly taskResolverRegistry: TaskResolverRegistry;
+    protected readonly taskResolverRegistry!: TaskResolverRegistry;
 
     @inject(ProgressService)
-    protected readonly progressService: ProgressService;
+    protected readonly progressService!: ProgressService;
 
     @inject(WebviewEnvironment)
-    protected readonly webviewEnvironment: WebviewEnvironment;
+    protected readonly webviewEnvironment!: WebviewEnvironment;
 
     @inject(WidgetManager)
-    protected readonly widgets: WidgetManager;
+    protected readonly widgets!: WidgetManager;
 
     @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    protected readonly terminalService!: TerminalService;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    protected readonly envServer!: EnvVariablesServer;
 
     @inject(JsonSchemaStore)
-    protected readonly jsonSchemaStore: JsonSchemaStore;
+    protected readonly jsonSchemaStore!: JsonSchemaStore;
 
     @inject(PluginCustomEditorRegistry)
-    protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+    protected readonly customEditorRegistry!: PluginCustomEditorRegistry;
 
-    private theiaReadyPromise: Promise<any>;
+    private theiaReadyPromise!: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
 
@@ -209,10 +209,11 @@ export class HostedPluginSupport {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
 
-                widget.storeState = () => {
+                widget.storeState = (): WebviewWidget.State => {
                     if (this.webviewRevivers.has(widget.viewType)) {
                         return storeState();
                     }
+                    // @ts-expect-error TS2322
                     return undefined;
                 };
 

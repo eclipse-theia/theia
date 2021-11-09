@@ -81,16 +81,16 @@ export namespace ScmNavigatorMoreToolbarGroups {
 export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget> implements TabBarToolbarContribution {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(FileNavigatorContribution)
-    protected readonly fileNavigatorContribution: FileNavigatorContribution;
+    protected readonly fileNavigatorContribution!: FileNavigatorContribution;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     constructor(
         @inject(SelectionService) protected readonly selectionService: SelectionService,

@@ -24,7 +24,7 @@ import URI from '@theia/core/lib/common/uri';
 export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContribution {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);

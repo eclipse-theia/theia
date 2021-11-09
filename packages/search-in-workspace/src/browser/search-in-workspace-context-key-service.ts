@@ -21,43 +21,43 @@ import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-k
 export class SearchInWorkspaceContextKeyService {
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
-    protected _searchViewletVisible: ContextKey<boolean>;
+    protected _searchViewletVisible!: ContextKey<boolean>;
     get searchViewletVisible(): ContextKey<boolean> {
         return this._searchViewletVisible;
     }
 
-    protected _searchViewletFocus: ContextKey<boolean>;
+    protected _searchViewletFocus!: ContextKey<boolean>;
     get searchViewletFocus(): ContextKey<boolean> {
         return this._searchViewletFocus;
     }
 
-    protected searchInputBoxFocus: ContextKey<boolean>;
+    protected searchInputBoxFocus!: ContextKey<boolean>;
     setSearchInputBoxFocus(searchInputBoxFocus: boolean): void {
         this.searchInputBoxFocus.set(searchInputBoxFocus);
         this.updateInputBoxFocus();
     }
 
-    protected replaceInputBoxFocus: ContextKey<boolean>;
+    protected replaceInputBoxFocus!: ContextKey<boolean>;
     setReplaceInputBoxFocus(replaceInputBoxFocus: boolean): void {
         this.replaceInputBoxFocus.set(replaceInputBoxFocus);
         this.updateInputBoxFocus();
     }
 
-    protected patternIncludesInputBoxFocus: ContextKey<boolean>;
+    protected patternIncludesInputBoxFocus!: ContextKey<boolean>;
     setPatternIncludesInputBoxFocus(patternIncludesInputBoxFocus: boolean): void {
         this.patternIncludesInputBoxFocus.set(patternIncludesInputBoxFocus);
         this.updateInputBoxFocus();
     }
 
-    protected patternExcludesInputBoxFocus: ContextKey<boolean>;
+    protected patternExcludesInputBoxFocus!: ContextKey<boolean>;
     setPatternExcludesInputBoxFocus(patternExcludesInputBoxFocus: boolean): void {
         this.patternExcludesInputBoxFocus.set(patternExcludesInputBoxFocus);
         this.updateInputBoxFocus();
     }
 
-    protected inputBoxFocus: ContextKey<boolean>;
+    protected inputBoxFocus!: ContextKey<boolean>;
     protected updateInputBoxFocus(): void {
         this.inputBoxFocus.set(
             this.searchInputBoxFocus.get() ||
@@ -67,12 +67,12 @@ export class SearchInWorkspaceContextKeyService {
         );
     }
 
-    protected _replaceActive: ContextKey<boolean>;
+    protected _replaceActive!: ContextKey<boolean>;
     get replaceActive(): ContextKey<boolean> {
         return this._replaceActive;
     }
 
-    protected _hasSearchResult: ContextKey<boolean>;
+    protected _hasSearchResult!: ContextKey<boolean>;
     get hasSearchResult(): ContextKey<boolean> {
         return this._hasSearchResult;
     }

@@ -64,9 +64,8 @@ export class OpenUriCommandHandler {
 class OpenNewTabDialog extends AbstractDialog<string> {
     protected readonly windowService: WindowService;
     protected readonly openButton: HTMLButtonElement;
-    protected readonly messageNode: HTMLDivElement;
     protected readonly linkNode: HTMLAnchorElement;
-    value: string;
+    protected _value?: string;
 
     constructor(windowService: WindowService) {
         super({
@@ -88,8 +87,15 @@ class OpenNewTabDialog extends AbstractDialog<string> {
         this.openButton = this.appendAcceptButton('Open');
     }
 
+    get value(): string {
+        if (!this._value) {
+            throw new Error('OpenNewTabDialog._value is not set');
+        }
+        return this._value;
+    }
+
     showOpenNewTabDialog(uri: string): void {
-        this.value = uri;
+        this._value = uri;
 
         this.linkNode.innerHTML = DOMPurify.sanitize(uri);
         this.linkNode.href = uri;

@@ -54,28 +54,28 @@ export interface NavigatableWidgetMoveSnapshot {
 export class FileSystemFrontendContribution implements FrontendApplicationContribution, CommandContribution {
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     @inject(MimeService)
-    protected readonly mimeService: MimeService;
+    protected readonly mimeService!: MimeService;
 
     @inject(FileSystemPreferences)
-    protected readonly preferences: FileSystemPreferences;
+    protected readonly preferences!: FileSystemPreferences;
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     @inject(FileUploadService)
-    protected readonly uploadService: FileUploadService;
+    protected readonly uploadService!: FileUploadService;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     protected onDidChangeEditorFileEmitter = new Emitter<{ editor: NavigatableWidget, type: FileChangeType }>();
     readonly onDidChangeEditorFile = this.onDidChangeEditorFileEmitter.event;

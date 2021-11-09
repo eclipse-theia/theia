@@ -30,7 +30,7 @@ export namespace SelectionProviderCommands {
 @injectable()
 export class SelectionProviderCommandContribution implements CommandContribution {
 
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
+    @inject(SelectionService) protected readonly selectionService!: SelectionService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SelectionProviderCommands.GET_SELECTED_CONTEXT, this.newMultiUriAwareCommandHandler({

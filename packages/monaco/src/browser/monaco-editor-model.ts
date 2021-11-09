@@ -53,9 +53,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     /* @deprecated there is no general save timeout, each participant should introduce a sensible timeout  */
     readonly onWillSaveLoopTimeOut = 1500;
-    protected bufferSavedVersionId: number;
+    protected bufferSavedVersionId?: number;
 
-    protected model: monaco.editor.IModel;
+    protected _model?: monaco.editor.IModel;
     protected readonly resolveModel: Promise<void>;
 
     protected readonly toDispose = new DisposableCollection();
@@ -100,6 +100,13 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.resolveModel = this.readContents().then(
             content => this.initialize(content || '')
         );
+    }
+
+    get model(): monaco.editor.IModel {
+        if (!this._model) {
+            throw new Error('MonacoEditorModel._model is not set');
+        }
+        return this._model;
     }
 
     dispose(): void {
@@ -162,7 +169,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
                 firstLine = value.getFirstLineText(1000);
             }
             const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
-            this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
+            this._model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
             this.updateSavedVersionId();
             this.toDispose.push(this.model);

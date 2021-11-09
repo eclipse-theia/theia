@@ -21,8 +21,8 @@ import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/wo
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 
 @injectable()
-export class WorkspaceFilePreferenceProviderOptions {
-    workspaceUri: URI;
+export abstract class WorkspaceFilePreferenceProviderOptions {
+    abstract workspaceUri: URI;
 }
 
 export const WorkspaceFilePreferenceProviderFactory = Symbol('WorkspaceFilePreferenceProviderFactory');
@@ -32,10 +32,10 @@ export type WorkspaceFilePreferenceProviderFactory = (options: WorkspaceFilePref
 export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceProvider {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(WorkspaceFilePreferenceProviderOptions)
-    protected readonly options: WorkspaceFilePreferenceProviderOptions;
+    protected readonly options!: WorkspaceFilePreferenceProviderOptions;
 
     protected sectionsInsideSettings = new Set<string>();
 

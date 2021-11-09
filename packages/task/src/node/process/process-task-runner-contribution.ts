@@ -22,7 +22,7 @@ import { TaskRunnerContribution, TaskRunnerRegistry } from '../task-runner';
 export class ProcessTaskRunnerContribution implements TaskRunnerContribution {
 
     @inject(ProcessTaskRunner)
-    protected readonly processTaskRunner: ProcessTaskRunner;
+    protected readonly processTaskRunner!: ProcessTaskRunner;
 
     registerRunner(runners: TaskRunnerRegistry): void {
         runners.registerRunner('process', this.processTaskRunner);

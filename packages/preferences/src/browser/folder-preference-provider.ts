@@ -35,10 +35,10 @@ export interface FolderPreferenceProviderOptions {
 @injectable()
 export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FolderPreferenceProviderFolder) protected readonly folder: FileStat;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(FolderPreferenceProviderFolder) protected readonly folder!: FileStat;
 
-    private _folderUri: URI;
+    private _folderUri?: URI;
 
     get folderUri(): URI {
         if (!this._folderUri) {

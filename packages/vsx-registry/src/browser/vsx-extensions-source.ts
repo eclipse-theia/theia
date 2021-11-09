@@ -19,22 +19,22 @@ import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 
 @injectable()
-export class VSXExtensionsSourceOptions {
+export abstract class VSXExtensionsSourceOptions {
     static INSTALLED = 'installed';
     static BUILT_IN = 'builtin';
     static SEARCH_RESULT = 'searchResult';
     static RECOMMENDED = 'recommended';
-    readonly id: string;
+    abstract readonly id: string;
 }
 
 @injectable()
 export class VSXExtensionsSource extends TreeSource {
 
     @inject(VSXExtensionsSourceOptions)
-    protected readonly options: VSXExtensionsSourceOptions;
+    protected readonly options!: VSXExtensionsSourceOptions;
 
     @inject(VSXExtensionsModel)
-    protected readonly model: VSXExtensionsModel;
+    protected readonly model!: VSXExtensionsModel;
 
     @postConstruct()
     protected async init(): Promise<void> {

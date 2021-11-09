@@ -23,7 +23,7 @@ import { GitPrompt } from '../../common/git-prompt';
 export class GitQuickOpenPrompt extends GitPrompt {
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     protected readonly queue = new PQueue({ autoStart: true, concurrency: 1 });
 

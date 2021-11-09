@@ -26,13 +26,13 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 export class WorkspaceVariableContribution implements VariableContribution {
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     protected currentWidget: NavigatableWidget | undefined;
 

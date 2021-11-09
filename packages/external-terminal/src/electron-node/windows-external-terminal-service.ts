@@ -29,7 +29,7 @@ import { ExternalTerminalService, ExternalTerminalConfiguration } from '../commo
 @injectable()
 export class WindowsExternalTerminalService implements ExternalTerminalService {
     protected readonly CMD = 'cmd.exe';
-    protected DEFAULT_TERMINAL_WINDOWS: string;
+    protected DEFAULT_TERMINAL_WINDOWS?: string;
 
     async openTerminal(configuration: ExternalTerminalConfiguration, cwd: string): Promise<void> {
         await this.spawnTerminal(configuration, FileUri.fsPath(cwd));

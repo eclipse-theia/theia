@@ -20,7 +20,7 @@ import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extension
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
-export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
+export abstract class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
     title?: string;
 }
 
@@ -45,10 +45,10 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     }
 
     @inject(VSXExtensionsWidgetOptions)
-    protected readonly options: VSXExtensionsWidgetOptions;
+    protected readonly options!: VSXExtensionsWidgetOptions;
 
     @inject(VSXExtensionsSource)
-    protected readonly extensionsSource: VSXExtensionsSource;
+    protected readonly extensionsSource!: VSXExtensionsSource;
 
     @postConstruct()
     protected init(): void {

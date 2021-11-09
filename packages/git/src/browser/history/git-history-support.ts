@@ -25,9 +25,9 @@ import { GitRepositoryTracker } from '../git-repository-tracker';
 @injectable()
 export class GitHistorySupport implements ScmHistorySupport {
 
-    @inject(GitScmProvider) protected readonly provider: GitScmProvider;
-    @inject(Git) protected readonly git: Git;
-    @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
+    @inject(GitScmProvider) protected readonly provider!: GitScmProvider;
+    @inject(Git) protected readonly git!: Git;
+    @inject(GitRepositoryTracker) protected readonly repositoryTracker!: GitRepositoryTracker;
 
     async getCommitHistory(options?: HistoryWidgetOptions): Promise<ScmHistoryCommit[]> {
         const repository = this.provider.repository;

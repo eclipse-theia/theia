@@ -35,20 +35,26 @@ export class DebugConsoleSession extends ConsoleSession {
 
     protected items: ConsoleItem[] = [];
 
-    protected _debugSession: DebugSession;
+    protected _debugSession?: DebugSession;
 
     // content buffer for [append](#append) method
     protected uncompletedItemContent: string | undefined;
 
     protected readonly completionKinds = new Map<DebugProtocol.CompletionItemType | undefined, monaco.languages.CompletionItemKind>();
 
+    get id(): string {
+        return this.debugSession.id;
+    }
+
     get debugSession(): DebugSession {
+        if (this._debugSession === undefined) {
+            throw new Error('DebugConsoleSession._debugSession is not set');
+        }
         return this._debugSession;
     }
 
     set debugSession(value: DebugSession) {
         this._debugSession = value;
-        this.id = value.id;
     }
 
     @postConstruct()

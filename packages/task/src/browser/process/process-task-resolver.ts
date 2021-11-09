@@ -27,13 +27,13 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 export class ProcessTaskResolver implements TaskResolver {
 
     @inject(VariableResolverService)
-    protected readonly variableResolverService: VariableResolverService;
+    protected readonly variableResolverService!: VariableResolverService;
 
     @inject(TaskDefinitionRegistry)
-    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected readonly taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     /**
      * Perform some adjustments to the task launch configuration, before sending

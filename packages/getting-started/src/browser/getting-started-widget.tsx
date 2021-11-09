@@ -80,22 +80,22 @@ export class GettingStartedWidget extends ReactWidget {
     protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
 
     @inject(ApplicationServer)
-    protected readonly appServer: ApplicationServer;
+    protected readonly appServer!: ApplicationServer;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @postConstruct()
     protected async init(): Promise<void> {

@@ -22,7 +22,7 @@ import { ElectronSecurityToken } from '../electron-common/electron-token';
 export class ElectronSecurityTokenService {
 
     @inject(ElectronSecurityToken)
-    protected readonly electronSecurityToken: ElectronSecurityToken;
+    protected readonly electronSecurityToken!: ElectronSecurityToken;
 
     async setElectronSecurityTokenCookie(url: string): Promise<void> {
         await session.defaultSession.cookies.set({

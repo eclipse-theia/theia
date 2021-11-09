@@ -58,12 +58,12 @@ export interface Address {
 export class Askpass implements Disposable {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(DugiteGitPromptServer)
-    protected readonly promptServer: DugiteGitPromptServer;
+    protected readonly promptServer!: DugiteGitPromptServer;
 
-    protected server: http.Server;
+    protected server!: http.Server;
     protected serverAddress: Address | undefined;
     protected ready = new Deferred<boolean>();
 

@@ -487,7 +487,6 @@ export class CustomTextEditorModel implements CustomEditorModel {
     private readonly toDispose = new DisposableCollection();
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
-    readonly autoSave: 'on' | 'off';
 
     static async create(
         viewType: string,
@@ -517,6 +516,10 @@ export class CustomTextEditorModel implements CustomEditorModel {
     dispose(): void {
         this.toDispose.dispose();
         this.model.dispose();
+    }
+
+    get autoSave(): 'on' | 'off' {
+        return this.model.object.autoSave;
     }
 
     get resource(): URI {

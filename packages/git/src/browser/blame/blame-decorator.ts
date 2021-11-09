@@ -25,7 +25,7 @@ import URI from '@theia/core/lib/common/uri';
 export class BlameDecorator implements monaco.languages.HoverProvider {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     protected registerHoverProvider(uri: string): Disposable {
         return monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);

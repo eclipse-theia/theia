@@ -29,7 +29,7 @@ import { OVSXClientProvider } from '../common/ovsx-client-provider';
 export class VSXExtensionResolver implements PluginDeployerResolver {
 
     @inject(OVSXClientProvider)
-    protected clientProvider: OVSXClientProvider;
+    protected clientProvider!: OVSXClientProvider;
 
     protected readonly downloadPath: string;
 

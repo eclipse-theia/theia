@@ -26,17 +26,16 @@ export const ABOUT_CONTENT_CLASS = 'theia-aboutDialog';
 export const ABOUT_EXTENSIONS_CLASS = 'theia-aboutExtensions';
 
 @injectable()
-export class AboutDialogProps extends DialogProps {
+export abstract class AboutDialogProps extends DialogProps {
 }
 
 @injectable()
 export class AboutDialog extends ReactDialog<void> {
-    protected applicationInfo: ApplicationInfo | undefined;
+    protected applicationInfo?: ApplicationInfo;
     protected extensionsInfos: ExtensionInfo[] = [];
-    protected readonly okButton: HTMLButtonElement;
 
     @inject(ApplicationServer)
-    protected readonly appServer: ApplicationServer;
+    protected readonly appServer!: ApplicationServer;
 
     constructor(
         @inject(AboutDialogProps) protected readonly props: AboutDialogProps

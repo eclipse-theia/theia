@@ -24,7 +24,7 @@ import { FileNavigatorFilter } from './navigator-filter';
 @injectable()
 export class FileNavigatorTree extends FileTree {
 
-    @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter;
+    @inject(FileNavigatorFilter) protected readonly filter!: FileNavigatorFilter;
 
     @postConstruct()
     protected init(): void {

@@ -21,8 +21,8 @@ import { Widget, BaseWidget, Message, addKeyListener, codiconArray } from './wid
 import { FrontendApplicationContribution } from './frontend-application';
 
 @injectable()
-export class DialogProps {
-    readonly title: string;
+export abstract class DialogProps {
+    abstract readonly title: string;
     /**
      * Determines the maximum width of the dialog in pixels.
      * Default value is undefined, which would result in the css property 'max-width: none' being applied to the dialog.
@@ -347,8 +347,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 }
 
 @injectable()
-export class ConfirmDialogProps extends DialogProps {
-    readonly msg: string | HTMLElement;
+export abstract class ConfirmDialogProps extends DialogProps {
+    abstract readonly msg: string | HTMLElement;
     readonly cancel?: string;
     readonly ok?: string;
 }
@@ -389,7 +389,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
 }
 
 @injectable()
-export class SingleTextInputDialogProps extends DialogProps {
+export abstract class SingleTextInputDialogProps extends DialogProps {
     readonly confirmButtonLabel?: string;
     readonly initialValue?: string;
     readonly initialSelectionRange?: {

@@ -22,10 +22,10 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 export class PluginMetricStringGenerator {
 
     @inject(PluginMetricTimeCount)
-    private pluginMetricsTimeCount: PluginMetricTimeCount;
+    private pluginMetricsTimeCount!: PluginMetricTimeCount;
 
     @inject(PluginMetricTimeSum)
-    private pluginMetricsTimeSum: PluginMetricTimeSum;
+    private pluginMetricsTimeSum!: PluginMetricTimeSum;
 
     getMetricsString(extensionIDAnalytics: MetricsMap): string {
 

@@ -28,7 +28,7 @@ export class TerminalActiveContext implements KeybindingContext {
     readonly id: string = TerminalKeybindingContexts.terminalActive;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     isEnabled(): boolean {
         return this.shell.activeWidget instanceof TerminalWidget;
@@ -40,7 +40,7 @@ export class TerminalSearchVisibleContext implements KeybindingContext {
     readonly id: string = TerminalKeybindingContexts.terminalHideSearch;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     isEnabled(): boolean {
         if (!(this.shell.activeWidget instanceof TerminalWidget)) {

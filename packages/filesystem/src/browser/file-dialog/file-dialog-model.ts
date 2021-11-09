@@ -24,7 +24,7 @@ import { FileDialogTree } from './file-dialog-tree';
 @injectable()
 export class FileDialogModel extends FileTreeModel {
 
-    @inject(FileDialogTree) readonly tree: FileDialogTree;
+    @inject(FileDialogTree) readonly tree!: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
     protected _initialLocation: URI | undefined;
     private _disableFileSelection: boolean = false;

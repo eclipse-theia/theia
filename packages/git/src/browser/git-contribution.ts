@@ -267,19 +267,19 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
     protected toDispose = new DisposableCollection();
 
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
-    @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
-    @inject(GitSyncService) protected readonly syncService: GitSyncService;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
-    @inject(Git) protected readonly git: Git;
-    @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
-    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
-    @inject(ProgressService) protected readonly progressService: ProgressService;
-    @inject(GitPreferences) protected readonly gitPreferences: GitPreferences;
-    @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
-    @inject(GitDecorationProvider) protected readonly gitDecorationProvider: GitDecorationProvider;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
+    @inject(GitQuickOpenService) protected readonly quickOpenService!: GitQuickOpenService;
+    @inject(GitRepositoryTracker) protected readonly repositoryTracker!: GitRepositoryTracker;
+    @inject(GitSyncService) protected readonly syncService!: GitSyncService;
+    @inject(WorkspaceService) protected readonly workspaceService!: WorkspaceService;
+    @inject(GitRepositoryProvider) protected readonly repositoryProvider!: GitRepositoryProvider;
+    @inject(Git) protected readonly git!: Git;
+    @inject(GitErrorHandler) protected readonly gitErrorHandler!: GitErrorHandler;
+    @inject(CommandRegistry) protected readonly commands!: CommandRegistry;
+    @inject(ProgressService) protected readonly progressService!: ProgressService;
+    @inject(GitPreferences) protected readonly gitPreferences!: GitPreferences;
+    @inject(DecorationsService) protected readonly decorationsService!: DecorationsService;
+    @inject(GitDecorationProvider) protected readonly gitDecorationProvider!: GitDecorationProvider;
 
     onStart(): void {
         this.updateStatusBar();

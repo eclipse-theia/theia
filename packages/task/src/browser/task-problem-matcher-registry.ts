@@ -33,10 +33,10 @@ import { Severity } from '@theia/core/lib/common/severity';
 export class ProblemMatcherRegistry {
 
     private readonly matchers = new Map<string, NamedProblemMatcher>();
-    private readyPromise: Promise<void>;
+    private readyPromise!: Promise<void>;
 
     @inject(ProblemPatternRegistry)
-    protected readonly problemPatternRegistry: ProblemPatternRegistry;
+    protected readonly problemPatternRegistry!: ProblemPatternRegistry;
 
     protected readonly onDidChangeProblemMatcherEmitter = new Emitter<void>();
     get onDidChangeProblemMatcher(): Event<void> {
@@ -45,9 +45,8 @@ export class ProblemMatcherRegistry {
 
     @postConstruct()
     protected init(): void {
-        this.problemPatternRegistry.onReady().then(() => {
+        this.readyPromise = this.problemPatternRegistry.onReady().then(() => {
             this.fillDefaults();
-            this.readyPromise = new Promise<void>((res, rej) => res(undefined));
             this.onDidChangeProblemMatcherEmitter.fire(undefined);
         });
     }

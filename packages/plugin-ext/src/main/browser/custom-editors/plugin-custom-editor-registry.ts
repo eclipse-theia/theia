@@ -36,22 +36,22 @@ export class PluginCustomEditorRegistry {
     readonly onWillOpenCustomEditor = this.onWillOpenCustomEditorEmitter.event;
 
     @inject(DefaultOpenerService)
-    protected readonly defaultOpenerService: DefaultOpenerService;
+    protected readonly defaultOpenerService!: DefaultOpenerService;
 
     @inject(MenuModelRegistry)
-    protected readonly menuModelRegistry: MenuModelRegistry;
+    protected readonly menuModelRegistry!: MenuModelRegistry;
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetManager!: WidgetManager;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected readonly shell!: ApplicationShell;
 
     @postConstruct()
     protected init(): void {

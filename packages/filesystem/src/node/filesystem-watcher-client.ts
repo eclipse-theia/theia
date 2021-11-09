@@ -39,10 +39,10 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
     protected readonly clientId = FileSystemWatcherServerClient.clientIdSequence++;
 
     @inject(FileSystemWatcherServiceDispatcher)
-    protected readonly watcherDispatcher: FileSystemWatcherServiceDispatcher;
+    protected readonly watcherDispatcher!: FileSystemWatcherServiceDispatcher;
 
     @inject(FileSystemWatcherService)
-    protected readonly watcherService: FileSystemWatcherService;
+    protected readonly watcherService!: FileSystemWatcherService;
 
     async watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
         const watcherId = await this.watcherService.watchFileChanges(this.clientId, uri, options);

@@ -20,7 +20,7 @@
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CancellationError, CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { CancellationError, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
 import {
     MAIN_RPC_CONTEXT,
@@ -213,6 +213,11 @@ export function createAPIFactory(
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
+        function getSession(providerId: string, scopes: string[], options?: theia.AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<theia.AuthenticationSession>;
+        function getSession(providerId: string, scopes: string[], options?: theia.AuthenticationGetSessionOptions): Thenable<theia.AuthenticationSession | undefined>;
+        function getSession(providerId: string, scopes: string[], options?: theia.AuthenticationGetSessionOptions): any {
+            return authenticationExt.getSession(plugin, providerId, scopes, options);
+        };
         const authentication: typeof theia.authentication = {
             registerAuthenticationProvider(provider: theia.AuthenticationProvider): theia.Disposable {
                 return authenticationExt.registerAuthenticationProvider(provider);
@@ -229,9 +234,7 @@ export function createAPIFactory(
             get providers(): ReadonlyArray<theia.AuthenticationProviderInformation> {
                 return authenticationExt.providers;
             },
-            getSession(providerId: string, scopes: string[], options: theia.AuthenticationGetSessionOptions) {
-                return authenticationExt.getSession(plugin, providerId, scopes, options as any);
-            },
+            getSession,
             logout(providerId: string, sessionId: string): Thenable<void> {
                 return authenticationExt.logout(providerId, sessionId);
             },
@@ -258,14 +261,14 @@ export function createAPIFactory(
                 return commandRegistry.executeCommand<T>(commandId, ...args);
             },
             registerTextEditorCommand(command: string, handler: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void, thisArg?: any): Disposable {
-                return commandRegistry.registerCommand({ id: command }, (...args: any[]): any => {
+                return commandRegistry.registerCommand({ id: command }, (...args: [theia.TextEditor, theia.TextEditorEdit, ...any[]]): any => {
                     const activeTextEditor = editors.getActiveEditor();
                     if (!activeTextEditor) {
                         console.warn('Cannot execute ' + command + ' because there is no active text editor.');
                         return undefined;
                     }
 
-                    return activeTextEditor.edit((edit: theia.TextEditorEdit) => {
+                    return activeTextEditor.edit(edit => {
                         args.unshift(activeTextEditor, edit);
                         handler.apply(thisArg, args);
                     }).then(result => {
@@ -294,9 +297,9 @@ export function createAPIFactory(
         };
 
         const { onDidChangeActiveTerminal, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
-        const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
-        const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
-        const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
+        const showInformationMessage: any = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
+        const showWarningMessage: any = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
+        const showErrorMessage: any = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
 
             get activeTerminal(): TerminalExtImpl | undefined {
@@ -430,7 +433,7 @@ export function createAPIFactory(
                 return treeViewsExt.createTreeView(plugin, viewId, options);
             },
             withProgress<R>(
-                options: ProgressOptions,
+                options: theia.ProgressOptions,
                 task: (progress: Progress<{ message?: string; increment?: number }>, token: theia.CancellationToken) => PromiseLike<R>
             ): PromiseLike<R> {
                 return notificationExt.withProgress(options, task);
@@ -530,13 +533,14 @@ export function createAPIFactory(
                 const data = await documents.openDocument(uri);
                 return data && data.document;
             },
-            createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
-                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
-            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<URI[]> {
+            createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreate?: boolean, ignoreChange?: boolean, ignoreDelete?: boolean): theia.FileSystemWatcher {
+                return extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete);
+            },
+            findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: theia.CancellationToken): PromiseLike<URI[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
             findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
-                callbackOrToken?: CancellationToken | ((result: theia.TextSearchResult) => void), token?: CancellationToken): Promise<theia.TextSearchComplete> {
+                callbackOrToken?: theia.CancellationToken | ((result: theia.TextSearchResult) => void), token?: theia.CancellationToken): Promise<theia.TextSearchComplete> {
                 return workspaceExt.findTextInFiles(query, optionsOrCallback, callbackOrToken, token);
             },
             saveAll(includeUntitled?: boolean): PromiseLike<boolean> {

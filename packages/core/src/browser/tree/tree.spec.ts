@@ -221,8 +221,7 @@ describe('Tree', () => {
     }
 
     function assertTreeNode(expectation: string, node: TreeNode): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        assert.deepStrictEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
+        assert.deepStrictEqual(expectation, JSON.stringify(node, (key, value) => {
             if (key === 'parent' || key === 'previousSibling' || key === 'nextSibling') {
                 return value && value.id;
             }
@@ -231,12 +230,10 @@ describe('Tree', () => {
     }
 
     function createTreeModel(): TreeModel {
-        const container = createTreeTestContainer();
-        return container.get(TreeModel);
+        return createTreeTestContainer().get(TreeModel);
     }
     function retrieveNode<T extends TreeNode>(id: string): Readonly<T> {
-        const readonlyNode: Readonly<T> = model.getNode(id) as T;
-        return readonlyNode;
+        return model.getNode(id) as Readonly<T>;
     }
 
 });

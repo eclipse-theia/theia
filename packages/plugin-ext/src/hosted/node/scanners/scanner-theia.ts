@@ -98,10 +98,10 @@ export class TheiaPluginScanner implements PluginScanner {
     private readonly _apiType: PluginEngine = 'theiaPlugin';
 
     @inject(GrammarsReader)
-    private readonly grammarsReader: GrammarsReader;
+    private readonly grammarsReader!: GrammarsReader;
 
     @inject(PluginUriFactory)
-    protected readonly pluginUriFactory: PluginUriFactory;
+    protected readonly pluginUriFactory!: PluginUriFactory;
 
     get apiType(): PluginEngine {
         return this._apiType;

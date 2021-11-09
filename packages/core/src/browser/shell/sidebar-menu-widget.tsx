@@ -42,7 +42,7 @@ export class SidebarMenuWidget extends ReactWidget {
   protected readonly menus: SidebarMenu[];
 
   @inject(ContextMenuRenderer)
-  protected readonly contextMenuRenderer: ContextMenuRenderer;
+  protected readonly contextMenuRenderer!: ContextMenuRenderer;
 
   constructor() {
     super();

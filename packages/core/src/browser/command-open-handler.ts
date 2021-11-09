@@ -25,7 +25,7 @@ export class CommandOpenHandler implements OpenHandler {
     readonly id = 'command';
 
     @inject(CommandService)
-    protected readonly commands: CommandService;
+    protected readonly commands!: CommandService;
 
     canHandle(uri: URI): number {
         return uri.scheme === 'command' ? 500 : -1;

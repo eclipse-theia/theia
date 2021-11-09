@@ -22,7 +22,7 @@ import { TaskRunnerContribution, TaskRunnerRegistry } from '../task-runner';
 export class CustomTaskRunnerContribution implements TaskRunnerContribution {
 
     @inject(CustomTaskRunner)
-    protected readonly customTaskRunner: CustomTaskRunner;
+    protected readonly customTaskRunner!: CustomTaskRunner;
 
     registerRunner(runners: TaskRunnerRegistry): void {
         runners.registerRunner('customExecution', this.customTaskRunner);

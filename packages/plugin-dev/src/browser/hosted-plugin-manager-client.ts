@@ -89,9 +89,9 @@ export interface HostedInstanceData {
  */
 @injectable()
 export class HostedPluginManagerClient {
-    private openNewTabAskDialog: OpenHostedInstanceLinkDialog;
+    private openNewTabAskDialog!: OpenHostedInstanceLinkDialog;
 
-    private connection: DebugSessionConnection;
+    private connection?: DebugSessionConnection;
 
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
@@ -108,25 +108,25 @@ export class HostedPluginManagerClient {
     }
 
     @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    protected readonly hostedPluginServer!: HostedPluginServer;
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
     @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
+    protected readonly debugSessionManager!: DebugSessionManager;
     @inject(HostedPluginPreferences)
-    protected readonly hostedPluginPreferences: HostedPluginPreferences;
+    protected readonly hostedPluginPreferences!: HostedPluginPreferences;
     @inject(FileDialogService)
-    protected readonly fileDialogService: FileDialogService;
+    protected readonly fileDialogService!: FileDialogService;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -299,7 +299,7 @@ export class HostedPluginManagerClient {
     register(configType: string, connection: DebugSessionConnection): void {
         if (configType === 'pwa-extensionHost') {
             this.connection = connection;
-            this.connection.onRequest('launchVSCode', (request: LaunchVSCodeRequest) => this.launchVSCode(request));
+            this.connection.onRequest('launchVSCode', request => this.launchVSCode(request as LaunchVSCodeRequest));
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.connection.on('exited', async (args: any) => {
@@ -328,10 +328,12 @@ export class HostedPluginManagerClient {
     }
 
     protected async launchVSCode({ arguments: { args } }: LaunchVSCodeRequest): Promise<LaunchVSCodeResult> {
+        if (!this.connection) {
+            throw new Error('HostedPluginManagerClient.connection is not set');
+        }
         let result = {};
         let instanceURI;
-
-        const sessions = this.debugSessionManager.sessions.filter(session => session.id !== this.connection.sessionId);
+        const sessions = this.debugSessionManager.sessions.filter(session => session.id !== this.connection!.sessionId);
 
         /* if `launchVSCode` is invoked and sessions do not exist - it means that `start` debug was invoked.
            if `launchVSCode` is invoked and sessions do exist - it means that `restartSessions()` was invoked,
@@ -386,9 +388,8 @@ export class HostedPluginManagerClient {
 class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
     protected readonly windowService: WindowService;
     protected readonly openButton: HTMLButtonElement;
-    protected readonly messageNode: HTMLDivElement;
     protected readonly linkNode: HTMLAnchorElement;
-    value: string;
+    protected _value?: string;
 
     constructor(windowService: WindowService) {
         super({
@@ -410,8 +411,15 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         this.openButton = this.appendAcceptButton('Open');
     }
 
+    get value(): string {
+        if (this._value === undefined) {
+            throw new Error('OpenHostedInstanceLinkDialog._value is not set');
+        }
+        return this._value;
+    }
+
     showOpenNewTabAskDialog(uri: string): void {
-        this.value = uri;
+        this._value = uri;
 
         this.linkNode.innerHTML = uri;
         this.linkNode.href = uri;

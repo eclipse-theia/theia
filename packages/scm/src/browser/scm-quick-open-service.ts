@@ -24,10 +24,10 @@ import { QuickInputService } from '@theia/core/lib/browser';
 @injectable()
 export class ScmQuickOpenService {
 
-    @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(QuickInputService) @optional() protected readonly quickInputService?: QuickInputService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
+    @inject(ScmService) protected readonly scmService!: ScmService;
 
     async changeRepository(): Promise<void> {
         const repositories = this.scmService.repositories;

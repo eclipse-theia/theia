@@ -131,7 +131,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         this.ensureNotDisposed();
         this.diagnostics.forEach((diagnostics, uriString) => {
             const uri = URI.parse(uriString);
-            callback.apply(thisArg, [uri, this.getDiagnosticsByUri(uri), this]);
+            callback.apply(thisArg, [uri, this.getDiagnosticsByUri(uri)!, this]);
         });
     }
 

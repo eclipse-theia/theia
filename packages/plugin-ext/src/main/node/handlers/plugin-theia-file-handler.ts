@@ -28,7 +28,7 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
     private readonly systemPluginsDirUri = FileUri.create(getTempDir('theia-unpacked'));
 
     @inject(PluginTheiaEnvironment)
-    protected readonly environment: PluginTheiaEnvironment;
+    protected readonly environment!: PluginTheiaEnvironment;
 
     accept(resolvedPlugin: PluginDeployerEntry): boolean {
         return resolvedPlugin.isFile() && resolvedPlugin.path() !== null && resolvedPlugin.path().endsWith('.theia');

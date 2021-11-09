@@ -29,7 +29,7 @@ export interface DownloadStorageItem {
 export class FileDownloadCache {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
     protected readonly downloads = new Map<string, DownloadStorageItem>();
     protected readonly expireTimeInMinutes: number = 1;
 

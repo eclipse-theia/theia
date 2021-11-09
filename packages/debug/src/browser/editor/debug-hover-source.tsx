@@ -24,7 +24,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 export class DebugHoverSource extends TreeSource {
 
     @inject(DebugSessionManager)
-    protected readonly sessions: DebugSessionManager;
+    protected readonly sessions!: DebugSessionManager;
 
     protected _expression: ExpressionItem | DebugVariable | undefined;
     get expression(): ExpressionItem | DebugVariable | undefined {

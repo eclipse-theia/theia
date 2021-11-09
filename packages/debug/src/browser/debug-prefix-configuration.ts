@@ -33,31 +33,31 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     static readonly PREFIX = 'debug ';
 
     @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    protected readonly commandRegistry!: CommandRegistry;
 
     @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
+    protected readonly debugSessionManager!: DebugSessionManager;
 
     @inject(DebugPreferences)
-    protected readonly preference: DebugPreferences;
+    protected readonly preference!: DebugPreferences;
 
     @inject(DebugConfigurationManager)
-    protected readonly debugConfigurationManager: DebugConfigurationManager;
+    protected readonly debugConfigurationManager!: DebugConfigurationManager;
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(QuickAccessRegistry)
-    protected readonly quickAccessRegistry: QuickAccessRegistry;
+    protected readonly quickAccessRegistry!: QuickAccessRegistry;
 
     @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    protected readonly workspaceService!: WorkspaceService;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     readonly statusBarId = 'select-run-debug-statusbar-item';
 

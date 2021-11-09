@@ -94,7 +94,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     constructor(connection: MessageConnection, transformations?: {
         replacer?: (key: string | undefined, value: any) => any,
-        reviver?: (key: string | undefined, value: any) =>  any
+        reviver?: (key: string | undefined, value: any) => any
     }) {
         this.toDispose.push(
             this.multiplexer = new RPCMultiplexer(connection)
@@ -482,29 +482,29 @@ export const enum MessageType {
     Terminated = 6
 }
 
-class CancelMessage {
-    type: MessageType.Cancel;
-    id: string;
+abstract class CancelMessage {
+    abstract type: MessageType.Cancel;
+    abstract id: string;
 }
 
-class RequestMessage {
-    type: MessageType.Request;
-    id: string;
-    proxyId: string;
-    method: string;
-    args: any[];
+abstract class RequestMessage {
+    abstract type: MessageType.Request;
+    abstract id: string;
+    abstract proxyId: string;
+    abstract method: string;
+    abstract args: any[];
 }
 
-class ReplyMessage {
-    type: MessageType.Reply;
-    id: string;
-    res: any;
+abstract class ReplyMessage {
+    abstract type: MessageType.Reply;
+    abstract id: string;
+    abstract res: any;
 }
 
-class ReplyErrMessage {
-    type: MessageType.ReplyErr;
-    id: string;
-    err: SerializedError;
+abstract class ReplyErrMessage {
+    abstract type: MessageType.ReplyErr;
+    abstract id: string;
+    abstract err: SerializedError;
 }
 
 type RPCMessage = RequestMessage | ReplyMessage | ReplyErrMessage | CancelMessage;

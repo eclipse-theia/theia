@@ -35,13 +35,13 @@ const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
 export class PluginPathsServiceImpl implements PluginPathsService {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    protected readonly envServer!: EnvVariablesServer;
 
     @inject(PluginCliContribution)
-    protected readonly cliContribution: PluginCliContribution;
+    protected readonly cliContribution!: PluginCliContribution;
 
     async getHostLogPath(): Promise<string> {
         const parentLogsDir = await this.getLogsDirPath();

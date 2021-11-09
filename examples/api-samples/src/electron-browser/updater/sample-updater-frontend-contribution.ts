@@ -84,7 +84,7 @@ export class SampleUpdaterClientImpl implements SampleUpdaterClient {
 export class ElectronMenuUpdater {
 
     @inject(ElectronMainMenuFactory)
-    protected readonly factory: ElectronMainMenuFactory;
+    protected readonly factory!: ElectronMainMenuFactory;
 
     public update(): void {
         this.setMenu();
@@ -104,16 +104,16 @@ export class ElectronMenuUpdater {
 export class SampleUpdaterFrontendContribution implements CommandContribution, MenuContribution {
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(ElectronMenuUpdater)
-    protected readonly menuUpdater: ElectronMenuUpdater;
+    protected readonly menuUpdater!: ElectronMenuUpdater;
 
     @inject(SampleUpdater)
-    protected readonly updater: SampleUpdater;
+    protected readonly updater!: SampleUpdater;
 
     @inject(SampleUpdaterClientImpl)
-    protected readonly updaterClient: SampleUpdaterClientImpl;
+    protected readonly updaterClient!: SampleUpdaterClientImpl;
 
     protected readyToUpdate = false;
 

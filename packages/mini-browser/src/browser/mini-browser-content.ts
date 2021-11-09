@@ -163,22 +163,22 @@ export type MiniBrowserContentFactory = (props: MiniBrowserProps) => MiniBrowser
 export class MiniBrowserContent extends BaseWidget {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
 
     @inject(LocationMapperService)
-    protected readonly locationMapper: LocationMapperService;
+    protected readonly locationMapper!: LocationMapperService;
 
     @inject(KeybindingRegistry)
-    protected readonly keybindings: KeybindingRegistry;
+    protected readonly keybindings!: KeybindingRegistry;
 
     @inject(ApplicationShellMouseTracker)
-    protected readonly mouseTracker: ApplicationShellMouseTracker;
+    protected readonly mouseTracker!: ApplicationShellMouseTracker;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
@@ -196,7 +196,7 @@ export class MiniBrowserContent extends BaseWidget {
     // XXX It is a hack. Instead of loading the PDF in an iframe we use `PDFObject` to render it in a div.
     protected readonly pdfContainer: HTMLElement;
 
-    protected frameLoadTimeout: number;
+    protected frameLoadTimeout?: number;
     protected readonly initialHistoryLength: number;
     protected readonly toDisposeOnGo = new DisposableCollection();
 

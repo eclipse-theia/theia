@@ -26,10 +26,10 @@ import { PropertyViewWidgetProvider } from './property-view-widget-provider';
 export class PropertyViewService {
 
     @inject(ContributionProvider) @named(PropertyViewWidgetProvider)
-    private readonly contributions: ContributionProvider<PropertyViewWidgetProvider>;
+    private readonly contributions!: ContributionProvider<PropertyViewWidgetProvider>;
 
     @inject(EmptyPropertyViewWidgetProvider)
-    private readonly emptyWidgetProvider: EmptyPropertyViewWidgetProvider;
+    private readonly emptyWidgetProvider!: EmptyPropertyViewWidgetProvider;
 
     private providers: PropertyViewWidgetProvider[] = [];
 

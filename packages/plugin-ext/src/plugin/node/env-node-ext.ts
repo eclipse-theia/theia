@@ -26,7 +26,7 @@ import { v4 } from 'uuid';
  */
 export class EnvNodeExtImpl extends EnvExtImpl {
 
-    private macMachineId: string;
+    private macMachineId?: string;
 
     constructor(rpc: RPCProtocol) {
         super(rpc);
@@ -44,6 +44,9 @@ export class EnvNodeExtImpl extends EnvExtImpl {
      * override machineID
      */
     get machineId(): string {
+        if (!this.macMachineId) {
+            throw new Error('EnvNodeExtImpl.macMachineId is not set');
+        }
         return this.macMachineId;
     }
 

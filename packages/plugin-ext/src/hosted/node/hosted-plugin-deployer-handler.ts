@@ -27,13 +27,13 @@ import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-a
 export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(HostedPluginReader)
-    private readonly reader: HostedPluginReader;
+    private readonly reader!: HostedPluginReader;
 
     @inject(HostedPluginLocalizationService)
-    private readonly localizationService: HostedPluginLocalizationService;
+    private readonly localizationService!: HostedPluginLocalizationService;
 
     private readonly deployedLocations = new Map<string, Set<string>>();
 

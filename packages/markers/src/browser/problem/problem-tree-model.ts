@@ -87,7 +87,7 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
 @injectable()
 export class ProblemTreeModel extends MarkerTreeModel {
 
-    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
+    @inject(ProblemManager) protected readonly problemManager!: ProblemManager;
 
     protected getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
         if (ProblemMarker.is(node.marker)) {

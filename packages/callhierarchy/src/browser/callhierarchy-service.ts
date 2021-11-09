@@ -37,7 +37,7 @@ export interface CallHierarchyService {
 export class CallHierarchyServiceProvider {
 
     @inject(ContributionProvider) @named(CallHierarchyService)
-    protected readonly contributions: ContributionProvider<CallHierarchyService>;
+    protected readonly contributions!: ContributionProvider<CallHierarchyService>;
 
     private services: CallHierarchyService[] = [];
 

@@ -31,13 +31,13 @@ import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
 @injectable()
 export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget {
 
-    protected panel: Panel;
+    protected panel!: Panel;
 
-    @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(GitCommitDetailHeaderWidget) protected readonly commitDetailHeaderWidget: GitCommitDetailHeaderWidget;
-    @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
-    @inject(GitDiffTreeModel) protected readonly model: GitDiffTreeModel;
-    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+    @inject(ScmService) protected readonly scmService!: ScmService;
+    @inject(GitCommitDetailHeaderWidget) protected readonly commitDetailHeaderWidget!: GitCommitDetailHeaderWidget;
+    @inject(ScmTreeWidget) protected readonly resourceWidget!: ScmTreeWidget;
+    @inject(GitDiffTreeModel) protected readonly model!: GitDiffTreeModel;
+    @inject(ScmPreferences) protected readonly scmPreferences!: ScmPreferences;
 
     set viewMode(mode: 'tree' | 'list') {
         this.resourceWidget.viewMode = mode;

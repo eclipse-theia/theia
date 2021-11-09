@@ -2287,7 +2287,7 @@ export module '@theia/plugin' {
          * @return A human readable string which is presented as diagnostic message.
          * Return `undefined`, or the empty string when 'value' is valid.
          */
-        validateInput?: (input: string) => Promise<string | null | undefined> | undefined;
+        validateInput?: (input: string) => Promise<string | null | undefined>;
 
         /**
          * An optional function that will be called on Enter key.

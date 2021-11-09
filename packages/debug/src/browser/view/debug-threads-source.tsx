@@ -22,7 +22,7 @@ import { DebugViewModel } from './debug-view-model';
 export class DebugThreadsSource extends TreeSource {
 
     @inject(DebugViewModel)
-    protected readonly model: DebugViewModel;
+    protected readonly model!: DebugViewModel;
 
     @postConstruct()
     protected init(): void {

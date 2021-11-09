@@ -313,7 +313,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 export abstract class EditorAccess {
 
     @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
+    protected readonly editorManager!: EditorManager;
 
     /**
      * The URI of the underlying document from the editor.

@@ -24,7 +24,7 @@ import { NewWindowOptions } from '../common/window';
 export class ElectronMainWindowServiceImpl implements ElectronMainWindowService {
 
     @inject(ElectronMainApplication)
-    protected readonly app: ElectronMainApplication;
+    protected readonly app!: ElectronMainApplication;
 
     openNewWindow(url: string, { external }: NewWindowOptions): undefined {
         if (external) {

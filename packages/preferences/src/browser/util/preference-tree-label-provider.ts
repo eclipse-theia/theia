@@ -20,7 +20,7 @@ import { Preference } from './preference-types';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
 @injectable()
 export class PreferenceTreeLabelProvider implements LabelProviderContribution {
-    @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
+    @inject(PreferenceTreeGenerator) protected readonly treeGenerator!: PreferenceTreeGenerator;
 
     canHandle(element: object): number {
         return TreeNode.is(element) && Preference.TreeNode.is(element) ? 150 : 0;

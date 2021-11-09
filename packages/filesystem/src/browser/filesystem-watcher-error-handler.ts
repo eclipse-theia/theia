@@ -22,8 +22,8 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 @injectable()
 export class FileSystemWatcherErrorHandler {
 
-    @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(WindowService) protected readonly windowService: WindowService;
+    @inject(MessageService) protected readonly messageService!: MessageService;
+    @inject(WindowService) protected readonly windowService!: WindowService;
 
     protected watchHandlesExhausted: boolean = false;
 

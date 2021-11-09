@@ -55,31 +55,31 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         return DebugSessionWidget.createContainer(parent, options).get(DebugSessionWidget);
     }
 
-    protected viewContainer: ViewContainer;
+    protected viewContainer!: ViewContainer;
 
     @inject(ViewContainer.Factory)
-    protected readonly viewContainerFactory: ViewContainer.Factory;
+    protected readonly viewContainerFactory!: ViewContainer.Factory;
 
     @inject(DebugViewModel)
-    readonly model: DebugViewModel;
+    readonly model!: DebugViewModel;
 
     @inject(DebugToolBar)
-    protected readonly toolbar: DebugToolBar;
+    protected readonly toolbar!: DebugToolBar;
 
     @inject(DebugThreadsWidget)
-    protected readonly threads: DebugThreadsWidget;
+    protected readonly threads!: DebugThreadsWidget;
 
     @inject(DebugStackFramesWidget)
-    protected readonly stackFrames: DebugStackFramesWidget;
+    protected readonly stackFrames!: DebugStackFramesWidget;
 
     @inject(DebugVariablesWidget)
-    protected readonly variables: DebugVariablesWidget;
+    protected readonly variables!: DebugVariablesWidget;
 
     @inject(DebugWatchWidget)
-    protected readonly watch: DebugWatchWidget;
+    protected readonly watch!: DebugWatchWidget;
 
     @inject(DebugBreakpointsWidget)
-    protected readonly breakpoints: DebugBreakpointsWidget;
+    protected readonly breakpoints!: DebugBreakpointsWidget;
 
     @postConstruct()
     protected init(): void {

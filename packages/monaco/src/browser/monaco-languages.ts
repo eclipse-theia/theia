@@ -38,8 +38,8 @@ export class MonacoLanguages implements LanguageService {
 
     protected readonly makers = new Map<string, MonacoDiagnosticCollection>();
 
-    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
-    @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter;
+    @inject(ProblemManager) protected readonly problemManager!: ProblemManager;
+    @inject(ProtocolToMonacoConverter) protected readonly p2m!: ProtocolToMonacoConverter;
 
     @postConstruct()
     protected init(): void {

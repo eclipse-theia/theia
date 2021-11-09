@@ -36,13 +36,13 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     static readonly LABEL = nls.localizeByDefault('Output');
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     @inject(MonacoEditorProvider)
-    protected readonly editorProvider: MonacoEditorProvider;
+    protected readonly editorProvider!: MonacoEditorProvider;
 
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected readonly outputChannelManager!: OutputChannelManager;
 
     protected _state: OutputWidget.State = { locked: false };
     protected readonly editorContainer: DockPanel;

@@ -41,10 +41,10 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
      */
     static readonly LABEL = nls.localizeByDefault('Preferences');
 
-    @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
-    @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;
-    @inject(PreferencesSearchbarWidget) protected readonly searchbarWidget: PreferencesSearchbarWidget;
-    @inject(PreferencesScopeTabBar) protected readonly tabBarWidget: PreferencesScopeTabBar;
+    @inject(PreferencesEditorWidget) protected readonly editorWidget!: PreferencesEditorWidget;
+    @inject(PreferencesTreeWidget) protected readonly treeWidget!: PreferencesTreeWidget;
+    @inject(PreferencesSearchbarWidget) protected readonly searchbarWidget!: PreferencesSearchbarWidget;
+    @inject(PreferencesScopeTabBar) protected readonly tabBarWidget!: PreferencesScopeTabBar;
 
     get currentScope(): Preference.SelectedScopeDetails {
         return this.tabBarWidget.currentScope;

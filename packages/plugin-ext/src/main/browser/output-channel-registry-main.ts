@@ -23,7 +23,7 @@ import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-r
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
 
     @inject(CommandService)
-    protected readonly commandService: CommandService;
+    protected readonly commandService!: CommandService;
 
     $append(name: string, text: string, pluginInfo: PluginInfo): PromiseLike<void> {
         this.commandService.executeCommand(OutputCommands.APPEND.id, { name, text });

@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 export class PluginTheiaEnvironment {
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     protected _pluginsDirUri: URI | undefined;
     async getPluginsDirUri(): Promise<URI> {

@@ -30,10 +30,10 @@ export interface LocalizationContribution {
 export class LocalizationRegistry {
 
     @inject(LocalizationProvider)
-    protected readonly localizationProvider: LocalizationProvider;
+    protected readonly localizationProvider!: LocalizationProvider;
 
     @inject(ContributionProvider) @named(LocalizationContribution)
-    protected readonly contributions: ContributionProvider<LocalizationContribution>;
+    protected readonly contributions!: ContributionProvider<LocalizationContribution>;
 
     async initialize(): Promise<void> {
         await Promise.all(this.contributions.getContributions().map(

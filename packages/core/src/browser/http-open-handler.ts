@@ -30,10 +30,10 @@ export class HttpOpenHandler implements OpenHandler {
     readonly id = 'http';
 
     @inject(WindowService)
-    protected readonly windowService: WindowService;
+    protected readonly windowService!: WindowService;
 
     @inject(ExternalUriService)
-    protected readonly externalUriService: ExternalUriService;
+    protected readonly externalUriService!: ExternalUriService;
 
     canHandle(uri: URI, options?: HttpOpenHandlerOptions): number {
         return ((options && options.openExternal) || uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;

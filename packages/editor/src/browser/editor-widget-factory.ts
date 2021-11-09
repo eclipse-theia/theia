@@ -35,13 +35,13 @@ export class EditorWidgetFactory implements WidgetFactory {
     readonly id = EditorWidgetFactory.ID;
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(TextEditorProvider)
-    protected readonly editorProvider: TextEditorProvider;
+    protected readonly editorProvider!: TextEditorProvider;
 
     @inject(SelectionService)
-    protected readonly selectionService: SelectionService;
+    protected readonly selectionService!: SelectionService;
 
     createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
         const uri = new URI(options.uri);

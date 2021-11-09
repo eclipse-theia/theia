@@ -27,8 +27,8 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
 
     private _languageId: string | undefined;
 
-    @inject(CallHierarchyTree) protected readonly tree: CallHierarchyTree;
-    @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
+    @inject(CallHierarchyTree) protected readonly tree!: CallHierarchyTree;
+    @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider!: CallHierarchyServiceProvider;
 
     getTree(): CallHierarchyTree {
         return this.tree;

@@ -40,35 +40,35 @@ export class HostedPluginController implements FrontendApplicationContribution {
     public static readonly HOSTED_PLUGIN_FAILED = 'hosted-plugin-failed';
 
     @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
+    protected readonly statusBar!: StatusBar;
 
     @inject(FrontendApplicationStateService)
-    protected readonly frontendApplicationStateService: FrontendApplicationStateService;
+    protected readonly frontendApplicationStateService!: FrontendApplicationStateService;
 
     @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    protected readonly hostedPluginServer!: HostedPluginServer;
 
     @inject(HostedPluginManagerClient)
-    protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
+    protected readonly hostedPluginManagerClient!: HostedPluginManagerClient;
 
     @inject(ConnectionStatusService)
-    protected readonly connectionStatusService: ConnectionStatusService;
+    protected readonly connectionStatusService!: ConnectionStatusService;
 
     @inject(HostedPluginLogViewer)
-    protected readonly hostedPluginLogViewer: HostedPluginLogViewer;
+    protected readonly hostedPluginLogViewer!: HostedPluginLogViewer;
 
     @inject(HostedPluginPreferences)
-    protected readonly hostedPluginPreferences: HostedPluginPreferences;
+    protected readonly hostedPluginPreferences!: HostedPluginPreferences;
 
     @inject(PreferenceServiceImpl)
-    protected readonly preferenceService: PreferenceServiceImpl;
+    protected readonly preferenceService!: PreferenceServiceImpl;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     private pluginState: HostedInstanceState = HostedInstanceState.STOPPED;
     // used only for displaying Running instead of Watching in status bar if run of watcher fails
-    private watcherSuccess: boolean;
+    private watcherSuccess: boolean = false;
     private entry: StatusBarEntry | undefined;
 
     public initialize(): void {

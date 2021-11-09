@@ -96,7 +96,7 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
 export class URLMatcher extends AbstractCmdClickTerminalContribution {
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     async getRegExp(): Promise<RegExp> {
         return /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
@@ -112,7 +112,7 @@ export class URLMatcher extends AbstractCmdClickTerminalContribution {
 export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     async getRegExp(): Promise<RegExp> {
         return /(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]{1,5})?([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;

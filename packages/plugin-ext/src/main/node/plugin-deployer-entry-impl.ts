@@ -19,9 +19,9 @@ import * as fs from 'fs';
 
 export class PluginDeployerEntryImpl implements PluginDeployerEntry {
 
-    private initPath: string;
+    private initPath?: string;
 
-    private currentPath: string;
+    private currentPath?: string;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private map: Map<string, any>;
@@ -31,7 +31,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
 
     private changes: string[];
 
-    private resolvedByName: string;
+    private resolvedByName?: string;
 
     private _type = PluginType.System;
     private _rootPath: string | undefined;
@@ -53,9 +53,15 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
         return this.pluginId;
     }
     originalPath(): string {
+        if (this.initPath === undefined) {
+            throw new Error('PluginDeployerEntryImpl.initPath is not set');
+        }
         return this.initPath;
     }
     path(): string {
+        if (this.currentPath === undefined) {
+            throw new Error('PluginDeployerEntryImpl.currentPath is not set');
+        }
         return this.currentPath;
     }
     getValue<T>(key: string): T {
@@ -75,6 +81,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
     }
     isFile(): boolean {
         try {
+            // @ts-expect-error TS2322
             return fs.statSync(this.currentPath).isFile();
         } catch (e) {
             return false;
@@ -82,6 +89,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
     }
     isDirectory(): boolean {
         try {
+            // @ts-expect-error TS2322
             return fs.statSync(this.currentPath).isDirectory();
         } catch (e) {
             return false;
@@ -108,6 +116,9 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
     }
 
     resolvedBy(): string {
+        if (this.resolvedByName === undefined) {
+            throw new Error('PluginDeployerEntryImpl.resolvedByName is not set');
+        }
         return this.resolvedByName;
     }
 

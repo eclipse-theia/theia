@@ -36,10 +36,10 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     readonly contentClass: string = 'markdown-preview';
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     @inject(PreviewLinkNormalizer)
-    protected readonly linkNormalizer: PreviewLinkNormalizer;
+    protected readonly linkNormalizer!: PreviewLinkNormalizer;
 
     canHandle(uri: URI): number {
         return uri.scheme === 'file'

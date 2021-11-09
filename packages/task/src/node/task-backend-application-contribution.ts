@@ -23,10 +23,10 @@ import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 export class TaskBackendApplicationContribution implements BackendApplicationContribution {
 
     @inject(ContributionProvider) @named(TaskRunnerContribution)
-    protected readonly contributionProvider: ContributionProvider<TaskRunnerContribution>;
+    protected readonly contributionProvider!: ContributionProvider<TaskRunnerContribution>;
 
     @inject(TaskRunnerRegistry)
-    protected readonly taskRunnerRegistry: TaskRunnerRegistry;
+    protected readonly taskRunnerRegistry!: TaskRunnerRegistry;
 
     onStart(): void {
         this.contributionProvider.getContributions().forEach(contrib =>

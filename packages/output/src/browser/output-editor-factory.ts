@@ -27,10 +27,10 @@ import { OutputContextMenuService } from './output-context-menu';
 export class OutputEditorFactory implements MonacoEditorFactory {
 
     @inject(MonacoEditorServices)
-    protected readonly services: MonacoEditorServices;
+    protected readonly services!: MonacoEditorServices;
 
     @inject(OutputContextMenuService)
-    protected readonly contextMenuService: MonacoContextMenuService;
+    protected readonly contextMenuService!: MonacoContextMenuService;
 
     readonly scheme: string = OutputUri.SCHEME;
 

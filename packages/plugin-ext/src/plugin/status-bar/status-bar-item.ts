@@ -25,12 +25,12 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     private _alignment: StatusBarAlignment;
     private _priority: number;
 
-    private _text: string;
-    private _tooltip: string;
-    private _color: string | ThemeColor;
-    private _command: string | theia.Command;
+    private _text!: string;
+    private _tooltip!: string;
+    private _color!: string | ThemeColor;
+    private _command!: string | theia.Command;
 
-    private _isVisible: boolean;
+    private _isVisible: boolean = false;
     private _timeoutHandle: NodeJS.Timer | undefined;
 
     _proxy: StatusBarMessageRegistryMain;

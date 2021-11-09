@@ -25,10 +25,10 @@ export class ConsoleLoggerServer implements ILoggerServer {
     protected client: ILoggerClient | undefined = undefined;
 
     @inject(LoggerWatcher)
-    protected watcher: LoggerWatcher;
+    protected watcher!: LoggerWatcher;
 
     @inject(LogLevelCliContribution)
-    protected cli: LogLevelCliContribution;
+    protected cli!: LogLevelCliContribution;
 
     @postConstruct()
     protected init(): void {

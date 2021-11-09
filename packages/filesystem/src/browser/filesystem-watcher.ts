@@ -192,7 +192,7 @@ export class FileSystemWatcher implements Disposable {
     readonly onDidMove = this.fileMoveEmitter.onDid;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @postConstruct()
     protected init(): void {

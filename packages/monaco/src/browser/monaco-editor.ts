@@ -53,13 +53,13 @@ import IBoxSizing = ElementExt.IBoxSizing;
 export class MonacoEditorServices {
 
     @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
+    protected readonly m2p!: MonacoToProtocolConverter;
 
     @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
+    protected readonly p2m!: ProtocolToMonacoConverter;
 
     @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    protected readonly contextKeyService!: ContextKeyService;
 
     constructor(@unmanaged() services: MonacoEditorServices) {
         Object.assign(this, services);
@@ -73,7 +73,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected readonly autoSizing: boolean;
     protected readonly minHeight: number;
     protected readonly maxHeight: number;
-    protected editor: IStandaloneCodeEditor;
+    // Assigned in `create`.
+    protected editor!: IStandaloneCodeEditor;
 
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
@@ -95,7 +96,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
         services: MonacoEditorServices,
-        options?: MonacoEditor.IOptions,
+        options: MonacoEditor.IOptions = {},
         override?: IEditorOverrideServices
     ) {
         super(services);

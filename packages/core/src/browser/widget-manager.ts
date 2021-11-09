@@ -111,16 +111,16 @@ export interface DidCreateWidgetEvent {
 @injectable()
 export class WidgetManager {
 
-    protected _cachedFactories: Map<string, WidgetFactory>;
+    protected _cachedFactories?: Map<string, WidgetFactory>;
     protected readonly widgets = new Map<string, Widget>();
     protected readonly widgetPromises = new Map<string, MaybePromise<Widget>>();
     protected readonly pendingWidgetPromises = new Map<string, MaybePromise<Widget>>();
 
     @inject(ContributionProvider) @named(WidgetFactory)
-    protected readonly factoryProvider: ContributionProvider<WidgetFactory>;
+    protected readonly factoryProvider!: ContributionProvider<WidgetFactory>;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     protected readonly onWillCreateWidgetEmitter = new Emitter<WillCreateWidgetEvent>();
     /**

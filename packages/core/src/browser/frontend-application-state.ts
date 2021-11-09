@@ -31,7 +31,7 @@ export type FrontendApplicationState =
 export class FrontendApplicationStateService {
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     private _state: FrontendApplicationState = 'init';
 

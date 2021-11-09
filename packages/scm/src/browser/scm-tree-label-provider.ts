@@ -23,7 +23,7 @@ import { ScmFileChangeFolderNode, ScmFileChangeNode, ScmFileChangeGroupNode } fr
 @injectable()
 export class ScmTreeLabelProvider implements LabelProviderContribution {
 
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
 
     canHandle(element: object): number {
         return TreeNode.is(element) && (ScmFileChangeGroupNode.is(element) || ScmFileChangeFolderNode.is(element) || ScmFileChangeNode.is(element)) ? 60 : 0;

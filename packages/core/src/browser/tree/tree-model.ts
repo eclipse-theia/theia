@@ -139,12 +139,12 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
 @injectable()
 export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray<Readonly<SelectableTreeNode>>> {
 
-    @inject(ILogger) protected readonly logger: ILogger;
-    @inject(Tree) protected readonly tree: Tree;
-    @inject(TreeSelectionService) protected readonly selectionService: TreeSelectionService;
-    @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
-    @inject(TreeNavigationService) protected readonly navigationService: TreeNavigationService;
-    @inject(TreeSearch) protected readonly treeSearch: TreeSearch;
+    @inject(ILogger) protected readonly logger!: ILogger;
+    @inject(Tree) protected readonly tree!: Tree;
+    @inject(TreeSelectionService) protected readonly selectionService!: TreeSelectionService;
+    @inject(TreeExpansionService) protected readonly expansionService!: TreeExpansionService;
+    @inject(TreeNavigationService) protected readonly navigationService!: TreeNavigationService;
+    @inject(TreeSearch) protected readonly treeSearch!: TreeSearch;
 
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly onOpenNodeEmitter = new Emitter<TreeNode>();

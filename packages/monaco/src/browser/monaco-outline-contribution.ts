@@ -37,8 +37,8 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     protected roots: MonacoOutlineSymbolInformationNode[] | undefined;
     protected canUpdateOutline: boolean = true;
 
-    @inject(OutlineViewService) protected readonly outlineViewService: OutlineViewService;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(OutlineViewService) protected readonly outlineViewService!: OutlineViewService;
+    @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
     onStart(app: FrontendApplication): void {
 

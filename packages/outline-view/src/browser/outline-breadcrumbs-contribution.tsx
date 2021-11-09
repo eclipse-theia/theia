@@ -29,7 +29,7 @@ export interface BreadcrumbPopupOutlineViewFactory {
     (): BreadcrumbPopupOutlineView;
 }
 export class BreadcrumbPopupOutlineView extends OutlineViewWidget {
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(OpenerService) protected readonly openerService!: OpenerService;
 
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (UriSelection.is(node) && OutlineSymbolInformationNode.hasRange(node)) {
@@ -49,18 +49,18 @@ export class BreadcrumbPopupOutlineView extends OutlineViewWidget {
 @injectable()
 export class OutlineBreadcrumbsContribution implements BreadcrumbsContribution {
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(OutlineViewService)
-    protected readonly outlineViewService: OutlineViewService;
+    protected readonly outlineViewService!: OutlineViewService;
 
     @inject(BreadcrumbsService)
-    protected readonly breadcrumbsService: BreadcrumbsService;
+    protected readonly breadcrumbsService!: BreadcrumbsService;
 
     @inject(BreadcrumbPopupOutlineViewFactory)
-    protected readonly outlineFactory: BreadcrumbPopupOutlineViewFactory;
+    protected readonly outlineFactory!: BreadcrumbPopupOutlineViewFactory;
 
-    protected outlineView: BreadcrumbPopupOutlineView;
+    protected outlineView!: BreadcrumbPopupOutlineView;
 
     readonly type = OutlineBreadcrumbType;
     readonly priority: number = 200;

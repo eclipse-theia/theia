@@ -51,7 +51,7 @@ const DELAY_PREFERENCE = 'workbench.hover.delay';
 export class TooltipServiceImpl extends ReactRenderer implements TooltipService {
 
     @inject(CorePreferences)
-    protected readonly corePreferences: CorePreferences;
+    protected readonly corePreferences!: CorePreferences;
 
     public readonly tooltipId: string;
     protected rendered = false;

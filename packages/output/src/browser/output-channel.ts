@@ -30,10 +30,10 @@ import { OutputPreferences } from './output-preferences';
 export class OutputChannelManager implements Disposable, ResourceResolver {
 
     @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
+    protected readonly textModelService!: MonacoTextModelService;
 
     @inject(OutputPreferences)
-    protected readonly preferences: OutputPreferences;
+    protected readonly preferences!: OutputPreferences;
 
     protected readonly channels = new Map<string, OutputChannel>();
     protected readonly resources = new Map<string, OutputResource>();

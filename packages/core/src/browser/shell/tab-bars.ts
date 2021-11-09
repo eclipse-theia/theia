@@ -583,11 +583,11 @@ export class ScrollableTabBar extends TabBar<Widget> {
  */
 export class ToolbarAwareTabBar extends ScrollableTabBar {
 
-    protected contentContainer: HTMLElement;
+    protected contentContainer?: HTMLElement;
     protected toolbar: TabBarToolbar | undefined;
-    protected breadcrumbsContainer: HTMLElement;
+    protected breadcrumbsContainer?: HTMLElement;
     protected readonly breadcrumbsRenderer: BreadcrumbsRenderer;
-    protected topRow: HTMLElement;
+    protected topRow?: HTMLElement;
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
@@ -641,7 +641,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
             if (this.toolbar.isAttached) {
                 Widget.detach(this.toolbar);
             }
-            Widget.attach(this.toolbar, this.topRow);
+            Widget.attach(this.toolbar, this.topRow!);
             if (this.breadcrumbsContainer) {
                 this.node.appendChild(this.breadcrumbsContainer);
             }

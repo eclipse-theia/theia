@@ -19,12 +19,12 @@ import URI from '@theia/core/lib/common/uri';
 import { SingleTextInputDialog, SingleTextInputDialogProps, LabelProvider, codiconArray } from '@theia/core/lib/browser';
 
 @injectable()
-export class WorkspaceInputDialogProps extends SingleTextInputDialogProps {
+export abstract class WorkspaceInputDialogProps extends SingleTextInputDialogProps {
     /**
      * The parent `URI` for the selection present in the explorer.
      * Used to display the path in which the file/folder is created at.
      */
-    parentUri: URI;
+    abstract parentUri: URI;
 }
 
 export class WorkspaceInputDialog extends SingleTextInputDialog {

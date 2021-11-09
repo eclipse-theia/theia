@@ -209,8 +209,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
                     this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
                 });
-                quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
-                    this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+                quickPick.onDidTriggerButton(button => {
+                    this.proxy.$acceptOnDidTriggerButton(sessionId, button as QuickInputButtonHandle);
                 });
                 quickPick.onDidChangeValue((value: string) => {
                     this.proxy.$acceptDidChangeValue(sessionId, value);
@@ -227,8 +227,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 inputBox.onDidAccept(() => {
                     this.proxy.$acceptOnDidAccept(sessionId);
                 });
-                inputBox.onDidTriggerButton((button: QuickInputButtonHandle) => {
-                    this.proxy.$acceptOnDidTriggerButton(sessionId, button);
+                inputBox.onDidTriggerButton(button => {
+                    this.proxy.$acceptOnDidTriggerButton(sessionId, button as QuickInputButtonHandle);
                 });
                 inputBox.onDidChangeValue((value: string) => {
                     this.proxy.$acceptDidChangeValue(sessionId, value);

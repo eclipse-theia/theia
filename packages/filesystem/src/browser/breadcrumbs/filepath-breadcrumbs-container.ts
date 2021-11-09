@@ -37,7 +37,7 @@ export function createFileTreeBreadcrumbsWidget(parent: interfaces.Container): B
 export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
 
     @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    protected readonly openerService!: OpenerService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

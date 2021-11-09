@@ -33,10 +33,10 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     protected readonly emitter = new Emitter<void>();
 
     @inject(ProblemPreferences)
-    protected readonly preferences: ProblemPreferences;
+    protected readonly preferences!: ProblemPreferences;
 
     @inject(ProblemManager)
-    protected readonly problemManager: ProblemManager;
+    protected readonly problemManager!: ProblemManager;
 
     @postConstruct()
     protected init(): void {

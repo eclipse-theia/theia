@@ -25,10 +25,10 @@ import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 export class PluginTreeViewNodeLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    protected readonly labelProvider!: LabelProvider;
 
     @inject(TreeLabelProvider)
-    protected readonly treeLabelProvider: TreeLabelProvider;
+    protected readonly treeLabelProvider!: TreeLabelProvider;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     canHandle(element: TreeViewNode | any): number {

@@ -28,7 +28,7 @@ export class ProblemWidgetTabBarDecorator implements TabBarDecorator {
     protected readonly emitter = new Emitter<void>();
 
     @inject(ProblemManager)
-    protected readonly problemManager: ProblemManager;
+    protected readonly problemManager!: ProblemManager;
 
     @postConstruct()
     protected init(): void {

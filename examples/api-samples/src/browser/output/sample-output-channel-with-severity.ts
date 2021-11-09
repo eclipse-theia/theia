@@ -21,7 +21,7 @@ import { OutputChannelManager, OutputChannelSeverity } from '@theia/output/lib/b
 export class SampleOutputChannelWithSeverity
     implements FrontendApplicationContribution {
     @inject(OutputChannelManager)
-    protected readonly outputChannelManager: OutputChannelManager;
+    protected readonly outputChannelManager!: OutputChannelManager;
     public onStart(): void {
         const channel = this.outputChannelManager.getChannel('API Sample: my test channel');
         channel.appendLine('hello info1'); // showed without color

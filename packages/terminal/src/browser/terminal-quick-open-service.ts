@@ -33,16 +33,16 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
     static readonly PREFIX = 'term ';
 
     @inject(QuickInputService) @optional()
-    protected readonly quickInputService: QuickInputService;
+    protected readonly quickInputService?: QuickInputService;
 
     @inject(QuickAccessRegistry)
-    protected readonly quickAccessRegistry: QuickAccessRegistry;
+    protected readonly quickAccessRegistry!: QuickAccessRegistry;
 
     @inject(CommandService)
-    protected readonly commandService: CommandService;
+    protected readonly commandService!: CommandService;
 
     @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    protected readonly terminalService!: TerminalService;
 
     open(): void {
         this.quickInputService?.open(TerminalQuickOpenService.PREFIX);
@@ -118,7 +118,7 @@ export class TerminalQuickOpenService implements QuickAccessProvider {
 export class TerminalQuickOpenContribution implements CommandContribution, QuickAccessContribution {
 
     @inject(TerminalQuickOpenService)
-    protected readonly terminalQuickOpenService: TerminalQuickOpenService;
+    protected readonly terminalQuickOpenService!: TerminalQuickOpenService;
 
     registerQuickAccessProvider(): void {
         this.terminalQuickOpenService.registerQuickAccessProvider();

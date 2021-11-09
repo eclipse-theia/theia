@@ -39,13 +39,13 @@ export class WebviewThemeDataProvider {
     readonly onDidChangeThemeData = this.onDidChangeThemeDataEmitter.event;
 
     @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
+    protected readonly editorPreferences!: EditorPreferences;
 
     @inject(ColorRegistry)
-    protected readonly colors: ColorRegistry;
+    protected readonly colors!: ColorRegistry;
 
     @inject(ColorApplicationContribution)
-    protected readonly colorContribution: ColorApplicationContribution;
+    protected readonly colorContribution!: ColorApplicationContribution;
 
     protected themeData: WebviewThemeData | undefined;
 

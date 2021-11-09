@@ -23,7 +23,7 @@ import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 export class VSXExtensionsSearchBar extends ReactWidget {
 
     @inject(VSXExtensionsSearchModel)
-    protected readonly model: VSXExtensionsSearchModel;
+    protected readonly model!: VSXExtensionsSearchModel;
 
     @postConstruct()
     protected init(): void {

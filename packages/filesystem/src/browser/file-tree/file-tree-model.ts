@@ -29,16 +29,16 @@ import { FileSystemUtils } from '../../common';
 @injectable()
 export class FileTreeModel extends TreeModelImpl implements LocationService {
 
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(LabelProvider) protected readonly labelProvider!: LabelProvider;
 
     @inject(FileService)
-    protected readonly fileService: FileService;
+    protected readonly fileService!: FileService;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
+    protected readonly environments!: EnvVariablesServer;
 
     @postConstruct()
     protected init(): void {

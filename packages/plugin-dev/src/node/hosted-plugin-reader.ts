@@ -26,12 +26,12 @@ import { HostedPluginDeployerHandler } from '@theia/plugin-ext/lib/hosted/node/h
 export class HostedPluginReader implements BackendApplicationContribution {
 
     @inject(PluginReaderHosted)
-    protected pluginReader: PluginReaderHosted;
+    protected pluginReader!: PluginReaderHosted;
 
     private readonly hostedPlugin = new Deferred<PluginMetadata | undefined>();
 
     @inject(HostedPluginDeployerHandler)
-    protected deployerHandler: HostedPluginDeployerHandler;
+    protected deployerHandler!: HostedPluginDeployerHandler;
 
     async initialize(): Promise<void> {
         this.pluginReader.getPluginMetadata(process.env.HOSTED_PLUGIN)

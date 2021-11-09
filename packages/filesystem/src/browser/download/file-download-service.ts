@@ -29,10 +29,10 @@ export class FileDownloadService {
     protected downloadCounter: number = 0;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected readonly logger!: ILogger;
 
     @inject(MessageService)
-    protected readonly messageService: MessageService;
+    protected readonly messageService!: MessageService;
 
     protected handleCopy(event: ClipboardEvent, downloadUrl: string): void {
         if (downloadUrl && event.clipboardData) {

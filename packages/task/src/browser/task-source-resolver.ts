@@ -21,7 +21,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 @injectable()
 export class TaskSourceResolver {
     @inject(TaskDefinitionRegistry)
-    protected taskDefinitionRegistry: TaskDefinitionRegistry;
+    protected taskDefinitionRegistry!: TaskDefinitionRegistry;
 
     /**
      * Returns task source to display.
