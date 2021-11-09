@@ -15,7 +15,7 @@
  ********************************************************************************/
 
  #search-in-workspace {
-    height: 100%;
+    height: auto;
 }
 
 .t-siw-search-container {
