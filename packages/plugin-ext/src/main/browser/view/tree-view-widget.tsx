@@ -353,19 +353,6 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         }} />;
     }
 
-    protected hoverNodeId: string | undefined;
-    protected setHoverNodeId(hoverNodeId: string | undefined): void {
-        this.hoverNodeId = hoverNodeId;
-    }
-
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        return {
-            ...super.createNodeAttributes(node, props),
-            onMouseOver: () => this.setHoverNodeId(node.id),
-            onMouseOut: () => this.setHoverNodeId(undefined)
-        };
-    }
-
     protected toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
         return [this.toTreeViewSelection(node)];
     }
