@@ -90,7 +90,7 @@ export class QuickOpenWorkspace {
         }
         this.quickInputService?.showQuickPick(this.items, {
             placeholder: nls.localize(
-                'vscode/windowActions/openRecentPlaceholder',
+                'theia/workspace/openRecentPlaceholder',
                 'Type the name of the workspace you want to open'),
             onDidTriggerItemButton: async context => {
                 const resource = context.item.resource;
