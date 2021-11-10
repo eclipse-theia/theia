@@ -28,7 +28,7 @@ export class OutlineViewTreeModel extends TreeModelImpl {
      * after attempting to perform a `collapse-all`.
      * @param node the expandable tree node.
      */
-    handleExpansion(node: Readonly<ExpandableTreeNode>): void {
+    protected handleExpansion(node: Readonly<ExpandableTreeNode>): void {
         // no-op
     }
 

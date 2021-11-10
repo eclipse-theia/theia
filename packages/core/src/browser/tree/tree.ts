@@ -20,7 +20,6 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
 import { Mutable } from '../../common/types';
 import { timeout } from '../../common/promise-util';
-import { ExpandableTreeNode } from './tree-expansion';
 
 export const Tree = Symbol('Tree');
 
@@ -66,10 +65,6 @@ export interface Tree extends Disposable {
      * Emits when the busy state of the given node is changed.
      */
     readonly onDidChangeBusy: Event<TreeNode>;
-    /*
-    * Handles the expansion of a node.
-    */
-    handleExpansion?(node: Readonly<ExpandableTreeNode>): void;
     /**
      * Marks the give node as busy after a specified number of milliseconds.
      * A token source of the given token should be canceled to unmark.
