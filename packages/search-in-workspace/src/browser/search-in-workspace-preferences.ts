@@ -53,6 +53,11 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Search case-insensitively if the pattern is all lowercase, otherwise, search case-sensitively.'),
             default: false,
             type: 'boolean',
+        },
+        'search.followSymlinks': {
+            description: nls.localizeByDefault('Controls whether to follow symlinks while searching.'),
+            default: true,
+            type: 'boolean',
         }
     }
 };
@@ -64,6 +69,7 @@ export class SearchInWorkspaceConfiguration {
     'search.searchOnTypeDebouncePeriod': number;
     'search.searchOnEditorModification': boolean;
     'search.smartCase': boolean;
+    'search.followSymlinks': boolean;
 }
 
 export const SearchInWorkspacePreferenceContribution = Symbol('SearchInWorkspacePreferenceContribution');

@@ -53,6 +53,10 @@ export interface SearchInWorkspaceOptions {
      * Glob pattern for matching files and directories to exclude the search.
      */
     exclude?: string[];
+    /**
+     * Whether symlinks should be followed while searching.
+     */
+    followSymlinks?: boolean;
 }
 
 export interface SearchInWorkspaceResult {

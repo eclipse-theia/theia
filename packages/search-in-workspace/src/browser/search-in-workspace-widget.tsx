@@ -452,9 +452,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected performSearch(): void {
         const searchOptions: SearchInWorkspaceOptions = {
             ...this.searchInWorkspaceOptions,
+            followSymlinks: this.shouldFollowSymlinks(),
             matchCase: this.shouldMatchCase()
         };
         this.resultTreeWidget.search(this.searchTerm, searchOptions);
+    }
+
+    protected shouldFollowSymlinks(): boolean {
+        return this.searchInWorkspacePreferences['search.followSymlinks'];
     }
 
     /**

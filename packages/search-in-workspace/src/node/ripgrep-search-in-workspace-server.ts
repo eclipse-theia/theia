@@ -124,6 +124,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             this.addGlobArgs(args, options.exclude, true);
         }
 
+        if (options?.followSymlinks) {
+            args.add('--follow');
+        }
+
         if (options?.useRegExp || options?.matchWholeWord) {
             args.add('--regexp');
         } else {
