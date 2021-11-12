@@ -14,8 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- #search-in-workspace {
+#search-in-workspace {
     height: 100%;
+}
+
+#search-in-workspace .theia-TreeContainer.empty {
+    overflow: hidden;
 }
 
 .t-siw-search-container {
