@@ -104,7 +104,6 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             this.fireSocketDidClose();
         };
         socket.onmessage = ({ data }) => {
-            this.websocketErrorCounter = 0;
             this.handleIncomingRawMessage(data);
         };
         this.socket = socket;
@@ -224,6 +223,10 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 
     protected fireSocketDidOpen(): void {
+        // Once a websocket connection has opened, disable the http fallback
+        if (this.httpFallbackOptions?.allowed) {
+            this.httpFallbackOptions.allowed = false;
+        }
         this.onSocketDidOpenEmitter.fire(undefined);
     }
 
