@@ -77,7 +77,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 if (node.expanded && node.children.length === 1) {
                     const child = node.children[0];
                     // A compressed child is treated in the super.super class implementation (`CompressibleTreeWidget#onExpansionChanged`)
-                    if (CompressibleTreeNode.isCompressed(child)) {
+                    if (CompressibleTreeNode.isCompressionChild(child)) {
                         return;
                     }
                     if (ExpandableTreeNode.is(child) && !child.expanded) {

@@ -38,20 +38,10 @@ export class FileTree extends CompressibleTree {
     protected isCompressionEnabled = () => false;
 
     protected shouldCompressNode(node: TreeNode): boolean {
-        if (!CompositeTreeNode.is(node)) {
-            return false;
-        }
         const root = this.getRootNode(node);
         // The tree root is always `WorkspaceNode`, its child is the main project folder - shouldn't be compressed,
         // its grandchildren are the direct children of the main project folder - shouldn't be compressed either.
-        if (node.parent && (node.parent.id === root.id || (node.parent.parent && node.parent.parent.id === root.id))) {
-            return false;
-        }
-        return DirNode.is(node) && this.isSingleChild(node);
-    }
-
-    protected isSingleChild(node: CompositeTreeNode): boolean {
-        return !!node.parent && node.parent.children.length === 1;
+        return node.parent?.id !== root.id && node.parent?.parent?.id !== root.id;
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
@@ -101,7 +91,7 @@ export class FileTree extends CompressibleTree {
                 id, uri, fileStat, parent,
                 expanded: false,
                 selected: false,
-                compressed: false,
+                compressible: false,
                 children: []
             };
         }

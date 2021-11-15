@@ -64,7 +64,7 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
             return undefined;
         }
         // The node is considered as expanded if his child is compressed
-        if (this.options.pruneCollapsed && this.isCollapsed(node) && !this.hasCompressedItem(node)) {
+        if (this.options.pruneCollapsed && this.isCollapsed(node) && !this.isCompressionParent(node)) {
             return undefined;
         }
         return node.children.slice();
@@ -74,8 +74,8 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
         return ExpandableTreeNode.isCollapsed(node);
     }
 
-    protected hasCompressedItem(node: TreeNode): boolean {
-        return CompressibleTreeNode.hasCompressedItem(node);
+    protected isCompressionParent(node: TreeNode): boolean {
+        return CompressibleTreeNode.isCompressionParent(node);
     }
 
     protected isEmpty(nodes: TreeNode[] | undefined): boolean {

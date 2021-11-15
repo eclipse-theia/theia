@@ -14,36 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { TreeNode, TreeCompressionService, CompressibleTreeNode, TreeImpl } from '@theia/core/lib/browser';
+import { injectable } from '@theia/core/shared/inversify';
+import { TreeNode, CompressibleTreeNode, TreeImpl } from '@theia/core/lib/browser';
 
 @injectable()
 export abstract class CompressibleTree extends TreeImpl {
 
-    @inject(TreeCompressionService)
-    protected compressionService: TreeCompressionService;
-
     protected abstract isCompressionEnabled: () => boolean;
 
     protected abstract shouldCompressNode(node: TreeNode): boolean;
-
-    protected removeNode(node: TreeNode | undefined): void {
-        super.removeNode(node);
-        if (node && this.isCompressionEnabled()) {
-            this.compressionService.removeItem(node);
-        }
-    }
 
     protected addNode(node: TreeNode | undefined): void {
         if (CompressibleTreeNode.is(node)) {
             if (this.isCompressionEnabled() && this.shouldCompressNode(node)) {
                 const uncompressedParent = CompressibleTreeNode.getUncompressedParent(node);
                 if (uncompressedParent) {
-                    node.compressed = true;
-                    this.compressionService.addItem(uncompressedParent, node);
+                    node.compressible = true;
                 }
             } else {
-                node.compressed = false;
+                node.compressible = false;
             }
         }
         super.addNode(node);

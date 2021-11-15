@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     NodeProps, TreeNode, CompositeTreeNode, SelectableTreeNode, SELECTED_CLASS, ExpandableTreeNode,
-    TreeCompressionService, CompressibleTreeNode, TreeSelection, TreeProps, ContextMenuRenderer, TreeViewWelcomeWidget
+    CompressibleTreeNode, TreeSelection, TreeProps, ContextMenuRenderer, TreeViewWelcomeWidget
 } from '@theia/core/lib/browser';
 import { CompressibleTreeModel } from './compressible-tree-model';
 
@@ -27,9 +27,6 @@ export const COMPRESSED_CAPTION_SECTION_CLASS = 'theia-CompressedCaptionSection'
 
 @injectable()
 export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
-
-    @inject(TreeCompressionService)
-    protected readonly compressionService: TreeCompressionService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -57,7 +54,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         // And so on until all the compressed items in a raw will share the same expansion state...
         const updateCompressedExpansion = (node: CompositeTreeNode) => {
             let firstChild = node.children[0];
-            while (CompressibleTreeNode.isCompressed(firstChild) && !updateExpansion(firstChild)) {
+            while (CompressibleTreeNode.isCompressionChild(firstChild) && !updateExpansion(firstChild)) {
                 firstChild = firstChild.children[0];
             }
         };
@@ -65,7 +62,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         // Ensure that all compressed items in a row share the same expansion state.
         // If `changedNode` is compressed, find its uncompressed parent and update expansion from there,
         // Otherwise start from the node itself.
-        if (CompressibleTreeNode.isCompressed(changedNode)) {
+        if (CompressibleTreeNode.isCompressionChild(changedNode)) {
             const uncompressedParent = CompressibleTreeNode.getUncompressedParent(changedNode);
             if (uncompressedParent) {
                 if (!updateExpansion(uncompressedParent)) {
@@ -84,7 +81,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         this.model.selectedNodes.forEach(async node => {
             let collapsed = false;
             // In a compressed tree row - collapse the node only when reaching the start item
-            if (!CompressibleTreeNode.isCompressed(node) && ExpandableTreeNode.is(node)) {
+            if (CompressibleTreeNode.isCompressionHead(node) && ExpandableTreeNode.is(node)) {
                 collapsed = !!await this.model.collapseNode(node);
             }
             if (!collapsed) {
@@ -100,7 +97,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         this.model.selectedNodes.forEach(async node => {
             let expanded = false;
             // In a compressed tree row - expand the node only when reaching the last item
-            if (!CompressibleTreeNode.hasCompressedItem(node) && ExpandableTreeNode.is(node)) {
+            if (CompressibleTreeNode.isCompressionTail(node) && ExpandableTreeNode.is(node)) {
                 expanded = !!await this.model.expandNode(node);
             }
             if (!expanded) {
@@ -137,19 +134,17 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement, MouseEvent>): void {
         let clickedNode: TreeNode | undefined;
         // Clicked on a specific part of the node caption, e.g: caption => 'aaa/bbb/ccc', user clicked on 'ccc'
-        const compressedNodeId = event.currentTarget.getAttribute('compressed-node-id');
-        if (compressedNodeId) {
-            clickedNode = this.model.getNode(compressedNodeId);
-        } else if (!CompressibleTreeNode.isCompressed(node) && !SelectableTreeNode.isSelected(node)) {
+        const compressionPartId = event.currentTarget.getAttribute('compression-part-id');
+        if (compressionPartId) {
+            clickedNode = this.model.getNode(compressionPartId);
+        } else if (CompressibleTreeNode.isCompressionHead(node) && !SelectableTreeNode.isSelected(node)) {
             // Clicked outside the node caption, e.g: expansion toggle or the empty section right after the caption.
             // Will handle the click for the already selected/last compressed child if there is one...
             const items = this.getCompressedItems(node);
-            if (items.length > 0) {
-                let selectedIndex = items.findIndex(item => SelectableTreeNode.isSelected(item));
-                // Select the last compressed item if no item is selected
-                selectedIndex = selectedIndex > -1 ? selectedIndex : items.length - 1;
-                clickedNode = items[selectedIndex];
-            }
+            let selectedIndex = items.findIndex(item => SelectableTreeNode.isSelected(item));
+            // Select the last compressed item if no item is selected
+            selectedIndex = selectedIndex > -1 ? selectedIndex : items.length - 1;
+            clickedNode = items[selectedIndex];
         }
         super.handleClickEvent(clickedNode || node, event);
     }
@@ -161,7 +156,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         const selected = this.model.selectedNodes;
         let node: TreeNode | undefined = selected.find(SelectableTreeNode.hasFocus) || selected[0];
         // If the node for scrolling is compressed - return its uncompressed parent.
-        if (CompressibleTreeNode.isCompressed(node)) {
+        if (CompressibleTreeNode.isCompressionChild(node)) {
             node = CompressibleTreeNode.getUncompressedParent(node);
         }
         const row = node && this.rows.get(node.id);
@@ -169,34 +164,32 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected getParentDepth(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number | undefined {
-        if (CompressibleTreeNode.isCompressed(node.parent)) {
+        if (CompressibleTreeNode.isCompressionChild(node.parent)) {
             return depths.get(CompressibleTreeNode.getUncompressedParent(node));
         }
         return super.getParentDepth(node, depths);
     }
 
     protected shouldDisplayNode(node: TreeNode): boolean {
-        return super.shouldDisplayNode(node) && !CompressibleTreeNode.isCompressed(node);
+        return super.shouldDisplayNode(node) && !CompressibleTreeNode.isCompressionChild(node);
     }
 
     // Handles the context menu event for a compressed node if selected.
     protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         let selectedNode: TreeNode | undefined;
-        // If the event is handled by a node in a compressed tree row.
-        const isCompressedNode = !!event.currentTarget.getAttribute('compressed-node-id');
+        // If the event is handled by a node in a compression row.
+        const isCompressionPartEvent = !!event.currentTarget.getAttribute('compression-part-id');
         // In case user clicked on the area outside the label of the tree raw, the context menu event need to be handled for the selected compressed item.
-        if (!isCompressedNode && !CompressibleTreeNode.isCompressed(node)) {
+        if (!isCompressionPartEvent && CompressibleTreeNode.isCompressionHead(node)) {
             const items = this.getCompressedItems(node);
-            if (items.length > 0) {
-                selectedNode = items.find(item => SelectableTreeNode.isSelected(item));
-            }
+            selectedNode = items.find(item => SelectableTreeNode.isSelected(item));
         }
         super.handleContextMenuEvent(selectedNode || node, event);
     }
 
     protected needsActiveIndentGuideline(node: TreeNode): boolean {
         // Commpressed node has no indent for itself.
-        if (CompressibleTreeNode.isCompressed(node)) {
+        if (CompressibleTreeNode.isCompressionChild(node)) {
             return false;
         }
         const parent = node.parent;
@@ -233,16 +226,16 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected getCompressedItems(node: TreeNode | undefined): TreeNode[] {
-        return this.compressionService.getItems(node);
+        return CompressibleTreeNode.getCompressedItems(node);
     }
 
     protected renderCaptionNode(node: TreeNode): React.ReactNode[] {
         const captionNode: React.ReactNode[] = [];
-        const comppressedItems = this.getCompressedItems(node);
         captionNode.push(
             this.toCompressibleHighlightNode(0, node)
         );
-        if (comppressedItems.length > 0) {
+        if (CompressibleTreeNode.isCompressionHead(node)) {
+            const comppressedItems = this.getCompressedItems(node);
             comppressedItems.forEach((item, idx) => {
                 captionNode.push(
                     this.toCompressibleHighlightNode(idx + 1, node, item)
@@ -291,12 +284,12 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
 
     protected getCompressibleElement(node: TreeNode, compressedItem: TreeNode | undefined, index: number, children?: React.ReactNode[]): React.ReactElement {
         const currentItem = compressedItem || node;
-        // className and style should be applied only for a compressed row
-        const isCompressedRow = compressedItem || CompressibleTreeNode.hasCompressedItem(node);
-        const className = isCompressedRow ? COMPRESSED_CAPTION_SECTION_CLASS : '';
-        const style = isCompressedRow && SelectableTreeNode.isSelected(currentItem) ? { textDecoration: 'underline' } : {};
+        // className and style should be applied only for a compression row
+        const isCompressionRow = CompressibleTreeNode.isCompressionHead(node);
+        const className = isCompressionRow ? COMPRESSED_CAPTION_SECTION_CLASS : '';
+        const style = isCompressionRow && SelectableTreeNode.isSelected(currentItem) ? { textDecoration: 'underline' } : {};
         return <span
-            compressed-node-id={currentItem.id}
+            compression-part-id={currentItem.id}
             key={`${className}-${node.id}-${index}`}
             className={className}
             style={style}

@@ -14,79 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
 import { ExpandableTreeNode } from './tree-expansion';
 import { TreeNode, CompositeTreeNode } from './tree';
-
-export class CompressionStack {
-    protected items: TreeNode[] = [];
-
-    getItems(): TreeNode[] {
-        return this.items;
-    }
-
-    addItem(item: TreeNode): void {
-        if (this.items.find(i => i.id === item.id)) {
-            return;
-        }
-        this.items.push(item);
-    }
-
-    removeItem(item: TreeNode): void {
-        this.items = this.items.filter(i => i.id !== item.id);
-    }
-}
-
-@injectable()
-export class TreeCompressionService {
-
-    protected compressedMap = new Map<string, CompressionStack>();
-
-    getItems(node: TreeNode | undefined): TreeNode[] {
-        if (node) {
-            const compressed = this.compressedMap.get(node.id);
-            if (compressed) {
-                return compressed.getItems();
-            }
-        }
-        return [];
-    }
-
-    addItem(node: TreeNode, item: TreeNode): void {
-        let compressed: CompressionStack;
-        if (this.compressedMap.has(node.id)) {
-            compressed = this.compressedMap.get(node.id)!;
-        } else {
-            compressed = new CompressionStack();
-            this.compressedMap.set(node.id, compressed);
-        }
-        compressed.addItem(item);
-    }
-
-    removeItem(node: TreeNode): void {
-        if (!this.remove(node) && CompressibleTreeNode.isCompressed(node)) {
-            const uncompressedParent = CompressibleTreeNode.getUncompressedParent(node);
-            if (uncompressedParent) {
-                const compressed = this.compressedMap.get(uncompressedParent.id);
-                if (compressed) {
-                    compressed.removeItem(node);
-                }
-            }
-        }
-        const { children = [] } = node as CompositeTreeNode;
-        for (const item of children) {
-            this.removeItem(item);
-        }
-    }
-
-    protected remove(node: TreeNode): boolean {
-        return this.compressedMap.delete(node.id);
-    }
-
-    reset(): void {
-        this.compressedMap.clear();
-    }
-}
 
 /**
  * Represents a tree node that is able to be compressed into
@@ -94,29 +23,57 @@ export class TreeCompressionService {
  */
 export interface CompressibleTreeNode extends ExpandableTreeNode {
     /**
-     * Indicates whether the tree node is compressed into its parent node
+     * Indicates whether the tree node can be compressed into its parent node
      */
-    compressed: boolean;
+    compressible: boolean;
 }
 
 export namespace CompressibleTreeNode {
     export function is(node: Object | undefined): node is CompressibleTreeNode {
-        return !!node && 'compressed' in node;
+        return !!node && CompositeTreeNode.is(node) && 'compressible' in node;
     }
 
-    export function isCompressed(node: Object | undefined): node is CompressibleTreeNode {
-        return is(node) && node.compressed;
+    function isCompressibleParent(node?: TreeNode): node is CompositeTreeNode {
+        return CompositeTreeNode.is(node) && node.children.length === 1;
     }
 
-    export function hasCompressedItem(node: TreeNode): boolean {
-        return CompositeTreeNode.is(node) && node.children.length === 1 && CompressibleTreeNode.isCompressed(node.children[0]);
+    export function isCompressionParent(node?: TreeNode): node is CompositeTreeNode {
+        return isCompressibleParent(node) && isCompressionChild(node.children[0]);
+    }
+
+    export function isCompressionChild(node: Object | undefined): node is CompressibleTreeNode {
+        return is(node) && node.compressible && isCompressibleParent(node.parent);
+    }
+
+    export function isCompressionHead(node?: TreeNode): node is CompositeTreeNode {
+        return isCompressionParent(node) && !isCompressionChild(node);
+    }
+
+    export function isCompressionTail(node?: TreeNode): node is CompressibleTreeNode {
+        return isCompressionChild(node) && !isCompressionParent(node);
+    }
+
+    export function isCompressionParticipant(node?: TreeNode): node is CompositeTreeNode {
+        return isCompressionParent(node) || isCompressionChild(node);
+    }
+
+    export function getCompressedItems(node?: TreeNode): TreeNode[] {
+        const items = [];
+        if (isCompressionHead(node)) {
+            let next = node.children[0];
+            while (isCompressionChild(next)) {
+                items.push(next);
+                next = next.children[0];
+            }
+        }
+        return items;
     }
 
     export function getUncompressedParent(node: TreeNode): CompositeTreeNode | undefined {
-        let parent = node.parent;
-        while (isCompressed(parent)) {
-            parent = parent.parent;
+        let candidate = node.parent;
+        while (isCompressionChild(candidate)) {
+            candidate = candidate.parent;
         }
-        return parent;
+        return candidate;
     }
 }

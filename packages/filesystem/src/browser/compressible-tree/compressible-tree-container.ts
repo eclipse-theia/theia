@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { Tree, TreeModel, TreeCompressionService, createTreeContainer, TreeImpl, TreeModelImpl, TreeWidget } from '@theia/core/lib/browser';
+import { Tree, TreeModel, createTreeContainer, TreeImpl, TreeModelImpl, TreeWidget } from '@theia/core/lib/browser';
 import { CompressibleTree } from './compressible-tree';
 import { CompressibleTreeModel } from './compressible-tree-model';
 import { CompressibleTreeWidget } from './compressible-tree-widget';
@@ -33,8 +33,6 @@ export function createCompressibleTreeContainer(parent: interfaces.Container): C
 
     child.unbind(TreeWidget);
     child.bind(CompressibleTreeWidget).toSelf();
-
-    child.bind(TreeCompressionService).toSelf();
 
     return child;
 }

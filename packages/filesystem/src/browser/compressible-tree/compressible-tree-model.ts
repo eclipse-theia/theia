@@ -44,8 +44,8 @@ export class CompressibleTreeModel extends TreeModelImpl {
         // Skip the first item. // TODO: clean this up, and skip the first item in a different way without loading everything.
         iterator.next();
         let result = iterator.next();
-        // `while (this.hasCompressedItem(result.value))` - to skip all items in a compressed tree row except the last one which represents the entire row
-        while (this.hasCompressedItem(result.value) || (!result.done && !this.isVisibleSelectableNode(result.value))) {
+        // While `!this.isCompressionTail` - to skip all items in a compressed tree row except the last one (the tail) which represents the entire row
+        while (!result.done && (!this.isVisibleSelectableNode(result.value) || !this.isCompressionTail(result.value))) {
             result = iterator.next();
         }
         const node = result.value;
@@ -67,12 +67,12 @@ export class CompressibleTreeModel extends TreeModelImpl {
         return iterator && this.doGetNextRow(iterator);
     }
 
-    protected hasCompressedItem(node: TreeNode): boolean {
-        return CompressibleTreeNode.hasCompressedItem(node);
+    protected isCompressed(node: TreeNode): boolean {
+        return CompressibleTreeNode.isCompressionChild(node);
     }
 
-    protected isCompressed(node: TreeNode): boolean {
-        return CompressibleTreeNode.isCompressed(node);
+    protected isCompressionTail(node: TreeNode): boolean {
+        return CompressibleTreeNode.isCompressionTail(node);
     }
 
 }

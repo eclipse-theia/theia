@@ -89,15 +89,15 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
     protected init(): void {
         this.tree.onNodeRefreshed(node => {
             for (const child of node.children) {
-                if (ExpandableTreeNode.is(child) && ((child.expanded || this.isNodeOrChildCompressed(child)))) {
+                if (ExpandableTreeNode.is(child) && ((child.expanded || this.isCompressionParticipant(child)))) {
                     node.waitUntil(this.tree.refresh(child));
                 }
             }
         });
     }
 
-    protected isNodeOrChildCompressed(node: ExpandableTreeNode): boolean {
-        return CompressibleTreeNode.isCompressed(node) || CompressibleTreeNode.hasCompressedItem(node);
+    protected isCompressionParticipant(node: ExpandableTreeNode): boolean {
+        return CompressibleTreeNode.isCompressionParticipant(node);
     }
 
     dispose(): void {
@@ -155,7 +155,7 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
             return false;
         }
         // Need to refresh compressed node tree in order to update the compressed caption view (in case of deletion).
-        if (CompressibleTreeNode.isCompressed(node)) {
+        if (CompressibleTreeNode.isCompressionChild(node)) {
             this.tree.refresh(node);
         }
         node.expanded = false;

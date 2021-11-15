@@ -34,7 +34,6 @@ export class FileNavigatorTree extends FileTree {
             this.filter.onFilterChanged(() => this.refresh()),
             this.navigatorPreferences.onPreferenceChanged(e => {
                 if (e.preferenceName === 'explorer.compactFolders') {
-                    this.compressionService.reset();
                     this.refresh();
                 }
             })
