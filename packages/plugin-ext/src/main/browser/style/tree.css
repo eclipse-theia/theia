@@ -41,6 +41,6 @@
     margin-left: 17px;
 }
 
-.theia-TreeNode:not(:hover):not(.theia-mod-selected) .theia-tree-view-inline-action {
+.theia-tree-view .theia-TreeNode:not(:hover):not(.theia-mod-selected) .theia-tree-view-inline-action {
     display: none;
 }
