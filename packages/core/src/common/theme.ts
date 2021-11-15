@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
+ * Copyright (C) 2017 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,4 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from '../../common/quick-pick-service';
+export type ThemeType = 'light' | 'dark' | 'hc';
+
+export interface Theme {
+    readonly id: string;
+    readonly type: ThemeType;
+    readonly label: string;
+    readonly description?: string;
+    readonly editorTheme?: string;
+    activate(): void;
+    deactivate(): void;
+}
+
+export interface ThemeChangeEvent {
+    readonly newTheme: Theme;
+    readonly oldTheme?: Theme;
+}

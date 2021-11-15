@@ -73,8 +73,7 @@ import {
     ProblemPatternContribution,
     TaskDefinition
 } from '@theia/task/lib/common/task-protocol';
-// eslint-disable-next-line @theia/runtime-import-check
-import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
+import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginUriFactory } from './plugin-uri-factory';
 
