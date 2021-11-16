@@ -144,6 +144,11 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return type === PluginType.System;
     }
 
+    get compatible(): boolean {
+        // An extension is not compatible if it has no compatible version.
+        return !!this.version;
+    }
+
     update(data: Partial<VSXExtensionData>): void {
         for (const key of VSXExtensionData.KEYS) {
             if (key in data) {
@@ -260,7 +265,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${this.version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        let md = `__${this.displayName}__ ${this.version !== undefined ? this.version : 'No Compatible Version'}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
 
         if (this.license) {
             md += `  \rLicense: ${this.license}`;
@@ -384,7 +389,7 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
 
     protected renderAction(): React.ReactNode {
         const extension = this.props.extension;
-        const { builtin, busy, installed } = extension;
+        const { builtin, busy, installed, compatible } = extension;
         if (builtin) {
             return <div className="codicon codicon-settings-gear action" onClick={this.manage}></div>;
         }
@@ -398,7 +403,9 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
             return <div><button className="theia-button action" onClick={this.uninstall}>Uninstall</button>
                 <div className="codicon codicon-settings-gear action" onClick={this.manage}></div></div>;
         }
-        return <button className="theia-button prominent action" onClick={this.install}>Install</button>;
+        if (compatible) {
+            return <button className="theia-button prominent action" onClick={this.install}>Install</button>;
+        }
     }
 
 }
@@ -414,16 +421,16 @@ const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'c
 
 export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
-        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
+        const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip, compatible } = this.props.extension;
 
-        return <div className='theia-vsx-extension noselect' data-for={tooltipId} data-tip={tooltip}>
+        return <div className={`theia-vsx-extension noselect ${compatible ? '' : 'incompatible'}`} data-for={tooltipId} data-tip={tooltip}>
             {iconUrl ?
                 <img className='theia-vsx-extension-icon' src={iconUrl} /> :
                 <div className='theia-vsx-extension-icon placeholder' />}
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span> <span className='version'>{version}</span>
+                        <span className='name'>{displayName}</span> <span className='version'>{version !== undefined ? version : 'No Compatible Version'}</span>
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}

@@ -28,6 +28,11 @@
     min-height: calc(var(--theia-content-line-height)*3)
 }
 
+.theia-vsx-extension.incompatible {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .theia-vsx-extensions-search-bar {
     padding: var(--theia-ui-padding) var(--theia-scrollbar-width) var(--theia-ui-padding) 18px /* expansion toggle padding of tree elements in result list */;
     display: flex;

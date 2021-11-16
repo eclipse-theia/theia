@@ -31,6 +31,7 @@ import { RecommendedExtensions } from './recommended-extensions/recommended-exte
 import URI from '@theia/core/lib/common/uri';
 import { VSXResponseError, VSXSearchParam } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { VSXExtensionPreferences } from './vsx-extension-preferences';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -55,6 +56,9 @@ export class VSXExtensionsModel {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(VSXExtensionPreferences)
+    protected vsxPreferences: VSXExtensionPreferences;
 
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
@@ -175,7 +179,7 @@ export class VSXExtensionsModel {
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
                 const extension = client.getLatestCompatibleVersion(data);
-                if (!extension) {
+                if (!extension && this.vsxPreferences.get('extensions.displayIncompatible') === false) {
                     continue;
                 }
                 this.setExtension(id).update(Object.assign(data, {
@@ -184,7 +188,7 @@ export class VSXExtensionsModel {
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
-                    version: extension.version
+                    version: extension?.version
                 }));
                 searchResult.add(id);
             }
