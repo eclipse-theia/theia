@@ -38,8 +38,14 @@
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-handle:after {
     background-color: var(--theia-sideBarSectionHeader-border);
-    min-height: 2px;
+    min-height: 4px;   /* hard-coded at the moment; value should update when preference changes */
     min-width: 2px
+}
+
+.p-SplitPanel > .p-SplitPanel-handle:hover:after {
+    background-color: var(--theia-sash-hoverBorder);
+    transition-delay: 300ms;   /* hard-coded at the moment; value should update when preference changes */
+    min-width: 4px;     /* hard-coded at the moment; value should update when preference changes */
 }
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-handle {

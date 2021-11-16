@@ -1140,6 +1140,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
+            { id: 'sash.hoverBorder', defaults: { dark: '#007acc', light: '#007acc', hc: '#007acc' }, description: 'The hover border color for draggable sashes.' },
 
             // Window border colors should be aligned with https://code.visualstudio.com/api/references/theme-color#window-border
             {

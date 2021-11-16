@@ -136,6 +136,20 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: isOSX ? 1500 : 500,
             description: nls.localizeByDefault('Controls the delay in milliseconds after which the hover is shown.')
         },
+        'workbench.sash.hoverDelay': {
+            type: 'number',
+            default: 300,
+            minimum: 1,
+            maximum: 2000,
+            description: nls.localizeByDefault('Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.')
+        },
+        'workbench.sash.size': {
+            type: 'number',
+            default: 4,
+            minimum: 1,
+            maximum: 20,
+            description: nls.localizeByDefault('Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.')
+        },
     }
 };
 
