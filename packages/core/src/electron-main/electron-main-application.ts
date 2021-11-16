@@ -42,6 +42,12 @@ const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yarg
 export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptions {
     isMaximized?: boolean;
     isFullScreen?: boolean;
+
+    /**
+     * Represents the complete screen layout for all available displays.
+     * - Used to determine if the layout was updated since the electron window was last opened.
+     */
+    screenLayout: string;
 }
 
 /**
@@ -254,11 +260,16 @@ export class ElectronMainApplication {
     }
 
     async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
-        const windowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate') || this.getDefaultTheiaWindowOptions();
+        let windowState;
+        if (this.getCurrentScreenLayout() === this.electronStore.get('windowstate').screenLayout) {
+            windowState = this.electronStore.get('windowstate');
+        } else {
+            windowState = this.getDefaultTheiaWindowOptions();
+        }
         return {
             frame: this.useNativeWindowFrame,
-            ...windowState,
-            ...this.getDefaultOptions()
+            ...this.getDefaultOptions(),
+            ...windowState
         };
     }
 
@@ -284,6 +295,7 @@ export class ElectronMainApplication {
             title: this.config.applicationName,
             minWidth: 200,
             minHeight: 120,
+            screenLayout: this.getCurrentScreenLayout(),
             webPreferences: {
                 // https://github.com/eclipse-theia/theia/issues/2018
                 nodeIntegration: true,
@@ -403,11 +415,20 @@ export class ElectronMainApplication {
                 height: bounds.height,
                 x: bounds.x,
                 y: bounds.y,
-                frame: this.useNativeWindowFrame
-            });
+                frame: this.useNativeWindowFrame,
+                screenLayout: this.getCurrentScreenLayout(),
+            } as TheiaBrowserWindowOptions);
         } catch (e) {
             console.error('Error while saving window state:', e);
         }
+    }
+
+    /**
+     * Get display information and turn it into a string.
+     */
+    protected getCurrentScreenLayout(): string {
+        const displays = screen.getAllDisplays();
+        return displays.map(display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`).join('-');
     }
 
     /**
