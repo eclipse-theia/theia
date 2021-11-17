@@ -37,7 +37,7 @@ import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/com
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ViewContextKeyService } from './view-context-key-service';
-import { Widget } from '@theia/core/lib/browser/widgets/widget';
+import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
@@ -327,9 +327,6 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     protected renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
-        if (this.model.selectedNodes.every(selected => selected.id !== node.id) && node.id !== this.hoverNodeId) {
-            return false;
-        }
         return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
             const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
             const arg = this.toTreeViewSelection(node);
@@ -349,25 +346,11 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !this.contextKeys.match(node.action.when)) {
             return false;
         }
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, 'theia-tree-view-inline-action'].join(' ');
+        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
         return <div key={index} className={className} title={node.label} onClick={e => {
             e.stopPropagation();
             this.commands.executeCommand(node.action.commandId, arg);
         }} />;
-    }
-
-    protected hoverNodeId: string | undefined;
-    protected setHoverNodeId(hoverNodeId: string | undefined): void {
-        this.hoverNodeId = hoverNodeId;
-        this.update();
-    }
-
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        return {
-            ...super.createNodeAttributes(node, props),
-            onMouseOver: () => this.setHoverNodeId(node.id),
-            onMouseOut: () => this.setHoverNodeId(undefined)
-        };
     }
 
     protected toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
