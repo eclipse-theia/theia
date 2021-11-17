@@ -50,7 +50,7 @@ interface ShellSpecificOptions {
     /** Arguments passed to the shell, aka `command` here. */
     execArgs: string[];
     /** Pack of functions used to escape the `subCommand` and `subArgs` to run in the shell. */
-    quotingFunctions: ShellQuotingFunctions | undefined;
+    quotingFunctions?: ShellQuotingFunctions;
 }
 
 /**
@@ -111,9 +111,9 @@ export class ProcessTaskRunner implements TaskRunner {
     }
 
     protected getResolvedCommand(taskConfig: TaskConfiguration): TerminalProcessOptions {
-        const systemSpecificCommand = this.getOsSpecificCommand(taskConfig);
+        const osSpecificCommand = this.getOsSpecificCommand(taskConfig);
 
-        const options = systemSpecificCommand.options;
+        const options = osSpecificCommand.options;
 
         // Use task's cwd with spawned process and pass node env object to
         // new process, so e.g. we can re-use the system path
@@ -153,7 +153,7 @@ export class ProcessTaskRunner implements TaskRunner {
             //
             // We need to accommodate most shells, so we need to get specific.
 
-            const { shell } = systemSpecificCommand.options;
+            const { shell } = osSpecificCommand.options;
 
             command = shell?.executable || ShellProcess.getShellExecutablePath();
             const { execArgs, quotingFunctions } = this.getShellSpecificOptions(command);
@@ -163,7 +163,7 @@ export class ProcessTaskRunner implements TaskRunner {
 
             // Check if an argument list is defined or not. Empty is ok.
             /** Shell command to run: */
-            const shellCommand = this.buildShellCommand(systemSpecificCommand, quotingFunctions);
+            const shellCommand = this.buildShellCommand(osSpecificCommand, quotingFunctions);
 
             if (isWindows && /cmd(.exe)?$/.test(command)) {
                 // Let's take the following command, including an argument containing whitespace:
@@ -192,10 +192,10 @@ export class ProcessTaskRunner implements TaskRunner {
         } else {
             // When running process tasks, `command` is the executable to run,
             // and `args` are the arguments we want to pass to it.
-            command = systemSpecificCommand.command;
-            if (Array.isArray(systemSpecificCommand.args)) {
+            command = osSpecificCommand.command;
+            if (Array.isArray(osSpecificCommand.args)) {
                 // Process task doesn't handle quotation: Normalize arguments from `ShellQuotedString` to raw `string`.
-                args = systemSpecificCommand.args.map(arg => typeof arg === 'string' ? arg : arg.value);
+                args = osSpecificCommand.args.map(arg => typeof arg === 'string' ? arg : arg.value);
             } else {
                 args = [];
             }
@@ -203,7 +203,7 @@ export class ProcessTaskRunner implements TaskRunner {
         return { command, args, commandLine, options };
     }
 
-    protected buildShellCommand(systemSpecificCommand: Required<OsSpecificCommand>, quotingFunctions?: ShellQuotingFunctions): string {
+    protected buildShellCommand(systemSpecificCommand: OsSpecificCommand, quotingFunctions?: ShellQuotingFunctions): string {
         if (Array.isArray(systemSpecificCommand.args)) {
             const commandLineElements: Array<string | ShellQuotedString> = [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => {
                 // We want to quote arguments only if needed.
