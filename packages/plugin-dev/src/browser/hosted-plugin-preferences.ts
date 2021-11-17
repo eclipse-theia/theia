@@ -37,7 +37,7 @@ export const HostedPluginConfigSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             },
-            description: nls.localize(
+            markdownDescription: nls.localize(
                 'theia/plugin-dev/launchOutFiles',
                 'Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).'
             ),

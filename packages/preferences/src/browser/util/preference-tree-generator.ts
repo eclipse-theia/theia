@@ -126,6 +126,12 @@ export class PreferenceTreeGenerator {
         return root;
     };
 
+    getNodeId(preferenceId: string): string {
+        const expectedGroup = this.getGroupName(preferenceId.split('.'));
+        const expectedId = `${expectedGroup}@${preferenceId}`;
+        return expectedId;
+    }
+
     protected getGroupName(labels: string[]): string {
         const defaultGroup = labels[0];
         if (this.topLevelCategories.has(defaultGroup)) {

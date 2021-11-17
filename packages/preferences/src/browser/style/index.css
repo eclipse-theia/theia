@@ -301,6 +301,11 @@
     line-height: 18px;
 }
 
+.theia-settings-container .pref-description a {
+    text-decoration-line: none;
+    cursor: pointer;
+}
+
 .theia-settings-container .theia-select:focus {
     outline-width: 1px;
     outline-style: solid;

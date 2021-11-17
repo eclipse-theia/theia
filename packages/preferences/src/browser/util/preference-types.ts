@@ -64,6 +64,7 @@ export namespace Preference {
     export interface LeafNode extends BaseTreeNode {
         depth: number;
         preference: { data: PreferenceDataProperty };
+        preferenceId: string;
     }
 
     export namespace LeafNode {

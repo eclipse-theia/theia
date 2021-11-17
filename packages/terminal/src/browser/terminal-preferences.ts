@@ -36,7 +36,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.fontFamily': {
             type: 'string',
-            description: nls.localizeByDefault("Controls the font family of the terminal, this defaults to `#editor.fontFamily#`'s value."),
+            markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to `#editor.fontFamily#`'s value."),
             default: EDITOR_FONT_DEFAULTS.fontFamily
         },
         'terminal.integrated.fontSize': {
@@ -79,7 +79,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: 1000
         },
         'terminal.integrated.fastScrollSensitivity': {
-            description: nls.localizeByDefault('Scrolling speed multiplier when pressing `Alt`.'),
+            markdownDescription: nls.localizeByDefault('Scrolling speed multiplier when pressing `Alt`.'),
             type: 'number',
             default: 5,
         },

@@ -100,6 +100,7 @@ describe('preference-tree-label-provider', () => {
                 visible: true,
                 selected: false,
                 depth: 2,
+                preferenceId: property,
                 preference: { data: {} }
             };
 

@@ -16,7 +16,7 @@
 
 import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandService } from '@theia/core/lib/common';
+import { CommandService, nls } from '@theia/core/lib/common';
 import { PreferencesCommands } from '../../util/preference-types';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
@@ -25,7 +25,7 @@ export class PreferenceJSONLinkRenderer extends PreferenceLeafNodeRenderer<JSONV
     @inject(CommandService) protected readonly commandService: CommandService;
 
     protected createInteractable(parent: HTMLElement): void {
-        const message = 'Edit in settings.json';
+        const message = nls.localizeByDefault('Edit in settings.json');
         const interactable = document.createElement('a');
         this.interactable = interactable;
         interactable.classList.add('theia-json-input');
