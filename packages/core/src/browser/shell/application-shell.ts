@@ -846,6 +846,13 @@ export class ApplicationShell extends Widget {
      * @returns the selected title widget, else returns the currentTitle or undefined.
      */
     findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
+        return this.findTitleForEvent(tabBar, event) || tabBar.currentTitle || undefined;
+    }
+
+    /**
+     * @returns the title of the widget whose tab was targeted by the event, if any.
+     */
+    findTitleForEvent(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
             let tabNode: HTMLElement | null = event.target;
             while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
@@ -862,7 +869,6 @@ export class ApplicationShell extends Widget {
                 }
             }
         }
-        return tabBar.currentTitle || undefined;
     }
 
     /**
@@ -870,13 +876,19 @@ export class ApplicationShell extends Widget {
      * @returns the selected tab-bar, else returns the currentTabBar.
      */
     findTabBar(event?: Event): TabBar<Widget> | undefined {
+        return this.findTabBarForEvent(event) ?? this.currentTabBar;
+    }
+
+    /**
+     * @returns the tabbar targeted by the event, if any.
+     */
+    findTabBarForEvent(event?: Event): TabBar<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
             const tabBar = this.findWidgetForElement(event.target);
             if (tabBar instanceof TabBar) {
                 return tabBar;
             }
         }
-        return this.currentTabBar;
     }
 
     /**
