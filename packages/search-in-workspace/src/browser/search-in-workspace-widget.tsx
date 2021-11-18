@@ -220,9 +220,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const values = Array.from(new Set(uris.map(uri => `${uri}/**`)));
         const value = values.join(', ');
         this.searchInWorkspaceOptions.include = values;
-        const include = document.getElementById('include-glob-field');
-        if (include) {
-            (include as HTMLInputElement).value = value;
+        if (this.includeRef.current) {
+            this.includeRef.current.value = value;
+            this.includeRef.current.addToHistory();
         }
         this.update();
     }
@@ -234,9 +234,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
      */
     updateSearchTerm(term: string, showReplaceField?: boolean): void {
         this.searchTerm = term;
-        const search = document.getElementById('search-input-field');
-        if (search) {
-            (search as HTMLInputElement).value = term;
+        if (this.searchRef.current) {
+            this.searchRef.current.value = term;
+            this.searchRef.current.addToHistory();
         }
         if (showReplaceField) {
             this.showReplaceField = true;
@@ -284,15 +284,17 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.matchCaseState.enabled = false;
         this.wholeWordState.enabled = false;
         this.regExpState.enabled = false;
-        const search = document.getElementById('search-input-field');
-        const replace = document.getElementById('replace-input-field');
-        const include = document.getElementById('include-glob-field');
-        const exclude = document.getElementById('exclude-glob-field');
-        if (search && replace && include && exclude) {
-            (search as HTMLInputElement).value = '';
-            (replace as HTMLInputElement).value = '';
-            (include as HTMLInputElement).value = '';
-            (exclude as HTMLInputElement).value = '';
+        if (this.searchRef.current) {
+            this.searchRef.current.value = '';
+        }
+        if (this.replaceRef.current) {
+            this.replaceRef.current.value = '';
+        }
+        if (this.includeRef.current) {
+            this.includeRef.current.value = '';
+        }
+        if (this.excludeRef.current) {
+            this.excludeRef.current.value = '';
         }
         this.performSearch();
         this.update();
@@ -530,6 +532,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 size={1}
                 placeholder={replace}
                 defaultValue={this.replaceTerm}
+                autoComplete='off'
                 onKeyUp={this.updateReplaceTerm}
                 onFocus={this.handleFocusReplaceInputBox}
                 onBlur={this.handleBlurReplaceInputBox}
@@ -623,6 +626,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 type='text'
                 size={1}
                 defaultValue={value}
+                autoComplete='off'
                 id={kind + '-glob-field'}
                 onKeyUp={e => {
                     if (e.target) {
