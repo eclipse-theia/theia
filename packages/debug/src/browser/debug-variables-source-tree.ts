@@ -71,8 +71,11 @@ export class DebugVariablesSourceTree extends SourceTree {
             }
         }
     }
-
     protected getNodeElementId(node: Readonly<TreeElementNode>): string {
+        /* node.id is a positional identifier (EG: __source__:0:1 identifies the second child of the first child of the root)
+         * so if used directly to memorize the expanded node it would expand tree nodes that should be collapsed.
+         * Using a combination of the node id and the node element name greately reduces the risks of collisions
+         */
         if (this.isDebugScopeOrVariable(node.element)) {
             return node.id + '-' + node.element.name;
         }
