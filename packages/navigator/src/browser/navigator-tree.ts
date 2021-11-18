@@ -40,7 +40,7 @@ export class FileNavigatorTree extends FileTree {
         ]);
     }
 
-    protected isCompressionEnabled = () => this.navigatorPreferences['explorer.compactFolders'];
+    protected isCompressionEnabled = () => this.navigatorPreferences.get('explorer.compactFolders', true);
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (WorkspaceNode.is(parent)) {
