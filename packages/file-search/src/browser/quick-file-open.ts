@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProvider, CommonCommands } from '@theia/core/lib/browser';
+import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProvider, CommonCommands, PreferenceService } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
@@ -27,6 +27,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { EditorOpenerOptions, EditorWidget, Position, Range } from '@theia/editor/lib/browser';
 import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 
 export const quickFileOpen = Command.toDefaultLocalizedCommand({
     id: 'file-search.openFile',
@@ -66,6 +67,10 @@ export class QuickFileOpenService implements QuickAccessProvider {
     protected readonly messageService: MessageService;
     @inject(FileSystemPreferences)
     protected readonly fsPreferences: FileSystemPreferences;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+    @inject(VariableResolverService)
+    protected readonly variableResolverService: VariableResolverService;
 
     registerQuickAccessProvider(): void {
         this.quickAccessRegistry.registerQuickAccessProvider({
@@ -153,9 +158,14 @@ export class QuickFileOpenService implements QuickAccessProvider {
         return undefined;
     }
 
-    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
-        const roots = this.workspaceService.tryGetRoots();
+    async getRoots(): Promise<string[]> {
+        const workspaceRoots = this.workspaceService.tryGetRoots().map(r => r.resource.toString());
+        const additionalSearchRoots: string[] = this.preferenceService.get('search.additionalRoots') ?? [];
+        const resolvedAdditionalSearchRoots = await this.variableResolverService.resolveArray(additionalSearchRoots);
+        return [...workspaceRoots, ...resolvedAdditionalSearchRoots];
+    }
 
+    async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
         this.filterAndRange = this.splitFilterAndRange(filter);
         const fileFilter = this.filterAndRange.filter;
 
@@ -176,6 +186,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
             }
         }
 
+        const roots = await this.getRoots();
         if (fileFilter.length > 0) {
             const handler = async (results: string[]) => {
                 if (token.isCancellationRequested || results.length <= 0) {
@@ -207,7 +218,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
             };
 
             return this.fileSearchService.find(fileFilter, {
-                rootUris: roots.map(r => r.resource.toString()),
+                rootUris: roots,
                 fuzzyMatch: true,
                 limit: 200,
                 useGitIgnore: this.hideIgnoredFiles,

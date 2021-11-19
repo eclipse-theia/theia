@@ -58,6 +58,11 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Controls whether to follow symlinks while searching.'),
             default: true,
             type: 'boolean',
+        },
+        'search.additionalRoots': {
+            description: nls.localize('theia/search-in-workspace/additionalRoots', 'Directories outside the current workspace that should be included in searches.'),
+            default: [],
+            type: 'array',
         }
     }
 };
@@ -70,6 +75,7 @@ export class SearchInWorkspaceConfiguration {
     'search.searchOnEditorModification': boolean;
     'search.smartCase': boolean;
     'search.followSymlinks': boolean;
+    'search.additionalRoots': string[];
 }
 
 export const SearchInWorkspacePreferenceContribution = Symbol('SearchInWorkspacePreferenceContribution');

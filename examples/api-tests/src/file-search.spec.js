@@ -64,8 +64,8 @@ describe('file-search', function () {
                 assert.equal(filterAndRange, quickFileOpenService['filterAndRangeDefault']);
             });
 
-            it('should update when searching', () => {
-                quickFileOpenService['getPicks']('a:2:1', new CancellationTokenSource().token); // perform a mock search.
+            it('should update when searching', async () => {
+                await quickFileOpenService['getPicks']('a:2:1', new CancellationTokenSource().token); // perform a mock search.
                 const filterAndRange = quickFileOpenService['filterAndRange'];
                 assert.equal(filterAndRange.filter, 'a');
                 assert.deepEqual(filterAndRange.range, { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } });

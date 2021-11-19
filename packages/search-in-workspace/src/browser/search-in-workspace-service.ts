@@ -23,6 +23,8 @@ import {
 } from '../common/search-in-workspace-interface';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ILogger } from '@theia/core';
+import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 
 /**
  * Class that will receive the search results from the server.  This is separate
@@ -72,6 +74,8 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(ILogger) protected readonly logger: ILogger;
+    @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
+    @inject(VariableResolverService) protected readonly variableResolverService: VariableResolverService;
 
     @postConstruct()
     protected init(): void {
@@ -113,8 +117,15 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
             throw new Error('Search failed: no workspace root.');
         }
 
-        const roots = await this.workspaceService.roots;
-        return this.doSearch(what, roots.map(r => r.resource.toString()), callbacks, opts);
+        const roots = await this.getRoots();
+        return this.doSearch(what, roots, callbacks, opts);
+    }
+
+    async getRoots(): Promise<string[]> {
+        const workspaceRoots = (await this.workspaceService.roots).map(r => r.resource.toString());
+        const additionalSearchRoots = this.searchInWorkspacePreferences.get('search.additionalRoots');
+        const resolvedAdditionalSearchRoots = await this.variableResolverService.resolveArray(additionalSearchRoots);
+        return [...workspaceRoots, ...resolvedAdditionalSearchRoots];
     }
 
     protected async doSearch(what: string, rootsUris: string[], callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {
