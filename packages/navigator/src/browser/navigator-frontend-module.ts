@@ -42,6 +42,7 @@ import { OpenEditorsTreeDecorator } from './open-editors-widget/navigator-open-e
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { NavigatorTreeDecorator } from './navigator-decorator-service';
 import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator-deleted-editor-decorator';
+import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -81,4 +82,8 @@ export default new ContainerModule(bind => {
     bind(NavigatorTabBarDecorator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(NavigatorTabBarDecorator);
     bind(TabBarDecorator).toService(NavigatorTabBarDecorator);
+
+    bind(NavigatorSymlinkDecorator).toSelf().inSingletonScope();
+    bind(NavigatorTreeDecorator).toService(NavigatorSymlinkDecorator);
+    bind(OpenEditorsTreeDecorator).toService(NavigatorSymlinkDecorator);
 });
