@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2021 ARM and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -38,6 +38,9 @@ export class DebugVariablesSourceTree extends SourceTree {
 
     protected readonly expandedElements = new Set<string>();
     protected firstNodeExpanded = true;
+    /**
+     * Id of the first node of the tree
+     */
     protected readonly firstNodeId = '__source__:0';
 
     async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
