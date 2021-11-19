@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
-import { SourceTree, TreeElement, TreeElementNode, TreeElementNodeParent } from '@theia/core/lib/browser/source-tree';
+import { SourceTree, TreeElement, TreeElementNode, TreeElementNodeParent, SOURCE_NODE_ID_PREFIX, SOURCE_NODE_ID_SEPARATOR } from '@theia/core/lib/browser/source-tree';
 import { Disposable } from '@theia/core';
 import { DebugScope, DebugVariable } from './console/debug-console-items';
 import { DebugSessionManager } from './debug-session-manager';
@@ -41,7 +41,7 @@ export class DebugVariablesSourceTree extends SourceTree {
     /**
      * Id of the first node of the tree
      */
-    protected readonly firstNodeId = '__source__:0';
+    protected readonly firstNodeId = `${SOURCE_NODE_ID_PREFIX}${SOURCE_NODE_ID_SEPARATOR}0`;
 
     async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
         const nodes = await super.resolveChildren(parent);
