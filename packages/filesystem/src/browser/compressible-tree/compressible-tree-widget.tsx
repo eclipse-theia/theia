@@ -81,7 +81,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         this.model.selectedNodes.forEach(async node => {
             let collapsed = false;
             // In a compressed tree row - collapse the node only when reaching the start item
-            if (CompressibleTreeNode.isCompressionHead(node) && ExpandableTreeNode.is(node)) {
+            if (!CompressibleTreeNode.isCompressionChild(node) && ExpandableTreeNode.is(node)) {
                 collapsed = !!await this.model.collapseNode(node);
             }
             if (!collapsed) {
@@ -97,7 +97,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
         this.model.selectedNodes.forEach(async node => {
             let expanded = false;
             // In a compressed tree row - expand the node only when reaching the last item
-            if (CompressibleTreeNode.isCompressionTail(node) && ExpandableTreeNode.is(node)) {
+            if (!CompressibleTreeNode.isCompressionParent(node) && ExpandableTreeNode.is(node)) {
                 expanded = !!await this.model.expandNode(node);
             }
             if (!expanded) {
