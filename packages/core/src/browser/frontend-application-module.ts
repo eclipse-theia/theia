@@ -50,7 +50,7 @@ import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import { PreferenceService } from './preferences';
-import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
+import { Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
@@ -165,12 +165,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
     bind(DockPanelRenderer).toSelf();
-    bind(TabBarRendererFactory).toFactory(context => () => {
-        const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
-        const decoratorService = context.container.get<TabBarDecoratorService>(TabBarDecoratorService);
-        const iconThemeService = context.container.get<IconThemeService>(IconThemeService);
-        return new TabBarRenderer(contextMenuRenderer, decoratorService, iconThemeService);
-    });
+    bind(TabBarRendererFactory).toFactory(({ container }) => () => container.resolve(TabBarRenderer));
 
     bindContributionProvider(bind, TabBarDecorator);
     bind(TabBarDecoratorService).toSelf().inSingletonScope();
