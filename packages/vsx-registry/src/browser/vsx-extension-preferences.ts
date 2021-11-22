@@ -16,13 +16,14 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 
 export const VSXExtensionConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
         'extensions.displayIncompatible': {
             type: 'boolean',
-            description: 'Controls whether to display incompatible extensions when searching.',
+            description: nls.localize('theia/vsx-registry/displayIncompatible', 'Controls whether to display incompatible extensions when searching.'),
             default: true
         }
     }

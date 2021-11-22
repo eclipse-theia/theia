@@ -28,7 +28,7 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { MenuPath } from '@theia/core/lib/common';
+import { MenuPath, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer, TooltipService } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
@@ -265,7 +265,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get tooltip(): string {
-        let md = `__${this.displayName}__ ${this.version !== undefined ? this.version : 'No Compatible Version'}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
+        const version = this.version !== undefined
+            ? this.version
+            : nls.localize('theia/vsx-registry/noCompatibleVersion', 'No Compatible Version');
+        let md = `__${this.displayName}__ ${version}\n\n${this.description}\n_____\n\nPublisher: ${this.publisher}`;
 
         if (this.license) {
             md += `  \rLicense: ${this.license}`;
@@ -422,6 +425,9 @@ const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'c
 export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
         const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip, compatible } = this.props.extension;
+        const extensionVersion = version !== undefined
+            ? version
+            : nls.localize('theia/vsx-registry/noCompatibleVersion', 'No Compatible Version');
 
         return <div className={`theia-vsx-extension noselect ${compatible ? '' : 'incompatible'}`} data-for={tooltipId} data-tip={tooltip}>
             {iconUrl ?
@@ -430,7 +436,7 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span> <span className='version'>{version !== undefined ? version : 'No Compatible Version'}</span>
+                        <span className='name'>{displayName}</span> <span className='version'>{extensionVersion}</span>
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
