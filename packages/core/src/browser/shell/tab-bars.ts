@@ -31,7 +31,6 @@ import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { inject, injectable } from 'shared/inversify';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -72,11 +71,7 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
  * `transform` property, disrupting the browser's ability to arrange those elements
  * automatically.
  */
-@injectable()
 export class TabBarRenderer extends TabBar.Renderer {
-
-    @inject(SelectionService) protected readonly selectionService?: SelectionService;
-
     /**
      * The menu path used to render the context menu.
      */
@@ -88,9 +83,10 @@ export class TabBarRenderer extends TabBar.Renderer {
     // events should be handled by clients, like ApplicationShell
     // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderers and clients
     constructor(
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer?: ContextMenuRenderer,
-        @inject(TabBarDecoratorService) protected readonly decoratorService?: TabBarDecoratorService,
-        @inject(IconThemeService) protected readonly iconThemeService?: IconThemeService,
+        protected readonly contextMenuRenderer?: ContextMenuRenderer,
+        protected readonly decoratorService?: TabBarDecoratorService,
+        protected readonly iconThemeService?: IconThemeService,
+        protected readonly selectionService?: SelectionService,
     ) {
         super();
         if (this.decoratorService) {

@@ -29,10 +29,10 @@ import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
+import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed } from '../widgets';
@@ -1827,12 +1827,12 @@ export class ApplicationShell extends Widget {
         return undefined;
     }
 
-    canToggleMaximized(widget?: Widget): boolean {
+    canToggleMaximized(widget: Widget | undefined = this.currentWidget): boolean {
         const area = widget && this.getAreaFor(widget);
         return area === 'main' || area === 'bottom';
     }
 
-    toggleMaximized(widget?: Widget): void {
+    toggleMaximized(widget: Widget | undefined = this.currentWidget): void {
         const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
             area.toggleMaximized();

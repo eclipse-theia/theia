@@ -50,7 +50,7 @@ import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import { PreferenceService } from './preferences';
-import { Coordinate } from './context-menu-renderer';
+import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
@@ -165,7 +165,13 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
     bind(DockPanelRenderer).toSelf();
-    bind(TabBarRendererFactory).toFactory(({ container }) => () => container.resolve(TabBarRenderer));
+    bind(TabBarRendererFactory).toFactory(({ container }) => () => {
+        const contextMenuRenderer = container.get(ContextMenuRenderer);
+        const tabBarDecoratorService = container.get(TabBarDecoratorService);
+        const iconThemeService = container.get(IconThemeService);
+        const selectionService = container.get(SelectionService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService);
+    });
 
     bindContributionProvider(bind, TabBarDecorator);
     bind(TabBarDecoratorService).toSelf().inSingletonScope();

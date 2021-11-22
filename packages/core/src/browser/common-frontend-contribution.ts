@@ -474,7 +474,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected initResourceContextKeys(): void {
-        console.log('SENTINEL FOR SETTING UP THE RESOURCE CONTEXT KEYS!');
         const updateContextKeys = () => {
             const selection = this.selectionService.selection;
             const resourceUri = Navigatable.is(selection) && selection.getResourceUri() || UriSelection.getUri(selection);
@@ -788,9 +787,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => this.shell.canToggleMaximized(title?.owner),
-            isVisible: title => this.shell.canToggleMaximized(title?.owner),
-            execute: title => this.shell.toggleMaximized(title?.owner),
+            isEnabled: title => Boolean(title?.owner && this.shell.canToggleMaximized(title?.owner)),
+            isVisible: title => Boolean(title?.owner && this.shell.canToggleMaximized(title?.owner)),
+            execute: title => title?.owner && this.shell.toggleMaximized(title?.owner),
         }));
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {

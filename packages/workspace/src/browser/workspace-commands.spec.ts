@@ -39,6 +39,7 @@ import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { WorkspacePreferences } from './workspace-preferences';
 import { WorkspaceService } from './workspace-service';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 disableJSDOM();
 
@@ -88,6 +89,7 @@ describe('workspace-commands', () => {
         container.bind(WorkspaceDuplicateHandler).toConstantValue(<WorkspaceDuplicateHandler>{});
         container.bind(WorkspacePreferences).toConstantValue(<WorkspacePreferences>{});
         container.bind(WorkspaceService).toConstantValue(<WorkspaceService>{});
+        container.bind(ClipboardService).toConstantValue(<ClipboardService>{});
         container.bind(ApplicationServer).toConstantValue(<ApplicationServer>{
             getBackendOS(): Promise<OS.Type> {
                 return Promise.resolve(OS.type());
