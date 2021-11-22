@@ -120,7 +120,7 @@ export class DebugSessionConnection implements Disposable {
 
     private sequence = 1;
 
-    protected readonly pendingRequests = new Map<number, (response: DebugProtocol.Response) => void>();
+    protected readonly pendingRequests = new Map<number, Deferred<DebugProtocol.Response>>();
     protected readonly connectionPromise: Promise<Channel>;
 
     protected readonly requestHandlers = new Map<string, DebugRequestHandler>();
@@ -130,6 +130,8 @@ export class DebugSessionConnection implements Disposable {
 
     protected readonly onDidCloseEmitter = new Emitter<void>();
     readonly onDidClose: Event<void> = this.onDidCloseEmitter.event;
+
+    protected isClosed = false;
 
     protected readonly toDispose = new DisposableCollection(
         this.onDidCustomEventEmitter,
@@ -162,6 +164,8 @@ export class DebugSessionConnection implements Disposable {
     protected async createConnection(connectionFactory: (sessionId: string) => Promise<Channel>): Promise<Channel> {
         const connection = await connectionFactory(this.sessionId);
         connection.onClose(() => {
+            this.isClosed = true;
+            this.cancelPendingRequests();
             this.onDidCloseEmitter.fire();
         });
         connection.onMessage(data => this.handleMessage(data));
@@ -169,8 +173,8 @@ export class DebugSessionConnection implements Disposable {
     }
 
     protected allThreadsContinued = true;
-    async sendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0]): Promise<DebugRequestTypes[K][1]> {
-        const result = await this.doSendRequest(command, args);
+    async sendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0], timeout?: number): Promise<DebugRequestTypes[K][1]> {
+        const result = await this.doSendRequest(command, args, timeout);
         if (command === 'next' || command === 'stepIn' ||
             command === 'stepOut' || command === 'stepBack' ||
             command === 'reverseContinue' || command === 'restartFrame') {
@@ -190,39 +194,48 @@ export class DebugSessionConnection implements Disposable {
     sendCustomRequest<T extends DebugProtocol.Response>(command: string, args?: any): Promise<T> {
         return this.doSendRequest<T>(command, args);
     }
-    protected async doSendRequest<K extends DebugProtocol.Response>(command: string, args?: any): Promise<K> {
+
+    protected cancelPendingRequests(): void {
+        this.pendingRequests.forEach((deferred, requestId) => {
+            deferred.reject(new Error(`Request ${requestId} cancelled on connection close`));
+        });
+    }
+
+    protected doSendRequest<K extends DebugProtocol.Response>(command: string, args?: any, timeout?: number): Promise<K> {
         const result = new Deferred<K>();
 
-        const request: DebugProtocol.Request = {
-            seq: this.sequence++,
-            type: 'request',
-            command: command,
-            arguments: args
-        };
+        if (this.isClosed) {
+            result.reject(new Error('Connection is closed'));
+        } else {
+            const request: DebugProtocol.Request = {
+                seq: this.sequence++,
+                type: 'request',
+                command: command,
+                arguments: args
+            };
 
-        const onDispose = this.toDispose.push(Disposable.create(() => {
-            const pendingRequest = this.pendingRequests.get(request.seq);
-            if (pendingRequest) {
-                pendingRequest({
-                    type: 'response',
-                    request_seq: request.seq,
-                    command: request.command,
-                    seq: 0,
-                    success: false,
-                    message: 'debug session is closed'
-                });
+            this.pendingRequests.set(request.seq, result);
+            if (timeout) {
+                const handle = setTimeout(() => {
+                    const pendingRequest = this.pendingRequests.get(request.seq);
+                    if (pendingRequest) {
+                        // request has not been handled
+                        this.pendingRequests.delete(request.seq);
+                        const error: DebugProtocol.Response = {
+                            type: 'response',
+                            seq: 0,
+                            request_seq: request.seq,
+                            success: false,
+                            command,
+                            message: `Request #${request.seq}: ${request.command} timed out`
+                        };
+                        pendingRequest.reject(error);
+                    }
+                }, timeout);
+                result.promise.finally(() => clearTimeout(handle));
             }
-        }));
-        this.pendingRequests.set(request.seq, (response: K) => {
-            onDispose.dispose();
-            if (!response.success) {
-                result.reject(response);
-            } else {
-                result.resolve(response);
-            }
-        });
-
-        await this.send(request);
+            this.send(request);
+        }
         return result.promise;
     }
 
@@ -250,10 +263,14 @@ export class DebugSessionConnection implements Disposable {
     }
 
     protected handleResponse(response: DebugProtocol.Response): void {
-        const callback = this.pendingRequests.get(response.request_seq);
-        if (callback) {
+        const pendingRequest = this.pendingRequests.get(response.request_seq);
+        if (pendingRequest) {
             this.pendingRequests.delete(response.request_seq);
-            callback(response);
+            if (!response.success) {
+                pendingRequest.reject(response);
+            } else {
+                pendingRequest.resolve(response);
+            }
         }
     }
 

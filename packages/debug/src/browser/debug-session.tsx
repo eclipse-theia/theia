@@ -330,15 +330,19 @@ export class DebugSession implements CompositeTreeElement {
         if (!this.isStopping) {
             this.isStopping = true;
             if (this.canTerminate()) {
-                const terminated = this.waitFor('terminated', 1000);
-                await this.connection.sendRequest('terminate', { restart: isRestart });
+                const terminated = this.waitFor('terminated', 5000);
                 try {
+                    await this.connection.sendRequest('terminate', { restart: isRestart }, 5000);
                     await terminated;
                 } catch (e) {
                     console.error('Did not receive terminated event in time', e);
                 }
             } else {
-                await this.sendRequest('disconnect', { restart: isRestart });
+                try {
+                    await this.sendRequest('disconnect', { restart: isRestart }, 5000);
+                } catch (e) {
+                    console.error('Error on disconnect', e);
+                }
             }
             callback();
         }
@@ -364,8 +368,8 @@ export class DebugSession implements CompositeTreeElement {
         return response.body;
     }
 
-    sendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0]): Promise<DebugRequestTypes[K][1]> {
-        return this.connection.sendRequest(command, args);
+    sendRequest<K extends keyof DebugRequestTypes>(command: K, args: DebugRequestTypes[K][0], timeout?: number): Promise<DebugRequestTypes[K][1]> {
+        return this.connection.sendRequest(command, args, timeout);
     }
 
     sendCustomRequest<T extends DebugProtocol.Response>(command: string, args?: any): Promise<T> {

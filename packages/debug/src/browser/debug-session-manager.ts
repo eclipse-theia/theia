@@ -290,7 +290,11 @@ export class DebugSessionManager {
         });
 
         session.onDispose(() => this.cleanup(session));
-        session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session)).catch(e => session.stop(false, () => this.debug.terminateDebugSession(session.id)));
+        session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session)).catch(e => {
+            session.stop(false, () => {
+                this.debug.terminateDebugSession(session.id);
+            });
+        });
         session.onDidCustomEvent(({ event, body }) =>
             this.onDidReceiveDebugSessionCustomEventEmitter.fire({ event, body, session })
         );
