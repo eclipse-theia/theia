@@ -75,6 +75,7 @@ import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
 import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 import { nls } from '@theia/core/lib/common/nls';
+import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = Command.toLocalizedCommand({
@@ -270,20 +271,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerCommand(FileNavigatorCommands.FOCUS, {
             execute: () => this.openView({ activate: true })
         });
-        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
-            execute: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                this.openView({ activate: true }).then(() => this.selectWidgetFileNode(widget || this.shell.currentWidget));
-            },
-            isEnabled: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
-            },
-            isVisible: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
-            }
-        });
+        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, new CurrentWidgetCommandAdapter(this.shell, {
+            execute: title => this.selectWidgetFileNode(title?.owner),
+            isEnabled: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
+            isVisible: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
+        }));
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
                 this.fileNavigatorFilter.toggleHiddenFiles();

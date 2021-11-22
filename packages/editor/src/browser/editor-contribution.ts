@@ -20,7 +20,7 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import {
     FrontendApplicationContribution, DiffUris, DockLayout,
-    QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT
+    QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT, ApplicationShell
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
@@ -29,6 +29,8 @@ import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
+import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
+import { EditorWidget } from './editor-widget';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
@@ -36,6 +38,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(LanguageService) protected readonly languages: LanguageService;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -135,15 +138,14 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
             execute: () => this.quickInputService?.open('edt ')
         });
-        const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => ({
-            isEnabled: () => !!this.editorManager.currentEditor,
-            isVisible: () => !!this.editorManager.currentEditor,
-            execute: async () => {
-                const { currentEditor } = this.editorManager;
-                if (currentEditor) {
-                    const selection = currentEditor.editor.selection;
-                    const newEditor = await this.editorManager.openToSide(currentEditor.editor.uri, { selection, widgetOptions: { mode: splitMode } });
-                    const oldEditorState = currentEditor.editor.storeViewState();
+        const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => title?.owner instanceof EditorWidget,
+            isVisible: title => title?.owner instanceof EditorWidget,
+            execute: async title => {
+                if (title?.owner instanceof EditorWidget) {
+                    const selection = title.owner.editor.selection;
+                    const newEditor = await this.editorManager.openToSide(title.owner.editor.uri, { selection, widgetOptions: { mode: splitMode } });
+                    const oldEditorState = title.owner.editor.storeViewState();
                     newEditor.editor.restoreViewState(oldEditorState);
                 }
             }

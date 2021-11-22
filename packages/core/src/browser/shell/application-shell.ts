@@ -82,9 +82,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
     constructor(
-        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
+        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar,
+        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
     ) { }
 
@@ -846,29 +846,18 @@ export class ApplicationShell extends Widget {
      * @returns the selected title widget, else returns the currentTitle or undefined.
      */
     findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
-        return this.findTitleForEvent(tabBar, event) || tabBar.currentTitle || undefined;
-    }
-
-    /**
-     * @returns the title of the widget whose tab was targeted by the event, if any.
-     */
-    findTitleForEvent(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
-            let tabNode: HTMLElement | null = event.target;
-            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
-                tabNode = tabNode.parentElement;
+            const tabNode = event.target;
+
+            const titleIndex = Array.from(tabBar.contentNode.getElementsByClassName('p-TabBar-tab'))
+                .findIndex(node => node.contains(tabNode));
+
+            if (titleIndex !== -1) {
+                return tabBar.titles[titleIndex];
             }
-            if (tabNode && tabNode.title) {
-                let title = tabBar.titles.find(t => t.caption === tabNode!.title);
-                if (title) {
-                    return title;
-                }
-                title = tabBar.titles.find(t => t.label === tabNode!.title);
-                if (title) {
-                    return title;
-                }
-            }
+
         }
+        return tabBar.currentTitle || undefined;
     }
 
     /**
@@ -876,19 +865,13 @@ export class ApplicationShell extends Widget {
      * @returns the selected tab-bar, else returns the currentTabBar.
      */
     findTabBar(event?: Event): TabBar<Widget> | undefined {
-        return this.findTabBarForEvent(event) ?? this.currentTabBar;
-    }
-
-    /**
-     * @returns the tabbar targeted by the event, if any.
-     */
-    findTabBarForEvent(event?: Event): TabBar<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
             const tabBar = this.findWidgetForElement(event.target);
             if (tabBar instanceof TabBar) {
                 return tabBar;
             }
         }
+        return this.currentTabBar;
     }
 
     /**
@@ -1844,18 +1827,18 @@ export class ApplicationShell extends Widget {
         return undefined;
     }
 
-    canToggleMaximized(): boolean {
-        const area = this.currentWidget && this.getAreaFor(this.currentWidget);
+    canToggleMaximized(widget?: Widget): boolean {
+        const area = widget && this.getAreaFor(widget);
         return area === 'main' || area === 'bottom';
     }
 
-    toggleMaximized(): void {
-        const area = this.currentWidget && this.getAreaPanelFor(this.currentWidget);
+    toggleMaximized(widget?: Widget): void {
+        const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
             area.toggleMaximized();
+            this.revealWidget(widget!.id);
         }
     }
-
 }
 
 /**

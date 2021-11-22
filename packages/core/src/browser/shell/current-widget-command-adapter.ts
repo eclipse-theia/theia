@@ -18,21 +18,24 @@ import { CommandHandler } from '../../common';
 import { TabBar, Title, Widget } from '../widgets';
 import { ApplicationShell } from './application-shell';
 
-type TabBarContextMenuCommandAdapterBooleanCheck = undefined | ((event: Event) => boolean);
-type TabBarContextMenuCommandHandlerBooleanCheck = undefined | ((widget: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event) => boolean);
+type CurrentWidgetCommandAdapterBooleanCheck = (event: Event) => boolean;
+type CurrentWidgetCommandHandlerBooleanCheck = (title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event) => boolean;
 
 export interface TabBarContextMenuCommandHandler extends CommandHandler {
-    execute(widget: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event): unknown;
-    isEnabled: TabBarContextMenuCommandHandlerBooleanCheck;
-    isVisible: TabBarContextMenuCommandHandlerBooleanCheck;
-    isToggled: TabBarContextMenuCommandHandlerBooleanCheck;
+    execute(title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event): unknown;
+    isEnabled?: CurrentWidgetCommandHandlerBooleanCheck;
+    isVisible?: CurrentWidgetCommandHandlerBooleanCheck;
+    isToggled?: CurrentWidgetCommandHandlerBooleanCheck;
 }
 
-export class TabBarContextMenuCommandAdapter implements CommandHandler {
+/**
+ * Creates a command handler that acts on either the widget targeted by a DOM event or the current widget.
+ */
+export class CurrentWidgetCommandAdapter implements CommandHandler {
     execute: (event: Event) => unknown;
-    isEnabled: TabBarContextMenuCommandAdapterBooleanCheck;
-    isVisible: TabBarContextMenuCommandAdapterBooleanCheck;
-    isToggled: TabBarContextMenuCommandAdapterBooleanCheck;
+    isEnabled?: CurrentWidgetCommandAdapterBooleanCheck;
+    isVisible?: CurrentWidgetCommandAdapterBooleanCheck;
+    isToggled?: CurrentWidgetCommandAdapterBooleanCheck;
     constructor(shell: ApplicationShell, handler: TabBarContextMenuCommandHandler) {
         this.execute = (event: Event) => handler.execute(...this.transformArguments(shell, event));
         if (handler.isEnabled) {
@@ -47,9 +50,9 @@ export class TabBarContextMenuCommandAdapter implements CommandHandler {
     }
 
     protected transformArguments(shell: ApplicationShell, event: Event): [Title<Widget> | undefined, TabBar<Widget> | undefined, Event] {
-        const tabBar = shell.findTabBarForEvent(event);
+        const tabBar = shell.findTabBar(event);
         if (tabBar) {
-            const title = shell.findTitleForEvent(tabBar, event);
+            const title = shell.findTitle(tabBar, event);
             if (title) {
                 return [title, tabBar, event];
             }

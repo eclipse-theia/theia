@@ -18,7 +18,6 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { TabBar, Widget } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
@@ -55,6 +54,7 @@ import { FormatType, Saveable } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
+import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
 
 export namespace CommonMenus {
 
@@ -474,6 +474,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected initResourceContextKeys(): void {
+        console.log('SENTINEL FOR SETTING UP THE RESOURCE CONTEXT KEYS!');
         const updateContextKeys = () => {
             const selection = this.selectionService.selection;
             const resourceUri = Navigatable.is(selection) && selection.getResourceUri() || UriSelection.getUri(selection);
@@ -700,71 +701,45 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: () => this.shell.previousTabBar() !== undefined,
             execute: () => this.shell.activatePreviousTabBar()
         });
-        commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
-            isEnabled: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                if (!tabBar) {
-                    return false;
-                }
-                const currentTitle = this.shell.findTitle(tabBar, event);
-                return currentTitle !== undefined && currentTitle.closable;
+        commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => Boolean(title?.closable),
+            execute: (title, tabBar) => tabBar && this.shell.closeTabs(tabBar, candidate => candidate === title),
+        }));
+        commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: (title, tabbar) => Boolean(tabbar?.titles.some(candidate => candidate !== title && candidate.closable)),
+            execute: (title, tabbar) => tabbar && this.shell.closeTabs(tabbar, candidate => candidate !== title && candidate.closable),
+        }));
+        commandRegistry.registerCommand(CommonCommands.CLOSE_SAVED_TABS, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: (_title, tabbar) => Boolean(tabbar?.titles.some(candidate => candidate.closable && !Saveable.isDirty(candidate.owner))),
+            execute: (_title, tabbar) => tabbar && this.shell.closeTabs(tabbar, candidate => candidate.closable && !Saveable.isDirty(candidate.owner)),
+        }));
+        commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: (title, tabbar) => {
+                let targetSeen = false;
+                return Boolean(tabbar?.titles.some(candidate => {
+                    if (targetSeen && candidate.closable) { return true; };
+                    if (candidate === title) { targetSeen = true; };
+                }));
             },
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event)!;
-                const currentTitle = this.shell.findTitle(tabBar, event);
-                this.shell.closeTabs(tabBar, title => title === currentTitle);
-            }
-        });
-        commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
-            isEnabled: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                if (!tabBar) {
-                    return false;
-                }
-                const currentTitle = this.shell.findTitle(tabBar, event);
-                return tabBar.titles.some(title => title !== currentTitle && title.closable);
-            },
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event)!;
-                const currentTitle = this.shell.findTitle(tabBar, event);
-                this.shell.closeTabs(tabBar, title => title !== currentTitle && title.closable);
-            }
-        });
-        commandRegistry.registerCommand(CommonCommands.CLOSE_SAVED_TABS, {
-            isEnabled: (event?: Event) => !!this.shell.findTabBar(event),
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                if (tabBar) {
-                    this.shell.closeTabs(tabBar, title => title.closable && !Saveable.isDirty(title.owner));
-                }
-            }
-        });
-        commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
-            isEnabled: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                if (!tabBar) {
-                    return false;
-                }
-                const currentIndex = this.findTitleIndex(tabBar, event);
-                return tabBar.titles.some((title, index) => index > currentIndex && title.closable);
-            },
-            isVisible: (event?: Event) => {
-                const area = this.findTabArea(event);
+            isVisible: (_title, tabbar) => {
+                const area = (tabbar && this.shell.getAreaFor(tabbar)) ?? this.shell.currentTabArea;
                 return area !== undefined && area !== 'left' && area !== 'right';
             },
-            execute: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event)!;
-                const currentIndex = this.findTitleIndex(tabBar, event);
-                this.shell.closeTabs(tabBar, (title, index) => index > currentIndex && title.closable);
+            execute: (title, tabbar) => {
+                if (tabbar) {
+                    let targetSeen = false;
+                    this.shell.closeTabs(tabbar, candidate => {
+                        if (targetSeen && candidate.closable) { return true; };
+                        if (candidate === title) { targetSeen = true; };
+                        return false;
+                    });
+                }
             }
-        });
-        commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: (event?: Event) => {
-                const tabBar = this.shell.findTabBar(event);
-                return tabBar !== undefined && tabBar.titles.some(title => title.closable);
-            },
-            execute: (event?: Event) => this.shell.closeTabs(this.shell.findTabBar(event)!, title => title.closable)
-        });
+        }));
+        commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: (_title, tabbar) => Boolean(tabbar?.titles.some(title => title.closable)),
+            execute: (_title, tabbar) => tabbar && this.shell.closeTabs(tabbar, candidate => candidate.closable),
+        }));
         commandRegistry.registerCommand(CommonCommands.CLOSE_MAIN_TAB, {
             isEnabled: () => {
                 const currentWidget = this.shell.getCurrentWidget('main');
@@ -787,11 +762,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: () => this.shell.mainAreaTabBars.some(tb => tb.titles.some(title => title.closable)),
             execute: () => this.shell.closeTabs('main', title => title.closable)
         });
-        commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
-            isEnabled: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
-            isVisible: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
-            execute: (event?: Event) => this.shell.collapsePanel(this.findTabArea(event)!)
-        });
+        commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: (_title, tabbar) => Boolean(tabbar && ApplicationShell.isSideArea(this.shell.getAreaFor(tabbar))),
+            isVisible: (_title, tabbar) => Boolean(tabbar && ApplicationShell.isSideArea(this.shell.getAreaFor(tabbar))),
+            execute: (_title, tabbar) => tabbar && this.shell.collapsePanel(this.shell.getAreaFor(tabbar)!)
+        }));
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
             execute: () => {
                 this.shell.collapsePanel('left');
@@ -812,11 +787,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.TOGGLE_STATUS_BAR, {
             execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
         });
-        commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
-            isEnabled: (event?: Event) => this.canToggleMaximized(event),
-            isVisible: (event?: Event) => this.canToggleMaximized(event),
-            execute: (event?: Event) => this.toggleMaximized(event)
-        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => this.shell.canToggleMaximized(title?.owner),
+            isVisible: title => this.shell.canToggleMaximized(title?.owner),
+            execute: title => this.shell.toggleMaximized(title?.owner),
+        }));
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.shell.save({ formatType: FormatType.ON })
@@ -845,63 +820,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
         });
-    }
-
-    private findTabArea(event?: Event): ApplicationShell.Area | undefined {
-        const tabBar = this.shell.findTabBar(event);
-        if (tabBar) {
-            return this.shell.getAreaFor(tabBar);
-        }
-        return this.shell.currentTabArea;
-    }
-
-    /**
-     * Finds the index of the selected title from the tab-bar.
-     * @param tabBar: used for providing an array of titles.
-     * @returns the index of the selected title if it is available in the tab-bar, else returns the index of currently-selected title.
-     */
-    private findTitleIndex(tabBar: TabBar<Widget>, event?: Event): number {
-        if (event) {
-            const targetTitle = this.shell.findTitle(tabBar, event);
-            return targetTitle ? tabBar.titles.indexOf(targetTitle) : tabBar.currentIndex;
-        }
-        return tabBar.currentIndex;
-    }
-
-    private canToggleMaximized(event?: Event): boolean {
-        if (event?.target instanceof HTMLElement) {
-            const widget = this.shell.findWidgetForElement(event.target);
-            if (widget) {
-                return this.shell.mainPanel.contains(widget) || this.shell.bottomPanel.contains(widget);
-            }
-        }
-        return this.shell.canToggleMaximized();
-    }
-
-    /**
-     * Maximize the bottom or the main dockpanel based on the widget.
-     * @param event used to find the selected widget.
-     */
-    private toggleMaximized(event?: Event): void {
-        if (event?.target instanceof HTMLElement) {
-            const widget = this.shell.findWidgetForElement(event.target);
-            if (widget) {
-                if (this.shell.mainPanel.contains(widget)) {
-                    this.shell.mainPanel.toggleMaximized();
-                } else if (this.shell.bottomPanel.contains(widget)) {
-                    this.shell.bottomPanel.toggleMaximized();
-                }
-                if (widget instanceof TabBar) {
-                    // reveals the widget when maximized.
-                    const title = this.shell.findTitle(widget, event);
-                    if (title) {
-                        this.shell.revealWidget(title.owner.id);
-                    }
-                }
-            }
-        } else {
-            this.shell.toggleMaximized();
-        }
     }
 
     private isElectron(): boolean {
