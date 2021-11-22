@@ -398,16 +398,20 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
         }
         if (busy) {
             if (installed) {
-                return <button className="theia-button action theia-mod-disabled">Uninstalling</button>;
+                return <button className="theia-button action theia-mod-disabled">{nls.localizeByDefault('Uninstalling')}</button>;
             }
-            return <button className="theia-button action prominent theia-mod-disabled">Installing</button>;
+            return <button className="theia-button action prominent theia-mod-disabled">{nls.localizeByDefault('Installing')}</button>;
         }
         if (installed) {
-            return <div><button className="theia-button action" onClick={this.uninstall}>Uninstall</button>
-                <div className="codicon codicon-settings-gear action" onClick={this.manage}></div></div>;
+            return (
+                <div>
+                    <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button>
+                    <div className="codicon codicon-settings-gear action" onClick={this.manage}></div>
+                </div>
+            );
         }
         if (compatible) {
-            return <button className="theia-button prominent action" onClick={this.install}>Install</button>;
+            return <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>;
         }
     }
 
