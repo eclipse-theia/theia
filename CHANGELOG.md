@@ -1,5 +1,5 @@
 # Change Log
-
+- [plugindev] Renamed HostedPlugin(Server|Client) to PluginDev(Server|Client)
 ## v1.19.0 - 10/28/2021
 
 [1.19.0 Milestone](https://github.com/eclipse-theia/theia/milestone/25)
