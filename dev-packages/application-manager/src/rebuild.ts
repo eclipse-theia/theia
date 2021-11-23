@@ -136,7 +136,7 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
         console.debug('No module to rebuild.');
         return 0;
     }
-    // Update manifest tracking the backups original locations.
+    // Update manifest tracking the backups' original locations.
     await fs.writeJson(modulesJsonPath, modulesJson, { spaces: 2 });
     // If we failed to process a module then exit now.
     if (!success) {
@@ -188,10 +188,10 @@ async function revertBrowserModules(browserModuleCache: string, modules: string[
         }
     }));
     if (Object.keys(modulesJson).length === 0) {
-        // We restored everything so we can delete the cache.
+        // We restored everything, so we can delete the cache.
         await fs.remove(browserModuleCache);
     } else {
-        // Some things were not restored so we update the manifest.
+        // Some things were not restored, so we update the manifest.
         await fs.writeJson(modulesJsonPath, modulesJson, { spaces: 2 });
     }
     return exitCode;
