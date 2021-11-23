@@ -16,7 +16,6 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core';
-// eslint-disable-next-line @theia/runtime-import-check
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface WorkingDirectoryStatus {

@@ -18,25 +18,14 @@ import { Emitter, Event } from '../common/event';
 import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
+import { Theme, ThemeChangeEvent } from '../common/theme';
+
+/**
+ * @deprecated since 1.20.0. Import from `@theia/core/lib/common/theme` instead.
+ */
+export * from '../common/theme';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
-
-export type ThemeType = 'light' | 'dark' | 'hc';
-
-export interface Theme {
-    readonly id: string;
-    readonly type: ThemeType;
-    readonly label: string;
-    readonly description?: string;
-    readonly editorTheme?: string;
-    activate(): void;
-    deactivate(): void;
-}
-
-export interface ThemeChangeEvent {
-    readonly newTheme: Theme;
-    readonly oldTheme?: Theme;
-}
 
 export class ThemeService {
 
