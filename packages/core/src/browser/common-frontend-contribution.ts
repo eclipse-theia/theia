@@ -648,6 +648,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.COPY_PATH, UriAwareCommandHandler.MultiSelect(this.selectionService, {
+            isVisible: uris => Array.isArray(uris) && uris.some(uri => uri instanceof URI),
+            isEnabled: uris => Array.isArray(uris) && uris.some(uri => uri instanceof URI),
             execute: async uris => {
                 if (uris.length) {
                     const lineDelimiter = isWindows ? '\r\n' : '\n';
