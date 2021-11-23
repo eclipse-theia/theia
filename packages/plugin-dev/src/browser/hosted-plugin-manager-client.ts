@@ -22,7 +22,7 @@ import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
-import { HostedPluginServer } from '../common/plugin-dev-protocol';
+import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { DebugPluginConfiguration, LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
@@ -107,8 +107,8 @@ export class HostedPluginManagerClient {
         return this.stateChanged.event;
     }
 
-    @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    @inject(PluginDevServer)
+    protected readonly hostedPluginServer: PluginDevServer;
     @inject(MessageService)
     protected readonly messageService: MessageService;
     @inject(LabelProvider)

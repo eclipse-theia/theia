@@ -22,7 +22,7 @@ import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
 import { Menu } from '@theia/core/shared/@phosphor/widgets';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import { HostedPluginServer } from '../common/plugin-dev-protocol';
+import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
 import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
@@ -45,8 +45,8 @@ export class HostedPluginController implements FrontendApplicationContribution {
     @inject(FrontendApplicationStateService)
     protected readonly frontendApplicationStateService: FrontendApplicationStateService;
 
-    @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
+    @inject(PluginDevServer)
+    protected readonly hostedPluginServer: PluginDevServer;
 
     @inject(HostedPluginManagerClient)
     protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
