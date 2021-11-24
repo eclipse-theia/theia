@@ -75,13 +75,6 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     protected deferredChanges: PreferenceProviderDataChanges | undefined;
-    protected _pendingChanges = new Deferred<boolean>();
-    get pendingChanges(): Promise<boolean> {
-        if (this._pendingChanges.state !== 'unresolved') {
-            this._pendingChanges = new Deferred();
-        }
-        return this._pendingChanges.promise;
-    }
 
     /**
      * Informs the listeners that one or more preferences of this provider are changed.
@@ -124,7 +117,6 @@ export abstract class PreferenceProvider implements Disposable {
         if (changes && Object.keys(changes).length) {
             this.onDidPreferencesChangedEmitter.fire(changes);
         }
-        this._pendingChanges.resolve(true);
         return true;
     }, 0);
 
