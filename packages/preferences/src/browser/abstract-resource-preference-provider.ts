@@ -195,6 +195,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                         success = true;
                     } finally {
                         this.readPreferences();
+                        await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.
                         this.pendingTransaction.resolve(success);
                     }
                 }));

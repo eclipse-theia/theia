@@ -36,6 +36,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { Disposable, MessageService } from '@theia/core/lib/common';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 
 disableJSDOM();
 
@@ -84,6 +85,7 @@ describe('AbstractResourcePreferenceProvider', () => {
         testContainer.bind(<any>MonacoTextModelService).toConstantValue(new MockTextModelService);
         testContainer.bind(<any>MessageService).toConstantValue(undefined);
         testContainer.bind(<any>MonacoWorkspace).toConstantValue(undefined);
+        testContainer.bind(<any>EditorManager).toConstantValue(undefined);
         provider = testContainer.resolve(<any>LessAbstractPreferenceProvider);
     });
 
