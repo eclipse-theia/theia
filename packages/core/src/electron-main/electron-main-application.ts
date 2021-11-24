@@ -42,12 +42,12 @@ const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yarg
 export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptions {
     isMaximized?: boolean;
     isFullScreen?: boolean;
-
     /**
      * Represents the complete screen layout for all available displays.
-     * - Used to determine if the layout was updated since the electron window was last opened.
+     * This field is used to determine if the layout was updated since the electron window was last opened,
+     * in which case we want to invalidate the stored options and use the default options instead.
      */
-    screenLayout: string;
+    screenLayout?: string;
 }
 
 /**
@@ -260,12 +260,10 @@ export class ElectronMainApplication {
     }
 
     async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
-        let windowState;
-        if (this.getCurrentScreenLayout() === this.electronStore.get('windowstate').screenLayout) {
-            windowState = this.electronStore.get('windowstate');
-        } else {
-            windowState = this.getDefaultTheiaWindowOptions();
-        }
+        const previousWindowState: TheiaBrowserWindowOptions | undefined = this.electronStore.get('windowstate');
+        const windowState = previousWindowState?.screenLayout === this.getCurrentScreenLayout()
+            ? previousWindowState
+            : this.getDefaultTheiaWindowOptions();
         return {
             frame: this.useNativeWindowFrame,
             ...this.getDefaultOptions(),
@@ -424,11 +422,12 @@ export class ElectronMainApplication {
     }
 
     /**
-     * Get display information and turn it into a string.
+     * Return a string unique to the current display layout.
      */
     protected getCurrentScreenLayout(): string {
-        const displays = screen.getAllDisplays();
-        return displays.map(display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`).join('-');
+        return screen.getAllDisplays().map(
+            display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`
+        ).sort().join('-');
     }
 
     /**
