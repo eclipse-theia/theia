@@ -80,7 +80,7 @@ export class ProcessTaskResolver implements TaskResolver {
             } : undefined,
             options: {
                 cwd: await this.variableResolverService.resolve(cwd, variableResolverOptions),
-                env: await this.variableResolverService.resolve(processTaskConfig.options && processTaskConfig.options.env, variableResolverOptions),
+                env: processTaskConfig.options?.env && await this.variableResolverService.resolve(processTaskConfig.options.env, variableResolverOptions),
                 shell: processTaskConfig.options && processTaskConfig.options.shell
             }
         };
