@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './tree';
-export * from './tree-selection';
-export * from './tree-expansion';
-export * from './tree-navigation';
-export * from './tree-iterator';
-export * from './tree-model';
-export * from './tree-widget';
-export * from './tree-view-welcome-widget';
-export * from './tree-container';
-export * from './tree-decorator';
-export * from './tree-search';
+export * from './compressible-tree';
+export * from './compressible-tree-model';
+export * from './compressible-tree-widget';
+export * from './compressible-tree-container';
+export * from './tree-compression';

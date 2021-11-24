@@ -857,7 +857,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
                 paddingLeft: `${paddingLeft}px`
             }} />);
-            // Indent need to be calculated according to the displayed rows, The direct parent might be hidden by the `shouldDisplayNode` condition.
+            // Indent needs to be calculated according to the displayed rows, The direct parent might be hidden by the `shouldDisplayNode` condition.
             current = this.getDisplayedParent(current.parent);
             depth--;
         }
@@ -1104,7 +1104,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addEventListener(this.node, 'focus', () => this.doFocus());
     }
 
-    protected isMutiSelectMaskEvent(event: KeyboardEvent): boolean {
+    protected isMultiSelectMaskEvent(event: KeyboardEvent): boolean {
         return !!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event));
     }
 
@@ -1113,7 +1113,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param event the `left arrow` keyboard event.
      */
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
-        if (this.isMutiSelectMaskEvent(event)) {
+        if (this.isMultiSelectMaskEvent(event)) {
             return;
         }
         if (! await this.model.collapseNode()) {
@@ -1126,7 +1126,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param event the `right arrow` keyboard event.
      */
     protected async handleRight(event: KeyboardEvent): Promise<void> {
-        if (this.isMutiSelectMaskEvent(event)) {
+        if (this.isMultiSelectMaskEvent(event)) {
             return;
         }
         if (! await this.model.expandNode()) {

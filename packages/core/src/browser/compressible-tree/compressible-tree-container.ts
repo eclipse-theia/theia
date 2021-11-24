@@ -14,7 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './compressible-tree';
-export * from './compressible-tree-model';
-export * from './compressible-tree-widget';
-export * from './compressible-tree-container';
+import { interfaces, Container } from 'inversify';
+import { Tree, TreeModel, createTreeContainer, TreeImpl, TreeModelImpl, TreeWidget } from '../tree';
+import { CompressibleTree } from './compressible-tree';
+import { CompressibleTreeModel } from './compressible-tree-model';
+import { CompressibleTreeWidget } from './compressible-tree-widget';
+
+export function createCompressibleTreeContainer(parent: interfaces.Container): Container {
+    const child = createTreeContainer(parent);
+
+    child.unbind(TreeImpl);
+    child.bind(CompressibleTree).toSelf();
+    child.rebind(Tree).toService(CompressibleTree);
+
+    child.unbind(TreeModelImpl);
+    child.bind(CompressibleTreeModel).toSelf();
+    child.rebind(TreeModel).toService(CompressibleTreeModel);
+
+    child.unbind(TreeWidget);
+    child.bind(CompressibleTreeWidget).toSelf();
+
+    return child;
+}

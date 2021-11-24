@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from '@theia/core/shared/inversify';
-import { TreeNode, CompressibleTreeNode, TreeImpl } from '@theia/core/lib/browser';
+import { injectable } from 'inversify';
+import { CompressibleTreeNode } from './tree-compression';
+import { TreeNode, TreeImpl } from '../tree';
 
 @injectable()
 export abstract class CompressibleTree extends TreeImpl {
 
-    protected abstract isCompressionEnabled: () => boolean;
+    protected abstract isCompressionEnabled(): boolean;
 
     protected abstract shouldCompressNode(node: TreeNode): boolean;
 

@@ -24,7 +24,7 @@ import { UriSelection } from '@theia/core/lib/common/selection';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileSelection } from '../file-selection';
 import { FileService } from '../file-service';
-import { CompressibleTree } from '../compressible-tree';
+import { CompressibleTree } from '@theia/core/lib/browser/compressible-tree/compressible-tree';
 
 @injectable()
 export class FileTree extends CompressibleTree {

@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from '@theia/core/shared/react';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject } from 'inversify';
+import React = require('react');
+import { ContextMenuRenderer } from '../context-menu-renderer';
 import {
-    NodeProps, TreeNode, CompositeTreeNode, SelectableTreeNode, SELECTED_CLASS, ExpandableTreeNode,
-    CompressibleTreeNode, TreeSelection, TreeProps, ContextMenuRenderer, TreeViewWelcomeWidget
-} from '@theia/core/lib/browser';
+    NodeProps, TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeSelection, TreeProps, TreeViewWelcomeWidget
+} from '../tree';
+import { SELECTED_CLASS } from '../widgets';
 import { CompressibleTreeModel } from './compressible-tree-model';
+import { CompressibleTreeNode } from './tree-compression';
 
 export const COMPRESSED_CAPTION_SEPARATOR_CLASS = 'theia-CompressedCaptionSeparator';
 export const COMPRESSED_CAPTION_SECTION_CLASS = 'theia-CompressedCaptionSection';
@@ -50,7 +52,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
             return false;
         };
         // Searching for a compressed child that is not updated with the `node` expansion state and update it,
-        // The update will cause the `onExpansionChanged` event to fire with the updated child and search again for a compressed child that need to be upadted,
+        // The update will cause the `onExpansionChanged` event to fire with the updated child and search again for a compressed child that need to be updated,
         // And so on until all the compressed items in a raw will share the same expansion state...
         const updateCompressedExpansion = (node: CompositeTreeNode) => {
             let firstChild = node.children[0];
@@ -75,7 +77,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
-        if (this.isMutiSelectMaskEvent(event)) {
+        if (this.isMultiSelectMaskEvent(event)) {
             return;
         }
         this.model.selectedNodes.forEach(async node => {
@@ -91,7 +93,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected async handleRight(event: KeyboardEvent): Promise<void> {
-        if (this.isMutiSelectMaskEvent(event)) {
+        if (this.isMultiSelectMaskEvent(event)) {
             return;
         }
         this.model.selectedNodes.forEach(async node => {
@@ -188,7 +190,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected needsActiveIndentGuideline(node: TreeNode): boolean {
-        // Commpressed node has no indent for itself.
+        // Compressed node has no indent for itself.
         if (CompressibleTreeNode.isCompressionChild(node)) {
             return false;
         }
@@ -235,8 +237,8 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
             this.toCompressibleHighlightNode(0, node)
         );
         if (CompressibleTreeNode.isCompressionHead(node)) {
-            const comppressedItems = this.getCompressedItems(node);
-            comppressedItems.forEach((item, idx) => {
+            const comppresedItems = this.getCompressedItems(node);
+            comppresedItems.forEach((item, idx) => {
                 captionNode.push(
                     this.toCompressibleHighlightNode(idx + 1, node, item)
                 );
@@ -279,7 +281,7 @@ export class CompressibleTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected getSeparatorElement(index: number): React.ReactNode {
-        return <span className={COMPRESSED_CAPTION_SEPARATOR_CLASS} key={`seperator-${index}`}>/</span>;
+        return <span className={COMPRESSED_CAPTION_SEPARATOR_CLASS} key={`separator-${index}`}>/</span>;
     }
 
     protected getCompressibleElement(node: TreeNode, compressedItem: TreeNode | undefined, index: number, children?: React.ReactNode[]): React.ReactElement {

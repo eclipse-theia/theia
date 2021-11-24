@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { CompressibleTreeNode } from './tree-compression';
 import { Emitter, Event, Disposable } from '../../common';
+import { CompressibleTreeNode } from '../compressible-tree/tree-compression';
 import { CompositeTreeNode, TreeNode, Tree } from './tree';
 
 export const TreeExpansionService = Symbol('TreeExpansionService');

@@ -25,7 +25,7 @@ import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeTy
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemUtils } from '../../common';
-import { CompressibleTreeModel } from '../compressible-tree';
+import { CompressibleTreeModel } from '@theia/core/lib/browser/compressible-tree/compressible-tree-model';
 
 @injectable()
 export class FileTreeModel extends CompressibleTreeModel implements LocationService {

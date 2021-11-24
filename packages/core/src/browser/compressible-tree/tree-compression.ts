@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ExpandableTreeNode } from './tree-expansion';
-import { TreeNode, CompositeTreeNode } from './tree';
+import { ExpandableTreeNode } from '../tree/tree-expansion';
+import { TreeNode, CompositeTreeNode } from '../tree';
 
 /**
  * Represents a tree node that is able to be compressed into
@@ -33,30 +33,40 @@ export namespace CompressibleTreeNode {
         return !!node && CompositeTreeNode.is(node) && 'compressible' in node;
     }
 
+    // Determines whether the node has a single child
     function isCompressibleParent(node?: TreeNode): node is CompositeTreeNode {
         return CompositeTreeNode.is(node) && node.children.length === 1;
     }
 
+    /** Determines whether the node has a compressed child */
     export function isCompressionParent(node?: TreeNode): node is CompositeTreeNode {
         return isCompressibleParent(node) && isCompressionChild(node.children[0]);
     }
 
+    /** Determines whether the node is a compressed child */
     export function isCompressionChild(node: Object | undefined): node is CompressibleTreeNode {
         return is(node) && node.compressible && isCompressibleParent(node.parent);
     }
 
+    /** Determines whether the node is the first to start a sequence of compressed items */
     export function isCompressionHead(node?: TreeNode): node is CompositeTreeNode {
         return isCompressionParent(node) && !isCompressionChild(node);
     }
 
+    /** Determines whether the node is the last item in a sequence of compressed items */
     export function isCompressionTail(node?: TreeNode): node is CompressibleTreeNode {
         return isCompressionChild(node) && !isCompressionParent(node);
     }
 
+    /** 
+     * Determines whether the node is part of a compression row, Either a parent or a child compression 
+     * (It is not obligatory that it is compressed)
+     */
     export function isCompressionParticipant(node?: TreeNode): node is CompositeTreeNode {
         return isCompressionParent(node) || isCompressionChild(node);
     }
 
+    /** Returns a sequence of compressed items for the node if it is the compression head */
     export function getCompressedItems(node?: TreeNode): TreeNode[] {
         const items = [];
         if (isCompressionHead(node)) {
@@ -69,6 +79,7 @@ export namespace CompressibleTreeNode {
         return items;
     }
 
+    // Returns the node that starts the sequence of the compressed items
     export function getUncompressedParent(node: TreeNode): CompositeTreeNode | undefined {
         let candidate = node.parent;
         while (isCompressionChild(candidate)) {

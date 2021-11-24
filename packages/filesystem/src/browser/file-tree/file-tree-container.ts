@@ -19,7 +19,7 @@ import { Tree, TreeModel } from '@theia/core/lib/browser';
 import { FileTree } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { FileTreeWidget } from './file-tree-widget';
-import { CompressibleTree, CompressibleTreeModel, CompressibleTreeWidget, createCompressibleTreeContainer } from '../compressible-tree';
+import { CompressibleTree, CompressibleTreeModel, CompressibleTreeWidget, createCompressibleTreeContainer } from '@theia/core/lib/browser/compressible-tree';
 
 export function createFileTreeContainer(parent: interfaces.Container): Container {
     const child = createCompressibleTreeContainer(parent);

@@ -26,7 +26,7 @@ import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { FileStat, FileType } from '../../common/files';
-import { CompressibleTreeWidget } from '../compressible-tree';
+import { CompressibleTreeWidget } from '@theia/core/lib/browser/compressible-tree/compressible-tree-widget';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';

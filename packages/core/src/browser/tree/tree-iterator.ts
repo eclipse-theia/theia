@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CompressibleTreeNode } from './tree-compression';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
+import { CompressibleTreeNode } from '../compressible-tree/tree-compression';
 
 export interface TreeIterator extends Iterator<TreeNode> {
 }

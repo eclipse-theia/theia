@@ -20,7 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
 import {
     CorePreferences, Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
-    TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode, CompressibleTreeNode
+    TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode,
 } from '@theia/core/lib/browser';
 import { FileNode, DirNode, FileStatNode, FileTreeWidget } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -32,6 +32,7 @@ import * as React from '@theia/core/shared/react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { FileNavigatorCommands } from './navigator-contribution';
 import { nls } from '@theia/core/lib/common/nls';
+import { CompressibleTreeNode } from '@theia/core/lib/browser/compressible-tree/tree-compression';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = nls.localizeByDefault('No Folder Opened');

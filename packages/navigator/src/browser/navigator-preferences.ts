@@ -28,8 +28,8 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
         },
         'explorer.compactFolders': {
             type: 'boolean',
-            description: `Controls whether the explorer should render folders in a compact form. In such a form, single child folders will be compressed in a combined tree element.
-             Useful for Java package structures, for example.`,
+            description: nls.localizeByDefault(`Controls whether the explorer should render folders in a compact form. In such a form, single child folders will be compressed in a 
+            combined tree element. Useful for Java package structures, for example.`),
             default: true
         }
     }
