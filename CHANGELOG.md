@@ -1,5 +1,15 @@
 # Change Log
+
+## v1.19.0 - 11/25/2021
+
+[1.20.0 Milestone](https://github.com/eclipse-theia/theia/milestone/26)
+
+<a name="breaking_changes_1.20.0">[Breaking Changes:](#breaking_changes_1.20.0)</a>
+
 - [plugindev] Renamed HostedPlugin(Server|Client) to PluginDev(Server|Client)
+- [core] `value` is now not optional in `Deferred<T>.resolve(value: T)`
+- [core] `T` defaults to `void` if not specified when defining a `Deferred`
+
 ## v1.19.0 - 10/28/2021
 
 [1.19.0 Milestone](https://github.com/eclipse-theia/theia/milestone/25)
