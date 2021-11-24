@@ -71,9 +71,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(reference);
         this.toDispose.push(Disposable.create(() => this.model = undefined));
 
-        this.toDispose.push(this.model.onDidChangeContent(() => this.readPreferences()));
-        this.toDispose.push(this.model.onDirtyChanged(() => this.readPreferences()));
-        this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
+        this.toDispose.push(this.model.onDidChangeContent(() => (console.log('READING BECAUSE...CONTENT'), this.readPreferences())));
+        this.toDispose.push(this.model.onDirtyChanged(() => (console.log('READING BECAUSE...DIRTY'), this.readPreferences())));
+        this.toDispose.push(this.model.onDidChangeValid(() => (console.log('READING BECAUSE...VALID'), this.readPreferences())));
 
         this.toDispose.push(Disposable.create(() => this.reset()));
     }
@@ -152,6 +152,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                     text: null,
                     forceMoveMarkers: false
                 });
+            }
+            if (editOperations.length === 0) {
+                return true;
             }
             await this.workspace.applyBackgroundEdit(this.model, editOperations);
             return await this.pendingChanges;
@@ -234,9 +237,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
         }
 
-        if (prefChanges.length > 0) { // do not emit the change event if the pref value is not changed
-            this.emitPreferencesChangedEvent(prefChanges);
-        }
+        this.emitPreferencesChangedEvent(prefChanges);
     }
 
     protected reset(): void {

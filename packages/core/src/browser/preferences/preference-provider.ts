@@ -75,9 +75,12 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     protected deferredChanges: PreferenceProviderDataChanges | undefined;
-    protected _pendingChanges: Promise<boolean> = Promise.resolve(false);
+    protected _pendingChanges = new Deferred<boolean>();
     get pendingChanges(): Promise<boolean> {
-        return this._pendingChanges;
+        if (this._pendingChanges.state !== 'unresolved') {
+            this._pendingChanges = new Deferred();
+        }
+        return this._pendingChanges.promise;
     }
 
     /**
@@ -94,7 +97,7 @@ export abstract class PreferenceProvider implements Disposable {
                 this.mergePreferenceProviderDataChange(changes[preferenceName]);
             }
         }
-        return this._pendingChanges = this.fireDidPreferencesChanged();
+        return this.fireDidPreferencesChanged();
     }
 
     protected mergePreferenceProviderDataChange(change: PreferenceProviderDataChange): void {
@@ -120,9 +123,9 @@ export abstract class PreferenceProvider implements Disposable {
         this.deferredChanges = undefined;
         if (changes && Object.keys(changes).length) {
             this.onDidPreferencesChangedEmitter.fire(changes);
-            return true;
         }
-        return false;
+        this._pendingChanges.resolve(true);
+        return true;
     }, 0);
 
     /**
