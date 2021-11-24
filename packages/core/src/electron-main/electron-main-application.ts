@@ -293,7 +293,6 @@ export class ElectronMainApplication {
             title: this.config.applicationName,
             minWidth: 200,
             minHeight: 120,
-            screenLayout: this.getCurrentScreenLayout(),
             webPreferences: {
                 // https://github.com/eclipse-theia/theia/issues/2018
                 nodeIntegration: true,
