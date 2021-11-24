@@ -383,7 +383,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStoragePath: globalStoragePath,
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
-            extensionMode: 1 // @todo: implement proper `extensionMode`.
+            extensionMode: 1, // @todo: implement proper `extensionMode`.
+            extension: plugin,
+            logUri: Uri.file(logPath)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
 
