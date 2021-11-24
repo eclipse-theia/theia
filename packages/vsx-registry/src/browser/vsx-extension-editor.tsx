@@ -77,7 +77,13 @@ export class VSXExtensionEditor extends ReactWidget {
     };
 
     protected resolveScrollContainer = (element: VSXExtensionEditorComponent | null) => {
-        this.deferredScrollContainer.resolve(element?.scrollContainer);
+        if (!element) {
+            this.deferredScrollContainer.reject(new Error('element is null'));
+        } else if (!element.scrollContainer) {
+            this.deferredScrollContainer.reject(new Error('element.scrollContainer is undefined'));
+        } else {
+            this.deferredScrollContainer.resolve(element.scrollContainer);
+        }
     };
 
     protected render(): React.ReactNode {

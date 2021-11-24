@@ -20,14 +20,14 @@ import { CancellationToken, cancelled } from './cancellation';
  * Simple implementation of the deferred pattern.
  * An object that exposes a promise and functions to resolve and reject it.
  */
-export class Deferred<T> {
+export class Deferred<T = void> {
     state: 'resolved' | 'rejected' | 'unresolved' = 'unresolved';
-    resolve: (value?: T) => void;
+    resolve: (value: T) => void;
     reject: (err?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     promise = new Promise<T>((resolve, reject) => {
         this.resolve = result => {
-            resolve(result as T);
+            resolve(result);
             if (this.state === 'unresolved') {
                 this.state = 'resolved';
             }

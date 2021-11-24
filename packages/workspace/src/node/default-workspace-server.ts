@@ -43,7 +43,7 @@ export class WorkspaceCliContribution implements CliContribution {
         if (!wsPath) {
             wsPath = args['root-dir'] as string;
             if (!wsPath) {
-                this.workspaceRoot.resolve();
+                this.workspaceRoot.resolve(undefined);
                 return;
             }
         }
