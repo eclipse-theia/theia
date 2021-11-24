@@ -123,36 +123,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             return false;
         }
         try {
-            const content = this.model.getText().trim();
-            if (!content && value === undefined) {
-                return true;
-            }
-            const textModel = this.model.textEditorModel;
-            const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-            if (path.length || value !== undefined) {
-                const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-                for (const edit of jsoncparser.modify(content, path, value, {
-                    formattingOptions: {
-                        insertSpaces,
-                        tabSize,
-                        eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
-                    }
-                })) {
-                    const start = textModel.getPositionAt(edit.offset);
-                    const end = textModel.getPositionAt(edit.offset + edit.length);
-                    editOperations.push({
-                        range: monaco.Range.fromPositions(start, end),
-                        text: edit.content || null,
-                        forceMoveMarkers: false
-                    });
-                }
-            } else {
-                editOperations.push({
-                    range: textModel.getFullModelRange(),
-                    text: null,
-                    forceMoveMarkers: false
-                });
-            }
+            const editOperations = this.getEditOperations(path, value);
             if (editOperations.length === 0) {
                 return true;
             }
@@ -164,6 +135,40 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             console.error(`${message}`, e);
             return false;
         }
+    }
+
+    private getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
+        const textModel = this.model!.textEditorModel;
+        const content = this.model!.getText().trim();
+        // Everything is already undefined - no need for changes.
+        if (!content && value === undefined) {
+            return [];
+        }
+        // Delete the entire document.
+        if (!path.length && value === undefined) {
+            return [{
+                range: textModel.getFullModelRange(),
+                text: null,
+                forceMoveMarkers: false
+            }];
+        }
+        const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
+        const jsonCOptions = {
+            formattingOptions: {
+                insertSpaces,
+                tabSize,
+                eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
+            }
+        };
+        return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {
+            const start = textModel.getPositionAt(edit.offset);
+            const end = textModel.getPositionAt(edit.offset + edit.length);
+            return {
+                range: monaco.Range.fromPositions(start, end),
+                text: edit.content || null,
+                forceMoveMarkers: false
+            };
+        });
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
