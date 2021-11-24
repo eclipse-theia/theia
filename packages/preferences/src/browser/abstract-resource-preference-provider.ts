@@ -170,17 +170,18 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
      * @returns `undefined` if the queue has been cleared by a user action.
      */
     protected async acquireLocks(): Promise<FilePreferenceProviderLocks | undefined> {
-        let releaseTransaction: MutexInterface.Releaser | undefined;
-        if (!this.transactionLock.isLocked()) {
+        // Request locks immediately
+        const releaseTransactionPromise = this.transactionLock.isLocked() ? undefined : this.transactionLock.acquire();
+        const releaseChangePromise = this.singleChangeLock.acquire().catch(() => {
+            releaseTransactionPromise?.then(release => release());
+            return undefined;
+        });
+        if (releaseTransactionPromise) {
             await this.pendingTransaction.promise; // Ensure previous transaction complete before starting a new one.
             this.pendingTransaction = new Deferred();
-            releaseTransaction = await this.transactionLock.acquire();
         }
-        const releaseChange = await this.singleChangeLock.acquire()
-            .catch(() => { // Means that the user has cancelled this action
-                releaseTransaction?.();
-                return undefined;
-            });
+        // Wait to acquire locks
+        const [releaseTransaction, releaseChange] = await Promise.all([releaseTransactionPromise, releaseChangePromise]);
         return releaseChange && { releaseTransaction, releaseChange };
     }
 
