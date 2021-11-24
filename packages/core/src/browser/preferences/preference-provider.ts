@@ -116,8 +116,9 @@ export abstract class PreferenceProvider implements Disposable {
         this.deferredChanges = undefined;
         if (changes && Object.keys(changes).length) {
             this.onDidPreferencesChangedEmitter.fire(changes);
+            return true;
         }
-        return true;
+        return false;
     }, 0);
 
     /**

@@ -92,13 +92,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(reference);
         this.toDispose.push(Disposable.create(() => this.model = undefined));
 
-        this.toDispose.push(this.model.onDidChangeContent(() => (
-            console.log('READING BECAUSE...CONTENT', this.transactionLock.isLocked()), !this.transactionLock.isLocked() && this.readPreferences()))
-        );
-        this.toDispose.push(this.model.onDirtyChanged(() => (
-            console.log('READING BECAUSE...DIRTY', this.transactionLock.isLocked()), !this.transactionLock.isLocked() && this.readPreferences()))
-        );
-        this.toDispose.push(this.model.onDidChangeValid(() => (console.log('READING BECAUSE...VALID'), this.readPreferences())));
+        this.toDispose.push(this.model.onDidChangeContent(() => !this.transactionLock.isLocked() && this.readPreferences()));
+        this.toDispose.push(this.model.onDirtyChanged(() => !this.transactionLock.isLocked() && this.readPreferences()));
+        this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
 
         this.toDispose.push(Disposable.create(() => this.reset()));
     }
@@ -210,7 +206,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         locks?.releaseChange();
     }
 
-    private getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
+    protected getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = this.model!.textEditorModel;
         const content = this.model!.getText().trim();
         // Everything is already undefined - no need for changes.
