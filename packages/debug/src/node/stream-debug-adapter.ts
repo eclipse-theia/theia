@@ -120,8 +120,8 @@ export class SocketDebugAdapter extends StreamDebugAdapter implements DebugAdapt
     }
 
     stop(): Promise<void> {
-        const deferred = new Deferred<void>();
-        this.socket.end(() => deferred.resolve());
-        return deferred.promise;
+        return new Promise<void>(resolve => {
+            this.socket.end(() => resolve());
+        });
     }
 }

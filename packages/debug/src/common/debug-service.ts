@@ -118,7 +118,7 @@ export namespace DebugError {
 }
 
 /**
- * A channel closeable channel to send messages over with error/close handling
+ * A closeable channel to send messages over with error/close handling
  */
 export interface Channel {
     send(content: string): void;

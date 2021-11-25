@@ -94,15 +94,18 @@ export async function wait(ms: number): Promise<void> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function waitForEvent<T>(event: Event<T>, ms: number, thisArgs?: any, disposables?: Disposable[]): Promise<T> {
-    const deferred = new Deferred<T>();
-    const disposable = event(() => {
-        disposable.dispose();
-        deferred.resolve(undefined);
-    }, thisArgs, disposables);
-    setTimeout(() => {
-        disposable.dispose();
-        deferred.reject(new CancellationError());
-    }, ms);
-    return deferred.promise;
+export function waitForEvent<T>(event: Event<T>, ms: number, thisArg?: any, disposables?: Disposable[]): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const registration = setTimeout(() => {
+            listener.dispose();
+            reject(new CancellationError());
+        }, ms);
+
+        const listener = event((evt: T) => {
+            clearTimeout(registration);
+            listener.dispose();
+            resolve(evt);
+        }, thisArg, disposables);
+
+    });
 }
