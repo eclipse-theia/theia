@@ -4,11 +4,42 @@
 
 [1.20.0 Milestone](https://github.com/eclipse-theia/theia/milestone/28)
 
+- [application-manager] added a workaround to the upstream `electron-rebuild` bug [#10429](https://github.com/eclipse-theia/theia/pull/10429)
+- [application-manager] remove unnecessary `font-awesome-webpack` dependency [#10401](https://github.com/eclipse-theia/theia/pull/10401)
+- [application-manager] updated `compression-webpack-plugin` to `v9.0.0` [#10391](https://github.com/eclipse-theia/theia/pull/10391)
+- [application-package] fixed `electron.isDevMode` API on Windows [#10359](https://github.com/eclipse-theia/theia/pull/10359)
+- [core] added handling to disable http fallback on a successful websocket connection [#10395](https://github.com/eclipse-theia/theia/pull/10395)
+- [core] added support to remove workspaces from the recently opened workspace list [#10378](https://github.com/eclipse-theia/theia/pull/10378)
+- [core] fixed `runtime-import-check` errors [#10418](https://github.com/eclipse-theia/theia/pull/10418)
+- [core] fixed an issue with window paths [#10226](https://github.com/eclipse-theia/theia/pull/10226)
+- [core] fixed the `new window` command in the browser application [#10364](https://github.com/eclipse-theia/theia/pull/10364)
+- [core] improved `Deferred` typings [#10455](https://github.com/eclipse-theia/theia/pull/10455)
+- [core] simplified default vscode localizations [#10319](https://github.com/eclipse-theia/theia/pull/10319)
+- [core] updated `sinon` dependency to `v12.0.0` [#10381](https://github.com/eclipse-theia/theia/pull/10381)
+- [monaco] fixed visibility of selected items in the peek widget [#10307](https://github.com/eclipse-theia/theia/pull/10307)
+- [navigator] added support to decorate deleted files in the open editors widget [#10361](https://github.com/eclipse-theia/theia/pull/10361)
+- [plugin] fixed an issue related to `taskExecutions` not returning executions properly on startup [#10330](https://github.com/eclipse-theia/theia/pull/10330)
+- [plugin] fixed an issue when calling `showInput` subsequently due to `validateInput` [#10396](https://github.com/eclipse-theia/theia/pull/10396)
+- [plugin] fixed issue causing notifications to not appear [#10399](https://github.com/eclipse-theia/theia/pull/10399)
+- [plugin] fixed typedoc generation for the plugin system [#10274](https://github.com/eclipse-theia/theia/pull/10274)
+- [plugin] fixed visibility of inline actions when hovering tree-views [#10375](https://github.com/eclipse-theia/theia/pull/10375)
+- [repo] upgraded repository `yarn.lock` [#10349](https://github.com/eclipse-theia/theia/pull/10349)
+- [search-in-workspace] added functionality to preserve `find in files` history [#10438](https://github.com/eclipse-theia/theia/pull/10438)
+- [search-in-workspace] added support to follow symlinks when searching [#10413](https://github.com/eclipse-theia/theia/pull/10413)
+- [search-in-workspace] fixed flickering when hovering results [#10388](https://github.com/eclipse-theia/theia/pull/10388)
+- [search-in-workspace] fixed issue causing the scrollbar to display without results present [#10410](https://github.com/eclipse-theia/theia/pull/10410)
+- [search-in-workspace] fixed selection of results [#10371](https://github.com/eclipse-theia/theia/pull/10371)
+- [task] added functionality to substitute variables in `options.env` of tasks [#10208](https://github.com/eclipse-theia/theia/pull/10208)
+- [task] improved extensibility of `ProcessTaskRunner` [#10392](https://github.com/eclipse-theia/theia/pull/10392)
+- [terminal] added support for the `terminal.integrated.confirmOnExit` preference [#10374](https://github.com/eclipse-theia/theia/pull/10374)
+- [vsx-registry] fixed the selection of extension results [#10373](https://github.com/eclipse-theia/theia/pull/10373)
+
 <a name="breaking_changes_1.20.0">[Breaking Changes:](#breaking_changes_1.20.0)</a>
 
-- [plugindev] Renamed HostedPlugin(Server|Client) to PluginDev(Server|Client) [#10352](https://github.com/eclipse-theia/theia/pull/10352)
-- [core] `value` is now not optional in `Deferred<T>.resolve(value: T)` [#10455](https://github.com/eclipse-theia/theia/pull/10455)
 - [core] `T` defaults to `void` if not specified when defining a `Deferred` [#10455](https://github.com/eclipse-theia/theia/pull/10455)
+- [core] `value` is now not optional in `Deferred<T>.resolve(value: T)` [#10455](https://github.com/eclipse-theia/theia/pull/10455)
+- [plugin] renamed `HostedPluginClient` to `PluginDevClient` [#10352](https://github.com/eclipse-theia/theia/pull/10352)
+- [plugin] renamed `HostedPluginServer` to `PluginDevServer` [#10352](https://github.com/eclipse-theia/theia/pull/10352)
 
 ## v1.19.0 - 10/28/2021
 
