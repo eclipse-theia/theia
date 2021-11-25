@@ -542,7 +542,7 @@ export class HostedPluginSupport {
 
         // Make sure that folder by the path exists
         if (!await this.fileService.exists(globalStorageFolderUri)) {
-            await this.fileService.createFolder(globalStorageFolderUri);
+            await this.fileService.createFolder(globalStorageFolderUri, { fromUserGesture: false });
         }
         const globalStorageFolderFsPath = await this.fileService.fsPath(globalStorageFolderUri);
         if (!globalStorageFolderFsPath) {

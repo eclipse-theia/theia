@@ -123,7 +123,7 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     }
 
     $mkdir(uri: UriComponents): Promise<void> {
-        return this._fileService.createFolder(new CoreURI(URI.revive(uri)))
+        return this._fileService.createFolder(new CoreURI(URI.revive(uri)), { fromUserGesture: false })
             .then(() => undefined).catch(FileSystemMainImpl._handleError);
     }
 
