@@ -58,8 +58,8 @@ export namespace CompressibleTreeNode {
         return isCompressionChild(node) && !isCompressionParent(node);
     }
 
-    /** 
-     * Determines whether the node is part of a compression row, Either a parent or a child compression 
+    /**
+     * Determines whether the node is part of a compression row, Either a parent or a child compression
      * (It is not obligatory that it is compressed)
      */
     export function isCompressionParticipant(node?: TreeNode): node is CompositeTreeNode {
