@@ -92,6 +92,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': nls.localizeByDefault('Controls whether a top border is drawn on modified (dirty) editor tabs or not. This value is ignored when `#workbench.editor.showTabs#` is disabled.'),
             'default': false
         },
+        'workbench.editor.wraptabs': {
+            'type': 'boolean',
+            // eslint-disable-next-line max-len
+            'description': nls.localizeByDefault('Controls whether tabs should be wrapped over multiple lines when exceeding available space or whether a scrollbar should appear instead.'),
+            'default': false
+        },
         'workbench.editor.closeOnFileDelete': {
             'type': 'boolean',
             // eslint-disable-next-line max-len
@@ -148,6 +154,7 @@ export interface CoreConfiguration {
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
+    'workbench.editor.wraptabs': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;

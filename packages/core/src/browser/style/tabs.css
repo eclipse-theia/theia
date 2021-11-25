@@ -442,3 +442,34 @@ body.theia-editor-highlightModifiedTabs
   flex-flow: row nowrap;
   min-width: 100%;
 }
+
+/* When wraptabs is selected*/
+body.theia-editor-wrapTabs
+.p-TabBar .p-TabBar-content {
+  cursor: pointer;
+  display: flex;
+  flex-flow: row wrap;
+}
+
+body.theia-editor-wrapTabs
+#theia-main-content-panel .p-Widget.p-DockPanel-widget {
+    background: var(--theia-editor-background);  
+    position: relative !important;  
+    top:0px !important;
+}
+
+body.theia-editor-wrapTabs
+.p-TabBar.theia-tabBar-multirow[data-orientation='horizontal'] {
+  min-height: calc(var(--theia-breadcrumbs-height) + var(--theia-horizontal-toolbar-height));
+  flex-direction: column;
+  position: static !important;
+  height: fit-content !important;
+}
+
+body.theia-editor-wrapTabs
+.p-TabBar.theia-app-centers {
+  background: var(--theia-editorGroupHeader-tabsBackground);
+  position: static !important;
+  height: fit-content !important;
+}
+
