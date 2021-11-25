@@ -1252,7 +1252,7 @@ export class FileService {
         return { exists, isSameResourceWithDifferentPathCase };
     }
 
-    async createFolder(resource: URI): Promise<FileStatWithMetadata> {
+    async createFolder(resource: URI, options?: FileOperationOptions): Promise<FileStatWithMetadata> {
         const provider = this.throwIfFileSystemIsReadonly(await this.withProvider(resource), resource);
 
         // mkdir recursively
@@ -1260,7 +1260,13 @@ export class FileService {
 
         // events
         const fileStat = await this.resolve(resource, { resolveMetadata: true });
-        this.onDidRunOperationEmitter.fire(new FileOperationEvent(resource, FileOperation.CREATE, fileStat));
+
+        if (options?.fromUserGesture === false) {
+            this.onDidRunOperationEmitter.fire(new FileOperationEvent(resource, FileOperation.CREATE, fileStat));
+        } else {
+            const event = { correlationId: this.correlationIds++, operation: FileOperation.CREATE, target: resource };
+            this.onDidRunUserOperationEmitter.fire(event);
+        }
 
         return fileStat;
     }
