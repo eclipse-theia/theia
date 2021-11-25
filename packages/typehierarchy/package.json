@@ -1,10 +1,10 @@
 {
   "name": "@theia/typehierarchy",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "description": "Theia - Type Hierarchy Extension",
   "dependencies": {
-    "@theia/core": "1.19.0",
-    "@theia/editor": "1.19.0",
+    "@theia/core": "1.20.0",
+    "@theia/editor": "1.20.0",
     "@types/uuid": "^7.0.3",
     "uuid": "^8.0.0"
   },
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.19.0"
+    "@theia/ext-scripts": "1.20.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
