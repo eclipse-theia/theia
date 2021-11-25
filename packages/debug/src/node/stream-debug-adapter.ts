@@ -16,7 +16,6 @@
 
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChildProcess } from 'child_process';
 import * as stream from 'stream';
 import * as net from 'net';
