@@ -621,6 +621,7 @@ export interface WorkspaceMain {
     $onTextDocumentContentChange(uri: string, content: string): void;
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
     $getWorkspace(): Promise<files.FileStat | undefined>;
+    $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
 }
 
 export interface WorkspaceExt {
@@ -628,6 +629,7 @@ export interface WorkspaceExt {
     $onWorkspaceLocationChanged(event: files.FileStat | undefined): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
+    $onWorkspaceTrustChanged(trust: boolean | undefined): void;
 }
 
 export interface TimelineExt {

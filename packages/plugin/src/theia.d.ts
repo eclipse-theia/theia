@@ -6049,6 +6049,28 @@ export module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /**
+         * When true, the user has explicitly trusted the contents of the workspace.
+         */
+        export const isTrusted: boolean;
+
+        export function requestWorkspaceTrust(options?: WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
+
+        /**
+         * Event that fires when the current workspace has been trusted.
+         */
+        export const onDidGrantWorkspaceTrust: Event<void>;
+    }
+
+    export interface WorkspaceTrustRequestButton {
+        readonly label: string;
+        readonly type: 'ContinueWithTrust' | 'ContinueWithoutTrust' | 'Manage' | 'Cancel'
+    }
+
+    export interface WorkspaceTrustRequestOptions {
+        readonly buttons?: WorkspaceTrustRequestButton[];
+        readonly message?: string;
     }
 
     export namespace env {

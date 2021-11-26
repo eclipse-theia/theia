@@ -45,6 +45,7 @@ export class PreferenceTreeGenerator {
         ['window', 'Window'],
         ['features', 'Features'],
         ['application', 'Application'],
+        ['security', 'Security'],
         ['extensions', 'Extensions']
     ]);
     protected readonly sectionAssignments = new Map([
