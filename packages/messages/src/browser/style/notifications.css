@@ -191,27 +191,17 @@
     margin-left: 4px;
 }
 
-.theia-notification-actions > li:hover {
-    /* remove default background change as due to the different scaling of the items it might look odd */ 
-    background-color: transparent;
-    transform: scale(1.5);
-}
-
 .theia-notification-actions > .expand {
     transform: rotate(0deg) scale(1.35);
 }
-
-.theia-notification-actions > .expand:active,
-.theia-notification-actions > li.expand:hover {
+.theia-notification-actions > .expand:active {
     transform: rotate(0deg) scale(1.8);
 }
 
 .theia-notification-actions > .collapse {
     transform: rotate(-90deg) scale(1.35);
 }
-
-.theia-notification-actions > .collapse:active,
-.theia-notification-actions > li.collapse:hover {
+.theia-notification-actions > .collapse:active {
     transform: rotate(-90deg) scale(1.8);
 }
 
