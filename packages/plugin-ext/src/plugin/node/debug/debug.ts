@@ -21,9 +21,8 @@ import { Breakpoint } from '../../../common/plugin-api-rpc-model';
 import { DebugConfigurationProviderTriggerKind, DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { PluginWebSocketChannel } from '../../../common/connection';
 import { CommandRegistryImpl } from '../../command-registry';
-import { ConnectionExtImpl } from '../../connection-ext';
+import { ConnectionImpl } from '../../../common/connection';
 import {
     Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range,
     DebugAdapterServer, DebugAdapterExecutable, DebugAdapterNamedPipeServer, DebugAdapterInlineImplementation
@@ -33,7 +32,7 @@ import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { connectInlineDebugAdapter, connectPipeDebugAdapter, connectSocketDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
-import { CommunicationProvider } from '@theia/debug/lib/node/debug-model';
+import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -60,7 +59,7 @@ export class DebugExtImpl implements DebugExt {
     private trackerFactories: [string, theia.DebugAdapterTrackerFactory][] = [];
     private contributionPaths = new Map<string, string>();
 
-    private connectionExt: ConnectionExtImpl;
+    private connectionExt: ConnectionImpl;
     private commandRegistryExt: CommandRegistryImpl;
 
     private proxy: DebugMain;
@@ -91,7 +90,7 @@ export class DebugExtImpl implements DebugExt {
     /**
      * Sets dependencies.
      */
-    assistedInject(connectionExt: ConnectionExtImpl, commandRegistryExt: CommandRegistryImpl): void {
+    assistedInject(connectionExt: ConnectionImpl, commandRegistryExt: CommandRegistryImpl): void {
         this.connectionExt = connectionExt;
         this.commandRegistryExt = commandRegistryExt;
     }
@@ -301,13 +300,13 @@ export class DebugExtImpl implements DebugExt {
         };
 
         const tracker = await this.createDebugAdapterTracker(theiaSession);
-        const communicationProvider = await this.createCommunicationProvider(theiaSession, debugConfiguration);
+        const communicationProvider = await this.createDebugAdapter(theiaSession, debugConfiguration);
 
         const debugAdapterSession = new PluginDebugAdapterSession(communicationProvider, tracker, theiaSession);
         this.sessions.set(sessionId, debugAdapterSession);
 
         const connection = await this.connectionExt!.ensureConnection(sessionId);
-        debugAdapterSession.start(new PluginWebSocketChannel(connection));
+        debugAdapterSession.start(connection);
 
         return sessionId;
     }
@@ -406,7 +405,7 @@ export class DebugExtImpl implements DebugExt {
         return PluginDebugAdapterTracker.create(session, this.trackerFactories);
     }
 
-    protected async createCommunicationProvider(session: theia.DebugSession, debugConfiguration: theia.DebugConfiguration): Promise<CommunicationProvider> {
+    protected async createDebugAdapter(session: theia.DebugSession, debugConfiguration: theia.DebugConfiguration): Promise<DebugAdapter> {
         const executable = await this.resolveDebugAdapterExecutable(debugConfiguration);
         const descriptorFactory = this.descriptorFactories.get(session.type);
         if (descriptorFactory) {

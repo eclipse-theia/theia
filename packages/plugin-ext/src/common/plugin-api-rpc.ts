@@ -265,8 +265,6 @@ export interface ConnectionMain {
     $createConnection(id: string): Promise<void>;
     $deleteConnection(id: string): Promise<void>;
     $sendMessage(id: string, message: string): void;
-    $createConnection(id: string): Promise<void>;
-    $deleteConnection(id: string): Promise<void>;
 }
 
 export interface ConnectionExt {

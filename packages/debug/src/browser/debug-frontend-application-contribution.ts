@@ -646,11 +646,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: (config?: DebugSessionOptions) => this.start(true, config)
         });
         registry.registerCommand(DebugCommands.STOP, {
-            execute: () => this.manager.terminateSessions(),
+            execute: () => this.manager.terminateSession(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.RESTART, {
-            execute: () => this.manager.restartSessions(),
+            execute: () => this.manager.restartSession(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
 
@@ -722,12 +722,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
 
         registry.registerCommand(DebugSessionContextCommands.STOP, {
-            execute: () => this.selectedSession && this.selectedSession.terminate(),
+            execute: () => this.selectedSession && this.manager.terminateSession(this.selectedSession),
             isEnabled: () => !!this.selectedSession && this.selectedSession.state !== DebugState.Inactive,
             isVisible: () => !this.selectedThread
         });
         registry.registerCommand(DebugSessionContextCommands.RESTART, {
-            execute: () => this.selectedSession && this.manager.restart(this.selectedSession),
+            execute: () => this.selectedSession && this.manager.restartSession(this.selectedSession),
             isEnabled: () => !!this.selectedSession && this.selectedSession.state !== DebugState.Inactive,
             isVisible: () => !this.selectedThread
         });

@@ -16,32 +16,32 @@
 
 import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-session';
 import * as theia from '@theia/plugin';
-import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
-import { CommunicationProvider, DebugAdapterSession } from '@theia/debug/lib/node/debug-model';
+import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
+import { Channel } from '@theia/debug/lib/common/debug-service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Server debug adapter session.
  */
-export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession, DebugAdapterSession {
+export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
     readonly type: string;
     readonly name: string;
     readonly configuration: theia.DebugConfiguration;
 
     constructor(
-        readonly communicationProvider: CommunicationProvider,
+        readonly debugAdapter: DebugAdapter,
         protected readonly tracker: theia.DebugAdapterTracker,
         protected readonly theiaSession: theia.DebugSession) {
 
-        super(theiaSession.id, communicationProvider);
+        super(theiaSession.id, debugAdapter);
 
         this.type = theiaSession.type;
         this.name = theiaSession.name;
         this.configuration = theiaSession.configuration;
     }
 
-    async start(channel: IWebSocket): Promise<void> {
+    async start(channel: Channel): Promise<void> {
         if (this.tracker.onWillStartSession) {
             this.tracker.onWillStartSession();
         }
@@ -83,10 +83,10 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
         super.write(message);
     }
 
-    protected onDebugAdapterExit(exitCode: number, signal: string | undefined): void {
+    protected onDebugAdapterExit(): void {
         if (this.tracker.onExit) {
-            this.tracker.onExit(exitCode, signal);
+            this.tracker.onExit(undefined, undefined);
         }
-        super.onDebugAdapterExit(exitCode, signal);
+        super.onDebugAdapterExit();
     }
 }

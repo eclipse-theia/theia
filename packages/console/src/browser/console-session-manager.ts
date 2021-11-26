@@ -109,10 +109,12 @@ export class ConsoleSessionManager implements Disposable {
     delete(id: string): void {
         const session = this.sessions.get(id);
         if (this.sessions.delete(id) && session) {
-            this.sessionDeletedEmitter.fire(session);
-            if (this.sessions.size === 0) {
-                this.selectedSessionChangedEmitter.fire(undefined);
+            if (this.selectedSession === session) {
+                // select a new sessions or undefined if none are left
+                this.selectedSession = this.sessions.values().next().value;
             }
+            session.dispose();
+            this.sessionDeletedEmitter.fire(session);
         }
     }
 

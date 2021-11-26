@@ -22,12 +22,11 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
-import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { Disposable } from '@theia/core/lib/common/disposable';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event } from '@theia/core/lib/common/event';
+import { Channel } from '../common/debug-service';
 
 // FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
@@ -37,12 +36,14 @@ import { Event } from '@theia/core/lib/common/event';
 export const DebugAdapterSession = Symbol('DebugAdapterSession');
 
 /**
- * The debug adapter session.
+ * The debug adapter session. The debug adapter session manages the lifecycle of a
+ * debug session: the debug session should be discarded if and only if the debug adapter
+ * session is stopped.
  */
 export interface DebugAdapterSession {
     id: string;
     parentSession?: DebugAdapterSession;
-    start(channel: WebSocketChannel): Promise<void>
+    start(channel: Channel): Promise<void>
     stop(): Promise<void>
 }
 
@@ -55,7 +56,7 @@ export const DebugAdapterSessionFactory = Symbol('DebugAdapterSessionFactory');
  * The [debug session](#DebugSession) factory.
  */
 export interface DebugAdapterSessionFactory {
-    get(sessionId: string, communicationProvider: CommunicationProvider): DebugAdapterSession;
+    get(sessionId: string, debugAdapter: DebugAdapter): DebugAdapterSession;
 }
 
 /**
@@ -88,18 +89,35 @@ export interface DebugAdapterForkExecutable {
 export type DebugAdapterExecutable = DebugAdapterSpawnExecutable | DebugAdapterForkExecutable;
 
 /**
- * Provides some way we can communicate with the running debug adapter. In general there is
- * no obligation as of how to launch/initialize local or remote debug adapter
- * process/server, it can be done separately and it is not required that this interface covers the
- * procedure, however it is also not disallowed.
- *
- * TODO: the better name is DebugStreamConnection + handling on error and close
+ * Implementers stand for the various types of debug adapters the system can talk to.
+ * Creation of debug adapters is not covered in this interface, but handling communication
+ * and the end of life is.
  */
-export interface CommunicationProvider extends Disposable {
+
+export interface DebugAdapter {
+    /**
+     * A DAP protocol message has been received from the debug adapter
+     */
     onMessageReceived: Event<string>;
-    onError: Event<Error>;
-    onClose: Event<void>;
+    /**
+     * Send a DAP message to the debug adapter
+     * @param message the JSON-encoded DAP message
+     */
     send(message: string): void;
+    /**
+     * An error has occured communicating with the debug adapter. This does not meant the debug adapter
+     * has terminated.
+     */
+    onError: Event<Error>;
+    /**
+     * The connection to the debug adapter has been lost. This signals the end of life for this
+     * debug adapter instance.
+     */
+    onClose: Event<void>;
+    /**
+     * Terminate the connection to the debug adapter.
+     */
+    stop(): Promise<void>;
 }
 
 /**
@@ -111,8 +129,8 @@ export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
  * Factory to start debug adapter.
  */
 export interface DebugAdapterFactory {
-    start(executable: DebugAdapterExecutable): CommunicationProvider;
-    connect(debugServerPort: number): CommunicationProvider;
+    start(executable: DebugAdapterExecutable): DebugAdapter;
+    connect(debugServerPort: number): DebugAdapter;
 }
 
 /**

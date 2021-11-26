@@ -43,7 +43,6 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
                 channel.close();
                 return;
             }
-            channel.onClose(() => session.stop());
             session.start(channel);
         });
     }

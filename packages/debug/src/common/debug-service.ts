@@ -116,3 +116,16 @@ export namespace DebugError {
         data: { type }
     }));
 }
+
+/**
+ * A closeable channel to send messages over with error/close handling
+ */
+export interface Channel {
+    send(content: string): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onMessage(cb: (data: any) => void): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError(cb: (reason: any) => void): void;
+    onClose(cb: (code: number, reason: string) => void): void;
+    close(): void;
+}

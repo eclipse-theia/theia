@@ -18,7 +18,7 @@ import { CommandRegistryMainImpl } from './command-registry-main';
 import { PreferenceRegistryMainImpl } from './preference-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory } from '../../common/plugin-api-rpc';
+import { PLUGIN_RPC_CONTEXT, LanguagesMainFactory, OutputChannelRegistryFactory, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { MessageRegistryMainImpl } from './message-registry-main';
 import { WindowStateMain } from './window-state-main';
 import { WorkspaceMainImpl } from './workspace-main';
@@ -29,7 +29,7 @@ import { TerminalServiceMainImpl } from './terminal-main';
 import { DialogsMainImpl } from './dialogs-main';
 import { TreeViewsMainImpl } from './view/tree-views-main';
 import { NotificationMainImpl } from './notification-main';
-import { ConnectionMainImpl } from './connection-main';
+import { ConnectionImpl } from '../../common/connection';
 import { WebviewsMainImpl } from './webviews-main';
 import { TasksMainImpl } from './tasks-main';
 import { StorageMainImpl } from './plugin-storage';
@@ -130,7 +130,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const storageMain = new StorageMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STORAGE_MAIN, storageMain);
 
-    const connectionMain = new ConnectionMainImpl(rpc);
+    const connectionMain = new ConnectionImpl(rpc.getProxy(MAIN_RPC_CONTEXT.CONNECTION_EXT));
     rpc.set(PLUGIN_RPC_CONTEXT.CONNECTION_MAIN, connectionMain);
 
     const tasksMain = new TasksMainImpl(rpc, container);

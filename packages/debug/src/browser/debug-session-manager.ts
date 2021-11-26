@@ -278,51 +278,73 @@ export class DebugSessionManager {
             const restart = event.body && event.body.restart;
             if (restart) {
                 // postDebugTask isn't run in case of auto restart as well as preLaunchTask
-                this.doRestart(session, restart);
+                this.doRestart(session, !!restart);
             } else {
-                session.terminate();
+                await session.disconnect(false, () => this.debug.terminateDebugSession(session.id));
                 await this.runTask(session.options.workspaceFolderUri, session.configuration.postDebugTask);
             }
         });
-        session.on('exited', () => this.destroy(session.id));
-        session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session));
+
+        session.on('exited', async event => {
+            await session.disconnect(false, () => this.debug.terminateDebugSession(session.id));
+        });
+
+        session.onDispose(() => this.cleanup(session));
+        session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session)).catch(e => {
+            session.stop(false, () => {
+                this.debug.terminateDebugSession(session.id);
+            });
+        });
         session.onDidCustomEvent(({ event, body }) =>
             this.onDidReceiveDebugSessionCustomEventEmitter.fire({ event, body, session })
         );
         return session;
     }
 
-    restart(): Promise<DebugSession | undefined>;
-    restart(session: DebugSession): Promise<DebugSession>;
-    async restart(session: DebugSession | undefined = this.currentSession): Promise<DebugSession | undefined> {
-        return session && this.doRestart(session);
+    protected cleanup(session: DebugSession): void {
+        if (this.remove(session.id)) {
+            this.onDidDestroyDebugSessionEmitter.fire(session);
+        }
     }
-    protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession | undefined> {
-        if (await session.restart()) {
+
+    protected async doRestart(session: DebugSession, isRestart: boolean): Promise<DebugSession | undefined> {
+        if (session.canRestart()) {
+            await session.restart();
             return session;
         }
-        await session.terminate(true);
         const { options, configuration } = session;
-        configuration.__restart = restart;
+        session.stop(isRestart, () => this.debug.terminateDebugSession(session.id));
+        configuration.__restart = isRestart;
         return this.start(options);
     }
 
-    async terminateSessions(): Promise<void> {
-        this.updateCurrentSession(undefined);
-        this.currentSession?.terminate();
+    async terminateSession(session?: DebugSession): Promise<void> {
+        if (!session) {
+            this.updateCurrentSession(this._currentSession);
+            session = this._currentSession;
+        }
+        if (session) {
+            session.stop(false, () => this.debug.terminateDebugSession(session!.id));
+        }
     }
 
-    async restartSessions(): Promise<void> {
-        this.updateCurrentSession(undefined);
-        this.currentSession?.restart();
+    async restartSession(session?: DebugSession): Promise<DebugSession | undefined> {
+        if (!session) {
+            this.updateCurrentSession(this._currentSession);
+            session = this._currentSession;
+        }
+        if (session) {
+            return this.doRestart(session, true);
+        }
     }
 
-    protected remove(sessionId: string): void {
-        this._sessions.delete(sessionId);
+    protected remove(sessionId: string): boolean {
+        const existed = this._sessions.delete(sessionId);
         const { currentSession } = this;
         if (currentSession && currentSession.id === sessionId) {
             this.updateCurrentSession(undefined);
         }
+        return existed;
     }
 
     getSession(sessionId: string): DebugSession | undefined {
@@ -334,7 +356,7 @@ export class DebugSessionManager {
     }
 
     protected _currentSession: DebugSession | undefined;
-    protected readonly toDisposeOnCurrentSession = new DisposableCollection();
+    protected readonly disposeOnCurrentSessionChanged = new DisposableCollection();
     get currentSession(): DebugSession | undefined {
         return this._currentSession;
     }
@@ -342,12 +364,12 @@ export class DebugSessionManager {
         if (this._currentSession === current) {
             return;
         }
-        this.toDisposeOnCurrentSession.dispose();
+        this.disposeOnCurrentSessionChanged.dispose();
         const previous = this.currentSession;
         this._currentSession = current;
         this.onDidChangeActiveDebugSessionEmitter.fire({ previous, current });
         if (current) {
-            this.toDisposeOnCurrentSession.push(current.onDidChange(() => {
+            this.disposeOnCurrentSessionChanged.push(current.onDidChange(() => {
                 if (this.currentFrame === this.topFrame) {
                     this.open();
                 }
@@ -401,30 +423,6 @@ export class DebugSessionManager {
     get topFrame(): DebugStackFrame | undefined {
         const { currentThread } = this;
         return currentThread && currentThread.topFrame;
-    }
-
-    /**
-     * Destroy the debug session. If session identifier isn't provided then
-     * all active debug session will be destroyed.
-     * @param sessionId The session identifier
-     */
-    destroy(sessionId?: string): void {
-        if (sessionId) {
-            const session = this._sessions.get(sessionId);
-            if (session) {
-                this.doDestroy(session);
-            }
-        } else {
-            this._sessions.forEach(session => this.doDestroy(session));
-        }
-    }
-
-    private doDestroy(session: DebugSession): void {
-        this.debug.terminateDebugSession(session.id);
-
-        session.dispose();
-        this.remove(session.id);
-        this.onDidDestroyDebugSessionEmitter.fire(session);
     }
 
     getFunctionBreakpoints(session: DebugSession | undefined = this.currentSession): DebugFunctionBreakpoint[] {

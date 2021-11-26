@@ -181,8 +181,8 @@ export class DebugViewModel implements Disposable {
         if (!session) {
             return;
         }
-        const newSession = await this.manager.restart(session);
-        if (newSession !== session) {
+        const newSession = await this.manager.restartSession(session);
+        if (newSession && newSession !== session) {
             this._sessions.delete(session);
             this._sessions.add(newSession);
         }
@@ -190,7 +190,7 @@ export class DebugViewModel implements Disposable {
     }
 
     async terminate(): Promise<void> {
-        this.manager.terminateSessions();
+        this.manager.terminateSession();
     }
 
     get watchExpressions(): IterableIterator<DebugWatchExpression> {

@@ -16,10 +16,12 @@
 
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { ChildProcess } from 'child_process';
 import * as stream from 'stream';
-import { CommunicationProvider } from './debug-model';
+import * as net from 'net';
+import { DebugAdapter } from './debug-model';
 
-export class StreamCommunicationProvider extends DisposableCollection implements CommunicationProvider {
+abstract class StreamDebugAdapter extends DisposableCollection {
     private messageReceivedEmitter = new Emitter<string>();
     onMessageReceived: Event<string> = this.messageReceivedEmitter.event;
     private errorEmitter = new Emitter<Error>();
@@ -37,13 +39,17 @@ export class StreamCommunicationProvider extends DisposableCollection implements
         super();
 
         this.fromAdapter.on('data', (data: Buffer) => this.handleData(data));
-        this.fromAdapter.on('close', () => this.closeEmitter.fire()); // FIXME pass a proper exit code
+        this.fromAdapter.on('close', () => this.handleClosed()); // FIXME pass a proper exit code
         this.fromAdapter.on('error', error => this.errorEmitter.fire(error));
         this.toAdapter.on('error', error => this.errorEmitter.fire(error));
-    };
+    }
+
+    handleClosed(): void {
+        this.closeEmitter.fire();
+    }
 
     send(message: string): void {
-        const msg = `${StreamCommunicationProvider.CONTENT_LENGTH}: ${Buffer.byteLength(message, 'utf8')}${StreamCommunicationProvider.TWO_CRLF}${message}`;
+        const msg = `${StreamDebugAdapter.CONTENT_LENGTH}: ${Buffer.byteLength(message, 'utf8')}${StreamDebugAdapter.TWO_CRLF}${message}`;
 
         this.toAdapter.write(msg, 'utf8');
     }
@@ -64,7 +70,7 @@ export class StreamCommunicationProvider extends DisposableCollection implements
                     continue; // there may be more complete messages to process
                 }
             } else {
-                let idx = this.buffer.indexOf(StreamCommunicationProvider.CONTENT_LENGTH);
+                let idx = this.buffer.indexOf(StreamDebugAdapter.CONTENT_LENGTH);
                 if (idx > 0) {
                     // log unrecognized output
                     const output = this.buffer.slice(0, idx);
@@ -73,21 +79,48 @@ export class StreamCommunicationProvider extends DisposableCollection implements
                     this.buffer = this.buffer.slice(idx);
                 }
 
-                idx = this.buffer.indexOf(StreamCommunicationProvider.TWO_CRLF);
+                idx = this.buffer.indexOf(StreamDebugAdapter.TWO_CRLF);
                 if (idx !== -1) {
                     const header = this.buffer.toString('utf8', 0, idx);
                     const lines = header.split('\r\n');
                     for (let i = 0; i < lines.length; i++) {
                         const pair = lines[i].split(/: +/);
-                        if (pair[0] === StreamCommunicationProvider.CONTENT_LENGTH) {
+                        if (pair[0] === StreamDebugAdapter.CONTENT_LENGTH) {
                             this.contentLength = +pair[1];
                         }
                     }
-                    this.buffer = this.buffer.slice(idx + StreamCommunicationProvider.TWO_CRLF.length);
+                    this.buffer = this.buffer.slice(idx + StreamDebugAdapter.TWO_CRLF.length);
                     continue;
                 }
             }
             break;
         }
+    }
+}
+
+export class ProcessDebugAdapter extends StreamDebugAdapter implements DebugAdapter {
+    protected readonly process: ChildProcess;
+    constructor(process: ChildProcess) {
+        super(process.stdout!, process.stdin!);
+        this.process = process;
+    }
+
+    async stop(): Promise<void> {
+        this.process.kill();
+        this.process.stdin?.end();
+    }
+}
+
+export class SocketDebugAdapter extends StreamDebugAdapter implements DebugAdapter {
+    private readonly socket: net.Socket;
+    constructor(socket: net.Socket) {
+        super(socket, socket);
+        this.socket = socket;
+    }
+
+    stop(): Promise<void> {
+        return new Promise<void>(resolve => {
+            this.socket.end(() => resolve());
+        });
     }
 }
