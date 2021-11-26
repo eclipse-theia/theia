@@ -1,5 +1,15 @@
 # Change Log
 
+## v1.21.0 - 12/??/2021
+
+[1.21.0 Milestone](https://github.com/eclipse-theia/theia/milestone/29)
+
+<a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
+
+- [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...`
+  to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to the file relative
+  to your application package's root.
+
 ## v1.20.0 - 11/25/2021
 
 [1.20.0 Milestone](https://github.com/eclipse-theia/theia/milestone/28)

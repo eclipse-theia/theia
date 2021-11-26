@@ -102,7 +102,8 @@ module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
         filename: 'bundle.js',
-        path: outputPath
+        path: outputPath,
+        devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]'
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
     cache: staticCompression,
