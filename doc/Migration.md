@@ -7,6 +7,24 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ## Guide
 
+### v1.21.0
+
+#### Frontend Source Maps
+
+The frontend's source map naming changed. If you had something like the following in your debug configurations:
+
+```json
+      "sourceMapPathOverrides": {
+        "webpack://@theia/example-electron/*": "${workspaceFolder}/examples/electron/*"
+      }
+```
+
+You can delete this whole block and replace it by the following:
+
+```json
+      "webRoot": "${workspaceFolder}/examples/electron"
+```
+
 ### v1.19.0
 
 #### Runtime System Plugin Resolvement
@@ -14,7 +32,7 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 Introduced in `v1.19.0` was the feature to better support extension-packs which both contribute functionality and reference plugins (by `id`).
 The feature works best when there is no runtime plugin resolvement for system (builtin) plugins as it should be done at build time instead.
 In order not to change behavior today, the feature is behind an application prop (acting as a flag). If you want to enable better support for
-extension-packs and extension-dependencies as builtins the property should be turned off. You can disable the resolvement in your application's 
+extension-packs and extension-dependencies as builtins the property should be turned off. You can disable the resolvement in your application's
 `package.json` like so:
 
 

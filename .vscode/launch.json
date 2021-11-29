@@ -20,18 +20,18 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Electron Backend",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
-      "cwd": "${workspaceRoot}/examples/electron",
+      "cwd": "${workspaceFolder}/examples/electron",
       "protocol": "inspector",
       "args": [
         ".",
         "--log-level=debug",
         "--hostname=localhost",
         "--no-cluster",
-        "--app-project-path=${workspaceRoot}/examples/electron",
+        "--app-project-path=${workspaceFolder}/examples/electron",
         "--remote-debugging-port=9222",
         "--no-app-auto-install",
         "--plugins=local-dir:../../plugins"
@@ -41,11 +41,11 @@
       },
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
-        "${workspaceRoot}/examples/electron/src-gen/backend/main.js",
-        "${workspaceRoot}/examples/electron/lib/**/*.js",
-        "${workspaceRoot}/packages/*/lib/**/*.js",
-        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+        "${workspaceFolder}/examples/electron/src-gen/frontend/electron-main.js",
+        "${workspaceFolder}/examples/electron/src-gen/backend/main.js",
+        "${workspaceFolder}/examples/electron/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
       ],
       "smartStep": true,
       "internalConsoleOptions": "openOnSessionStart",
@@ -55,12 +55,12 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Browser Backend",
-      "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
       "args": [
         "--hostname=0.0.0.0",
         "--port=3000",
         "--no-cluster",
-        "--app-project-path=${workspaceRoot}/examples/browser",
+        "--app-project-path=${workspaceFolder}/examples/browser",
         "--plugins=local-dir:plugins",
         "--hosted-plugin-inspect=9339"
       ],
@@ -69,10 +69,10 @@
       },
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
-        "${workspaceRoot}/examples/browser/lib/**/*.js",
-        "${workspaceRoot}/packages/*/lib/**/*.js",
-        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
+        "${workspaceFolder}/examples/browser/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
       ],
       "smartStep": true,
       "internalConsoleOptions": "openOnSessionStart",
@@ -89,18 +89,18 @@
       "sourceMaps": true,
       "internalConsoleOptions": "openOnSessionStart",
       "outFiles": [
-        "${workspaceRoot}/packages/plugin-ext/lib/**/*.js",
-        "${workspaceRoot}/plugins/**/*.js"
+        "${workspaceFolder}/packages/plugin-ext/lib/**/*.js",
+        "${workspaceFolder}/plugins/**/*.js"
       ]
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Launch Browser Backend (eclipse.jdt.ls)",
-      "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+      "program": "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
       "args": [
         "--log-level=debug",
-        "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
+        "--root-dir=${workspaceFolder}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
         "--port=3000",
         "--no-cluster",
         "--no-app-auto-install"
@@ -110,10 +110,10 @@
       },
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
-        "${workspaceRoot}/examples/browser/lib/**/*.js",
-        "${workspaceRoot}/packages/*/lib/**/*.js",
-        "${workspaceRoot}/dev-packages/*/lib/**/*.js"
+        "${workspaceFolder}/examples/browser/src-gen/backend/*.js",
+        "${workspaceFolder}/examples/browser/lib/**/*.js",
+        "${workspaceFolder}/packages/*/lib/**/*.js",
+        "${workspaceFolder}/dev-packages/*/lib/**/*.js"
       ],
       "smartStep": true,
       "internalConsoleOptions": "openOnSessionStart",
@@ -124,16 +124,16 @@
       "request": "launch",
       "protocol": "inspector",
       "name": "Run Mocha Tests",
-      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": [
         "--no-timeouts",
         "--colors",
         "--opts",
-        "${workspaceRoot}/configs/mocha.opts",
+        "${workspaceFolder}/configs/mocha.opts",
         "**/${fileBasenameNoExtension}.js"
       ],
       "env": {
-        "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
       },
       "sourceMaps": true,
       "smartStep": true,
@@ -145,16 +145,14 @@
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:3000/",
-      "webRoot": "${workspaceRoot}"
+      "webRoot": "${workspaceFolder}/examples/browser"
     },
     {
       "type": "chrome",
       "request": "attach",
       "name": "Attach to Electron Frontend",
       "port": 9222,
-      "sourceMapPathOverrides": {
-        "webpack://@theia/example-electron/*": "${workspaceFolder}/examples/electron/*"
-      }
+      "webRoot": "${workspaceFolder}/examples/electron"
     },
     {
       "name": "Launch VS Code Tests",
