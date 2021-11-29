@@ -681,6 +681,7 @@ export interface ViewContainer {
     id: string;
     title: string;
     iconUrl: string;
+    themeIcon?: string;
 }
 
 /**

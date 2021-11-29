@@ -554,10 +554,13 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     private readViewContainer(rawViewContainer: PluginPackageViewContainer, pck: PluginPackage): ViewContainer {
+        const themeIcon = rawViewContainer.icon.startsWith('$(') ? rawViewContainer.icon : undefined;
+        const iconUrl = this.toPluginUrl(pck, rawViewContainer.icon);
         return {
             id: rawViewContainer.id,
             title: rawViewContainer.title,
-            iconUrl: this.toPluginUrl(pck, rawViewContainer.icon)
+            iconUrl,
+            themeIcon,
         };
     }
 
