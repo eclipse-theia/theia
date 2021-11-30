@@ -22,13 +22,14 @@
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { EditorPreferences, EditorConfiguration } from '@theia/editor/lib/browser/editor-preferences';
-import { ThemeService } from '@theia/core/lib/browser/theming';
+import { Theme, ThemeService } from '@theia/core/lib/browser/theming';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ColorApplicationContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export type WebviewThemeType = 'vscode-light' | 'vscode-dark' | 'vscode-high-contrast';
 export interface WebviewThemeData {
-    readonly activeTheme: WebviewThemeType;
+    readonly activeThemeName: string;
+    readonly activeThemeType: WebviewThemeType;
     readonly styles: { readonly [key: string]: string | number; };
 }
 
@@ -104,11 +105,18 @@ export class WebviewThemeDataProvider {
         }
 
         const activeTheme = this.getActiveTheme();
-        return { styles, activeTheme };
+        return {
+            styles,
+            activeThemeName: activeTheme.label,
+            activeThemeType: this.getThemeType(activeTheme)
+        };
     }
 
-    protected getActiveTheme(): WebviewThemeType {
-        const theme = ThemeService.get().getCurrentTheme();
+    protected getActiveTheme(): Theme {
+        return ThemeService.get().getCurrentTheme();
+    }
+
+    protected getThemeType(theme: Theme): WebviewThemeType {
         switch (theme.type) {
             case 'light': return 'vscode-light';
             case 'dark': return 'vscode-dark';
