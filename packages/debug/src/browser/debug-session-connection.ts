@@ -246,19 +246,19 @@ export class DebugSessionConnection implements Disposable {
             // keep getMilliseconds
             const now = new Date();
             const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
-            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${messageStr}`);
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${JSON.stringify(message, null, 4)}`);
         }
         connection.send(messageStr);
     }
 
     protected handleMessage(data: string): void {
+        const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (this.traceOutputChannel) {
             // keep getMilliseconds
             const now = new Date();
             const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
-            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia <- adapter: ${data}`);
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia <- adapter: ${JSON.stringify(message, null, 4)}`);
         }
-        const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
         if (message.type === 'request') {
             this.handleRequest(message as DebugProtocol.Request);
         } else if (message.type === 'response') {
