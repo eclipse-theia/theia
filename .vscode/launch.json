@@ -176,6 +176,21 @@
       "outFiles": [
         "${workspaceFolder}/../.js"
       ]
+    },
+    {
+      "name": "Run Playwright Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/playwright/node_modules/.bin/playwright",
+      "args": [
+        "test",
+        "--debug",
+        "--config=./configs/playwright.debug.config.ts",
+        "${fileBasenameNoExtension}"
+      ],
+      "cwd": "${workspaceFolder}/examples/playwright",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ],
   "compounds": [
