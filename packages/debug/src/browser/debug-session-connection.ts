@@ -243,10 +243,9 @@ export class DebugSessionConnection implements Disposable {
         const connection = await this.connectionPromise;
         const messageStr = JSON.stringify(message);
         if (this.traceOutputChannel) {
+            // keep getMilliseconds
             const now = new Date();
-            /// offset in milliseconds
-            const tzoffset = now.getTimezoneOffset() * 60 * 1000;
-            const dateStr = new Date(now.getTime() - tzoffset).toISOString();
+            const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
             this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${messageStr}`);
         }
         connection.send(messageStr);
@@ -254,10 +253,9 @@ export class DebugSessionConnection implements Disposable {
 
     protected handleMessage(data: string): void {
         if (this.traceOutputChannel) {
+            // keep getMilliseconds
             const now = new Date();
-            /// offset in milliseconds
-            const tzoffset = now.getTimezoneOffset() * 60 * 1000;
-            const dateStr = new Date(now.getTime() - tzoffset).toISOString();
+            const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
             this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia <- adapter: ${data}`);
         }
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
