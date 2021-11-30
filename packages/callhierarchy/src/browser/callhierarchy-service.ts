@@ -52,10 +52,13 @@ export class CallHierarchyServiceProvider {
     }
 
     get(languageId: string, uri: URI): CallHierarchyService | undefined {
+        return this.services
+            .filter(service => this.score(service, languageId, uri) > 0)
+            .sort((left, right) => this.score(right, languageId, uri) - this.score(left, languageId, uri))[0];
+    }
 
-        return this.services.sort(
-            (left, right) =>
-                score(right.selector, uri.scheme, uri.path.toString(), languageId, true) - score(left.selector, uri.scheme, uri.path.toString(), languageId, true))[0];
+    protected score(service: CallHierarchyService, languageId: string, uri: URI): number {
+        return score(service.selector, uri.scheme, uri.path.toString(), languageId, true);
     }
 
     add(service: CallHierarchyService): Disposable {
