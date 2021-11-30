@@ -195,10 +195,6 @@
     transform: rotate(180deg);
 }
 
-.theia-notification-actions > .collapse {
-    transform: rotate(0deg);
-}
-
 .theia-notification-list-item-content-bottom {
     display: flex;
     flex-direction: row;
