@@ -218,15 +218,28 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         const toDispose = new DisposableCollection();
         const containerClass = 'theia-plugin-view-container';
+        let themeIconClass = '';
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
-        const iconUrl = PluginSharedStyle.toExternalIconUrl(viewContainer.iconUrl);
-        toDispose.push(this.style.insertRule('.' + containerClass + '.' + iconClass, () => `
+
+        if (viewContainer.themeIcon) {
+            const icon = monaco.theme.ThemeIcon.fromString(viewContainer.themeIcon);
+            if (icon) {
+                themeIconClass = monaco.theme.ThemeIcon.asClassName(icon) ?? '';
+            }
+        }
+
+        if (!themeIconClass) {
+            const iconUrl = PluginSharedStyle.toExternalIconUrl(viewContainer.iconUrl);
+            toDispose.push(this.style.insertRule('.' + containerClass + '.' + iconClass, () => `
                 mask: url('${iconUrl}') no-repeat 50% 50%;
                 -webkit-mask: url('${iconUrl}') no-repeat 50% 50%;
             `));
+        }
+
         toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
             label: viewContainer.title,
-            iconClass: containerClass + ' ' + iconClass,
+            // The container class automatically sets a mask; if we're using a theme icon, we don't want one.
+            iconClass: (themeIconClass || containerClass) + ' ' + iconClass,
             closeable: true
         }));
         return toDispose;
