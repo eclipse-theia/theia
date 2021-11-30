@@ -192,11 +192,11 @@
 }
 
 .theia-notification-actions > .expand {
-    transform: rotate(0deg);
+    transform: rotate(180deg);
 }
 
 .theia-notification-actions > .collapse {
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
 }
 
 .theia-notification-list-item-content-bottom {
