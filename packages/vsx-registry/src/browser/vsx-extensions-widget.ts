@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
+import { TreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
@@ -77,5 +78,14 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
             default:
                 return '';
         }
+    }
+
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        super.handleClickEvent(node, event);
+        this.model.openNode(node); // Open the editor view on a single click.
+    }
+
+    protected handleDblClickEvent(): void {
+        // Don't open the editor view on a double click.
     }
 }

@@ -357,7 +357,8 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
 export abstract class AbstractVSXExtensionComponent extends React.Component<AbstractVSXExtensionComponent.Props> {
 
-    readonly install = async () => {
+    readonly install = async (event?: React.MouseEvent) => {
+        event?.stopPropagation();
         this.forceUpdate();
         try {
             const pending = this.props.extension.install();
@@ -368,7 +369,8 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
         }
     };
 
-    readonly uninstall = async () => {
+    readonly uninstall = async (event?: React.MouseEvent) => {
+        event?.stopPropagation();
         try {
             const pending = this.props.extension.uninstall();
             this.forceUpdate();
@@ -379,6 +381,7 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
     };
 
     protected readonly manage = (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
+        e.stopPropagation();
         this.props.extension.handleContextMenu(e);
     };
 
