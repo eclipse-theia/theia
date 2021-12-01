@@ -30,7 +30,7 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { nls } from '@theia/core';
+import { CancellationError, nls } from '@theia/core';
 import { EditorManager } from '@theia/editor/lib/browser';
 
 export interface FilePreferenceProviderLocks {
@@ -140,15 +140,15 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             if (!this.model || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
                 return false;
             }
-            if (!locks) { // Action cancelled by user. Consider it complete.
-                return true;
+            if (!locks) {
+                throw new CancellationError();
             }
             if (shouldSave) {
                 if (this.model.dirty) {
                     shouldSave = await this.handleDirtyEditor();
                 }
-                if (!shouldSave) { // Action cancelled by user. Consider it complete.
-                    return true;
+                if (!shouldSave) {
+                    throw new CancellationError();
                 }
             }
             const editOperations = this.getEditOperations(path, value);
@@ -157,6 +157,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
             return this.pendingTransaction.promise;
         } catch (e) {
+            if (e instanceof CancellationError) {
+                throw e;
+            }
             const message = `Failed to update the value of '${key}' in '${this.getUri()}'.`;
             this.messageService.error(`${message} Please check if it is corrupted.`);
             console.error(`${message}`, e);
@@ -200,9 +203,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                         this.pendingTransaction.resolve(success);
                     }
                 }));
-            } else { // User cancelled the operation.
+            } else { // User canceled the operation.
                 this.singleChangeLock.cancel();
                 locks.releaseTransaction!();
+                this.pendingTransaction.resolve(false);
             }
         }
         locks?.releaseChange();
@@ -342,7 +346,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const saveAndRetry = nls.localizeByDefault('Save and Retry');
         const open = nls.localizeByDefault('Open File');
         const msg = await this.messageService.error(
-            nls.localizeByDefault('Unable to write preference change because the settings file is dirty. Please save the file and try again.'),
+            nls.localizeByDefault('Unable to write into {0} settings because the file has unsaved changes. Please save the {0} settings file first and then try again.',
+                nls.localizeByDefault(PreferenceScope[this.getScope()].toLocaleLowerCase())
+            ),
             saveAndRetry, open);
 
         if (this.model) {
