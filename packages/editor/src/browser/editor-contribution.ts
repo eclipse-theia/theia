@@ -144,7 +144,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             execute: async title => {
                 if (title?.owner instanceof EditorWidget) {
                     const selection = title.owner.editor.selection;
-                    const newEditor = await this.editorManager.openToSide(title.owner.editor.uri, { selection, widgetOptions: { mode: splitMode } });
+                    const newEditor = await this.editorManager.openToSide(title.owner.editor.uri, { selection, widgetOptions: { mode: splitMode, ref: title.owner } });
                     const oldEditorState = title.owner.editor.storeViewState();
                     newEditor.editor.restoreViewState(oldEditorState);
                 }
