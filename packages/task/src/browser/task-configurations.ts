@@ -264,7 +264,7 @@ export class TaskConfigurations implements Disposable {
         for (const change of fileChanges) {
             if (change.type === FileChangeType.DELETED) {
                 this.removeTasks(change.scope);
-            } else {
+            } else if (change.scope) {
                 // re-parse the config file
                 await this.refreshTasks(change.scope);
             }
