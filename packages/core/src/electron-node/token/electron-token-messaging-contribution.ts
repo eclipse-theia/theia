@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as net from 'net';
 import * as http from 'http';
 import { injectable, inject } from 'inversify';
 import { MessagingContribution } from '../../node/messaging/messaging-contribution';
@@ -33,13 +32,10 @@ export class ElectronMessagingContribution extends MessagingContribution {
     /**
      * Only allow token-bearers.
      */
-    protected handleHttpUpgrade(request: http.IncomingMessage, socket: net.Socket, head: Buffer): void {
+    protected async allowConnect(request: http.IncomingMessage): Promise<boolean> {
         if (this.tokenValidator.allowRequest(request)) {
-            super.handleHttpUpgrade(request, socket, head);
-        } else {
-            console.error(`refused a websocket connection: ${request.connection.remoteAddress}`);
-            socket.destroy(); // kill connection, client will take that as a "no".
+            return super.allowConnect(request);
         }
+        return false;
     }
-
 }

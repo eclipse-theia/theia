@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as ws from 'ws';
+import { Socket } from 'socket.io';
 import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
@@ -43,7 +43,7 @@ export interface MessagingService {
      * Prefer JSON-RPC connections or web socket channels over web sockets. Clients can handle only limited amount of web sockets
      * and excessive amount can cause performance degradation. All JSON-RPC connections and web socket channels share the single web socket connection.
      */
-    ws(path: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void;
+    ws(path: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void;
 }
 export namespace MessagingService {
     /** Inversify container identifier for the `MessagingService` component. */
