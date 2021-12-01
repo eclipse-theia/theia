@@ -143,25 +143,25 @@ export class ApplicationShell extends Widget {
     /**
      * The dock panel in the main shell area. This is where editors usually go to.
      */
-    readonly mainPanel: TheiaDockPanel;
+    mainPanel: TheiaDockPanel;
 
     /**
      * The dock panel in the bottom shell area. In contrast to the main panel, the bottom panel
      * can be collapsed and expanded.
      */
-    readonly bottomPanel: TheiaDockPanel;
+    bottomPanel: TheiaDockPanel;
 
     /**
      * Handler for the left side panel. The primary application views go here, such as the
      * file explorer and the git view.
      */
-    readonly leftPanelHandler: SidePanelHandler;
+    leftPanelHandler: SidePanelHandler;
 
     /**
      * Handler for the right side panel. The secondary application views go here, such as the
      * outline view.
      */
-    readonly rightPanelHandler: SidePanelHandler;
+    rightPanelHandler: SidePanelHandler;
 
     /**
      * General options for the application shell.
@@ -171,7 +171,7 @@ export class ApplicationShell extends Widget {
     /**
      * The fixed-size panel shown on top. This one usually holds the main menu.
      */
-    readonly topPanel: Panel;
+    topPanel: Panel;
 
     /**
      * The current state of the bottom panel.
@@ -212,54 +212,18 @@ export class ApplicationShell extends Widget {
     constructor(
         @inject(DockPanelRendererFactory) protected dockPanelRendererFactory: () => DockPanelRenderer,
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
-        @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
+        @inject(SidePanelHandlerFactory) protected readonly sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
         @inject(CorePreferences) protected readonly corePreferences: CorePreferences
     ) {
         super(options as Widget.IOptions);
-        this.addClass(APPLICATION_SHELL_CLASS);
-        this.id = 'theia-app-shell';
-
-        // Merge the user-defined application options with the default options
-        this.options = {
-            bottomPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
-                ...options.bottomPanel || {}
-            },
-            leftPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
-                ...options.leftPanel || {}
-            },
-            rightPanel: {
-                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
-                ...options.rightPanel || {}
-            }
-        };
-
-        this.mainPanel = this.createMainPanel();
-        this.topPanel = this.createTopPanel();
-        this.bottomPanel = this.createBottomPanel();
-
-        this.leftPanelHandler = sidePanelHandlerFactory();
-        this.leftPanelHandler.create('left', this.options.leftPanel);
-        this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
-
-        this.rightPanelHandler = sidePanelHandlerFactory();
-        this.rightPanelHandler.create('right', this.options.rightPanel);
-        this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
-
-        this.layout = this.createLayout();
-
-        this.tracker.currentChanged.connect(this.onCurrentChanged, this);
-        this.tracker.activeChanged.connect(this.onActiveChanged, this);
     }
 
     @postConstruct()
     protected init(): void {
+        this.initializeShell();
         this.initSidebarVisibleKeyContext();
         this.initFocusKeyContexts();
 
@@ -273,6 +237,45 @@ export class ApplicationShell extends Widget {
                 }
             });
         }
+    }
+
+    protected initializeShell(): void {
+        this.addClass(APPLICATION_SHELL_CLASS);
+        this.id = 'theia-app-shell';
+        // Merge the user-defined application options with the default options
+        this.options = {
+            bottomPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
+                ...this.options?.bottomPanel || {}
+            },
+            leftPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
+                ...this.options?.leftPanel || {}
+            },
+            rightPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
+                ...this.options?.rightPanel || {}
+            }
+        };
+
+        this.mainPanel = this.createMainPanel();
+        this.topPanel = this.createTopPanel();
+        this.bottomPanel = this.createBottomPanel();
+
+        this.leftPanelHandler = this.sidePanelHandlerFactory();
+        this.leftPanelHandler.create('left', this.options.leftPanel);
+        this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        this.rightPanelHandler = this.sidePanelHandlerFactory();
+        this.rightPanelHandler.create('right', this.options.rightPanel);
+        this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        this.layout = this.createLayout();
+
+        this.tracker.currentChanged.connect(this.onCurrentChanged, this);
+        this.tracker.activeChanged.connect(this.onActiveChanged, this);
     }
 
     protected initSidebarVisibleKeyContext(): void {

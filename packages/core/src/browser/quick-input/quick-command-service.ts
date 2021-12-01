@@ -98,7 +98,7 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
         return items;
     }
 
-    private toItem(command: Command): QuickPickItem {
+    toItem(command: Command): QuickPickItem {
         const label = (command.category) ? `${command.category}: ` + command.label! : command.label!;
         const iconClasses = this.getItemIconClasses(command);
         const activeElement = window.document.activeElement as HTMLElement;

@@ -151,6 +151,9 @@
       "path": "packages/timeline"
     },
     {
+      "path": "packages/toolbar"
+    },
+    {
       "path": "packages/typehierarchy"
     },
     {
