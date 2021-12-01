@@ -16,11 +16,11 @@
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
-import { Definition, Caller, Callee } from './callhierarchy';
-import { ContributionProvider, Disposable } from '@theia/core/lib/common';
-import { LanguageSelector, score } from '../common/language-selector';
-import URI from '@theia/core/lib/common/uri';
 import { CancellationToken } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { ContributionProvider, Disposable, Emitter, Event } from '@theia/core/lib/common';
+import { Definition, Caller, Callee } from './callhierarchy';
+import { LanguageSelector, score } from '../common/language-selector';
 
 export const CallHierarchyService = Symbol('CallHierarchyService');
 
@@ -39,6 +39,11 @@ export class CallHierarchyServiceProvider {
     @inject(ContributionProvider) @named(CallHierarchyService)
     protected readonly contributions: ContributionProvider<CallHierarchyService>;
 
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+    get onDidChange(): Event<void> {
+        return this.onDidChangeEmitter.event;
+    }
+
     private services: CallHierarchyService[] = [];
 
     @postConstruct()
@@ -47,15 +52,19 @@ export class CallHierarchyServiceProvider {
     }
 
     get(languageId: string, uri: URI): CallHierarchyService | undefined {
+        return this.services
+            .filter(service => this.score(service, languageId, uri) > 0)
+            .sort((left, right) => this.score(right, languageId, uri) - this.score(left, languageId, uri))[0];
+    }
 
-        return this.services.sort(
-            (left, right) =>
-                score(right.selector, uri.scheme, uri.path.toString(), languageId, true) - score(left.selector, uri.scheme, uri.path.toString(), languageId, true))[0];
+    protected score(service: CallHierarchyService, languageId: string, uri: URI): number {
+        return score(service.selector, uri.scheme, uri.path.toString(), languageId, true);
     }
 
     add(service: CallHierarchyService): Disposable {
         this.services.push(service);
         const that = this;
+        this.onDidChangeEmitter.fire();
         return {
             dispose: () => {
                 that.remove(service);
@@ -66,6 +75,10 @@ export class CallHierarchyServiceProvider {
     private remove(service: CallHierarchyService): boolean {
         const length = this.services.length;
         this.services = this.services.filter(value => value !== service);
-        return length !== this.services.length;
+        const serviceWasRemoved = length !== this.services.length;
+        if (serviceWasRemoved) {
+            this.onDidChangeEmitter.fire();
+        }
+        return serviceWasRemoved;
     }
 }
