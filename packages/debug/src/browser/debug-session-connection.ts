@@ -243,16 +243,20 @@ export class DebugSessionConnection implements Disposable {
         const connection = await this.connectionPromise;
         const messageStr = JSON.stringify(message);
         if (this.traceOutputChannel) {
-            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} theia -> adapter: ${messageStr}`);
+            const now = new Date();
+            const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${JSON.stringify(message, undefined, 4)}`);
         }
         connection.send(messageStr);
     }
 
     protected handleMessage(data: string): void {
-        if (this.traceOutputChannel) {
-            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} theia <- adapter: ${data}`);
-        }
         const message: DebugProtocol.ProtocolMessage = JSON.parse(data);
+        if (this.traceOutputChannel) {
+            const now = new Date();
+            const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
+            this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia <- adapter: ${JSON.stringify(message, undefined, 4)}`);
+        }
         if (message.type === 'request') {
             this.handleRequest(message as DebugProtocol.Request);
         } else if (message.type === 'response') {
