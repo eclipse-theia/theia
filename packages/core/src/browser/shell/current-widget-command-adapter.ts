@@ -51,12 +51,7 @@ export class CurrentWidgetCommandAdapter implements CommandHandler {
 
     protected transformArguments(shell: ApplicationShell, event: Event): [Title<Widget> | undefined, TabBar<Widget> | undefined, Event] {
         const tabBar = shell.findTabBar(event);
-        if (tabBar) {
-            const title = shell.findTitle(tabBar, event);
-            if (title) {
-                return [title, tabBar, event];
-            }
-        }
-        return [undefined, tabBar, event];
+        const title = tabBar && shell.findTitle(tabBar, event);
+        return [title, tabBar, event];
     }
 }
