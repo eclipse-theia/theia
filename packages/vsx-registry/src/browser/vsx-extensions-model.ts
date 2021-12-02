@@ -236,7 +236,7 @@ export class VSXExtensionsModel {
             if (this.workspaceService.saved) {
                 updateRecommendationsForScope('workspaceValue');
             }
-            const recommendedSorted = new Set(Array.from(allRecommendations).sort((a, b) => this.compareExtensions(a, b)).values());
+            const recommendedSorted = new Set(Array.from(allRecommendations).sort((a, b) => this.compareExtensions(a, b)));
             allUnwantedRecommendations.forEach(unwantedRecommendation => recommendedSorted.delete(unwantedRecommendation));
             this._recommended = recommendedSorted;
             return Promise.all(Array.from(recommendedSorted, plugin => this.refresh(plugin)));
