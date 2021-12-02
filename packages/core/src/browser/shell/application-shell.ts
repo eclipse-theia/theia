@@ -29,10 +29,10 @@ import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
+import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
-import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed } from '../widgets';
@@ -82,9 +82,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
     constructor(
-        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer,
+        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: () => TabBarToolbar,
+        @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
     ) { }
 
@@ -847,20 +847,15 @@ export class ApplicationShell extends Widget {
      */
     findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
         if (event?.target instanceof HTMLElement) {
-            let tabNode: HTMLElement | null = event.target;
-            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
-                tabNode = tabNode.parentElement;
+            const tabNode = event.target;
+
+            const titleIndex = Array.from(tabBar.contentNode.getElementsByClassName('p-TabBar-tab'))
+                .findIndex(node => node.contains(tabNode));
+
+            if (titleIndex !== -1) {
+                return tabBar.titles[titleIndex];
             }
-            if (tabNode && tabNode.title) {
-                let title = tabBar.titles.find(t => t.caption === tabNode!.title);
-                if (title) {
-                    return title;
-                }
-                title = tabBar.titles.find(t => t.label === tabNode!.title);
-                if (title) {
-                    return title;
-                }
-            }
+
         }
         return tabBar.currentTitle || undefined;
     }
@@ -1832,18 +1827,18 @@ export class ApplicationShell extends Widget {
         return undefined;
     }
 
-    canToggleMaximized(): boolean {
-        const area = this.currentWidget && this.getAreaFor(this.currentWidget);
+    canToggleMaximized(widget: Widget | undefined = this.currentWidget): boolean {
+        const area = widget && this.getAreaFor(widget);
         return area === 'main' || area === 'bottom';
     }
 
-    toggleMaximized(): void {
-        const area = this.currentWidget && this.getAreaPanelFor(this.currentWidget);
+    toggleMaximized(widget: Widget | undefined = this.currentWidget): void {
+        const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
             area.toggleMaximized();
+            this.revealWidget(widget!.id);
         }
     }
-
 }
 
 /**

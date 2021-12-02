@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -37,8 +37,14 @@ const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
 
 /** Menu path for tab bars used throughout the application shell. */
 export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu'];
+export const SHELL_TABBAR_CONTEXT_CLOSE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '0_close'];
+export const SHELL_TABBAR_CONTEXT_COPY: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '1_copy'];
+// Kept here in anticipation of tab pinning behavior implemented in tab-bars.ts
+export const SHELL_TABBAR_CONTEXT_PIN: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '4_pin'];
+export const SHELL_TABBAR_CONTEXT_SPLIT: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '5_split'];
 
 export const TabBarRendererFactory = Symbol('TabBarRendererFactory');
+export type TabBarRendererFactory = () => TabBarRenderer;
 
 /**
  * Size information of DOM elements used for rendering tabs in side bars.
@@ -66,7 +72,6 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
  * automatically.
  */
 export class TabBarRenderer extends TabBar.Renderer {
-
     /**
      * The menu path used to render the context menu.
      */
@@ -80,7 +85,8 @@ export class TabBarRenderer extends TabBar.Renderer {
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
         protected readonly decoratorService?: TabBarDecoratorService,
-        protected readonly iconThemeService?: IconThemeService
+        protected readonly iconThemeService?: IconThemeService,
+        protected readonly selectionService?: SelectionService,
     ) {
         super();
         if (this.decoratorService) {
@@ -437,7 +443,27 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (this.contextMenuRenderer && this.contextMenuPath && event.currentTarget instanceof HTMLElement) {
             event.stopPropagation();
             event.preventDefault();
-            this.contextMenuRenderer.render(this.contextMenuPath, event);
+            let widget: Widget | undefined = undefined;
+            if (this.tabBar) {
+                const titleIndex = Array.from(this.tabBar.contentNode.getElementsByClassName('p-TabBar-tab'))
+                    .findIndex(node => node.contains(event.currentTarget as HTMLElement));
+                if (titleIndex !== -1) {
+                    widget = this.tabBar.titles[titleIndex].owner;
+                }
+            }
+
+            const oldSelection = this.selectionService?.selection;
+            if (widget && this.selectionService) {
+                this.selectionService.selection = NavigatableWidget.is(widget) ? { uri: widget.getResourceUri() } : widget;
+            }
+
+            this.contextMenuRenderer.render({
+                menuPath: this.contextMenuPath!,
+                anchor: event,
+                args: [event],
+                // We'd like to wait until the command triggered by the context menu has been run, but this should let it get through the preamble, at least.
+                onHide: () => setTimeout(() => { if (this.selectionService) { this.selectionService.selection = oldSelection; } })
+            });
         }
     };
 
@@ -452,7 +478,6 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
         }
     };
-
 }
 
 /**

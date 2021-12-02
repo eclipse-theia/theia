@@ -165,11 +165,12 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
     bind(DockPanelRenderer).toSelf();
-    bind(TabBarRendererFactory).toFactory(context => () => {
-        const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
-        const decoratorService = context.container.get<TabBarDecoratorService>(TabBarDecoratorService);
-        const iconThemeService = context.container.get<IconThemeService>(IconThemeService);
-        return new TabBarRenderer(contextMenuRenderer, decoratorService, iconThemeService);
+    bind(TabBarRendererFactory).toFactory(({ container }) => () => {
+        const contextMenuRenderer = container.get(ContextMenuRenderer);
+        const tabBarDecoratorService = container.get(TabBarDecoratorService);
+        const iconThemeService = container.get(IconThemeService);
+        const selectionService = container.get(SelectionService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService);
     });
 
     bindContributionProvider(bind, TabBarDecorator);

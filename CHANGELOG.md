@@ -4,11 +4,14 @@
 
 [1.21.0 Milestone](https://github.com/eclipse-theia/theia/milestone/29)
 
+- [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
+
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
 - [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...`
   to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to the file relative
   to your application package's root.
+- [core] `SelectionService` added to constructor arguments of `TabBarRenderer`. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
 
 ## v1.20.0 - 11/25/2021
 

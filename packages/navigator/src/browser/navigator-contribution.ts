@@ -27,13 +27,13 @@ import {
     PreferenceScope,
     PreferenceService,
     SelectableTreeNode,
-    SHELL_TABBAR_CONTEXT_MENU,
     Widget,
     NavigatableWidget,
     ApplicationShell,
     TabBar,
     Title,
-    codicon
+    codicon,
+    SHELL_TABBAR_CONTEXT_MENU
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -44,7 +44,6 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
-    isWindows
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
@@ -72,12 +71,11 @@ import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import URI from '@theia/core/lib/common/uri';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
 import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 import { nls } from '@theia/core/lib/common/nls';
+import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = Command.toLocalizedCommand({
@@ -113,15 +111,15 @@ export namespace FileNavigatorCommands {
         category: CommonCommands.FILE_CATEGORY,
         label: 'Focus on Files Explorer'
     });
-    export const COPY_RELATIVE_FILE_PATH = Command.toDefaultLocalizedCommand({
-        id: 'navigator.copyRelativeFilePath',
-        label: 'Copy Relative Path'
-    });
     export const OPEN = Command.toDefaultLocalizedCommand({
         id: 'navigator.open',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Open'
     });
+    /**
+     * @deprecated since 1.21.0. Use WorkspaceCommands.COPY_RELATIVE_FILE_COMMAND instead.
+     */
+    export const COPY_RELATIVE_FILE_PATH = WorkspaceCommands.COPY_RELATIVE_FILE_PATH;
 }
 
 /**
@@ -135,6 +133,7 @@ export namespace NavigatorMoreToolbarGroups {
 }
 
 export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
+export const SHELL_TABBAR_CONTEXT_REVEAL: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '2_reveal'];
 
 /**
  * Navigator context menu default groups should be aligned
@@ -272,20 +271,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerCommand(FileNavigatorCommands.FOCUS, {
             execute: () => this.openView({ activate: true })
         });
-        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
-            execute: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                this.openView({ activate: true }).then(() => this.selectWidgetFileNode(widget || this.shell.currentWidget));
-            },
-            isEnabled: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
-            },
-            isVisible: (event?: Event) => {
-                const widget = this.shell.findTargetedWidget(event);
-                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
-            }
-        });
+        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, new CurrentWidgetCommandAdapter(this.shell, {
+            execute: title => this.selectWidgetFileNode(title?.owner),
+            isEnabled: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
+            isVisible: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
+        }));
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
                 this.fileNavigatorFilter.toggleHiddenFiles();
@@ -343,20 +333,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: () => this.navigatorDiff.isFirstFileSelected,
             isVisible: () => this.navigatorDiff.isFirstFileSelected
         });
-        registry.registerCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH, UriAwareCommandHandler.MultiSelect(this.selectionService, {
-            isEnabled: uris => !!uris.length,
-            isVisible: uris => !!uris.length,
-            execute: async uris => {
-                const lineDelimiter = isWindows ? '\r\n' : '\n';
-                const text = uris.map((uri: URI) => {
-                    const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
-                    if (workspaceRoot) {
-                        return workspaceRoot.relative(uri);
-                    }
-                }).join(lineDelimiter);
-                await this.clipboardService.writeText(text);
-            }
-        }));
         registry.registerCommand(FileNavigatorCommands.OPEN, {
             isEnabled: () => this.getSelectedFileNodes().length > 0,
             isVisible: () => this.getSelectedFileNodes().length > 0,
@@ -421,7 +397,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_REVEAL, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             label: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.label,
             order: '5'
@@ -460,8 +436,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             order: 'c'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
-            commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
-            label: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.label,
+            commandId: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id,
+            label: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.label,
             order: 'd'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
@@ -519,7 +495,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             order: 'a'
         });
         registry.registerMenuAction(OpenEditorsContextMenu.CLIPBOARD, {
-            commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
+            commandId: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id,
             order: 'b'
         });
         registry.registerMenuAction(OpenEditorsContextMenu.SAVE, {
@@ -576,12 +552,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
             keybinding: 'ctrlcmd+i',
             context: NavigatorKeybindingContexts.navigatorActive
-        });
-
-        registry.registerKeybinding({
-            command: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
-            keybinding: isWindows ? 'ctrl+k ctrl+shift+c' : 'ctrlcmd+shift+alt+c',
-            when: '!editorFocus'
         });
     }
 

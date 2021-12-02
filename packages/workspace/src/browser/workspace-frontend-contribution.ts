@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService, isWindows } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
-    open, OpenerService, CommonMenus, StorageService, LabelProvider,
-    ConfirmDialog, KeybindingRegistry, KeybindingContribution, CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable
+    open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
+    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -214,6 +214,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         menus.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: WorkspaceCommands.SAVE_AS.id,
         });
+
+        menus.registerMenuAction(SHELL_TABBAR_CONTEXT_COPY, {
+            commandId: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id,
+            label: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.label,
+        });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -242,6 +247,11 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         keybindings.registerKeybinding({
             command: WorkspaceCommands.SAVE_AS.id,
             keybinding: 'ctrlcmd+shift+s',
+        });
+        keybindings.registerKeybinding({
+            command: WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id,
+            keybinding: isWindows ? 'ctrl+k ctrl+shift+c' : 'ctrlcmd+shift+alt+c',
+            when: '!editorFocus'
         });
     }
 
