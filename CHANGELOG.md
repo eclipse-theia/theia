@@ -4,28 +4,20 @@
 
 [1.21.0 Milestone](https://github.com/eclipse-theia/theia/milestone/29)
 
-<<<<<<< HEAD
 - [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
-=======
 - [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
->>>>>>> 6583dd0a9d4 (changelog)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
 - [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...`
   to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to the file relative
   to your application package's root.
-<<<<<<< HEAD
 - [core] `SelectionService` added to constructor arguments of `TabBarRenderer`. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
-=======
 - [preferences] Removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
->>>>>>> 6583dd0a9d4 (changelog)
 
 ## v1.20.0 - 11/25/2021
 
-[1.20.0 Milestone](https://github.com/eclipse-theia/theia/milestone/26)
-
-- [plugindev] Renamed HostedPlugin(Server|Client) to PluginDev(Server|Client) [#10352](https://github.com/eclipse-theia/theia/pull/10352)
+[1.20.0 Milestone](https://github.com/eclipse-theia/theia/milestone/28)
 
 - [application-manager] added a workaround to the upstream `electron-rebuild` bug [#10429](https://github.com/eclipse-theia/theia/pull/10429)
 - [application-manager] remove unnecessary `font-awesome-webpack` dependency [#10401](https://github.com/eclipse-theia/theia/pull/10401)
