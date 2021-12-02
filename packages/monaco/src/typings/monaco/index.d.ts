@@ -904,7 +904,7 @@ declare module monaco.services {
         removeDecorationType: monaco.editor.ICodeEditorService['removeDecorationType'];
         resolveDecorationOptions: monaco.editor.ICodeEditorService['resolveDecorationOptions'];
         /**
-         * It respects inline and emebedded editors in comparison to `getActiveCodeEditor`
+         * It respects inline and embedded editors in comparison to `getActiveCodeEditor`
          * which only respect standalone and diff modified editors.
          */
         getFocusedCodeEditor(): monaco.editor.ICodeEditor | undefined;
@@ -997,7 +997,7 @@ declare module monaco.services {
         private readonly _instantiatedModes: { [modeId: string]: IMode; };
         private readonly _onLanguagesMaybeChanged: Emitter<void>;
         readonly onDidCreateMode: monaco.IEvent<IMode>;
-        createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
+        createByFilepathOrFirstLine(resource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
         getLanguageIdentifier(modeId: string | LanguageId): LanguageIdentifier | null;
     }
 
@@ -2351,7 +2351,7 @@ declare module monaco.list {
             private user: string,
             container: HTMLElement,
             virtualDelegate: IListVirtualDelegate<T>,
-            renderers: IListRenderer<any /* TODO@joao */, any>[],
+            renderers: IListRenderer<any, any>[],
             private _options: IListOptions<T> = DefaultOptions
         )
 

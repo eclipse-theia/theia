@@ -160,23 +160,23 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         const uri = new TheiaURI(resource);
         const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
 
-        let opener: OpenHandler | undefined;
+        let openHandler: OpenHandler | undefined;
         if (typeof openerId === 'string') {
             const lowerViewType = openerId.toLowerCase();
             const openers = await this.openerService.getOpeners();
-            for (const opnr of openers) {
-                const idLowerCase = opnr.id.toLowerCase();
+            for (const opener of openers) {
+                const idLowerCase = opener.id.toLowerCase();
                 if (lowerViewType === idLowerCase) {
-                    opener = opnr;
+                    openHandler = opener;
                     break;
                 }
             }
         } else {
-            opener = await this.openerService.getOpener(uri, editorOptions);
+            openHandler = await this.openerService.getOpener(uri, editorOptions);
         }
 
-        if (opener) {
-            await opener.open(uri, editorOptions);
+        if (openHandler) {
+            await openHandler.open(uri, editorOptions);
             return true;
         }
 
