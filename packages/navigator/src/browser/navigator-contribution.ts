@@ -117,7 +117,7 @@ export namespace FileNavigatorCommands {
         label: 'Open'
     });
     /**
-     * @deprecated since 1.20.0. Use WorkspaceCommands.COPY_RELATIVE_FILE_COMMAND instead.
+     * @deprecated since 1.21.0. Use WorkspaceCommands.COPY_RELATIVE_FILE_COMMAND instead.
      */
     export const COPY_RELATIVE_FILE_PATH = WorkspaceCommands.COPY_RELATIVE_FILE_PATH;
 }
