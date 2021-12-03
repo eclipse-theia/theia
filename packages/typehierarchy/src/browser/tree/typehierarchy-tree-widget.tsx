@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DockPanel } from '@theia/core/shared/@phosphor/widgets';
 import URI from '@theia/core/lib/common/uri';
-import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-types';
+import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';

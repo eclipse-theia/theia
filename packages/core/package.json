@@ -102,7 +102,6 @@
       "react-dom",
       "react-virtualized",
       "vscode-languageserver-protocol",
-      "vscode-languageserver-types",
       "vscode-uri",
       "vscode-ws-jsonrpc"
     ],

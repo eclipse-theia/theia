@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import * as lstypes from '@theia/core/shared/vscode-languageserver-types';
+import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
 import { URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {

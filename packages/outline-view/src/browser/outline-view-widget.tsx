@@ -31,7 +31,7 @@ import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Emitter, Mutable, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';
-import { Range } from '@theia/core/shared/vscode-languageserver-types';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 

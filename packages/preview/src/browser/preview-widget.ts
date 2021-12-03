@@ -26,7 +26,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { Range, Location } from '@theia/core/shared/vscode-languageserver-types';
+import { Range, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 

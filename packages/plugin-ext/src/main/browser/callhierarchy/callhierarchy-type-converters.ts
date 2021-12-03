@@ -17,7 +17,7 @@
 import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller, Callee as CallHierarchyCallee } from '@theia/callhierarchy/lib/browser';
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
-import * as callhierarchy from '@theia/core/shared/vscode-languageserver-types';
+import * as callhierarchy from '@theia/core/shared/vscode-languageserver-protocol';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../../common/uri-components';
 

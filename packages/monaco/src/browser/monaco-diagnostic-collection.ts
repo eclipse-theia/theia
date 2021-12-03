@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import IModel = monaco.editor.IModel;

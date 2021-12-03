@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-types';
+import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocumentPositionParams } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()

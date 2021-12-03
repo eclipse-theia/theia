@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Title, Widget } from '@theia/core/shared/@phosphor/widgets';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
