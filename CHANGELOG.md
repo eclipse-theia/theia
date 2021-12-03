@@ -5,6 +5,7 @@
 [1.21.0 Milestone](https://github.com/eclipse-theia/theia/milestone/29)
 
 - [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
+- [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
@@ -12,6 +13,7 @@
   to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to the file relative
   to your application package's root.
 - [core] `SelectionService` added to constructor arguments of `TabBarRenderer`. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
+- [preferences] Removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
 
 ## v1.20.0 - 11/25/2021
 

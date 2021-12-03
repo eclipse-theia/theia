@@ -193,7 +193,6 @@ describe('Preference Service', () => {
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
         assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
 
-        assert.strictEqual(await prefSchema.pendingChanges, false);
         assert.deepStrictEqual([], events.map(e => ({
             preferenceName: e.preferenceName,
             newValue: e.newValue,
@@ -488,7 +487,6 @@ describe('Preference Service', () => {
 
         it('onPreferenceChanged #0', async () => {
             const { preferences, schema } = prepareServices();
-            await schema.pendingChanges;
 
             const events: PreferenceChange[] = [];
             preferences.onPreferenceChanged(event => events.push(event));
@@ -511,7 +509,6 @@ describe('Preference Service', () => {
 
         it('onPreferenceChanged #1', async () => {
             const { preferences, schema } = prepareServices();
-            await schema.pendingChanges;
 
             const events: PreferenceChange[] = [];
             preferences.onPreferenceChanged(event => events.push(event));

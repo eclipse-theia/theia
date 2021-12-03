@@ -403,7 +403,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected setPreferenceWithDebounce = debounce(this.setPreferenceImmediately.bind(this), 500, { leading: false, trailing: true });
 
     protected setPreferenceImmediately(value: ValueType | undefined): Promise<void> {
-        return this.preferenceService.set(this.id, value, this.scopeTracker.currentScope.scope, this.scopeTracker.currentScope.uri);
+        return this.preferenceService.set(this.id, value, this.scopeTracker.currentScope.scope, this.scopeTracker.currentScope.uri)
+            .catch(() => this.handleValueChange());
     }
 
     handleSearchChange(isFiltered = this.model.isFiltered): void {
@@ -420,7 +421,18 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         this.updateHeadline();
     }
 
+    /**
+     * Should create an HTML element that the user can interact with to change the value of the preference.
+     * @param container the parent element for the interactable. This method is responsible for adding the new element to its parent.
+     */
     protected abstract createInteractable(container: HTMLElement): void;
+    /**
+     * @returns a fallback default value for a preference of the type implemented by a concrete leaf renderer
+     * This function is only called if the default value for a given preference is not specified in its schema.
+     */
     protected abstract getFallbackValue(): ValueType;
+    /**
+     * This function is responsible for reconciling the display of the preference value with the value reported by the PreferenceService.
+     */
     protected abstract doHandleValueChange(): void;
 }

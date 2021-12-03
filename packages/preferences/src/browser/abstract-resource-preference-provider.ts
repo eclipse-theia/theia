@@ -18,6 +18,7 @@
 /* eslint-disable no-null/no-null */
 
 import * as jsoncparser from 'jsonc-parser';
+import { Mutex, MutexInterface } from 'async-mutex';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -29,6 +30,21 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { CancellationError, nls } from '@theia/core';
+import { EditorManager } from '@theia/editor/lib/browser';
+
+export interface FilePreferenceProviderLocks {
+    /**
+     * Defined if the current operation is the first operation in a new transaction.
+     * The first operation is responsible for checking whether the underlying editor is dirty
+     * and for saving the file when the transaction is complete.
+     */
+    releaseTransaction?: MutexInterface.Releaser | undefined;
+    /**
+     * A lock on the queue for single operations.
+     */
+    releaseChange: MutexInterface.Releaser;
+}
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
@@ -37,10 +53,14 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected model: MonacoEditorModel | undefined;
     protected readonly loading = new Deferred();
     protected modelInitialized = false;
+    protected readonly singleChangeLock = new Mutex();
+    protected readonly transactionLock = new Mutex();
+    protected pendingTransaction = new Deferred<boolean>();
 
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
     @inject(FileService) protected readonly fileService: FileService;
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
@@ -53,6 +73,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     @postConstruct()
     protected async init(): Promise<void> {
+        this.pendingTransaction.resolve(true);
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
         await this.readPreferencesFromFile();
@@ -71,8 +92,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(reference);
         this.toDispose.push(Disposable.create(() => this.model = undefined));
 
-        this.toDispose.push(this.model.onDidChangeContent(() => this.readPreferences()));
-        this.toDispose.push(this.model.onDirtyChanged(() => this.readPreferences()));
+        this.toDispose.push(this.model.onDidChangeContent(() => !this.transactionLock.isLocked() && this.readPreferences()));
+        this.toDispose.push(this.model.onDirtyChanged(() => !this.transactionLock.isLocked() && this.readPreferences()));
         this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
 
         this.toDispose.push(Disposable.create(() => this.reset()));
@@ -111,56 +132,118 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
-        await this.loading.promise;
-        if (!this.model) {
-            return false;
-        }
-        if (!this.contains(resourceUri)) {
-            return false;
-        }
-        const path = this.getPath(key);
-        if (!path) {
-            return false;
-        }
+        const locks = await this.acquireLocks();
+        let shouldSave = Boolean(locks?.releaseTransaction);
         try {
-            const content = this.model.getText().trim();
-            if (!content && value === undefined) {
-                return true;
+            await this.loading.promise;
+            let path: string[] | undefined;
+            if (!this.model || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
+                return false;
             }
-            const textModel = this.model.textEditorModel;
-            const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-            if (path.length || value !== undefined) {
-                const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-                for (const edit of jsoncparser.modify(content, path, value, {
-                    formattingOptions: {
-                        insertSpaces,
-                        tabSize,
-                        eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
-                    }
-                })) {
-                    const start = textModel.getPositionAt(edit.offset);
-                    const end = textModel.getPositionAt(edit.offset + edit.length);
-                    editOperations.push({
-                        range: monaco.Range.fromPositions(start, end),
-                        text: edit.content || null,
-                        forceMoveMarkers: false
-                    });
+            if (!locks) {
+                throw new CancellationError();
+            }
+            if (shouldSave) {
+                if (this.model.dirty) {
+                    shouldSave = await this.handleDirtyEditor();
                 }
-            } else {
-                editOperations.push({
-                    range: textModel.getFullModelRange(),
-                    text: null,
-                    forceMoveMarkers: false
-                });
+                if (!shouldSave) {
+                    throw new CancellationError();
+                }
             }
-            await this.workspace.applyBackgroundEdit(this.model, editOperations);
-            return await this.pendingChanges;
+            const editOperations = this.getEditOperations(path, value);
+            if (editOperations.length > 0) {
+                await this.workspace.applyBackgroundEdit(this.model, editOperations, false);
+            }
+            return this.pendingTransaction.promise;
         } catch (e) {
+            if (e instanceof CancellationError) {
+                throw e;
+            }
             const message = `Failed to update the value of '${key}' in '${this.getUri()}'.`;
             this.messageService.error(`${message} Please check if it is corrupted.`);
             console.error(`${message}`, e);
             return false;
+        } finally {
+            this.releaseLocks(locks, shouldSave);
         }
+    }
+
+    /**
+     * @returns `undefined` if the queue has been cleared by a user action.
+     */
+    protected async acquireLocks(): Promise<FilePreferenceProviderLocks | undefined> {
+        // Request locks immediately
+        const releaseTransactionPromise = this.transactionLock.isLocked() ? undefined : this.transactionLock.acquire();
+        const releaseChangePromise = this.singleChangeLock.acquire().catch(() => {
+            releaseTransactionPromise?.then(release => release());
+            return undefined;
+        });
+        if (releaseTransactionPromise) {
+            await this.pendingTransaction.promise; // Ensure previous transaction complete before starting a new one.
+            this.pendingTransaction = new Deferred();
+        }
+        // Wait to acquire locks
+        const [releaseTransaction, releaseChange] = await Promise.all([releaseTransactionPromise, releaseChangePromise]);
+        return releaseChange && { releaseTransaction, releaseChange };
+    }
+
+    protected releaseLocks(locks: FilePreferenceProviderLocks | undefined, shouldSave: boolean): void {
+        if (locks?.releaseTransaction) {
+            if (shouldSave) {
+                this.singleChangeLock.waitForUnlock().then(() => this.singleChangeLock.runExclusive(async () => {
+                    locks.releaseTransaction!(); // Release lock so that no new changes join this transaction.
+                    let success = false;
+                    try {
+                        await this.model?.save();
+                        success = true;
+                    } finally {
+                        this.readPreferences();
+                        await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.
+                        this.pendingTransaction.resolve(success);
+                    }
+                }));
+            } else { // User canceled the operation.
+                this.singleChangeLock.cancel();
+                locks.releaseTransaction!();
+                this.pendingTransaction.resolve(false);
+            }
+        }
+        locks?.releaseChange();
+    }
+
+    protected getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
+        const textModel = this.model!.textEditorModel;
+        const content = this.model!.getText().trim();
+        // Everything is already undefined - no need for changes.
+        if (!content && value === undefined) {
+            return [];
+        }
+        // Delete the entire document.
+        if (!path.length && value === undefined) {
+            return [{
+                range: textModel.getFullModelRange(),
+                text: null,
+                forceMoveMarkers: false
+            }];
+        }
+        const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
+        const jsonCOptions = {
+            formattingOptions: {
+                insertSpaces,
+                tabSize,
+                eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
+            }
+        };
+        return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {
+            const start = textModel.getPositionAt(edit.offset);
+            const end = textModel.getPositionAt(edit.offset + edit.length);
+            return {
+                range: monaco.Range.fromPositions(start, end),
+                text: edit.content || null,
+                forceMoveMarkers: false
+            };
+        });
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
@@ -234,7 +317,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
         }
 
-        if (prefChanges.length > 0) { // do not emit the change event if the pref value is not changed
+        if (prefChanges.length > 0) {
             this.emitPreferencesChangedEvent(prefChanges);
         }
     }
@@ -256,4 +339,27 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         }
     }
 
+    /**
+     * @returns whether the setting operation in progress, and any others started in the meantime, should continue.
+     */
+    protected async handleDirtyEditor(): Promise<boolean> {
+        const saveAndRetry = nls.localizeByDefault('Save and Retry');
+        const open = nls.localizeByDefault('Open File');
+        const msg = await this.messageService.error(
+            nls.localizeByDefault('Unable to write into {0} settings because the file has unsaved changes. Please save the {0} settings file first and then try again.',
+                nls.localizeByDefault(PreferenceScope[this.getScope()].toLocaleLowerCase())
+            ),
+            saveAndRetry, open);
+
+        if (this.model) {
+            if (msg === open) {
+                this.editorManager.open(new URI(this.model.uri));
+                return false;
+            } else if (msg === saveAndRetry) {
+                await this.model.save();
+                return true;
+            }
+        }
+        return false;
+    }
 }

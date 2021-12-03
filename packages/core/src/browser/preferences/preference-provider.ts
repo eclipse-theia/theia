@@ -75,10 +75,6 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     protected deferredChanges: PreferenceProviderDataChanges | undefined;
-    protected _pendingChanges: Promise<boolean> = Promise.resolve(false);
-    get pendingChanges(): Promise<boolean> {
-        return this._pendingChanges;
-    }
 
     /**
      * Informs the listeners that one or more preferences of this provider are changed.
@@ -94,7 +90,7 @@ export abstract class PreferenceProvider implements Disposable {
                 this.mergePreferenceProviderDataChange(changes[preferenceName]);
             }
         }
-        return this._pendingChanges = this.fireDidPreferencesChanged();
+        return this.fireDidPreferencesChanged();
     }
 
     protected mergePreferenceProviderDataChange(change: PreferenceProviderDataChange): void {
