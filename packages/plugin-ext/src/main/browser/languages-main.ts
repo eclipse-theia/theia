@@ -52,12 +52,11 @@ import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
-import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
-import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
