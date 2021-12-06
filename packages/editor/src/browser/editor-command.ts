@@ -379,7 +379,7 @@ export class EditorCommandContribution implements CommandContribution {
         return {
             value,
             label: value.name,
-            description: nls.localizeByDefault(`({0})${configured ? ' - Configured Language' : ''}`),
+            description: nls.localizeByDefault(`({0})${configured ? ' - Configured Language' : ''}`, value.id),
             iconClasses
         };
     }

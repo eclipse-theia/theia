@@ -66,11 +66,11 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         if (editor && editorModel) {
             const modelOptions = editorModel.getOptions();
             const tabSize = modelOptions.tabSize;
-            const useSpaceOrTab = modelOptions.insertSpaces
+            const spaceOrTabSizeMessage = modelOptions.insertSpaces
                 ? nls.localizeByDefault('Spaces: {0}', tabSize)
                 : nls.localizeByDefault('Tab Size: {0}', tabSize);
             this.statusBar.setElement('editor-status-tabbing-config', {
-                text: `${useSpaceOrTab}: ${tabSize}`,
+                text: spaceOrTabSizeMessage,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 10,
                 command: EditorCommands.CONFIG_INDENTATION.id,
