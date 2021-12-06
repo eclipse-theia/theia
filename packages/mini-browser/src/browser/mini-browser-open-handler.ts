@@ -273,7 +273,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
 
     protected getSourceUri(ref?: Widget): URI | undefined {
         const uri = ref instanceof MiniBrowser && ref.getResourceUri() || undefined;
-        if (!uri || uri.scheme === 'http' || uri.scheme === 'https') {
+        if (!uri || uri.scheme === 'http' || uri.scheme === 'https' || uri.isEqual(MiniBrowserOpenHandler.PREVIEW_URI)) {
             return undefined;
         }
         return uri;
