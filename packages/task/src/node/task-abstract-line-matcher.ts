@@ -29,6 +29,7 @@ import URI from '@theia/core/lib/common/uri';
 // TODO use only URI from '@theia/core'
 import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
+import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
 
 const endOfLine: string = isWindows ? '\r\n' : '\n';
 
@@ -201,7 +202,7 @@ export abstract class AbstractLineMatcher {
                 range = Range.create(startLine, startColumn, startLine, startColumn);
             }
         } else {
-            range = Range.create(startLine, 1, startLine, Number.MAX_VALUE);
+            range = Range.create(startLine, 1, startLine, MAX_SAFE_INTEGER);
         }
 
         // range indexes should be zero-based
