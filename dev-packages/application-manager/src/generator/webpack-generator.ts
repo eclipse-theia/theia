@@ -177,7 +177,7 @@ module.exports = {
                 }
             },
             {
-                test: /node_modules[\\\\|\/](vscode-languageserver-types|vscode-uri|jsonc-parser)/,
+                test: /node_modules[\\\\|\/](vscode-languageserver-types|vscode-uri|jsonc-parser|vscode-languageserver-protocol)/,
                 loader: 'umd-compat-loader'
             },
             {
