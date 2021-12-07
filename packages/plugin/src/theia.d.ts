@@ -202,7 +202,7 @@ export module '@theia/plugin' {
         /**
          * The identifier of the actual command handler.
          */
-        command?: string;
+        command: string;
         /**
          * Title of the command invocation, like "Add local variable 'foo'".
          */
@@ -216,15 +216,6 @@ export module '@theia/plugin' {
          * invoked with.
          */
         arguments?: any[];
-
-        /**
-         * @deprecated use command instead
-         */
-        id?: string;
-        /**
-         * @deprecated use title instead
-         */
-        label?: string;
     }
 
     /**
