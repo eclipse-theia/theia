@@ -16,7 +16,6 @@
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
 import { ArrayExt, find, toArray, each } from '@phosphor/algorithm';
-import { Signal } from '@phosphor/signaling';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
     SplitPanel, TabBar, Widget, Title
@@ -299,7 +298,7 @@ export class ApplicationShell extends Widget {
             panelFocus.set(area === 'main');
         };
         updateFocusContextKeys();
-        this.activeChanged.connect(updateFocusContextKeys);
+        this.onDidChangeActiveWidget(updateFocusContextKeys);
     }
 
     protected setTopPanelVisibility(preference: string): void {
@@ -930,26 +929,11 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * A signal emitted whenever the `currentWidget` property is changed.
-     *
-     * @deprecated since 0.11.0, use `onDidChangeCurrentWidget` instead
-     */
-    readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
-
-    /**
      * Handle a change to the current widget.
      */
     private onCurrentChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
-        this.currentChanged.emit(args);
         this.onDidChangeCurrentWidgetEmitter.fire(args);
     }
-
-    /**
-     * A signal emitted whenever the `activeWidget` property is changed.
-     *
-     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
-     */
-    readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
     protected readonly toDisposeOnActiveChanged = new DisposableCollection();
 
@@ -1014,7 +998,6 @@ export class ApplicationShell extends Widget {
             };
             this.toDisposeOnActiveChanged.push(Disposable.create(() => newValue['onCloseRequest'] = onCloseRequest));
         }
-        this.activeChanged.emit(args);
         this.onDidChangeActiveWidgetEmitter.fire(args);
     }
 

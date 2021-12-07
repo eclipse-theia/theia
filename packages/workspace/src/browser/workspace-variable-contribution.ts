@@ -38,7 +38,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     @postConstruct()
     protected init(): void {
-        this.shell.currentChanged.connect(() => this.updateCurrentWidget());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentWidget());
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (NavigatableWidget.is(widget)) {
                 widget.onDidChangeVisibility(() => {
