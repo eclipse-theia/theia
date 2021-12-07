@@ -91,10 +91,21 @@
         "variable",
         "meta.definition.variable.name",
         "support.variable",
-        "entity.name.variable"
+        "entity.name.variable",
+        "constant.other.placeholder"
       ],
       "settings": {
         "foreground": "#9CDCFE"
+      }
+    },
+    {
+      "name": "Constants and enums",
+      "scope": [
+        "variable.other.constant",
+        "variable.other.enummember"
+      ],
+      "settings": {
+        "foreground": "#4FC1FF"
       }
     },
     {
@@ -180,5 +191,11 @@
         "foreground": "#C8C8C8"
       }
     }
-  ]
+  ],
+  "semanticTokenColors": {
+    "newOperator": "#C586C0",
+    "stringLiteral": "#ce9178",
+    "customLiteral": "#DCDCAA",
+    "numberLiteral": "#b5cea8"
+  }
 }
