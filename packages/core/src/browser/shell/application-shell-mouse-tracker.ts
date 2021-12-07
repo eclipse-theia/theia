@@ -46,10 +46,10 @@ export class ApplicationShellMouseTracker implements FrontendApplicationContribu
     onStart(): void {
         // Here we need to attach a `mousedown` listener to the `TabBar`s, `DockPanel`s and the `SidePanel`s. Otherwise, Phosphor handles the event and stops the propagation.
         // Track the `mousedown` on the `TabBar` for the currently active widget.
-        this.applicationShell.activeChanged.connect((shell: ApplicationShell, args: FocusTracker.IChangedArgs<Widget>) => {
+        this.applicationShell.onDidChangeActiveWidget((args: FocusTracker.IChangedArgs<Widget>) => {
             this.toDisposeOnActiveChange.dispose();
             if (args.newValue) {
-                const tabBar = shell.getTabBarFor(args.newValue);
+                const tabBar = this.applicationShell.getTabBarFor(args.newValue);
                 if (tabBar) {
                     this.toDisposeOnActiveChange.push(addEventListener(tabBar.node, 'mousedown', this.mousedownListener, true));
                 }
