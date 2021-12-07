@@ -93,6 +93,10 @@ body.theia-no-open-workspace #theia-statusBar {
     background-color: var(--theia-statusBarItem-offlineActiveBackground) !important;
 }
 
+.theia-mod-debugging #theia-statusBar .area .element {
+    color: var(--theia-statusBar-debuggingForeground);
+}
+
 #theia-statusBar .area.left .element {
     margin-right: var(--theia-ui-padding);
 }
