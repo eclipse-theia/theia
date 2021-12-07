@@ -11,11 +11,6 @@
           "files.enableTrash": false
         }
       }
-    },
-    "backend": {
-      "config": {
-        "resolveSystemPlugins": false
-      }
     }
   },
   "dependencies": {

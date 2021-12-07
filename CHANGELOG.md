@@ -26,6 +26,7 @@
 - [core] removed deprecated `currentChanged` signal emitter in favor of `onDidChangeCurrentWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
 - [plugin] changed return type of `WebviewThemeDataProvider.getActiveTheme()` to `Theme` instead of `WebviewThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
+- [plugin] removed the application prop `resolveSystemPlugins`, builtin plugins should now be resolved at build time [#10353](https://github.com/eclipse-theia/theia/pull/10353)
 
 ## v1.20.0 - 11/25/2021
 
