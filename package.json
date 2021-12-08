@@ -79,7 +79,9 @@
     "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
     "watch": "concurrently --kill-others -n tsc,browser,electron -c red,yellow,blue \"tsc -b -w --preserveWatchOutput\" \"yarn --cwd examples/browser watch:bundle\" \"yarn --cwd examples/electron watch:bundle\"",
     "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\"",
-    "performance:startup": "concurrently --success first -k -r \"cd scripts/performance && node measure-performance.js --name Startup --folder startup --runs 10\" \"yarn --cwd examples/browser start\""
+    "performance:startup": "yarn performance:startup:browser && yarn performance:startup:electron",
+    "performance:startup:browser": "concurrently --success first -k -r \"cd scripts/performance && node browser-performance.js --name 'Browser Frontend Startup' --folder browser --runs 10\" \"yarn --cwd examples/browser start\"",
+    "performance:startup:electron": "yarn electron rebuild && cd scripts/performance && node electron-performance.js --name 'Electron Frontend Startup' --folder electron --runs 10"
   },
   "workspaces": [
     "dev-packages/*",

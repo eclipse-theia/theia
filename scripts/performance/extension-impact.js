@@ -22,13 +22,16 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const env = Object.assign({}, process.env);
 env.PATH = path.resolve("../../node_modules/.bin") + path.delimiter + env.PATH;
-const basePackage = require(`./base-package.json`);
+let basePackage;
+const { exit } = require('process');
 let runs = 10;
 let baseTime;
 let extensions = [];
 let yarn = false;
 let url;
+let workspace;
 let file = path.resolve('./script.csv');
+let hostApp = 'browser';
 
 async function sigintHandler() {
     process.exit();
@@ -42,7 +45,9 @@ async function exitHandler() {
 (async () => {
     process.on('SIGINT', sigintHandler);
     process.on('exit', exitHandler);
-    const args = require('yargs/yargs')(process.argv.slice(2))
+
+    const yargs = require('yargs');
+    const args = yargs(process.argv.slice(2))
         .option('base-time', {
             alias: 'b',
             desc: 'Pass an existing mean of the base application',
@@ -51,7 +56,8 @@ async function exitHandler() {
         .option('runs', {
             alias: 'r',
             desc: 'The number of runs to measure',
-            type: 'number'
+            type: 'number',
+            default: 10
         })
         .option('extensions', {
             alias: 'e',
@@ -64,16 +70,28 @@ async function exitHandler() {
         .option('yarn', {
             alias: 'y',
             desc: 'Build all typescript sources on script start',
-            type: 'boolean'
+            type: 'boolean',
+            default: false
         }).option('url', {
             alias: 'u',
-            desc: 'Specify a custom URL at which to launch Theia (e.g. with a specific workspace)',
+            desc: 'Specify a custom URL at which to launch Theia in the browser (e.g. with a specific workspace)',
+            type: 'string'
+        }).option('workspace', {
+            alias: 'w',
+            desc: 'Specify an absolute path to a workspace on which to launch Theia in Electron',
             type: 'string'
         }).option('file', {
             alias: 'f',
-            desc: 'Specify the relative path to a CSV file which stores the result (default: ./extensions.csv)',
-            type: 'string'
-        }).argv;
+            desc: 'Specify the relative path to a CSV file which stores the result',
+            type: 'string',
+            default: file
+        }).option('app', {
+            alias: 'a',
+            desc: 'Specify in which application to run the tests',
+            type: 'string',
+            choices: ['browser', 'electron'],
+            default: 'browser'
+        }).wrap(Math.min(120, yargs.terminalWidth())).argv;
     if (args.baseTime) {
         baseTime = parseFloat(args.baseTime.toString()).toFixed(3);
     }
@@ -93,6 +111,9 @@ async function exitHandler() {
     if (args.url) {
         url = args.url;
     }
+    if (args.workspace) {
+        workspace = args.workspace;
+    }
     if (args.file) {
         file = path.resolve(args.file);
         if (!file.endsWith('.csv')) {
@@ -100,6 +121,11 @@ async function exitHandler() {
             return;
         }
     }
+    if (args.app) {
+        hostApp = args.app;
+    }
+
+    preparePackageTemplate();
     prepareWorkspace();
     if (yarn) {
         execSync('yarn build', { cwd: '../../', stdio: 'pipe' });
@@ -110,7 +136,7 @@ async function exitHandler() {
 async function extensionImpact(extensions) {
     logToFile(`Extension Name, Mean (${runs} runs) (in s), Std Dev (in s), CV (%), Delta (in s)`);
     if (baseTime === undefined) {
-        calculateExtension(undefined);
+        await calculateExtension(undefined);
     } else {
         log(`Base Theia (provided), ${baseTime}, -, -, -`);
     }
@@ -124,8 +150,21 @@ async function extensionImpact(extensions) {
     }
 }
 
+function preparePackageTemplate() {
+    const core = require('../../packages/core/package.json');
+    const version = core.version;
+    const content = readFileSync(path.resolve(__dirname, './base-package.json'), 'utf-8')
+        .replace(/\{\{app\}\}/g, hostApp)
+        .replace(/\{\{version\}\}/g, version);
+    basePackage = JSON.parse(content);
+    if (hostApp === 'electron') {
+        basePackage.dependencies['@theia/electron'] = version;
+    }
+    return basePackage;
+}
+
 function prepareWorkspace() {
-    copyFileSync('../../examples/browser/package.json', './backup-package.json');
+    copyFileSync(`../../examples/${hostApp}/package.json`, './backup-package.json');
     mkdirp('../../noPlugins', function (err) {
         if (err) {
             console.error(err);
@@ -141,7 +180,7 @@ function prepareWorkspace() {
 }
 
 function cleanWorkspace() {
-    copyFileSync('./backup-package.json', '../../examples/browser/package.json');
+    copyFileSync('./backup-package.json', `../../examples/${hostApp}/package.json`);
     unlinkSync('./backup-package.json');
     rmdirSync('../../noPlugins');
     rmdirSync('./theia-config-dir');
@@ -170,19 +209,41 @@ async function calculateExtension(extensionQualifier) {
     } else {
         extensionQualifier = "Base Theia";
     }
-    logToConsole(`Building the browser example with ${extensionQualifier}.`);
-    writeFileSync(`../../examples/browser/package.json`, JSON.stringify(basePackageCopy, null, 2));
+    logToConsole(`Building the ${hostApp} example with ${extensionQualifier}.`);
+    writeFileSync(`../../examples/${hostApp}/package.json`, JSON.stringify(basePackageCopy, null, 2));
     try {
-        execSync('yarn browser build', { cwd: '../../', stdio: 'pipe' });
+        execSync(`yarn ${hostApp} build`, { cwd: '../../', stdio: 'pipe' });
+
+        // Rebuild native modules if necessary
+        execSync(`yarn ${hostApp} rebuild`, { cwd: '../../', stdio: 'pipe' });
     } catch (error) {
         log(`${extensionQualifier}, Error while building the package.json, -, -, -`);
         return;
     }
 
     logToConsole(`Measuring the startup time with ${extensionQualifier} ${runs} times. This may take a while.`);
-    const output = await execCommand(
-        `concurrently --success first -k -r "cd scripts/performance && node measure-performance.js --name Startup --folder script --runs ${runs}${url ? ' --url ' + url : ''}" `
-        + `"yarn --cwd examples/browser start | grep -v '.*'"`, { env: env, cwd: '../../', shell: true });
+    const appCommand = (app) => {
+        let command;
+        let cwd;
+        switch (app) {
+            case 'browser':
+                command = `concurrently --success first -k -r "cd scripts/performance && node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}" `
+                    + `"yarn --cwd examples/browser start | grep -v '.*'"`
+                cwd = path.resolve(__dirname, '../../');
+                break;
+            case 'electron':
+                command = `node electron-performance.js  --name Electron --folder electron --runs ${runs}${workspace ? ' --workspace "' + workspace + '"' : ''}`
+                cwd = __dirname;
+                break;
+            default:
+                console.log('Unknown host app:', hostApp);
+                exit(1);
+                break; // Unreachable
+        }
+        return [command, cwd];
+    };
+    const [command, cwd] = appCommand(hostApp);
+    const output = await execCommand(command, { env: env, cwd: cwd, shell: true });
 
     const mean = parseFloat(getMeasurement(output, '[MEAN] Largest Contentful Paint (LCP):'));
     const stdev = parseFloat(getMeasurement(output, '[STDEV] Largest Contentful Paint (LCP):'));
