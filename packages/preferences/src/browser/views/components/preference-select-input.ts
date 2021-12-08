@@ -16,22 +16,28 @@
 
 import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
 import { injectable } from '@theia/core/shared/inversify';
+import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 @injectable()
-export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<string, HTMLSelectElement> {
+export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLSelectElement> {
+
+    protected get enumValues(): JSONValue[] {
+        return this.preferenceNode.preference.data.enum!;
+    }
+
     protected createInteractable(parent: HTMLElement): void {
-        const options = this.preferenceNode.preference.data.enum!;
+        const { enumValues } = this;
         const interactable = document.createElement('select');
         this.interactable = interactable;
         interactable.classList.add('theia-select');
         interactable.onchange = this.handleUserInteraction.bind(this);
-        for (const value of options) {
+        for (const [index, value] of enumValues.entries()) {
             const option = document.createElement('option');
-            option.value = value;
-            option.textContent = value;
+            option.value = index.toString();
+            option.textContent = `${value}`;
             interactable.appendChild(option);
         }
-        interactable.value = this.getValue();
+        interactable.value = this.getDataValue();
         parent.appendChild(interactable);
     }
 
@@ -42,14 +48,24 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<st
     protected doHandleValueChange(): void {
         const currentValue = this.interactable.value || undefined;
         this.updateInspection();
-        const newValue = this.getValue();
-        this.updateModificationStatus(newValue);
+        const newValue = this.getDataValue();
+        this.updateModificationStatus(this.getValue());
         if (newValue !== currentValue && document.activeElement !== this.interactable) {
             this.interactable.value = newValue;
         }
     }
 
+    /**
+     * Returns the stringified index corresponding to the currently selected value.
+     */
+    protected getDataValue(): string {
+        const currentValue = this.getValue();
+        const selected = this.enumValues.findIndex(value => value === currentValue);
+        return selected > -1 ? selected.toString() : '0';
+    }
+
     protected handleUserInteraction(): void {
-        this.setPreferenceImmediately(this.interactable.value || undefined);
+        const value = this.enumValues[Number(this.interactable.value)];
+        this.setPreferenceImmediately(value);
     }
 }
