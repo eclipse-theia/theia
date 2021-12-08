@@ -15,25 +15,48 @@
  ********************************************************************************/
 // @ts-check
 const puppeteer = require('puppeteer');
-const fs = require('fs');
-const fsExtra = require('fs-extra');
-const resolve = require('path').resolve;
+const fsx = require('fs-extra');
+const { resolve } = require('path');
+const { delay, lcp, isLCP, measure } = require('./common-performance');
+
 const workspacePath = resolve('./workspace');
 const profilesPath = './profiles/';
 
-const lcp = 'Largest Contentful Paint (LCP)';
-const performanceTag = braceText('Performance');
-
-let name = 'StartupPerformance';
+let name = 'Browser Frontend Startup';
 let url = 'http://localhost:3000/#' + workspacePath;
-let folder = 'profile';
+let folder = 'browser';
 let headless = true;
 let runs = 10;
 
 (async () => {
     let defaultUrl = true;
+    const yargs = require('yargs');
+    const args = yargs(process.argv.slice(2)).option('name', {
+        alias: 'n',
+        desc: 'A name for the test suite',
+        type: 'string',
+        default: name
+    }).option('folder', {
+        alias: 'f',
+        desc: 'Name of a folder within the "profiles" folder in which to collect trace logs',
+        type: 'string',
+        default: folder
+    }).option('runs', {
+        alias: 'r',
+        desc: 'The number of times to run the test',
+        type: 'number',
+        default: runs
+    }).option('url', {
+        alias: 'u',
+        desc: 'URL on which to open Theia in the browser (e.g., to specify a workspace)',
+        type: 'string',
+        default: url
+    }).option('headless', {
+        desc: 'Run in headless mode (do not open a browser)',
+        type: 'boolean',
+        default: headless
+    }).wrap(Math.min(120, yargs.terminalWidth())).argv;
 
-    const args = require('yargs/yargs')(process.argv.slice(2)).argv;
     if (args.name) {
         name = args.name.toString();
     }
@@ -47,16 +70,21 @@ let runs = 10;
     if (args.runs) {
         runs = parseInt(args.runs.toString());
     }
-    if (args.headless) {
-        if (args.headless.toString() === 'false') {
-            headless = false;
-        }
+    if (args.headless !== undefined && args.headless.toString() === 'false') {
+        headless = false;
     }
 
-    if (defaultUrl) { fsExtra.ensureDirSync(workspacePath); }
-    fsExtra.ensureDirSync(profilesPath);
+    // Verify that the application exists
+    const indexHTML = resolve(__dirname, '../../examples/browser/src-gen/frontend/index.html');
+    if (!fsx.existsSync(indexHTML)) {
+        console.error('Browser example app does not exist. Please build it before running this script.');
+        process.exit(1);
+    }
+
+    if (defaultUrl) { fsx.ensureDirSync(workspacePath); }
+    fsx.ensureDirSync(profilesPath);
     const folderPath = profilesPath + folder;
-    fsExtra.ensureDirSync(folderPath);
+    fsx.ensureDirSync(folderPath);
 
     const deployed = await waitForDeployed(url, 10, 500);
     if (deployed == false) {
@@ -67,9 +95,9 @@ let runs = 10;
 })();
 
 async function measurePerformance(name, url, folder, headless, runs) {
-    const durations = [];
-    for (let i = 0; i < runs; i++) {
-        const runNr = i + 1;
+
+    /** @type import('./common-performance').TestFunction */
+    const testScenario = async (runNr) => {
         const browser = await puppeteer.launch({ headless: headless });
         const page = await browser.newPage();
 
@@ -85,80 +113,14 @@ async function measurePerformance(name, url, folder, headless, runs) {
 
         await browser.close();
 
-        const time = await analyzeStartup(file)
-        durations.push(time);
-        logDuration(name, runNr, lcp, time.toFixed(3), runs > 1);
-    }
+        return file;
+    };
 
-    if (runs > 1) {
-        const mean = calculateMean(durations);
-        logDuration(name, 'MEAN', lcp, mean);
-        logDuration(name, 'STDEV', lcp, calculateStandardDeviation(mean, durations));
-    }
-}
-
-async function analyzeStartup(profilePath) {
-    let startEvent;
-    const tracing = JSON.parse(fs.readFileSync('./' + profilePath, 'utf8'));
-    const lcpEvents = tracing.traceEvents.filter(x => {
-        if (isStart(x)) {
-            startEvent = x;
-            return false;
-        }
-        return isLCP(x);
-    });
-
-    if (startEvent !== undefined) {
-        return duration(lcpEvents[lcpEvents.length - 1], startEvent);
-    }
-    throw new Error('Could not analyze startup');
-}
-
-function isLCP(x) {
-    return x.name === 'largestContentfulPaint::Candidate';
+    measure(name, lcp, runs, testScenario, isStart, isLCP);
 }
 
 function isStart(x) {
     return x.name === 'TracingStartedInBrowser';
-}
-
-function duration(event, startEvent) {
-    return (event.ts - startEvent.ts) / 1000000;
-}
-
-function logDuration(name, run, metric, duration, multipleRuns = true) {
-    let runText = '';
-    if (multipleRuns) {
-        runText = braceText(run);
-    }
-    console.log(performanceTag + braceText(name) + runText + ' ' + metric + ': ' + duration + ' seconds');
-}
-
-function calculateMean(array) {
-    let sum = 0;
-    array.forEach(x => {
-        sum += x;
-    });
-    return (sum / array.length).toFixed(3);
-};
-
-function calculateStandardDeviation(mean, array) {
-    let sumOfDiffsSquared = 0;
-    array.forEach(time => {
-        sumOfDiffsSquared += Math.pow((time - mean), 2)
-    });
-    const variance = sumOfDiffsSquared / array.length;
-    return Math.sqrt(variance).toFixed(3);
-}
-
-function braceText(text) {
-    return '[' + text + ']';
-}
-
-function delay(time) {
-    return new Promise(function (resolve) {
-        setTimeout(resolve, time)
-    });
 }
 
 async function waitForDeployed(url, maxTries, ms) {
