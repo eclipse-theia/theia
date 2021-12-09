@@ -442,7 +442,13 @@ export class WorkspaceCommandContribution implements CommandContribution {
         const childUri = parent.resource.resolve(name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
-            return nls.localizeByDefault('A file or folder "{0}" already exists at this location.', this.trimFileName(name));
+            // check the nature of the child item so we can return a specific validation message
+            const existingChild = await this.fileService.resolve(childUri);
+            if (existingChild.isDirectory) {
+                return nls.localizeByDefault('A folder "{0}" already exists at this location.', this.trimFileName(name));
+            } else {
+                return nls.localizeByDefault('A file "{0}" already exists at this location.', this.trimFileName(name));
+            }
         }
         return '';
     }

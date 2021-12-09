@@ -28,7 +28,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Container } from '@theia/core/shared/inversify';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileStat, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 import { LabelProvider, OpenerService, FrontendApplication } from '@theia/core/lib/browser';
 import { MessageService, OS } from '@theia/core/lib/common';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
@@ -76,6 +76,11 @@ describe('workspace-commands', () => {
         container.bind(FileService).toConstantValue(<FileService>{
             async exists(resource: URI): Promise<boolean> {
                 return resource.path.base.includes('bar'); // 'bar' exists for test purposes.
+            },
+            async resolve(resource: URI): Promise<FileStatWithMetadata> {
+                return <FileStatWithMetadata>{
+                    isDirectory: resource.path.base.includes('folder')
+                };
             }
         });
         container.bind(FrontendApplication).toConstantValue(<FrontendApplication>{});
@@ -111,9 +116,13 @@ describe('workspace-commands', () => {
             expect(message).to.equal('');
         });
 
-        it('should not accept if the resource exists', async () => {
+        it('should not accept if the resource exists (as file)', async () => {
             const message = await commands['validateFileName']('bar', parent);
-            expect(message).to.not.equal(''); // a non empty message indicates an error.
+            expect(message).to.satisfy((msg: String) => msg.startsWith('A file'));
+        });
+        it('should not accept if the resource exists (as folder)', async () => {
+            const message = await commands['validateFileName']('barfolder', parent);
+            expect(message).to.satisfy((msg: String) => msg.startsWith('A folder'));
         });
 
         it('should not accept invalid filenames', async () => {
