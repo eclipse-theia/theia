@@ -16,6 +16,9 @@
       "path": "../core"
     },
     {
+      "path": "../editor"
+    },
+    {
       "path": "../filesystem"
     },
     {

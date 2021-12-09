@@ -32,6 +32,7 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
+import { RecommendedExtensionsManager } from './recommended-extensions/recommended-extensions-manager';
 
 /**
  * @deprecated since 1.17.0. - Moved to `vsx-extension-commands.ts` to avoid circular dependencies. Import from there, instead.
@@ -49,6 +50,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(RecommendedExtensionsManager) protected readonly recommendedManager: RecommendedExtensionsManager;
 
     constructor() {
         super({
@@ -105,6 +107,10 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         commands.registerCommand(VSXExtensionsCommands.SHOW_RECOMMENDATIONS, {
             execute: () => this.showRecommendedExtensions()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.CONFIGURE_RECOMMENDATIONS, {
+            execute: () => this.recommendedManager.openRecommendations()
         });
     }
 
@@ -214,4 +220,5 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         await this.openView({ activate: true });
         this.model.search.query = RECOMMENDED_QUERY;
     }
+
 }

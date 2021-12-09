@@ -35,6 +35,7 @@ import { bindExtensionPreferences } from './recommended-extensions/recommended-e
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
 import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { RecommendedExtensionsManager } from './recommended-extensions/recommended-extensions-manager';
 
 export default new ContainerModule((bind, unbind) => {
     bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
@@ -105,4 +106,6 @@ export default new ContainerModule((bind, unbind) => {
 
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);
+
+    bind(RecommendedExtensionsManager).toSelf().inSingletonScope();
 });

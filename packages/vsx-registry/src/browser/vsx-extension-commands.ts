@@ -57,4 +57,8 @@ export namespace VSXExtensionsCommands {
         label: 'Show Recommended Extensions',
         category: EXTENSIONS_CATEGORY,
     });
+    export const CONFIGURE_RECOMMENDATIONS = Command.toDefaultLocalizedCommand({
+        id: 'workbench.extensions.action.configureWorkspaceRecommendedExtensions',
+        label: 'Configure Recommended Extensions (Workspace Folder)'
+    });
 }
