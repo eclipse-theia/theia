@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { remote } from '../../../shared/electron';
+import * as electron from '../../../shared/electron';
 import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
 import { ElectronWindowPreferences } from './electron-window-preferences';
+import { CloseRequestArguments, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUESTED_SIGNAL, StopReason } from '../../electron-common/messaging/electron-messages';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
@@ -59,49 +60,24 @@ export class ElectronWindowService extends DefaultWindowService {
         });
     }
 
-    registerUnloadListeners(): void {
-        window.addEventListener('beforeunload', event => {
-            if (this.isUnloading) {
-                // Unloading process ongoing, do nothing:
-                return this.preventUnload(event);
-            } else if (this.closeOnUnload || this.canUnload()) {
-                // Let the window close and notify clients:
-                delete event.returnValue;
-                this.onUnloadEmitter.fire();
-                return;
-            } else {
-                this.isUnloading = true;
-                // Fix https://github.com/eclipse-theia/theia/issues/8186#issuecomment-742624480
-                // On Electron/Linux doing `showMessageBoxSync` does not seems to block the closing
-                // process long enough and closes the window no matter what you click on (yes/no).
-                // Instead we'll prevent closing right away, ask for confirmation and finally close.
-                setTimeout(() => {
-                    if (this.shouldUnload()) {
-                        this.closeOnUnload = true;
-                        window.close();
-                    }
-                    this.isUnloading = false;
-                });
-                return this.preventUnload(event);
-            }
-        });
+    protected registerUnloadListeners(): void {
+        electron.ipcRenderer.on(CLOSE_REQUESTED_SIGNAL, (_event, closeRequestEvent: CloseRequestArguments) => this.handleCloseRequestedEvent(closeRequestEvent));
+        window.addEventListener('unload', () => this.onUnloadEmitter.fire());
     }
 
     /**
-     * When preventing `beforeunload` on Electron, no popup is shown.
-     *
-     * This method implements a modal to ask the user if he wants to quit the page.
+     * Run when ElectronMain detects a `close` event and emits a `close-requested` event.
+     * Should send an event to `electron.ipcRenderer` on the event's `confirmChannel` if it is safe to exit
+     * after running FrontentApplication `onWillStop` handlers or on the `cancelChannel` if it is not safe to exit.
      */
-    protected shouldUnload(): boolean {
-        const electronWindow = remote.getCurrentWindow();
-        const response = remote.dialog.showMessageBoxSync(electronWindow, {
-            type: 'question',
-            buttons: ['Yes', 'No'],
-            title: 'Confirm',
-            message: 'Are you sure you want to quit?',
-            detail: 'Any unsaved changes will not be saved.'
-        });
-        return response === 0; // 'Yes', close the window.
+    protected async handleCloseRequestedEvent(event: CloseRequestArguments): Promise<void> {
+        const safeToClose = await this.isSafeToShutDown();
+        if (safeToClose) {
+            console.debug(`Shutting down because of ${StopReason[event.reason]} request.`);
+            electron.ipcRenderer.send(event.confirmChannel);
+        } else {
+            electron.ipcRenderer.send(event.cancelChannel);
+        }
     }
 
     /**
@@ -109,9 +85,13 @@ export class ElectronWindowService extends DefaultWindowService {
      */
     protected updateWindowZoomLevel(): void {
         const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
-        const webContents = remote.getCurrentWindow().webContents;
+        const webContents = electron.remote.getCurrentWindow().webContents;
         if (webContents.getZoomLevel() !== preferredZoomLevel) {
             webContents.setZoomLevel(preferredZoomLevel);
         }
+    }
+
+    reload(): void {
+        electron.ipcRenderer.send(RELOAD_REQUESTED_SIGNAL);
     }
 }

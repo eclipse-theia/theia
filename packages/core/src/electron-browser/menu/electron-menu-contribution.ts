@@ -22,7 +22,7 @@ import {
 } from '../../common';
 import {
     ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
-    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog
+    PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
@@ -30,6 +30,7 @@ import { FrontendApplicationConfigProvider } from '../../browser/frontend-applic
 import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../../electron-common/messaging/electron-messages';
 import { ZoomLevel } from '../window/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
+import { WindowService } from '../../browser/window/window-service';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 
@@ -83,6 +84,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     protected titleBarStyleChangeFlag = false;
     protected titleBarStyle?: string;
@@ -241,6 +245,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             cancel: Dialog.CANCEL
         });
         if (await dialog.open()) {
+            this.windowService.setSafeToShutDown();
             electron.ipcRenderer.send(Restart);
         }
     }

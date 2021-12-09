@@ -31,7 +31,14 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { isOSX, isWindows } from '../common';
-import { RequestTitleBarStyle, Restart, TitleBarStyleAtStartup, TitleBarStyleChanged } from '../electron-common/messaging/electron-messages';
+import {
+    CLOSE_REQUESTED_SIGNAL,
+    RELOAD_REQUESTED_SIGNAL,
+    RequestTitleBarStyle,
+    Restart, StopReason,
+    TitleBarStyleAtStartup,
+    TitleBarStyleChanged
+} from '../electron-common/messaging/electron-messages';
 import { DEFAULT_WINDOW_HASH } from '../common/window';
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
@@ -192,6 +199,8 @@ export class ElectronMainApplication {
     protected useNativeWindowFrame: boolean = true;
     protected didUseNativeWindowFrameOnStart = new Map<number, boolean>();
     protected restarting = false;
+    protected closeIsConfirmed = new Set<number>();
+    protected closeRequested = 0;
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
@@ -256,6 +265,7 @@ export class ElectronMainApplication {
         this.attachSaveWindowState(electronWindow);
         this.attachGlobalShortcuts(electronWindow);
         this.restoreMaximizedState(electronWindow, options);
+        this.attachCloseListeners(electronWindow, options);
         return electronWindow;
     }
 
@@ -433,19 +443,20 @@ export class ElectronMainApplication {
      * Catch certain keybindings to prevent reloading the window using keyboard shortcuts.
      */
     protected attachGlobalShortcuts(electronWindow: BrowserWindow): void {
-        if (this.config.electron?.disallowReloadKeybinding) {
-            const accelerators = ['CmdOrCtrl+R', 'F5'];
-            electronWindow.on('focus', () => {
-                for (const accelerator of accelerators) {
-                    globalShortcut.register(accelerator, () => { });
-                }
-            });
-            electronWindow.on('blur', () => {
-                for (const accelerator of accelerators) {
-                    globalShortcut.unregister(accelerator);
-                }
-            });
-        }
+        const handler = this.config.electron?.disallowReloadKeybinding
+            ? () => { }
+            : () => this.reload(electronWindow);
+        const accelerators = ['CmdOrCtrl+R', 'F5'];
+        electronWindow.on('focus', () => {
+            for (const accelerator of accelerators) {
+                globalShortcut.register(accelerator, handler);
+            }
+        });
+        electronWindow.on('blur', () => {
+            for (const accelerator of accelerators) {
+                globalShortcut.unregister(accelerator);
+            }
+        });
     }
 
     protected restoreMaximizedState(electronWindow: BrowserWindow, options: TheiaBrowserWindowOptions): void {
@@ -454,6 +465,43 @@ export class ElectronMainApplication {
         } else {
             electronWindow.unmaximize();
         }
+    }
+
+    protected attachCloseListeners(electronWindow: BrowserWindow, options: TheiaBrowserWindowOptions): void {
+        electronWindow.on('close', async event => {
+            // User has already indicated that it is OK to close this window.
+            if (this.closeIsConfirmed.has(electronWindow.id)) {
+                this.closeIsConfirmed.delete(electronWindow.id);
+                return;
+            }
+
+            event.preventDefault();
+            this.handleStopRequest(electronWindow, () => this.doCloseWindow(electronWindow), StopReason.Close);
+        });
+    }
+
+    protected doCloseWindow(electronWindow: BrowserWindow): void {
+        this.closeIsConfirmed.add(electronWindow.id);
+        electronWindow.close();
+    }
+
+    protected async handleStopRequest(electronWindow: BrowserWindow, onSafeCallback: () => unknown, reason: StopReason): Promise<void> {
+        // Only confirm close to windows that have loaded our front end.
+        const safeToClose = !electronWindow.webContents.getURL().includes(this.globals.THEIA_FRONTEND_HTML_PATH) || await this.checkSafeToStop(electronWindow, reason);
+        if (safeToClose) {
+            onSafeCallback();
+        }
+    }
+
+    protected checkSafeToStop(electronWindow: BrowserWindow, reason: StopReason): Promise<boolean> {
+        const closeRequest = this.closeRequested++;
+        const confirmChannel = `safeToClose-${electronWindow.id}-${closeRequest}`;
+        const cancelChannel = `notSafeToClose-${electronWindow.id}-${closeRequest}`;
+        return new Promise<boolean>(resolve => {
+            electronWindow.webContents.send(CLOSE_REQUESTED_SIGNAL, { confirmChannel, cancelChannel, reason });
+            ipcMain.once(confirmChannel, () => resolve(true));
+            ipcMain.once(cancelChannel, () => resolve(false));
+        });
     }
 
     /**
@@ -541,6 +589,8 @@ export class ElectronMainApplication {
             this.restart(sender.id);
         });
 
+        ipcMain.on(RELOAD_REQUESTED_SIGNAL, event => this.handleReload(event));
+
         ipcMain.on(RequestTitleBarStyle, ({ sender }) => {
             sender.send(TitleBarStyleAtStartup, this.didUseNativeWindowFrameOnStart.get(sender.id) ? 'native' : 'custom');
         });
@@ -578,7 +628,16 @@ export class ElectronMainApplication {
             });
             this.restarting = false;
         });
-        window.close();
+        this.handleStopRequest(window, () => this.doCloseWindow(window), StopReason.Restart);
+    }
+
+    protected async handleReload(event: Electron.IpcMainEvent): Promise<void> {
+        const window = BrowserWindow.fromId(event.sender.id);
+        this.reload(window);
+    }
+
+    protected reload(electronWindow: BrowserWindow): void {
+        this.handleStopRequest(electronWindow, () => electronWindow.reload(), StopReason.Reload);
     }
 
     protected async startContributions(): Promise<void> {

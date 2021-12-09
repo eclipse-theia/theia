@@ -52,10 +52,10 @@ export interface FrontendApplicationContribution {
 
     /**
      * Called on `beforeunload` event, right before the window closes.
-     * Return `true` in order to prevent exit.
+     * Return `true` or an OnWillStopAction in order to prevent exit.
      * Note: No async code allowed, this function has to run on one tick.
      */
-    onWillStop?(app: FrontendApplication): boolean | void;
+    onWillStop?(app: FrontendApplication): boolean | undefined | OnWillStopAction;
 
     /**
      * Called when an application is stopped or unloaded.
@@ -75,6 +75,23 @@ export interface FrontendApplicationContribution {
      * An event is emitted when a layout is initialized, but before the shell is attached.
      */
     onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
+}
+
+export interface OnWillStopAction {
+    /**
+     * @resolves to `true` if it is safe to close the application; `false` otherwise.
+     */
+    action: () => MaybePromise<boolean>;
+    /**
+     * A descriptive string for the reason preventing close.
+     */
+    reason: string;
+}
+
+export namespace OnWillStopAction {
+    export function is(candidate: unknown): candidate is OnWillStopAction {
+        return typeof candidate === 'object' && !!candidate && 'action' in candidate && 'reason' in candidate;
+    }
 }
 
 const TIMER_WARNING_THRESHOLD = 100;

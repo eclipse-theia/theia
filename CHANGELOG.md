@@ -7,6 +7,7 @@
 - [scripts] added Electron frontend start-up performance measurement script [#10442](https://github.com/eclipse-theia/theia/pull/10442) - Contributed on behalf of STMicroelectronics
 - [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
 - [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
+- [core] `WindowService` and `ElectronMainApplication` updated to allow for asynchronous pre-exit code in Electron. [#10379](https://github.com/eclipse-theia/theia/pull/10379)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
@@ -15,6 +16,11 @@
   to your application package's root.
 - [core] `SelectionService` added to constructor arguments of `TabBarRenderer`. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
 - [preferences] Removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
+- [core] `WindowService` interface changed considerably [#10379](https://github.com/eclipse-theia/theia/pull/10379)
+  - remove `canUnload(): boolean`- it's replaced by `isSafeToShutDown(): Promise<boolean>` to allow asynchronous handling in Electron.
+  - add `isSafeToShutDown()` - replaces `canUnload()`.
+  - add `setSafeToShutDown()` - ensures that next close event will not be prevented.
+  - add `reload()` - to allow different handling in Electron and browser.
 
 ## v1.20.0 - 11/25/2021
 

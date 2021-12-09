@@ -23,7 +23,6 @@ import { NewWindowOptions } from '../../common/window';
 export const WindowService = Symbol('WindowService');
 
 export interface WindowService {
-
     /**
      * Opens a new window and loads the content from the given URL.
      * In a browser, opening a new Theia tab or open a link is the same thing.
@@ -38,16 +37,31 @@ export interface WindowService {
     openNewDefaultWindow(): void;
 
     /**
-     * Called when the `window` is about to `unload` its resources.
-     * At this point, the `document` is still visible and the [`BeforeUnloadEvent`](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
-     * event will be canceled if the return value of this method is `false`.
-     */
-    canUnload(): boolean;
-
-    /**
      * Fires when the `window` unloads. The unload event is inevitable. On this event, the frontend application can save its state and release resource.
      * Saving the state and releasing any resources must be a synchronous call. Any asynchronous calls invoked after emitting this event might be ignored.
      */
     readonly onUnload: Event<void>;
 
+    /**
+     * Checks `FrontendApplicationContribution#willStop` for impediments to shutdown and runs any actions returned.
+     * Can be used safely in browser and Electron when triggering reload or shutdown programmatically.
+     * Should _only_ be called before a shutdown - if this returns `true`, `FrontendApplicationContribution#willStop`
+     * will not be called again in the current session. I.e. if this return `true`, the shutdown should proceed without
+     * further condition.
+     */
+    isSafeToShutDown(): Promise<boolean>;
+
+    /**
+     * Will prevent subsequent checks of `FrontendApplicationContribution#willStop`. Should only be used after requesting
+     * user confirmation.
+     *
+     * This is primarily intended programmatic restarts due to e.g. change of display language. It allows for a single confirmation
+     * of intent, rather than one warning and then several warnings from other contributions.
+     */
+    setSafeToShutDown(): void;
+
+    /**
+     * Reloads the window according to platform.
+     */
+    reload(): void;
 }
