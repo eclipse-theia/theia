@@ -444,10 +444,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
         if (exists) {
             // check the nature of the child item so we can return a specific validation message
             const existingChild = await this.fileService.resolve(childUri);
+            const trimmedFileName = this.trimFileName(name);
             if (existingChild.isDirectory) {
-                return nls.localizeByDefault('A folder "{0}" already exists at this location.', this.trimFileName(name));
+                return nls.localize('theia/workspace/folderExists', 'A folder "{0}" already exists at this location.', trimmedFileName);
             } else {
-                return nls.localizeByDefault('A file "{0}" already exists at this location.', this.trimFileName(name));
+                return nls.localize('theia/workspace/fileExists', 'A file "{0}" already exists at this location.', trimmedFileName);
             }
         }
         return '';
