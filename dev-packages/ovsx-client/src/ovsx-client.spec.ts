@@ -107,6 +107,13 @@ describe('OVSX Client', () => {
             expect(client['isVersionLTE']('2.0.2', '2.0.1')).equal(false, 'should not be satisfied since v1 is greater than v2');
         });
 
+        it('should support \'preview\' versions', () => {
+            expect(client['isVersionLTE']('1.40.0-next.622cb03f7e0', '1.50.0')).equal(true, 'should be satisfied since v1 is less than v2');
+            expect(client['isVersionLTE']('1.50.0-next.622cb03f7e0', '1.50.0')).equal(true, 'should be satisfied since v1 and v2 are equal');
+            expect(client['isVersionLTE']('1.50.0-next.622cb03f7e0', '1.50.0-next.622cb03f7e0')).equal(true, 'should be satisfied since v1 and v2 are equal');
+            expect(client['isVersionLTE']('2.0.2-next.622cb03f7e0', '2.0.1')).equal(false, 'should not be satisfied since v1 is greater than v2');
+        });
+
     });
 
 });
