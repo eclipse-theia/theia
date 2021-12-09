@@ -29,13 +29,6 @@ export interface TerminalService {
      */
     newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget>;
 
-    /**
-     * Display new terminal widget.
-     * @param terminal - widget to attach.
-     * @deprecated use #open
-     */
-    activateTerminal(terminal: TerminalWidget): void;
-
     open(terminal: TerminalWidget, options?: WidgetOpenerOptions): void;
 
     readonly all: TerminalWidget[];

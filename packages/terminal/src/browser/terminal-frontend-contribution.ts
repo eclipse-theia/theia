@@ -427,7 +427,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         // Open terminal
         const termWidget = await this.newTerminal({ cwd });
         termWidget.start();
-        this.activateTerminal(termWidget);
+        this.open(termWidget);
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -600,10 +600,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             ...options
         });
         return widget;
-    }
-
-    activateTerminal(widget: TerminalWidget, widgetOptions?: ApplicationShell.WidgetOptions): void {
-        this.open(widget, { widgetOptions });
     }
 
     // TODO: reuse WidgetOpenHandler.open

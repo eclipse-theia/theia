@@ -1056,7 +1056,7 @@ export class TaskService implements TaskConfigurationClient {
         if (!terminal || terminal.kind !== 'user' || (await terminal.hasChildProcesses())) {
             terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: new Date().toString() });
             await terminal.start();
-            this.terminalService.activateTerminal(terminal);
+            this.terminalService.open(terminal);
         }
         terminal.sendText(selectedText);
     }

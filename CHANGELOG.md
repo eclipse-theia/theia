@@ -21,6 +21,7 @@
   - add `isSafeToShutDown()` - replaces `canUnload()`.
   - add `setSafeToShutDown()` - ensures that next close event will not be prevented.
   - add `reload()` - to allow different handling in Electron and browser.
+- [terminal] removed deprecated `activateTerminal` method in favor of `open`. [#10529](https://github.com/eclipse-theia/theia/pull/10529)
 
 ## v1.20.0 - 11/25/2021
 
