@@ -486,7 +486,8 @@ export class ElectronMainApplication {
     }
 
     protected async handleStopRequest(electronWindow: BrowserWindow, onSafeCallback: () => unknown, reason: StopReason): Promise<void> {
-        const safeToClose = await this.checkSafeToStop(electronWindow, reason);
+        // Only confirm close to windows that have loaded our front end.
+        const safeToClose = !electronWindow.webContents.getURL().includes(this.globals.THEIA_FRONTEND_HTML_PATH) || await this.checkSafeToStop(electronWindow, reason);
         if (safeToClose) {
             onSafeCallback();
         }
