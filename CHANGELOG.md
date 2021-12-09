@@ -7,6 +7,7 @@
 - [scripts] added Electron frontend start-up performance measurement script [#10442](https://github.com/eclipse-theia/theia/pull/10442) - Contributed on behalf of STMicroelectronics
 - [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
 - [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
+- [workspace]]The validation message when creating a file or folder is now more specific if a file or folder with the same name already exists in the respective location. [#10527](https://github.com/eclipse-theia/theia/pull/10527)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
