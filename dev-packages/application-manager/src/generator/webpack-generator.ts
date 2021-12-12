@@ -56,8 +56,8 @@ export class WebpackGenerator extends AbstractGenerator {
 const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CircularDependencyPlugin = require('circular-dependency-plugin');
+${this.ifMonaco(() => `const CopyWebpackPlugin = require('copy-webpack-plugin');
+`)}const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 
 const outputPath = path.resolve(__dirname, 'lib');
@@ -75,13 +75,13 @@ const development = mode === 'development';${this.ifMonaco(() => `
 const monacoEditorCorePath = development ? '${this.resolve('@theia/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@theia/monaco-editor-core', 'min/vs')}';`)}
 
 const plugins = [
-    new CopyWebpackPlugin({
-        patterns: [${this.ifMonaco(() => `{
+    ${this.ifMonaco(() => `new CopyWebpackPlugin({
+        patterns: [{
             from: monacoEditorCorePath,
             to: 'vs'
-        }`)}]
+        }]
     }),
-    new webpack.ProvidePlugin({
+    `)}new webpack.ProvidePlugin({
         // the Buffer class doesn't exist in the browser but some dependencies rely on it
         Buffer: ['buffer', 'Buffer']
     })
