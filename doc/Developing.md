@@ -362,7 +362,7 @@ npx run watch @theia/navigator --include-filtered-dependencies --parallel
 ### Debug IPC servers
 
   - Pass `--${server-name}-inspect` arg to the backend server.
-    - For example `--nfsw-watcher-inspect=0` to inspect nfsw watcher processes with dynamic port allocation.
+    - For example `--nsfw-watcher-inspect=0` to inspect nsfw watcher processes with dynamic port allocation.
     - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
   - Attach the debugger to the logged port.
 

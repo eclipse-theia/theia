@@ -68,7 +68,7 @@ export class ElectronWindowService extends DefaultWindowService {
     /**
      * Run when ElectronMain detects a `close` event and emits a `close-requested` event.
      * Should send an event to `electron.ipcRenderer` on the event's `confirmChannel` if it is safe to exit
-     * after running FrontentApplication `onWillStop` handlers or on the `cancelChannel` if it is not safe to exit.
+     * after running FrontendApplication `onWillStop` handlers or on the `cancelChannel` if it is not safe to exit.
      */
     protected async handleCloseRequestedEvent(event: CloseRequestArguments): Promise<void> {
         const safeToClose = await this.isSafeToShutDown();
