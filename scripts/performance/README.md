@@ -22,7 +22,7 @@ The script can be executed using `node browser-performance.js` in this directory
 The script accepts the following optional parameters:
 
 -   `--name`: Specify a name for the current measurement (default: `Browser Frontend Startup`)
--   `--url`: Point Theia to a url for example for specifying a specifc workspace (default: `http://localhost:3000/#/<pathToMeasurementScript>/workspace`)
+-   `--url`: Point Theia to a url for example for specifying a specific workspace (default: `http://localhost:3000/#/<pathToMeasurementScript>/workspace`)
 -   `--folder`: Folder name for the generated tracing files in the `profiles` folder (default: `browser`)
 -   `--runs`: Number of runs for the measurement (default: `10`)
 -   `--headless`: Boolean, if the tests should be run in headless mode (default: `true`)

@@ -51,7 +51,7 @@ const i18nInput = JSON.parse(fs.readFileSync(i18nFilePath, 'utf8'));
 const outputContent = {};
 
 // The following objects are translation items that cannot be successfully translated by the duplication algorithm
-// Therefore they are written down explicitely
+// Therefore they are written down explicitly
 
 const keybindingLabels = {
     /*  0 */ 'ctrlKey': 'Ctrl',

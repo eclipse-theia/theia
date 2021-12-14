@@ -3,6 +3,7 @@
 
 ## Release Procedure
 
+- [**Yarn Upgrade**](#yarn-upgrade)
 - [**Announce Release**](#announce-release)
 - [**Pre-Publishing Steps**](#pre-publishing-steps)
 - [**Login to NPM Registry**](#login-to-npm-registry)
@@ -12,8 +13,15 @@
 - [**Update Eclipse Release Page**](#update-eclipse-release-page)
 - [**Post-Release**](#post-release)
     - [Announce Release is Completed](#announce-release-is-completed)
-    - [Yarn Upgrade](#yarn-upgrade)
 
+## Yarn Upgrade
+
+Before a release (Monday of the same week), it is a good time to perform a `yarn upgrade` on the repository to update the `yarn.lock`.
+Updating the `yarn.lock` helps identify potential problems with our dependency version ranges, and is more representative of what downstream adopters may pull when building their own applications.
+
+To successfully complete a `yarn upgrade`, one must:
+- perform `yarn upgrade` at the root of the repository.
+- fix any compilation errors, typing issues, and failing tests that may be introduced.
 
 ## Announce Release
 
@@ -157,16 +165,6 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 
 - Update the forum release post to announce that the release has completed.
 - Submit to "Theia News", so that a Tweet will be created by the Twitter managers. Use [this template](https://github.com/eclipse-theia/theia/wiki/Eclipse-Theia-Twitter-strategy#release-announcement-no-review) for the message and post it [here](https://forms.gle/ccS6qawpS54FQZht5).
-
-
-### Yarn Upgrade
-
-After a release, it is a good time to perform a `yarn upgrade` on the repository to update the `yarn.lock`.
-Updating the `yarn.lock` helps identify potential problems with our dependency version ranges, and is more representative of what downstream adopters may pull when building their own applications.
-
-To successfully complete a `yarn upgrade`, one must:
-- perform `yarn upgrade` at the root of the repository.
-- fix any compilation errors, typing issues, and failing tests that may be introduced.
 
 ### Update Milestones
 

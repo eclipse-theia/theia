@@ -105,7 +105,7 @@ export interface DebugAdapter {
      */
     send(message: string): void;
     /**
-     * An error has occured communicating with the debug adapter. This does not meant the debug adapter
+     * An error has occurred communicating with the debug adapter. This does not meant the debug adapter
      * has terminated.
      */
     onError: Event<Error>;
