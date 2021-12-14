@@ -55,7 +55,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             type: 'object',
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             // eslint-disable-next-line max-len
-            description: nls.localize('theia/filesystem/filesExclude', 'Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting. Refer to the `#search.exclude#` setting to define search specific excludes.'),
+            markdownDescription: nls.localize('theia/filesystem/filesExclude', 'Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.'),
             scope: 'resource'
         },
         'files.enableTrash': {
@@ -65,7 +65,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         },
         'files.associations': {
             type: 'object',
-            description: nls.localizeByDefault(
+            markdownDescription: nls.localizeByDefault(
                 'Configure file associations to languages (e.g. `\"*.extension\": \"html\"`). These have precedence over the default associations of the languages installed.'
             )
         },

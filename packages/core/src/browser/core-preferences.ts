@@ -58,8 +58,7 @@ export const corePreferenceSchema: PreferenceSchema = {
                 'keyCode',
             ],
             default: 'code',
-            description: nls.localizeByDefault(
-                'Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
+            markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
         'window.menuBarVisibility': {
             type: 'string',
@@ -89,7 +88,7 @@ export const corePreferenceSchema: PreferenceSchema = {
         'workbench.editor.highlightModifiedTabs': {
             'type': 'boolean',
             // eslint-disable-next-line max-len
-            'description': nls.localizeByDefault('Controls whether a top border is drawn on modified (dirty) editor tabs or not. This value is ignored when `#workbench.editor.showTabs#` is disabled.'),
+            'markdownDescription': nls.localize('theia/core/highlightModifiedTabs', 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.'),
             'default': false
         },
         'workbench.editor.closeOnFileDelete': {

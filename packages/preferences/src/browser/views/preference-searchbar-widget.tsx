@@ -17,7 +17,7 @@
 import { codicon, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce = require('p-debounce');
 import { Disposable, Emitter } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -45,11 +45,9 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
         this.update();
     }
 
-    protected handleSearch = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.search(e.target.value);
-    };
+    protected handleSearch = (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => this.search(e.target.value);
 
-    protected search = debounce((value: string) => {
+    protected search = debounce(async (value: string) => {
         this.onFilterStringChangedEmitter.fire(value);
         this.update();
     }, 200);
@@ -64,11 +62,11 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
      * Clears the search input and all search results.
      * @param e on-click mouse event.
      */
-    protected clearSearchResults = (e: React.MouseEvent): void => {
+    protected clearSearchResults = async (e: React.MouseEvent): Promise<void> => {
         const search = document.getElementById(PreferencesSearchbarWidget.SEARCHBAR_ID) as HTMLInputElement;
         if (search) {
             search.value = '';
-            this.search(search.value);
+            await this.search(search.value);
             this.update();
         }
     };
@@ -127,13 +125,13 @@ export class PreferencesSearchbarWidget extends ReactWidget implements StatefulW
         return search?.value;
     }
 
-    updateSearchTerm(searchTerm: string): void {
+    async updateSearchTerm(searchTerm: string): Promise<void> {
         const search = document.getElementById(PreferencesSearchbarWidget.SEARCHBAR_ID) as HTMLInputElement;
-        if (!search) {
+        if (!search || search.value === searchTerm) {
             return;
         }
         search.value = searchTerm;
-        this.search(search.value);
+        await this.search(search.value);
         this.update();
     }
 

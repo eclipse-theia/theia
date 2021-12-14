@@ -122,7 +122,7 @@ const codeEditorPreferenceProperties = {
     },
     'editor.semanticHighlighting.enabled': {
         'enum': [true, false, 'configuredByTheme'],
-        'enumDescriptions': [
+        'markdownEnumDescriptions': [
             nls.localizeByDefault('Semantic highlighting enabled for all color themes.'),
             nls.localizeByDefault('Semantic highlighting disabled for all color themes.'),
             nls.localizeByDefault('Semantic highlighting is configured by the current color theme\'s `semanticHighlighting` setting.')
@@ -327,7 +327,7 @@ const codeEditorPreferenceProperties = {
         'default': 0,
         'minimum': 0,
         'maximum': 100,
-        'description': nls.localizeByDefault('Controls the font size in pixels for CodeLens. When set to `0`, the 90% of `#editor.fontSize#` is used.')
+        'markdownDescription': nls.localizeByDefault('Controls the font size in pixels for CodeLens. When set to `0`, the 90% of `#editor.fontSize#` is used.')
     },
     'editor.colorDecorators': {
         'description': nls.localizeByDefault('Controls whether the editor should render the inline color decorators and color picker.'),
@@ -392,11 +392,11 @@ const codeEditorPreferenceProperties = {
         'maximum': 1073741824
     },
     'editor.cursorSurroundingLinesStyle': {
-        'enumDescriptions': [
+        'markdownEnumDescriptions': [
             nls.localizeByDefault('`cursorSurroundingLines` is enforced only when triggered via the keyboard or API.'),
             nls.localizeByDefault('`cursorSurroundingLines` is enforced always.')
         ],
-        'description': nls.localizeByDefault('Controls when `cursorSurroundingLines` should be enforced.'),
+        'markdownDescription': nls.localizeByDefault('Controls when `cursorSurroundingLines` should be enforced.'),
         'type': 'string',
         'enum': [
             'default',
@@ -1111,7 +1111,7 @@ const codeEditorPreferenceProperties = {
     'editor.inlineHints.fontSize': {
         'type': 'number',
         'default': EDITOR_FONT_DEFAULTS.fontSize,
-        description: nls.localizeByDefault('Controls font size of inline hints in the editor. When set to `0`, the 90% of `#editor.fontSize#` is used.')
+        markdownDescription: nls.localizeByDefault('Controls font size of inline hints in the editor. When set to `0`, the 90% of `#editor.fontSize#` is used.')
     },
     'editor.inlineHints.fontFamily': {
         'type': 'string',
@@ -1173,7 +1173,7 @@ const codeEditorPreferenceProperties = {
     'editor.suggest.insertHighlight': {
         'type': 'boolean',
         'default': false,
-        'description': nls.localize('theia/editor/suggest.insertHighlight', 'Controls whether unexpected text modifications while accepting completions should be highlighted, e.g `insertMode` is `replace` but the completion only supports `insert`.')
+        'markdownDescription': nls.localize('theia/editor/suggest.insertHighlight', 'Controls whether unexpected text modifications while accepting completions should be highlighted, e.g `insertMode` is `replace` but the completion only supports `insert`.')
     },
     'editor.suggest.filterGraceful': {
         'type': 'boolean',

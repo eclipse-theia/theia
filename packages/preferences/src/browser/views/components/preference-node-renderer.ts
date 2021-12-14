@@ -15,15 +15,19 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { PreferenceService, ContextMenuRenderer, PreferenceInspection, PreferenceScope, PreferenceProvider } from '@theia/core/lib/browser';
+import {
+    PreferenceService, ContextMenuRenderer, PreferenceInspection,
+    PreferenceScope, PreferenceProvider, MarkdownRenderer, codicon, animationFrame
+} from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable } from '@theia/core/lib/common';
+import { Disposable, nls } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;
@@ -151,23 +155,98 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferencesSearchbarWidget) protected readonly searchbar: PreferencesSearchbarWidget;
+    @inject(WindowService) protected readonly windowService: WindowService;
 
     protected headlineWrapper: HTMLDivElement;
     protected gutter: HTMLDivElement;
     protected interactable: InteractableType;
     protected inspection: PreferenceInspection<ValueType> | undefined;
     protected isModifiedFromDefault = false;
+    protected markdownRenderer: MarkdownRenderer;
 
     @postConstruct()
     protected init(): void {
         this.setId();
         this.updateInspection();
+        this.markdownRenderer = this.buildMarkdownRenderer();
         this.domNode = this.createDomNode();
         this.updateModificationStatus();
     }
 
     protected updateInspection(): void {
         this.inspection = this.preferenceService.inspect<ValueType>(this.id, this.scopeTracker.currentScope.uri);
+    }
+
+    protected buildMarkdownRenderer(): MarkdownRenderer {
+        return new MarkdownRenderer()
+            .modify('a', link => {
+                const href = link.href;
+                link.href = '#';
+                link.title = href;
+                this.setClickListener(link, e => this.openLink(e, href));
+            })
+            .modify('code', code => {
+                const innerText = code.innerText;
+                // Linked preferences always start and end with `#`
+                if (innerText.startsWith('#') && innerText.endsWith('#')) {
+                    const preferenceId = innerText.substring(1, innerText.length - 1);
+                    const preferenceNode = this.model.getNodeFromPreferenceId(preferenceId);
+                    if (preferenceNode) {
+                        let name = this.labelProvider.getName(preferenceNode);
+                        const prefix = this.labelProvider.getPrefix(preferenceNode, true);
+                        if (prefix) {
+                            name = prefix + name;
+                        }
+                        const link = document.createElement('a');
+                        this.setClickListener(link, e => this.selectPreference(e, preferenceId));
+                        link.innerText = name;
+                        link.title = `#${preferenceId}`;
+                        link.href = '#';
+                        return link;
+                    } else {
+                        console.warn(`Linked preference "${preferenceId}" not found. Source: "${this.preferenceNode.preferenceId}"`);
+                    }
+                }
+                return code;
+            });
+    }
+
+    protected setClickListener(element: HTMLElement, callback: (event: MouseEvent) => void): void {
+        // onclick only handles left button clicks
+        // onauxclick handles all other cases
+        element.onclick = callback;
+        element.onauxclick = callback;
+        // Disables showing a context menu when right clicking
+        element.oncontextmenu = () => false;
+    }
+
+    protected openLink(event: MouseEvent, href: string): void {
+        event.preventDefault();
+        event.stopPropagation();
+        // Exclude right click
+        if (event.button < 2) {
+            // Opens link in external browser
+            this.windowService.openNewWindow(href, { external: true });
+        }
+    }
+
+    protected async selectPreference(event: MouseEvent, preferenceId: string): Promise<void> {
+        event.preventDefault();
+        event.stopPropagation();
+        // Exclude right click
+        if (event.button < 2) {
+            // Selects the rendered html preference node that does not belong to the commonly used group
+            const selector = `li[data-pref-id="${preferenceId}"]:not([data-node-id^="commonly-used@"])`;
+            const element = document.querySelector(selector);
+            if (element) {
+                if (element.classList.contains('hidden')) {
+                    // We clear the search term as we have clicked on a hidden preference
+                    await this.searchbar.updateSearchTerm('');
+                    await animationFrame();
+                }
+                element.scrollIntoView();
+            }
+        }
     }
 
     protected createDomNode(): HTMLLIElement {
@@ -191,12 +270,12 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         wrapper.appendChild(gutter);
 
         const cog = document.createElement('i');
-        cog.className = 'codicon codicon-settings-gear settings-context-menu-btn';
+        cog.className = `${codicon('settings-gear', true)} settings-context-menu-btn`;
         cog.setAttribute('aria-label', 'Open Context Menu');
         cog.setAttribute('role', 'button');
         cog.onclick = this.handleCogAction.bind(this);
         cog.onkeydown = this.handleCogAction.bind(this);
-        cog.title = 'More actions...';
+        cog.title = nls.localizeByDefault('More Actions...');
         gutter.appendChild(cog);
 
         const activeType = Array.isArray(this.preferenceNode.preference.data.type) ? this.preferenceNode.preference.data.type[0] : this.preferenceNode.preference.data.type;
@@ -205,11 +284,15 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         wrapper.appendChild(contentWrapper);
 
         const { description, markdownDescription } = this.preferenceNode.preference.data;
-        const descriptionToUse = markdownDescription || description;
-        if (descriptionToUse) {
+        if (markdownDescription || description) {
             const descriptionWrapper = document.createElement('div');
             descriptionWrapper.classList.add('pref-description');
-            descriptionWrapper.textContent = descriptionToUse;
+            if (markdownDescription) {
+                const renderedDescription = this.markdownRenderer.renderInline(markdownDescription);
+                descriptionWrapper.appendChild(renderedDescription);
+            } else if (description) {
+                descriptionWrapper.textContent = description;
+            }
             contentWrapper.appendChild(descriptionWrapper);
         }
 
@@ -356,7 +439,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     }
 
     protected getModifiedMessagePrefix(): string {
-        return this.isModifiedFromDefault ? 'Also modified in: ' : 'Modified in: ';
+        return (this.isModifiedFromDefault ? nls.localizeByDefault('Also modified in') : nls.localizeByDefault('Modified in')) + ': ';
     }
 
     protected addEventHandlerToModifiedScope(scope: PreferenceScope, scopeWrapper: HTMLElement): void {

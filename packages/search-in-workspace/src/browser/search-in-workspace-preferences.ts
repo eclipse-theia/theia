@@ -39,7 +39,7 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
         },
         'search.searchOnTypeDebouncePeriod': {
             // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('When `#search.searchOnType#` is enabled, controls the timeout in milliseconds between a character being typed and the search starting. Has no effect when `search.searchOnType` is disabled.'),
+            markdownDescription: nls.localizeByDefault('When `#search.searchOnType#` is enabled, controls the timeout in milliseconds between a character being typed and the search starting. Has no effect when `search.searchOnType` is disabled.'),
             default: 300,
             type: 'number',
         },

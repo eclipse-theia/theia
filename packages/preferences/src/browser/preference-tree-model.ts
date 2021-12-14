@@ -227,6 +227,11 @@ export class PreferenceTreeModel extends TreeModelImpl {
         }
     }
 
+    getNodeFromPreferenceId(id: string): Preference.TreeNode | undefined {
+        const node = this.getNode(this.treeGenerator.getNodeId(id));
+        return node && Preference.TreeNode.is(node) ? node : undefined;
+    }
+
     /**
      * @returns true if selection changed, false otherwise
      */
