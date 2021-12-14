@@ -24,7 +24,7 @@ import * as request from 'request';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { environment } from '@theia/core';
+import { environment, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
@@ -292,6 +292,12 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                     resolve(new URI(match[1]));
                 }
             };
+
+            if (isWindows) {
+                // Has to be set for running on windows (electron).
+                // See also: https://github.com/nodejs/node/issues/3675
+                options.shell = true;
+            }
 
             this.hostedInstanceProcess = cp.spawn(command.shift()!, command, options);
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
