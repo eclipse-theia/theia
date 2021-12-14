@@ -21,7 +21,6 @@ import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedP
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
 
 @injectable()
 export class HostedPluginDeployerHandler implements PluginDeployerHandler {
@@ -86,8 +85,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const metadata = this.reader.readMetadata(manifest);
             const dependencies: PluginDependencies = { metadata };
             // Do not resolve system (aka builtin) plugins because it should be done statically at build time.
-            const { resolveSystemPlugins = true } = BackendApplicationConfigProvider.get();
-            if (resolveSystemPlugins || entry.type !== PluginType.System) {
+            if (entry.type !== PluginType.System) {
                 dependencies.mapping = this.reader.readDependencies(manifest);
             }
             return dependencies;
