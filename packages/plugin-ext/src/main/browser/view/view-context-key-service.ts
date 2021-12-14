@@ -74,18 +74,4 @@ export class ViewContextKeyService {
     match(expression: string | undefined): boolean {
         return !expression || this.contextKeyService.match(expression);
     }
-
-    with<T>(input: { view?: string, viewItem?: string }, cb: () => T): T {
-        const view = this.view.get();
-        const viewItem = this.viewItem.get();
-        this.view.set(input.view);
-        this.viewItem.set(input.viewItem);
-        try {
-            return cb();
-        } finally {
-            this.view.set(view);
-            this.viewItem.set(viewItem);
-        }
-    }
-
 }

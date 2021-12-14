@@ -36,7 +36,6 @@ import {
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '../plugin-shared-style';
-import { ViewContextKeyService } from './view-context-key-service';
 import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -236,8 +235,8 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
 
-    @inject(ViewContextKeyService)
-    protected readonly contextKeys: ViewContextKeyService;
+    @inject(ContextKeyService)
+    protected readonly contextKeys: ContextKeyService;
 
     @inject(TreeViewWidgetIdentifier)
     readonly identifier: TreeViewWidgetIdentifier;
@@ -343,7 +342,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected renderInlineCommand(node: ActionMenuNode, index: number, arg: any): React.ReactNode {
         const { icon } = node;
-        if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !this.contextKeys.match(node.action.when)) {
+        if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !node.action.when || !this.contextKeys.match(node.action.when)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');

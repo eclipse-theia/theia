@@ -66,7 +66,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
 
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
-        container.get(ContextKeyService).createKey('callStackItemType', undefined)
+        container.get<ContextKeyService>(ContextKeyService).createKey('callStackItemType', undefined)
     ).inSingletonScope();
 
     bindContributionProvider(bind, DebugSessionContribution);

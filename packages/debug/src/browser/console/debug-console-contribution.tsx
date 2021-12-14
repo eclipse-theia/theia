@@ -160,7 +160,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     static bindContribution(bind: interfaces.Bind): void {
         bind(InDebugReplContextKey).toDynamicValue(({ container }) =>
-            container.get(ContextKeyService).createKey('inDebugRepl', false)
+            container.get<ContextKeyService>(ContextKeyService).createKey('inDebugRepl', false)
         ).inSingletonScope();
         bind(DebugConsoleSession).toSelf().inRequestScope();
         bind(DebugConsoleSessionFactory).toFactory(context => (session: DebugSession) => {

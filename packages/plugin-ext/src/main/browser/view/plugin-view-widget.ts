@@ -18,12 +18,12 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { Panel, Widget } from '@theia/core/shared/@phosphor/widgets';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
-import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { TreeViewWidget } from './tree-view-widget';
 import { DescriptionWidget } from '@theia/core/lib/browser/view-container';
-import { Emitter } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class PluginViewWidgetIdentifier {
@@ -34,14 +34,16 @@ export class PluginViewWidgetIdentifier {
 @injectable()
 export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget {
 
+    protected readonly toDispose = new DisposableCollection();
+
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
-    @inject(ViewContextKeyService)
-    protected readonly contextKeys: ViewContextKeyService;
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     @inject(PluginViewWidgetIdentifier)
     readonly options: PluginViewWidgetIdentifier;
@@ -59,6 +61,9 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
     @postConstruct()
     protected init(): void {
         this.id = this.options.id;
+        const localContext = this.contextKeyService.createScoped(this.node);
+        localContext.setContext('view', this.options.viewId);
+        this.toDispose.push(localContext);
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -147,6 +152,11 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
     insertWidget(index: number, widget: Widget): void {
         super.insertWidget(index, widget);
         this.updateWidgetMessage();
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+        super.dispose();
     }
 }
 export namespace PluginViewWidget {
