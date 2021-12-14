@@ -24,6 +24,8 @@
 - [terminal] removed deprecated `activateTerminal` method in favor of `open`. [#10529](https://github.com/eclipse-theia/theia/pull/10529)
 - [core] removed deprecated `activeChanged` signal emitter in favor of `onDidChangeActiveWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
 - [core] removed deprecated `currentChanged` signal emitter in favor of `onDidChangeCurrentWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
+- [plugin] changed return type of `WebviewThemeDataProvider.getActiveTheme()` to `Theme` instead of `WebviewThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
+- [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 
 ## v1.20.0 - 11/25/2021
 

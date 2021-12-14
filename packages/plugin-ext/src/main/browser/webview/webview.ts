@@ -420,8 +420,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected style(): void {
-        const { styles, activeTheme } = this.themeDataProvider.getThemeData();
-        this.doSend('styles', { styles, activeTheme });
+        const { styles, activeThemeType, activeThemeName } = this.themeDataProvider.getThemeData();
+        this.doSend('styles', { styles, activeThemeType, activeThemeName });
     }
 
     protected openLink(link: URI): void {

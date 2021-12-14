@@ -204,7 +204,9 @@
 
             if (body) {
                 body.classList.remove('vscode-light', 'vscode-dark', 'vscode-high-contrast');
-                body.classList.add(initData.activeTheme);
+                body.classList.add(initData.activeThemeType);
+                body.setAttribute('data-vscode-theme-kind', initData.activeThemeType);
+                body.setAttribute('data-vscode-theme-name', initData.activeThemeName);
             }
 
             if (initData.styles) {
@@ -409,7 +411,8 @@
 
             host.onMessage('styles', (_event, data) => {
                 initData.styles = data.styles;
-                initData.activeTheme = data.activeTheme;
+                initData.activeThemeType = data.activeThemeType;
+                initData.activeThemeName = data.activeThemeName;
 
                 const target = getActiveFrame();
                 if (!target) {
