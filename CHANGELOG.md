@@ -27,6 +27,7 @@
 - [plugin] changed return type of `WebviewThemeDataProvider.getActiveTheme()` to `Theme` instead of `WebviewThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] removed the application prop `resolveSystemPlugins`, builtin plugins should now be resolved at build time [#10353](https://github.com/eclipse-theia/theia/pull/10353)
+- [core/shared] removed `vscode-languageserver-types`; use `vscode-languageserver-protocol` instead. [#10500](https://github.com/eclipse-theia/theia/pull/10500)
 
 ## v1.20.0 - 11/25/2021
 
