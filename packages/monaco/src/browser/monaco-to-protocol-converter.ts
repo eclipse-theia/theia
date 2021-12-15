@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from '@theia/core/shared/inversify';
-import { Position, Range } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 
 export interface MonacoRangeReplace {

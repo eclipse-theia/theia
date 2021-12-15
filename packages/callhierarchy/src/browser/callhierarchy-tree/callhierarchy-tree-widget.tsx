@@ -24,7 +24,7 @@ import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
 import URI from '@theia/core/lib/common/uri';
-import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-types';
+import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager } from '@theia/editor/lib/browser';
 import * as React from '@theia/core/shared/react';
 
@@ -190,9 +190,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     private doOpenEditor(uri: DocumentUri, range: Range, keepFocus: boolean): void {
         this.editorManager.open(
             new URI(uri), {
-                mode: keepFocus ? 'reveal' : 'activate',
-                selection: range
-            }
+            mode: keepFocus ? 'reveal' : 'activate',
+            selection: range
+        }
         ).then(editorWidget => {
             if (editorWidget.parent instanceof DockPanel) {
                 editorWidget.parent.selectWidget(editorWidget);

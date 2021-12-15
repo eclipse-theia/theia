@@ -79,7 +79,7 @@ import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
+import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import * as files from '@theia/filesystem/lib/common/files';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';

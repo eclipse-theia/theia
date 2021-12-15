@@ -21,7 +21,7 @@ import { Marker } from '../common/marker';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
 import { ProblemSelection } from './problem/problem-selection';
-import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
+import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {

@@ -79,7 +79,7 @@ import { CodeLensAdapter } from './languages/lens';
 import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
-import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
+import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FoldingProviderAdapter } from './languages/folding';
 import { SelectionRangeProviderAdapter } from './languages/selection-range';
 import { ColorProviderAdapter } from './languages/color';

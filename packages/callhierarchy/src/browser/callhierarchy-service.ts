@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CancellationToken } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, Disposable, Emitter, Event } from '@theia/core/lib/common';

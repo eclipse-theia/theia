@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { Position, Location } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';

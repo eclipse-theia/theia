@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Location, Range, Position } from '@theia/core/shared/vscode-languageserver-types';
+import { Location, Range, Position } from '@theia/core/shared/vscode-languageserver-protocol';
 
 /**
  * Test if `otherRange` is in `range`. If the ranges are equal, will return true.

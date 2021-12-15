@@ -45,19 +45,18 @@ import CoreURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import * as vst from '@theia/core/shared/vscode-languageserver-types';
+import * as vst from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
-import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
+import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
-import { DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
