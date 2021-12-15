@@ -105,12 +105,12 @@ export namespace RenderContextMenuOptions {
         let args: any[];
         if (Array.isArray(menuPathOrOptions)) {
             menuPath = menuPathOrOptions;
-            args = [anchor!];
+            args = [];
         } else {
             menuPath = menuPathOrOptions.menuPath;
             anchor = menuPathOrOptions.anchor;
             onHide = menuPathOrOptions.onHide;
-            args = menuPathOrOptions.args ? [...menuPathOrOptions.args, anchor] : [anchor];
+            args = menuPathOrOptions.args ? [...menuPathOrOptions.args] : [];
         }
         return {
             menuPath,
