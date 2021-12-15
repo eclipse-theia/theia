@@ -46,6 +46,11 @@ export interface ViewContainerTitleOptions {
     closeable?: boolean;
 }
 
+enum SashType {
+    TopSash = 'top-sash',
+    BottomSash = 'bottom-sash'
+}
+
 @injectable()
 export class ViewContainerIdentifier {
     id: string;
@@ -994,6 +999,11 @@ export class ViewContainerPart extends BaseWidget {
         }
         this._collapsed = collapsed;
         this.node.classList.toggle('collapsed', collapsed);
+
+        // Update the sashes for the active `horizontal` container when the container is collapsed/expanded
+        this.updateSashState(SashType.TopSash, this.node.previousElementSibling, collapsed);
+        this.updateSashState(SashType.BottomSash, this.node.nextElementSibling, collapsed);
+
         if (collapsed && this.wrapped.node.contains(document.activeElement)) {
             this.header.focus();
         }
@@ -1230,6 +1240,26 @@ export class ViewContainerPart extends BaseWidget {
         }
     }
 
+    protected updateSashState(sashType: SashType, sashElement: Element | null, activeContainerCollapsed: boolean): void {
+        if (sashElement && sashElement.className.includes('p-SplitPanel-handle')) {
+            // Hide the sash when the active `horizontal` container in the left panel is collapsed
+            sashElement.classList.toggle('sash-hidden', activeContainerCollapsed);
+
+            let adjacentContainer: Element | null;
+            if (sashType === SashType.TopSash) {
+                adjacentContainer = sashElement.previousElementSibling;
+            } else {
+                adjacentContainer = sashElement.nextElementSibling;
+            }
+
+            // Sash should only appear when the following two conditions are met:
+            //    1.  the active `horizontal` container is expanded
+            //    2.  the container that is above/below the active `horizontal` container is also expanded
+            if (!activeContainerCollapsed && adjacentContainer) {
+                sashElement.classList.toggle('sash-hidden', adjacentContainer.className.includes('collapsed'));
+            }
+        }
+    }
 }
 
 export namespace ViewContainerPart {
