@@ -25,10 +25,34 @@
 
 .p-DockPanel-handle[data-orientation='vertical'] {
   min-height: var(--theia-border-width);
+  z-index: 3;
 }
 
 .p-DockPanel-handle[data-orientation='horizontal'] {
   min-width: var(--theia-border-width);
+}
+
+.p-DockPanel-handle[data-orientation='horizontal']::after {
+  min-width: var(--theia-sash-width);
+  transform: translateX(0%);
+  left: calc(-1*var(--theia-sash-width)/2);
+}
+
+.p-DockPanel-handle[data-orientation='vertical']::after {
+  min-height: var(--theia-sash-width);
+  width: 100%;
+  transform: translateY(0%);
+  top: calc(-1*var(--theia-sash-width)/2);
+}
+
+.p-DockPanel-handle:hover::after {
+  background-color: var(--theia-sash-hoverBorder);
+  transition-delay: var(--theia-sash-hoverDelay);
+}
+
+.p-DockPanel-handle:active::after {
+  background-color: var(--theia-sash-activeBorder);
+  transition-delay: 0s !important;
 }
 
 .p-DockPanel-overlay {

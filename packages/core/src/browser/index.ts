@@ -42,3 +42,4 @@ export * from './view-container';
 export * from './breadcrumbs';
 export * from './tooltip-service';
 export * from './markdown-renderer';
+export * from './decoration-style';

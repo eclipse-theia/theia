@@ -8,6 +8,7 @@
 - [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
 - [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
 - [core] `WindowService` and `ElectronMainApplication` updated to allow for asynchronous pre-exit code in Electron. [#10379](https://github.com/eclipse-theia/theia/pull/10379)
+- [core] added sash option for widget resize [#10441](https://github.com/eclipse-theia/theia/pull/10441)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
@@ -28,6 +29,7 @@
 - [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] removed the application prop `resolveSystemPlugins`, builtin plugins should now be resolved at build time [#10353](https://github.com/eclipse-theia/theia/pull/10353)
 - [core/shared] removed `vscode-languageserver-types`; use `vscode-languageserver-protocol` instead. [#10500](https://github.com/eclipse-theia/theia/pull/10500)
+- [editor] moved the utilities for creating and manipulating dynamic stylesheets from `editor-decoration-style.ts` to `decoration-style.ts` in `core`. Each namespace now has its indepednent style sheet. Only one rule should exist for a given selector in the provided stylesheet. [#10441](https://github.com/eclipse-theia/theia/pull/10441)
 
 ## v1.20.0 - 11/25/2021
 

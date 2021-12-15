@@ -973,8 +973,11 @@ export class ApplicationShell extends Widget {
             if (panel instanceof TheiaDockPanel) {
                 panel.markAsCurrent(newValue.title);
             }
-            // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
-            this.setZIndex(newValue.node, '1');
+            // Add checks to ensure that the 'sash' for left panel is displayed correctly
+            if (newValue.node.className === 'p-Widget theia-view-container p-DockPanel-widget') {
+                // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
+                this.setZIndex(newValue.node, '1');
+            }
 
             // activate another widget if an active widget will be closed
             const onCloseRequest = newValue['onCloseRequest'];

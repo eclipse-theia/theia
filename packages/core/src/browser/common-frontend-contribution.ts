@@ -58,6 +58,7 @@ import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adap
 import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { DecorationStyle } from './decoration-style';
 
 export namespace CommonMenus {
 
@@ -308,6 +309,8 @@ export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
+    protected commonDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('coreCommonDecorationsStyle');
+
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
@@ -378,6 +381,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.updateStyles();
         this.updateThemeFromPreference('workbench.colorTheme');
         this.updateThemeFromPreference('workbench.iconTheme');
+        this.preferences.ready.then(() => this.setSashProperties());
         this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
         this.themeService.onDidColorThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
         this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
@@ -466,7 +470,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
                 break;
             }
+            case 'workbench.sash.hoverDelay':
+            case 'workbench.sash.size': {
+                this.setSashProperties();
+                break;
+            }
         }
+    }
+
+    protected setSashProperties(): void {
+        const sashRule = `:root {
+            --theia-sash-hoverDelay: ${this.preferences['workbench.sash.hoverDelay']}ms;
+            --theia-sash-width: ${this.preferences['workbench.sash.size']}px;
+        }`;
+
+        DecorationStyle.deleteStyleRule(':root', this.commonDecorationsStyleSheet);
+        this.commonDecorationsStyleSheet.insertRule(sashRule);
     }
 
     onStart(): void {
@@ -1100,7 +1119,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
-
+            { id: 'sash.hoverBorder', defaults: { dark: Color.transparent('focusBorder', 0.99), light: Color.transparent('focusBorder', 0.99), hc: Color.transparent('focusBorder', 0.99) }, description: 'The hover border color for draggable sashes.' },
+            { id: 'sash.activeBorder', defaults: { dark: 'focusBorder', light: 'focusBorder', hc: 'focusBorder' }, description: 'The active border color for draggable sashes.' },
             // Window border colors should be aligned with https://code.visualstudio.com/api/references/theme-color#window-border
             {
                 id: 'window.activeBorder', defaults: {
