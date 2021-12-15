@@ -128,7 +128,7 @@
   - renamed `createMenuBar` to `createElectronMenuBar`
 - [output] moved `output-channel` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
 - [output] moved `output-preferences` from `common` to `browser` [#10154](https://github.com/eclipse-theia/theia/pull/10154)
-- [ovsx-client] removed `fetchJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
+- [ovsx-client] removed `postJson` method from `OVSXClient` [#10325](https://github.com/eclipse-theia/theia/pull/10325)
 - [plugin] removed unnecessary function `getCaption` [#10253](https://github.com/eclipse-theia/theia/pull/10253)
 - [view-container] updated the `ViewContainerPart` constructor to take two new parameters: `originalContainerId` and `originalContainerTitle` [#9644](https://github.com/eclipse-theia/theia/pull/9644)
   - the existing `viewContainerId` parameter has been renamed to `currentContainerId` to enable drag & drop views.
