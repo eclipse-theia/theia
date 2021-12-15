@@ -40,13 +40,13 @@ import { ProcessTaskError, CommandOptions } from '../../common/process/task-prot
 import * as fs from 'fs';
 import { ShellProcess } from '@theia/terminal/lib/node/shell-process';
 
-interface OsSpecificCommand {
+export interface OsSpecificCommand {
     command: string,
     args: Array<string | ShellQuotedString> | undefined,
     options: CommandOptions
 }
 
-interface ShellSpecificOptions {
+export interface ShellSpecificOptions {
     /** Arguments passed to the shell, aka `command` here. */
     execArgs: string[];
     /** Pack of functions used to escape the `subCommand` and `subArgs` to run in the shell. */
