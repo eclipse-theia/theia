@@ -29,6 +29,13 @@ export function toAnchor(anchor: HTMLElement | Coordinate): Anchor {
     return anchor instanceof HTMLElement ? { x: anchor.offsetLeft, y: anchor.offsetTop } : anchor;
 }
 
+export function isAnchor(arg: unknown): boolean {
+    if (arg && typeof arg === 'object' && 'x' in arg && 'y' in arg && Object.keys(arg).length === 2) {
+        return true;
+    }
+    return false;
+}
+
 export function coordinateFromAnchor(anchor: Anchor): Coordinate {
     const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
     return { x, y };

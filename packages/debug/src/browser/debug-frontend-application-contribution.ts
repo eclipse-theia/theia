@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
+import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon, isAnchor } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
@@ -640,10 +640,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(DebugCommands.START, {
-            execute: (config?: DebugSessionOptions) => this.start(false, config)
+            execute: (config?: DebugSessionOptions) => this.start(false, isAnchor(config) ? undefined : config)
         });
         registry.registerCommand(DebugCommands.START_NO_DEBUG, {
-            execute: (config?: DebugSessionOptions) => this.start(true, config)
+            execute: (config?: DebugSessionOptions) => this.start(true, isAnchor(config) ? undefined : config)
         });
         registry.registerCommand(DebugCommands.STOP, {
             execute: () => this.manager.terminateSessions(),
