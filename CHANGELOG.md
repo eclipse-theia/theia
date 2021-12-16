@@ -1,35 +1,58 @@
 # Change Log
 
-## v1.21.0 - 12/??/2021
+## v1.21.0 - 12/16/2021
 
 [1.21.0 Milestone](https://github.com/eclipse-theia/theia/milestone/29)
 
-- [scripts] added Electron frontend start-up performance measurement script [#10442](https://github.com/eclipse-theia/theia/pull/10442) - Contributed on behalf of STMicroelectronics
-- [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
-- [preferences] Updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
-- [core] `WindowService` and `ElectronMainApplication` updated to allow for asynchronous pre-exit code in Electron. [#10379](https://github.com/eclipse-theia/theia/pull/10379)
+- [callhierarchy] added support for the `editorHasCallHierarchyProvider` context key [#10492](https://github.com/eclipse-theia/theia/pull/10492)
+- [core] `WindowService` and `ElectronMainApplication` updated to allow for asynchronous pre-exit code in `electron` [#10379](https://github.com/eclipse-theia/theia/pull/10379)
 - [core] added sash option for widget resize [#10441](https://github.com/eclipse-theia/theia/pull/10441)
+- [core] improved handling of close and reload events [#10379](https://github.com/eclipse-theia/theia/pull/10379)
+- [core, editor, editor-preview] additional commands added to tabbar context menu for editor widgets [#10394](https://github.com/eclipse-theia/theia/pull/10394)
+- [debug] added timestamps to dap traces [#10484](https://github.com/eclipse-theia/theia/pull/10484)
+- [debug] refactored the debug session lifecycle [#10333](https://github.com/eclipse-theia/theia/pull/10333)
+- [editor] fixed localization formatting for configuring languages [#10510](https://github.com/eclipse-theia/theia/pull/10510)
+- [electron] added handling to restore last window state if it still exists [#10436](https://github.com/eclipse-theia/theia/pull/10436)
+- [filesystem] fixed `createFolder` emitter for user gestures [#10460](https://github.com/eclipse-theia/theia/pull/10460)
+- [markers] added support for valid range column for problem matchers [#10509](https://github.com/eclipse-theia/theia/pull/10509)
+- [messages] fixed implementation for expand and collapse actions in notifications [#10471](https://github.com/eclipse-theia/theia/pull/10471)
+- [mini-browser] updated `getSourceUri` to properly handle previews [#10481](https://github.com/eclipse-theia/theia/pull/10481)
+- [monaco] fixed localization formatting for configuring spaces versus tabs [#10510](https://github.com/eclipse-theia/theia/pull/10510)
+- [navigator] added support for symlink decorations [#10439](https://github.com/eclipse-theia/theia/pull/10439)
+- [ovsx-client] added `isVersionLTE` unit tests to cover preview versions [#10530](https://github.com/eclipse-theia/theia/pull/10530)
+- [plugin] added support for codicon icon references in view containers [#10491](https://github.com/eclipse-theia/theia/pull/10491)
+- [plugin] added support to set theme attributes in webviews [#10493](https://github.com/eclipse-theia/theia/pull/10493)
+- [plugin] fixed running plugin hosts on `electron` for `Windows` [#10518](https://github.com/eclipse-theia/theia/pull/10518)
+- [preferences] updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. 
+  It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
+- [preferences] added support for non-string enum values in schemas [#10511](https://github.com/eclipse-theia/theia/pull/10511)
+- [preferences] added support for rendering markdown descriptions [#10431](https://github.com/eclipse-theia/theia/pull/10431)
+- [scripts] added Electron frontend start-up performance measurement script [#10442](https://github.com/eclipse-theia/theia/pull/10442) - Contributed on behalf of STMicroelectronics
+- [task] updated `OsSpecificCommand` and `ShellSpecificOptions` so they are exportable [#10547](https://github.com/eclipse-theia/theia/pull/10547)
+- [vsx-registry] updated logic to open extensions with a single-click [#10498](https://github.com/eclipse-theia/theia/pull/10498)
 
 <a name="breaking_changes_1.21.0">[Breaking Changes:](#breaking_changes_1.21.0)</a>
 
-- [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...`
-  to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to the file relative
-  to your application package's root.
-- [core] `SelectionService` added to constructor arguments of `TabBarRenderer`. [#10394](https://github.com/eclipse-theia/theia/pull/10394)
-- [preferences] Removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
-- [core] `WindowService` interface changed considerably [#10379](https://github.com/eclipse-theia/theia/pull/10379)
+- [core/shared] removed `vscode-languageserver-types`; use `vscode-languageserver-protocol` instead [#10500](https://github.com/eclipse-theia/theia/pull/10500)
+- [core] added `SelectionService` as a constructor argument of `TabBarRenderer` [#10394](https://github.com/eclipse-theia/theia/pull/10394)
+- [core] removed deprecated `activeChanged` signal emitter in favor of `onDidChangeActiveWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
+- [core] removed deprecated `currentChanged` signal emitter in favor of `onDidChangeCurrentWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
+- [core] updated `WindowService` interface considerably [#10379](https://github.com/eclipse-theia/theia/pull/10379)
   - remove `canUnload(): boolean`- it's replaced by `isSafeToShutDown(): Promise<boolean>` to allow asynchronous handling in Electron.
   - add `isSafeToShutDown()` - replaces `canUnload()`.
   - add `setSafeToShutDown()` - ensures that next close event will not be prevented.
   - add `reload()` - to allow different handling in Electron and browser.
-- [terminal] removed deprecated `activateTerminal` method in favor of `open`. [#10529](https://github.com/eclipse-theia/theia/pull/10529)
-- [core] removed deprecated `activeChanged` signal emitter in favor of `onDidChangeActiveWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
-- [core] removed deprecated `currentChanged` signal emitter in favor of `onDidChangeCurrentWidget` [#10515](https://github.com/eclipse-theia/theia/pull/10515)
+- [editor] moved the utilities for creating and manipulating dynamic stylesheets from `editor-decoration-style.ts` to `decoration-style.ts` in `core`.
+  Each namespace now has its independent stylesheet. Only one rule should exist for a given selector in the provided stylesheet. [#10441](https://github.com/eclipse-theia/theia/pull/10441)
 - [plugin] changed return type of `WebviewThemeDataProvider.getActiveTheme()` to `Theme` instead of `WebviewThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
-- [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] removed the application prop `resolveSystemPlugins`, builtin plugins should now be resolved at build time [#10353](https://github.com/eclipse-theia/theia/pull/10353)
-- [core/shared] removed `vscode-languageserver-types`; use `vscode-languageserver-protocol` instead. [#10500](https://github.com/eclipse-theia/theia/pull/10500)
-- [editor] moved the utilities for creating and manipulating dynamic stylesheets from `editor-decoration-style.ts` to `decoration-style.ts` in `core`. Each namespace now has its indepednent style sheet. Only one rule should exist for a given selector in the provided stylesheet. [#10441](https://github.com/eclipse-theia/theia/pull/10441)
+- [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
+- [preferences] removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. 
+  If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. 
+  See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
+- [terminal] removed deprecated `activateTerminal` method in favor of `open`. [#10529](https://github.com/eclipse-theia/theia/pull/10529)
+- [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...` to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to 
+  the file relative to your application package's root [#10480](https://github.com/eclipse-theia/theia/pull/10480)
 
 ## v1.20.0 - 11/25/2021
 
