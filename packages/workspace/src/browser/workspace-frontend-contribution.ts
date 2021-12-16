@@ -90,11 +90,16 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const updateWorkspaceStateKey = () => workspaceStateKey.set(this.updateWorkspaceStateKey());
         updateWorkspaceStateKey();
 
+        const workbenchStateKey = this.contextKeyService.createKey<WorkspaceState>('workbenchState', 'empty');
+        const updateWorkbenchStateKey = () => workbenchStateKey.set(this.updateWorkbenchStateKey());
+        updateWorkbenchStateKey();
+
         this.updateStyles();
         this.workspaceService.onWorkspaceChanged(() => {
             this.updateEncodingOverrides();
             updateWorkspaceFolderCountKey();
             updateWorkspaceStateKey();
+            updateWorkbenchStateKey();
             this.updateStyles();
         });
     }
@@ -495,8 +500,16 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     protected updateWorkspaceStateKey(): WorkspaceState {
+        return this.doUpdateWorkspaceState();
+    }
+
+    protected updateWorkbenchStateKey(): WorkspaceState {
+        return this.doUpdateWorkspaceState();
+    }
+
+    protected doUpdateWorkspaceState(): WorkspaceState {
         if (this.workspaceService.opened) {
-            return this.workspaceService.isMultiRootWorkspaceOpened ? 'folder' : 'workspace';
+            return this.workspaceService.isMultiRootWorkspaceOpened ? 'workspace' : 'folder';
         }
         return 'empty';
     }
