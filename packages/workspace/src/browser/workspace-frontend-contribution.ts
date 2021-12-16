@@ -51,6 +51,7 @@ export enum WorkspaceStates {
     folder = 'folder',
 };
 export type WorkspaceState = keyof typeof WorkspaceStates;
+export type WorkbenchState = keyof typeof WorkspaceStates;
 
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution {
@@ -90,7 +91,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const updateWorkspaceStateKey = () => workspaceStateKey.set(this.updateWorkspaceStateKey());
         updateWorkspaceStateKey();
 
-        const workbenchStateKey = this.contextKeyService.createKey<WorkspaceState>('workbenchState', 'empty');
+        const workbenchStateKey = this.contextKeyService.createKey<WorkbenchState>('workbenchState', 'empty');
         const updateWorkbenchStateKey = () => workbenchStateKey.set(this.updateWorkbenchStateKey());
         updateWorkbenchStateKey();
 
@@ -500,14 +501,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     protected updateWorkspaceStateKey(): WorkspaceState {
-        return this.doUpdateWorkspaceState();
+        return this.doUpdateState();
     }
 
-    protected updateWorkbenchStateKey(): WorkspaceState {
-        return this.doUpdateWorkspaceState();
+    protected updateWorkbenchStateKey(): WorkbenchState {
+        return this.doUpdateState();
     }
 
-    protected doUpdateWorkspaceState(): WorkspaceState {
+    protected doUpdateState(): WorkspaceState | WorkbenchState {
         if (this.workspaceService.opened) {
             return this.workspaceService.isMultiRootWorkspaceOpened ? 'workspace' : 'folder';
         }
