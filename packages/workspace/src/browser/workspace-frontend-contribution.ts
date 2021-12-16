@@ -19,7 +19,7 @@ import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegist
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
-    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY
+    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -37,6 +37,7 @@ import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/pr
 import { nls } from '@theia/core/lib/common/nls';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 
 export enum WorkspaceStates {
     /**
@@ -335,14 +336,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const [rootStat] = await this.workspaceService.roots;
         const targetFolders = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (targetFolders) {
-            const [openableURI, defaultWorkspaceURI] = await Promise.all([this.getOpenableWorkspaceUri(targetFolders), this.workspaceService.getUntitledWorkspace()]);
+            const openableURI = await this.getOpenableWorkspaceUri(targetFolders);
             if (openableURI) {
-                // Handle case of move from one untitled workspace to another
-                if (this.workspaceService.workspace?.isFile && openableURI.isEqual(this.workspaceService.workspace.resource) && openableURI.isEqual(defaultWorkspaceURI)) {
-                    await this.workspaceCommands.saveWorkspaceWithPrompt(this.commandRegistry);
-                    this.workspaceService.open(openableURI, { preserveWindow: true });
-                    return openableURI;
-                } else if (!this.workspaceService.workspace || !openableURI.isEqual(this.workspaceService.workspace.resource)) {
+                if (!this.workspaceService.workspace || !openableURI.isEqual(this.workspaceService.workspace.resource)) {
                     this.workspaceService.open(openableURI);
                     return openableURI;
                 }
@@ -442,7 +438,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }
     }
 
-    protected async saveWorkspaceAs(): Promise<void> {
+    /**
+     * @returns whether the file was successfully saved.
+     */
+    protected async saveWorkspaceAs(): Promise<boolean> {
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
@@ -464,8 +463,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         } while (selected && exist && !overwrite);
 
         if (selected) {
-            await this.workspaceService.save(selected);
+            try {
+                await this.workspaceService.save(selected);
+                return true;
+            } catch {
+                this.messageService.error(nls.localizeByDefault("Unable to save workspace '{0}'", selected.path.toString()));
+            }
         }
+        return false;
     }
 
     /**
@@ -581,6 +586,30 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         return this.workspaceService.workspace?.resource;
     }
 
+    onWillStop(): OnWillStopAction | undefined {
+        const { workspace } = this.workspaceService;
+        if (workspace && this.workspaceService.isUntitledWorkspace(workspace.resource)) {
+            return {
+                action: async () => {
+                    const shouldSaveFile = await new UntitledWorkspaceExitDialog({
+                        title: nls.localizeByDefault('Do you want to save your workspace configuration as a file?')
+                    }).open();
+                    if (shouldSaveFile === "Don't Save") {
+                        // TODO: Move this somewhere where it can be done more safely.
+                        // E.g. on start up, the first window should delete all untitled workspaces that it isn't using.
+                        return this.fileService.delete(this.workspaceService.workspace!.resource).then(() => true, () => true);
+                    } else if (shouldSaveFile === 'Save') {
+                        return this.saveWorkspaceAs();
+                    }
+                    return false; // If cancel, prevent exit.
+
+                },
+                reason: 'Untitled workspace.',
+                // Since deleting the workspace would hobble any future functionality, run this late.
+                priority: 100,
+            };
+        }
+    }
 }
 
 export namespace WorkspaceFrontendContribution {

@@ -24,7 +24,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
@@ -298,7 +298,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (this._workspace) {
             const displayName = this._workspace.name;
             if (this.isWorkspaceFile(this._workspace)) {
-                title = this.isUntitledWorkspace(this._workspace.resource) ? 'Untitled (Workspace)' : displayName.slice(0, displayName.lastIndexOf('.'));
+                title = this.isUntitledWorkspace(this._workspace.resource) ? nls.localizeByDefault('Untitled (Workspace)') : displayName.slice(0, displayName.lastIndexOf('.'));
             } else {
                 title = displayName;
             }
@@ -515,7 +515,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             this.setURLFragment('');
         }
 
-        window.location.reload(true);
+        this.windowService.reload();
     }
 
     protected openNewWindow(workspacePath: string): void {

@@ -74,6 +74,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
                     }
                 }
             }
+            vetoes.sort((a, b) => (a.priority ?? -Infinity) - (b.priority ?? -Infinity));
             if (vetoes.length === 0 && shouldConfirmExit === 'always') {
                 vetoes.push({ reason: 'application.confirmExit preference', action: () => confirmExit() });
             }
