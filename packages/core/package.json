@@ -164,9 +164,11 @@
     "clean": "theiaext clean",
     "compile": "theiaext compile",
     "generate-layout": "electron ./scripts/generate-layout",
+    "generate-shared": "node scripts/generate-shared.js",
     "lint": "theiaext lint",
-    "prepare": "node scripts/generate-shared.js",
+    "prepare": "yarn generate-shared",
     "test": "theiaext test",
+    "version": "yarn generate-shared",
     "watch": "theiaext watch"
   },
   "devDependencies": {
