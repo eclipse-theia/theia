@@ -462,6 +462,7 @@ export class SidePanelHandler {
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);
+            this.updateSashState(this.container, true);
             if (this.state.expansion === SidePanel.ExpansionState.expanded && !this.state.empty) {
                 // Update the lastPanelSize property
                 const size = this.getPanelSize();
@@ -472,6 +473,7 @@ export class SidePanelHandler {
             this.state.expansion = SidePanel.ExpansionState.collapsed;
         } else {
             container.removeClass(COLLAPSED_CLASS);
+            this.updateSashState(this.container, false);
             let size: number | undefined;
             if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
                 if (this.state.lastPanelSize) {
@@ -657,6 +659,17 @@ export class SidePanelHandler {
     protected onWidgetRemoved(sender: DockPanel, widget: Widget): void {
         this.tabBar.removeTab(widget.title);
         this.refresh();
+    }
+
+    protected updateSashState(sidePanelElement: Panel | null, sidePanelCollapsed: boolean): void {
+        if (sidePanelElement) {
+            // Hide the sash when the left/right side panel is collapsed
+            if (sidePanelElement.id === 'theia-left-content-panel' && sidePanelElement.node.nextElementSibling) {
+                sidePanelElement.node.nextElementSibling.classList.toggle('sash-hidden', sidePanelCollapsed);
+            } else if (sidePanelElement.id === 'theia-right-content-panel' && sidePanelElement.node.previousElementSibling) {
+                sidePanelElement.node.previousElementSibling.classList.toggle('sash-hidden', sidePanelCollapsed);
+            }
+        }
     }
 
 }
