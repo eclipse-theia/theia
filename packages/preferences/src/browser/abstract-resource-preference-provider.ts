@@ -49,10 +49,10 @@ export interface FilePreferenceProviderLocks {
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
-    protected preferences: { [key: string]: any } = {};
-    protected model: MonacoEditorModel | undefined;
+    protected preferences: Record<string, any> = {};
+    protected fileExists = false;
+    protected modelReference: monaco.editor.IReference<MonacoEditorModel> | undefined;
     protected readonly loading = new Deferred();
-    protected modelInitialized = false;
     protected readonly singleChangeLock = new Mutex();
     protected readonly transactionLock = new Mutex();
     protected pendingTransaction = new Deferred<boolean>();
@@ -78,32 +78,24 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
         await this.readPreferencesFromFile();
         this._ready.resolve();
-
-        const reference = await this.textModelService.createModelReference(uri);
-        if (this.toDispose.disposed) {
-            reference.dispose();
-            return;
-        }
-
-        this.model = reference.object;
         this.loading.resolve();
-        this.modelInitialized = true;
-
-        this.toDispose.push(reference);
-        this.toDispose.push(Disposable.create(() => this.model = undefined));
-
-        this.toDispose.push(this.model.onDidChangeContent(() => !this.transactionLock.isLocked() && this.readPreferences()));
-        this.toDispose.push(this.model.onDirtyChanged(() => !this.transactionLock.isLocked() && this.readPreferences()));
-        this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
-
-        this.toDispose.push(Disposable.create(() => this.reset()));
+        this.toDispose.pushAll([
+            this.fileService.watch(uri),
+            this.fileService.onDidFilesChange(e => {
+                if (e.contains(uri)) {
+                    this.readPreferencesFromFile();
+                }
+            }),
+            Disposable.create(() => this.disposeModel()),
+            Disposable.create(() => this.reset()),
+        ]);
     }
 
     protected abstract getUri(): URI;
     protected abstract getScope(): PreferenceScope;
 
     protected get valid(): boolean {
-        return this.modelInitialized ? !!this.model?.valid : Object.keys(this.preferences).length > 0;
+        return this.fileExists;
     }
 
     getConfigUri(): URI;
@@ -134,17 +126,18 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
         const locks = await this.acquireLocks();
         let shouldSave = Boolean(locks?.releaseTransaction);
+        const model = this.modelReference?.object;
         try {
             await this.loading.promise;
             let path: string[] | undefined;
-            if (!this.model || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
+            if (this.toDispose.disposed || !model || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
                 return false;
             }
             if (!locks) {
                 throw new CancellationError();
             }
             if (shouldSave) {
-                if (this.model.dirty) {
+                if (model.dirty) {
                     shouldSave = await this.handleDirtyEditor();
                 }
                 if (!shouldSave) {
@@ -153,7 +146,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
             const editOperations = this.getEditOperations(path, value);
             if (editOperations.length > 0) {
-                await this.workspace.applyBackgroundEdit(this.model, editOperations, false);
+                await this.workspace.applyBackgroundEdit(model, editOperations, false);
             }
             return this.pendingTransaction.promise;
         } catch (e) {
@@ -181,6 +174,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         });
         if (releaseTransactionPromise) {
             await this.pendingTransaction.promise; // Ensure previous transaction complete before starting a new one.
+            this.modelReference = await this.textModelService.createModelReference(this.getUri());
+            this.toDispose.push(this.modelReference);
             this.pendingTransaction = new Deferred();
         }
         // Wait to acquire locks
@@ -195,11 +190,12 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                     locks.releaseTransaction!(); // Release lock so that no new changes join this transaction.
                     let success = false;
                     try {
-                        await this.model?.save();
+                        await this.modelReference?.object.save();
                         success = true;
                     } finally {
-                        this.readPreferences();
+                        await this.readPreferencesFromFile();
                         await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.
+                        this.disposeModel();
                         this.pendingTransaction.resolve(success);
                     }
                 }));
@@ -212,9 +208,14 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         locks?.releaseChange();
     }
 
+    protected disposeModel(): void {
+        this.modelReference?.dispose();
+        this.modelReference = undefined;
+    }
+
     protected getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
-        const textModel = this.model!.textEditorModel;
-        const content = this.model!.getText().trim();
+        const textModel = this.modelReference!.object.textEditorModel;
+        const content = this.modelReference!.object.getText().trim();
         // Everything is already undefined - no need for changes.
         if (!content && value === undefined) {
             return [];
@@ -251,7 +252,15 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected async readPreferencesFromFile(): Promise<void> {
-        const content = await this.fileService.read(this.getUri()).catch(() => ({ value: '' }));
+        const content = await this.fileService.read(this.getUri())
+            .then(value => {
+                this.fileExists = true;
+                return value;
+            })
+            .catch(() => {
+                this.fileExists = false;
+                return { value: '' };
+            });
         this.readPreferencesFromContent(content.value);
     }
 
@@ -260,7 +269,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
      * or any other operation modifying the monaco model content.
      */
     protected readPreferences(): void {
-        const model = this.model;
+        const model = this.modelReference?.object;
         if (!model || model.dirty) {
             return;
         }
@@ -351,12 +360,12 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             ),
             saveAndRetry, open);
 
-        if (this.model) {
+        if (this.modelReference?.object) {
             if (msg === open) {
-                this.editorManager.open(new URI(this.model.uri));
+                this.editorManager.open(new URI(this.modelReference.object.uri));
                 return false;
             } else if (msg === saveAndRetry) {
-                await this.model.save();
+                await this.modelReference.object.save();
                 return true;
             }
         }
