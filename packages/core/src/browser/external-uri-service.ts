@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { environment } from '@theia/application-package/lib/environment';
 import { injectable } from 'inversify';
-import URI from '../common/uri';
 import { MaybePromise } from '../common/types';
+import URI from '../common/uri';
 import { Endpoint } from './endpoint';
 
 @injectable()
@@ -24,13 +25,17 @@ export class ExternalUriService {
 
     /**
      * Maps local to remote URLs.
-     * Should be no-op if the given URL is not a localhost URL.
+     * Should be no-op if the given URL is not a localhost URL or when not running in the browser.
      *
      * By default maps to an origin serving Theia.
      *
      * Use `parseLocalhost` to retrieve localhost address and port information.
      */
     resolve(uri: URI): MaybePromise<URI> {
+        if (environment.electron.is()) {
+            // nothing to resolve (window.location.hostname is empty)
+            return uri;
+        }
         const localhost = this.parseLocalhost(uri);
         if (localhost) {
             return this.toRemoteUrl(uri, localhost);
