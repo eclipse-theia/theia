@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Disposable, MaybeArray } from '@theia/core/lib/common';
+import { Disposable, MaybeArray, nls } from '@theia/core/lib/common';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget, codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer, LocationListRendererFactory } from '../location';
@@ -244,7 +244,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
         this.appendFiltersPanel();
 
-        this.appendCloseButton('Cancel');
+        this.appendCloseButton(nls.localizeByDefault('Cancel'));
         this.appendAcceptButton(this.getAcceptButtonLabel());
 
         this.addKeyListener(this.back, Key.ENTER, () => {
