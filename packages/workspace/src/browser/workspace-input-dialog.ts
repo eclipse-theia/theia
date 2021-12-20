@@ -49,8 +49,12 @@ export class WorkspaceInputDialog extends SingleTextInputDialog {
         const icon = document.createElement('i');
         icon.classList.add(...codiconArray('folder'));
         icon.style.marginRight = '0.5em';
+        icon.style.verticalAlign = 'middle';
         element.appendChild(icon);
-        element.appendChild(document.createTextNode(label));
+        const path = document.createElement('span');
+        path.style.verticalAlign = 'middle';
+        path.textContent = label;
+        element.appendChild(path);
         // Add the path and icon div before the `inputField`.
         this.contentNode.insertBefore(element, this.inputField);
     }
