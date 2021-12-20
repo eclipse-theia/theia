@@ -86,7 +86,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return this.configurations.isSectionName(firstSegment);
     }
 
-    protected getScope(): PreferenceScope {
+    getScope(): PreferenceScope {
         return PreferenceScope.Workspace;
     }
 

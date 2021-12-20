@@ -26,6 +26,8 @@ import { PreferencesContribution } from './preferences-contribution';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution';
+import { MonacoJSONCEditor } from './monaco-jsonc-editor';
+import { PreferenceContext, PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -40,6 +42,14 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
 
     bind(PreferencesJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(PreferencesJsonSchemaContribution);
+
+    bind(MonacoJSONCEditor).toSelf().inSingletonScope();
+    bind(PreferenceTransaction).toSelf();
+    bind(PreferenceTransactionFactory).toFactory(({ container }) => (context: PreferenceContext) => {
+        const child = container.createChild();
+        child.bind(PreferenceContext).toConstantValue(context);
+        return child.get(PreferenceTransaction);
+    });
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
