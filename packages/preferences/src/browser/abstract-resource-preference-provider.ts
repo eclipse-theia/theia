@@ -95,6 +95,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (this.toDispose.disposed || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
             return false;
         }
+        return this.doSetPreference(key, path, value);
+    }
+
+    protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
         if (!this.transaction?.open) {
             const current = this.transaction;
             this.transaction = this.transactionFactory(this);
