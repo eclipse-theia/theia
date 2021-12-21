@@ -37,6 +37,7 @@ import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
+import { Deferred } from '../../common/promise-util';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -1076,25 +1077,27 @@ export class ApplicationShell extends Widget {
         if (!current) {
             return undefined;
         }
-        await Promise.all([
+        return Promise.all([
             this.waitForActivation(current.id),
             waitForRevealed(current),
             this.pendingUpdates
-        ]);
-        return current;
+        ]).then(() => current, () => undefined);
     }
 
     waitForActivation(id: string): Promise<void> {
         if (this.activeWidget && this.activeWidget.id === id) {
             return Promise.resolve();
         }
-        return new Promise(resolve => {
-            const toDispose = this.onDidChangeActiveWidget(() => {
-                if (this.activeWidget && this.activeWidget.id === id) {
-                    toDispose.dispose();
-                    resolve();
-                }
-            });
+        const activation = new Deferred();
+        const success = this.onDidChangeActiveWidget(() => {
+            if (this.activeWidget && this.activeWidget.id === id) {
+                activation.resolve();
+            }
+        });
+        const failure = setTimeout(() => activation.reject(new Error(`Widget with id '${id}' failed to activate.`)), this.activationTimeout + 250);
+        return activation.promise.finally(() => {
+            success.dispose();
+            clearTimeout(failure);
         });
     }
 
