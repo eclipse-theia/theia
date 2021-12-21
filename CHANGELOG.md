@@ -1,4 +1,11 @@
 # Change Log
+## v1.22.0 - 1/??/2022
+
+[1.22.0 Milestone](https://github.com/eclipse-theia/theia/milestone/30)
+
+<a name="breaking_changes_1.22.0">[Breaking Changes:](#breaking_changes_1.22.0)</a>
+- [plugin] Removed deprecated fields `id` and `label` from `theia.Command`
+
 
 ## v1.21.0 - 12/16/2021
 
