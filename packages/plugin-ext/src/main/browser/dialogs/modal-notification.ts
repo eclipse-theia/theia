@@ -20,6 +20,7 @@ import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
 import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { nls } from '@theia/core/lib/common/nls';
 
 export enum MessageType {
     Error = 'error',
@@ -91,7 +92,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         if (actions.length <= 0) {
             this.appendAcceptButton();
         } else if (!actions.some(action => action.isCloseAffordance === true)) {
-            this.appendCloseButton('Close');
+            this.appendCloseButton(nls.localizeByDefault('Close'));
         }
 
         return messageNode;

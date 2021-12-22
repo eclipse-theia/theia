@@ -407,7 +407,7 @@ class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
         this.contentNode.appendChild(messageNode);
 
         this.appendCloseButton();
-        this.openButton = this.appendAcceptButton('Open');
+        this.openButton = this.appendAcceptButton(nls.localizeByDefault('Open'));
     }
 
     showOpenNewTabAskDialog(uri: string): void {

@@ -20,6 +20,7 @@ import { Command, CommandService } from '@theia/core/lib/common/command';
 import { AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as DOMPurify from '@theia/core/shared/dompurify';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class OpenUriCommandHandler {
@@ -85,7 +86,7 @@ class OpenNewTabDialog extends AbstractDialog<string> {
         this.contentNode.appendChild(messageNode);
 
         this.appendCloseButton();
-        this.openButton = this.appendAcceptButton('Open');
+        this.openButton = this.appendAcceptButton(nls.localizeByDefault('Open'));
     }
 
     showOpenNewTabDialog(uri: string): void {
