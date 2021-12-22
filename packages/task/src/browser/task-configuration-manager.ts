@@ -225,8 +225,9 @@ export class TaskConfigurationManager {
 
     protected readonly toDisposeOnDelegateChange = new DisposableCollection();
     protected updateWorkspaceModel(): void {
-        const newDelegate = this.workspaceService.saved ? this.workspacePreferences : this.folderPreferences;
-        const effectiveScope = this.workspaceService.saved ? TaskScope.Workspace : this.workspaceService.tryGetRoots()[0]?.resource.toString();
+        const isFolderWorkspace = this.workspaceService.opened && !this.workspaceService.saved;
+        const newDelegate = isFolderWorkspace ? this.folderPreferences : this.workspacePreferences;
+        const effectiveScope = isFolderWorkspace ? this.workspaceService.tryGetRoots()[0]?.resource.toString() : TaskScope.Workspace;
         if (newDelegate !== this.workspaceDelegate) {
             this.workspaceDelegate = newDelegate;
             this.toDisposeOnDelegateChange.dispose();
