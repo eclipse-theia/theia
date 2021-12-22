@@ -514,17 +514,17 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
             commandId: CommonCommands.CLOSE_TAB.id,
-            label: 'Close',
+            label: nls.localizeByDefault('Close'),
             order: 'a'
         });
         registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
-            label: 'Close Others',
+            label: nls.localizeByDefault('Close Others'),
             order: 'b'
         });
         registry.registerMenuAction(OpenEditorsContextMenu.MODIFICATION, {
             commandId: CommonCommands.CLOSE_ALL_MAIN_TABS.id,
-            label: 'Close All',
+            label: nls.localizeByDefault('Close All'),
             order: 'c'
         });
     }
