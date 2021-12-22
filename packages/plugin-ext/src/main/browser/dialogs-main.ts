@@ -52,14 +52,14 @@ export class DialogsMainImpl implements DialogsMain {
             } catch {
                 rootStat = undefined;
             }
-        }
 
-        // Try to use as root the parent folder of existing file URI/non existing URI
-        if (rootStat && !rootStat.isDirectory || !rootStat) {
-            try {
-                rootStat = await this.fileService.resolve(new URI(defaultUri).parent);
-            } catch {
-                rootStat = undefined;
+            // Try to use as root the parent folder of existing file URI/non existing URI
+            if (rootStat && !rootStat.isDirectory || !rootStat) {
+                try {
+                    rootStat = await this.fileService.resolve(new URI(defaultUri).parent);
+                } catch {
+                    rootStat = undefined;
+                }
             }
         }
 
