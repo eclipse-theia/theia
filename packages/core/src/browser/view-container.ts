@@ -580,6 +580,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (this.titleOptions) {
             this.menuRegistry.registerMenuAction([...SIDE_PANEL_TOOLBAR_CONTEXT_MENU, 'navigation'], action);
         }
+
+        ViewContainer.updateSashState(SashType.TopSash, part.node.previousElementSibling, part.collapsed);
+        ViewContainer.updateSashState(SashType.BottomSash, part.node.nextElementSibling, part.collapsed);
     }
 
     protected unregisterPart(part: ViewContainerPart): void {
@@ -885,6 +888,27 @@ export namespace ViewContainer {
         }
         return 'vertical';
     }
+
+    export function updateSashState(sashType: SashType, sashElement: Element | null, activeContainerCollapsed: boolean): void {
+        if (sashElement && sashElement.className.includes('p-SplitPanel-handle')) {
+            // Hide the sash when the active `horizontal` container in the left panel is collapsed
+            sashElement.classList.toggle('sash-hidden', activeContainerCollapsed);
+
+            let adjacentContainer: Element | null;
+            if (sashType === SashType.TopSash) {
+                adjacentContainer = sashElement.previousElementSibling;
+            } else {
+                adjacentContainer = sashElement.nextElementSibling;
+            }
+
+            // Sash should only appear when the following two conditions are met:
+            //    1.  the active `horizontal` container is expanded
+            //    2.  the container that is above/below the active `horizontal` container is also expanded
+            if (!activeContainerCollapsed && adjacentContainer) {
+                sashElement.classList.toggle('sash-hidden', adjacentContainer.className.includes('collapsed'));
+            }
+        }
+    }
 }
 
 /**
@@ -1001,8 +1025,8 @@ export class ViewContainerPart extends BaseWidget {
         this.node.classList.toggle('collapsed', collapsed);
 
         // Update the sashes for the active `horizontal` container when the container is collapsed/expanded
-        this.updateSashState(SashType.TopSash, this.node.previousElementSibling, collapsed);
-        this.updateSashState(SashType.BottomSash, this.node.nextElementSibling, collapsed);
+        ViewContainer.updateSashState(SashType.TopSash, this.node.previousElementSibling, collapsed);
+        ViewContainer.updateSashState(SashType.BottomSash, this.node.nextElementSibling, collapsed);
 
         if (collapsed && this.wrapped.node.contains(document.activeElement)) {
             this.header.focus();
@@ -1237,27 +1261,6 @@ export class ViewContainerPart extends BaseWidget {
             this.header.focus();
         } else {
             this.wrapped.activate();
-        }
-    }
-
-    protected updateSashState(sashType: SashType, sashElement: Element | null, activeContainerCollapsed: boolean): void {
-        if (sashElement && sashElement.className.includes('p-SplitPanel-handle')) {
-            // Hide the sash when the active `horizontal` container in the left panel is collapsed
-            sashElement.classList.toggle('sash-hidden', activeContainerCollapsed);
-
-            let adjacentContainer: Element | null;
-            if (sashType === SashType.TopSash) {
-                adjacentContainer = sashElement.previousElementSibling;
-            } else {
-                adjacentContainer = sashElement.nextElementSibling;
-            }
-
-            // Sash should only appear when the following two conditions are met:
-            //    1.  the active `horizontal` container is expanded
-            //    2.  the container that is above/below the active `horizontal` container is also expanded
-            if (!activeContainerCollapsed && adjacentContainer) {
-                sashElement.classList.toggle('sash-hidden', adjacentContainer.className.includes('collapsed'));
-            }
         }
     }
 }
