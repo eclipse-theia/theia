@@ -30,22 +30,43 @@ export interface OnWillConcludeEvent<T> extends WaitUntilEvent {
 }
 
 @injectable()
+/**
+ * Represents a batch of interactions with an underlying resource.
+ */
 export abstract class Transaction<Arguments extends unknown[], Result = unknown, Status = unknown> {
     protected _open = true;
+    /**
+     * Whether the transaction is still accepting new interactions.
+     * Enqueueing an action when the Transaction is no longer open will throw an error.
+     */
     get open(): boolean {
         return this._open;
     }
     protected _result = new Deferred<Result | false>();
+    /**
+     * The status of the transaction when complete.
+     */
     get result(): Promise<Result | false> {
         return this._result.promise;
     }
-    protected readonly queue = new Mutex(new CancellationError);
+    /**
+     * The transaction will self-dispose when the queue is empty, once at least one action has been processed.
+     */
+    protected readonly queue = new Mutex(new CancellationError());
     protected readonly onWillConcludeEmitter = new Emitter<OnWillConcludeEvent<Status>>();
+    /**
+     * An event fired when the transaction is wrapping up.
+     * Consumers can call `waitUntil` on the event to delay the resolution of the `result` Promise.
+     */
     get onWillConclude(): Event<OnWillConcludeEvent<Status>> {
         return this.onWillConcludeEmitter.event;
     }
 
     protected status = new Deferred<Status>();
+    /**
+     * Whether any actions have been added to the transaction.
+     * The Transaction will not self-dispose until at least one action has been performed.
+     */
     protected inUse = false;
 
     @postConstruct()
@@ -61,6 +82,9 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
         }
     }
 
+    /**
+     * @returns a promise reflecting the result of performing an action. Typically the promise will not resolve until the whole transaction is complete.
+     */
     async enqueueAction(...args: Arguments): Promise<Result | false> {
         if (this._open) {
             let release: MutexInterface.Releaser | undefined;
@@ -106,8 +130,23 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
         this.conclude();
     }
 
+    /**
+     * Runs any code necessary to initialize the batch of interactions. No interaction will be run until the setup is complete.
+     *
+     * @returns a representation of the success of setup specific to a given transaction implementation.
+     */
     protected abstract setUp(): MaybePromise<Status>;
+    /**
+     * Performs a single interaction
+     *
+     * @returns the result of that interaction, specific to a given transaction type.
+     */
     protected abstract act(...args: Arguments): MaybePromise<Result>;
+    /**
+     * Runs any code necessary to complete a transaction and release any resources it holds.
+     *
+     * @returns implementation-specific information about the success of the transaction. Will be used as the final status of the transaction.
+     */
     protected abstract tearDown(): MaybePromise<Result>;
 }
 
@@ -118,7 +157,7 @@ export interface PreferenceContext {
 export const PreferenceContext = Symbol('PreferenceContext');
 
 @injectable()
-export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean, boolean> {
+export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
     reference: monaco.editor.IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
