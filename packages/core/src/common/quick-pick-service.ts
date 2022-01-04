@@ -312,7 +312,7 @@ export interface QuickInputService {
  * @param filter the filter to search for.
  * @returns the list of quick pick items that satisfy the filter.
  */
-export function filterItems(items: QuickPickItemOrSeparator[], filter: string): QuickPickItemOrSeparator[] {
+export function filterItems<T extends QuickPickItemOrSeparator>(items: T[], filter: string): T[] {
     filter = filter.trim().toLowerCase();
 
     if (filter.length === 0) {
@@ -324,7 +324,7 @@ export function filterItems(items: QuickPickItemOrSeparator[], filter: string): 
         return items;
     }
 
-    const filteredItems: QuickPickItemOrSeparator[] = [];
+    const filteredItems: T[] = [];
     for (const item of items) {
         if (item.type === 'separator') {
             filteredItems.push(item);

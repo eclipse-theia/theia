@@ -118,6 +118,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         this.trackVisibleWidget(TERMINAL_WIDGET_FACTORY_ID, { panelId: 'workbench.panel.terminal' });
         // TODO workbench.panel.comments - Theia does not have a proper comments view yet
 
+        this.quickView?.registerContainer(EXPLORER_VIEW_CONTAINER_ID, 'left', 'Explorer');
+        this.quickView?.registerContainer(SCM_VIEW_CONTAINER_ID, 'left', 'Source Control');
+        this.quickView?.registerContainer(SEARCH_VIEW_CONTAINER_ID, 'left', 'Search');
+
+        this.quickView?.registerContainer('explorer', 'left', 'Explorer');
+        this.quickView?.registerContainer('scm', 'left', 'Source Control');
+        this.quickView?.registerContainer('search', 'left', 'Search');
+        this.quickView?.registerContainer('debug', 'left', 'Debug');
+
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
 
@@ -279,8 +288,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             commandId: toggleCommandId,
             label: options.label
         }));
+        toDispose.push(this.quickView?.registerContainer(id, location, options.label));
         toDispose.push(this.quickView?.registerItem({
             label: options.label,
+            viewId: id,
+            location,
             open: async () => {
                 const widget = await this.openViewContainer(id);
                 if (widget) {
@@ -331,6 +343,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         toDispose.push(this.quickView?.registerItem({
             label: view.name,
+            viewId: view.id,
+            location: viewContainerId,
             when: view.when,
             open: () => this.openView(view.id, { activate: true })
         }));
@@ -822,7 +836,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             if (view.sideArea !== undefined) {
                 toDispose.pushAll([
                     this.shell.onDidAddWidget(w => {
-                        if (w === widget) {
+                        if ((w as Widget) === widget) {
                             this.updateVisibleWidget(widget, view);
                         }
                     })

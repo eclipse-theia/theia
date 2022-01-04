@@ -134,6 +134,12 @@ interface WidgetDragState {
     leaveTimeout?: number;
 }
 
+export const WidgetArea = Symbol('WidgetArea');
+
+export type AreaWidget = Widget & {
+    [WidgetArea]: ApplicationShell.Area;
+};
+
 /**
  * The application shell manages the top-level widgets of the application. Use this class to
  * add, remove, or activate a widget.
@@ -189,16 +195,20 @@ export class ApplicationShell extends Widget {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
+    protected readonly onDidAddWidgetEmitter = new Emitter<AreaWidget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
-    protected fireDidAddWidget(widget: Widget): void {
-        this.onDidAddWidgetEmitter.fire(widget);
+    protected fireDidAddWidget(widget: Widget, area: ApplicationShell.Area): void {
+        const areaWidget = widget as AreaWidget;
+        areaWidget[WidgetArea] = area;
+        this.onDidAddWidgetEmitter.fire(areaWidget);
     }
 
-    protected readonly onDidRemoveWidgetEmitter = new Emitter<Widget>();
+    protected readonly onDidRemoveWidgetEmitter = new Emitter<AreaWidget>();
     readonly onDidRemoveWidget = this.onDidRemoveWidgetEmitter.event;
-    protected fireDidRemoveWidget(widget: Widget): void {
-        this.onDidRemoveWidgetEmitter.fire(widget);
+    protected fireDidRemoveWidget(widget: Widget, area: ApplicationShell.Area): void {
+        const areaWidget = widget as AreaWidget;
+        areaWidget[WidgetArea] = area;
+        this.onDidRemoveWidgetEmitter.fire(areaWidget);
     }
 
     protected readonly onDidChangeActiveWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
@@ -266,13 +276,13 @@ export class ApplicationShell extends Widget {
 
         this.leftPanelHandler = this.sidePanelHandlerFactory();
         this.leftPanelHandler.create('left', this.options.leftPanel);
-        this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+        this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget, 'left'));
+        this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget, 'left'));
 
         this.rightPanelHandler = this.sidePanelHandlerFactory();
         this.rightPanelHandler.create('right', this.options.rightPanel);
-        this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+        this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget, 'right'));
+        this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget, 'right'));
 
         this.layout = this.createLayout();
 
@@ -483,8 +493,8 @@ export class ApplicationShell extends Widget {
             spacing: 0
         }, this.corePreferences);
         dockPanel.id = MAIN_AREA_ID;
-        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget, 'main'));
+        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget, 'main'));
         return dockPanel;
     }
 
@@ -515,8 +525,8 @@ export class ApplicationShell extends Widget {
             this.mainPanel.overlay.hide(0);
         });
         dockPanel.hide();
-        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
-        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget, 'bottom'));
+        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget, 'bottom'));
         return dockPanel;
     }
 
