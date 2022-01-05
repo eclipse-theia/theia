@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     PreferenceService, ContextMenuRenderer, PreferenceInspection,
-    PreferenceScope, PreferenceProvider, MarkdownRenderer, codicon, animationFrame
+    PreferenceScope, PreferenceProvider, codicon, animationFrame
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
@@ -28,6 +28,9 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import * as markdownit from 'markdown-it';
+import * as DOMPurify from '@theia/core/shared/dompurify';
+import URI from '@theia/core/lib/common/uri';
 
 export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;
@@ -162,7 +165,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected interactable: InteractableType;
     protected inspection: PreferenceInspection<ValueType> | undefined;
     protected isModifiedFromDefault = false;
-    protected markdownRenderer: MarkdownRenderer;
+    protected markdownRenderer: markdownit;
 
     @postConstruct()
     protected init(): void {
@@ -177,75 +180,60 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         this.inspection = this.preferenceService.inspect<ValueType>(this.id, this.scopeTracker.currentScope.uri);
     }
 
-    protected buildMarkdownRenderer(): MarkdownRenderer {
-        return new MarkdownRenderer()
-            .modify('a', link => {
-                const href = link.href;
-                link.href = '#';
-                link.title = href;
-                this.setClickListener(link, e => this.openLink(e, href));
-            })
-            .modify('code', code => {
-                const innerText = code.innerText;
-                // Linked preferences always start and end with `#`
-                if (innerText.startsWith('#') && innerText.endsWith('#')) {
-                    const preferenceId = innerText.substring(1, innerText.length - 1);
-                    const preferenceNode = this.model.getNodeFromPreferenceId(preferenceId);
-                    if (preferenceNode) {
-                        let name = this.labelProvider.getName(preferenceNode);
-                        const prefix = this.labelProvider.getPrefix(preferenceNode, true);
-                        if (prefix) {
-                            name = prefix + name;
-                        }
-                        const link = document.createElement('a');
-                        this.setClickListener(link, e => this.selectPreference(e, preferenceId));
-                        link.innerText = name;
-                        link.title = `#${preferenceId}`;
-                        link.href = '#';
-                        return link;
-                    } else {
-                        console.warn(`Linked preference "${preferenceId}" not found. Source: "${this.preferenceNode.preferenceId}"`);
+    protected buildMarkdownRenderer(): markdownit {
+        const engine = markdownit();
+        const inlineCode = engine.renderer.rules.code_inline;
+
+        engine.renderer.rules.code_inline = (tokens, idx, options, env, self) => {
+            const token = tokens[idx];
+            const content = token.content;
+            if (content.startsWith('#') && content.endsWith('#')) {
+                const preferenceId = content.substring(1, content.length - 1);
+                const preferenceNode = this.model.getNodeFromPreferenceId(preferenceId);
+                if (preferenceNode) {
+                    let name = this.labelProvider.getName(preferenceNode);
+                    const prefix = this.labelProvider.getPrefix(preferenceNode, true);
+                    if (prefix) {
+                        name = prefix + name;
                     }
+                    return `<a title="${preferenceId}" href="preference:${preferenceId}">${name}</a>`;
+                } else {
+                    console.warn(`Linked preference "${preferenceId}" not found. Source: "${this.preferenceNode.preferenceId}"`);
                 }
-                return code;
-            });
+            }
+            return inlineCode ? inlineCode(tokens, idx, options, env, self) : '';
+        };
+        return engine;
     }
 
-    protected setClickListener(element: HTMLElement, callback: (event: MouseEvent) => void): void {
-        // onclick only handles left button clicks
-        // onauxclick handles all other cases
-        element.onclick = callback;
-        element.onauxclick = callback;
-        // Disables showing a context menu when right clicking
-        element.oncontextmenu = () => false;
-    }
-
-    protected openLink(event: MouseEvent, href: string): void {
-        event.preventDefault();
-        event.stopPropagation();
-        // Exclude right click
-        if (event.button < 2) {
-            // Opens link in external browser
-            this.windowService.openNewWindow(href, { external: true });
+    protected openLink(event: MouseEvent): void {
+        if (event.target instanceof HTMLAnchorElement) {
+            event.preventDefault();
+            event.stopPropagation();
+            // Exclude right click
+            if (event.button < 2) {
+                const uri = new URI(event.target.href);
+                if (uri.scheme === 'preference') {
+                    this.selectPreference(uri.path.toString());
+                } else {
+                    // Opens link in external browser
+                    this.windowService.openNewWindow(event.target.href, { external: true });
+                }
+            }
         }
     }
 
-    protected async selectPreference(event: MouseEvent, preferenceId: string): Promise<void> {
-        event.preventDefault();
-        event.stopPropagation();
-        // Exclude right click
-        if (event.button < 2) {
-            // Selects the rendered html preference node that does not belong to the commonly used group
-            const selector = `li[data-pref-id="${preferenceId}"]:not([data-node-id^="commonly-used@"])`;
-            const element = document.querySelector(selector);
-            if (element) {
-                if (element.classList.contains('hidden')) {
-                    // We clear the search term as we have clicked on a hidden preference
-                    await this.searchbar.updateSearchTerm('');
-                    await animationFrame();
-                }
-                element.scrollIntoView();
+    protected async selectPreference(preferenceId: string): Promise<void> {
+        // Selects the rendered html preference node that does not belong to the commonly used group
+        const selector = `li[data-pref-id="${preferenceId}"]:not([data-node-id^="commonly-used@"])`;
+        const element = document.querySelector(selector);
+        if (element) {
+            if (element.classList.contains('hidden')) {
+                // We clear the search term as we have clicked on a hidden preference
+                await this.searchbar.updateSearchTerm('');
+                await animationFrame();
             }
+            element.scrollIntoView();
         }
     }
 
@@ -289,7 +277,12 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             descriptionWrapper.classList.add('pref-description');
             if (markdownDescription) {
                 const renderedDescription = this.markdownRenderer.renderInline(markdownDescription);
-                descriptionWrapper.appendChild(renderedDescription);
+                descriptionWrapper.onauxclick = this.openLink.bind(this);
+                descriptionWrapper.onclick = this.openLink.bind(this);
+                descriptionWrapper.oncontextmenu = () => false;
+                descriptionWrapper.innerHTML = DOMPurify.sanitize(renderedDescription, {
+                    ALLOW_UNKNOWN_PROTOCOLS: true
+                });
             } else if (description) {
                 descriptionWrapper.textContent = description;
             }
