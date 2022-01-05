@@ -436,8 +436,23 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     async getUntitledWorkspace(): Promise<URI> {
         const configDirURI = await this.envVariableServer.getConfigDirUri();
-        const semiRandomID = (Date.now() + Math.floor(Math.random() * 1000)).toString();
-        return new URI(configDirURI).resolve(`workspaces/Untitled-${semiRandomID}.${THEIA_EXT}`);
+        let uri;
+        let attempts = 0;
+        do {
+            attempts++;
+            uri = new URI(configDirURI).resolve(`workspaces/Untitled-${Math.round(Math.random() * 1000)}.${THEIA_EXT}`);
+            if (attempts === 10) {
+                this.messageService.warn(nls.localize(
+                    'theia/workspace-service/untitled-cleanup',
+                    'There appear to be many untitled workspace files. Please check {0} and remove any unused files.',
+                    new URI(configDirURI).resolve('workspaces').path.toString())
+                );
+            }
+            if (attempts === 50) {
+                throw new Error('Workspace Service: too many attempts to find unused filename.');
+            }
+        } while (await this.fileService.exists(uri));
+        return uri;
     }
 
     protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
@@ -583,7 +598,12 @@ export class WorkspaceService implements FrontendApplicationContribution {
         Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
         stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData));
         await this.server.setMostRecentlyUsedWorkspace(resource.toString());
+        // If saving a workspace based on an untitled workspace, delete the old file.
+        const toDelete = this.isUntitledWorkspace(this.workspace?.resource) && this.workspace!.resource;
         await this.setWorkspace(stat);
+        if (toDelete && stat && !toDelete.isEqual(stat.resource)) {
+            await this.fileService.delete(toDelete).catch(() => { });
+        }
         this.onWorkspaceLocationChangedEmitter.fire(stat);
     }
 
@@ -671,8 +691,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return uri.path.ext === `.${THEIA_EXT}` || uri.path.ext === `.${VSCODE_EXT}`;
     }
 
-    isUntitledWorkspace(candidate: URI): boolean {
-        return this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+    isUntitledWorkspace(candidate?: URI): boolean {
+        return !!candidate && this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
     }
 
     /**
