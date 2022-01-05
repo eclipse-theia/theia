@@ -23,8 +23,10 @@ import { ClipboardService } from '../../browser/clipboard-service';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';
 import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-provider';
 import { bindWindowPreferences } from './electron-window-preferences';
+import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
+import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ElectronMainWindowService).toDynamicValue(context =>
         ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
     ).inSingletonScope();
@@ -32,4 +34,5 @@ export default new ContainerModule(bind => {
     bind(WindowService).to(ElectronWindowService).inSingletonScope();
     bind(FrontendApplicationContribution).toService(WindowService);
     bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
+    rebind(FrontendApplicationStateService).to(ElectronFrontendApplicationStateService).inSingletonScope();
 });
