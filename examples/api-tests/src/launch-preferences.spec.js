@@ -38,6 +38,7 @@ describe('Launch Preferences', function () {
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
     const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
+    const { waitForEvent } = require('@theia/core/lib/common/promise-util');
 
     const container = window.theia.container;
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
@@ -443,27 +444,11 @@ describe('Launch Preferences', function () {
                     const provider = findProvider(uri);
                     try {
                         if (provider) {
-                            const original = provider['readPreferencesFromContent'];
-                            try {
-                                await new Promise(resolve => {
-                                    if (!provider['valid']) {
-                                        return resolve();
-                                    }
-                                    const beginningPreferences = provider['preferences'];
-                                    const timeout = setTimeout(() => console.log("I'm still waiting on an event from this file...", uri.path.toString(), beginningPreferences), 3000);
-                                    const check = () => {
-                                        if (provider && !provider['valid']) {
-                                            clearTimeout(timeout);
-                                            resolve();
-                                        } else {
-                                            console.log('Got a change event, but the provider was still valid.', uri.path.toString());
-                                        }
-                                    };
-                                    provider['readPreferencesFromContent'] = (content) => { check(); return original.bind(provider)(content); };
-                                });
-                            } finally {
-                                provider['readPreferencesFromContent'] = original;
+                            if (provider.valid) {
+                                await waitForEvent(provider.onDidChangeValidity, 5000);
                             }
+                            await provider['readPreferencesFromFile']();
+                            await provider['fireDidPreferencesChanged']();
                         } else {
                             console.log('Unable to find provider for', uri.path.toString());
                         }

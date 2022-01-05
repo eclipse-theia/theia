@@ -26,14 +26,27 @@ import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/pr
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
+import { Emitter, Event } from '@theia/core';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
     protected preferences: Record<string, any> = {};
-    protected fileExists = false;
+    protected _fileExists = false;
     protected readonly loading = new Deferred();
     protected transaction: PreferenceTransaction | undefined;
+    protected readonly onDidChangeValidityEmitter = new Emitter<boolean>();
+
+    set fileExists(exists: boolean) {
+        if (exists !== this._fileExists) {
+            this._fileExists = exists;
+            this.onDidChangeValidityEmitter.fire(exists);
+        }
+    }
+
+    get onDidChangeValidity(): Event<boolean> {
+        return this.onDidChangeValidityEmitter.event;
+    }
 
     @inject(PreferenceTransactionFactory) protected readonly transactionFactory: PreferenceTransactionFactory;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
@@ -61,8 +74,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected abstract getUri(): URI;
     abstract getScope(): PreferenceScope;
 
-    protected get valid(): boolean {
-        return this.fileExists;
+    get valid(): boolean {
+        return this._fileExists;
     }
 
     getConfigUri(): URI;
@@ -113,7 +126,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             this.toDispose.push(this.transaction);
             await current?.result;
         }
-        return this.transaction?.enqueueAction(key, path, value);
+        return this.transaction.enqueueAction(key, path, value);
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
