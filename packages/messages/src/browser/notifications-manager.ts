@@ -276,8 +276,10 @@ export class NotificationManager extends MessageClient {
         if (cancellationToken.isCancellationRequested) {
             this.clear(messageId);
         } else {
-            notification.message = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` :
-                originalMessage.text || update?.message || notification.message;
+            const textMessage = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text || update?.message;
+            if (textMessage) {
+                notification.message = this.contentRenderer.renderMessage(textMessage);
+            }
             notification.progress = this.toPlainProgress(update) || notification.progress;
         }
         this.fireUpdatedEvent();
