@@ -549,6 +549,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return false;
     }
 
+    /**
+     * `true` if the current workspace is configured using a configuration file.
+     *
+     * `false` if there is no workspace or the workspace is simply a folder.
+     */
     get saved(): boolean {
         return !!this._workspace && !this._workspace.isDirectory;
     }
