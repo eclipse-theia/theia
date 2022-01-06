@@ -458,11 +458,11 @@ export class SidePanelHandler {
         const currentTitle = tabBar.currentTitle;
         // eslint-disable-next-line no-null/no-null
         const hideDockPanel = currentTitle === null;
+        this.updateSashState(this.container, hideDockPanel);
         let relativeSizes: number[] | undefined;
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);
-            this.updateSashState(this.container, true);
             if (this.state.expansion === SidePanel.ExpansionState.expanded && !this.state.empty) {
                 // Update the lastPanelSize property
                 const size = this.getPanelSize();
@@ -473,7 +473,6 @@ export class SidePanelHandler {
             this.state.expansion = SidePanel.ExpansionState.collapsed;
         } else {
             container.removeClass(COLLAPSED_CLASS);
-            this.updateSashState(this.container, false);
             let size: number | undefined;
             if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
                 if (this.state.lastPanelSize) {
