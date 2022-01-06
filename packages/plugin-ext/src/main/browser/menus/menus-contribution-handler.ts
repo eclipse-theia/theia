@@ -242,14 +242,10 @@ export class MenusContributionPointHandler {
     }
 
     protected registerViewTitleAction(location: string, action: Menu): Disposable {
-        return this.registerTitleAction(location, { ...action, when: undefined }, {
+        return this.registerTitleAction(location, action, {
             execute: widget => widget instanceof PluginViewWidget && this.commands.executeCommand(action.command!),
-            isEnabled: widget => widget instanceof PluginViewWidget &&
-                this.viewContextKeys.with({ view: widget.options.viewId }, () =>
-                    this.commands.isEnabled(action.command!) && this.viewContextKeys.match(action.when)),
-            isVisible: widget => widget instanceof PluginViewWidget &&
-                this.viewContextKeys.with({ view: widget.options.viewId }, () =>
-                    this.commands.isVisible(action.command!) && this.viewContextKeys.match(action.when))
+            isEnabled: widget => widget instanceof PluginViewWidget && this.commands.isEnabled(action.command!),
+            isVisible: widget => widget instanceof PluginViewWidget && this.commands.isVisible(action.command!),
         });
     }
 

@@ -62,7 +62,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { bindCorePreferences } from './core-preferences';
-import { ContextKeyService } from './context-key-service';
+import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
@@ -221,7 +221,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
 
-    bind(ContextKeyService).toSelf().inSingletonScope();
+    bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);

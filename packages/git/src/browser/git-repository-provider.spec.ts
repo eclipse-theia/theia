@@ -36,7 +36,7 @@ import * as chai from 'chai';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmContextKeyService } from '@theia/scm/lib/browser/scm-context-key-service';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService, ContextKeyServiceDummyImpl } from '@theia/core/lib/browser/context-key-service';
 import { GitScmProvider } from './git-scm-provider';
 import { createGitScmProviderFactory } from './git-frontend-module';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -98,7 +98,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(ScmService).toSelf().inSingletonScope();
         testContainer.bind(GitScmProvider.Factory).toFactory(createGitScmProviderFactory);
         testContainer.bind(ScmContextKeyService).toSelf().inSingletonScope();
-        testContainer.bind(ContextKeyService).toSelf().inSingletonScope();
+        testContainer.bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
         testContainer.bind(GitCommitMessageValidator).toSelf().inSingletonScope();
         testContainer.bind(EditorManager).toConstantValue(<EditorManager>{});
         testContainer.bind(GitErrorHandler).toConstantValue(<GitErrorHandler>{});
