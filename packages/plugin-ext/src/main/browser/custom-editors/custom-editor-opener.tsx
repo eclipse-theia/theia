@@ -16,7 +16,7 @@
 
 import { inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ApplicationShell, OpenerOptions, OpenHandler, Widget, WidgetManager } from '@theia/core/lib/browser';
+import { ApplicationShell, OpenHandler, Widget, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import * as glob from './glob';
 import { CustomEditorWidget } from './custom-editor-widget';
@@ -62,7 +62,7 @@ export class CustomEditorOpener implements OpenHandler {
     }
 
     protected readonly pendingWidgetPromises = new Map<string, Promise<CustomEditorWidget>>();
-    async open(uri: URI, options?: OpenerOptions): Promise<Widget | undefined> {
+    async open(uri: URI, options?: WidgetOpenerOptions): Promise<Widget | undefined> {
         let widget: CustomEditorWidget | undefined;
         const widgets = this.widgetManager.getWidgets(CustomEditorWidget.FACTORY_ID) as CustomEditorWidget[];
         widget = widgets.find(w => w.viewType === this.editor.viewType && w.resource.toString() === uri.toString());
@@ -85,6 +85,11 @@ export class CustomEditorOpener implements OpenHandler {
                 widget.viewType = this.editor.viewType;
                 widget.resource = uri;
                 this.onDidOpenCustomEditorEmitter.fire(widget);
+                if (options !== undefined) {
+                    if (!widget.isAttached) {
+                        this.shell.addWidget(widget, options.widgetOptions || { area: 'main' });
+                    }
+                }
             }
         }
         return widget;

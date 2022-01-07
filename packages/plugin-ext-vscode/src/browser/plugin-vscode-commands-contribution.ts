@@ -179,12 +179,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }
 
         if (openHandler) {
-            const widget = await openHandler.open(uri, editorOptions);
-            if (widget instanceof Widget) {
-                if (!widget.isAttached) {
-                    await this.shell.addWidget(widget, editorOptions?.widgetOptions);
-                }
-            }
+            await openHandler.open(uri, editorOptions);
             return true;
         }
 
