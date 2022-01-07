@@ -81,7 +81,7 @@ const codeEditorPreferenceProperties = {
         'markdownDescription': nls.localizeByDefault('The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.')
     },
     'editor.defaultFormatter': {
-        'type': 'string',
+        'type': ['string', 'null'],
         'default': null,
         'description': 'Default formatter.'
     },
@@ -320,7 +320,7 @@ const codeEditorPreferenceProperties = {
     'editor.codeLensFontFamily': {
         'description': nls.localizeByDefault('Controls the font family for CodeLens.'),
         'type': 'string',
-        'default': true
+        'default': ''
     },
     'editor.codeLensFontSize': {
         'type': 'integer',

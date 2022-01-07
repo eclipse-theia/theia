@@ -28,6 +28,7 @@ import { bindPreferenceConfigurations, PreferenceConfigurations } from './prefer
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 import { Mutable } from '../../common/types';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { JSONValue } from '@phosphor/coreutils';
 
 /**
  * @deprecated since 1.13.0 import from @theia/core/lib/browser/preferences/preference-language-override-service.
@@ -241,7 +242,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, oldValue, newValue, scope, domain };
     }
 
-    protected getDefaultValue(property: PreferenceItem): any {
+    getDefaultValue(property: PreferenceItem): JSONValue {
         if (property.defaultValue !== undefined) {
             return property.defaultValue;
         }

@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { IJSONSchema } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
 
 export interface PreferenceSchema {
@@ -61,7 +62,9 @@ export interface PreferenceDataSchema {
 
 export interface PreferenceItem {
     type?: JsonType | JsonType[];
+    anyOf?: IJSONSchema[];
     minimum?: number;
+    maximum?: number;
     /**
      * content assist (UI) default value
      */
