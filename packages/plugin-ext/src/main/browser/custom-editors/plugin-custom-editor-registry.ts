@@ -23,14 +23,14 @@ import { CommandRegistry, Emitter, MenuModelRegistry } from '@theia/core';
 import { SelectionService } from '@theia/core/lib/common';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { NavigatorContextMenu } from '@theia/navigator/lib//browser/navigator-contribution';
-import { ApplicationShell, DefaultOpenerService, WidgetManager } from '@theia/core/lib/browser';
+import { ApplicationShell, DefaultOpenerService, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
 @injectable()
 export class PluginCustomEditorRegistry {
     private readonly editors = new Map<string, CustomEditor>();
     private readonly pendingEditors = new Set<CustomEditorWidget>();
-    private readonly resolvers = new Map<string, (widget: CustomEditorWidget) => void>();
+    private readonly resolvers = new Map<string, (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => void>();
 
     private readonly onWillOpenCustomEditorEmitter = new Emitter<string>();
     readonly onWillOpenCustomEditor = this.onWillOpenCustomEditorEmitter.event;
@@ -109,22 +109,22 @@ export class PluginCustomEditorRegistry {
             )
         );
         toDispose.push(
-            editorOpenHandler.onDidOpenCustomEditor(widget => this.resolveWidget(widget))
+            editorOpenHandler.onDidOpenCustomEditor(event => this.resolveWidget(event[0], event[1]))
         );
         return toDispose;
     }
 
-    resolveWidget = (widget: CustomEditorWidget) => {
+    resolveWidget = (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => {
         const resolver = this.resolvers.get(widget.viewType);
         if (resolver) {
-            resolver(widget);
+            resolver(widget, options);
         } else {
             this.pendingEditors.add(widget);
             this.onWillOpenCustomEditorEmitter.fire(widget.viewType);
         }
     };
 
-    registerResolver(viewType: string, resolver: (widget: CustomEditorWidget) => void): Disposable {
+    registerResolver(viewType: string, resolver: (widget: CustomEditorWidget, options?: WidgetOpenerOptions) => void): Disposable {
         if (this.resolvers.has(viewType)) {
             throw new Error(`Resolver for ${viewType} already registered`);
         }

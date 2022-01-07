@@ -28,7 +28,7 @@ export class CustomEditorOpener implements OpenHandler {
     readonly id: string;
     readonly label: string;
 
-    private readonly onDidOpenCustomEditorEmitter = new Emitter<CustomEditorWidget>();
+    private readonly onDidOpenCustomEditorEmitter = new Emitter<[CustomEditorWidget, WidgetOpenerOptions?]>();
     readonly onDidOpenCustomEditor = this.onDidOpenCustomEditorEmitter.event;
 
     constructor(
@@ -84,12 +84,7 @@ export class CustomEditorOpener implements OpenHandler {
                 this.pendingWidgetPromises.delete(uriString);
                 widget.viewType = this.editor.viewType;
                 widget.resource = uri;
-                this.onDidOpenCustomEditorEmitter.fire(widget);
-                if (options !== undefined) {
-                    if (!widget.isAttached) {
-                        this.shell.addWidget(widget, options.widgetOptions || { area: 'main' });
-                    }
-                }
+                this.onDidOpenCustomEditorEmitter.fire([widget, options]);
             }
         }
         return widget;

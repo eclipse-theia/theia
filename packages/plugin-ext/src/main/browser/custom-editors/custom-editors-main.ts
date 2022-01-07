@@ -20,7 +20,7 @@
 // some code copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/workbench/api/browser/mainThreadCustomEditors.ts
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities, EditorPosition } from '../../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, CustomEditorsMain, CustomEditorsExt, CustomTextEditorCapabilities } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
@@ -39,10 +39,11 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UndoRedoService } from './undo-redo-service';
 import { WebviewsMainImpl } from '../webviews-main';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { ApplicationShell, DefaultUriLabelProviderContribution, Saveable, SaveOptions } from '@theia/core/lib/browser';
-import { WebviewOptions, WebviewPanelOptions, ViewColumn } from '@theia/plugin';
+import { ApplicationShell, DefaultUriLabelProviderContribution, Saveable, SaveOptions, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { WebviewWidgetIdentifier } from '../webview/webview';
 import { EditorPreferences } from '@theia/editor/lib/browser';
+import { ViewColumn, WebviewPanelTargetArea } from '../../../plugin/types-impl';
 
 const enum CustomEditorModelType {
     Custom,
@@ -110,7 +111,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
         const disposables = new DisposableCollection();
 
         disposables.push(
-            this.customEditorRegistry.registerResolver(viewType, async widget => {
+            this.customEditorRegistry.registerResolver(viewType, async (widget, widgetOpenerOptions) => {
                 const { resource, identifier } = widget;
                 widget.options = options;
 
@@ -149,7 +150,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
                     identifier.id,
                     viewType,
                     this.labelProvider.getName(resource)!,
-                    EditorPosition.ONE, // TODO: fix this when Theia has support splitting editors,
+                    widgetOpenerOptions,
                     options,
                     _cancellationSource.token
                 );
@@ -216,14 +217,14 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
     async $createCustomEditorPanel(
         panelId: string,
         title: string,
-        viewColumn: ViewColumn,
+        widgetOpenerOptions: WidgetOpenerOptions | undefined,
         options: WebviewPanelOptions & WebviewOptions
     ): Promise<void> {
         const view = await this.widgetManager.getOrCreateWidget<CustomEditorWidget>(CustomEditorWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
         this.webviewsMain.hookWebview(view);
         view.title.label = title;
         const { enableFindWidget, retainContextWhenHidden, enableScripts, localResourceRoots, ...contentOptions } = options;
-        view.viewColumn = viewColumn;
+        view.viewColumn = ViewColumn.One; // behaviour might be overridden later using widgetOpenerOptions (if available)
         view.options = { enableFindWidget, retainContextWhenHidden };
         view.setContentOptions({
             allowScripts: enableScripts,
@@ -237,7 +238,39 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
             }
             return;
         }
-        this.webviewsMain.addOrReattachWidget(view, { preserveFocus: true });
+        const showOptions: WebviewPanelShowOptions = {
+            preserveFocus: true
+        };
+
+        if (widgetOpenerOptions) {
+            if (widgetOpenerOptions.mode === 'reveal') {
+                showOptions.preserveFocus = false;
+            }
+
+            if (widgetOpenerOptions.widgetOptions) {
+                let area: WebviewPanelTargetArea;
+                switch (widgetOpenerOptions.widgetOptions.area) {
+                    case 'main':
+                        area = WebviewPanelTargetArea.Main;
+                    case 'left':
+                        area = WebviewPanelTargetArea.Left;
+                    case 'right':
+                        area = WebviewPanelTargetArea.Right;
+                    case 'bottom':
+                        area = WebviewPanelTargetArea.Bottom;
+                    default: // includes 'top'
+                        area = WebviewPanelTargetArea.Main;
+                }
+                showOptions.area = area;
+
+                if (widgetOpenerOptions.widgetOptions.mode === 'split-right' ||
+                    widgetOpenerOptions.widgetOptions.mode === 'open-to-right') {
+                    showOptions.viewColumn = ViewColumn.Beside;
+                }
+            }
+        }
+
+        this.webviewsMain.addOrReattachWidget(view, showOptions);
     }
 }
 
