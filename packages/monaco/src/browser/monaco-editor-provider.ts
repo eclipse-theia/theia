@@ -275,7 +275,7 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.preferenceValidator.validateBySchema(preferenceName,
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
                 this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString())
             );
             editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
@@ -306,7 +306,7 @@ export class MonacoEditorProvider {
         }
         const overrideIdentifier = editor.document.languageId;
         const uri = editor.uri.toString();
-        const formatOnSave = this.preferenceValidator.validateBySchema('editor.formatOnSave',
+        const formatOnSave = this.preferenceValidator.validateByName('editor.formatOnSave',
             this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!
         );
         if (formatOnSave) {
@@ -359,7 +359,7 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.preferenceValidator.validateBySchema(preferenceName,
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
                 this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri)
             );
             editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
@@ -373,9 +373,8 @@ export class MonacoEditorProvider {
     protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
-        const theKeys = Object.keys(this.editorPreferences);
         const flat: Record<string, any> = {};
-        for (const preferenceName of theKeys) {
+        for (const preferenceName of Object.keys(this.editorPreferences)) {
             flat[preferenceName] = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
         }
         const valid = this.preferenceValidator.validateOptions(flat);

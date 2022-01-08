@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { JSONValue } from '@phosphor/coreutils';
+
+export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -31,10 +35,9 @@ export interface IJSONSchema {
     id?: string;
     $id?: string;
     $schema?: string;
-    type?: string | string[];
+    type?: JsonType | JsonType[];
     title?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    default?: any;
+    default?: JSONValue;
     definitions?: IJSONSchemaMap;
     description?: string;
     properties?: IJSONSchemaMap;
@@ -63,7 +66,7 @@ export interface IJSONSchema {
     oneOf?: IJSONSchema[];
     not?: IJSONSchema;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    enum?: any[];
+    enum?: JSONValue[];
     format?: string;
 
     // schema draft 06

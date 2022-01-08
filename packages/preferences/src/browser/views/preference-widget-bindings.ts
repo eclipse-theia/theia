@@ -30,6 +30,7 @@ import { PreferenceJSONLinkRenderer } from './components/preference-json-input';
 import { PreferenceSelectInputRenderer } from './components/preference-select-input';
 import { PreferenceNumberInputRenderer } from './components/preference-number-input';
 import { PreferenceArrayInputRenderer } from './components/preference-array-input';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 
 export function bindPreferencesWidgets(bind: interfaces.Bind): void {
     bind(PreferenceTreeLabelProvider).toSelf().inSingletonScope();
@@ -70,7 +71,7 @@ function createPreferencesWidgetContainer(parent: interfaces.Container): Contain
                 return grandchild.get(PreferenceSelectInputRenderer);
             }
             const type = Array.isArray(node.preference.data.type) ? node.preference.data.type[0] : node.preference.data.type;
-            if (type === 'array' && node.preference.data.items?.type === 'string') {
+            if (type === 'array' && (node.preference.data.items as IJSONSchema)?.type === 'string') {
                 return grandchild.get(PreferenceArrayInputRenderer);
             }
             switch (type) {
