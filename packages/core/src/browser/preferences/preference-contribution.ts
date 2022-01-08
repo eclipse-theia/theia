@@ -219,10 +219,12 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                     schemaProps.defaultValue = PreferenceSchemaProperties.is(configuredDefault)
                         ? PreferenceProvider.merge(schemaDefault, configuredDefault)
                         : schemaDefault;
-                    for (const overriddenPreferenceName in schemaProps.defaultValue) {
-                        const overrideValue = schemaDefault[overriddenPreferenceName];
-                        const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
-                        changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                    if (schemaProps.defaultValue && PreferenceSchemaProperties.is(schemaProps.defaultValue)) {
+                        for (const overriddenPreferenceName in schemaProps.defaultValue) {
+                            const overrideValue = schemaDefault[overriddenPreferenceName];
+                            const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
+                            changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                        }
                     }
                 } else {
                     schemaProps.defaultValue = configuredDefault === undefined ? schemaDefault : configuredDefault;
