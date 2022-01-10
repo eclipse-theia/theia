@@ -495,8 +495,13 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
-        const uri = sourceWidget.getResourceUri()!;
-        const stat = await this.fileService.resolve(uri);
+        const uri: URI = sourceWidget.getResourceUri()!;
+        let stat;
+        if (uri.scheme === 'file') {
+            stat = await this.fileService.resolve(uri);
+        } else {
+            stat = this.workspaceService.workspace;
+        }
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
@@ -530,7 +535,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     private async copyAndSave(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
         const snapshot = sourceWidget.saveable.createSnapshot!();
         if (!await this.fileService.exists(target)) {
-            await this.fileService.copy(sourceWidget.getResourceUri()!, target, { overwrite });
+            const sourceUri = sourceWidget.getResourceUri()!;
+            if (this.fileService.canHandleResource(sourceUri)) {
+                await this.fileService.copy(sourceUri, target, { overwrite });
+            } else {
+                await this.fileService.createFile(target);
+            }
         }
         const targetWidget = await open(this.openerService, target);
         const targetSaveable = Saveable.get(targetWidget);
