@@ -91,6 +91,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onDataEmitter = new Emitter<string>();
     readonly onData: Event<string> = this.onDataEmitter.event;
 
+    protected readonly onKeyEmitter = new Emitter<{ key: string, domEvent: KeyboardEvent }>();
+    readonly onKey: Event<{ key: string, domEvent: KeyboardEvent }> = this.onKeyEmitter.event;
+
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
     @postConstruct()
@@ -213,6 +216,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onDidOpenFailureEmitter);
         this.toDispose.push(this.onSizeChangedEmitter);
         this.toDispose.push(this.onDataEmitter);
+        this.toDispose.push(this.onKeyEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -240,6 +244,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.term.onBinary(data => {
             this.onDataEmitter.fire(data);
+        }));
+
+        this.toDispose.push(this.term.onKey(data => {
+            this.onKeyEmitter.fire(data);
         }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {

@@ -80,6 +80,9 @@ export abstract class TerminalWidget extends BaseWidget {
     /** Event that fires when the terminal size changed */
     abstract onSizeChanged: Event<{ cols: number; rows: number; }>;
 
+    /** Event that fires when the terminal receives a key event. */
+    abstract onKey: Event<{ key: string, domEvent: KeyboardEvent }>;
+
     /** Event that fires when the terminal input data */
     abstract onData: Event<string>;
 
