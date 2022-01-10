@@ -21,14 +21,8 @@
 import { spawn, execSync, SpawnOptions, ChildProcess, spawnSync } from 'child_process';
 import { Readable } from 'stream';
 import { join } from 'path';
-
 import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder';
-
-import {
-    bgRed, bgWhite, bgYellow,
-    black, green, magenta, red, white, yellow,
-    bold,
-} from 'colors/safe'; // tslint:disable-line:no-implicit-dependencies
+import * as chalk from 'chalk'; // tslint:disable-line:no-implicit-dependencies
 
 export interface TestProcessInfo extends ProcessInfo {
     shell: ChildProcess
@@ -67,9 +61,9 @@ const spawnOptions: SpawnOptions = {
 
 // Formatting options, used with `scanLines` for debugging.
 const stdoutFormat = (prefix: string) => (data: string) =>
-    `${bold(yellow(`${prefix} STDOUT:`))} ${bgYellow(black(data))}`;
+    `${chalk.bold(chalk.yellow(`${prefix} STDOUT:`))} ${chalk.bgYellow(chalk.black(data))}`;
 const stderrFormat = (prefix: string) => (data: string) =>
-    `${bold(red(`${prefix} STDERR:`))} ${bgRed(white(data))}`;
+    `${chalk.bold(chalk.red(`${prefix} STDERR:`))} ${chalk.bgRed(chalk.white(data))}`;
 
 // Default error scanner
 const errorScanner = (handle: ScanLineHandle<void>) => {
@@ -352,7 +346,7 @@ async function testCommandLine(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
     const commandLine = shellCommandBuilder.buildCommand(processInfo, options);
-    debug(`${bold(white(`${context.name} STDIN:`))} ${bgWhite(black(displayWhitespaces(commandLine)))}`);
+    debug(`${chalk.bold(chalk.white(`${context.name} STDIN:`))} ${chalk.bgWhite(chalk.black(displayWhitespaces(commandLine)))}`);
     processInfo.shell.stdin!.write(commandLine + context.submit);
     return Promise.race(firstOf);
 }
@@ -366,9 +360,9 @@ function createShell(
     shellArguments: string[] = []
 ): TestProcessInfo {
     const shell = spawn(shellExecutable, shellArguments, spawnOptions);
-    debug(magenta(`${bold(`${context.name} SPAWN:`)} ${shellExecutable} ${shellArguments.join(' ')}`));
-    shell.on('close', (code, signal) => debug(magenta(
-        `${bold(`${context.name} CLOSE:`)} ${shellExecutable} code(${code}) signal(${signal})`
+    debug(chalk.magenta(`${chalk.bold(`${context.name} SPAWN:`)} ${shellExecutable} ${shellArguments.join(' ')}`));
+    shell.on('close', (code, signal) => debug(chalk.magenta(
+        `${chalk.bold(`${context.name} CLOSE:`)} ${shellExecutable} code(${code}) signal(${signal})`
     )));
     return {
         executable: shellExecutable,
@@ -409,21 +403,21 @@ async function scanLines<T = void>(
                             if (!context.resolved) {
                                 context.resolve();
                                 resolve(value);
-                                debug(bold(green(`${context.name} SCANLINES RESOLVED`)));
+                                debug(chalk.bold(chalk.green(`${context.name} SCANLINES RESOLVED`)));
                             }
                         },
                         reject: (reason?: Error) => {
                             if (!context.resolved) {
                                 context.resolve();
                                 reject(reason);
-                                debug(bold(red(`${context.name} SCANLINES REJECTED`)));
+                                debug(chalk.bold(chalk.red(`${context.name} SCANLINES REJECTED`)));
                             }
                         },
                         line,
                         text,
                     });
                 } catch (error) {
-                    debug(bold(red(`${context.name} SCANLINES THROWED`)));
+                    debug(chalk.bold(chalk.red(`${context.name} SCANLINES THROWED`)));
                     context.resolve();
                     reject(error);
                     break;
@@ -485,7 +479,7 @@ class TestCaseContext {
     finalize(): void {
         if (!this.resolved) {
             this.resolve();
-            debug(red(`${bold(`${this.name} CONTEXT:`)} context wasn't resolved when finalizing, resolving!`));
+            debug(chalk.red(`${chalk.bold(`${this.name} CONTEXT:`)} context wasn't resolved when finalizing, resolving!`));
         }
     }
 

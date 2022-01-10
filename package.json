@@ -22,7 +22,7 @@
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "chai-string": "^1.4.0",
-    "colors": "^1.4.0",
+    "chalk": "4.0.0",
     "concurrently": "^3.5.0",
     "debug": "^4.3.2",
     "electron-mocha": "^8.2.0",

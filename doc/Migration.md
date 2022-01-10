@@ -7,6 +7,18 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ## Guide
 
+### General
+
+Due to a [colors.js](https://github.com/Marak/colors.js) issue, a [resolution](https://classic.yarnpkg.com/lang/en/docs/selective-version-resolutions/) may be necessary for your application in order to workaround the problem:
+
+For example:
+
+```json
+"resolutions": {
+    "**/colors": "<=1.4.0"
+}
+```
+
 ### v1.21.0
 
 #### Frontend Source Maps

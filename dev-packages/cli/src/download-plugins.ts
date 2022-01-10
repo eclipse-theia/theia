@@ -24,7 +24,7 @@ declare global {
 }
 
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
-import { green, red, yellow } from 'colors/safe';
+import * as chalk from 'chalk';
 import * as decompress from 'decompress';
 import { createWriteStream, promises as fs } from 'fs';
 import { HttpsProxyAgent } from 'https-proxy-agent';
@@ -91,7 +91,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     await fs.mkdir(pluginsDir, { recursive: true });
 
     if (!pck.theiaPlugins) {
-        console.log(red('error: missing mandatory \'theiaPlugins\' property.'));
+        console.log(chalk.red('error: missing mandatory \'theiaPlugins\' property.'));
         return;
     }
     try {
@@ -171,7 +171,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
     } else if (pluginUrl.endsWith('theia')) {
         fileExt = '.theia'; // theia plugins.
     } else {
-        failures.push(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
+        failures.push(chalk.red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
         return;
     }
     const targetPath = path.resolve(pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
@@ -206,15 +206,15 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         }
     }
     if (lastError) {
-        failures.push(red(`x ${plugin}: failed to download, last error:\n ${lastError}`));
+        failures.push(chalk.red(`x ${plugin}: failed to download, last error:\n ${lastError}`));
         return;
     }
     if (typeof response === 'undefined') {
-        failures.push(red(`x ${plugin}: failed to download (unknown reason)`));
+        failures.push(chalk.red(`x ${plugin}: failed to download (unknown reason)`));
         return;
     }
     if (response.status !== 200) {
-        failures.push(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
+        failures.push(chalk.red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
         return;
     }
 
@@ -229,7 +229,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         await decompress(tempFile.path, targetPath);
     }
 
-    console.warn(green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
+    console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
 }
 
 /**
@@ -290,7 +290,7 @@ async function collectExtensionPacks(pluginDir: string, excludedIds: Set<string>
         if (Array.isArray(extensionPack)) {
             extensionPackPaths.set(packageJsonPath, extensionPack.filter(id => {
                 if (excludedIds.has(id)) {
-                    console.log(yellow(`'${id}' referenced by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${id}' referenced by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
                     return false; // remove
                 }
                 return true; // keep
@@ -316,7 +316,7 @@ async function collectPluginDependencies(pluginDir: string, excludedIds: Set<str
         if (Array.isArray(extensionDependencies)) {
             for (const dependency of extensionDependencies) {
                 if (excludedIds.has(dependency)) {
-                    console.log(yellow(`'${dependency}' referenced by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${dependency}' referenced by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
                 } else {
                     dependencyIds.push(dependency);
                 }
