@@ -487,7 +487,14 @@ export class ElectronMainApplication {
 
     protected async handleStopRequest(electronWindow: BrowserWindow, onSafeCallback: () => unknown, reason: StopReason): Promise<void> {
         // Only confirm close to windows that have loaded our front end.
-        const safeToClose = !electronWindow.webContents.getURL().includes(this.globals.THEIA_FRONTEND_HTML_PATH) || await this.checkSafeToStop(electronWindow, reason);
+        let currentUrl = electronWindow.webContents.getURL();
+        let frontendUri = this.globals.THEIA_FRONTEND_HTML_PATH;
+        // Since our resolved frontend HTML path might contain backward slashes on Windows, we normalize everything first.
+        if (isWindows) {
+            currentUrl = currentUrl.replace(/\\/g, '/');
+            frontendUri = frontendUri.replace(/\\/g, '/');
+        }
+        const safeToClose = !currentUrl.includes(frontendUri) || await this.checkSafeToStop(electronWindow, reason);
         if (safeToClose) {
             onSafeCallback();
         }
