@@ -19,6 +19,7 @@ import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 import { nls } from './nls';
+import debounce = require('p-debounce');
 
 /**
  * A command is a unique identifier of a function
@@ -198,6 +199,9 @@ export class CommandRegistry implements CommandService {
     protected readonly onDidExecuteCommandEmitter = new Emitter<CommandEvent>();
     readonly onDidExecuteCommand = this.onDidExecuteCommandEmitter.event;
 
+    protected readonly onCommandsChangedEmitter = new Emitter<void>();
+    readonly onCommandsChanged = this.onCommandsChangedEmitter.event;
+
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
         protected readonly contributionProvider: ContributionProvider<CommandContribution>
@@ -207,6 +211,12 @@ export class CommandRegistry implements CommandService {
         const contributions = this.contributionProvider.getContributions();
         for (const contrib of contributions) {
             contrib.registerCommands(this);
+        }
+    }
+
+    *getAllCommands(): IterableIterator<Readonly<Command & { handlers: CommandHandler[] }>> {
+        for (const command of Object.values(this._commands)) {
+            yield { ...command, handlers: this._handlers[command.id] ?? [] };
         }
     }
 
@@ -271,14 +281,22 @@ export class CommandRegistry implements CommandService {
             this._handlers[commandId] = handlers = [];
         }
         handlers.unshift(handler);
+        this.fireDidChange();
         return {
             dispose: () => {
                 const idx = handlers.indexOf(handler);
                 if (idx >= 0) {
                     handlers.splice(idx, 1);
+                    this.fireDidChange();
                 }
             }
         };
+    }
+
+    protected fireDidChange = debounce(() => this.doFireDidChange(), 0);
+
+    protected doFireDidChange(): void {
+        this.onCommandsChangedEmitter.fire();
     }
 
     /**

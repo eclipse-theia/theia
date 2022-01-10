@@ -204,7 +204,9 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
                 },
                 inputs: inputsSchema.definitions!.inputs
             },
-            additionalProperties: false
+            additionalProperties: false,
+            allowComments: true,
+            allowTrailingCommas: true,
         };
     }
 

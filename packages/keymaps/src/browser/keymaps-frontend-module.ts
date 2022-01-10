@@ -14,18 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import './keymaps-monaco-contribution';
+import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { KeymapsService } from './keymaps-service';
 import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-
-import './keymaps-monaco-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser';
 import { KeybindingWidget } from './keybindings-widget';
-
-import '../../src/browser/style/index.css';
+import { KeybindingSchemaUpdater } from './keybinding-schema-updater';
+import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 
 export default new ContainerModule(bind => {
     bind(KeymapsService).toSelf().inSingletonScope();
@@ -39,4 +39,6 @@ export default new ContainerModule(bind => {
         id: KeybindingWidget.ID,
         createWidget: () => context.container.get<KeybindingWidget>(KeybindingWidget),
     })).inSingletonScope();
+    bind(KeybindingSchemaUpdater).toSelf().inSingletonScope();
+    bind(JsonSchemaContribution).toService(KeybindingSchemaUpdater);
 });

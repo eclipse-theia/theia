@@ -97,9 +97,9 @@ export namespace FrontendApplicationPreferenceConfig {
 export class PreferenceSchemaProvider extends PreferenceProvider {
 
     protected readonly preferences: { [name: string]: any } = {};
-    protected readonly combinedSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
-    protected readonly workspaceSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
-    protected readonly folderSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
+    protected readonly combinedSchema: PreferenceDataSchema = { properties: {}, patternProperties: {}, allowComments: true, allowTrailingCommas: true, };
+    protected readonly workspaceSchema: PreferenceDataSchema = { properties: {}, patternProperties: {}, allowComments: true, allowTrailingCommas: true, };
+    protected readonly folderSchema: PreferenceDataSchema = { properties: {}, patternProperties: {}, allowComments: true, allowTrailingCommas: true, };
 
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
