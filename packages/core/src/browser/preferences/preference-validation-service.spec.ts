@@ -40,7 +40,7 @@ describe('Preference Validation Service', () => {
             const actual = validateBySchema(3, { type: 'string', default: expected });
             assert.strictEqual(actual, expected);
         });
-        it('bad input -> should return string even if default not string', () => {
+        it('bad input -> should return string even if default is not a string', () => {
             const actual = validateBySchema(3, { type: 'string', default: 3 });
             assert.strictEqual(typeof actual, 'string');
             assert.strictEqual(actual, '3');

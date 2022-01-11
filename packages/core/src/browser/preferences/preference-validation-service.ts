@@ -105,7 +105,7 @@ export class PreferenceValidationService {
         }
     }
 
-    protected getSchema(name: string, overrideIdentifier?: string): ValidatablePreference | undefined {
+    protected getSchema(name: string): ValidatablePreference | undefined {
         const combinedSchema = this.schemaProvider.getCombinedSchema().properties;
         if (combinedSchema[name]) {
             return combinedSchema[name];
