@@ -33,6 +33,7 @@ describe('Saveable', function () {
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
 
     const container = window.theia.container;
+    /** @type {EditorManager} */
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const fileService = container.get(FileService);
@@ -264,6 +265,17 @@ describe('Saveable', function () {
         assert.isTrue(widget.isDisposed, 'model should be disposed after close');
         const state = await fileService.read(fileUri);
         assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
+    });
+
+    it('no save prompt when multiple editors open for same file', async () => {
+        const secondWidget = await editorManager.openToSide(fileUri);
+        editor.getControl().setValue('two widgets');
+        assert.isTrue(Saveable.isDirty(widget), 'the first widget should be dirty');
+        assert.isTrue(Saveable.isDirty(secondWidget), 'the second widget should also be dirty');
+        await Promise.resolve(secondWidget.close());
+        assert.isTrue(secondWidget.isDisposed, 'the widget should have closed without requesting user action');
+        assert.isTrue(Saveable.isDirty(widget), 'the original widget should still be dirty.');
+        assert.equal(editor.getControl().getValue(), 'two widgets', 'should still have the same value');
     });
 
     it('normal close', async () => {

@@ -1445,8 +1445,7 @@ export class ApplicationShell extends Widget {
      * @return an array of all the widgets that were actually closed.
      */
     async closeMany(targets: Widget[], options?: ApplicationShell.CloseOptions): Promise<Widget[]> {
-        const others = this.widgets.filter(widget => !targets.includes(widget));
-        if (options?.save === false || await Saveable.confirmSaveBeforeClose(targets, others)) {
+        if (options?.save === false || await Saveable.confirmSaveBeforeClose(targets, this.widgets.filter(widget => !targets.includes(widget)))) {
             return (await Promise.all(targets.map(target => this.closeWidget(target.id, options)))).filter((widget): widget is Widget => widget !== undefined);
         }
         return [];

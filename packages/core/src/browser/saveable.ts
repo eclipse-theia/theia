@@ -125,7 +125,7 @@ export namespace Saveable {
                     if (result) {
                         await Saveable.save(this);
                     }
-                    await this.closeWithoutSaving(result);
+                    await this.closeWithoutSaving();
                 }
             } finally {
                 closing = false;
