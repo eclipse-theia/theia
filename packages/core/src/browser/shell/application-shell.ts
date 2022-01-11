@@ -24,7 +24,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
 import { animationFrame } from '../browser';
-import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
+import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
@@ -1025,7 +1025,7 @@ export class ApplicationShell extends Widget {
         }
         this.tracker.add(widget);
         this.checkActivation(widget);
-        Saveable.apply(widget);
+        Saveable.apply(widget, () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)));
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {
                 this.track(toTrack);

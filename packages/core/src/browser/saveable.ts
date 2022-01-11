@@ -93,7 +93,7 @@ export namespace Saveable {
             await saveable.save(options);
         }
     }
-    export function apply(widget: Widget): SaveableWidget | undefined {
+    export function apply(widget: Widget, getOtherSaveables?: () => Array<Widget & (Saveable | SaveableSource)>): SaveableWidget | undefined {
         if (SaveableWidget.is(widget)) {
             return widget;
         }
@@ -104,8 +104,8 @@ export namespace Saveable {
         setDirty(widget, saveable.dirty);
         saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
         const closeWidget = widget.close.bind(widget);
-        const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = async () => {
-            if (saveable.dirty && saveable.revert) {
+        const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = async (doRevert = true) => {
+            if (doRevert && saveable.dirty && saveable.revert) {
                 await saveable.revert();
             }
             closeWidget();
@@ -119,6 +119,10 @@ export namespace Saveable {
             closing = true;
             try {
                 const result = await shouldSave(saveable, () => {
+                    const notLastWithDocument = getOtherSaveables?.().some(otherWidget => otherWidget !== widget && Saveable.get(otherWidget) === saveable);
+                    if (notLastWithDocument) {
+                        return closeWithoutSaving(false).then(() => undefined);
+                    }
                     if (options && options.shouldSave) {
                         return options.shouldSave();
                     }
@@ -128,7 +132,7 @@ export namespace Saveable {
                     if (result) {
                         await Saveable.save(widget);
                     }
-                    await closeWithoutSaving();
+                    await closeWithoutSaving(result);
                 }
             } finally {
                 closing = false;
@@ -154,7 +158,10 @@ export namespace Saveable {
 }
 
 export interface SaveableWidget extends Widget {
-    closeWithoutSaving(): Promise<void>;
+    /**
+     * @param doRevert whether the saveable should be reverted before being saved. Defaults to `true`.
+     */
+    closeWithoutSaving(doRevert?: boolean): Promise<void>;
     closeWithSaving(options?: SaveableWidget.CloseOptions): Promise<void>;
 }
 export namespace SaveableWidget {
