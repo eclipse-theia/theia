@@ -17,7 +17,7 @@
 const puppeteer = require('puppeteer');
 const fsx = require('fs-extra');
 const { resolve } = require('path');
-const { delay, lcp, isLCP, measure } = require('./common-performance');
+const { delay, githubReporting, isLCP, lcp, measure } = require('./common-performance');
 
 const workspacePath = resolve('./workspace');
 const profilesPath = './profiles/';
@@ -72,6 +72,9 @@ let runs = 10;
     }
     if (args.headless !== undefined && args.headless.toString() === 'false') {
         headless = false;
+    }
+    if (process.env.GITHUB_ACTIONS) {
+        githubReporting.enabled = true;
     }
 
     // Verify that the application exists
