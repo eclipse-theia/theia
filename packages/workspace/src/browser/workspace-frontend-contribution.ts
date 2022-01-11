@@ -595,9 +595,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                         title: nls.localizeByDefault('Do you want to save your workspace configuration as a file?')
                     }).open();
                     if (shouldSaveFile === "Don't Save") {
-                        // TODO: Move this somewhere where it can be done more safely.
-                        // E.g. on start up, the first window should delete all untitled workspaces that it isn't using.
-                        return this.fileService.delete(this.workspaceService.workspace!.resource).then(() => true, () => true);
+                        return true;
                     } else if (shouldSaveFile === 'Save') {
                         return this.saveWorkspaceAs();
                     }
