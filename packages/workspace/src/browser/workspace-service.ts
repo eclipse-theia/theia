@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceServer, THEIA_EXT, VSCODE_EXT } from '../common';
+import { WorkspaceServer, THEIA_EXT, CommonWorkspaceUtils } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
@@ -81,6 +81,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(WorkspaceSchemaUpdater)
     protected readonly schemaUpdater: WorkspaceSchemaUpdater;
+
+    @inject(CommonWorkspaceUtils)
+    protected readonly utils: CommonWorkspaceUtils;
 
     protected applicationName: string;
 
@@ -458,7 +461,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
         if (workspaceFile) {
             const data = JSON.stringify(WorkspaceData.transformToRelative(workspaceData, workspaceFile));
-            const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
+            const edits = jsoncparser.format(data, undefined, { tabSize: 2, insertSpaces: true, eol: '' });
             const result = jsoncparser.applyEdits(data, edits);
             await this.fileService.write(workspaceFile.resource, result);
             return this.fileService.resolve(workspaceFile.resource);
@@ -687,12 +690,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Example: We should not try to read the contents of an .exe file.
      */
     protected isWorkspaceFile(candidate: FileStat | URI): boolean {
-        const uri = FileStat.is(candidate) ? candidate.resource : candidate;
-        return uri.path.ext === `.${THEIA_EXT}` || uri.path.ext === `.${VSCODE_EXT}`;
+        return this.utils.isWorkspaceFile(candidate);
     }
 
     isUntitledWorkspace(candidate?: URI): boolean {
-        return !!candidate && this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+        return this.utils.isUntitledWorkspace(candidate);
     }
 
     /**

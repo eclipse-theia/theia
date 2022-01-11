@@ -18,6 +18,8 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { injectable } from '@theia/core/shared/inversify';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
@@ -28,4 +30,21 @@ export const VSCODE_EXT = 'code-workspace';
 export async function getTemporaryWorkspaceFileUri(envVariableServer: EnvVariablesServer): Promise<URI> {
     const configDirUri = await envVariableServer.getConfigDirUri();
     return new URI(configDirUri).resolve(`Untitled.${THEIA_EXT}`);
+}
+
+@injectable()
+export class CommonWorkspaceUtils {
+    /**
+     * Check if the file should be considered as a workspace file.
+     *
+     * Example: We should not try to read the contents of an .exe file.
+     */
+    isWorkspaceFile(candidate: FileStat | URI): boolean {
+        const uri = FileStat.is(candidate) ? candidate.resource : candidate;
+        return uri.path.ext === `.${THEIA_EXT}` || uri.path.ext === `.${VSCODE_EXT}`;
+    }
+
+    isUntitledWorkspace(candidate?: URI): boolean {
+        return !!candidate && this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+    }
 }
