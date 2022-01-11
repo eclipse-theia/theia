@@ -82,7 +82,7 @@ export class URI extends CodeURI implements theia.Uri {
         if (!uri.path) {
             throw new Error('\'joinPath\' called on URI without path');
         }
-        const newPath = paths.resolve(uri.path, ...pathSegments);
+        const newPath = paths.posix.join(uri.path, ...pathSegments);
         return new URI(uri.scheme, uri.authority, newPath, uri.query, uri.fragment);
     }
 

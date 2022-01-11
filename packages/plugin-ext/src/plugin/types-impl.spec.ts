@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { isWindows } from '@theia/core';
 import * as assert from 'assert';
 import * as types from './types-impl';
 
 describe('API Type Implementations:', () => {
 
     describe('URI:', () => {
-         it('should convert to string', () => {
+        it('should convert to string', () => {
             const uriString = 'scheme://authority.com/foo/bar/zoz?query#fragment';
             const uri = types.URI.parse(uriString);
             // when
@@ -28,6 +29,41 @@ describe('API Type Implementations:', () => {
 
             // then
             assert.strictEqual(result, uriString);
+        });
+
+        // Issue: #10370
+        it('should returns correct path while using joinPath()', () => {
+            if (isWindows) {
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\foo\\bar'), '/file.js').toString(), 'file:///c%3A/foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\foo\\bar\\'), 'file.js').toString(), 'file:///c%3A/foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\foo\\bar\\'), '/file.js').toString(), 'file:///c%3A/foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\'), '/file.js').toString(), 'file:///c%3A/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\'), 'bar/file.js').toString(), 'file:///c%3A/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\foo'), './file.js').toString(), 'file:///c%3A/foo/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('c:\\foo'), '/./file.js').toString(), 'file:///c%3A/foo/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('C:\\foo'), '../file.js').toString(), 'file:///c%3A/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('C:\\foo\\.'), '../file.js').toString(), 'file:///c%3A/file.js');
+            } else {
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar'), '/file.js').toString(), 'file:///foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar'), 'file.js').toString(), 'file:///foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar/'), '/file.js').toString(), 'file:///foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/'), '/file.js').toString(), 'file:///file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar'), './file.js').toString(), 'file:///foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar'), '/./file.js').toString(), 'file:///foo/bar/file.js');
+                assert.strictEqual(types.URI.joinPath(types.URI.file('/foo/bar'), '../file.js').toString(), 'file:///foo/file.js');
+            }
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar')).toString(), 'foo://a/foo/bar');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar'), '/file.js').toString(), 'foo://a/foo/bar/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar'), 'file.js').toString(), 'foo://a/foo/bar/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar/'), '/file.js').toString(), 'foo://a/foo/bar/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/'), '/file.js').toString(), 'foo://a/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar/'), './file.js').toString(), 'foo://a/foo/bar/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar/'), '/./file.js').toString(), 'foo://a/foo/bar/file.js');
+            assert.strictEqual(types.URI.joinPath(types.URI.parse('foo://a/foo/bar/'), '../file.js').toString(), 'foo://a/foo/file.js');
+
+            assert.strictEqual(
+                types.URI.joinPath(types.URI.from({ scheme: 'myScheme', authority: 'authority', path: '/path', query: 'query', fragment: 'fragment' }), '/file.js').toString(),
+                'myScheme://authority/path/file.js?query#fragment');
         });
     });
 });
