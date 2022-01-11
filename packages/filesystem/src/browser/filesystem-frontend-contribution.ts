@@ -22,9 +22,9 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
-    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed,
+    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode,
     CorePreferences,
-    CommonCommands
+    CommonCommands,
 } from '@theia/core/lib/browser';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
@@ -272,24 +272,20 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         if (!event.gotDeleted() && !event.gotAdded()) {
             return;
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pending: Promise<any>[] = [];
-
         const dirty = new Set<string>();
         const toClose = new Map<string, NavigatableWidget[]>();
         for (const [uri, widget] of NavigatableWidget.get(this.shell.widgets)) {
-            this.updateWidget(uri, widget, event, { dirty, toClose });
+            this.updateWidget(uri, widget, event, { dirty, toClose: toClose });
         }
-        for (const [uriString, widgets] of toClose.entries()) {
-            if (!dirty.has(uriString) && this.corePreferences['workbench.editor.closeOnFileDelete']) {
-                for (const widget of widgets) {
-                    widget.close();
-                    pending.push(waitForClosed(widget));
+        if (this.corePreferences['workbench.editor.closeOnFileDelete']) {
+            const doClose = [];
+            for (const [uri, widgets] of toClose.entries()) {
+                if (!dirty.has(uri)) {
+                    doClose.push(...widgets);
                 }
             }
+            await this.shell.closeMany(doClose);
         }
-
-        await Promise.all(pending);
     }
     protected updateWidget(uri: URI, widget: NavigatableWidget, event: FileChangesEvent, { dirty, toClose }: {
         dirty: Set<string>;

@@ -93,7 +93,77 @@ export namespace Saveable {
             await saveable.save(options);
         }
     }
-    export function apply(widget: Widget, getOtherSaveables?: () => Array<Widget & (Saveable | SaveableSource)>): SaveableWidget | undefined {
+
+    async function closeWithoutSaving(this: SaveableWidget, doRevert: boolean = true): Promise<void> {
+        const saveable = get(this);
+        if (saveable && doRevert && saveable.dirty && saveable.revert) {
+            await saveable.revert();
+        }
+        this[close]();
+        return waitForClosed(this);
+    }
+
+    function createCloseWithSaving(getOtherSaveables?: () => Array<Widget | SaveableWidget>): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
+        let closing = false;
+        return async function (this: SaveableWidget, options: SaveableWidget.CloseOptions): Promise<void> {
+            if (closing) { return; }
+            const saveable = get(this);
+            if (!saveable) { return; }
+            closing = true;
+            try {
+                const result = await shouldSave(saveable, () => {
+                    const notLastWithDocument = !closingWidgetWouldLoseSaveable(this, getOtherSaveables?.() ?? []);
+                    if (notLastWithDocument) {
+                        return this.closeWithoutSaving(false).then(() => undefined);
+                    }
+                    if (options && options.shouldSave) {
+                        return options.shouldSave();
+                    }
+                    return new ShouldSaveDialog(this).open();
+                });
+                if (typeof result === 'boolean') {
+                    if (result) {
+                        await Saveable.save(this);
+                    }
+                    await this.closeWithoutSaving(result);
+                }
+            } finally {
+                closing = false;
+            }
+        };
+    }
+
+    export async function confirmSaveBeforeClose(toClose: Iterable<Widget>, others: Widget[]): Promise<boolean | undefined> {
+        for (const widget of toClose) {
+            const saveable = Saveable.get(widget);
+            if (saveable?.dirty) {
+                if (!closingWidgetWouldLoseSaveable(widget, others)) {
+                    continue;
+                }
+                const userWantsToSave = await new ShouldSaveDialog(widget).open();
+                if (userWantsToSave === undefined) { // User clicked cancel.
+                    return undefined;
+                } else if (userWantsToSave) {
+                    await saveable.save();
+                } else {
+                    await saveable.revert?.();
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @param widget the widget that may be closed
+     * @param others widgets that will not be closed.
+     * @returns `true` if widget is saveable and no widget among the `others` refers to the same saveable. `false` otherwise.
+     */
+    function closingWidgetWouldLoseSaveable(widget: Widget, others: Widget[]): boolean {
+        const saveable = get(widget);
+        return !!saveable && !others.some(otherWidget => otherWidget !== widget && get(otherWidget) === saveable);
+    }
+
+    export function apply(widget: Widget, getOtherSaveables?: () => Array<Widget | SaveableWidget>): SaveableWidget | undefined {
         if (SaveableWidget.is(widget)) {
             return widget;
         }
@@ -101,47 +171,15 @@ export namespace Saveable {
         if (!saveable) {
             return undefined;
         }
-        setDirty(widget, saveable.dirty);
-        saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
-        const closeWidget = widget.close.bind(widget);
-        const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = async (doRevert = true) => {
-            if (doRevert && saveable.dirty && saveable.revert) {
-                await saveable.revert();
-            }
-            closeWidget();
-            return waitForClosed(widget);
-        };
-        let closing = false;
-        const closeWithSaving: SaveableWidget['closeWithSaving'] = async options => {
-            if (closing) {
-                return;
-            }
-            closing = true;
-            try {
-                const result = await shouldSave(saveable, () => {
-                    const notLastWithDocument = getOtherSaveables?.().some(otherWidget => otherWidget !== widget && Saveable.get(otherWidget) === saveable);
-                    if (notLastWithDocument) {
-                        return closeWithoutSaving(false).then(() => undefined);
-                    }
-                    if (options && options.shouldSave) {
-                        return options.shouldSave();
-                    }
-                    return new ShouldSaveDialog(widget).open();
-                });
-                if (typeof result === 'boolean') {
-                    if (result) {
-                        await Saveable.save(widget);
-                    }
-                    await closeWithoutSaving(result);
-                }
-            } finally {
-                closing = false;
-            }
-        };
-        return Object.assign(widget, {
+        const saveableWidget = widget as SaveableWidget;
+        setDirty(saveableWidget, saveable.dirty);
+        saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
+        const closeWithSaving = createCloseWithSaving(getOtherSaveables);
+        return Object.assign(saveableWidget, {
             closeWithoutSaving,
             closeWithSaving,
-            close: () => closeWithSaving()
+            close: closeWithSaving,
+            [close]: saveableWidget.close,
         });
     }
     export async function shouldSave(saveable: Saveable, cb: () => MaybePromise<boolean | undefined>): Promise<boolean | undefined> {
@@ -157,12 +195,17 @@ export namespace Saveable {
     }
 }
 
+export const close = Symbol('close');
 export interface SaveableWidget extends Widget {
     /**
      * @param doRevert whether the saveable should be reverted before being saved. Defaults to `true`.
      */
     closeWithoutSaving(doRevert?: boolean): Promise<void>;
     closeWithSaving(options?: SaveableWidget.CloseOptions): Promise<void>;
+    /**
+     * The original close function of the widget
+     */
+    [close](): void;
 }
 export namespace SaveableWidget {
     export function is(widget: Widget | undefined): widget is SaveableWidget {

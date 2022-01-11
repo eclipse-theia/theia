@@ -349,11 +349,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                for (const widget of this.shell.widgets) {
-                    if (this.codeEditorWidgetUtil.is(widget) && widget !== editor) {
-                        await this.shell.closeWidget(widget.id);
-                    }
-                }
+                const toClose = this.shell.widgets.filter(widget => widget !== editor && this.codeEditorWidgetUtil.is(widget));
+                await this.shell.closeMany(toClose);
             }
         });
 
@@ -449,13 +446,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
             execute: async () => {
-                const promises = [];
-                for (const widget of this.shell.widgets) {
-                    if (this.codeEditorWidgetUtil.is(widget)) {
-                        promises.push(this.shell.closeWidget(widget.id));
-                    }
-                }
-                await Promise.all(promises);
+                const toClose = this.shell.widgets.filter(widget => this.codeEditorWidgetUtil.is(widget));
+                await this.shell.closeMany(toClose);
             }
         });
         commands.registerCommand({ id: 'workbench.action.nextEditor' }, {

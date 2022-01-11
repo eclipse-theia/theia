@@ -348,7 +348,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             }
         });
         registry.registerCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR, {
-            execute: widget => this.withOpenEditorsWidget(widget, () => this.editorWidgets.forEach(editor => editor.close())),
+            execute: widget => this.withOpenEditorsWidget(widget, () => this.shell.closeMany(this.editorWidgets)),
             isEnabled: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length),
             isVisible: widget => this.withOpenEditorsWidget(widget, () => !!this.editorWidgets.length)
         });
