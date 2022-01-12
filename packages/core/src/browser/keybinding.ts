@@ -295,7 +295,7 @@ export class KeybindingRegistry {
     containsKeybindingInScope(binding: common.Keybinding, scope = KeybindingScope.USER): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
         const collisions = this.getKeySequenceCollisions(this.getUsableBindings(this.keymaps[scope]), bindingKeySequence)
-            .filter(b => b.context === binding.context && !b.when && !binding.when);
+            .filter(b => !b.when && !binding.when);
         if (collisions.full.length > 0) {
             return true;
         }
@@ -483,10 +483,6 @@ export class KeybindingRegistry {
      * Only execute if it has no context (global context) or if we're in that context.
      */
     protected isEnabled(binding: common.Keybinding, event: KeyboardEvent): boolean {
-        const context = binding.context && this.contexts[binding.context];
-        if (context && !context.isEnabled(binding)) {
-            return false;
-        }
         if (binding.when && !this.whenContextService.match(binding.when, <HTMLElement>event.target)) {
             return false;
         }
@@ -579,13 +575,13 @@ export class KeybindingRegistry {
             if (event && !this.isEnabled(binding, event)) {
                 return false;
             }
-            const { command, context, when, keybinding } = binding;
+            const { command, when, keybinding } = binding;
             if (!this.isUsable(binding)) {
                 disabled = disabled || new Set<string>();
-                disabled.add(JSON.stringify({ command: command.substr(1), context, when, keybinding }));
+                disabled.add(JSON.stringify({ command: command.substr(1), when, keybinding }));
                 return false;
             }
-            return !disabled?.has(JSON.stringify({ command, context, when, keybinding }));
+            return !disabled?.has(JSON.stringify({ command, when, keybinding }));
         };
 
         for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {

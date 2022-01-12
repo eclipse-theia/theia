@@ -28,14 +28,6 @@ export interface Keybinding {
      */
     keybinding: string;
     /**
-     * The optional keybinding context where this binding belongs to.
-     * If not specified, then this keybinding context belongs to the NOOP
-     * keybinding context.
-     *
-     * @deprecated use `when` closure instead
-     */
-    context?: string;
-    /**
      * An optional clause defining the condition when the keybinding is active, e.g. based on the current focus.
      * See {@link https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts} for more details.
      */
@@ -60,7 +52,6 @@ export namespace Keybinding {
      */
     export function equals(a: Keybinding, b: Keybinding, ignoreKeybinding: boolean = false, ignoreArgs: boolean = false): boolean {
         if (a.command === b.command &&
-            (a.context || '') === (b.context || '') &&
             (a.when || '') === (b.when || '') &&
             (ignoreKeybinding || a.keybinding === b.keybinding) &&
             (ignoreArgs || (a.args || '') === (b.args || ''))) {
@@ -79,7 +70,6 @@ export namespace Keybinding {
         return {
             command: binding.command,
             keybinding: binding.keybinding,
-            context: binding.context,
             when: binding.when,
             args: binding.args
         };

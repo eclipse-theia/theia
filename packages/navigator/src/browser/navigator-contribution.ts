@@ -55,10 +55,9 @@ import {
 import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
-import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
-import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { NavigatorContextKeyService, NavigatorContextKeys } from './navigator-context-key-service';
 import {
     TabBarToolbarContribution,
     TabBarToolbarItem,
@@ -539,19 +538,19 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_DELETE.id,
             keybinding: isOSX ? 'cmd+backspace' : 'del',
-            context: NavigatorKeybindingContexts.navigatorActive
+            when: NavigatorContextKeys.EXPLORER_VIEWLET_FOCUS
         });
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
             keybinding: 'f2',
-            context: NavigatorKeybindingContexts.navigatorActive
+            when: NavigatorContextKeys.EXPLORER_VIEWLET_FOCUS
         });
 
         registry.registerKeybinding({
             command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
             keybinding: 'ctrlcmd+i',
-            context: NavigatorKeybindingContexts.navigatorActive
+            when: NavigatorContextKeys.EXPLORER_VIEWLET_FOCUS
         });
     }
 

@@ -17,6 +17,16 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 
+/**
+ * When clauses for the navigator/explorer.
+ */
+export namespace NavigatorContextKeys {
+    export const EXPLORER_VIEWLET_VISIBLE = 'explorerViewletVisible';
+    export const EXPLORER_VIEWLET_FOCUS = 'explorerViewletFocus';
+    export const FILE_EXPLORER_FOCUS = 'filesExplorerFocus';
+    export const EXPLORER_RESOURCE_IS_FOLDER = 'explorerResourceIsFolder';
+}
+
 @injectable()
 export class NavigatorContextKeyService {
 
@@ -41,16 +51,17 @@ export class NavigatorContextKeyService {
     }
 
     protected _explorerResourceIsFolder: ContextKey<boolean>;
+    /** True if a folder is selected in the Explorer. */
     get explorerResourceIsFolder(): ContextKey<boolean> {
         return this._explorerResourceIsFolder;
     }
 
     @postConstruct()
     protected init(): void {
-        this._explorerViewletVisible = this.contextKeyService.createKey<boolean>('explorerViewletVisible', false);
-        this._explorerViewletFocus = this.contextKeyService.createKey<boolean>('explorerViewletFocus', false);
-        this._filesExplorerFocus = this.contextKeyService.createKey<boolean>('filesExplorerFocus', false);
-        this._explorerResourceIsFolder = this.contextKeyService.createKey<boolean>('explorerResourceIsFolder', false);
+        this._explorerViewletVisible = this.contextKeyService.createKey<boolean>(NavigatorContextKeys.EXPLORER_VIEWLET_VISIBLE, false);
+        this._explorerViewletFocus = this.contextKeyService.createKey<boolean>(NavigatorContextKeys.EXPLORER_VIEWLET_FOCUS, false);
+        this._filesExplorerFocus = this.contextKeyService.createKey<boolean>(NavigatorContextKeys.FILE_EXPLORER_FOCUS, false);
+        this._explorerResourceIsFolder = this.contextKeyService.createKey<boolean>(NavigatorContextKeys.EXPLORER_RESOURCE_IS_FOLDER, false);
     }
 
 }

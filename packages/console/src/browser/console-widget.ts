@@ -17,7 +17,7 @@
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';
-import { ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
@@ -26,6 +26,7 @@ import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
 import { ConsoleSessionManager } from './console-session-manager';
+import { ConsoleContextKeys, ConsoleContextKeyService } from './console-context-key-service';
 
 export const ConsoleOptions = Symbol('ConsoleWidgetOptions');
 export interface ConsoleOptions {
@@ -73,6 +74,9 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
+
+    @inject(ConsoleContextKeyService)
+    protected readonly contextKeyService: ConsoleContextKeyService;
 
     protected _input: MonacoEditor;
 
@@ -263,7 +267,9 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     hasInputFocus(): boolean {
-        return this._input && this._input.isFocused({ strict: true });
+        const hasFocus = this._input && this._input.isFocused({ strict: true });
+        this.contextKeyService.consoleInputFocus.set(hasFocus);
+        return hasFocus;
     }
 
 }
