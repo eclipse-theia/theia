@@ -22,7 +22,7 @@ import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution, KeybindingContext
+    bindViewContribution
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
@@ -41,7 +41,6 @@ import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugViewOptions } from './view/debug-view-model';
 import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
-import { InDebugModeContext, BreakpointWidgetInputFocusContext, BreakpointWidgetInputStrictFocusContext } from './debug-keybinding-contexts';
 import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
 import './debug-monaco-contribution';
 import { bindDebugPreferences } from './debug-preferences';
@@ -102,9 +101,6 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(DebugResourceResolver);
 
-    bind(KeybindingContext).to(InDebugModeContext).inSingletonScope();
-    bind(KeybindingContext).to(BreakpointWidgetInputFocusContext).inSingletonScope();
-    bind(KeybindingContext).to(BreakpointWidgetInputStrictFocusContext).inSingletonScope();
     bindViewContribution(bind, DebugFrontendApplicationContribution);
     bind(FrontendApplicationContribution).toService(DebugFrontendApplicationContribution);
     bind(TabBarToolbarContribution).toService(DebugFrontendApplicationContribution);

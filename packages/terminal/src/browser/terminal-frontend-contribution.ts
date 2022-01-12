@@ -34,7 +34,6 @@ import {
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
-import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -192,6 +191,11 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
         updateFocusKey();
         this.shell.onDidChangeActiveWidget(updateFocusKey);
+
+        const terminalSearchVisible = this.contextKeyService.createKey<boolean>('terminalSearchVisible', false);
+        const updateSearchKey = () => terminalSearchVisible.set(this.isTerminalSearchVisible());
+        updateSearchKey();
+        this.shell.onDidChangeActiveWidget(updateSearchKey);
 
         this.terminalWatcher.onStoreTerminalEnvVariablesRequested(data => {
             this.storageService.setData(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY, data);
@@ -471,7 +475,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ key: k, ctrl: true }).toString(),
-                context: TerminalKeybindingContexts.terminalActive,
+                when: 'terminalFocus'
             });
         };
 
@@ -481,7 +485,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ key: k, alt: true }).toString(),
-                context: TerminalKeybindingContexts.terminalActive
+                when: 'terminalFocus'
             });
         };
 
@@ -540,7 +544,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: 'ctrlcmd+a',
-                context: TerminalKeybindingContexts.terminalActive
+                when: 'terminalFocus'
             });
         }
 
@@ -555,42 +559,42 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_CLEAR.id,
             keybinding: 'ctrlcmd+k',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT.id,
             keybinding: 'ctrlcmd+f',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
             keybinding: 'esc',
-            context: TerminalKeybindingContexts.terminalHideSearch
+            when: 'terminalSearchVisible'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_LINE_UP.id,
             keybinding: 'ctrl+shift+up',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_LINE_DOWN.id,
             keybinding: 'ctrl+shift+down',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_TO_TOP.id,
             keybinding: 'shift-home',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_PAGE_UP.id,
             keybinding: 'shift-pageUp',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.SCROLL_PAGE_DOWN.id,
             keybinding: 'shift-pageDown',
-            context: TerminalKeybindingContexts.terminalActive
+            when: 'terminalFocus'
         });
     }
 
@@ -666,6 +670,14 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         const termWidget = await this.newTerminal({});
         termWidget.start();
         this.open(termWidget, { widgetOptions: options });
+    }
+
+    protected isTerminalSearchVisible(): boolean {
+        if (!(this.shell.activeWidget instanceof TerminalWidget)) {
+            return false;
+        }
+        const searchWidget = this.shell.activeWidget.getSearchBox();
+        return searchWidget.isVisible;
     }
 
     /**

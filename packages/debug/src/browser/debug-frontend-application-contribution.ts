@@ -19,7 +19,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
-import { EditorKeybindingContexts, EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
 import { FunctionBreakpoint } from './breakpoint/breakpoint-marker';
@@ -35,7 +35,6 @@ import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugVariablesWidget } from './view/debug-variables-widget';
 import { DebugVariable } from './console/debug-console-items';
 import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
-import { DebugKeybindingContexts } from './debug-keybinding-contexts';
 import { DebugEditorModel } from './editor/debug-editor-model';
 import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
@@ -1040,60 +1039,60 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugCommands.STOP.id,
             keybinding: 'shift+f5',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
 
         keybindings.registerKeybinding({
             command: DebugCommands.RESTART.id,
             keybinding: 'shift+ctrlcmd+f5',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STEP_OVER.id,
             keybinding: 'f10',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STEP_INTO.id,
             keybinding: 'f11',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STEP_OUT.id,
             keybinding: 'shift+f11',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.CONTINUE.id,
             keybinding: 'f5',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.PAUSE.id,
             keybinding: 'f6',
-            context: DebugKeybindingContexts.inDebugMode
+            when: 'inDebugMode'
         });
 
         keybindings.registerKeybinding({
             command: DebugCommands.TOGGLE_BREAKPOINT.id,
             keybinding: 'f9',
-            context: EditorKeybindingContexts.editorTextFocus
+            when: 'editorFocus'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.INLINE_BREAKPOINT.id,
             keybinding: 'shift+f9',
-            context: EditorKeybindingContexts.editorTextFocus
+            when: 'editorFocus'
         });
 
         keybindings.registerKeybinding({
             command: DebugBreakpointWidgetCommands.ACCEPT.id,
             keybinding: 'enter',
-            context: DebugKeybindingContexts.breakpointWidgetInputFocus
+            when: 'inDebugRepl'
         });
         keybindings.registerKeybinding({
             command: DebugBreakpointWidgetCommands.CLOSE.id,
             keybinding: 'esc',
-            context: DebugKeybindingContexts.breakpointWidgetInputStrictFocus
+            when: 'inDebugRepl'
         });
     }
 

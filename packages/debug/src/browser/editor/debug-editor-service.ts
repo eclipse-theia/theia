@@ -24,9 +24,13 @@ import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model'
 import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 @injectable()
 export class DebugEditorService {
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     @inject(EditorManager)
     protected readonly editors: EditorManager;
@@ -45,6 +49,8 @@ export class DebugEditorService {
 
     protected readonly models = new Map<string, DebugEditorModel>();
 
+    protected inDebugReplKey: ContextKey<boolean>;
+
     @postConstruct()
     protected init(): void {
         this.editors.all.forEach(widget => this.push(widget));
@@ -55,6 +61,7 @@ export class DebugEditorService {
             }
         });
         this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event));
+        this.inDebugReplKey = this.contextKeyService.createKey<boolean>('inDebugRepl', this.inDebugRepl);
     }
 
     protected push(widget: EditorWidget): void {
@@ -200,6 +207,10 @@ export class DebugEditorService {
                 model.breakpointWidget.hide();
             }
         }
+    }
+
+    protected get inDebugRepl(): boolean {
+        return !!this.model?.breakpointWidget.input?.isFocused({ strict: true });
     }
 
 }
