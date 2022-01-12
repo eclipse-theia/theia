@@ -410,17 +410,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    /**
-     * @deprecated use `blurSearchFieldContainer` instead.
-     */
-    protected readonly unfocusSearchFieldContainer = this.blurSearchFieldContainer;
-    /**
-     * @deprecated use `doBlurSearchFieldContainer` instead.
-     */
-    protected doUnfocusSearchFieldContainer(): void {
-        this.doBlurSearchFieldContainer();
-    }
-
     private _searchTimeout: number;
     protected readonly search = (e: React.KeyboardEvent) => {
         e.persist();
