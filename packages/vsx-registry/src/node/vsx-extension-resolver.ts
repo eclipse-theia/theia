@@ -21,15 +21,20 @@ import { v4 as uuidv4 } from 'uuid';
 import * as requestretry from 'requestretry';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
+import { VSXExtensionRaw } from '@theia/ovsx-client';
+import { compareVersion, parseVersion } from '../common/vsx-version';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
 
     @inject(OVSXClientProvider)
     protected clientProvider: OVSXClientProvider;
+
+    @inject(PluginDeployerHandler)
+    protected pluginDeployerHandler: PluginDeployerHandler;
 
     protected readonly downloadPath: string;
 
@@ -61,6 +66,12 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const downloadUrl = extension.files.download;
         console.log(`[${id}]: resolved to '${resolvedId}'`);
 
+        const existingVersion = this.hasSameOrNewerVersion(id, extension);
+        if (existingVersion) {
+            console.log(`[${id}]: is already installed with the same or newer version '${existingVersion}'`);
+            return;
+        }
+
         const extensionPath = path.resolve(this.downloadPath, path.basename(downloadUrl));
         console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`);
         if (!await this.download(downloadUrl, extensionPath)) {
@@ -69,6 +80,19 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         }
         console.log(`[${resolvedId}]: downloaded to ${extensionPath}"`);
         context.addPlugin(resolvedId, extensionPath);
+    }
+
+    protected hasSameOrNewerVersion(id: string, extension: VSXExtensionRaw): string | undefined {
+        const existingPlugin = this.pluginDeployerHandler.getDeployedPlugin(id);
+        if (existingPlugin) {
+            const version = parseVersion(extension.version);
+            const modelVersion = existingPlugin.metadata.model.version;
+            const existingVersion = parseVersion(modelVersion);
+            if (version && existingVersion && compareVersion(existingVersion, version) >= 0) {
+                return modelVersion;
+            }
+        }
+        return undefined;
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {
