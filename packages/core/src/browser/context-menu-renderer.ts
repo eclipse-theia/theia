@@ -94,10 +94,17 @@ export abstract class ContextMenuRenderer {
 }
 
 export interface RenderContextMenuOptions {
-    menuPath: MenuPath
-    anchor: Anchor
-    args?: any[]
-    onHide?: () => void
+    menuPath: MenuPath;
+    anchor: Anchor;
+    args?: any[];
+    /**
+     * Whether the anchor should be passed as an argument to the handlers of commands for this context menu.
+     * If true, the anchor will be appended to the list of arguments or passed as the only argument if no other
+     * arguments are supplied.
+     * Default is `true`.
+     */
+    includeAnchorArg?: boolean;
+    onHide?: () => void;
 }
 export namespace RenderContextMenuOptions {
     export function resolve(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
@@ -110,7 +117,10 @@ export namespace RenderContextMenuOptions {
             menuPath = menuPathOrOptions.menuPath;
             anchor = menuPathOrOptions.anchor;
             onHide = menuPathOrOptions.onHide;
-            args = menuPathOrOptions.args ? [...menuPathOrOptions.args, anchor] : [anchor];
+            args = menuPathOrOptions.args ? menuPathOrOptions.args.slice() : [];
+            if (menuPathOrOptions.includeAnchorArg !== false) {
+                args.push(anchor);
+            }
         }
         return {
             menuPath,

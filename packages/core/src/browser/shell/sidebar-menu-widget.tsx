@@ -55,6 +55,7 @@ export class SidebarMenuWidget extends ReactWidget {
       return;
     }
     this.menus.push(menu);
+    this.menus.sort((a, b) => a.order - b.order);
     this.update();
   }
 
@@ -73,6 +74,7 @@ export class SidebarMenuWidget extends ReactWidget {
     const button = e.currentTarget.getBoundingClientRect();
     this.contextMenuRenderer.render({
       menuPath,
+      includeAnchorArg: false,
       anchor: {
         x: button.left + button.width,
         y: button.top,
@@ -82,7 +84,7 @@ export class SidebarMenuWidget extends ReactWidget {
 
   protected render(): React.ReactNode {
     return <React.Fragment>
-      {this.menus.sort((a, b) => a.order - b.order).map(menu => <i
+      {this.menus.map(menu => <i
         key={menu.id}
         className={menu.iconClass}
         title={menu.title}
