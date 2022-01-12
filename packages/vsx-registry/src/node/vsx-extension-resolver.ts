@@ -16,6 +16,7 @@
 
 import * as os from 'os';
 import * as path from 'path';
+import * as semver from 'semver';
 import * as fs from '@theia/core/shared/fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 import * as requestretry from 'requestretry';
@@ -25,7 +26,6 @@ import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverCo
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
-import { compareVersion, parseVersion } from '../common/vsx-version';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
@@ -85,11 +85,10 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     protected hasSameOrNewerVersion(id: string, extension: VSXExtensionRaw): string | undefined {
         const existingPlugin = this.pluginDeployerHandler.getDeployedPlugin(id);
         if (existingPlugin) {
-            const version = parseVersion(extension.version);
-            const modelVersion = existingPlugin.metadata.model.version;
-            const existingVersion = parseVersion(modelVersion);
-            if (version && existingVersion && compareVersion(existingVersion, version) >= 0) {
-                return modelVersion;
+            const existingVersion = semver.clean(existingPlugin.metadata.model.version);
+            const desiredVersion = semver.clean(extension.version);
+            if (desiredVersion && existingVersion && semver.gte(existingVersion, desiredVersion)) {
+                return existingVersion;
             }
         }
         return undefined;
