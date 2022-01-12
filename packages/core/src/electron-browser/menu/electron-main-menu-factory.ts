@@ -24,8 +24,6 @@ import {
 } from '../../common';
 import { Keybinding } from '../../common/keybinding';
 import { PreferenceService, KeybindingRegistry, CommonCommands } from '../../browser';
-import debounce = require('lodash.debounce');
-import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 
 /**
@@ -56,9 +54,6 @@ export type ElectronMenuItemRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' |
 @injectable()
 export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected _menu: Electron.Menu | undefined;
-    protected _toggledCommands: Set<string> = new Set();
-
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(PreferenceService) protected readonly preferencesService: PreferenceService,
@@ -66,51 +61,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) {
         super();
-        preferencesService.onPreferenceChanged(
-            debounce(e => {
-                if (e.preferenceName === 'window.menuBarVisibility') {
-                    this.setMenuBar();
-                }
-                if (this._menu) {
-                    for (const item of this._toggledCommands) {
-                        this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
-                    }
-                    electron.remote.getCurrentWindow().setMenu(this._menu);
-                }
-            }, 10)
-        );
-        keybindingRegistry.onKeybindingsChanged(() => {
-            this.setMenuBar();
-        });
     }
 
-    async setMenuBar(): Promise<void> {
-        await this.preferencesService.ready;
-        if (isOSX) {
-            const createdMenuBar = this.createElectronMenuBar();
-            electron.remote.Menu.setApplicationMenu(createdMenuBar);
-        } else if (this.preferencesService.get('window.titleBarStyle') === 'native') {
-            const createdMenuBar = this.createElectronMenuBar();
-            electron.remote.getCurrentWindow().setMenu(createdMenuBar);
-        }
-    }
-
-    createElectronMenuBar(): Electron.Menu | null {
-        const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
-        const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
-        if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
-            const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-            const template = this.fillMenuTemplate([], menuModel);
-            if (isOSX) {
-                template.unshift(this.createOSXMenu());
-            }
-            const menu = electron.remote.Menu.buildFromTemplate(template);
-            this._menu = menu;
-            return this._menu;
-        }
-        this._menu = undefined;
-        // eslint-disable-next-line no-null/no-null
-        return null;
+    createElectronMenuBar(): Electron.Menu {
+        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
+        const template = this.fillMenuTemplate(isOSX ? [this.createOSXMenu()] : [], menuModel);
+        return electron.remote.Menu.buildFromTemplate(template);
     }
 
     createElectronContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
@@ -182,26 +138,19 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     continue;
                 }
 
-                const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+                const accelerator = this.getAcceleratorFor(commandId);
+                const isToggleable = this.commandRegistry.isToggleable(commandId);
 
-                let accelerator;
-
-                /* Only consider the first keybinding. */
-                if (bindings.length > 0) {
-                    const binding = bindings[0];
-                    accelerator = this.acceleratorFor(binding);
-                }
-
-                const menuItem = {
+                const menuItem: Electron.MenuItemConstructorOptions = {
                     id: node.id,
                     label: node.label,
-                    type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
+                    type: isToggleable ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
                     enabled: true, // https://github.com/eclipse-theia/theia/issues/446
                     visible: true,
                     accelerator,
-                    click: () => this.execute(commandId, args)
-                } as Electron.MenuItemConstructorOptions;
+                    click: () => this.commandRegistry.executeCommand(commandId, ...args).catch(() => { }),
+                };
 
                 if (isOSX) {
                     const role = this.roleFor(node.id);
@@ -211,15 +160,42 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     }
                 }
                 items.push(menuItem);
-
-                if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
-                    this._toggledCommands.add(commandId);
-                }
             } else {
                 items.push(...this.handleElectronDefault(menu, args, options));
             }
         }
         return items;
+    }
+
+    protected getAcceleratorFor(commandId: string): string | undefined {
+        const binding = this.keybindingRegistry.getKeybindingsForCommand(commandId)[0];
+        return binding && this.acceleratorFor(binding);
+    }
+
+    updateToggledStatus(menu?: Electron.Menu | null): void {
+        if (menu) {
+            for (const item of CompositeMenuNode.depthFirstIterator(this.menuProvider.getMenu(MAIN_MENU_BAR))) {
+                if (item instanceof ActionMenuNode) {
+                    const menuItem = menu.getMenuItemById(item.id);
+                    if (menuItem && this.commandRegistry.isToggleable(item.action.commandId)) {
+                        menuItem.checked = this.commandRegistry.isToggled(item.action.commandId);
+                    }
+                }
+            }
+        }
+    }
+
+    updateKeybindings(menu?: Electron.Menu | null): void {
+        if (menu) {
+            for (const item of CompositeMenuNode.depthFirstIterator(this.menuProvider.getMenu(MAIN_MENU_BAR))) {
+                if (item instanceof ActionMenuNode) {
+                    const menuItem = menu.getMenuItemById(item.id);
+                    if (menuItem) {
+                        menuItem.accelerator = this.getAcceleratorFor(item.action.commandId);
+                    }
+                }
+            }
+        }
     }
 
     protected handleElectronDefault(menuNode: MenuNode, args: any[] = [], options?: ElectronMenuOptions): Electron.MenuItemConstructorOptions[] {
@@ -269,23 +245,6 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 break;
         }
         return role;
-    }
-
-    protected async execute(command: string, args: any[]): Promise<void> {
-        try {
-            // This is workaround for https://github.com/eclipse-theia/theia/issues/446.
-            // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
-            // We need to check if we can execute it.
-            if (this.commandRegistry.isEnabled(command, ...args)) {
-                await this.commandRegistry.executeCommand(command, ...args);
-                if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
-                    this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command, ...args);
-                    electron.remote.getCurrentWindow().setMenu(this._menu);
-                }
-            }
-        } catch {
-            // no-op
-        }
     }
 
     protected createOSXMenu(): Electron.MenuItemConstructorOptions {

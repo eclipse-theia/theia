@@ -45,7 +45,7 @@ describe('Menus', function () {
     const container = window.theia.container;
     const shell = container.get(ApplicationShell);
     const menuBarContribution = container.get(BrowserMenuBarContribution);
-    const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.menuBar);
+    const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.browserMenu);
     const pluginService = container.get(HostedPluginSupport);
     const menus = container.get(MenuModelRegistry);
     const commands = container.get(CommandRegistry);

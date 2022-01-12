@@ -21,6 +21,8 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
 
+export const MENU_BAR_VISIBILITY = 'window.menuBarVisibility';
+
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
@@ -60,7 +62,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'code',
             markdownDescription: nls.localizeByDefault('Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`.')
         },
-        'window.menuBarVisibility': {
+        [MENU_BAR_VISIBILITY]: {
             type: 'string',
             enum: ['classic', 'visible', 'hidden', 'compact'],
             markdownEnumDescriptions: [
@@ -157,7 +159,7 @@ export interface CoreConfiguration {
     'breadcrumbs.enabled': boolean;
     'files.encoding': string
     'keyboard.dispatch': 'code' | 'keyCode';
-    'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
+    [MENU_BAR_VISIBILITY]: 'classic' | 'visible' | 'hidden' | 'compact';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;

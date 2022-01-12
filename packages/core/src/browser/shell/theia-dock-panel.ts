@@ -24,7 +24,6 @@ import { inject } from 'inversify';
 import { Emitter, environment } from '../../common';
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
-const VISIBLE_MENU_MAXIMIZED_CLASS = 'theia-visible-menu-maximized';
 
 export const MAIN_AREA_ID = 'theia-main-content-panel';
 export const BOTTOM_AREA_ID = 'theia-bottom-content-panel';
@@ -63,30 +62,10 @@ export class TheiaDockPanel extends DockPanel {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
-        if (preferences) {
-            preferences.onPreferenceChanged(preference => {
-                if (!this.isElectron() && preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
-                    this.handleMenuBarVisibility(preference.newValue);
-                }
-            });
-        }
     }
 
     isElectron(): boolean {
         return environment.electron.is();
-    }
-
-    protected handleMenuBarVisibility(newValue: string): void {
-        const areaContainer = this.node.parentElement;
-        const maximizedElement = this.getMaximizedElement();
-
-        if (areaContainer === maximizedElement) {
-            if (newValue === 'visible') {
-                this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            } else {
-                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            }
-        }
     }
 
     protected _currentTitle: Title<Widget> | undefined;
@@ -179,10 +158,6 @@ export class TheiaDockPanel extends DockPanel {
         }
         maximizedElement.style.display = 'block';
         this.addClass(MAXIMIZED_CLASS);
-        const preference = this.preferences?.get('window.menuBarVisibility');
-        if (!this.isElectron() && preference === 'visible') {
-            this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-        }
         UnsafeWidgetUtilities.attach(this, maximizedElement);
         this.fit();
         this.onDidToggleMaximizedEmitter.fire(this);
@@ -190,9 +165,6 @@ export class TheiaDockPanel extends DockPanel {
             maximizedElement.style.display = 'none';
             this.removeClass(MAXIMIZED_CLASS);
             this.onDidToggleMaximizedEmitter.fire(this);
-            if (!this.isElectron()) {
-                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            }
             if (this.isAttached) {
                 UnsafeWidgetUtilities.detach(this);
             }

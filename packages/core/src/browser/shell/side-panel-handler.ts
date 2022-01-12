@@ -111,6 +111,7 @@ export class SidePanelHandler {
      * Options that control the behavior of the side panel.
      */
     protected options: SidePanel.Options;
+    protected sideContainer: Panel;
 
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
@@ -250,6 +251,7 @@ export class SidePanelHandler {
         const sidebarContainerLayout = new PanelLayout();
         const sidebarContainer = new Panel({ layout: sidebarContainerLayout });
         sidebarContainer.addClass('theia-app-sidebar-container');
+        this.sideContainer = sidebarContainer;
         sidebarContainerLayout.addWidget(this.topMenu);
         sidebarContainerLayout.addWidget(this.tabBar);
         sidebarContainerLayout.addWidget(this.bottomMenu);
@@ -402,6 +404,10 @@ export class SidePanelHandler {
             SidePanelHandler.rankProperty.set(widget, options.rank);
         }
         this.dockPanel.addWidget(widget);
+    }
+
+    prependWidgetToTabbar(widget: Widget): void {
+        this.sideContainer.insertWidget(0, widget);
     }
 
     /**

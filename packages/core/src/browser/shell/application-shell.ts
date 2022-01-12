@@ -22,11 +22,11 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
-import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
+import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID, MAXIMIZED_CLASS } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
 import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -262,17 +262,6 @@ export class ApplicationShell extends Widget {
     protected init(): void {
         this.initSidebarVisibleKeyContext();
         this.initFocusKeyContexts();
-
-        if (!environment.electron.is()) {
-            this.corePreferences.ready.then(() => {
-                this.setTopPanelVisibility(this.corePreferences['window.menuBarVisibility']);
-            });
-            this.corePreferences.onPreferenceChanged(preference => {
-                if (preference.preferenceName === 'window.menuBarVisibility') {
-                    this.setTopPanelVisibility(preference.newValue);
-                }
-            });
-        }
     }
 
     protected initSidebarVisibleKeyContext(): void {
@@ -1827,6 +1816,13 @@ export class ApplicationShell extends Widget {
             area.toggleMaximized();
             this.revealWidget(widget!.id);
         }
+    }
+
+    /**
+     * @returns `true` if any dock panel is currently maximized.
+     */
+    isAreaMaximized(): boolean {
+        return document.getElementsByClassName(MAXIMIZED_CLASS).length > 0;
     }
 }
 

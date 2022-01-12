@@ -78,7 +78,8 @@ export interface SubMenuOptions {
 
 export type MenuPath = string[];
 
-export const MAIN_MENU_BAR: MenuPath = ['menubar'];
+export const COMPACT_MENU_ROOT: MenuPath = ['main-menu-root'];
+export const MAIN_MENU_BAR: MenuPath = [...COMPACT_MENU_ROOT, 'menubar'];
 
 export const SETTINGS_MENU: MenuPath = ['settings_menu'];
 export const ACCOUNTS_MENU: MenuPath = ['accounts_menu'];
@@ -314,6 +315,17 @@ export interface MenuNode {
  * Node representing a (sub)menu in the menu tree structure.
  */
 export class CompositeMenuNode implements MenuNode {
+    static * depthFirstIterator(parent: CompositeMenuNode): IterableIterator<MenuNode> {
+        yield parent;
+        for (const child of parent.children) {
+            if (child instanceof CompositeMenuNode) {
+                yield* CompositeMenuNode.depthFirstIterator(child);
+            } else {
+                yield child;
+            }
+        }
+    }
+
     protected readonly _children: MenuNode[] = [];
     public iconClass?: string;
     public order?: string;
@@ -447,3 +459,4 @@ export class ActionMenuNode implements MenuNode {
         return this.action.order || this.label;
     }
 }
+

@@ -78,7 +78,7 @@ blockquote {
     background: var(--theia-editor-background);
 }
 
-.theia-visible-menu-maximized {
+.theia-menu-visible .theia-maximized {
   top: var(--theia-private-menubar-height) !important;
 }
 

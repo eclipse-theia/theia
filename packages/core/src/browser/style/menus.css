@@ -54,14 +54,14 @@
 }
 
 
-.p-MenuBar-item.p-mod-active {
+#theia-top-panel .p-MenuBar-item.p-mod-active {
   background: var(--theia-menubar-selectionBackground);
   color: var(--theia-menubar-selectionForeground);
   opacity: 1;
 }
 
 
-.p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
+#theia-top-panel .p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
   z-index: calc(var(--theia-menu-z-index) - 1);
   background: var(--theia-menubar-selectionBackground);
   border-left: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
@@ -212,3 +212,24 @@
 .p-Menu-item[data-type='submenu'] > .p-Menu-itemSubmenuIcon::before {
   content: '\eab6';
 }
+
+/* Menu in side panel when `window.menuBarVisibility` is `'compact'` */
+
+.theia-app-sidebar-container .p-Widget.p-MenuBar {
+  padding: 0;
+}
+
+.theia-app-sidebar-container .p-MenuBar-item {
+  width: var(--theia-private-sidebar-tab-width);
+  height: var(--theia-private-sidebar-tab-width);
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--theia-activityBar-inactiveForeground);
+}
+
+.theia-app-sidebar-container .p-MenuBar-item:hover {
+  color: var(--theia-activityBar-foreground);
+}
+

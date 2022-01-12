@@ -406,6 +406,14 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
+     * Test whether there is any handler that checks whether an item is toggled.
+     */
+    isToggleable(commandId: string): boolean {
+        const handlers = this._handlers[commandId];
+        return Boolean(handlers?.some(handler => Boolean(handler.isToggled)));
+    }
+
+    /**
      * Returns with all handlers for the given command. If the command does not have any handlers,
      * or the command is not registered, returns an empty array.
      */

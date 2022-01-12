@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
+import { SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, OnWillStopAction } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
@@ -59,44 +59,11 @@ import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
+import { CommonMenus } from './menu/main-menus';
+import { SHOW_MENU_BAR as REAL_SHOW_MENU_BAR } from './menu/browser-menu-plugin';
 
-export namespace CommonMenus {
-
-    export const FILE = [...MAIN_MENU_BAR, '1_file'];
-    export const FILE_NEW = [...FILE, '1_new'];
-    export const FILE_OPEN = [...FILE, '2_open'];
-    export const FILE_SAVE = [...FILE, '3_save'];
-    export const FILE_AUTOSAVE = [...FILE, '4_autosave'];
-    export const FILE_SETTINGS = [...FILE, '5_settings'];
-    export const FILE_SETTINGS_SUBMENU = [...FILE_SETTINGS, '1_settings_submenu'];
-    export const FILE_SETTINGS_SUBMENU_OPEN = [...FILE_SETTINGS_SUBMENU, '1_settings_submenu_open'];
-    export const FILE_SETTINGS_SUBMENU_THEME = [...FILE_SETTINGS_SUBMENU, '2_settings_submenu_theme'];
-    export const FILE_CLOSE = [...FILE, '6_close'];
-
-    export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
-    export const EDIT_UNDO = [...EDIT, '1_undo'];
-    export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
-    export const EDIT_FIND = [...EDIT, '3_find'];
-
-    export const VIEW = [...MAIN_MENU_BAR, '4_view'];
-    export const VIEW_PRIMARY = [...VIEW, '0_primary'];
-    export const VIEW_APPEARANCE = [...VIEW, '1_appearance'];
-    export const VIEW_APPEARANCE_SUBMENU = [...VIEW_APPEARANCE, '1_appearance_submenu'];
-    export const VIEW_APPEARANCE_SUBMENU_SCREEN = [...VIEW_APPEARANCE_SUBMENU, '2_appearance_submenu_screen'];
-    export const VIEW_APPEARANCE_SUBMENU_BAR = [...VIEW_APPEARANCE_SUBMENU, '3_appearance_submenu_bar'];
-    export const VIEW_EDITOR_SUBMENU = [...VIEW_APPEARANCE, '2_editor_submenu'];
-    export const VIEW_EDITOR_SUBMENU_SPLIT = [...VIEW_EDITOR_SUBMENU, '1_editor_submenu_split'];
-    export const VIEW_EDITOR_SUBMENU_ORTHO = [...VIEW_EDITOR_SUBMENU, '2_editor_submenu_ortho'];
-    export const VIEW_VIEWS = [...VIEW, '2_views'];
-    export const VIEW_LAYOUT = [...VIEW, '3_layout'];
-    export const VIEW_TOGGLE = [...VIEW, '4_toggle'];
-
-    export const SETTINGS_OPEN = [...SETTINGS_MENU, '1_settings_open'];
-    export const SETTINGS__THEME = [...SETTINGS_MENU, '2_settings_theme'];
-    // last menu item
-    export const HELP = [...MAIN_MENU_BAR, '9_help'];
-
-}
+/** @deprecated @since 1.22 import from @theia/core/lib/browser/menu/main-menus */
+export { CommonMenus };
 
 export namespace CommonCommands {
 
@@ -251,12 +218,6 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Open View...'
     });
-    export const SHOW_MENU_BAR = Command.toDefaultLocalizedCommand({
-        id: 'window.menuBarVisibility',
-        category: VIEW_CATEGORY,
-        label: 'Show Menu Bar'
-    });
-
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
         category: FILE_CATEGORY,
@@ -305,6 +266,9 @@ export namespace CommonCommands {
         id: 'workbench.action.configureLanguage',
         label: 'Configure Display Language'
     });
+
+    /** @deprecated @since 1.22 import from @theia/core/lib/browser/menu/browser-menu-plugin instead */
+    export const SHOW_MENU_BAR = REAL_SHOW_MENU_BAR;
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -464,22 +428,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 this.updateThemeFromPreference(e.preferenceName);
                 break;
             }
-            case 'window.menuBarVisibility': {
-                const { newValue } = e;
-                const mainMenuId = 'main-menu';
-                if (newValue === 'compact') {
-                    this.shell.leftPanelHandler.addTopMenu({
-                        id: mainMenuId,
-                        iconClass: 'codicon codicon-menu',
-                        title: nls.localizeByDefault('Application Menu'),
-                        menuPath: ['menubar'],
-                        order: 0,
-                    });
-                } else {
-                    app.shell.leftPanelHandler.removeTopMenu(mainMenuId);
-                }
-                break;
-            }
             case 'workbench.sash.hoverDelay':
             case 'workbench.sash.size': {
                 this.setSashProperties();
@@ -630,11 +578,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.COPY_PATH.id,
             label: CommonCommands.COPY_PATH.label,
             order: '1',
-        });
-        registry.registerMenuAction(CommonMenus.VIEW_APPEARANCE_SUBMENU_BAR, {
-            commandId: CommonCommands.SHOW_MENU_BAR.id,
-            label: nls.localizeByDefault('Toggle Menu Bar'),
-            order: '0'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
@@ -840,19 +783,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isVisible: title => Boolean(title?.owner && this.shell.canToggleMaximized(title?.owner)),
             execute: title => title?.owner && this.shell.toggleMaximized(title?.owner),
         }));
-        commandRegistry.registerCommand(CommonCommands.SHOW_MENU_BAR, {
-            isEnabled: () => !isOSX,
-            isVisible: () => !isOSX,
-            execute: () => {
-                const menuBarVisibility = 'window.menuBarVisibility';
-                const visibility = this.preferences[menuBarVisibility];
-                if (visibility !== 'compact') {
-                    this.preferenceService.updateValue(menuBarVisibility, 'compact');
-                } else {
-                    this.preferenceService.updateValue(menuBarVisibility, 'classic');
-                }
-            }
-        });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.shell.save({ formatType: FormatType.ON })

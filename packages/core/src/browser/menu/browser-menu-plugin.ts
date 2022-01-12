@@ -18,22 +18,31 @@ import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
-    CommandRegistry, ActionMenuNode, CompositeMenuNode, environment,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode
+    CommandRegistry, ActionMenuNode, CompositeMenuNode,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode, CommandContribution, MenuContribution, Command, nls, isOSX, COMPACT_MENU_ROOT
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
-import { waitForRevealed } from '../widgets';
+import { waitForRevealed, codicon } from '../widgets';
 import { ApplicationShell } from '../shell';
-import { CorePreferences } from '../core-preferences';
-import { PreferenceService } from '../preferences/preference-service';
+import { CorePreferences, MENU_BAR_VISIBILITY } from '../core-preferences';
+import { PreferenceService, PreferenceScope } from '../preferences/preference-service';
+import { CommonMenus } from './main-menus';
+
+export const VISIBLE_MENU_CLASS = 'theia-menu-visible';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
 }
+
+export const SHOW_MENU_BAR = Command.toDefaultLocalizedCommand({
+    id: MENU_BAR_VISIBILITY,
+    category: 'View',
+    label: 'Show Menu Bar'
+});
 
 @injectable()
 export class BrowserMainMenuFactory implements MenuWidgetFactory {
@@ -56,39 +65,21 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
     @inject(MenuModelRegistry)
     protected readonly menuProvider: MenuModelRegistry;
 
-    createMenuBar(): MenuBarWidget {
+    createMenuBar(): DynamicMenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
-        this.corePreferences.ready.then(() => {
-            this.showMenuBar(menuBar, this.corePreferences.get('window.menuBarVisibility', 'classic'));
-        });
-        const preferenceListener = this.corePreferences.onPreferenceChanged(preference => {
-            if (preference.preferenceName === 'window.menuBarVisibility') {
-                this.showMenuBar(menuBar, preference.newValue);
-            }
-        });
-        const keybindingListener = this.keybindingRegistry.onKeybindingsChanged(() => {
-            const preference = this.corePreferences['window.menuBarVisibility'];
-            this.showMenuBar(menuBar, preference);
-        });
-        menuBar.disposed.connect(() => {
-            preferenceListener.dispose();
-            keybindingListener.dispose();
-        });
         return menuBar;
     }
 
-    protected showMenuBar(menuBar: DynamicMenuBarWidget, preference: string | undefined): void {
-        if (preference && ['classic', 'visible'].includes(preference)) {
+    rebuildMenu(menuBar?: MenuBarWidget, menuPath = MAIN_MENU_BAR): void {
+        if (menuBar) {
             menuBar.clearMenus();
-            this.fillMenuBar(menuBar);
-        } else {
-            menuBar.clearMenus();
+            this.fillMenuBar(menuBar, menuPath);
         }
     }
 
-    protected fillMenuBar(menuBar: MenuBarWidget): void {
-        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
+    protected fillMenuBar(menuBar: MenuBarWidget, menuPath = MAIN_MENU_BAR): void {
+        const menuModel = this.menuProvider.getMenu(menuPath);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel);
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
@@ -153,6 +144,11 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
 export class DynamicMenuBarWidget extends MenuBarWidget {
 
     /**
+     * If true, children will anchor at the top-right of the parent, rather than bottom-left.
+     */
+    public openChildrenRight = false;
+
+    /**
      * We want to restore the focus after the menu closes.
      */
     protected previousFocusedElement: HTMLElement | undefined;
@@ -174,6 +170,11 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
                 this.activeMenu.aboutToShow({ previousFocusedElement: this.previousFocusedElement });
             }
             super['_openChildMenu']();
+            if (this.childMenu && this.openChildrenRight) {
+                const { top, right } = this.node.getBoundingClientRect();
+                this.childMenu.node.style.top = `${top}px`;
+                this.childMenu.node.style.left = `${right}px`;
+            }
         };
     }
 
@@ -276,14 +277,14 @@ export class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
+    protected updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
         const items = this.buildSubMenus([], menu, commands);
         for (const item of items) {
             parent.addItem(item);
         }
     }
 
-    private buildSubMenus(items: MenuWidget.IItemOptions[], menu: CompositeMenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
+    protected buildSubMenus(items: MenuWidget.IItemOptions[], menu: CompositeMenuNode, commands: MenuCommandRegistry): MenuWidget.IItemOptions[] {
         for (const item of menu.children) {
             if (item instanceof CompositeMenuNode) {
                 if (item.children.length) { // do not render empty nodes
@@ -363,11 +364,10 @@ export class DynamicMenuWidget extends MenuWidget {
             }
         }
     }
-
 }
 
 @injectable()
-export class BrowserMenuBarContribution implements FrontendApplicationContribution {
+export class BrowserMenuBarContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -375,16 +375,103 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
+    protected browserMenu: DynamicMenuBarWidget | undefined;
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
 
-    onStart(app: FrontendApplication): void {
-        this.appendMenu(app.shell);
+    async onStart(app: FrontendApplication): Promise<void> {
+        await this.subscribeToPreferenceEvents();
+        this.attachMainMenu();
+        this.subscribeToKeyBindingEvents();
     }
 
-    get menuBar(): MenuBarWidget | undefined {
-        return this.shell.topPanel.widgets.find(w => w instanceof MenuBarWidget) as MenuBarWidget | undefined;
+    protected ensureBrowserMenu(): DynamicMenuBarWidget {
+        if (!this.browserMenu) {
+            this.browserMenu = this.factory.createMenuBar();
+        }
+        return this.browserMenu;
+    }
+
+    protected async subscribeToPreferenceEvents(): Promise<void> {
+        await this.preferenceService.ready;
+        this.preferenceService.onPreferenceChanged(e => {
+            if (e.preferenceName === MENU_BAR_VISIBILITY) {
+                this.handleVisibilityChange();
+            }
+        });
+    }
+
+    protected subscribeToKeyBindingEvents(): void {
+        this.keybindingRegistry.onKeybindingsChanged(() => this.handleKeyBindingChange());
+    }
+
+    /**
+     * Responsible for creating the menu on startup and ensuring that it is attached.
+     */
+    protected attachMainMenu(menuVisibility = this.getMenuVisibility()): void {
+        const logo = this.createLogo();
+        this.shell.addWidget(logo, { area: 'top' });
+        this.browserMenu = this.factory.createMenuBar();
+        this.handleVisibilityChange(menuVisibility);
+    }
+
+    /**
+     * Handles changes to the `window.menuBarVisibility` preference as well as panel maximization.
+     */
+    protected handleVisibilityChange(menuVisibility = this.getMenuVisibility()): void {
+        const menu = this.ensureBrowserMenu();
+        if (menuVisibility === 'compact') {
+            this.factory.rebuildMenu(menu, COMPACT_MENU_ROOT);
+            menu.openChildrenRight = true;
+            menu.node.title = nls.localizeByDefault('Application Menu');
+            this.attachWidgetToSidebar();
+        } else {
+            menu.openChildrenRight = false;
+            menu.node.title = '';
+            this.factory.rebuildMenu(this.ensureBrowserMenu(), MAIN_MENU_BAR);
+            this.attachMenuWidgetToTop();
+        }
+        this.setVisibilityClass(menuVisibility);
+        this.setMenuAndTopPanelVisibility(menuVisibility);
+    }
+
+    /**
+     * Adds or removes the `VISIBLE_MENU_CLASS` to the body to control the visibility of the menu when a panel is maximized.
+     */
+    protected setVisibilityClass(menuVisibility = this.getMenuVisibility()): void {
+        if (menuVisibility === 'visible') {
+            document.body.classList.add(VISIBLE_MENU_CLASS);
+        } else {
+            document.body.classList.remove(VISIBLE_MENU_CLASS);
+        }
+    }
+
+    /**
+     * Shows or hides the top panel and the menu depending on the platform and `window.menuBarVisibility` setting.
+     */
+    protected setMenuAndTopPanelVisibility(menuVisibility = this.getMenuVisibility()): void {
+        this.shell.topPanel.setHidden(menuVisibility === 'hidden' || menuVisibility === 'compact');
+    }
+
+    protected attachWidgetToSidebar(): void {
+        this.shell.leftPanelHandler.prependWidgetToTabbar(this.ensureBrowserMenu());
+    }
+
+    protected attachMenuWidgetToTop(): void {
+        this.shell.topPanel.addWidget(this.ensureBrowserMenu());
+    }
+
+    protected handleKeyBindingChange(): void {
+        this.factory.rebuildMenu(this.browserMenu);
+    }
+
+    protected getMenuVisibility(): CorePreferences[typeof MENU_BAR_VISIBILITY] {
+        return this.preferenceService.get<CorePreferences[typeof MENU_BAR_VISIBILITY]>(MENU_BAR_VISIBILITY, 'classic');
     }
 
     protected appendMenu(shell: ApplicationShell): void {
@@ -392,18 +479,6 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         shell.addWidget(logo, { area: 'top' });
         const menu = this.factory.createMenuBar();
         shell.addWidget(menu, { area: 'top' });
-        // Hiding the menu is only necessary in electron
-        // In the browser we hide the whole top panel
-        if (environment.electron.is()) {
-            this.preferenceService.ready.then(() => {
-                menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
-            });
-            this.preferenceService.onPreferenceChanged(change => {
-                if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(change.newValue));
-                }
-            });
-        }
     }
 
     protected createLogo(): Widget {
@@ -411,6 +486,26 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         logo.id = 'theia:icon';
         logo.addClass('theia-icon');
         return logo;
+    }
+
+    registerCommands(registry: CommandRegistry): void {
+        registry.registerCommand(SHOW_MENU_BAR, {
+            isEnabled: () => !isOSX,
+            isVisible: () => !isOSX,
+            execute: () => {
+                const visibility = this.preferenceService.get<CorePreferences[typeof MENU_BAR_VISIBILITY]>(MENU_BAR_VISIBILITY, 'classic');
+                this.preferenceService.set(MENU_BAR_VISIBILITY, visibility === 'compact' ? 'classic' : 'compact', PreferenceScope.User);
+            }
+        });
+    }
+
+    registerMenus(registry: MenuModelRegistry): void {
+        registry.registerMenuAction(CommonMenus.VIEW_APPEARANCE_SUBMENU_BAR, {
+            commandId: SHOW_MENU_BAR.id,
+            label: nls.localizeByDefault('Toggle Menu Bar'),
+            order: '0'
+        });
+        registry.registerSubmenu(MAIN_MENU_BAR, '', { iconClass: codicon('menu') });
     }
 }
 

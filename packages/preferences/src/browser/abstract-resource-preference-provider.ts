@@ -77,6 +77,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
         await this.readPreferencesFromFile();
+        await this.fireDidPreferencesChanged();
+        // Ready should only resolve when the first round of events has fired.
         this._ready.resolve();
 
         const reference = await this.textModelService.createModelReference(uri);
