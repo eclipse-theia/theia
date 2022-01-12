@@ -41,8 +41,8 @@ export class KeybindingSchemaUpdater implements JsonSchemaContribution {
 
     protected updateSchema(): void {
         const schema = deepClone(keybindingSchema);
-        const enumValues = schema.items.properties.command.anyOf[1].enum!;
-        const enumDescriptions = schema.items.properties.command.anyOf[1].enumDescriptions!;
+        const enumValues = schema.items.allOf[0].properties!.command.anyOf[1].enum!;
+        const enumDescriptions = schema.items.allOf[0].properties!.command.anyOf[1].enumDescriptions!;
         for (const command of this.commandRegistry.getAllCommands()) {
             if (command.handlers.length > 0 && !command.id.startsWith('_')) {
                 enumValues.push(command.id);
@@ -59,16 +59,30 @@ export const keybindingSchema = {
     type: 'array',
     title: 'Keybinding Configuration File',
     default: [],
+    definitions: {
+        key: { type: 'string', description: nls.localizeByDefault('Key or key sequence (separated by space)') },
+    },
     items: {
         type: 'object',
-        required: ['key', 'command'],
         defaultSnippets: [{ body: { key: '$1', command: '$2', when: '$3' } }],
-        properties: {
-            key: { type: 'string', description: nls.localizeByDefault('Key or key sequence (separated by space)') },
-            command: { anyOf: [{ type: 'string' }, { enum: <string[]>[], enumDescriptions: <string[]>[] }], description: nls.localizeByDefault('Name of the command to execute') },
-            when: { type: 'string', description: nls.localizeByDefault('Condition when the key is active.') },
-            args: { description: nls.localizeByDefault('Arguments to pass to the command to execute.') }
-        },
+        allOf: [
+            {
+                required: ['command'],
+                properties: {
+                    command: {
+                        anyOf: [{ type: 'string' }, { enum: <string[]>[], enumDescriptions: <string[]>[] }], description: nls.localizeByDefault('Name of the command to execute')
+                    },
+                    when: { type: 'string', description: nls.localizeByDefault('Condition when the key is active.') },
+                    args: { description: nls.localizeByDefault('Arguments to pass to the command to execute.') }
+                }
+            },
+            {
+                anyOf: [
+                    { required: ['key'], properties: { key: { $ref: '#/definitions/key' }, } },
+                    { required: ['keybinding'], properties: { keybinding: { $ref: '#/definitions/key' } } }
+                ]
+            }
+        ]
     },
     allowComments: true,
     allowTrailingCommas: true,

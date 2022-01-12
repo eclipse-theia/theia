@@ -75,14 +75,18 @@ export namespace Keybinding {
      *
      * @param binding the binding to create an API object for.
      */
-    export function apiObjectify(binding: Keybinding): Keybinding {
+    export function apiObjectify(binding: Keybinding | RawKeybinding): Keybinding {
         return {
             command: binding.command,
-            keybinding: binding.keybinding,
+            keybinding: retrieveKeybinding(binding),
             context: binding.context,
             when: binding.when,
             args: binding.args
         };
+    }
+
+    export function retrieveKeybinding(binding: Partial<Keybinding & RawKeybinding>): string {
+        return binding.keybinding ?? binding.key ?? '';
     }
 
     /**
@@ -100,5 +104,21 @@ export namespace Keybinding {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: Keybinding | any): arg is Keybinding {
         return !!arg && arg === Object(arg) && 'command' in arg && 'keybinding' in arg;
+    }
+}
+
+/**
+ * @internal
+ *
+ * Optional representation of key sequence as found in `keymaps.json` file.
+ * Use `keybinding` as the official representation.
+ */
+export interface RawKeybinding extends Omit<Keybinding, 'keybinding'> {
+    key: string;
+}
+
+export namespace RawKeybinding {
+    export function is(candidate: unknown): candidate is RawKeybinding {
+        return typeof candidate === 'object' && !!candidate && 'command' in candidate && 'key' in candidate;
     }
 }
