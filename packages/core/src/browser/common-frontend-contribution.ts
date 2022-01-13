@@ -50,7 +50,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
-import { FormatType, Saveable } from './saveable';
+import { FormatType, Saveable, SaveOptions } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
@@ -60,6 +60,7 @@ import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
+import { SaveResourceService } from './save-resource-service';
 
 export namespace CommonMenus {
 
@@ -338,7 +339,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
-        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider
+        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider,
+        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
     ) { }
 
     @inject(ContextKeyService)
@@ -889,10 +891,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
-            execute: () => this.shell.save({ formatType: FormatType.ON })
+            execute: () => this.save({ formatType: FormatType.ON })
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_WITHOUT_FORMATTING, {
-            execute: () => this.shell.save({ formatType: FormatType.OFF })
+            execute: () => this.save({ formatType: FormatType.OFF })
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
             execute: () => this.shell.saveAll({ formatType: FormatType.DIRTY })
@@ -1056,6 +1058,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 when: 'activeEditorIsPinned'
             }
         );
+    }
+
+    protected async save(options?: SaveOptions): Promise<void> {
+        const widget = this.shell.currentWidget;
+        this.saveResourceService.save(widget, options);
     }
 
     protected async openAbout(): Promise<void> {
