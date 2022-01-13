@@ -42,7 +42,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import * as markdownit from 'markdown-it';
+import * as markdownit from '@theia/core/shared/markdown-it';
 import { isMarkdownString } from '../../../plugin/markdown-string';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';

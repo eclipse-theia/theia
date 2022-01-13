@@ -28,7 +28,7 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import * as markdownit from 'markdown-it';
+import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
 
