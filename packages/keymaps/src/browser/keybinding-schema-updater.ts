@@ -73,7 +73,12 @@ export const keybindingSchema = {
                         anyOf: [{ type: 'string' }, { enum: <string[]>[], enumDescriptions: <string[]>[] }], description: nls.localizeByDefault('Name of the command to execute')
                     },
                     when: { type: 'string', description: nls.localizeByDefault('Condition when the key is active.') },
-                    args: { description: nls.localizeByDefault('Arguments to pass to the command to execute.') }
+                    args: { description: nls.localizeByDefault('Arguments to pass to the command to execute.') },
+                    context: {
+                        type: 'string',
+                        description: nls.localizeByDefault('Condition when the key is active.'),
+                        deprecationMessage: nls.localize('theia/keybinding-schema-updater/deprecation', 'Use `when` clause instead.')
+                    }
                 }
             },
             {
