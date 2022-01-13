@@ -284,6 +284,17 @@ export class DebugMainImpl implements DebugMain, Disposable {
         return !!session;
     }
 
+    async $stopDebugging(sessionId?: string): Promise<void> {
+        if (sessionId) {
+            const session = this.sessionManager.getSession(sessionId);
+            return this.sessionManager.terminateSession(session);
+        }
+        // Terminate all sessions if no session is provided.
+        for (const session of this.sessionManager.sessions) {
+            this.sessionManager.terminateSession(session);
+        }
+    }
+
     private toTheiaPluginApiBreakpoints(breakpoints: (SourceBreakpoint | FunctionBreakpoint)[]): Breakpoint[] {
         return breakpoints.map(b => this.toTheiaPluginApiBreakpoint(b));
     }
