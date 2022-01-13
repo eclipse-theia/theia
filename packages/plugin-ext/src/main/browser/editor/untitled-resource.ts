@@ -15,20 +15,15 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { Resource, ResourceResolver, ResourceVersion, ResourceSaveOptions } from '@theia/core/lib/common/resource';
+import { injectable } from '@theia/core/shared/inversify';
+import { Resource, ResourceResolver, ResourceVersion } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
-import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
-import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 
 let index = 0;
 
 @injectable()
 export class UntitledResourceResolver implements ResourceResolver {
-
-    @inject(FileResourceResolver)
-    protected readonly fileResourceResolver: FileResourceResolver;
 
     protected readonly resources = new Map<string, UntitledResource>();
 
@@ -38,14 +33,14 @@ export class UntitledResourceResolver implements ResourceResolver {
         } else {
             const untitledResource = this.resources.get(uri.toString());
             if (!untitledResource) {
-                return this.createUntitledResource(this.fileResourceResolver, '', '', uri);
+                return this.createUntitledResource('', '', uri);
             } else {
                 return untitledResource;
             }
         }
     }
 
-    async createUntitledResource(fileResourceResolver: FileResourceResolver, content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
+    async createUntitledResource(content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
         let extension;
         if (language) {
             for (const lang of monaco.languages.getLanguages()) {
@@ -58,33 +53,26 @@ export class UntitledResourceResolver implements ResourceResolver {
             }
         }
         return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(Schemes.untitled).withPath(`/Untitled-${index++}${extension ? extension : ''}`),
-            fileResourceResolver, content);
+            content);
     }
 }
 
 export class UntitledResource implements Resource {
 
-    private fileResource?: FileResource;
-
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
-    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private fileResourceResolver: FileResourceResolver, private content?: string) {
+    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private content?: string) {
         this.resources.set(this.uri.toString(), this);
     }
 
     dispose(): void {
         this.resources.delete(this.uri.toString());
         this.onDidChangeContentsEmitter.dispose();
-        if (this.fileResource) {
-            this.fileResource.dispose();
-        }
     }
 
     async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
-        if (this.fileResource) {
-            return this.fileResource.readContents(options);
-        } else if (this.content) {
+        if (this.content) {
             return this.content;
         } else {
             return '';
@@ -92,26 +80,9 @@ export class UntitledResource implements Resource {
     }
 
     async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: boolean }): Promise<void> {
-        if (!this.fileResource) {
-            this.fileResource = await this.fileResourceResolver.resolve(new URI(this.uri.path.toString()));
-            if (this.fileResource.onDidChangeContents) {
-                this.fileResource.onDidChangeContents(() => this.fireDidChangeContents());
-            }
-        }
-        await this.fileResource.saveContents(content, options);
-    }
-
-    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: ResourceSaveOptions): Promise<void> {
-        if (!this.fileResource || !this.fileResource.saveContentChanges) {
-            throw new Error('FileResource is not available for: ' + this.uri.path.toString());
-        }
-        await this.fileResource.saveContentChanges(changes, options);
-    }
-
-    async guessEncoding(): Promise<string | undefined> {
-        if (this.fileResource) {
-            return this.fileResource.guessEncoding();
-        }
+        // This function must exist to ensure readOnly is false for the Monaco editor.
+        // However it should not be called because saving 'untitled' is always processed as 'Save As'.
+        throw Error('never');
     }
 
     protected fireDidChangeContents(): void {
@@ -119,16 +90,10 @@ export class UntitledResource implements Resource {
     }
 
     get version(): ResourceVersion | undefined {
-        if (this.fileResource) {
-            return this.fileResource.version;
-        }
         return undefined;
     }
 
     get encoding(): string | undefined {
-        if (this.fileResource) {
-            return this.fileResource.encoding;
-        }
         return undefined;
     }
 }
