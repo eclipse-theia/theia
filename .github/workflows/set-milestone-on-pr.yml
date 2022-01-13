@@ -28,8 +28,7 @@ jobs:
         uses: actions/checkout@v2
       - id: compute-milestone
         run: |
-          cd packages/workspace
-          echo "MILESTONE_NUMBER=$(npm --no-git-tag-version version minor | cut -c 2-)" >> $GITHUB_ENV
+          echo "MILESTONE_NUMBER=$(node scripts/get-next-version.js minor)" >> $GITHUB_ENV
       - id: set
         uses: actions/github-script@v3
         with:
