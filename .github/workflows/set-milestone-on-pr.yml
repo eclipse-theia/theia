@@ -28,8 +28,8 @@ jobs:
         uses: actions/checkout@v2
       - id: compute-milestone
         run: |
-          cd packages/core
-          echo "MILESTONE_NUMBER=$(npm --no-git-tag-version version minor | cut -c 2-)" >> $GITHUB_ENV
+          export THEIA_CORE_VERSION=$(node -p "require(\"./packages/core/package.json\").version")
+          echo "MILESTONE_NUMBER=$(npx -q semver@7 --increment minor $THEIA_CORE_VERSION)" >> $GITHUB_ENV
       - id: set
         uses: actions/github-script@v3
         with:
