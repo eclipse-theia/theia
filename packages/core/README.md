@@ -89,6 +89,7 @@ export class SomeClass {
  - [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify)
  - [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce)
  - [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle)
+ - [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it)
  - [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw)
  - [`react@^16.8.0`](https://www.npmjs.com/package/react)
  - [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom)
