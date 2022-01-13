@@ -86,7 +86,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected readonly onDidUpdateEmitter = new Emitter<void>();
     readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
 
-    @inject(SearchInWorkspaceResultTreeWidget) protected readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
+    @inject(SearchInWorkspaceResultTreeWidget) readonly resultTreeWidget: SearchInWorkspaceResultTreeWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     @inject(SearchInWorkspaceContextKeyService)

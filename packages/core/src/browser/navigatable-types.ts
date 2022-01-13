@@ -63,6 +63,11 @@ export namespace NavigatableWidget {
             }
         }
     }
+    export function getUri(widget?: Widget): URI | undefined {
+        if (is(widget)) {
+            return widget.getResourceUri();
+        }
+    }
 }
 
 export interface NavigatableWidgetOptions {
