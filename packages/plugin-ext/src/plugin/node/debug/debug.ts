@@ -168,6 +168,10 @@ export class DebugExtImpl implements DebugExt {
         return this.proxy.$startDebugging(folder, nameOrConfiguration, options);
     }
 
+    stopDebugging(session?: theia.DebugSession): PromiseLike<void> {
+        return this.proxy.$stopDebugging(session?.id);
+    }
+
     registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
         if (this.descriptorFactories.has(debugType)) {
             throw new Error(`Descriptor factory for ${debugType} has been already registered`);

@@ -784,6 +784,9 @@ export function createAPIFactory(
                 Thenable<boolean> {
                 return debugExt.startDebugging(folder, nameOrConfiguration, options);
             },
+            stopDebugging(session?: theia.DebugSession): Thenable<void> {
+                return debugExt.stopDebugging(session);
+            },
             addBreakpoints(breakpoints: theia.Breakpoint[]): void {
                 debugExt.addBreakpoints(breakpoints);
             },
