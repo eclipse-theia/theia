@@ -20,7 +20,7 @@ import { PreferenceSchemaProvider } from './preference-contribution';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { inject, injectable } from '../../../shared/inversify';
 import { IJSONSchema } from '../../common/json-schema';
-import { deepClone } from '../../common';
+import { deepClone, unreachable } from '../../common';
 import { PreferenceProvider } from './preference-provider';
 
 export interface PreferenceValidator<T> {
@@ -96,8 +96,7 @@ export class PreferenceValidationService {
                 case 'string':
                     return this.validateString(key, value, schema);
                 default:
-                    this.validateNever(schema.type, key);
-                    return value;
+                    unreachable(schema.type, `Request to validate preference with unknown type in schema: ${key}`);
             }
         } catch (e) {
             console.error('Encountered an error while validating', key, 'with value', value, 'against schema', schema, e);
@@ -266,10 +265,6 @@ export class PreferenceValidationService {
         }
         const configuredDefault = this.getDefaultFromSchema(schema);
         return (configuredDefault ?? '').toString();
-    }
-
-    protected validateNever(nothing: never, key: string): void {
-        console.error(`Request to validate preference with unknown type in schema: ${key}, ${nothing}`);
     }
 
     protected getDefaultFromSchema(schema: ValidatablePreference): JSONValue {
