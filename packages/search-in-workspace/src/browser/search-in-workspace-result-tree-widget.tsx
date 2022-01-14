@@ -1209,12 +1209,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
 export namespace SearchInWorkspaceResultTreeWidget {
     export namespace Menus {
-        export const base = ['siw-tree-context-menu'];
+        export const BASE = ['siw-tree-context-menu'];
         /** Dismiss command, or others that only affect the widget itself */
-        export const internal = [...base, '1_internal'];
+        export const INTERNAL = [...BASE, '1_internal'];
         /** Copy a stringified representation of content */
-        export const copy = [...base, '2_copy'];
+        export const COPY = [...BASE, '2_copy'];
         /** Commands that lead out of the widget, like revealing a file in the navigator */
-        export const external = [...base, '3_external'];
+        export const EXTERNAL = [...BASE, '3_external'];
     }
 }

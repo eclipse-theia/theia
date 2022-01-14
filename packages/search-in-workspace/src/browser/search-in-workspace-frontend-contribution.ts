@@ -308,23 +308,23 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
             order: '3'
         });
-        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.internal, {
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.INTERNAL, {
             commandId: SearchInWorkspaceCommands.DISMISS_RESULT.id,
             order: '1'
         });
-        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.copy, {
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
             commandId: SearchInWorkspaceCommands.COPY_ONE.id,
             order: '1',
         });
-        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.copy, {
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
             commandId: CommonCommands.COPY_PATH.id,
             order: '2',
         });
-        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.copy, {
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
             commandId: SearchInWorkspaceCommands.COPY_ALL.id,
             order: '3',
         });
-        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.external, {
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.EXTERNAL, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             order: '1',
         });

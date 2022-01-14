@@ -74,7 +74,7 @@ export function createSearchTreeWidget(parent: interfaces.Container): SearchInWo
 
     child.unbind(TreeWidget);
     child.bind(SearchInWorkspaceResultTreeWidget).toSelf();
-    child.rebind(TreeProps).toConstantValue(<TreeProps>{ ...defaultTreeProps, contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.base, globalSelection: true });
+    child.rebind(TreeProps).toConstantValue(<TreeProps>{ ...defaultTreeProps, contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.BASE, globalSelection: true });
 
     return child.get(SearchInWorkspaceResultTreeWidget);
 }
