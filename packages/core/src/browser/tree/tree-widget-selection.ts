@@ -21,7 +21,7 @@ export type TreeWidgetSelection = ReadonlyArray<Readonly<SelectableTreeNode>> & 
     source: TreeWidget
 };
 export namespace TreeWidgetSelection {
-    export function isSource(selection: Object | undefined, source: TreeWidget): boolean {
+    export function isSource(selection: Object | undefined, source: TreeWidget): selection is TreeWidgetSelection {
         return getSource(selection) === source;
     }
     export function getSource(selection: Object | undefined): TreeWidget | undefined {

@@ -30,9 +30,10 @@ import {
     ApplicationShell,
     DiffUris,
     TREE_NODE_INFO_CLASS,
-    codicon
+    codicon,
+    TopDownTreeIterator
 } from '@theia/core/lib/browser';
-import { CancellationTokenSource, Emitter, Event, ProgressService } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event, isWindows, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
     EditorWidget, ReplaceOperation, EditorOpenerOptions, FindMatch
@@ -70,6 +71,7 @@ export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, Sel
     parent: SearchInWorkspaceRoot;
     path: string;
     folderUri: string;
+    uri: URI;
 }
 export namespace SearchInWorkspaceRootFolderNode {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,6 +87,7 @@ export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, Selectabl
     parent: SearchInWorkspaceRootFolderNode;
     path: string;
     fileUri: string;
+    uri: URI;
 }
 export namespace SearchInWorkspaceFileNode {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -656,6 +659,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             selected: false,
             path: uri.path.toString(),
             folderUri: rootUri,
+            uri: new URI(rootUri),
             children: [],
             expanded: true,
             id: rootUri,
@@ -672,7 +676,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             expanded: true,
             id: `${rootUri}::${fileUri}`,
             parent,
-            fileUri
+            fileUri,
+            uri: new URI(fileUri),
         };
     }
 
@@ -707,7 +712,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const uri: URI = new URI(uriStr);
         const relativePath = new URI(rootUriStr).relative(uri.parent);
         return {
-            name: uri.displayName,
+            name: this.labelProvider.getName(uri),
             path: relativePath ? relativePath.toString() : ''
         };
     }
@@ -899,7 +904,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <span className={codicon('close')} onClick={e => this.remove(node, e)} title='Dismiss'></span>;
     }
 
-    protected removeNode(node: TreeNode): void {
+    removeNode(node: TreeNode): void {
         if (SearchInWorkspaceRootFolderNode.is(node)) {
             this.removeRootFolderNode(node);
         } else if (SearchInWorkspaceFileNode.is(node)) {
@@ -1164,4 +1169,52 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return itemA.localeCompare(itemB);
     }
 
+    /**
+     * @param recursive if true, all child nodes will be included in the stringified result.
+     */
+    nodeToString(node: TreeNode, recursive: boolean): string {
+        if (SearchInWorkspaceFileNode.is(node) || SearchInWorkspaceRootFolderNode.is(node)) {
+            if (recursive) {
+                return this.nodeIteratorToString(new TopDownTreeIterator(node, { pruneSiblings: true }));
+            }
+            return this.labelProvider.getLongName(node.uri);
+        }
+        if (SearchInWorkspaceResultLineNode.is(node)) {
+            return `  ${node.line}:${node.character}: ${node.lineText}`;
+        }
+        return '';
+    }
+
+    treeToString(): string {
+        return this.nodeIteratorToString(this.getVisibleNodes());
+    }
+
+    protected *getVisibleNodes(): IterableIterator<TreeNode> {
+        for (const { node } of this.rows.values()) {
+            yield node;
+        }
+    }
+
+    protected nodeIteratorToString(nodes: Iterable<TreeNode>): string {
+        const strings = [];
+        for (const node of nodes) {
+            const string = this.nodeToString(node, false);
+            if (string.length !== 0) {
+                strings.push(string);
+            }
+        }
+        return strings.join(isWindows ? '\r\n' : '\n');
+    }
+}
+
+export namespace SearchInWorkspaceResultTreeWidget {
+    export namespace Menus {
+        export const BASE = ['siw-tree-context-menu'];
+        /** Dismiss command, or others that only affect the widget itself */
+        export const INTERNAL = [...BASE, '1_internal'];
+        /** Copy a stringified representation of content */
+        export const COPY = [...BASE, '2_copy'];
+        /** Commands that lead out of the widget, like revealing a file in the navigator */
+        export const EXTERNAL = [...BASE, '3_external'];
+    }
 }

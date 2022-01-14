@@ -14,12 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import {
+    AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution, CommonCommands
+} from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
 import { codicon, Widget } from '@theia/core/lib/browser/widgets';
-import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
+import { FileNavigatorCommands, NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -29,6 +31,9 @@ import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SEARCH_VIEW_CONTAINER_ID } from './search-in-workspace-factory';
+import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
+import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -80,6 +85,21 @@ export namespace SearchInWorkspaceCommands {
         label: 'Clear Search Results',
         iconClass: codicon('clear-all')
     });
+    export const COPY_ALL = Command.toDefaultLocalizedCommand({
+        id: 'search.action.copyAll',
+        category: SEARCH_CATEGORY,
+        label: 'Copy All',
+    });
+    export const COPY_ONE = Command.toDefaultLocalizedCommand({
+        id: 'search.action.copyMatch',
+        category: SEARCH_CATEGORY,
+        label: 'Copy',
+    });
+    export const DISMISS_RESULT = Command.toDefaultLocalizedCommand({
+        id: 'search.action.remove',
+        category: SEARCH_CATEGORY,
+        label: 'Dismiss',
+    });
 }
 
 @injectable()
@@ -90,6 +110,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     @inject(SearchInWorkspaceContextKeyService)
     protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
@@ -180,6 +201,60 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             isEnabled: w => this.withWidget(w, widget => widget.hasResultList()),
             isVisible: w => this.withWidget(w, () => true)
         });
+        commands.registerCommand(SearchInWorkspaceCommands.DISMISS_RESULT, {
+            isEnabled: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            isVisible: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            execute: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                if (TreeWidgetSelection.is(selection)) {
+                    widget.resultTreeWidget.removeNode(selection[0]);
+                }
+            })
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.COPY_ONE, {
+            isEnabled: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            isVisible: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            execute: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                if (TreeWidgetSelection.is(selection)) {
+                    const string = widget.resultTreeWidget.nodeToString(selection[0], true);
+                    if (string.length !== 0) {
+                        this.clipboardService.writeText(string);
+                    }
+                }
+            })
+        });
+        commands.registerCommand(SearchInWorkspaceCommands.COPY_ALL, {
+            isEnabled: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            isVisible: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                return TreeWidgetSelection.isSource(selection, widget.resultTreeWidget) && selection.length > 0;
+            }),
+            execute: () => this.withWidget(undefined, widget => {
+                const { selection } = this.selectionService;
+                if (TreeWidgetSelection.is(selection)) {
+                    const string = widget.resultTreeWidget.treeToString();
+                    if (string.length !== 0) {
+                        this.clipboardService.writeText(string);
+                    }
+                }
+            })
+        });
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: SearchInWorkspaceWidget) => T): T | false {
@@ -232,6 +307,26 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         menus.registerMenuAction(CommonMenus.EDIT_FIND, {
             commandId: SearchInWorkspaceCommands.REPLACE_IN_FILES.id,
             order: '3'
+        });
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.INTERNAL, {
+            commandId: SearchInWorkspaceCommands.DISMISS_RESULT.id,
+            order: '1'
+        });
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
+            commandId: SearchInWorkspaceCommands.COPY_ONE.id,
+            order: '1',
+        });
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
+            commandId: CommonCommands.COPY_PATH.id,
+            order: '2',
+        });
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.COPY, {
+            commandId: SearchInWorkspaceCommands.COPY_ALL.id,
+            order: '3',
+        });
+        menus.registerMenuAction(SearchInWorkspaceResultTreeWidget.Menus.EXTERNAL, {
+            commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
+            order: '1',
         });
     }
 

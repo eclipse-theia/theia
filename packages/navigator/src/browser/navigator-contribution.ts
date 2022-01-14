@@ -22,7 +22,6 @@ import {
     FrontendApplication,
     FrontendApplicationContribution,
     KeybindingRegistry,
-    Navigatable,
     OpenerService,
     PreferenceScope,
     PreferenceService,
@@ -75,7 +74,8 @@ import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-
 import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
 import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 import { nls } from '@theia/core/lib/common/nls';
-import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
+import URI from '@theia/core/lib/common/uri';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = Command.toLocalizedCommand({
@@ -271,10 +271,14 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerCommand(FileNavigatorCommands.FOCUS, {
             execute: () => this.openView({ activate: true })
         });
-        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, new CurrentWidgetCommandAdapter(this.shell, {
-            execute: title => this.selectWidgetFileNode(title?.owner),
-            isEnabled: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
-            isVisible: title => Navigatable.is(title?.owner) && Boolean(this.workspaceService.getWorkspaceRootUri(title?.owner.getResourceUri())),
+        registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, UriAwareCommandHandler.MonoSelect(this.selectionService, {
+            execute: async uri => {
+                if (await this.selectFileNode(uri)) {
+                    this.openView({ activate: false, reveal: true });
+                }
+            },
+            isEnabled: uri => !!this.workspaceService.getWorkspaceRootUri(uri),
+            isVisible: uri => !!this.workspaceService.getWorkspaceRootUri(uri),
         }));
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
@@ -634,17 +638,20 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
      *
      * @param widget widget file resource of which should be revealed and selected
      */
-    async selectWidgetFileNode(widget: Widget | undefined): Promise<void> {
-        if (Navigatable.is(widget)) {
-            const resourceUri = widget.getResourceUri();
-            if (resourceUri) {
-                const { model } = await this.widget;
-                const node = await model.revealFile(resourceUri);
-                if (SelectableTreeNode.is(node)) {
-                    model.selectNode(node);
-                }
+    async selectWidgetFileNode(widget: Widget | undefined): Promise<boolean> {
+        return this.selectFileNode(NavigatableWidget.getUri(widget));
+    }
+
+    async selectFileNode(uri?: URI): Promise<boolean> {
+        if (uri) {
+            const { model } = await this.widget;
+            const node = await model.revealFile(uri);
+            if (SelectableTreeNode.is(node)) {
+                model.selectNode(node);
+                return true;
             }
         }
+        return false;
     }
 
     protected onCurrentWidgetChangedHandler(): void {

@@ -21,7 +21,9 @@ import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
     WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
-    ApplicationShellLayoutMigration
+    ApplicationShellLayoutMigration,
+    TreeProps,
+    defaultTreeProps
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
@@ -72,6 +74,7 @@ export function createSearchTreeWidget(parent: interfaces.Container): SearchInWo
 
     child.unbind(TreeWidget);
     child.bind(SearchInWorkspaceResultTreeWidget).toSelf();
+    child.rebind(TreeProps).toConstantValue(<TreeProps>{ ...defaultTreeProps, contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.BASE, globalSelection: true });
 
     return child.get(SearchInWorkspaceResultTreeWidget);
 }
