@@ -92,5 +92,7 @@ const launchSchema: IJSONSchema = {
             }
         },
         inputs: inputsSchema.definitions!.inputs
-    }
+    },
+    allowComments: true,
+    allowTrailingCommas: true,
 };

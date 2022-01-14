@@ -48,7 +48,9 @@ export const extensionsConfigurationSchema: IJSONSchema = {
             },
             default: [],
         }
-    }
+    },
+    allowComments: true,
+    allowTrailingCommas: true,
 };
 
 @injectable()

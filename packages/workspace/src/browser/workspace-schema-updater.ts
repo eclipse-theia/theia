@@ -145,4 +145,6 @@ export const workspaceSchema: IJSONSchema = {
             }
         }
     },
+    allowComments: true,
+    allowTrailingCommas: true,
 };

@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
-import { Keybinding } from '@theia/core/lib/common/keybinding';
+import { Keybinding, RawKeybinding } from '@theia/core/lib/common/keybinding';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import * as jsoncparser from 'jsonc-parser';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -85,6 +85,8 @@ export class KeymapsService {
                     for (const value of json) {
                         if (Keybinding.is(value)) {
                             keybindings.push(value);
+                        } else if (RawKeybinding.is(value)) {
+                            keybindings.push(Keybinding.apiObjectify(value));
                         }
                     }
                 }

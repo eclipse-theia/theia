@@ -88,6 +88,7 @@ export interface IJSONSchema {
     markdownDescription?: string; // VSCode extension
     doNotSuggest?: boolean; // VSCode extension
     allowComments?: boolean; // VSCode extension
+    allowTrailingCommas?: boolean; // VSCode extension
 }
 
 export interface IJSONSchemaMap {
