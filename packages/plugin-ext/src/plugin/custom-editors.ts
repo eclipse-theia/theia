@@ -29,7 +29,7 @@ import { WebviewImpl, WebviewsExtImpl } from './webviews';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { WorkspaceExtImpl } from './workspace';
-import * as Converters from './type-converters';
+import { WidgetOpenerOptions } from '@theia/core/lib/browser';
 
 export class CustomEditorsExtImpl implements CustomEditorsExt {
     private readonly proxy: CustomEditorsMain;
@@ -121,7 +121,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         handler: string,
         viewType: string,
         title: string,
-        position: number,
+        widgetOpenerOptions: WidgetOpenerOptions | undefined,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
         cancellation: CancellationToken
     ): Promise<void> {
@@ -129,10 +129,9 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         if (!entry) {
             throw new Error(`No provider found for '${viewType}'`);
         }
-        const viewColumn = Converters.toViewColumn(position);
         const panel = this.webviewExt.createWebviewPanel(viewType, title, {}, options, entry.plugin, handler);
         const webviewOptions = WebviewImpl.toWebviewOptions(options, this.workspace, entry.plugin);
-        await this.proxy.$createCustomEditorPanel(handler, title, viewColumn, webviewOptions);
+        await this.proxy.$createCustomEditorPanel(handler, title, widgetOpenerOptions, webviewOptions);
 
         const revivedResource = URI.revive(resource);
 
