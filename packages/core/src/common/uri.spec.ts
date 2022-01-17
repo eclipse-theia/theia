@@ -265,7 +265,7 @@ describe('uri', () => {
 
     describe('#resolveToAbsolute', () => {
         function checkResolution(original: string, segments: Array<Path | string>, expected: string | undefined): void {
-            it.only(`should resolve ${original.toString()} and ${segments.map(segment => segment.toString()).join(', ')} to ${expected}`, () => {
+            it(`should resolve ${original.toString()} and ${segments.map(segment => segment.toString()).join(', ')} to ${expected}`, () => {
                 const start = new URI(original);
                 const result = start.resolveToAbsolute(...segments);
                 expect(result?.toString()).equals(expected);
