@@ -23,6 +23,7 @@ import { WorkspaceUtils } from './workspace-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
@@ -147,16 +148,56 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * Perform deletion of a given URI.
      *
      * @param uri URI of selected resource.
+     * @param options deletion options.
      */
     protected async delete(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
             await Promise.all([
                 this.closeWithoutSaving(uri),
-                this.fileService.delete(uri, options)
+                options.useTrash ? this.moveFileToTrash(uri, options) : this.deleteFilePermanently(uri, options)
             ]);
         } catch (e) {
             console.error(e);
         }
+    }
+
+    protected async deleteFilePermanently(uri: URI, options: FileDeleteOptions): Promise<void> {
+        this.fileService.delete(uri, { ...options, useTrash: false });
+    }
+
+    protected async moveFileToTrash(uri: URI, options: FileDeleteOptions): Promise<void> {
+        try {
+            this.fileService.delete(uri, { ...options, useTrash: true });
+        } catch (error) {
+            console.error('Error deleting with trash:', error);
+            if (await this.confirmDeletePermanently(uri)) {
+                return this.deleteFilePermanently(uri, options);
+            }
+        }
+    }
+
+    /**
+     * Display dialog to confirm the permanent deletion of a file.
+     *
+     * @param uri URI of selected resource.
+     */
+    protected async confirmDeletePermanently(uri: URI): Promise<boolean> {
+        const title = nls.localize('theia/workspace/confirmDeletePermanently.title', 'Error deleting file');
+
+        const msg = document.createElement('div');
+
+        const question = document.createElement('p');
+        question.textContent = nls.localize('theia/workspace/confirmDeletePermanently.description',
+            'Failed to delete "{0}" using the Trash. Do you want to permanently delete instead?',
+            uri.path.base);
+        msg.append(question);
+
+        const info = document.createElement('p');
+        info.textContent = nls.localize('theia/workspace/confirmDeletePermanently.solution', 'You can disable the use of Trash in the preferences.');
+        msg.append(info);
+
+        const response = await new ConfirmDialog({ title, msg }).open();
+        return response || false;
     }
 
     /**
