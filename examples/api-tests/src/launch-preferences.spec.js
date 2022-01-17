@@ -26,7 +26,7 @@
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
 describe('Launch Preferences', function () {
-    this.timeout(5000);
+    this.timeout(10_000);
 
     const { assert } = chai;
 
