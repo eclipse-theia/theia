@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, CommandHandler } from '@theia/core';
-import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, CommonCommands } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, CommonCommands, ApplicationShell } from '@theia/core/lib/browser';
 import { ConsoleManager } from './console-manager';
-import { ConsoleKeybindingContexts } from './console-keybinding-contexts';
 import { ConsoleWidget } from './console-widget';
 import { ConsoleContentWidget } from './console-content-widget';
 import { nls } from '@theia/core/lib/common/nls';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export namespace ConsoleCommands {
     export const SELECT_ALL: Command = {
@@ -52,8 +52,42 @@ export namespace ConsoleContextMenu {
 @injectable()
 export class ConsoleContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
+    @inject(ApplicationShell)
+    protected shell: ApplicationShell;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     @inject(ConsoleManager)
     protected readonly manager: ConsoleManager;
+
+    @postConstruct()
+    protected init(): void {
+
+        const consoleContentFocusKey = this.contextKeyService.createKey<boolean>('consoleContentFocus', false);
+        const updateConsoleContentFocusKey = () => consoleContentFocusKey.set(this.isConsoleContentFocused());
+        updateConsoleContentFocusKey();
+
+        const consoleInputFocusKey = this.contextKeyService.createKey<boolean>('consoleInputFocus', false);
+        const updateConsoleInputFocusKey = () => consoleInputFocusKey.set(this.isConsoleInputFocused());
+        updateConsoleInputFocusKey();
+
+        const consoleNavigationBackEnabledKey = this.contextKeyService.createKey<boolean>('consoleNavigationBackEnabled', false);
+        const updateConsoleNavigationBackEnabledKey = () => consoleNavigationBackEnabledKey.set(this.isConsoleBackEnabled());
+        updateConsoleNavigationBackEnabledKey();
+
+        const consoleNavigationForwardEnabledKey = this.contextKeyService.createKey<boolean>('consoleNavigationForwardEnabled', false);
+        const updateConsoleNavigationForwardEnabledKey = () => consoleNavigationForwardEnabledKey.set(this.isConsoleForwardEnabled());
+        updateConsoleNavigationForwardEnabledKey();
+
+        this.shell.onDidChangeActiveWidget(() => {
+            updateConsoleContentFocusKey();
+            updateConsoleInputFocusKey();
+            updateConsoleNavigationBackEnabledKey();
+            updateConsoleNavigationForwardEnabledKey();
+        });
+
+    }
 
     initialize(): void { }
 
@@ -70,22 +104,22 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
         keybindings.registerKeybinding({
             command: ConsoleCommands.SELECT_ALL.id,
             keybinding: 'ctrlcmd+a',
-            context: ConsoleKeybindingContexts.consoleContentFocus
+            when: 'consoleContentFocus'
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.EXECUTE.id,
             keybinding: 'enter',
-            context: ConsoleKeybindingContexts.consoleInputFocus
+            when: 'consoleInputFocus',
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.NAVIGATE_BACK.id,
             keybinding: 'up',
-            context: ConsoleKeybindingContexts.consoleNavigationBackEnabled
+            when: 'consoleNavigationBackEnabled'
         });
         keybindings.registerKeybinding({
             command: ConsoleCommands.NAVIGATE_FORWARD.id,
             keybinding: 'down',
-            context: ConsoleKeybindingContexts.consoleNavigationForwardEnabled
+            when: 'consoleNavigationForwardEnabled'
         });
     }
 
@@ -113,6 +147,37 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
 
     protected newCommandHandler(execute: ConsoleExecuteFunction): ConsoleCommandHandler {
         return new ConsoleCommandHandler(this.manager, execute);
+    }
+
+    protected isConsoleContentFocused(): boolean {
+        const console = this.manager.activeConsole;
+        return !!console && !console.hasInputFocus();
+    }
+
+    protected isConsoleInputFocused(): boolean {
+        const console = this.manager.activeConsole;
+        return !!console && console.hasInputFocus();
+    }
+
+    protected isConsoleBackEnabled(): boolean {
+        const console = this.manager.activeConsole;
+        if (!!console && console.hasInputFocus()) {
+            const editor = console.input.getControl();
+            return editor.getPosition()!.equals({ lineNumber: 1, column: 1 });
+        }
+        return false;
+    }
+
+    protected isConsoleForwardEnabled(): boolean {
+        const console = this.manager.activeConsole;
+        if (!!console && console.hasInputFocus()) {
+            const editor = console.input.getControl();
+            const model = console.input.getControl().getModel()!;
+            const lineNumber = model.getLineCount();
+            const column = model.getLineMaxColumn(lineNumber);
+            return editor.getPosition()!.equals({ lineNumber, column });
+        }
+        return false;
     }
 
 }
