@@ -40,6 +40,14 @@ export interface SidebarMenu {
 @injectable()
 export class SidebarMenuWidget extends ReactWidget {
   protected readonly menus: SidebarMenu[];
+  /**
+   * The element that had focus when a menu rendered by this widget was activated.
+   */
+  protected preservedContext: HTMLElement | undefined;
+  /**
+   * Flag indicating whether a context menu is open. While a context menu is open, the `preservedContext` should not be cleared.
+   */
+  protected preservingContext = false;
 
   @inject(ContextMenuRenderer)
   protected readonly contextMenuRenderer: ContextMenuRenderer;
@@ -70,7 +78,21 @@ export class SidebarMenuWidget extends ReactWidget {
     }
   }
 
+  protected readonly onMouseDown = () => {
+    const { activeElement } = document;
+    if (activeElement instanceof HTMLElement && !this.node.contains(activeElement)) {
+      this.preservedContext = activeElement;
+    }
+  };
+
+  protected readonly onMouseOut = () => {
+    if (!this.preservingContext) {
+      this.preservedContext = undefined;
+    }
+  };
+
   protected onClick(e: React.MouseEvent<HTMLElement, MouseEvent>, menuPath: MenuPath): void {
+    this.preservingContext = true;
     const button = e.currentTarget.getBoundingClientRect();
     this.contextMenuRenderer.render({
       menuPath,
@@ -78,6 +100,13 @@ export class SidebarMenuWidget extends ReactWidget {
       anchor: {
         x: button.left + button.width,
         y: button.top,
+      },
+      onHide: () => {
+        this.preservingContext = false;
+        if (this.preservedContext) {
+          this.preservedContext.focus({ preventScroll: true });
+          this.preservedContext = undefined;
+        }
       }
     });
   }
@@ -89,6 +118,8 @@ export class SidebarMenuWidget extends ReactWidget {
         className={menu.iconClass}
         title={menu.title}
         onClick={e => this.onClick(e, menu.menuPath)}
+        onMouseDown={this.onMouseDown}
+        onMouseOut={this.onMouseOut}
       />)}
     </React.Fragment>;
   }
