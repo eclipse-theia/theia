@@ -274,10 +274,9 @@ export class DebugMainImpl implements DebugMain, Disposable {
             return false;
         }
 
-        Object.assign(configuration, options);
-
+        const debugConfiguration = { ...configuration, ...options };
         const session = await this.sessionManager.start({
-            configuration,
+            configuration: debugConfiguration,
             workspaceFolderUri: folder && Uri.revive(folder.uri).toString()
         });
 

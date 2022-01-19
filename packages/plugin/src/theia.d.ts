@@ -9758,9 +9758,10 @@ export module '@theia/plugin' {
          * Folder specific variables used in the configuration (e.g. '${workspaceFolder}') are resolved against the given folder.
          * @param folder The [workspace folder](#WorkspaceFolder) for looking up named configurations and resolving variables or `undefined` for a non-folder setup.
          * @param nameOrConfiguration Either the name of a debug or compound configuration or a [DebugConfiguration](#DebugConfiguration) object.
+         * @param parentSessionOrOptions Debug session options. When passed a parent debug session, assumes options with just this parent session.
          * @return A thenable that resolves when debugging could be successfully started.
          */
-        export function startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, options: DebugSessionOptions): PromiseLike<boolean>;
+        export function startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, parentSessionOrOptions?: DebugSession | DebugSessionOptions): PromiseLike<boolean>;
 
         /**
          * Stop the given debug session or stop all debug sessions if session is omitted.

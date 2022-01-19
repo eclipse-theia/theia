@@ -780,9 +780,15 @@ export function createAPIFactory(
             registerDebugAdapterTrackerFactory(debugType: string, factory: theia.DebugAdapterTrackerFactory): Disposable {
                 return debugExt.registerDebugAdapterTrackerFactory(debugType, factory);
             },
-            startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions):
-                Thenable<boolean> {
-                return debugExt.startDebugging(folder, nameOrConfiguration, options);
+            startDebugging(
+                folder: theia.WorkspaceFolder | undefined,
+                nameOrConfiguration: string | theia.DebugConfiguration,
+                parentSessionOrOptions?: theia.DebugSession | theia.DebugSessionOptions
+            ): Thenable<boolean> {
+                if (!parentSessionOrOptions || (typeof parentSessionOrOptions === 'object' && 'configuration' in parentSessionOrOptions)) {
+                    return debugExt.startDebugging(folder, nameOrConfiguration, { parentSession: parentSessionOrOptions });
+                }
+                return debugExt.startDebugging(folder, nameOrConfiguration, parentSessionOrOptions || {});
             },
             stopDebugging(session?: theia.DebugSession): Thenable<void> {
                 return debugExt.stopDebugging(session);
