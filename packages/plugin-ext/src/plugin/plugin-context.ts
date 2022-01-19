@@ -724,13 +724,13 @@ export function createAPIFactory(
         const plugins: typeof theia.plugins = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             get all(): theia.Plugin<any>[] {
-                return pluginManager.getAllPlugins().map(plg => new Plugin(pluginManager, plg));
+                return pluginManager.getAllPlugins().map(plg => new TheiaPlugin(pluginManager, plg));
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId.toLowerCase());
                 if (plg) {
-                    return new Plugin(pluginManager, plg);
+                    return new TheiaPlugin(pluginManager, plg);
                 }
                 return undefined;
             },
@@ -972,7 +972,7 @@ export function createAPIFactory(
     };
 }
 
-class Plugin<T> implements theia.Plugin<T> {
+export class TheiaPlugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     pluginUri: theia.Uri;

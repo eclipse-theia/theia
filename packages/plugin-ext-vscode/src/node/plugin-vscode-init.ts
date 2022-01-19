@@ -19,6 +19,7 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import { asVsCodeExtension, ExtensionKind } from './plugin-vscode-extension';
 
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
 
@@ -27,11 +28,6 @@ const plugins = new Array<Plugin>();
 let defaultApi: typeof theia;
 let isLoadOverride = false;
 let pluginApiFactory: PluginAPIFactory;
-
-export enum ExtensionKind {
-    UI = 1,
-    Workspace = 2
-}
 
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
     pluginsApiImpl.set(plugin.model.id, createVSCodeAPI(apiFactory, plugin));
@@ -50,10 +46,10 @@ function createVSCodeAPI(apiFactory: PluginAPIFactory, plugin: Plugin): typeof t
     // use Theia plugin api instead vscode extensions
     (<any>vscode).extensions = {
         get all(): any[] {
-            return vscode.plugins.all.map(p => asExtension(p));
+            return vscode.plugins.all.map(p => asVsCodeExtension(p));
         },
         getExtension(pluginId: string): any | undefined {
-            return asExtension(vscode.plugins.getPlugin(pluginId));
+            return asVsCodeExtension(vscode.plugins.getPlugin(pluginId));
         },
         get onDidChange(): theia.Event<void> {
             return vscode.plugins.onDidChange;
@@ -95,20 +91,4 @@ function overrideInternalLoad(): void {
 
 function findPlugin(filePath: string): Plugin | undefined {
     return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
-}
-
-function asExtension(plugin: any | undefined): any | undefined {
-    if (!plugin) {
-        return plugin;
-    }
-    if (plugin.pluginPath) {
-        plugin.extensionPath = plugin.pluginPath;
-    }
-
-    if (plugin.pluginUri) {
-        plugin.extensionUri = plugin.pluginUri;
-    }
-    // stub as a local VS Code extension (not running on a remote workspace)
-    plugin.extensionKind = ExtensionKind.UI;
-    return plugin;
 }
