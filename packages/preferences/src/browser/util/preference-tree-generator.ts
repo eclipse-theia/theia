@@ -58,6 +58,7 @@ export class PreferenceTreeGenerator {
         ['files', 'editor'],
         ['hosted-plugin', 'features'],
         ['keyboard', 'application'],
+        ['http', 'application'],
         ['output', 'features'],
         ['problems', 'features'],
         ['preview', 'features'],

@@ -16,6 +16,7 @@
 
 import * as chai from 'chai';
 import { OVSXClient } from './ovsx-client';
+import { NodeRequestService } from '@theia/request-service/lib/node-request-service';
 import { VSXSearchParam } from './ovsx-types';
 
 const expect = chai.expect;
@@ -31,7 +32,7 @@ describe('OVSX Client', () => {
         client = new OVSXClient({
             apiVersion,
             apiUrl
-        });
+        }, new NodeRequestService());
     });
 
     describe('isEngineValid', () => {

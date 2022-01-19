@@ -41,6 +41,7 @@
     "uuid": "^8.0.0",
     "vhost": "^3.0.2",
     "vscode-debugprotocol": "^1.32.0",
+    "vscode-proxy-agent": "^0.11.0",
     "vscode-textmate": "^4.0.1"
   },
   "publishConfig": {

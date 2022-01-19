@@ -20,6 +20,7 @@ import { FrontendApplicationContribution } from './frontend-application';
 import { MaybePromise } from '../common';
 import { Endpoint } from './endpoint';
 import { timeout, Deferred } from '../common/promise-util';
+import { RequestContext, RequestService } from '@theia/request-service';
 
 export interface JsonSchemaConfiguration {
     fileMatch: string | string[];
@@ -95,10 +96,13 @@ export class JsonSchemaStore implements FrontendApplicationContribution {
 @injectable()
 export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
 
+    @inject(RequestService)
+    protected readonly requestService: RequestService;
+
     async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
         const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
-        const response = await fetch(url);
-        const schemas: DefaultJsonSchemaContribution.SchemaData[] = (await response.json()).schemas!;
+        const response = await this.requestService.request({ url });
+        const schemas = RequestContext.asJson<{ schemas: DefaultJsonSchemaContribution.SchemaData[] }>(response).schemas;
         for (const s of schemas) {
             if (s.fileMatch) {
                 context.registerSchema({

@@ -35,10 +35,11 @@ import { bindExtensionPreferences } from './recommended-extensions/recommended-e
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
 import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
+import { RequestService } from '@theia/core/shared/@theia/request-service';
 
 export default new ContainerModule((bind, unbind) => {
     bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
-        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment));
+        const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment), ctx.container.get(RequestService));
         return () => clientPromise;
     }).inSingletonScope();
     bind(VSXEnvironment).toDynamicValue(

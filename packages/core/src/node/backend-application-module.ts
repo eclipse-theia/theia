@@ -16,6 +16,7 @@
 
 import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
+import { REQUEST_SERVICE_PATH } from '@theia/request-service';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath
@@ -35,8 +36,10 @@ import { KeytarServiceImpl } from './keytar-server';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { EnvironmentUtils } from './environment-utils';
 import { ProcessUtils } from './process-utils';
+import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendApplicationContribution } from './os-backend-application-contribution';
+import { BackendRequestFacade } from './request/backend-request-facade';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -114,6 +117,14 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(OSBackendApplicationContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(OSBackendApplicationContribution);
+
+    bind(ProxyCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toService(ProxyCliContribution);
+
+    bind(BackendRequestFacade).toSelf().inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(
+        ctx => new JsonRpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))
+    ).inSingletonScope();
 
     bindNodeStopwatch(bind);
     bindBackendStopwatchServer(bind);

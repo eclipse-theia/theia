@@ -118,6 +118,11 @@ export class VSXExtensionsModel {
         return this._installed.has(id);
     }
 
+    protected _searchError?: string;
+    get searchError(): string | undefined {
+        return this._searchError;
+    }
+
     protected _searchResult = new Set<string>();
     get searchResult(): IterableIterator<string> {
         return this._searchResult.values();
@@ -173,6 +178,7 @@ export class VSXExtensionsModel {
             }
             const client = await this.clientProvider();
             const result = await client.search(param);
+            this._searchError = result.error;
             if (token.isCancellationRequested) {
                 return;
             }

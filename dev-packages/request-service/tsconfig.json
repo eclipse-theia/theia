@@ -8,9 +8,5 @@
   "include": [
     "src"
   ],
-  "references": [
-    {
-      "path": "../request-service"
-    }
-  ]
+  "references": []
 }
