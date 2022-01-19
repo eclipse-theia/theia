@@ -94,7 +94,7 @@ export namespace Saveable {
         }
     }
 
-    async function closeWithoutSaving(this: SaveableWidget, doRevert: boolean = true): Promise<void> {
+    async function closeWithoutSaving(this: PostCreationSaveableWidget, doRevert: boolean = true): Promise<void> {
         const saveable = get(this);
         if (saveable && doRevert && saveable.dirty && saveable.revert) {
             await saveable.revert();
@@ -195,15 +195,22 @@ export namespace Saveable {
     }
 }
 
-export const close = Symbol('close');
 export interface SaveableWidget extends Widget {
     /**
      * @param doRevert whether the saveable should be reverted before being saved. Defaults to `true`.
      */
     closeWithoutSaving(doRevert?: boolean): Promise<void>;
     closeWithSaving(options?: SaveableWidget.CloseOptions): Promise<void>;
+}
+
+export const close = Symbol('close');
+/**
+ * An interface describing saveable widgets that are created by the `Saveable.apply` function.
+ * The original `close` function is reassigned to a locally-defined `Symbol`
+ */
+export interface PostCreationSaveableWidget extends SaveableWidget {
     /**
-     * The original close function of the widget
+     * The original `close` function of the widget
      */
     [close](): void;
 }
