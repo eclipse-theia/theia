@@ -1,0 +1,351 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "Open Call Hierarchy"
+    },
+    "core": {
+      "common": {
+        "closeAll": "Close All Tabs",
+        "closeAllTabMain": "Close All Tabs in Main Area",
+        "closeOtherTabMain": "Close Other Tabs in Main Area",
+        "closeOthers": "Close Other Tabs",
+        "closeRight": "Close Tabs to the Right",
+        "closeTab": "Close Tab",
+        "closeTabMain": "Close Tab in Main Area",
+        "collapseAllTabs": "Collapse All Side Panels",
+        "collapseBottomPanel": "Toggle Bottom Panel",
+        "collapseTab": "Collapse Side Panel",
+        "showNextTabGroup": "Switch to Next Tab Group",
+        "showNextTabInGroup": "Switch to Next Tab in Group",
+        "showPreviousTabGroup": "Switch to Previous Tab Group",
+        "showPreviousTabInGroup": "Switch to Previous Tab in Group",
+        "toggleMaximized": "Toggle Maximized"
+      },
+      "file": {
+        "browse": "Browse"
+      },
+      "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "keyboard": {
+        "choose": "Choose Keyboard Layout",
+        "chooseLayout": "Choose a keyboard layout",
+        "current": "(current: {0})",
+        "currentLayout": " - current layout",
+        "mac": "Mac Keyboards",
+        "pc": "PC Keyboards",
+        "tryDetect": "Try to detect the keyboard layout from browser information and pressed keys."
+      },
+      "quitMessage": "Any unsaved changes will not be saved.",
+      "quitTitle": "Are you sure you want to quit?",
+      "resetWorkbenchLayout": "Reset Workbench Layout",
+      "sashDelay": "Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.",
+      "sashSize": "Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.",
+      "silentNotifications": "Controls whether to suppress notification popups."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Select workspace root to add configuration to",
+      "continueAll": "Continue All",
+      "copyExpressionValue": "Copy Expression Value",
+      "debugViewLocation": "Controls the location of the debug view.",
+      "openBottom": "Open Bottom",
+      "openLeft": "Open Left",
+      "openRight": "Open Right",
+      "pauseAll": "Pause All",
+      "reveal": "Reveal",
+      "threads": "Threads",
+      "toggleTracing": "Enable/disable tracing communications with debug adapters"
+    },
+    "editor": {
+      "diffEditor.maxFileSize": "Maximum file size in MB for which to compute diffs. Use 0 for no limit.",
+      "editor.accessibilityPageSize": "Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default.",
+      "editor.autoClosingDelete": "Controls whether the editor should remove adjacent closing quotes or brackets when deleting.",
+      "editor.autoClosingDelete1": "Remove adjacent closing quotes or brackets only if they were automatically inserted.",
+      "editor.bracketPairColorization.enabled": "Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors.",
+      "editor.codeLensFontSize": "Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used.",
+      "editor.find.autoFindInSelection0": "Never turn on Find in Selection automatically (default).",
+      "editor.find.autoFindInSelection1": "Always turn on Find in Selection automatically.",
+      "editor.find.seedSearchStringFromSelection0": "Never seed search string from the editor selection.",
+      "editor.find.seedSearchStringFromSelection1": "Always seed search string from the editor selection, including word at cursor position.",
+      "editor.find.seedSearchStringFromSelection2": "Only seed search string from the editor selection.",
+      "editor.foldingImportsByDefault": "Controls whether the editor automatically collapses import ranges.",
+      "editor.foldingMaximumRegions": "The maximum number of foldable regions. Increasing this value may result in the editor becoming less responsive when the current source has a large number of foldable regions.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted.",
+      "editor.guides.bracketPairs": "Controls whether bracket pair guides are enabled or not.",
+      "editor.guides.bracketPairs0": "Enables bracket pair guides.",
+      "editor.guides.bracketPairs1": "Enables bracket pair guides only for the active bracket pair.",
+      "editor.guides.bracketPairs2": "Disables bracket pair guides.",
+      "editor.guides.bracketPairsHorizontal": "Controls whether horizontal bracket pair guides are enabled or not.",
+      "editor.guides.bracketPairsHorizontal0": "Enables horizontal guides as addition to vertical bracket pair guides.",
+      "editor.guides.bracketPairsHorizontal1": "Enables horizontal guides only for the active bracket pair.",
+      "editor.guides.bracketPairsHorizontal2": "Disables horizontal bracket pair guides.",
+      "editor.guides.highlightActiveBracketPair": "Controls whether the editor should highlight the active bracket pair.",
+      "editor.hover.above": "Prefer showing hovers above the line, if there's space.",
+      "editor.inlayHints.enabled": "Enables the inlay hints in the editor.",
+      "editor.inlayHints.fontFamily": "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used.",
+      "editor.inlayHints.fontSize": "Controls font size of inlay hints in the editor. A default of 90% of `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size.",
+      "editor.inlineSuggest.enabled": "Controls whether to automatically show inline suggestions in the editor.",
+      "editor.language.colorizedBracketPairs": "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled.",
+      "editor.lineHeight": "Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values.",
+      "editor.renderLineHighlightOnlyWhenFocus": "Controls if the editor should render the current line highlight only when the editor is focused.",
+      "editor.renderWhitespace3": "Render only trailing whitespace characters.",
+      "editor.scrollbar.horizontal": "Controls the visibility of the horizontal scrollbar.",
+      "editor.scrollbar.horizontal0": "The horizontal scrollbar will be visible only when necessary.",
+      "editor.scrollbar.horizontal1": "The horizontal scrollbar will always be visible.",
+      "editor.scrollbar.horizontal2": "The horizontal scrollbar will always be hidden.",
+      "editor.scrollbar.horizontalScrollbarSize": "The height of the horizontal scrollbar.",
+      "editor.scrollbar.scrollByPage": "Controls whether clicks scroll by page or jump to click position.",
+      "editor.scrollbar.vertical": "Controls the visibility of the vertical scrollbar.",
+      "editor.scrollbar.vertical0": "The vertical scrollbar will be visible only when necessary.",
+      "editor.scrollbar.vertical1": "The vertical scrollbar will always be visible.",
+      "editor.scrollbar.vertical2": "The vertical scrollbar will always be hidden.",
+      "editor.scrollbar.verticalScrollbarSize": "The width of the vertical scrollbar.",
+      "editor.stickyTabStops": "Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops.",
+      "editor.suggest.localityBonus": "Controls whether sorting favors words that appear close to the cursor.",
+      "editor.suggest.preview": "Controls whether to preview the suggestion outcome in the editor.",
+      "editor.suggest.showDeprecated": "When enabled IntelliSense shows `deprecated`-suggestions.",
+      "editor.unicodeHighlight.allowedCharacters": "Defines allowed characters that are not being highlighted.",
+      "editor.unicodeHighlight.allowedLocales": "Unicode characters that are common in allowed locales are not being highlighted.",
+      "editor.unicodeHighlight.ambiguousCharacters": "Controls whether characters are highlighted that can be confused with basic ASCII characters, except those that are common in the current user locale.",
+      "editor.unicodeHighlight.includeComments": "Controls whether characters in comments should also be subject to unicode highlighting.",
+      "editor.unicodeHighlight.includeStrings": "Controls whether characters in strings should also be subject to unicode highlighting.",
+      "editor.unicodeHighlight.invisibleCharacters": "Controls whether characters that just reserve space or have no width at all are highlighted.",
+      "editor.unicodeHighlight.nonBasicASCII": "Controls whether all non-basic ASCII characters are highlighted. Only characters between U+0020 and U+007E, tab, line-feed and carriage-return are considered basic ASCII.",
+      "editor.wordBasedSuggestionsMode": "Controls from which documents word based completions are computed.",
+      "files.autoSave": "Controls [auto save](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) of editors that have unsaved changes.",
+      "files.autoSave.afterDelay": "An editor with changes is automatically saved after the configured `#files.autoSaveDelay#`.",
+      "files.autoSave.off": "An editor with changes is never automatically saved.",
+      "files.autoSave.onFocusChange": "An editor with changes is automatically saved when the editor loses focus.",
+      "files.autoSave.onWindowChange": "An editor with changes is automatically saved when the window loses focus.",
+      "formatOnSaveTimeout": "Timeout in milliseconds after which the formatting that is run on file save is cancelled.",
+      "persistClosedEditors": "Controls whether to persist closed editor history for the workspace across window reloads.",
+      "showAllEditors": "Show All Opened Editors",
+      "splitHorizontal": "Split Editor Horizontal",
+      "splitVertical": "Split Editor Vertical"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Do you want to overwrite the changes made to '{0}' on the file system?"
+      }
+    },
+    "filesystem": {
+      "copyDownloadLink": "Copy Download Link",
+      "fileResource": {
+        "binaryFileQuery": "Opening it might take some time and might make the IDE unresponsive. Do you want to open '{0}' anyway?",
+        "binaryTitle": "The file is either binary or uses an unsupported text encoding.",
+        "largeFileTitle": "The file is too large ({0}).",
+        "overwriteTitle": "The file '{0}' has been changed on the file system."
+      },
+      "filesExclude": "Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.",
+      "maxConcurrentUploads": "Maximum number of concurrent files to upload when uploading multiple files. 0 means all files will be uploaded concurrently.",
+      "maxFileSizeMB": "Controls the max file size in MB which is possible to open.",
+      "processedOutOf": "Processed {0} out of {1}",
+      "uploadFiles": "Upload Files...",
+      "uploadedOutOf": "Uploaded {0} out of {1}"
+    },
+    "getting-started": {
+      "newExtension": "Building a New Extension",
+      "newPlugin": "Building a New Plugin"
+    },
+    "git": {
+      "addSignedOff": "Add Signed-off-by",
+      "amendReuseMessag": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
+      "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "checkoutCreateLocalBranchWithName": "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "checkoutProvideBranchName": "Please provide a branch name. ",
+      "checkoutSelectRef": "Select a ref to checkout or create a new local branch:",
+      "cloneQuickInputLabel": "Please provide a Git repository location. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "cloneRepository": "Clone the Git repository: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "compareWith": "Compare With...",
+      "compareWithBranchOrTag": "Pick a branch or tag to compare with the currently active {0} branch:",
+      "dirtyDiffLinesLimit": "Do not show dirty diff decorations, if editor's line count exceeds this limit.",
+      "dropStashMessage": "Stash successfully removed.",
+      "editorDecorationsEnabled": "Show git decorations in the editor.",
+      "fetchPickRemote": "Pick a remote to fetch from:",
+      "gitDecorationsColors": "Use color decoration in the navigator.",
+      "mergeQuickPickPlaceholder": "Pick a branch to merge into the currently active {0} branch:",
+      "missingUserInfo": "Make sure you configure your 'user.name' and 'user.email' in git.",
+      "noPreviousCommit": "No previous commit to amend",
+      "noRepositoriesSelected": "No repositories were selected.",
+      "repositoryNotInitialized": "Repository {0} is not yet initialized.",
+      "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+      "toggleBlameAnnotations": "Toggle Blame Annotations"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Use `when` clause instead."
+    },
+    "markers": {
+      "clearAll": "Clear All",
+      "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
+    },
+    "messages": {
+      "notificationTimeout": "Informative notifications will be hidden after this timeout.",
+      "toggleNotifications": "Toggle Notifications"
+    },
+    "mini-browser": {
+      "typeUrl": "Type a URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "No symbols matching",
+      "typeToSearchForSymbols": "Type to search for symbols"
+    },
+    "navigator": {
+      "autoReveal": "Auto Reveal",
+      "refresh": "Refresh in Explorer",
+      "reveal": "Reveal in Explorer",
+      "toggleHiddenFiles": "Toggle Hidden Files"
+    },
+    "output": {
+      "clearOutputChannel": "Clear Output Channel...",
+      "closeOutputChannel": "Close Output Channel...",
+      "hiddenChannels": "Hidden Channels",
+      "hideOutputChannel": "Hide Output Channel...",
+      "maxChannelHistory": "The maximum number of entries in an output channel.",
+      "outputChannels": "Output Channels",
+      "showOutputChannel": "Show Output Channel..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "Hosted instance is already running.",
+      "debugInstance": "Debug Instance",
+      "debugMode": "Using inspect or inspect-brk for Node.js debug",
+      "failed": "Failed to run hosted plugin instance: {0}",
+      "hostedPlugin": "Hosted Plugin",
+      "hostedPluginRunning": "Hosted Plugin: Running",
+      "hostedPluginStarting": "Hosted Plugin: Starting",
+      "hostedPluginStopped": "Hosted Plugin: Stopped",
+      "hostedPluginWatching": "Hosted Plugin: Watching",
+      "instanceTerminated": "{0} has been terminated",
+      "launchOutFiles": "Array of glob patterns for locating generated JavaScript files (`${pluginPath}` will be replaced by plugin actual path).",
+      "noValidPlugin": "Specified folder does not contain valid plugin.",
+      "notRunning": "Hosted instance is not running.",
+      "pluginFolder": "Plugin folder is set to: {0}",
+      "preventedNewTab": "Your browser prevented opening of a new tab",
+      "restartInstance": "Restart Instance",
+      "running": "Hosted instance is running at:",
+      "select": "Select",
+      "selectPath": "Select Path",
+      "startInstance": "Start Instance",
+      "starting": "Starting hosted instance server ...",
+      "stopInstance": "Stop Instance",
+      "unknownTerminated": "The instance has been terminated",
+      "watchMode": "Run watcher on plugin under development"
+    },
+    "plugin-ext": {
+      "plugins": "Plugins",
+      "signInAgain": "The extension '{0}' wants you to sign in again using {1}.",
+      "webviewTrace": "Controls communication tracing with webviews.",
+      "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
+    },
+    "preview": {
+      "openByDefault": "Open the preview instead of the editor by default."
+    },
+    "property-view": {
+      "created": "Created",
+      "directory": "Directory",
+      "lastModified": "Last modified",
+      "location": "Location",
+      "path": "Path",
+      "properties": "Properties",
+      "size": "Size",
+      "symbolicLink": "Symbolic link"
+    },
+    "scm": {
+      "amend": "Amend",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Amend last commit",
+      "changeRepository": "Change Repository...",
+      "history": "History",
+      "noRepositoryFound": "No repository found",
+      "unamend": "Unamend",
+      "unamendCommit": "Unamend commit"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Include Ignored Files",
+      "noFolderSpecified": "You have not opened or specified a folder. Only open files are currently searched.",
+      "resultSubset": "This is only a subset of all results. Use a more specific search term to narrow down the result list.",
+      "searchOnEditorModification": "Search the active editor when modified."
+    },
+    "task": {
+      "attachTask": "Attach Task...",
+      "clearHistory": "Clear History",
+      "openUserTasks": "Open User Tasks"
+    },
+    "terminal": {
+      "confirmClose": "Controls whether to confirm when the window closes if there are active terminal sessions.",
+      "confirmCloseAlways": "Always confirm if there are terminals.",
+      "confirmCloseChildren": "Confirm if there are any terminals that have child processes.",
+      "confirmCloseNever": "Never confirm.",
+      "enableCopy": "Enable ctrl-c (cmd-c on macOS) to copy selected text",
+      "enablePaste": "Enable ctrl-v (cmd-v on macOS) to paste from clipboard",
+      "shellArgsLinux": "The command line arguments to use when on the Linux terminal.",
+      "shellArgsOsx": "The command line arguments to use when on the macOS terminal.",
+      "shellArgsWindows": "The command line arguments to use when on the Windows terminal.",
+      "shellLinux": "The path of the shell that the terminal uses on Linux (default: '{0}'}).",
+      "shellOsx": "The path of the shell that the terminal uses on macOS (default: '{0}'}).",
+      "shellWindows": "The path of the shell that the terminal uses on Windows. (default: '{0}').",
+      "terminate": "Terminate",
+      "terminateActive": "Do you want to terminate the active terminal session?",
+      "terminateActiveMultiple": "Do you want to terminate the {0} active terminal sessions?"
+    },
+    "toolbar": {
+      "addCommand": "Add Command to Toolbar",
+      "addCommandPlaceholder": "Find a command to add to the toolbar",
+      "centerColumn": "Center Column",
+      "failedUpdate": "Failed to update the value of '{0}' in '{1}'.",
+      "filterIcons": "Filter Icons",
+      "iconSelectDialog": "Select an Icon for '{0}'",
+      "iconSet": "Icon Set",
+      "insertGroupLeft": "Insert Group Separator (Left)",
+      "insertGroupRight": "Insert Group Separator (Right)",
+      "leftColumn": "Left Column",
+      "openJSON": "Customize Toolbar (Open JSON)",
+      "removeCommand": "Remove Command From Toolbar",
+      "restoreDefaults": "Restore Toolbar Defaults",
+      "rightColumn": "Right Column",
+      "selectIcon": "Select Icon",
+      "toggleToolbar": "Toggle Toolbar",
+      "toolbarLocationPlaceholder": "Where would you like the command added?",
+      "useDefaultIcon": "Use Default Icon"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Subtype Hierarchy",
+      "supertypeHierarchy": "Supertype Hierarchy",
+      "typeHierarchy": "Type Hierarchy"
+    },
+    "vsx-registry": {
+      "openVSX": "Open VSX Registry",
+      "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
+      "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations."
+    },
+    "webview": {
+      "goToReadme": "Go To README",
+      "messageWarning": "            The {0} endpoint's host pattern has been changed to `{1}`; changing the pattern can lead to security vulnerabilities.             See `{2}` for more information."
+    },
+    "workspace": {
+      "closeWorkspace": "Do you really want to close the workspace?",
+      "compareWithEachOther": "Compare with Each Other",
+      "confirmDeletePermanently.description": "Failed to delete \"{0}\" using the Trash. Do you want to permanently delete instead?",
+      "confirmDeletePermanently.solution": "You can disable the use of Trash in the preferences.",
+      "confirmDeletePermanently.title": "Error deleting file",
+      "duplicate": "Duplicate",
+      "failApply": "Could not apply changes to new file",
+      "failSaveAs": "Cannot run \"{0}\" for the current widget.",
+      "noErasure": "Note: Nothing will be erased from disk",
+      "openRecentPlaceholder": "Type the name of the workspace you want to open",
+      "openRecentWorkspace": "Open Recent Workspace...",
+      "preserveWindow": "Enable opening workspaces in current window.",
+      "removeFolder": "Are you sure you want to remove the following folder from the workspace?",
+      "removeFolders": "Are you sure you want to remove the following folders from the workspace?",
+      "supportMultiRootWorkspace": "Controls whether multi-root workspace support is enabled.",
+      "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
+      "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",
+      "trustPrompt": "Controls when the startup prompt to trust a workspace is shown.",
+      "trustRequest": "An extension requests workspace trust but the corresponding API is not yet fully supported. Do you want to trust this workspace?",
+      "untitled-cleanup": "There appear to be many untitled workspace files. Please check {0} and remove any unused files.",
+      "workspaceFolderAdded": "A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?",
+      "workspaceFolderAddedTitle": "Folder added to Workspace"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+/********************************************************************************
+ * Copyright (C) 2019 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-open-change-icon {
+    width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    background: var(--theia-icon-open-change) no-repeat;
+}
+
+.theia-open-file-icon {
+    width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    background: var(--theia-icon-open-file) no-repeat;
+}
+
+.theia-open-preview-icon {
+    width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    background: var(--theia-icon-preview) no-repeat;
+}
+
+.theia-open-json-icon {
+    width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    background: var(--theia-icon-open-json) no-repeat;
+}
+
+.theia-collapse-all-icon {
+    background: var(--theia-icon-collapse-all) center center no-repeat;
+}
+
+.theia-remove-all-icon {
+	background: var(--theia-icon-remove-all) center center no-repeat;
+}
+
+.theia-add-icon {
+	background: var(--theia-icon-add) center center no-repeat;
+}
+
+@keyframes theia-spin {
+	100% {
+		transform:rotate(360deg);
+	}
+}
+
+.theia-animation-spin {
+	animation: theia-spin 1.5s linear infinite;
+}

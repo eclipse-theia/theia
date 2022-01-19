@@ -1,0 +1,10 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "Light (Theia)",
+  "include": "./light_plus.json",
+  "colors": {
+    "activityBar.background": "#ececec",
+    "activityBar.activeBorder": "#000000",
+    "activityBar.foreground": "#000000"
+  }
+}

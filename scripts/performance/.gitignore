@@ -1,0 +1,6 @@
+profiles
+workspace
+*.csv
+*.json
+!base-package.json
+!electron-trace-config.json

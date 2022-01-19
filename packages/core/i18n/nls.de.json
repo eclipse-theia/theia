@@ -1,0 +1,351 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "Öffne Aufruf-Hierarchie"
+    },
+    "core": {
+      "common": {
+        "closeAll": "Alle Registerkarten schließen",
+        "closeAllTabMain": "Alle Registerkarten im Hauptbereich schließen",
+        "closeOtherTabMain": "Andere Registerkarten im Hauptbereich schließen",
+        "closeOthers": "Andere Registerkarten schließen",
+        "closeRight": "Rechte Registerkarten schließen",
+        "closeTab": "Registerkarte schließen",
+        "closeTabMain": "Registerkarte im Hauptbereich schließen",
+        "collapseAllTabs": "Alle Registerkarten einklappen",
+        "collapseBottomPanel": "Unteres Panel umschalten",
+        "collapseTab": "Seitenwand einklappen",
+        "showNextTabGroup": "Zur nächsten Registerkarte wechseln Gruppe",
+        "showNextTabInGroup": "Zur nächsten Registerkarte in der Gruppe wechseln",
+        "showPreviousTabGroup": "Zur vorherigen Registerkartengruppe wechseln",
+        "showPreviousTabInGroup": "Zur vorherigen Registerkarte in der Gruppe wechseln",
+        "toggleMaximized": "Maximiert umschalten"
+      },
+      "file": {
+        "browse": "Durchsuchen"
+      },
+      "highlightModifiedTabs": "Steuert, ob ein oberer Rand auf modifizierten (schmutzigen) Editor-Tabs gezeichnet wird oder nicht.",
+      "keyboard": {
+        "choose": "Tastaturlayout wählen",
+        "chooseLayout": "Wählen Sie ein Tastaturlayout",
+        "current": "(aktuell: {0})",
+        "currentLayout": " - aktuelles Layout",
+        "mac": "Mac-Tastaturen",
+        "pc": "PC-Tastaturen",
+        "tryDetect": "Versuchen Sie, das Tastaturlayout anhand der Browserinformationen und der gedrückten Tasten zu ermitteln."
+      },
+      "quitMessage": "Alle nicht gespeicherten Änderungen werden nicht gespeichert.",
+      "quitTitle": "Sind Sie sicher, dass Sie aufhören wollen?",
+      "resetWorkbenchLayout": "Workbench-Layout zurücksetzen",
+      "sashDelay": "Steuert die Verzögerung des Schwebezustands in Millisekunden des Ziehbereichs zwischen den Ansichten/Editoren.",
+      "sashSize": "Steuert die Größe des Feedback-Bereichs in Pixeln des Ziehbereichs zwischen den Ansichten/Editoren. Setzen Sie ihn bei Bedarf auf einen größeren Wert.",
+      "silentNotifications": "Legt fest, ob Benachrichtigungs-Popups unterdrückt werden sollen."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",
+      "continueAll": "Alle fortsetzen",
+      "copyExpressionValue": "Ausdruckswert kopieren",
+      "debugViewLocation": "Steuert die Position der Debug-Ansicht.",
+      "openBottom": "Unten offen",
+      "openLeft": "Links öffnen",
+      "openRight": "Rechts öffnen",
+      "pauseAll": "Pause Alle",
+      "reveal": "Enthüllen",
+      "threads": "Fäden",
+      "toggleTracing": "Aktivieren/Deaktivieren der Verfolgung der Kommunikation mit Debug-Adaptern"
+    },
+    "editor": {
+      "diffEditor.maxFileSize": "Maximale Dateigröße in MB, für die Diffs berechnet werden sollen. Verwenden Sie 0 für keine Begrenzung.",
+      "editor.accessibilityPageSize": "Steuert die Anzahl der Zeilen im Editor, die von einem Screenreader auf einmal vorgelesen werden können. Wenn wir einen Screenreader erkennen, setzen wir automatisch den Standardwert auf 500. Achtung: Dies hat Auswirkungen auf die Leistung, wenn die Zahl größer als der Standardwert ist.",
+      "editor.autoClosingDelete": "Steuert, ob der Editor beim Löschen angrenzende schließende Anführungszeichen oder Klammern entfernen soll.",
+      "editor.autoClosingDelete1": "Entfernen Sie angrenzende schließende Anführungszeichen oder Klammern nur, wenn sie automatisch eingefügt wurden.",
+      "editor.bracketPairColorization.enabled": "Steuert, ob die Einfärbung von Klammerpaaren aktiviert ist oder nicht. Verwenden Sie 'workbench.colorCustomizations', um die Farben der Klammerhervorhebung zu überschreiben.",
+      "editor.codeLensFontSize": "Steuert die Schriftgröße in Pixeln für CodeLens. Bei Einstellung `0` werden 90% von `#editor.fontSize#` verwendet.",
+      "editor.find.autoFindInSelection0": "Niemals die automatische Suche in der Auswahl aktivieren (Standard).",
+      "editor.find.autoFindInSelection1": "Schalten Sie \"In Auswahl suchen\" immer automatisch ein.",
+      "editor.find.seedSearchStringFromSelection0": "Niemals einen Suchbegriff aus der Editorauswahl setzen.",
+      "editor.find.seedSearchStringFromSelection1": "Der Suchstring wird immer aus der Editorauswahl gesetzt, einschließlich des Wortes an der Cursorposition.",
+      "editor.find.seedSearchStringFromSelection2": "Nur Suchstring aus der Editorauswahl setzen.",
+      "editor.foldingImportsByDefault": "Steuert, ob der Editor automatisch Importbereiche zusammenfasst.",
+      "editor.foldingMaximumRegions": "Die maximale Anzahl der ausklappbaren Regionen. Eine Erhöhung dieses Wertes kann dazu führen, dass der Editor weniger schnell reagiert, wenn die Stromquelle eine große Anzahl von faltbaren Bereichen hat.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Es wird versucht, nur Änderungen zu formatieren (erfordert Quellensicherung). Wenn die Versionskontrolle nicht verwendet werden kann, wird die gesamte Datei formatiert.",
+      "editor.guides.bracketPairs": "Steuert, ob Klammerpaarführungen aktiviert sind oder nicht.",
+      "editor.guides.bracketPairs0": "Aktiviert die Klammerpaarführung.",
+      "editor.guides.bracketPairs1": "Aktiviert die Halterungspaarführung nur für das aktive Halterungspaar.",
+      "editor.guides.bracketPairs2": "Deaktiviert die Klammerpaarführung.",
+      "editor.guides.bracketPairsHorizontal": "Steuert, ob horizontale Klammerpaarführungen aktiviert sind oder nicht.",
+      "editor.guides.bracketPairsHorizontal0": "Ermöglicht horizontale Führungen als Ergänzung zu den vertikalen Bügelpaarführungen.",
+      "editor.guides.bracketPairsHorizontal1": "Aktiviert horizontale Hilfslinien nur für das aktive Halterungspaar.",
+      "editor.guides.bracketPairsHorizontal2": "Deaktiviert die horizontalen Klammerpaarführungen.",
+      "editor.guides.highlightActiveBracketPair": "Steuert, ob der Editor das aktive Klammerpaar hervorheben soll.",
+      "editor.hover.above": "Bevorzugen Sie es, über der Linie zu schweben, wenn Platz vorhanden ist.",
+      "editor.inlayHints.enabled": "Aktiviert die Inlay-Hinweise im Editor.",
+      "editor.inlayHints.fontFamily": "Steuert die Schriftfamilie der Inlay-Hinweise im Editor. Wenn leer, wird die `#editor.fontFamily#` verwendet.",
+      "editor.inlayHints.fontSize": "Steuert die Schriftgröße von Inlay-Hinweisen im Editor. Eine Vorgabe von 90% von `#editor.fontSize#` wird verwendet, wenn der konfigurierte Wert kleiner als `5` oder größer als die Schriftgröße des Editors ist.",
+      "editor.inlineSuggest.enabled": "Legt fest, ob automatisch Inline-Vorschläge im Editor angezeigt werden sollen.",
+      "editor.language.colorizedBracketPairs": "Definiert die Klammerpaare, die nach ihrer Verschachtelungsebene eingefärbt werden, wenn die Einfärbung von Klammerpaaren aktiviert ist.",
+      "editor.lineHeight": "Steuert die Zeilenhöhe.\n - Verwenden Sie 0, um die Zeilenhöhe automatisch anhand der Schriftgröße zu berechnen.\n - Werte zwischen 0 und 8 werden als Multiplikator mit der Schriftgröße verwendet.\n - Werte, die größer oder gleich 8 sind, werden als effektive Werte verwendet.",
+      "editor.renderLineHighlightOnlyWhenFocus": "Steuert, ob der Editor die aktuelle Zeile nur dann hervorheben soll, wenn der Editor fokussiert ist.",
+      "editor.renderWhitespace3": "Nur nachgestellte Leerzeichen werden wiedergegeben.",
+      "editor.scrollbar.horizontal": "Steuert die Sichtbarkeit der horizontalen Bildlaufleiste.",
+      "editor.scrollbar.horizontal0": "Die horizontale Bildlaufleiste ist nur sichtbar, wenn dies erforderlich ist.",
+      "editor.scrollbar.horizontal1": "Die horizontale Bildlaufleiste wird immer sichtbar sein.",
+      "editor.scrollbar.horizontal2": "Die horizontale Bildlaufleiste wird immer ausgeblendet.",
+      "editor.scrollbar.horizontalScrollbarSize": "Die Höhe der horizontalen Bildlaufleiste.",
+      "editor.scrollbar.scrollByPage": "Steuert, ob Klicks seitenweise blättern oder zur Klickposition springen.",
+      "editor.scrollbar.vertical": "Steuert die Sichtbarkeit der vertikalen Bildlaufleiste.",
+      "editor.scrollbar.vertical0": "Die vertikale Bildlaufleiste ist nur sichtbar, wenn dies erforderlich ist.",
+      "editor.scrollbar.vertical1": "Die vertikale Bildlaufleiste wird immer sichtbar sein.",
+      "editor.scrollbar.vertical2": "Die vertikale Bildlaufleiste wird immer ausgeblendet.",
+      "editor.scrollbar.verticalScrollbarSize": "Die Breite der vertikalen Bildlaufleiste.",
+      "editor.stickyTabStops": "Emulieren Sie das Auswahlverhalten von Tabulatorzeichen, wenn Sie Leerzeichen für die Einrückung verwenden. Die Auswahl bleibt an den Tabstopps hängen.",
+      "editor.suggest.localityBonus": "Legt fest, ob bei der Sortierung Wörter bevorzugt werden, die sich in der Nähe des Cursors befinden.",
+      "editor.suggest.preview": "Steuert, ob das Ergebnis des Vorschlags im Editor angezeigt werden soll.",
+      "editor.suggest.showDeprecated": "Wenn aktiviert, zeigt IntelliSense \"veraltete\" Vorschläge an.",
+      "editor.unicodeHighlight.allowedCharacters": "Definiert die erlaubten Zeichen, die nicht hervorgehoben werden sollen.",
+      "editor.unicodeHighlight.allowedLocales": "Unicode-Zeichen, die in zulässigen Sprachumgebungen üblich sind, werden nicht hervorgehoben.",
+      "editor.unicodeHighlight.ambiguousCharacters": "Steuert, ob Zeichen hervorgehoben werden, die mit einfachen ASCII-Zeichen verwechselt werden können, mit Ausnahme derjenigen, die im aktuellen Gebietsschema des Benutzers üblich sind.",
+      "editor.unicodeHighlight.includeComments": "Steuert, ob Zeichen in Kommentaren auch mit Unicode-Hervorhebung versehen werden sollen.",
+      "editor.unicodeHighlight.includeStrings": "Steuert, ob Zeichen in Zeichenketten auch mit Unicode-Hervorhebung versehen werden sollen.",
+      "editor.unicodeHighlight.invisibleCharacters": "Legt fest, ob Zeichen, die nur einen Leerraum oder gar keine Breite haben, hervorgehoben werden.",
+      "editor.unicodeHighlight.nonBasicASCII": "Legt fest, ob alle nichtbasischen ASCII-Zeichen hervorgehoben werden. Nur Zeichen zwischen U+0020 und U+007E, Tabulator, Zeilenvorschub und Carriage-Return gelten als Basis-ASCII.",
+      "editor.wordBasedSuggestionsMode": "Steuert, aus welchen Dokumenten die wortbasierten Vervollständigungen berechnet werden.",
+      "files.autoSave": "Steuert das [automatische Speichern](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) von Editoren, die ungespeicherte Änderungen haben.",
+      "files.autoSave.afterDelay": "Ein Editor mit Änderungen wird automatisch nach der konfigurierten `#files.autoSaveDelay#` gespeichert.",
+      "files.autoSave.off": "Ein Editor mit Änderungen wird nie automatisch gespeichert.",
+      "files.autoSave.onFocusChange": "Ein Editor mit Änderungen wird automatisch gespeichert, wenn der Editor den Fokus verliert.",
+      "files.autoSave.onWindowChange": "Ein Editor mit Änderungen wird automatisch gespeichert, wenn das Fenster den Fokus verliert.",
+      "formatOnSaveTimeout": "Zeitüberschreitung in Millisekunden, nach der die Formatierung, die beim Speichern der Datei ausgeführt wird, abgebrochen wird.",
+      "persistClosedEditors": "Legt fest, ob der Verlauf des geschlossenen Editors für den Arbeitsbereich beim Neuladen des Fensters erhalten bleiben soll.",
+      "showAllEditors": "Alle geöffneten Editoren anzeigen",
+      "splitHorizontal": "Editor horizontal teilen",
+      "splitVertical": "Editor vertikal teilen"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Möchten Sie die an '{0}' vorgenommenen Änderungen im Dateisystem überschreiben?"
+      }
+    },
+    "filesystem": {
+      "copyDownloadLink": "Download-Link kopieren",
+      "fileResource": {
+        "binaryFileQuery": "Das Öffnen kann einige Zeit in Anspruch nehmen und dazu führen, dass die IDE nicht mehr reagiert. Wollen Sie '{0}' trotzdem öffnen?",
+        "binaryTitle": "Die Datei ist entweder binär oder verwendet eine nicht unterstützte Textkodierung.",
+        "largeFileTitle": "Die Datei ist zu groß ({0}).",
+        "overwriteTitle": "Die Datei '{0}' wurde im Dateisystem geändert."
+      },
+      "filesExclude": "Konfigurieren Sie globale Muster für den Ausschluss von Dateien und Ordnern. Beispielsweise entscheidet der Datei-Explorer auf der Grundlage dieser Einstellung, welche Dateien und Ordner angezeigt oder ausgeblendet werden sollen.",
+      "maxConcurrentUploads": "Maximale Anzahl der gleichzeitig hochzuladenden Dateien, wenn mehrere Dateien hochgeladen werden. 0 bedeutet, dass alle Dateien gleichzeitig hochgeladen werden.",
+      "maxFileSizeMB": "Steuert die maximale Dateigröße in MB, die geöffnet werden kann.",
+      "processedOutOf": "Verarbeitet {0} von {1}",
+      "uploadFiles": "Dateien hochladen...",
+      "uploadedOutOf": "Hochgeladen {0} von {1}"
+    },
+    "getting-started": {
+      "newExtension": "Bau einer neuen Erweiterung",
+      "newPlugin": "Ein neues Plugin erstellen"
+    },
+    "git": {
+      "addSignedOff": "Abgezeichnet von hinzufügen",
+      "amendReuseMessag": "Um die letzte Meldung wieder zu verwenden, drücken Sie \"Enter\" oder \"Escape\", um den Vorgang abzubrechen.",
+      "amendRewrite": "Vorherige Übermittlungsnachricht neu schreiben. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "checkoutCreateLocalBranchWithName": "Erstellen Sie einen neuen lokalen Zweig mit dem Namen: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "checkoutProvideBranchName": "Bitte geben Sie den Namen einer Zweigstelle an.",
+      "checkoutSelectRef": "Wählen Sie eine Referenz zum Auschecken oder erstellen Sie eine neue lokale Zweigstelle:",
+      "cloneQuickInputLabel": "Bitte geben Sie einen Speicherort für das Git-Repository an. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "cloneRepository": "Klonen Sie das Git-Repository: {0}. Bestätigen Sie mit \"Enter\" oder brechen Sie mit \"Escape\" ab.",
+      "compareWith": "Vergleichen mit...",
+      "compareWithBranchOrTag": "Wählen Sie einen Zweig oder eine Markierung, den/die Sie mit dem derzeit aktiven {0} Zweig vergleichen möchten:",
+      "dirtyDiffLinesLimit": "Schmutzige Diff-Dekorationen nicht anzeigen, wenn die Zeilenzahl des Editors diese Grenze überschreitet.",
+      "dropStashMessage": "Versteck erfolgreich entfernt.",
+      "editorDecorationsEnabled": "Git-Dekorationen im Editor anzeigen.",
+      "fetchPickRemote": "Wählen Sie eine Fernbedienung zum Abrufen aus:",
+      "gitDecorationsColors": "Farbdekoration im Navigator verwenden.",
+      "mergeQuickPickPlaceholder": "Wählen Sie einen Zweig, der mit dem derzeit aktiven {0}-Zweig zusammengeführt werden soll:",
+      "missingUserInfo": "Stellen Sie sicher, dass Sie Ihren 'user.name' und 'user.email' in git konfigurieren.",
+      "noPreviousCommit": "Kein früherer Commit zur Änderung",
+      "noRepositoriesSelected": "Es wurden keine Repositories ausgewählt.",
+      "repositoryNotInitialized": "Das Repository {0} ist noch nicht initialisiert.",
+      "stashChanges": "Versteckte Änderungen. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "stashChangesWithMessage": "Stash-Änderungen mit Meldung: {0}. Drücken Sie \"Enter\" zur Bestätigung oder \"Escape\" zum Abbrechen.",
+      "toggleBlameAnnotations": "Blame Annotationen umschalten"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Verwenden Sie stattdessen die `when`-Klausel."
+    },
+    "markers": {
+      "clearAll": "Alle löschen",
+      "tabbarDecorationsEnabled": "Problemdekorationen (Diagnosemarkierungen) in den Registerkartenleisten anzeigen."
+    },
+    "messages": {
+      "notificationTimeout": "Informative Benachrichtigungen werden nach dieser Zeitspanne ausgeblendet.",
+      "toggleNotifications": "Benachrichtigungen umschalten"
+    },
+    "mini-browser": {
+      "typeUrl": "Geben Sie eine URL ein"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Keine passenden Symbole",
+      "typeToSearchForSymbols": "Tippen Sie, um nach Symbolen zu suchen"
+    },
+    "navigator": {
+      "autoReveal": "Auto-Enthüllung",
+      "refresh": "Aktualisieren im Explorer",
+      "reveal": "Enthüllen im Explorer",
+      "toggleHiddenFiles": "Versteckte Dateien umschalten"
+    },
+    "output": {
+      "clearOutputChannel": "Ausgangskanal löschen...",
+      "closeOutputChannel": "Ausgangskanal schließen...",
+      "hiddenChannels": "Versteckte Kanäle",
+      "hideOutputChannel": "Ausgangskanal ausblenden...",
+      "maxChannelHistory": "Die maximale Anzahl der Einträge in einem Ausgabekanal.",
+      "outputChannels": "Ausgangskanäle",
+      "showOutputChannel": "Ausgangskanal anzeigen..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "Die gehostete Instanz läuft bereits.",
+      "debugInstance": "Debug-Instanz",
+      "debugMode": "Verwendung von inspect oder inspect-brk zur Fehlersuche in Node.js",
+      "failed": "Die gehostete Plugin-Instanz konnte nicht ausgeführt werden: {0}",
+      "hostedPlugin": "Gehostetes Plugin",
+      "hostedPluginRunning": "Gehostetes Plugin: Läuft",
+      "hostedPluginStarting": "Gehostetes Plugin: Start",
+      "hostedPluginStopped": "Gehostetes Plugin: Angehalten",
+      "hostedPluginWatching": "Gehostetes Plugin: Überwachen",
+      "instanceTerminated": "{0} wurde abgebrochen",
+      "launchOutFiles": "Array von Glob-Patterns zum Auffinden der generierten JavaScript-Dateien (`${pluginPath}` wird durch den tatsächlichen Pfad des Plugins ersetzt).",
+      "noValidPlugin": "Der angegebene Ordner enthält kein gültiges Plugin.",
+      "notRunning": "Die gehostete Instanz läuft nicht.",
+      "pluginFolder": "Plugin-Ordner ist eingestellt auf: {0}",
+      "preventedNewTab": "Ihr Browser hat das Öffnen einer neuen Registerkarte verhindert",
+      "restartInstance": "Instanz neu starten",
+      "running": "Die gehostete Instanz läuft auf:",
+      "select": "Wählen Sie",
+      "selectPath": "Pfad auswählen",
+      "startInstance": "Start-Instanz",
+      "starting": "Start des gehosteten Instanzservers ...",
+      "stopInstance": "Instanz anhalten",
+      "unknownTerminated": "Die Instanz wurde beendet",
+      "watchMode": "Watcher auf Plugin in Entwicklung ausführen"
+    },
+    "plugin-ext": {
+      "plugins": "Plugins",
+      "signInAgain": "Die Erweiterung '{0}' möchte, dass Sie sich erneut mit {1} anmelden.",
+      "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
+      "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
+    },
+    "preview": {
+      "openByDefault": "Öffnen Sie standardmäßig die Vorschau anstelle des Editors."
+    },
+    "property-view": {
+      "created": "Erstellt",
+      "directory": "Verzeichnis",
+      "lastModified": "Zuletzt geändert",
+      "location": "Standort",
+      "path": "Pfad",
+      "properties": "Eigenschaften",
+      "size": "Größe",
+      "symbolicLink": "Symbolischer Link"
+    },
+    "scm": {
+      "amend": "Ändern",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Letzte Übertragung ändern",
+      "changeRepository": "Repository ändern...",
+      "history": "Geschichte",
+      "noRepositoryFound": "Kein Repository gefunden",
+      "unamend": "Ändern",
+      "unamendCommit": "Commit ändern"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Ignorierte Dateien einbeziehen",
+      "noFolderSpecified": "Sie haben keinen Ordner geöffnet oder angegeben. Es werden derzeit nur geöffnete Dateien durchsucht.",
+      "resultSubset": "Dies ist nur eine Teilmenge aller Ergebnisse. Verwenden Sie einen spezifischeren Suchbegriff, um die Ergebnisliste einzugrenzen.",
+      "searchOnEditorModification": "Durchsucht den aktiven Editor nach Änderungen."
+    },
+    "task": {
+      "attachTask": "Aufgabe anhängen...",
+      "clearHistory": "Geschichte löschen",
+      "openUserTasks": "Nutzertasks öffnen"
+    },
+    "terminal": {
+      "confirmClose": "Steuert, ob das Schließen des Fensters bestätigt werden soll, wenn es aktive Terminalsitzungen gibt.",
+      "confirmCloseAlways": "Bestätigen Sie immer, ob Terminals vorhanden sind.",
+      "confirmCloseChildren": "Überprüfen Sie, ob es Terminals gibt, die untergeordnete Prozesse haben.",
+      "confirmCloseNever": "Niemals bestätigen.",
+      "enableCopy": "Aktivieren von ctrl-c (cmd-c unter macOS) zum Kopieren von markiertem Text",
+      "enablePaste": "Aktivieren von ctrl-v (cmd-v unter macOS) zum Einfügen aus der Zwischenablage",
+      "shellArgsLinux": "Die Befehlszeilenargumente, die im Linux-Terminal zu verwenden sind.",
+      "shellArgsOsx": "Die Befehlszeilenargumente, die im macOS-Terminal zu verwenden sind.",
+      "shellArgsWindows": "Die Befehlszeilenargumente, die im Windows-Terminal zu verwenden sind.",
+      "shellLinux": "Der Pfad der Shell, die das Terminal unter Linux verwendet (Standard: '{0}'}).",
+      "shellOsx": "Der Pfad der Shell, die das Terminal unter macOS verwendet (Standard: '{0}'}).",
+      "shellWindows": "Der Pfad der Shell, die das Terminal unter Windows verwendet. (Standard: '{0}').",
+      "terminate": "Ende",
+      "terminateActive": "Möchten Sie die aktive Terminalsitzung beenden?",
+      "terminateActiveMultiple": "Sollen die {0} aktiven Terminalsitzungen beendet werden?"
+    },
+    "toolbar": {
+      "addCommand": "Befehl zur Symbolleiste hinzufügen",
+      "addCommandPlaceholder": "Suchen Sie einen Befehl, den Sie der Symbolleiste hinzufügen möchten",
+      "centerColumn": "Mittlere Spalte",
+      "failedUpdate": "Der Wert von '{0}' konnte nicht in '{1}' aktualisiert werden.",
+      "filterIcons": "Filter-Symbole",
+      "iconSelectDialog": "Wählen Sie ein Symbol für '{0}'.",
+      "iconSet": "Ikonensatz",
+      "insertGroupLeft": "Gruppentrennzeichen einfügen (links)",
+      "insertGroupRight": "Gruppentrennzeichen einfügen (rechts)",
+      "leftColumn": "Linke Spalte",
+      "openJSON": "Symbolleiste anpassen (JSON öffnen)",
+      "removeCommand": "Befehl aus der Symbolleiste entfernen",
+      "restoreDefaults": "Standardeinstellungen der Symbolleiste wiederherstellen",
+      "rightColumn": "Rechte Spalte",
+      "selectIcon": "Icon auswählen",
+      "toggleToolbar": "Symbolleiste umschalten",
+      "toolbarLocationPlaceholder": "Wo möchten Sie den Befehl hinzufügen?",
+      "useDefaultIcon": "Standardsymbol verwenden"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Hierarchie der Untertypen",
+      "supertypeHierarchy": "Supertyp-Hierarchie",
+      "typeHierarchy": "Typenhierarchie"
+    },
+    "vsx-registry": {
+      "openVSX": "Open VSX Registry",
+      "recommendedExtensions": "Eine Liste mit den Namen der Erweiterungen, die für die Verwendung in diesem Arbeitsbereich empfohlen werden.",
+      "showRecommendedExtensions": "Steuert, ob Benachrichtigungen für Erweiterungsempfehlungen angezeigt werden."
+    },
+    "webview": {
+      "goToReadme": "Zum README gehen",
+      "messageWarning": "            Das Host-Muster des {0}-Endpunkts wurde in `{1}` geändert; die Änderung des Musters kann zu Sicherheitslücken führen.             Siehe `{2}` für weitere Informationen."
+    },
+    "workspace": {
+      "closeWorkspace": "Wollen Sie den Arbeitsbereich wirklich schließen?",
+      "compareWithEachOther": "Miteinander vergleichen",
+      "confirmDeletePermanently.description": "Das Löschen von \"{0}\" über den Papierkorb ist fehlgeschlagen. Möchten Sie stattdessen dauerhaft löschen?",
+      "confirmDeletePermanently.solution": "Sie können die Verwendung des Papierkorbs in den Einstellungen deaktivieren.",
+      "confirmDeletePermanently.title": "Fehler beim Löschen einer Datei",
+      "duplicate": "Duplizieren",
+      "failApply": "Änderungen konnten nicht auf neue Datei angewendet werden",
+      "failSaveAs": "Kann \"{0}\" für das aktuelle Widget nicht ausführen.",
+      "noErasure": "Hinweis: Es wird nichts von der Festplatte gelöscht.",
+      "openRecentPlaceholder": "Geben Sie den Namen des Arbeitsbereichs ein, den Sie öffnen möchten",
+      "openRecentWorkspace": "Aktuellen Arbeitsbereich öffnen...",
+      "preserveWindow": "Aktivieren Sie das Öffnen von Arbeitsbereichen im aktuellen Fenster.",
+      "removeFolder": "Sind Sie sicher, dass Sie den folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
+      "removeFolders": "Sind Sie sicher, dass Sie die folgenden Ordner aus dem Arbeitsbereich entfernen möchten?",
+      "supportMultiRootWorkspace": "Steuert, ob die Unterstützung von Multi-Root-Arbeitsbereichen aktiviert ist.",
+      "trustEmptyWindow": "Steuert, ob dem leeren Arbeitsbereich standardmäßig vertraut wird oder nicht.",
+      "trustEnabled": "Steuert, ob das Vertrauen in Arbeitsbereiche aktiviert ist oder nicht. Wenn deaktiviert, wird allen Arbeitsbereichen vertraut.",
+      "trustPrompt": "Steuert, wann die Startaufforderung zum Vertrauen in einen Arbeitsbereich angezeigt wird.",
+      "trustRequest": "Eine Erweiterung fordert Vertrauen in den Arbeitsbereich an, aber die entsprechende API wird noch nicht vollständig unterstützt. Möchten Sie diesem Arbeitsbereich vertrauen?",
+      "untitled-cleanup": "Es scheint viele unbenannte Arbeitsbereichsdateien zu geben. Bitte überprüfen Sie {0} und entfernen Sie alle unbenutzten Dateien.",
+      "workspaceFolderAdded": "Ein Arbeitsbereich mit mehreren Wurzeln wurde erstellt. Möchten Sie Ihre Arbeitsbereichskonfiguration als Datei speichern?",
+      "workspaceFolderAddedTitle": "Ordner zum Arbeitsbereich hinzugefügt"
+    }
+  }
+}

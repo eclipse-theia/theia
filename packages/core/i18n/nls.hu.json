@@ -1,0 +1,351 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "Nyílt felhívás hierarchia"
+    },
+    "core": {
+      "common": {
+        "closeAll": "Minden lap bezárása",
+        "closeAllTabMain": "Minden lap bezárása a fő területen",
+        "closeOtherTabMain": "Más lapok bezárása a fő területen",
+        "closeOthers": "Más lapok bezárása",
+        "closeRight": "Lapok bezárása jobbra",
+        "closeTab": "Bezárja a lapot",
+        "closeTabMain": "Zárja be a fő terület lapját",
+        "collapseAllTabs": "Összes oldalsó panel összezárása",
+        "collapseBottomPanel": "Alsó panel átkapcsolása",
+        "collapseTab": "Összecsukható oldalsó panel",
+        "showNextTabGroup": "Váltás a következő lapcsoportra",
+        "showNextTabInGroup": "Csoporton belüli következő lapra váltás",
+        "showPreviousTabGroup": "Váltás az előző lapcsoportra",
+        "showPreviousTabInGroup": "Váltás a csoport előző lapjára",
+        "toggleMaximized": "Maximált kapcsoló"
+      },
+      "file": {
+        "browse": "Böngésszen a oldalon."
+      },
+      "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztő lapok felső szegélye kirajzolódjon-e vagy sem.",
+      "keyboard": {
+        "choose": "Válassza ki a billentyűzetkiosztást",
+        "chooseLayout": "Válasszon billentyűzetkiosztást",
+        "current": "(jelenlegi: {0})",
+        "currentLayout": " - jelenlegi elrendezés",
+        "mac": "Mac billentyűzetek",
+        "pc": "PC billentyűzetek",
+        "tryDetect": "Próbálja meg felismerni a billentyűzetkiosztást a böngésző információi és a lenyomott billentyűk alapján."
+      },
+      "quitMessage": "A mentetlen módosítások nem kerülnek mentésre.",
+      "quitTitle": "Biztos, hogy ki akarsz szállni?",
+      "resetWorkbenchLayout": "A munkapad elrendezésének visszaállítása",
+      "sashDelay": "A nézetek/szerkesztők közötti húzási terület lebegés-visszacsatolási késleltetését vezérli milliszekundumban.",
+      "sashSize": "A nézetek/szerkesztők közötti húzási terület visszajelzési területének méretét szabályozza pixelben. Szükség esetén nagyobb értékre állítsa be.",
+      "silentNotifications": "Beállítja, hogy az értesítések felugró ablakai el legyenek-e nyomva."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
+      "continueAll": "Folytassa az összes",
+      "copyExpressionValue": "Kifejezés értékének másolása",
+      "debugViewLocation": "A hibakeresési nézet helyét vezérli.",
+      "openBottom": "Nyitott fenék",
+      "openLeft": "Nyitva balra",
+      "openRight": "Nyitott jobbra",
+      "pauseAll": "Minden szünet",
+      "reveal": "Reveal",
+      "threads": "Szálak",
+      "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
+    },
+    "editor": {
+      "diffEditor.maxFileSize": "Maximális fájlméret MB-ban, amelyre diffs-t kell számítani. Használja a 0 értéket, ha nincs korlát.",
+      "editor.accessibilityPageSize": "A szerkesztő azon sorainak számát szabályozza, amelyeket a képernyőolvasó egyszerre fel tud olvasni. Amikor észlelünk egy képernyőolvasót, automatikusan 500-ra állítjuk az alapértelmezett értéket. Figyelmeztetés: ez az alapértelmezettnél nagyobb számok esetén teljesítménybeli következményekkel jár.",
+      "editor.autoClosingDelete": "Szabályozza, hogy a szerkesztő törléskor eltávolítsa-e a szomszédos záró idézőjeleket vagy zárójeleket.",
+      "editor.autoClosingDelete1": "Csak akkor távolítsa el a szomszédos záró idézőjeleket vagy zárójeleket, ha azok automatikusan be lettek illesztve.",
+      "editor.bracketPairColorization.enabled": "Szabályozza, hogy a zárójelpár színezése engedélyezve legyen-e vagy sem. A 'workbench.colorCustomizations' használatával felülbírálhatja a zárójelek kiemelési színeit.",
+      "editor.codeLensFontSize": "A CodeLens betűméretét vezérli pixelben. Ha `0`-ra van állítva, akkor a `#editor.fontSize#` 90%-át használja.",
+      "editor.find.autoFindInSelection0": "Soha ne kapcsolja be automatikusan a Keresés a kiválasztásban funkciót (alapértelmezett).",
+      "editor.find.autoFindInSelection1": "Mindig automatikusan kapcsolja be a Keresés a kiválasztásban funkciót.",
+      "editor.find.seedSearchStringFromSelection0": "Soha ne magozzon keresési karakterláncot a szerkesztő kiválasztásából.",
+      "editor.find.seedSearchStringFromSelection1": "Mindig a szerkesztő kiválasztásából származó keresési karakterlánc, beleértve a kurzor pozíciójában lévő szót is.",
+      "editor.find.seedSearchStringFromSelection2": "Csak a szerkesztő kiválasztásából származó keresési karakterlánc bevetése.",
+      "editor.foldingImportsByDefault": "Szabályozza, hogy a szerkesztő automatikusan összecsukja-e az importtartományokat.",
+      "editor.foldingMaximumRegions": "Az összehajtható régiók maximális száma. Ennek az értéknek a növelése azt eredményezheti, hogy a szerkesztő kevésbé reagál, ha az áramforrás nagyszámú hajtogatható régióval rendelkezik.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Csak a módosítások formázására tesz kísérletet (forrásellenőrzés szükséges). Ha a forrásellenőrzés nem használható, akkor a teljes fájl lesz formázva.",
+      "editor.guides.bracketPairs": "Szabályozza, hogy a konzolpár-vezetők engedélyezve legyenek-e vagy sem.",
+      "editor.guides.bracketPairs0": "Engedélyezi a konzolpár-vezetőket.",
+      "editor.guides.bracketPairs1": "Csak az aktív konzolpár esetében engedélyezi a konzolpár-vezetőket.",
+      "editor.guides.bracketPairs2": "Letiltja a konzolpár-vezetőket.",
+      "editor.guides.bracketPairsHorizontal": "Szabályozza, hogy a vízszintes konzolpár-vezetők engedélyezve legyenek-e vagy sem.",
+      "editor.guides.bracketPairsHorizontal0": "Engedélyezi a vízszintes vezetőket a függőleges konzolpár vezetők mellett.",
+      "editor.guides.bracketPairsHorizontal1": "Csak az aktív konzolpár vízszintes vezetőit engedélyezi.",
+      "editor.guides.bracketPairsHorizontal2": "Letiltja a vízszintes konzolpár vezetőket.",
+      "editor.guides.highlightActiveBracketPair": "Szabályozza, hogy a szerkesztő kiemelje-e az aktív zárójelpárt.",
+      "editor.hover.above": "Előnyben részesíti a vonal fölött lebegő megjelenítést, ha van hely.",
+      "editor.inlayHints.enabled": "Engedélyezi az inlay tippeket a szerkesztőben.",
+      "editor.inlayHints.fontFamily": "A szerkesztőben lévő betűtípus-családot szabályozza. Ha üres, akkor a `#editor.fontFamily#`-t használja.",
+      "editor.inlayHints.fontSize": "A betűméretet szabályozza a szerkesztőben megjelenő betűjelzések betűméretét. Az alapértelmezett érték a `#editor.fontSize#` 90%-a, ha a beállított érték kisebb, mint `5` vagy nagyobb, mint a szerkesztő betűmérete.",
+      "editor.inlineSuggest.enabled": "Szabályozza, hogy a szerkesztőben automatikusan megjelenjenek-e a soron belüli javaslatok.",
+      "editor.language.colorizedBracketPairs": "Meghatározza azokat a zárójelpárokat, amelyek színezése a beágyazási szintjük szerint történik, ha a zárójelpárok színezése engedélyezve van.",
+      "editor.lineHeight": "A vonal magasságát szabályozza.\n - A 0 értéket használva automatikusan kiszámítja a sortávolságot a betűméretből.\n - A 0 és 8 közötti értékek a betűmérettel való szorzóként kerülnek felhasználásra.\n - A 8-nál nagyobb vagy azzal egyenlő értékek tényleges értékként lesznek használva.",
+      "editor.renderLineHighlightOnlyWhenFocus": "Azt vezérli, hogy a szerkesztő csak akkor jelenítse meg az aktuális sor kiemelését, amikor a szerkesztő fókuszban van.",
+      "editor.renderWhitespace3": "Csak az utolsó szóköz karaktereket adja vissza.",
+      "editor.scrollbar.horizontal": "A vízszintes görgetősáv láthatóságát szabályozza.",
+      "editor.scrollbar.horizontal0": "A vízszintes görgetősáv csak akkor lesz látható, ha szükséges.",
+      "editor.scrollbar.horizontal1": "A vízszintes görgetősáv mindig látható lesz.",
+      "editor.scrollbar.horizontal2": "A vízszintes görgetősáv mindig el lesz rejtve.",
+      "editor.scrollbar.horizontalScrollbarSize": "A vízszintes görgetősáv magassága.",
+      "editor.scrollbar.scrollByPage": "Szabályozza, hogy a kattintások oldalankénti görgetéssel vagy a kattintási pozícióra való ugrással történjen-e a görgetés.",
+      "editor.scrollbar.vertical": "A függőleges görgetősáv láthatóságát szabályozza.",
+      "editor.scrollbar.vertical0": "A függőleges görgetősáv csak akkor lesz látható, ha szükséges.",
+      "editor.scrollbar.vertical1": "A függőleges görgetősáv mindig látható lesz.",
+      "editor.scrollbar.vertical2": "A függőleges görgetősáv mindig el lesz rejtve.",
+      "editor.scrollbar.verticalScrollbarSize": "A függőleges görgetősáv szélessége.",
+      "editor.stickyTabStops": "Emulálja a tabulátor karakterek kijelölési viselkedését, amikor szóközöket használ a behúzáshoz. A kijelölés ragaszkodik a tabulátorjelekhez.",
+      "editor.suggest.localityBonus": "Szabályozza, hogy a rendezés előnyben részesítse-e a kurzor közelében megjelenő szavakat.",
+      "editor.suggest.preview": "Szabályozza, hogy a javaslat eredményének előnézete megjelenjen-e a szerkesztőben.",
+      "editor.suggest.showDeprecated": "Ha engedélyezve van, az IntelliSense megjeleníti a `deprecated`-ajánlásokat.",
+      "editor.unicodeHighlight.allowedCharacters": "Meghatározza a megengedett karaktereket, amelyek nem kerülnek kiemelésre.",
+      "editor.unicodeHighlight.allowedLocales": "Az engedélyezett helyeken gyakori Unicode karakterek nem kerülnek kiemelésre.",
+      "editor.unicodeHighlight.ambiguousCharacters": "Szabályozza, hogy az ASCII karakterekkel összetéveszthető karakterek kiemelésre kerüljenek-e, kivéve azokat, amelyek az aktuális felhasználói nyelvjárásban gyakoriak.",
+      "editor.unicodeHighlight.includeComments": "Szabályozza, hogy a megjegyzésekben szereplő karakterek is legyenek-e unicode-kiemeléssel ellátva.",
+      "editor.unicodeHighlight.includeStrings": "Szabályozza, hogy a karakterláncok karakterei is legyenek-e unicode kiemeléssel ellátva.",
+      "editor.unicodeHighlight.invisibleCharacters": "Szabályozza, hogy a csak szóközt foglaló vagy egyáltalán nem széles karakterek kiemelésre kerüljenek-e.",
+      "editor.unicodeHighlight.nonBasicASCII": "Szabályozza, hogy minden nem alap ASCII karakter ki legyen-e emelve. Csak az U+0020 és U+007E közötti karakterek, a tabulátor, a sortovábbítás és a kocsi-visszavonás számítanak alap ASCII-nek.",
+      "editor.wordBasedSuggestionsMode": "Azt vezérli, hogy mely dokumentumokból számolja ki a szóalapú kiegészítéseket.",
+      "files.autoSave": "Az [automatikus mentés](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) vezérli a mentetlen módosításokkal rendelkező szerkesztőket.",
+      "files.autoSave.afterDelay": "A szerkesztő a változtatásokat automatikusan elmenti a beállított `#files.autoSaveDelay#` után.",
+      "files.autoSave.off": "Egy szerkesztő a módosításokkal soha nem kerül automatikusan mentésre.",
+      "files.autoSave.onFocusChange": "A szerkesztő a módosításokkal automatikusan elmentésre kerül, amikor a szerkesztő elveszíti a fókuszt.",
+      "files.autoSave.onWindowChange": "A szerkesztő a módosításokkal automatikusan elmentésre kerül, amikor az ablak elveszíti a fókuszt.",
+      "formatOnSaveTimeout": "A milliszekundumban megadott időkorlát, amely után a fájl mentésekor lefutó formázás törlődik.",
+      "persistClosedEditors": "Azt szabályozza, hogy a munkaterület lezárt szerkesztési előzményei az ablak újratöltése során megmaradjanak-e.",
+      "showAllEditors": "Minden megnyitott szerkesztő megjelenítése",
+      "splitHorizontal": "Osztott szerkesztő vízszintes",
+      "splitVertical": "Függőleges osztott szerkesztő"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Szeretné felülírni a fájlrendszerben a '{0}' fájlban végrehajtott változtatásokat?"
+      }
+    },
+    "filesystem": {
+      "copyDownloadLink": "Letöltési link másolása",
+      "fileResource": {
+        "binaryFileQuery": "Megnyitása eltarthat egy ideig, és az IDE esetleg nem reagál. Mindenképpen meg akarja nyitni a '{0}'-t?",
+        "binaryTitle": "A fájl vagy bináris, vagy nem támogatott szöveges kódolást használ.",
+        "largeFileTitle": "A fájl túl nagy ({0}).",
+        "overwriteTitle": "A '{0}' fájl megváltozott a fájlrendszerben."
+      },
+      "filesExclude": "Glob-minták beállítása a fájlok és mappák kizárásához. Például a Fájlkereső e beállítás alapján dönti el, hogy mely fájlokat és mappákat jelenítse meg vagy rejtse el.",
+      "maxConcurrentUploads": "Az egyidejűleg feltölthető fájlok maximális száma több fájl feltöltése esetén. A 0 azt jelenti, hogy az összes fájl egyidejűleg kerül feltöltésre.",
+      "maxFileSizeMB": "A megnyitható fájl maximális méretét szabályozza MB-ban.",
+      "processedOutOf": "{0} feldolgozva {1}-ből {0}",
+      "uploadFiles": "Fájlok feltöltése...",
+      "uploadedOutOf": "Feltöltött {0} a {1}-ből {0}"
+    },
+    "getting-started": {
+      "newExtension": "Új bővítmény építése",
+      "newPlugin": "Egy új plugin építése"
+    },
+    "git": {
+      "addSignedOff": "Add Signed-off-by",
+      "amendReuseMessag": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
+      "amendRewrite": "Írja át az előző commit üzenetet. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "checkoutCreateLocalBranchWithName": "Hozzon létre egy új helyi ágat {0} névvel. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "checkoutProvideBranchName": "Kérjük, adja meg a fióktelep nevét.",
+      "checkoutSelectRef": "Válasszon ki egy hivatkozást a pénztárhoz vagy hozzon létre egy új helyi ágat:",
+      "cloneQuickInputLabel": "Kérjük, adja meg a Git tároló helyét. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "cloneRepository": "Klónozza a Git tárolót: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "compareWith": "Összehasonlítás...",
+      "compareWithBranchOrTag": "Válasszon ki egy ágat vagy címkét, amelyet a jelenleg aktív {0} ággal akar összehasonlítani:",
+      "dirtyDiffLinesLimit": "Ne jelenítsen meg piszkos diff dekorációkat, ha a szerkesztő sorszáma meghaladja ezt a határt.",
+      "dropStashMessage": "Sikeresen eltávolítottuk a rejtekhelyet.",
+      "editorDecorationsEnabled": "A szerkesztőben a git dekorációk megjelenítése.",
+      "fetchPickRemote": "Válasszon ki egy távvezérlőt, ahonnan le kívánja hívni:",
+      "gitDecorationsColors": "Színes dekoráció használata a navigátorban.",
+      "mergeQuickPickPlaceholder": "Válasszon ki egy ágat, amelyet beolvaszt a jelenleg aktív {0} ágba:",
+      "missingUserInfo": "Győződjön meg róla, hogy a gitben beállította a 'user.name' és a 'user.email' értékeket.",
+      "noPreviousCommit": "Nincs korábbi kötelezettségvállalás a módosításra",
+      "noRepositoriesSelected": "Nem választottak ki tárolóhelyeket.",
+      "repositoryNotInitialized": "A {0} tároló még nincs inicializálva.",
+      "stashChanges": "Készletváltozások. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "stashChangesWithMessage": "Stash változik az üzenettel: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
+      "toggleBlameAnnotations": "Toggle Blame Annotations"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Használja helyette a `when` záradékot."
+    },
+    "markers": {
+      "clearAll": "Mindent törölni",
+      "tabbarDecorationsEnabled": "Problémadíszítők (diagnosztikai jelölők) megjelenítése a laprudakon."
+    },
+    "messages": {
+      "notificationTimeout": "Az informatív értesítések el lesznek rejtve az időkorlát után.",
+      "toggleNotifications": "Értesítések váltása"
+    },
+    "mini-browser": {
+      "typeUrl": "Írjon be egy URL-t"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Nincsenek megfelelő szimbólumok",
+      "typeToSearchForSymbols": "Írja be a szimbólumok kereséséhez"
+    },
+    "navigator": {
+      "autoReveal": "Automatikus felfedés",
+      "refresh": "Frissítés az Explorerben",
+      "reveal": "Feltárása az Explorerben",
+      "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
+    },
+    "output": {
+      "clearOutputChannel": "Tiszta kimeneti csatorna...",
+      "closeOutputChannel": "Kimeneti csatorna bezárása...",
+      "hiddenChannels": "Rejtett csatornák",
+      "hideOutputChannel": "Kimeneti csatorna elrejtése...",
+      "maxChannelHistory": "A kimeneti csatornában lévő bejegyzések maximális száma.",
+      "outputChannels": "Kimeneti csatornák",
+      "showOutputChannel": "Kimeneti csatorna megjelenítése..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "A hosztolt példány már fut.",
+      "debugInstance": "Hibakeresési példány",
+      "debugMode": "Az inspect vagy inspect-brk használata a Node.js hibakereséshez",
+      "failed": "Nem sikerült futtatni a hosztolt plugin példányt: {0}",
+      "hostedPlugin": "Hostolt bővítmény",
+      "hostedPluginRunning": "Hostolt bővítmény: Futó",
+      "hostedPluginStarting": "Hostolt bővítmény: Indítás",
+      "hostedPluginStopped": "Hostolt bővítmény: Leállt",
+      "hostedPluginWatching": "Hostolt bővítmény: Figyelem",
+      "instanceTerminated": "{0} megszűnt",
+      "launchOutFiles": "Glob minták tömbje a generált JavaScript fájlok kereséséhez (a `${pluginPath}` helyébe a plugin tényleges elérési útja lép).",
+      "noValidPlugin": "A megadott mappa nem tartalmaz érvényes plugint.",
+      "notRunning": "A hosztolt példány nem fut.",
+      "pluginFolder": "Plugin mappa van beállítva: {0}",
+      "preventedNewTab": "A böngészője megakadályozta az új lap megnyitását",
+      "restartInstance": "Instancia újraindítása",
+      "running": "A hosztolt példány a következő címen fut:",
+      "select": "Válassza ki a  címet.",
+      "selectPath": "Útvonal kiválasztása",
+      "startInstance": "Példa indítása",
+      "starting": "Hosted instance szerver indítása ...",
+      "stopInstance": "Állítsa le a példányt",
+      "unknownTerminated": "A példányt megszüntették",
+      "watchMode": "Watcher futtatása a fejlesztés alatt álló pluginon"
+    },
+    "plugin-ext": {
+      "plugins": "Plugins",
+      "signInAgain": "A '{0}' kiterjesztés azt kéri, hogy jelentkezzen be újra a {1} használatával.",
+      "webviewTrace": "Vezérli a kommunikáció nyomon követését a webnézetekkel.",
+      "webviewWarnIfUnsecure": "Figyelmezteti a felhasználókat, hogy a webnézetek jelenleg nem biztonságosan vannak telepítve."
+    },
+    "preview": {
+      "openByDefault": "Alapértelmezés szerint a szerkesztő helyett az előnézet megnyitása."
+    },
+    "property-view": {
+      "created": "Létrehozva",
+      "directory": "Címtár",
+      "lastModified": "Utoljára módosítva",
+      "location": "Helyszín",
+      "path": "Útvonal",
+      "properties": "Tulajdonságok",
+      "size": "Méret",
+      "symbolicLink": "Szimbolikus kapcsolat"
+    },
+    "scm": {
+      "amend": "A módosítása",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Az utolsó kötelezettségvállalás módosítása",
+      "changeRepository": "Repozitórium módosítása...",
+      "history": "Történelem",
+      "noRepositoryFound": "Nem talált tárolóhely",
+      "unamend": "Visszavonja a",
+      "unamendCommit": "Módosítás feloldása commit"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Ignorált fájlok felvétele",
+      "noFolderSpecified": "Nem nyitott meg vagy nem adott meg mappát. Jelenleg csak a megnyitott fájlok keresése történik.",
+      "resultSubset": "Ez csak egy részhalmaza az összes eredménynek. A találati lista szűkítéséhez használjon konkrétabb keresési kifejezést.",
+      "searchOnEditorModification": "Keresés az aktív szerkesztőben, amikor módosítják."
+    },
+    "task": {
+      "attachTask": "Feladat csatolása...",
+      "clearHistory": "Történelem törlése",
+      "openUserTasks": "Felhasználói feladatok megnyitása"
+    },
+    "terminal": {
+      "confirmClose": "Azt szabályozza, hogy aktív terminál munkamenetek esetén visszaigazolja-e az ablak bezárását.",
+      "confirmCloseAlways": "Mindig erősítse meg, hogy vannak-e terminálok.",
+      "confirmCloseChildren": "Ellenőrizze, hogy vannak-e olyan terminálok, amelyeknek gyermekfolyamatai vannak.",
+      "confirmCloseNever": "Soha ne erősítse meg.",
+      "enableCopy": "A ctrl-c (macOS-en cmd-c) engedélyezése a kijelölt szöveg másolásához",
+      "enablePaste": "A ctrl-v (cmd-v macOS-en) engedélyezése a vágólapról történő beillesztéshez",
+      "shellArgsLinux": "A Linux terminálon használandó parancssori argumentumok.",
+      "shellArgsOsx": "A macOS terminálon használandó parancssori argumentumok.",
+      "shellArgsWindows": "A Windows terminálon használandó parancssori argumentumok.",
+      "shellLinux": "A terminál által Linuxon használt shell elérési útja (alapértelmezett: '{0}'}).",
+      "shellOsx": "A terminál által macOS alatt használt shell elérési útja (alapértelmezett: '{0}'}).",
+      "shellWindows": "A Windows alatt a terminál által használt shell elérési útja. (alapértelmezett: '{0}').",
+      "terminate": "Vége",
+      "terminateActive": "Be akarja fejezni az aktív terminál munkamenetet?",
+      "terminateActiveMultiple": "Meg akarja szüntetni az {0} aktív terminál munkameneteket?"
+    },
+    "toolbar": {
+      "addCommand": "Parancs hozzáadása az eszköztárhoz",
+      "addCommandPlaceholder": "Az eszköztárhoz hozzáadandó parancs keresése",
+      "centerColumn": "Középső oszlop",
+      "failedUpdate": "Nem sikerült frissíteni a '{0}' értékét a '{1}'-ben.",
+      "filterIcons": "Szűrő ikonok",
+      "iconSelectDialog": "Ikon kiválasztása a '{0}' számára",
+      "iconSet": "Ikon készlet",
+      "insertGroupLeft": "Csoportelválasztó beillesztése (balra)",
+      "insertGroupRight": "Csoportelválasztó beillesztése (jobbra)",
+      "leftColumn": "Bal oszlop",
+      "openJSON": "Eszköztár testreszabása (JSON megnyitása)",
+      "removeCommand": "Parancs eltávolítása az eszköztárból",
+      "restoreDefaults": "Eszköztár alapértelmezett beállításainak visszaállítása",
+      "rightColumn": "Jobb oszlop",
+      "selectIcon": "Ikon kiválasztása",
+      "toggleToolbar": "Eszköztár kapcsolása",
+      "toolbarLocationPlaceholder": "Hol szeretné, ha a parancsot hozzáadnánk?",
+      "useDefaultIcon": "Alapértelmezett ikon használata"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Altípus-hierarchia",
+      "supertypeHierarchy": "Szupertípus hierarchia",
+      "typeHierarchy": "Típushierarchia"
+    },
+    "vsx-registry": {
+      "openVSX": "VSX Registry megnyitása",
+      "recommendedExtensions": "A munkaterületre ajánlott kiterjesztések neveinek listája.",
+      "showRecommendedExtensions": "Szabályozza, hogy a kiterjesztési ajánlásokhoz megjelenjenek-e értesítések."
+    },
+    "webview": {
+      "goToReadme": "Tovább a README-hez",
+      "messageWarning": "            A {0} végpont hoszt mintája `{1}-re` változott; a minta megváltoztatása biztonsági réseket okozhat.             További információért lásd a `{2}` című részt."
+    },
+    "workspace": {
+      "closeWorkspace": "Tényleg be akarja zárni a munkaterületet?",
+      "compareWithEachOther": "Összehasonlítás egymással",
+      "confirmDeletePermanently.description": "Nem sikerült törölni a \"{0}\" fájlt a Kukában. Szeretné véglegesen törölni?",
+      "confirmDeletePermanently.solution": "A beállítások között letilthatja a Trash használatát.",
+      "confirmDeletePermanently.title": "Hiba a fájl törlésében",
+      "duplicate": "Duplikátum",
+      "failApply": "Nem tudta alkalmazni a változtatásokat az új fájlra",
+      "failSaveAs": "Nem lehet futtatni a \"{0}\"-t az aktuális widgethez.",
+      "noErasure": "Megjegyzés: Semmi sem törlődik a lemezről",
+      "openRecentPlaceholder": "Írja be a megnyitni kívánt munkaterület nevét.",
+      "openRecentWorkspace": "Legutóbbi munkaterület megnyitása...",
+      "preserveWindow": "Munkaterületek megnyitásának engedélyezése az aktuális ablakban.",
+      "removeFolder": "Biztos, hogy a következő mappát szeretné eltávolítani a munkaterületről?",
+      "removeFolders": "Biztos, hogy a következő mappákat szeretné eltávolítani a munkaterületről?",
+      "supportMultiRootWorkspace": "Szabályozza, hogy a több gyökérrel rendelkező munkaterület támogatása engedélyezve legyen-e.",
+      "trustEmptyWindow": "Szabályozza, hogy az üres munkaterület alapértelmezés szerint megbízható legyen-e vagy sem.",
+      "trustEnabled": "Szabályozza, hogy a munkaterület megbízhatósága engedélyezve legyen-e vagy sem. Ha le van tiltva, akkor minden munkaterület megbízható.",
+      "trustPrompt": "Szabályozza, hogy mikor jelenjen meg a munkaterület megbízhatóságának megadására vonatkozó indítási felszólítás.",
+      "trustRequest": "Egy bővítmény munkaterület-megbízhatóságot kér, de a megfelelő API még nem támogatott teljes mértékben. Meg akarja bízni ezt a munkaterületet?",
+      "untitled-cleanup": "Úgy tűnik, hogy sok cím nélküli munkaterületi fájl van. Kérjük, ellenőrizze {0} és távolítsa el a nem használt fájlokat.",
+      "workspaceFolderAdded": "Több gyökérrel rendelkező munkaterületet hoztunk létre. Szeretné a munkaterület konfigurációját fájlba menteni?",
+      "workspaceFolderAddedTitle": "Mappa hozzáadása a munkaterülethez"
+    }
+  }
+}

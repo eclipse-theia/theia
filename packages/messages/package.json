@@ -1,0 +1,48 @@
+{
+  "name": "@theia/messages",
+  "version": "1.24.0",
+  "description": "Theia - Messages Extension",
+  "dependencies": {
+    "@theia/core": "1.24.0",
+    "react-perfect-scrollbar": "^1.5.3",
+    "ts-md5": "^1.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/messages-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.24.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

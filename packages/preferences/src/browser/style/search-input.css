@@ -1,0 +1,66 @@
+/********************************************************************************
+ * Copyright (C) 2020 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-settings-container .settings-search-container {
+  display: flex;
+  align-items: center;
+}
+
+.theia-settings-container .settings-search-container .settings-search-input {
+  flex: 1;
+  text-indent: 8px;
+  padding: calc(var(--theia-ui-padding) / 2) 0;
+  box-sizing: border-box;
+  border: 1px solid var(--theia-dropdown-border);
+}
+
+.theia-settings-container .settings-search-container .option-buttons {
+  height: 23px;
+  align-items: center;
+  position: absolute;
+  z-index: 999;
+  right: 5px;
+  display: flex;
+}
+
+.theia-settings-container .settings-search-container .clear-all {
+  background: var(--theia-icon-clear);
+}
+
+.theia-settings-container .settings-search-container .results-found {
+  background-color: var(--theia-badge-background);
+  border-radius: 2px;
+  color: var(--theia-badge-foreground);
+  padding: calc(var(--theia-ui-padding) / 5) calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-settings-container .settings-search-container .option {
+  width: 21px;
+  height: 21px;
+  margin: 0 1px;
+  display: inline-block;
+  box-sizing: border-box;
+  user-select: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: var(--theia-border-width) solid transparent;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.theia-settings-container .settings-search-container .enabled {
+  opacity: 1.0;
+}

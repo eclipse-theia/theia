@@ -1,0 +1,129 @@
+/********************************************************************************
+ * Copyright (C) 2017, 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.p-Widget.dialogOverlay {
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: var(--theia-ui-font-size1);
+    padding: 2px;
+}
+.p-Widget.dialogOverlay .dialogBlock {
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
+    min-height: 150px;
+    color: var(--theia-editorWidget-foreground);
+    background-color: var(--theia-editorWidget-background);
+    border: 1px solid var(--theia-contrastBorder);
+    box-shadow: 0 0px 8px var(--theia-widget-shadow);
+}
+.p-Widget.dialogOverlay .dialogTitle {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    font-size: var(--theia-ui-font-size1);
+    background-color: var(--theia-statusBar-background);
+    color: var(--theia-statusBar-foreground);
+    padding: 0 calc(var(--theia-ui-padding)*2);
+    min-height: 24px;
+}
+
+.p-Widget.dialogOverlay .dialogTitle i.closeButton {
+    cursor: pointer;
+}
+
+.p-Widget.dialogOverlay .dialogContent {
+    display: flex;
+    flex-grow: 2;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: stretch;
+    position: relative;
+    padding: calc(var(--theia-ui-padding)*2);
+}
+
+.p-Widget.dialogOverlay .dialogControl {
+    padding: calc(var(--theia-ui-padding)*2);
+    padding-top: 0px;
+    display: flex;
+    flex-direction: row;
+    align-content: right;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    min-height: 21px;
+}
+
+.dialogOverlay :focus {
+  box-shadow: 0px 0px 1px 1px var(--theia-focusBorder);
+  outline: none;
+}
+
+.p-Widget.dialogOverlay.hidden {
+    display: none;
+}
+.p-Widget.dialogOverlay.dialogErrorMessage {
+    display: none;
+}
+.p-Widget.dialogOverlay .error {
+    color: var(--theia-inputValidation-errorForeground);
+}
+.p-Widget.dialogOverlay .error.main {
+    color: var(--theia-inputValidation-errorForeground);
+    border-color: var(--theia-inputValidation-errorBorder);
+}
+.p-Widget.dialogOverlay .error > .theia-button.main {
+    background-color: var(--theia-inputValidation-errorBackground);
+    color: var(--theia-inputValidation-errorForeground);
+}
+.p-Widget.dialogOverlay .error > .dialogErrorMessage {
+    margin-top: calc(var(--theia-ui-padding)*3);
+    font-size: var(--theia-ui-font-size1);
+    display: block;
+}
+
+.theia-dialog-node {
+    line-height: var(--theia-content-line-height);
+    margin-top: calc(var(--theia-ui-padding)*1.5);
+    margin-left: calc(var(--theia-ui-padding)*2.5);
+}
+
+.theia-dialog-node-content {
+    display: flex;
+    align-items: center;
+    margin-right: calc(var(--theia-ui-padding)*1.5);}
+
+.theia-dialog-node-segment {
+    flex-grow: 0;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.theia-dialog-icon {
+    align-content: center;
+    margin-right: calc(var(--theia-ui-padding)*1.5);
+}

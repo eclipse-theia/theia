@@ -1,0 +1,34 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../editor"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../navigator"
+    },
+    {
+      "path": "../scm"
+    },
+    {
+      "path": "../scm-extra"
+    },
+    {
+      "path": "../workspace"
+    }
+  ]
+}

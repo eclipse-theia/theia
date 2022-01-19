@@ -1,0 +1,60 @@
+{
+    // comment
+    "tasks": [
+        {
+            "label": "test task",
+            "type": "shell",
+            "command": "./task",
+            "args": [
+                "test"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "task.bat",
+                    "abc"
+                ]
+            }
+        },
+        {
+            "label": "long running test task",
+            "type": "shell",
+            "command": "./task-long-running",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "task-long-running.bat",
+                    "abc"
+                ]
+            }
+        },
+        {
+            "label": "list all files",
+            "type": "shell",
+            "command": "ls",
+            "args": [
+                "-alR",
+                "/"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "dir"
+                ]
+            }
+        }
+    ]
+}
