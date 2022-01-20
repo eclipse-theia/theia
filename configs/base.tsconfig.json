@@ -19,6 +19,7 @@
     "jsx": "react",
     "lib": [
       "ES2017",
+      "ES2020.Promise",
       "dom"
     ],
     "sourceMap": true

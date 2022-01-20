@@ -16,13 +16,19 @@
       "path": "dev-packages/cli"
     },
     {
-      "path": "dev-packages/eslint-plugin"
+      "path": "dev-packages/ffmpeg"
     },
     {
       "path": "dev-packages/localization-manager"
     },
     {
       "path": "dev-packages/ovsx-client"
+    },
+    {
+      "path": "dev-packages/private-eslint-plugin"
+    },
+    {
+      "path": "dev-packages/private-re-exports"
     },
     {
       "path": "examples/api-samples"

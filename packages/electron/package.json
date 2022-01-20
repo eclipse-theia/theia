@@ -1,0 +1,65 @@
+{
+  "name": "@theia/electron",
+  "version": "1.21.0",
+  "description": "Theia - Electron utility package",
+  "dependencies": {
+    "@electron/remote": "^2.0.1",
+    "electron-store": "^8.0.0",
+    "fix-path": "^3.0.0",
+    "native-keymap": "^2.2.1"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.21.0",
+    "@theia/re-exports": "1.21.0"
+  },
+  "peerDependencies": {
+    "electron": "^15.3.5"
+  },
+  "theiaReExports": {
+    "shared": {
+      "export *": [
+        "@electron/remote",
+        "@electron/remote/main",
+        "native-keymap"
+      ],
+      "export =": [
+        "electron as Electron",
+        "electron-store as ElectronStore",
+        "fix-path as fixPath"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README.in.md > README.md",
+    "prepare": "yarn -s generate-theia-re-exports",
+    "lint": "echo skip || theiaext lint",
+    "build": "echo skip || theiaext build",
+    "watch": "echo skip || theiaext watch",
+    "clean": "echo skip || theiaext clean",
+    "test": "echo skip || theiaext test",
+    "version": "yarn -s generate-theia-re-exports"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

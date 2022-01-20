@@ -20,7 +20,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Ajv from 'ajv';
+import * as Ajv from '@theia/core/shared/ajv';
 import debounce = require('p-debounce');
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';

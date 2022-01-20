@@ -1,0 +1,25 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../application-manager/compile.tsconfig.json"
+    },
+    {
+      "path": "../application-package/compile.tsconfig.json"
+    },
+    {
+      "path": "../ovsx-client/compile.tsconfig.json"
+    },
+    {
+      "path": "../ffmpeg/compile.tsconfig.json"
+    }
+  ]
+}

@@ -14,35 +14,37 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/**
- * @file Generate the .js and .d.ts files to re-export shared dependencies.
- */
+// @ts-check
 
-const path = require('path');
-const { promises: fsp } = require('fs');
+const fs = require('fs');
 const os = require('os');
-const { exportStar, exportEqual, sharedModules } = require('../shared');
-
-const {
-    dependencies,
-    devDependencies,
-    peerDependencies,
-} = require('../package.json');
+const path = require('path');
+const { PackageReExport, getPackageName } = require('@theia/re-export');
 
 const shared = path.resolve(__dirname, '../shared');
+const electronShared = path.resolve(__dirname, '../electron-shared');
+const corePackageReExport = new PackageReExport(require('../package.json'), '@theia/core/shared/');
+const electronPackageReExport = new PackageReExport(require('@theia/electron/package.json'), '@theia/core/electron-shared/');
 
-main().catch(error => {
+generateShared().catch(error => {
     console.error(error);
     process.exitCode = 1;
 });
 
-async function main() {
+async function generateShared() {
     await mkdirp(shared);
     await Promise.all([
-        generateExportTheiaElectron(),
-        generateReadme(sharedModules),
-        ...exportStar.map(entry => generateExportStar(entry.module, entry.alias)),
-        ...exportEqual.map(entry => generateExportEqual(entry.module, entry.namespace)),
+        ...corePackageReExport.generateReExports().map(
+            item => writeReExport(item.export, item.generated, shared)
+        ),
+        ...electronPackageReExport.generateReExports(reExport => ({
+            ...reExport,
+            module: `@theia/electron/shared/${reExport.module}`,
+            alias: reExport.alias || reExport.module,
+        })).map(
+            item => writeReExport(item.export, item.generated, electronShared)
+        ),
+        generateReadme(corePackageReExport.modules),
     ]);
 }
 
@@ -52,72 +54,42 @@ async function main() {
 async function generateReadme(reExports) {
     const input = path.resolve(__dirname, '../README.in.md');
     const output = path.resolve(__dirname, '../README.md');
-    const readme = await fsp.readFile(input, { encoding: 'utf8' });
-    await fsp.writeFile(output, readme.replace('{{RE-EXPORTS}}', reExports.map(
-        module => ` - [\`${module}@${getPackageRange(module)}\`](${getNpmUrl(module)})`
+    const readme = await fs.promises.readFile(input, { encoding: 'utf8' });
+    await fs.promises.writeFile(output, readme.replace('{{RE-EXPORTS}}', reExports.map(
+        moduleName => ` - [\`${moduleName}@${corePackageReExport.getVersionRange(getPackageName(moduleName))}\`](${getNpmUrl(moduleName)})`
     ).join(getEOL(readme))));
 }
 
 /**
- * Special re-export case: The `electron` module comes from `@theia/electron`,
- * but instead of re-exporting it like `@theia/core/shared/@theia/electron` we'll
- * simplify this to `@theia/core/shared/electron`.
+ * @param {import('@theia/re-export').ExportStar | import('@theia/re-export').ExportEqual} exp the re-export data
+ * @param {import('@theia/re-export').GeneratedReExport} generated the content of the generated files
+ * @param {string} out directory where to write the generated files
  */
-async function generateExportTheiaElectron() {
-    const base = path.resolve(shared, 'electron');
+async function writeReExport(exp, generated, out) {
+    const base = await prepareOutputDir(out, exp.alias || exp.module);
     await Promise.all([
-        writeFileIfMissing(`${base}.js`, `\
-module.exports = require('@theia/electron');
-`),
-        writeFileIfMissing(`${base}.d.ts`, `\
-import Electron = require('@theia/electron');
-export = Electron;
-`),
-    ]);
-}
-
-async function generateExportStar(module, alias) {
-    const base = await prepareSharedModule(alias);
-    await Promise.all([
-        writeFileIfMissing(`${base}.js`, `\
-module.exports = require('${module}');
-`),
-        writeFileIfMissing(`${base}.d.ts`, `\
-export * from '${module}';
-`),
-    ]);
-}
-
-async function generateExportEqual(module, namespace) {
-    const base = await prepareSharedModule(module);
-    await Promise.all([
-        writeFileIfMissing(`${base}.js`, `\
-module.exports = require('${module}');
-`),
-        writeFileIfMissing(`${base}.d.ts`, `\
-import ${namespace} = require('${module}');
-export = ${namespace};
-`),
+        writeFileIfMissing(`${base}.js`, generated.js),
+        writeFileIfMissing(`${base}.d.ts`, generated.dts),
     ]);
 }
 
 /**
- * @param {string} module
- * @returns {string} target filename without extension (base)
+ * @param {string} moduleName
+ * @returns {Promise<string>} target filename without extension (base)
  */
-async function prepareSharedModule(module) {
-    const base = path.resolve(shared, module);
+async function prepareOutputDir(out, moduleName) {
+    const base = path.resolve(out, moduleName);
     // Handle case like '@a/b/c/d.js' => mkdirp('@a/b/c')
     await mkdirp(path.dirname(base));
     return base;
 }
 
 async function mkdirp(directory) {
-    await fsp.mkdir(directory, { recursive: true });
+    await fs.promises.mkdir(directory, { recursive: true });
 }
 
 async function writeFileIfMissing(file, content) {
-    if (await fsp.access(file).then(() => false, error => true)) {
+    if (await fs.promises.access(file).then(ok => false, error => true)) {
         await writeFile(file, content);
     }
 }
@@ -128,7 +100,7 @@ async function writeFile(file, content) {
         // writing to a file we want to use the system's EOL.
         content = content.replace(/\n/g, '\r\n');
     }
-    await fsp.writeFile(file, content);
+    await fs.promises.writeFile(file, content);
 }
 
 /**
@@ -150,37 +122,13 @@ function getEOL(content) {
 
 /**
  * @param {string} package
+ * @param {string} [version]
  * @returns {string} NPM URL
  */
-function getNpmUrl(package) {
-    return `https://www.npmjs.com/package/${getPackageName(package)}`;
-}
-
-/**
- * @param {string} module
- * @returns {string} range like `^1.2.3`
- */
-function getPackageRange(module) {
-    const name = getPackageName(module);
-    if (name === 'electron') {
-        // In this case we are doing something weird, @theia/core does not depend on electron,
-        // but rather we depend on an optional peer dependency @theia/electron which itself depends
-        // on electron. For practical purposes, we re-export electron through @theia/electron own re-exports.
-        // The exports look like this: electron -> @theia/electron (optional) -> @theia/core/shared/electron
-        return require('@theia/electron/package.json').dependencies.electron;
+function getNpmUrl(package, version) {
+    let url = `https://www.npmjs.com/package/${getPackageName(package)}`;
+    if (version) {
+        url += `/v/${version}`;
     }
-    return dependencies[name] || devDependencies[name] || peerDependencies[name];
-}
-
-/**
- * Only keep the first two parts of the package name
- * e.g. @a/b/c => @a/b
- * @param {string} module
- * @returns {string} package name
- */
-function getPackageName(module) {
-    const slice = module.startsWith('@') ? 2 : 1;
-    return module.split('/')
-        .slice(0, slice)
-        .join('/');
+    return url;
 }

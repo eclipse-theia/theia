@@ -45,10 +45,6 @@ export interface RebuildOptions {
      * Folder where the module cache will be created/read from.
      */
     cacheRoot?: string
-    /**
-     * Rebuild modules for Electron anyway.
-     */
-    force?: boolean
 }
 
 /**
@@ -149,14 +145,21 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
             ? m.substring(slash + 1)
             : m;
     });
+    let exitCode: number | undefined;
     try {
         if (process.env.THEIA_REBUILD_NO_WORKAROUND) {
-            return await runElectronRebuild(todo, token);
+            exitCode = await runElectronRebuild(todo, token);
         } else {
-            return await electronRebuildExtraModulesWorkaround(process.cwd(), todo, () => runElectronRebuild(todo, token), token);
+            exitCode = await electronRebuildExtraModulesWorkaround(process.cwd(), todo, () => runElectronRebuild(todo, token), token);
         }
     } catch (error) {
-        return revertBrowserModules(browserModuleCache, modules);
+        console.error(error);
+    } finally {
+        // If code is undefined or different from zero we need to revert back to the browser modules.
+        if (exitCode !== 0) {
+            await revertBrowserModules(browserModuleCache, modules);
+        }
+        return exitCode ?? 1;
     }
 }
 
@@ -199,8 +202,8 @@ async function revertBrowserModules(browserModuleCache: string, modules: string[
 
 async function runElectronRebuild(modules: string[], token: ExitToken): Promise<number> {
     const todo = modules.join(',');
-    return new Promise((resolve, reject) => {
-        const electronRebuild = cp.spawn(`npx --no-install electron-rebuild -f -w="${todo}" -o="${todo}"`, {
+    return new Promise(async (resolve, reject) => {
+        const electronRebuild = cp.spawn(`npx --no-install electron-rebuild -f -w=${todo} -o=${todo}`, {
             stdio: 'inherit',
             shell: true,
         });

@@ -49,11 +49,11 @@ An extension module should have a default export of `ContainerModule | Promise<C
 
 A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
-## Re-exports
+## Re-Exports Mechanism
 
-In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use.
+In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use. This is especially useful when having to re-use the same dependencies as `@theia/core` does: Since those dependencies will be pulled by Theia, instead of trying to match the same version in your own packages, you can use re-exports to consume it from the framework directly.
 
-### Usage example
+### Usage Example
 
 Let's take inversify as an example since you will most likely use this package, you can import it by prefixing with `@theia/core/shared/`:
 
@@ -66,9 +66,16 @@ export class SomeClass {
 }
 ```
 
-### List of re-exported packages
+## Re-Exports
 
-{{RE-EXPORTS}}
+{{#reExportsDirectories}}
+- `@theia/core/{{&directory}}/...`
+    {{#packages}}
+    {{#modules}}
+    - `{{&moduleName}}` (from [`{{&packageName}}@{{&versionRange}}`]({{&npmUrl}}))
+    {{/modules}}
+    {{/packages}}
+{{/reExportsDirectories}}
 
 ## Logging Configuration
 

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { IpcMainEvent, ipcMain, WebContents } from '../../../shared/electron';
+import { IpcMainEvent, ipcMain, WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';

@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as electron from '../../../shared/electron';
+import * as electron from '../../../electron-shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService

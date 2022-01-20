@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { ipcRenderer } from '@theia/electron/shared/electron';
 import { postConstruct, injectable } from 'inversify';
-import { ipcRenderer } from '../../../shared/electron';
 import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
 

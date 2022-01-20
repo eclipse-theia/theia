@@ -25,11 +25,11 @@
   },
   "scripts": {
     "clean": "theia clean",
-    "build": "yarn compile && yarn bundle",
+    "build": "yarn -s compile && yarn -s bundle",
     "bundle": "theia build --mode development",
     "compile": "tsc -b",
     "rebuild": "theia rebuild:{{app}} --cacheRoot ../..",
-    "start": "yarn rebuild && THEIA_CONFIG_DIR=./theia-config-dir theia start --plugins=local-dir:../../noPlugins --log-level=fatal"
+    "start": "yarn -s rebuild && THEIA_CONFIG_DIR=./theia-config-dir theia start --plugins=local-dir:../../noPlugins --log-level=fatal"
   },
   "devDependencies": {
     "@theia/cli": "{{version}}"

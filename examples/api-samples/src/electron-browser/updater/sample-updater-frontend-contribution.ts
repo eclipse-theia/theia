@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { remote, Menu, BrowserWindow } from '@theia/core/shared/electron';
+import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
+import { Menu, BrowserWindow } from '@theia/core/electron-shared/electron';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { isOSX } from '@theia/core/lib/common/os';
 import { CommonMenus } from '@theia/core/lib/browser';
@@ -90,9 +91,9 @@ export class ElectronMenuUpdater {
         this.setMenu();
     }
 
-    private setMenu(menu: Menu | null = this.factory.createElectronMenuBar(), electronWindow: BrowserWindow = remote.getCurrentWindow()): void {
+    private setMenu(menu: Menu | null = this.factory.createElectronMenuBar(), electronWindow: BrowserWindow = electronRemote.getCurrentWindow()): void {
         if (isOSX) {
-            remote.Menu.setApplicationMenu(menu);
+            electronRemote.Menu.setApplicationMenu(menu);
         } else {
             electronWindow.setMenu(menu);
         }

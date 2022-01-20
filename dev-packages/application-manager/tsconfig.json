@@ -11,6 +11,9 @@
   "references": [
     {
       "path": "../application-package"
+    },
+    {
+      "path": "../ffmpeg"
     }
   ]
 }

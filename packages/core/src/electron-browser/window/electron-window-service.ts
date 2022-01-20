@@ -14,8 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { injectable, inject, postConstruct } from 'inversify';
-import * as electron from '../../../shared/electron';
+import * as electron from '../../../electron-shared/electron';
 import { NewWindowOptions } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
@@ -85,7 +86,7 @@ export class ElectronWindowService extends DefaultWindowService {
      */
     protected updateWindowZoomLevel(): void {
         const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
-        const webContents = electron.remote.getCurrentWindow().webContents;
+        const webContents = electronRemote.getCurrentWindow().webContents;
         if (webContents.getZoomLevel() !== preferredZoomLevel) {
             webContents.setZoomLevel(preferredZoomLevel);
         }

@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { webContents } from '../../shared/electron';
+import { webContents } from '@theia/electron/shared/electron';
+import * as nativeKeymap from '@theia/electron/shared/native-keymap';
 import { injectable } from 'inversify';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import * as nativeKeymap from '@theia/electron/native-keymap';
 
 @injectable()
 export class ElectronNativeKeymap implements ElectronMainApplicationContribution {

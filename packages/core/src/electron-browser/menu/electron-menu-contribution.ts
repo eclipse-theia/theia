@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as electron from '../../../shared/electron';
+import * as electron from '../../../electron-shared/electron';
+import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
@@ -104,7 +105,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             // OSX: Recreate the menus when changing windows.
             // OSX only has one menu bar for all windows, so we need to swap
             // between them as the user switches windows.
-            electron.remote.getCurrentWindow().on('focus', () => this.setMenu(app));
+            electronRemote.getCurrentWindow().on('focus', () => this.setMenu(app));
         }
         // Make sure the application menu is complete, once the frontend application is ready.
         // https://github.com/theia-ide/theia/issues/5100
@@ -136,11 +137,11 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         electron.ipcRenderer.send(RequestTitleBarStyle);
         this.preferenceService.ready.then(() => {
             this.setMenu(app);
-            electron.remote.getCurrentWindow().setMenuBarVisibility(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+            electronRemote.getCurrentWindow().setMenuBarVisibility(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
         });
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'window.titleBarStyle') {
-                if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue && electron.remote.getCurrentWindow().isFocused()) {
+                if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue && electronRemote.getCurrentWindow().isFocused()) {
                     electron.ipcRenderer.send(TitleBarStyleChanged, change.newValue);
                     this.handleRequiredRestart();
                 }
@@ -177,9 +178,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     }
 
     protected setMenu(app: FrontendApplication, electronMenu: electron.Menu | null = this.factory.createElectronMenuBar(),
-        electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
+        electronWindow: electron.BrowserWindow = electronRemote.getCurrentWindow()): void {
         if (isOSX) {
-            electron.remote.Menu.setApplicationMenu(electronMenu);
+            electronRemote.Menu.setApplicationMenu(electronMenu);
         } else {
             this.hideTopPanel(app);
             if (this.titleBarStyle === 'custom' && !this.menuBar) {
@@ -252,11 +253,11 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     registerCommands(registry: CommandRegistry): void {
 
-        const currentWindow = electron.remote.getCurrentWindow();
+        const currentWindow = electronRemote.getCurrentWindow();
 
         registry.registerCommand(ElectronCommands.TOGGLE_DEVELOPER_TOOLS, {
             execute: () => {
-                const webContent = electron.remote.getCurrentWebContents();
+                const webContent = electronRemote.getCurrentWebContents();
                 if (!webContent.isDevToolsOpened()) {
                     webContent.openDevTools();
                 } else {
