@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2022 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -724,13 +724,13 @@ export function createAPIFactory(
         const plugins: typeof theia.plugins = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             get all(): theia.Plugin<any>[] {
-                return pluginManager.getAllPlugins().map(plg => new TheiaPlugin(pluginManager, plg));
+                return pluginManager.getAllPlugins().map(plg => new PluginInstance(pluginManager, plg));
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId.toLowerCase());
                 if (plg) {
-                    return new TheiaPlugin(pluginManager, plg);
+                    return new PluginInstance(pluginManager, plg);
                 }
                 return undefined;
             },
@@ -972,19 +972,33 @@ export function createAPIFactory(
     };
 }
 
-export class TheiaPlugin<T> implements theia.Plugin<T> {
+enum ExtensionKind {
+    UI = 1,
+    Workspace = 2
+}
+
+export class PluginInstance<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     pluginUri: theia.Uri;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     packageJSON: any;
     pluginType: theia.PluginType;
+
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
         this.pluginUri = URI.parse(plugin.pluginUri);
         this.packageJSON = plugin.rawModel;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
+
+        // Support VSCode Extension properties even if not explicitly exposed through interface
+        // as they are expected in the vscode.extension.* API calls and the ExtensionContext of the activate method
+        Object.assign(this, {
+            extensionPath: plugin.pluginPath,
+            extensionUri: plugin.pluginUri,
+            extensionKind: ExtensionKind.UI // stub as a local VS Code extension (not running on a remote workspace)
+        });
     }
 
     get isActive(): boolean {

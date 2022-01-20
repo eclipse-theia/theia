@@ -19,7 +19,6 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
-import { asVsCodeExtension, ExtensionKind } from './plugin-vscode-extension';
 
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
 
@@ -28,6 +27,11 @@ const plugins = new Array<Plugin>();
 let defaultApi: typeof theia;
 let isLoadOverride = false;
 let pluginApiFactory: PluginAPIFactory;
+
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2
+}
 
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
     pluginsApiImpl.set(plugin.model.id, createVSCodeAPI(apiFactory, plugin));
@@ -43,13 +47,13 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 function createVSCodeAPI(apiFactory: PluginAPIFactory, plugin: Plugin): typeof theia {
     const vscode = Object.assign(apiFactory(plugin), { ExtensionKind });
 
-    // use Theia plugin api instead vscode extensions
+    // use Theia plugin api to implement vscode extensions api
     (<any>vscode).extensions = {
         get all(): any[] {
-            return vscode.plugins.all.map(p => asVsCodeExtension(p));
+            return vscode.plugins.all;
         },
         getExtension(pluginId: string): any | undefined {
-            return asVsCodeExtension(vscode.plugins.getPlugin(pluginId));
+            return vscode.plugins.getPlugin(pluginId);
         },
         get onDidChange(): theia.Event<void> {
             return vscode.plugins.onDidChange;
