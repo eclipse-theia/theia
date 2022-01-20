@@ -21,7 +21,7 @@ import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
     PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType
+    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import {
@@ -118,11 +118,16 @@ export class PluginDeployerImpl implements PluginDeployer {
         }
 
         const startDeployTime = performance.now();
-        const [userPlugins, systemPlugins] = await Promise.all([
-            this.resolvePlugins(context.userEntries, PluginType.User),
-            this.resolvePlugins(context.systemEntries, PluginType.System)
-        ]);
-        await this.deployPlugins([...userPlugins, ...systemPlugins]);
+        const unresolvedUserEntries = context.userEntries.map(id => ({
+            id,
+            type: PluginType.User
+        }));
+        const unresolvedSystemEntries = context.systemEntries.map(id => ({
+            id,
+            type: PluginType.System
+        }));
+        const plugins = await this.resolvePlugins([...unresolvedUserEntries, ...unresolvedSystemEntries]);
+        await this.deployPlugins(plugins);
         this.logMeasurement('Deploy plugins list', startDeployTime);
     }
 
@@ -132,50 +137,53 @@ export class PluginDeployerImpl implements PluginDeployer {
         }
     }
 
-    async deploy(pluginEntry: string, type: PluginType = PluginType.System): Promise<void> {
+    async deploy(plugin: UnresolvedPluginEntry): Promise<void> {
         const startDeployTime = performance.now();
-        await this.deployMultipleEntries([pluginEntry], type);
+        await this.deployMultipleEntries([plugin]);
         this.logMeasurement('Deploy plugin entry', startDeployTime);
     }
 
-    protected async deployMultipleEntries(pluginEntries: ReadonlyArray<string>, type: PluginType = PluginType.System): Promise<void> {
-        const pluginsToDeploy = await this.resolvePlugins(pluginEntries, type);
+    protected async deployMultipleEntries(plugins: UnresolvedPluginEntry[]): Promise<void> {
+        const pluginsToDeploy = await this.resolvePlugins(plugins);
         await this.deployPlugins(pluginsToDeploy);
     }
 
     /**
      * Resolves plugins for the given type.
      *
-     * One can call it multiple times for different types before triggering a single deploy, i.e.
+     * Only call it a single time before triggering a single deploy to prevent re-resolving of extension dependencies, i.e.
      * ```ts
      * const deployer: PluginDeployer;
-     * deployer.deployPlugins([
-     *     ...await deployer.resolvePlugins(userEntries, PluginType.User),
-     *     ...await deployer.resolvePlugins(systemEntries, PluginType.System)
-     * ]);
+     * deployer.deployPlugins(await deployer.resolvePlugins(allPluginEntries));
      * ```
      */
-    async resolvePlugins(pluginEntries: ReadonlyArray<string>, type: PluginType): Promise<PluginDeployerEntry[]> {
+    async resolvePlugins(plugins: UnresolvedPluginEntry[]): Promise<PluginDeployerEntry[]> {
         const visited = new Set<string>();
         const pluginsToDeploy = new Map<string, PluginDeployerEntry>();
 
-        let queue = [...pluginEntries];
+        let queue: UnresolvedPluginEntry[] = [...plugins];
         while (queue.length) {
-            const dependenciesChunk: Array<Map<string, string>> = [];
-            const workload: string[] = [];
+            const dependenciesChunk: Array<{
+                dependencies: Map<string, string>
+                type: PluginType
+            }> = [];
+            const workload: UnresolvedPluginEntry[] = [];
             while (queue.length) {
                 const current = queue.shift()!;
-                if (visited.has(current)) {
+                if (visited.has(current.id)) {
                     continue;
                 } else {
                     workload.push(current);
                 }
-                visited.add(current);
+                visited.add(current.id);
             }
             queue = [];
-            await Promise.all(workload.map(async current => {
+            await Promise.all(workload.map(async ({ id, type }) => {
+                if (type === undefined) {
+                    type = PluginType.System;
+                }
                 try {
-                    const pluginDeployerEntries = await this.resolvePlugin(current, type);
+                    const pluginDeployerEntries = await this.resolvePlugin(id, type);
                     await this.applyFileHandlers(pluginDeployerEntries);
                     await this.applyDirectoryFileHandlers(pluginDeployerEntries);
                     for (const deployerEntry of pluginDeployerEntries) {
@@ -183,18 +191,21 @@ export class PluginDeployerImpl implements PluginDeployer {
                         if (dependencies && !pluginsToDeploy.has(dependencies.metadata.model.id)) {
                             pluginsToDeploy.set(dependencies.metadata.model.id, deployerEntry);
                             if (dependencies.mapping) {
-                                dependenciesChunk.push(dependencies.mapping);
+                                dependenciesChunk.push({ dependencies: dependencies.mapping, type });
                             }
                         }
                     }
                 } catch (e) {
-                    console.error(`Failed to resolve plugins from '${current}'`, e);
+                    console.error(`Failed to resolve plugins from '${id}'`, e);
                 }
             }));
-            for (const dependencies of dependenciesChunk) {
+            for (const { dependencies, type } of dependenciesChunk) {
                 for (const [dependency, deployableDependency] of dependencies) {
                     if (!pluginsToDeploy.has(dependency)) {
-                        queue.push(deployableDependency);
+                        queue.push({
+                            id: deployableDependency,
+                            type
+                        });
                     }
                 }
             }

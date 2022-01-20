@@ -406,6 +406,11 @@ export enum PluginType {
     User
 };
 
+export interface UnresolvedPluginEntry {
+    id: string;
+    type?: PluginType;
+}
+
 export interface PluginDeployerEntry {
 
     /**
