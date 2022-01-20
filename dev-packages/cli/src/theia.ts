@@ -52,6 +52,7 @@ function toStringArray(argv?: (string | number)[]): string[] | undefined {
 function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, {
     modules: string[]
     cacheRoot?: string
+    forceAbi?: number,
 }> {
     return {
         command,
@@ -65,9 +66,13 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                 alias: 'm',
                 type: 'array', // === `--modules/-m` can be specified multiple times
                 describe: 'List of modules to rebuild/revert'
+            },
+            'forceAbi': {
+                type: 'number',
+                describe: 'The Node ABI version to rebuild for'
             }
         },
-        handler: ({ cacheRoot, modules }) => {
+        handler: ({ cacheRoot, modules, forceAbi }) => {
             // Note: `modules` is actually `string[] | undefined`.
             if (modules) {
                 // It is ergonomic to pass arguments as --modules="a,b,c,..."
@@ -82,7 +87,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                 }
                 modules = flattened;
             }
-            rebuild(target, { cacheRoot, modules });
+            rebuild(target, { cacheRoot, modules, forceAbi });
         }
     };
 }

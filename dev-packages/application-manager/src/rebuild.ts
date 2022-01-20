@@ -28,6 +28,8 @@ interface ExitToken {
     onSignal(callback: (signal: NodeJS.Signals) => void): void
 }
 
+type NodeABI = string | number;
+
 export const DEFAULT_MODULES = [
     '@theia/node-pty',
     'nsfw',
@@ -45,6 +47,11 @@ export interface RebuildOptions {
      * Folder where the module cache will be created/read from.
      */
     cacheRoot?: string
+    /**
+     * In the event that `node-abi` doesn't recognize the current Electron version,
+     * you can specify the Node ABI to rebuild for.
+     */
+    forceAbi?: NodeABI
 }
 
 /**
@@ -55,12 +62,13 @@ export function rebuild(target: RebuildTarget, options: RebuildOptions = {}): vo
     const {
         modules = DEFAULT_MODULES,
         cacheRoot = process.cwd(),
+        forceAbi,
     } = options;
     const cache = path.resolve(cacheRoot, '.browser_modules');
     const cacheExists = folderExists(cache);
     guardExit(async token => {
         if (target === 'electron' && !cacheExists) {
-            process.exitCode = await rebuildElectronModules(cache, modules, token);
+            process.exitCode = await rebuildElectronModules(cache, modules, forceAbi, token);
         } else if (target === 'browser' && cacheExists) {
             process.exitCode = await revertBrowserModules(cache, modules);
         } else {
@@ -96,7 +104,7 @@ interface ModuleBackup {
     originalLocation: string
 }
 
-async function rebuildElectronModules(browserModuleCache: string, modules: string[], token: ExitToken): Promise<number> {
+async function rebuildElectronModules(browserModuleCache: string, modules: string[], forceAbi: NodeABI | undefined, token: ExitToken): Promise<number> {
     const modulesJsonPath = path.join(browserModuleCache, 'modules.json');
     const modulesJson: ModulesJson = await fs.access(modulesJsonPath).then(
         () => fs.readJson(modulesJsonPath),
@@ -148,9 +156,9 @@ async function rebuildElectronModules(browserModuleCache: string, modules: strin
     let exitCode: number | undefined;
     try {
         if (process.env.THEIA_REBUILD_NO_WORKAROUND) {
-            exitCode = await runElectronRebuild(todo, token);
+            exitCode = await runElectronRebuild(todo, forceAbi, token);
         } else {
-            exitCode = await electronRebuildExtraModulesWorkaround(process.cwd(), todo, () => runElectronRebuild(todo, token), token);
+            exitCode = await electronRebuildExtraModulesWorkaround(process.cwd(), todo, () => runElectronRebuild(todo, forceAbi, token), token);
         }
     } catch (error) {
         console.error(error);
@@ -200,10 +208,14 @@ async function revertBrowserModules(browserModuleCache: string, modules: string[
     return exitCode;
 }
 
-async function runElectronRebuild(modules: string[], token: ExitToken): Promise<number> {
+async function runElectronRebuild(modules: string[], forceAbi: NodeABI | undefined, token: ExitToken): Promise<number> {
     const todo = modules.join(',');
     return new Promise(async (resolve, reject) => {
-        const electronRebuild = cp.spawn(`npx --no-install electron-rebuild -f -w=${todo} -o=${todo}`, {
+        let command = `npx --no-install electron-rebuild -f -w=${todo} -o=${todo}`;
+        if (forceAbi) {
+            command += ` --force-abi ${forceAbi}`;
+        }
+        const electronRebuild = cp.spawn(command, {
             stdio: 'inherit',
             shell: true,
         });
