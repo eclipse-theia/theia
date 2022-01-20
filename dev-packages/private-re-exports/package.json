@@ -24,8 +24,9 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "yargs": "^15.3.1",
-    "mustache": "^4.2.0"
+    "mustache": "^4.2.0",
+    "semver": "^7.3.5",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/mustache": "^4.1.2"

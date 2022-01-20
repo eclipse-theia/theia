@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import fs = require('fs');
-import path = require('path');
-import yargs = require('yargs');
 import mustache = require('mustache');
+import path = require('path');
+import semver = require('semver');
+import yargs = require('yargs');
 import { parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 
@@ -36,8 +37,7 @@ yargs
             }
             const packageReExports = await PackageReExports.FromPackage(packageName);
             await Promise.all(packageReExports.all.map(async reExport => {
-                const reExportModuleName = parseModule(reExport.externalImport)[1]!;
-                const reExportPath = packageReExports.resolvePath(reExportModuleName, 'index');
+                const reExportPath = packageReExports.resolvePath(reExport.reExportDir, reExport.moduleName, 'index');
                 await writeFile(`${reExportPath}.js`, `module.exports = require('${reExport.internalImport}');\n`);
                 if (reExport.reExportStyle === '*') {
                     const content = `export * from '${reExport.internalImport}';\n`;
@@ -90,7 +90,7 @@ yargs
                     // eslint-disable-next-line @typescript-eslint/no-shadow
                     packages: Object.entries(reExportsPackages).map(([packageName, reExports]) => ({
                         packageName,
-                        npmUrl: getNpmUrl(packageName),
+                        npmUrl: getNpmUrl(packageName, reExports[0].versionRange),
                         versionRange: reExports[0].versionRange,
                         modules: reExports.map(reExport => ({
                             moduleName: reExport.moduleName,
@@ -98,6 +98,7 @@ yargs
                     }))
                 }))
             };
+            // `console.log` replaces CRLF with LF which is problematic on Windows
             process.stdout.write(replaceEolForWindows(mustache.render(template, reExportsView)));
         }
     )
@@ -117,9 +118,11 @@ interface ReExportsView {
     }>
 }
 
-function getNpmUrl(moduleName: string, version?: string): string {
+function getNpmUrl(moduleName: string, versionRange: string | null | undefined): string {
     const [packageName] = parseModule(moduleName);
     let url = `https://www.npmjs.com/package/${packageName}`;
+    // Is the range a fixed version?
+    const version = versionRange && semver.valid(versionRange);
     if (version) {
         url += `/v/${version}`;
     }
