@@ -995,8 +995,8 @@ export class PluginInstance<T> implements theia.Plugin<T> {
         // Support VSCode Extension properties even if not explicitly exposed through interface
         // as they are expected in the vscode.extension.* API calls and the ExtensionContext of the activate method
         Object.assign(this, {
-            extensionPath: plugin.pluginPath,
-            extensionUri: plugin.pluginUri,
+            extensionPath: this.pluginPath,
+            extensionUri: this.pluginUri,
             extensionKind: ExtensionKind.UI // stub as a local VS Code extension (not running on a remote workspace)
         });
     }
