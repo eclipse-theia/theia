@@ -202,6 +202,30 @@ export class Path {
         return new Path(this.raw + Path.separator + relativePath);
     }
 
+    /**
+     *
+     * @param paths portions of a path
+     * @returns a new Path if an absolute path can be computed from the segments passed in + this.raw
+     * If no absolute path can be computed, returns undefined.
+     *
+     * Processes the path segments passed in from right to left (reverse order) concatenating until an
+     * absolute path is found.
+     */
+    resolve(...paths: string[]): Path | undefined {
+        const segments = paths.slice().reverse(); // Don't mutate the caller's array.
+        segments.push(this.raw);
+        let result = new Path('');
+        for (const segment of segments) {
+            if (segment) {
+                const next = new Path(segment).join(result.raw);
+                if (next.isAbsolute) {
+                    return next.normalize();
+                }
+                result = next;
+            }
+        }
+    }
+
     toString(): string {
         return this.raw;
     }

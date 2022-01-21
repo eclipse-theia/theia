@@ -15,17 +15,17 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService, isWindows } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
-    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY
+    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
 import { THEIA_EXT, VSCODE_EXT } from '../common';
-import { WorkspaceCommands } from './workspace-commands';
+import { WorkspaceCommands, WorkspaceCommandContribution } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -35,6 +35,9 @@ import { UTF8 } from '@theia/core/lib/common/encodings';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { nls } from '@theia/core/lib/common/nls';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
 
 export enum WorkspaceStates {
     /**
@@ -68,6 +71,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(WorkspaceCommandContribution) protected readonly workspaceCommands: WorkspaceCommandContribution;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -314,30 +318,62 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     /**
-     * Opens a folder after prompting the `Open Folder` dialog. Resolves to `undefined`, if
-     *  - the workspace root is not set,
-     *  - the folder to open does not exist, or
-     *  - it was not a directory, but a file resource.
+     * Opens one or more folders after prompting the `Open Folder` dialog. Resolves to `undefined`, if
+     *  - the user's selection is empty or contains only files.
+     *  - the new workspace is equal to the old workspace.
      *
-     * Otherwise, resolves to the URI of the folder.
+     * Otherwise, resolves to the URI of the new workspace:
+     *  - a single folder if a single folder was selected.
+     *  - a new, untitled workspace file if multiple folders were selected.
      */
     protected async doOpenFolder(): Promise<URI | undefined> {
         const props: OpenFileDialogProps = {
             title: WorkspaceCommands.OPEN_FOLDER.dialogLabel,
             canSelectFolders: true,
-            canSelectFiles: false
+            canSelectFiles: false,
+            canSelectMany: this.preferences['workspace.supportMultiRootWorkspace'],
         };
         const [rootStat] = await this.workspaceService.roots;
-        const destinationFolderUri = await this.fileDialogService.showOpenDialog(props, rootStat);
-        if (destinationFolderUri &&
-            this.getCurrentWorkspaceUri()?.toString() !== destinationFolderUri.toString()) {
-            const destinationFolder = await this.fileService.resolve(destinationFolderUri);
-            if (destinationFolder.isDirectory) {
-                this.workspaceService.open(destinationFolderUri);
-                return destinationFolderUri;
-            }
+        const targetFolders = await this.fileDialogService.showOpenDialog(props, rootStat);
+        if (targetFolders) {
+            const openableURI = await this.getOpenableWorkspaceUri(targetFolders);
+            if (openableURI) {
+                if (!this.workspaceService.workspace || !openableURI.isEqual(this.workspaceService.workspace.resource)) {
+                    this.workspaceService.open(openableURI);
+                    return openableURI;
+                }
+            };
         }
         return undefined;
+    }
+
+    protected async getOpenableWorkspaceUri(uris: MaybeArray<URI>): Promise<URI | undefined> {
+        if (Array.isArray(uris)) {
+            if (uris.length < 2) {
+                return uris[0];
+            } else {
+                const foldersToOpen = (await Promise.all(uris.map(uri => this.fileService.resolve(uri))))
+                    .filter(fileStat => !!fileStat?.isDirectory);
+                if (foldersToOpen.length === 1) {
+                    return foldersToOpen[0].resource;
+                } else {
+                    return this.createMultiRootWorkspace(foldersToOpen);
+                }
+            }
+        } else {
+            return uris;
+        }
+    }
+
+    protected async createMultiRootWorkspace(roots: FileStat[]): Promise<URI> {
+        const untitledWorkspace = await this.workspaceService.getUntitledWorkspace();
+        const folders = Array.from(new Set(roots.map(stat => stat.resource.path.toString())), path => ({ path }));
+        const workspaceStat = await this.fileService.createFile(
+            untitledWorkspace,
+            BinaryBuffer.fromString(JSON.stringify({ folders }, null, 4)), // eslint-disable-line no-null/no-null
+            { overwrite: true }
+        );
+        return workspaceStat.resource;
     }
 
     /**
@@ -402,7 +438,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }
     }
 
-    protected async saveWorkspaceAs(): Promise<void> {
+    /**
+     * @returns whether the file was successfully saved.
+     */
+    protected async saveWorkspaceAs(): Promise<boolean> {
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
@@ -424,8 +463,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         } while (selected && exist && !overwrite);
 
         if (selected) {
-            this.workspaceService.save(selected);
+            try {
+                await this.workspaceService.save(selected);
+                return true;
+            } catch {
+                this.messageService.error(nls.localizeByDefault("Unable to save workspace '{0}'", selected.path.toString()));
+            }
         }
+        return false;
     }
 
     /**
@@ -541,6 +586,28 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         return this.workspaceService.workspace?.resource;
     }
 
+    onWillStop(): OnWillStopAction | undefined {
+        const { workspace } = this.workspaceService;
+        if (workspace && this.workspaceService.isUntitledWorkspace(workspace.resource)) {
+            return {
+                action: async () => {
+                    const shouldSaveFile = await new UntitledWorkspaceExitDialog({
+                        title: nls.localizeByDefault('Do you want to save your workspace configuration as a file?')
+                    }).open();
+                    if (shouldSaveFile === "Don't Save") {
+                        return true;
+                    } else if (shouldSaveFile === 'Save') {
+                        return this.saveWorkspaceAs();
+                    }
+                    return false; // If cancel, prevent exit.
+
+                },
+                reason: 'Untitled workspace.',
+                // Since deleting the workspace would hobble any future functionality, run this late.
+                priority: 100,
+            };
+        }
+    }
 }
 
 export namespace WorkspaceFrontendContribution {

@@ -18,12 +18,11 @@ import * as path from 'path';
 import * as yargs from '@theia/core/shared/yargs';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as jsoncparser from 'jsonc-parser';
-
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { FileUri } from '@theia/core/lib/node';
+import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceServer } from '../common';
+import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 @injectable()
@@ -59,9 +58,14 @@ export class WorkspaceCliContribution implements CliContribution {
 }
 
 @injectable()
-export class DefaultWorkspaceServer implements WorkspaceServer {
+export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicationContribution {
 
     protected root: Deferred<string | undefined> = new Deferred();
+    /**
+     * Untitled workspaces that are not among the most recent N workspaces will be deleted on start. Increase this number to keep older files,
+     * lower it to delete stale untitled workspaces more aggressively.
+     */
+    protected untitledWorkspaceStaleThreshhold = 10;
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
@@ -69,10 +73,17 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
+    @inject(CommonWorkspaceUtils)
+    protected readonly utils: CommonWorkspaceUtils;
+
     @postConstruct()
     protected async init(): Promise<void> {
         const root = await this.getRoot();
         this.root.resolve(root);
+    }
+
+    async onStart(): Promise<void> {
+        await this.removeOldUntitledWorkspaces();
     }
 
     protected async getRoot(): Promise<string | undefined> {
@@ -115,7 +126,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
             data.recentRoots.forEach(element => {
                 if (element.length > 0) {
                     if (this.workspaceStillExist(element)) {
-                        listUri.push(element);
+                        listUri.push(FileUri.fsPath(element));
                     }
                 }
             });
@@ -168,6 +179,19 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected async getUserStoragePath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
         return path.resolve(FileUri.fsPath(configDirUri), 'recentworkspace.json');
+    }
+
+    /**
+     * Removes untitled workspaces that are not among the most recently used workspaces.
+     * Use the `untitledWorkspaceStaleThreshhold` to configure when to delete workspaces.
+     */
+    protected async removeOldUntitledWorkspaces(): Promise<void> {
+        const recents = (await this.getRecentWorkspaces()).map(FileUri.fsPath);
+        const olderUntitledWorkspaces = recents.slice(this.untitledWorkspaceStaleThreshhold).filter(workspace => this.utils.isUntitledWorkspace(FileUri.create(workspace)));
+        await Promise.all(olderUntitledWorkspaces.map(workspace => fs.promises.unlink(FileUri.fsPath(workspace)).catch(() => { })));
+        if (olderUntitledWorkspaces.length > 0) {
+            await this.writeToUserHome({ recentRoots: await this.getRecentWorkspaces() });
+        }
     }
 }
 

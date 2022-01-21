@@ -336,12 +336,16 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.errorMessageNode.innerText = DialogError.getMessage(error);
     }
 
+    protected addAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, callback: () => void, ...additionalEventTypes: K[]): void {
+        this.addKeyListener(element, Key.ENTER, callback, ...additionalEventTypes);
+    }
+
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addKeyListener(element, Key.ENTER, () => this.close(), ...additionalEventTypes);
+        this.addAction(element, () => this.close(), ...additionalEventTypes);
     }
 
     protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addKeyListener(element, Key.ENTER, () => this.accept(), ...additionalEventTypes);
+        this.addAction(element, () => this.accept(), ...additionalEventTypes);
     }
 
 }

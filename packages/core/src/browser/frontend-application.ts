@@ -86,6 +86,12 @@ export interface OnWillStopAction {
      * A descriptive string for the reason preventing close.
      */
     reason: string;
+    /**
+     * A number representing priority. Higher priority items are run later.
+     * High priority implies that some options of this check will have negative impacts if
+     * the user subsequently cancels the shutdown.
+     */
+    priority?: number;
 }
 
 export namespace OnWillStopAction {

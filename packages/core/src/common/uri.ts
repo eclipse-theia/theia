@@ -79,6 +79,16 @@ export default class URI {
     }
 
     /**
+     * @returns a new, absolute URI if one can be computed from the path segments passed in.
+     */
+    resolveToAbsolute(...pathSegments: Array<string | Path>): URI | undefined {
+        const absolutePath = this.path.resolve(...pathSegments.map(path => path.toString()));
+        if (absolutePath) {
+            return this.withPath(absolutePath);
+        }
+    }
+
+    /**
      * return a new URI replacing the current with the given scheme
      */
     withScheme(scheme: string): URI {
