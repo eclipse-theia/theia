@@ -472,7 +472,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                         id: mainMenuId,
                         iconClass: 'codicon codicon-menu',
                         title: nls.localizeByDefault('Application Menu'),
-                        menuPath: ['menubar'],
+                        menuPath: MAIN_MENU_BAR,
                         order: 0,
                     });
                 } else {

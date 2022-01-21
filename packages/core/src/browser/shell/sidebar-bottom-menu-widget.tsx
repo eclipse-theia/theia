@@ -28,6 +28,7 @@ export class SidebarBottomMenuWidget extends SidebarMenuWidget {
         const button = e.currentTarget.getBoundingClientRect();
         this.contextMenuRenderer.render({
             menuPath,
+            includeAnchorArg: false,
             anchor: {
                 x: button.left + button.width,
                 y: button.top + button.height,
