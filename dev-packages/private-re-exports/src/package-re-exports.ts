@@ -63,8 +63,8 @@ export async function resolveTheiaReExports(
         });
     }
     const {
-        'export *': reExportsStar = [],
-        'export =': reExportsEqual = [],
+        ['export *']: reExportsStar = [],
+        ['export =']: reExportsEqual = [],
     } = reExportJson;
     return [
         ...reExportsStar.map<ReExportStar>(moduleName => {
