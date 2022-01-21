@@ -40,7 +40,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
 import { URI as Uri } from './types-impl';
 import { SecretsExtImpl, SecretStorageExt } from '../plugin/secrets-ext';
-import { PluginInstance } from './plugin-context';
+import { PluginExt } from './plugin-context';
 
 export interface PluginHost {
 
@@ -385,7 +385,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: 1, // @todo: implement proper `extensionMode`.
-            extension: new PluginInstance(this, plugin),
+            extension: new PluginExt(this, plugin),
             logUri: Uri.file(logPath)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);

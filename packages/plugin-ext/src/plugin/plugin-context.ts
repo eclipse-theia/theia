@@ -724,13 +724,13 @@ export function createAPIFactory(
         const plugins: typeof theia.plugins = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             get all(): theia.Plugin<any>[] {
-                return pluginManager.getAllPlugins().map(plg => new PluginInstance(pluginManager, plg));
+                return pluginManager.getAllPlugins().map(plg => new PluginExt(pluginManager, plg));
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
                 const plg = pluginManager.getPluginById(pluginId.toLowerCase());
                 if (plg) {
-                    return new PluginInstance(pluginManager, plg);
+                    return new PluginExt(pluginManager, plg);
                 }
                 return undefined;
             },
@@ -972,12 +972,36 @@ export function createAPIFactory(
     };
 }
 
-enum ExtensionKind {
+export enum ExtensionKind {
     UI = 1,
     Workspace = 2
 }
 
-export class PluginInstance<T> implements theia.Plugin<T> {
+/**
+ * Represents a Theia plugin as well as a VSCode extension.
+ */
+export interface ExtensionPlugin<T> extends theia.Plugin<T> {
+    /**
+     * The uri of the directory containing the extension. Same as {@linkcode theia.Plugin.pluginUri}.
+     */
+    readonly extensionUri: theia.Uri;
+
+    /**
+     * The absolute file path of the directory containing this extension.
+     * Same as {@linkcode theia.Plugin.pluginPath}.
+     */
+    readonly extensionPath: string;
+
+    /**
+     * The extension kind describes if an extension runs where the UI runs
+     * or if an extension runs where the remote extension host runs. The extension kind
+     * is defined in the `package.json`-file of extensions. When no remote extension host exists,
+     * the value is {@linkcode ExtensionKind.UI}.
+     */
+    extensionKind: ExtensionKind;
+}
+
+export class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
     pluginUri: theia.Uri;
@@ -985,20 +1009,38 @@ export class PluginInstance<T> implements theia.Plugin<T> {
     packageJSON: any;
     pluginType: theia.PluginType;
 
-    constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
         this.pluginUri = URI.parse(plugin.pluginUri);
         this.packageJSON = plugin.rawModel;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
+    }
 
-        // Support VSCode Extension properties even if not explicitly exposed through interface
-        // as they are expected in the vscode.extension.* API calls and the ExtensionContext of the activate method
-        Object.assign(this, {
-            extensionPath: this.pluginPath,
-            extensionUri: this.pluginUri,
-            extensionKind: ExtensionKind.UI // stub as a local VS Code extension (not running on a remote workspace)
-        });
+    get isActive(): boolean {
+        return this.pluginManager.isActive(this.id);
+    }
+
+    get exports(): T {
+        return <T>this.pluginManager.getPluginExport(this.id);
+    }
+
+    activate(): PromiseLike<T> {
+        return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
+    }
+}
+
+export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
+    extensionPath: string;
+    extensionUri: theia.Uri;
+    extensionKind: ExtensionKind;
+
+    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+        super(pluginManager, plugin);
+
+        this.extensionPath = this.pluginPath;
+        this.extensionUri = this.pluginUri;
+        this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
     }
 
     get isActive(): boolean {
