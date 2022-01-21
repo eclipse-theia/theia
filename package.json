@@ -27,7 +27,7 @@
     "electron-mocha": "^8.2.0",
     "glob": "^7.1.7",
     "eslint": "7",
-    "eslint-plugin-deprecation": "latest",
+    "eslint-plugin-deprecation": "~1.2.1",
     "eslint-plugin-import": "latest",
     "eslint-plugin-no-null": "latest",
     "eslint-plugin-no-unsanitized": "latest",
