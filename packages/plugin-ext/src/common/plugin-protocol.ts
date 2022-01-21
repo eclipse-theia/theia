@@ -406,6 +406,11 @@ export enum PluginType {
     User
 };
 
+export interface UnresolvedPluginEntry {
+    id: string;
+    type?: PluginType;
+}
+
 export interface PluginDeployerEntry {
 
     /**
@@ -822,9 +827,10 @@ export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
+    getDeployedPlugin(pluginId: string): DeployedPlugin | undefined;
     undeployPlugin(pluginId: string): Promise<boolean>;
 
-    getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>
+    getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>;
 }
 
 export interface GetDeployedPluginsParams {
