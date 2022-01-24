@@ -35,8 +35,6 @@ describe('Launch Preferences', function () {
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
-    const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
-    const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
     const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
     const { waitForEvent } = require('@theia/core/lib/common/promise-util');
 
@@ -51,8 +49,6 @@ describe('Launch Preferences', function () {
     const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
     const workspaceService = container.get(WorkspaceService);
     const fileService = container.get(FileService);
-    const textModelService = container.get(MonacoTextModelService);
-    const workspace = container.get(MonacoWorkspace);
     const fileResourceResolver = container.get(FileResourceResolver);
 
     const defaultLaunch = {
