@@ -42,21 +42,35 @@ export class PreferenceLanguageOverrideService {
         return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 
-    overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
-        return `[${overrideIdentifier}].${preferenceName}`;
+    /**
+     * @param overrideIdentifier the language id associated for a language override, e.g. `typescript`
+     * @returns the form used to mark language overrides in preference files, e.g. `[typescript]`
+     */
+    markLanguageOverride(overrideIdentifier: string): string {
+        return `[${overrideIdentifier}]`;
     }
 
+    /**
+     * @returns the flat JSON path to an overridden preference, e.g. [typescript].editor.tabSize.
+     */
+    overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
+        return `${this.markLanguageOverride(overrideIdentifier)}.${preferenceName}`;
+    }
+
+    /**
+     * @returns an OverridePreferenceName if the `name` contains a language override, e.g. [typescript].editor.tabSize.
+     */
     overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
         const index = name.indexOf('.');
         if (index === -1) {
             return undefined;
         }
-        const matches = name.substr(0, index).match(OVERRIDE_PROPERTY_PATTERN);
+        const matches = name.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
         const overrideIdentifier = matches && matches[1];
         if (!overrideIdentifier || !this.overrideIdentifiers.has(overrideIdentifier)) {
             return undefined;
         }
-        const preferenceName = name.substr(index + 1);
+        const preferenceName = name.substring(index + 1);
         return { preferenceName, overrideIdentifier };
     }
 

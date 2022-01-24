@@ -82,6 +82,9 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return ['settings', preferenceName];
     }
 
+    /**
+     * @returns `true` if `firstSegment` is a section name (e.g. `tasks`, `launch`)
+     */
     protected belongsInSection(firstSegment: string, remainder: string): boolean {
         return this.configurations.isSectionName(firstSegment);
     }
