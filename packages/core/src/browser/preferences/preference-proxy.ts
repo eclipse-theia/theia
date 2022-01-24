@@ -119,6 +119,7 @@ export interface PreferenceRetrieval<T> {
  * ```
  */
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceRetrieval<T>;
+export const PreferenceProxyOptions = Symbol('PreferenceProxyOptions');
 /**
  * Proxy configuration parameters.
  */
@@ -146,6 +147,10 @@ export interface PreferenceProxyOptions {
      * When 'deep' or 'both' is given, nested preference proxies can be retrieved.
      */
     style?: 'flat' | 'deep' | 'both';
+    /**
+     * Indicates whether the proxy should be disposable. Proxies that are shared between multiple callers should not be disposable.
+     */
+    isDisposable?: boolean
 }
 
 /**
@@ -166,6 +171,8 @@ export interface PreferenceProxyOptions {
  * See {@link CorePreferences} for an example.
  *
  * Note that if `schema` is a Promise, most actions will be no-ops until the promise is resolved.
+ *
+ * @deprecated @since 1.23.0 use `PreferenceProxyFactory` instead.
  */
 export function createPreferenceProxy<T>(preferences: PreferenceService, promisedSchema: MaybePromise<PreferenceSchema>, options?: PreferenceProxyOptions): PreferenceProxy<T> {
     const opts = options || {};

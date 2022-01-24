@@ -30,8 +30,12 @@ import { PreferenceSchemaProvider, PreferenceSchema } from './preference-contrib
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider } from './preference-provider';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { createPreferenceProxy, PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent } from './preference-proxy';
+import {
+    PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent
+    // , createPreferenceProxy
+} from './preference-proxy';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
+import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './injectable-preference-proxy';
 
 disableJSDOM();
 
@@ -47,10 +51,18 @@ function createTestContainer(): Container {
     const result = new Container();
     bindPreferenceService(result.bind.bind(result));
     bindMockPreferenceProviders(result.bind.bind(result), result.unbind.bind(result));
+    result.bind(InjectablePreferenceProxy).toSelf();
+    result.bind(PreferenceProxyFactory).toFactory(({ container }) => (schema, options) => {
+        const child = container.createChild();
+        child.bind(PreferenceProxySchema).toConstantValue(schema);
+        child.bind(PreferenceProxyOptions).toConstantValue(options ?? {});
+        const proxy = child.get(InjectablePreferenceProxy);
+        return new Proxy({}, proxy);
+    });
     return result;
 }
 
-describe('Preference Proxy', () => {
+describe.only('Preference Proxy', () => {
     let prefService: PreferenceServiceImpl;
     let prefSchema: PreferenceSchemaProvider;
 
@@ -113,11 +125,13 @@ describe('Preference Proxy', () => {
                         prefSchema.setSchema(s);
                         resolve(s);
                     }, 1000));
-                    const proxy = createPreferenceProxy(prefService, promisedSchema, options);
+                    const proxy = testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(promisedSchema, options);
+                    // const proxy = createPreferenceProxy(prefService, promisedSchema, options);
                     return { proxy, promisedSchema };
                 } else {
                     prefSchema.setSchema(s);
-                    const proxy = createPreferenceProxy(prefService, s, options);
+                    const proxy = testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(s, options);
+                    // const proxy = createPreferenceProxy(prefService, s, options);
                     return { proxy };
                 }
             }
@@ -147,7 +161,7 @@ describe('Preference Proxy', () => {
                 });
             }
 
-            it('by default, it should get provide access in flat style but not deep', async () => {
+            it('by default, it should provide access in flat style but not deep', async () => {
                 const { proxy, promisedSchema } = getProxy();
                 if (promisedSchema) {
                     await promisedSchema;
@@ -157,14 +171,14 @@ describe('Preference Proxy', () => {
                 expect(Object.keys(proxy).join()).to.equal(['my.pref'].join());
             });
 
-            it('it should get provide access in deep style but not flat', async () => {
+            it('it should provide access in deep style but not flat', async () => {
                 const { proxy, promisedSchema } = getProxy(undefined, { style: 'deep' });
                 if (promisedSchema) {
                     await promisedSchema;
                 }
                 expect(proxy['my.pref']).to.equal(undefined);
                 expect(proxy.my.pref).to.equal('foo');
-                expect(Object.keys(proxy).join()).to.equal(['my'].join());
+                expect(Object.keys(proxy).join()).equal('my');
             });
 
             it('it should get provide access in to both styles', async () => {
