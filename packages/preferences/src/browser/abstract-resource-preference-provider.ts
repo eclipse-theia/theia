@@ -18,92 +18,64 @@
 /* eslint-disable no-null/no-null */
 
 import * as jsoncparser from 'jsonc-parser';
-import { Mutex, MutexInterface } from 'async-mutex';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { CancellationError, nls } from '@theia/core';
-import { EditorManager } from '@theia/editor/lib/browser';
-
-export interface FilePreferenceProviderLocks {
-    /**
-     * Defined if the current operation is the first operation in a new transaction.
-     * The first operation is responsible for checking whether the underlying editor is dirty
-     * and for saving the file when the transaction is complete.
-     */
-    releaseTransaction?: MutexInterface.Releaser | undefined;
-    /**
-     * A lock on the queue for single operations.
-     */
-    releaseChange: MutexInterface.Releaser;
-}
+import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
+import { Emitter, Event } from '@theia/core';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
-    protected preferences: { [key: string]: any } = {};
-    protected model: MonacoEditorModel | undefined;
+    protected preferences: Record<string, any> = {};
+    protected _fileExists = false;
     protected readonly loading = new Deferred();
-    protected modelInitialized = false;
-    protected readonly singleChangeLock = new Mutex();
-    protected readonly transactionLock = new Mutex();
-    protected pendingTransaction = new Deferred<boolean>();
+    protected transaction: PreferenceTransaction | undefined;
+    protected readonly onDidChangeValidityEmitter = new Emitter<boolean>();
 
-    @inject(MessageService) protected readonly messageService: MessageService;
+    set fileExists(exists: boolean) {
+        if (exists !== this._fileExists) {
+            this._fileExists = exists;
+            this.onDidChangeValidityEmitter.fire(exists);
+        }
+    }
+
+    get onDidChangeValidity(): Event<boolean> {
+        return this.onDidChangeValidityEmitter.event;
+    }
+
+    @inject(PreferenceTransactionFactory) protected readonly transactionFactory: PreferenceTransactionFactory;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
     @inject(FileService) protected readonly fileService: FileService;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
-
-    @inject(PreferenceConfigurations)
-    protected readonly configurations: PreferenceConfigurations;
-
-    @inject(MonacoTextModelService)
-    protected readonly textModelService: MonacoTextModelService;
-
-    @inject(MonacoWorkspace)
-    protected readonly workspace: MonacoWorkspace;
+    @inject(PreferenceConfigurations) protected readonly configurations: PreferenceConfigurations;
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.pendingTransaction.resolve(true);
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
         await this.readPreferencesFromFile();
         this._ready.resolve();
-
-        const reference = await this.textModelService.createModelReference(uri);
-        if (this.toDispose.disposed) {
-            reference.dispose();
-            return;
-        }
-
-        this.model = reference.object;
         this.loading.resolve();
-        this.modelInitialized = true;
-
-        this.toDispose.push(reference);
-        this.toDispose.push(Disposable.create(() => this.model = undefined));
-
-        this.toDispose.push(this.model.onDidChangeContent(() => !this.transactionLock.isLocked() && this.readPreferences()));
-        this.toDispose.push(this.model.onDirtyChanged(() => !this.transactionLock.isLocked() && this.readPreferences()));
-        this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
-
-        this.toDispose.push(Disposable.create(() => this.reset()));
+        this.toDispose.pushAll([
+            this.fileService.watch(uri),
+            this.fileService.onDidFilesChange(e => {
+                if (e.contains(uri)) {
+                    this.readPreferencesFromFile();
+                }
+            }),
+            Disposable.create(() => this.reset()),
+        ]);
     }
 
     protected abstract getUri(): URI;
-    protected abstract getScope(): PreferenceScope;
+    abstract getScope(): PreferenceScope;
 
-    protected get valid(): boolean {
-        return this.modelInitialized ? !!this.model?.valid : Object.keys(this.preferences).length > 0;
+    get valid(): boolean {
+        return this._fileExists;
     }
 
     getConfigUri(): URI;
@@ -132,118 +104,29 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
-        const locks = await this.acquireLocks();
-        let shouldSave = Boolean(locks?.releaseTransaction);
-        try {
-            await this.loading.promise;
-            let path: string[] | undefined;
-            if (!this.model || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
-                return false;
-            }
-            if (!locks) {
-                throw new CancellationError();
-            }
-            if (shouldSave) {
-                if (this.model.dirty) {
-                    shouldSave = await this.handleDirtyEditor();
-                }
-                if (!shouldSave) {
-                    throw new CancellationError();
-                }
-            }
-            const editOperations = this.getEditOperations(path, value);
-            if (editOperations.length > 0) {
-                await this.workspace.applyBackgroundEdit(this.model, editOperations, false);
-            }
-            return this.pendingTransaction.promise;
-        } catch (e) {
-            if (e instanceof CancellationError) {
-                throw e;
-            }
-            const message = `Failed to update the value of '${key}' in '${this.getUri()}'.`;
-            this.messageService.error(`${message} Please check if it is corrupted.`);
-            console.error(`${message}`, e);
+        let path: string[] | undefined;
+        if (this.toDispose.disposed || !(path = this.getPath(key)) || !this.contains(resourceUri)) {
             return false;
-        } finally {
-            this.releaseLocks(locks, shouldSave);
         }
+        return this.doSetPreference(key, path, value);
     }
 
-    /**
-     * @returns `undefined` if the queue has been cleared by a user action.
-     */
-    protected async acquireLocks(): Promise<FilePreferenceProviderLocks | undefined> {
-        // Request locks immediately
-        const releaseTransactionPromise = this.transactionLock.isLocked() ? undefined : this.transactionLock.acquire();
-        const releaseChangePromise = this.singleChangeLock.acquire().catch(() => {
-            releaseTransactionPromise?.then(release => release());
-            return undefined;
-        });
-        if (releaseTransactionPromise) {
-            await this.pendingTransaction.promise; // Ensure previous transaction complete before starting a new one.
-            this.pendingTransaction = new Deferred();
-        }
-        // Wait to acquire locks
-        const [releaseTransaction, releaseChange] = await Promise.all([releaseTransactionPromise, releaseChangePromise]);
-        return releaseChange && { releaseTransaction, releaseChange };
-    }
-
-    protected releaseLocks(locks: FilePreferenceProviderLocks | undefined, shouldSave: boolean): void {
-        if (locks?.releaseTransaction) {
-            if (shouldSave) {
-                this.singleChangeLock.waitForUnlock().then(() => this.singleChangeLock.runExclusive(async () => {
-                    locks.releaseTransaction!(); // Release lock so that no new changes join this transaction.
-                    let success = false;
-                    try {
-                        await this.model?.save();
-                        success = true;
-                    } finally {
-                        this.readPreferences();
+    protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
+        if (!this.transaction?.open) {
+            const current = this.transaction;
+            this.transaction = this.transactionFactory(this);
+            this.transaction.onWillConclude(({ status, waitUntil }) => {
+                if (status) {
+                    waitUntil((async () => {
+                        await this.readPreferencesFromFile();
                         await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.
-                        this.pendingTransaction.resolve(success);
-                    }
-                }));
-            } else { // User canceled the operation.
-                this.singleChangeLock.cancel();
-                locks.releaseTransaction!();
-                this.pendingTransaction.resolve(false);
-            }
+                    })());
+                }
+            });
+            this.toDispose.push(this.transaction);
+            await current?.result;
         }
-        locks?.releaseChange();
-    }
-
-    protected getEditOperations(path: string[], value: any): monaco.editor.IIdentifiedSingleEditOperation[] {
-        const textModel = this.model!.textEditorModel;
-        const content = this.model!.getText().trim();
-        // Everything is already undefined - no need for changes.
-        if (!content && value === undefined) {
-            return [];
-        }
-        // Delete the entire document.
-        if (!path.length && value === undefined) {
-            return [{
-                range: textModel.getFullModelRange(),
-                text: null,
-                forceMoveMarkers: false
-            }];
-        }
-        const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-        const jsonCOptions = {
-            formattingOptions: {
-                insertSpaces,
-                tabSize,
-                eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
-            }
-        };
-        return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {
-            const start = textModel.getPositionAt(edit.offset);
-            const end = textModel.getPositionAt(edit.offset + edit.length);
-            return {
-                range: monaco.Range.fromPositions(start, end),
-                text: edit.content || null,
-                forceMoveMarkers: false
-            };
-        });
+        return this.transaction.enqueueAction(key, path, value);
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
@@ -251,25 +134,16 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected async readPreferencesFromFile(): Promise<void> {
-        const content = await this.fileService.read(this.getUri()).catch(() => ({ value: '' }));
+        const content = await this.fileService.read(this.getUri())
+            .then(value => {
+                this.fileExists = true;
+                return value;
+            })
+            .catch(() => {
+                this.fileExists = false;
+                return { value: '' };
+            });
         this.readPreferencesFromContent(content.value);
-    }
-
-    /**
-     * It HAS to be sync to ensure that `setPreference` returns only when values are updated
-     * or any other operation modifying the monaco model content.
-     */
-    protected readPreferences(): void {
-        const model = this.model;
-        if (!model || model.dirty) {
-            return;
-        }
-        try {
-            const content = model.valid ? model.getText() : '';
-            this.readPreferencesFromContent(content);
-        } catch (e) {
-            console.error(`Failed to load preferences from '${this.getUri()}'.`, e);
-        }
     }
 
     protected readPreferencesFromContent(content: string): void {
@@ -337,29 +211,5 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (changes.length > 0) {
             this.emitPreferencesChangedEvent(changes);
         }
-    }
-
-    /**
-     * @returns whether the setting operation in progress, and any others started in the meantime, should continue.
-     */
-    protected async handleDirtyEditor(): Promise<boolean> {
-        const saveAndRetry = nls.localizeByDefault('Save and Retry');
-        const open = nls.localizeByDefault('Open File');
-        const msg = await this.messageService.error(
-            nls.localizeByDefault('Unable to write into {0} settings because the file has unsaved changes. Please save the {0} settings file first and then try again.',
-                nls.localizeByDefault(PreferenceScope[this.getScope()].toLocaleLowerCase())
-            ),
-            saveAndRetry, open);
-
-        if (this.model) {
-            if (msg === open) {
-                this.editorManager.open(new URI(this.model.uri));
-                return false;
-            } else if (msg === saveAndRetry) {
-                await this.model.save();
-                return true;
-            }
-        }
-        return false;
     }
 }

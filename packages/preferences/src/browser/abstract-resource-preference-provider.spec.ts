@@ -32,11 +32,11 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { bindPreferenceService } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { Disposable, MessageService } from '@theia/core/lib/common';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { PreferenceTransactionFactory } from './preference-transaction-manager';
 
 disableJSDOM();
 
@@ -46,23 +46,11 @@ class MockFileService {
         await this.releaseContent.promise;
         return { value: JSON.stringify({ 'editor.fontSize': 20 }) };
     }
+    watch = RETURN_DISPOSABLE;
+    onDidFilesChange = RETURN_DISPOSABLE;
 }
 
-const DO_NOTHING = () => { };
 const RETURN_DISPOSABLE = () => Disposable.NULL;
-
-class MockTextModelService {
-    createModelReference(): any {
-        return {
-            dispose: DO_NOTHING,
-            object: {
-                onDidChangeContent: RETURN_DISPOSABLE,
-                onDirtyChanged: RETURN_DISPOSABLE,
-                onDidChangeValid: RETURN_DISPOSABLE,
-            }
-        };
-    }
-}
 
 const mockSchemaProvider = { getCombinedSchema: () => ({ properties: {} }) };
 
@@ -82,10 +70,10 @@ describe('AbstractResourcePreferenceProvider', () => {
         bindMockPreferenceProviders(testContainer.bind.bind(testContainer), testContainer.unbind.bind(testContainer));
         testContainer.rebind(<any>PreferenceSchemaProvider).toConstantValue(mockSchemaProvider);
         testContainer.bind(<any>FileService).toConstantValue(fileService);
-        testContainer.bind(<any>MonacoTextModelService).toConstantValue(new MockTextModelService);
         testContainer.bind(<any>MessageService).toConstantValue(undefined);
         testContainer.bind(<any>MonacoWorkspace).toConstantValue(undefined);
         testContainer.bind(<any>EditorManager).toConstantValue(undefined);
+        testContainer.bind(<any>PreferenceTransactionFactory).toConstantValue(undefined);
         provider = testContainer.resolve(<any>LessAbstractPreferenceProvider);
     });
 

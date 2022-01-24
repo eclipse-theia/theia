@@ -26,20 +26,29 @@
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
 describe('Launch Preferences', function () {
-    this.timeout(5000);
+    this.timeout(10_000);
 
     const { assert } = chai;
 
+    const { PreferenceProvider } = require('@theia/core/lib/browser');
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
+    const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
+    const { waitForEvent } = require('@theia/core/lib/common/promise-util');
 
     const container = window.theia.container;
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
+    /** @type {import('@theia/preferences/lib/browser/user-configs-preference-provider').UserConfigsPreferenceProvider} */
+    const userPreferences = container.getNamed(PreferenceProvider, PreferenceScope.User);
+    /** @type {import('@theia/preferences/lib/browser/workspace-preference-provider').WorkspacePreferenceProvider} */
+    const workspacePreferences = container.getNamed(PreferenceProvider, PreferenceScope.Workspace);
+    /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
+    const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
     const workspaceService = container.get(WorkspaceService);
     const fileService = container.get(FileService);
     const textModelService = container.get(MonacoTextModelService);
@@ -394,25 +403,54 @@ describe('Launch Preferences', function () {
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
 
+    /**
+     * @param uri the URI of the file to modify
+     * @returns {AbstractResourcePreferenceProvider | undefined} The preference provider matching the provided URI.
+     */
+    function findProvider(uri) {
+        /**
+         * @param {PreferenceProvider} provider
+         * @returns {boolean} whether the provider matches the desired URI.
+         */
+        const isMatch = (provider) => {
+            const configUri = provider.getConfigUri();
+            return configUri && uri.isEqual(configUri);
+        };
+        for (const provider of userPreferences['providers'].values()) {
+            if (isMatch(provider) && provider instanceof AbstractResourcePreferenceProvider) {
+                return provider;
+            }
+        }
+        for (const provider of folderPreferences['providers'].values()) {
+            if (isMatch(provider) && provider instanceof AbstractResourcePreferenceProvider) {
+                return provider;
+            }
+        }
+        /** @type {PreferenceProvider} */
+        const workspaceDelegate = workspacePreferences['delegate'];
+        if (workspaceDelegate !== folderPreferences) {
+            if (isMatch(workspaceDelegate) && workspaceDelegate instanceof AbstractResourcePreferenceProvider) {
+                return workspaceDelegate;
+            }
+        }
+    }
+
     function deleteWorkspacePreferences() {
         const promises = [];
         for (const configPath of ['.theia', '.vscode']) {
             for (const name of ['settings', 'launch']) {
                 promises.push((async () => {
+                    const uri = rootUri.resolve(configPath + '/' + name + '.json');
+                    const provider = findProvider(uri);
                     try {
-                        const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
-                        try {
-                            if (!reference.object.valid) {
-                                return;
+                        if (provider) {
+                            if (provider.valid) {
+                                await waitForEvent(provider.onDidChangeValidity, 5000);
                             }
-                            await new Promise(resolve => {
-                                const listener = reference.object.onDidChangeValid(() => {
-                                    listener.dispose();
-                                    resolve();
-                                });
-                            });
-                        } finally {
-                            reference.dispose();
+                            await provider['readPreferencesFromFile']();
+                            await provider['fireDidPreferencesChanged']();
+                        } else {
+                            console.log('Unable to find provider for', uri.path.toString());
                         }
                     } catch (e) {
                         console.error(e);
@@ -465,21 +503,18 @@ describe('Launch Preferences', function () {
                 const promises = [];
                 /**
                  * @param {string} name
-                 * @param {string} text
+                 * @param {Record<string, unknown>} value
                  */
-                const ensureConfigModel = (name, text) => {
+                const ensureConfigModel = (name, value) => {
                     for (const configPath of configPaths) {
                         promises.push((async () => {
                             try {
-                                const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
-                                try {
-                                    await workspace.applyBackgroundEdit(reference.object, [{
-                                        text,
-                                        range: reference.object.textEditorModel.getFullModelRange(),
-                                        forceMoveMarkers: false
-                                    }]);
-                                } finally {
-                                    reference.dispose();
+                                const uri = rootUri.resolve(configPath + '/' + name + '.json');
+                                const provider = findProvider(uri);
+                                if (provider) {
+                                    await provider['doSetPreference']('', [], value);
+                                } else {
+                                    console.log('Unable to find provider for', uri.path.toString());
                                 }
                             } catch (e) {
                                 console.error(e);
@@ -488,10 +523,10 @@ describe('Launch Preferences', function () {
                     }
                 };
                 if (settings) {
-                    ensureConfigModel('settings', JSON.stringify(settings));
+                    ensureConfigModel('settings', settings);
                 }
                 if (launch) {
-                    ensureConfigModel('launch', JSON.stringify(launch));
+                    ensureConfigModel('launch', launch);
                 }
                 await Promise.all(promises);
             });
@@ -641,7 +676,6 @@ describe('Launch Preferences', function () {
                     }
                     if (settings) {
                         let _settingsLaunch = undefined;
-                        // eslint-disable-next-line no-null/no-null
                         if (typeof settingsLaunch === 'object' && !Array.isArray(settings['launch']) && settings['launch'] !== null) {
                             _settingsLaunch = settingsLaunch;
                         } else {

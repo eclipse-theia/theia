@@ -3,7 +3,10 @@
 
 [1.22.0 Milestone](https://github.com/eclipse-theia/theia/milestone/30)
 
+- [preferences] `AbstractResourcePreferenceProvider` providers no longer maintain a reference to a `MonacoTextModel`. This removes preference files from the Problems view unless the file is opened by the user. [#10562](https://github.com/eclipse-theia/theia/pull/10562)
+
 <a name="breaking_changes_1.22.0">[Breaking Changes:](#breaking_changes_1.22.0)</a>
+
 - [core] Removed `MarkdownRenderer` class [#10589](https://github.com/eclipse-theia/theia/pull/10589)
 - [core] `ContextKeyService` is now an interface. Extenders should extend `ContextKeyServiceDummyImpl` [#10546](https://github.com/eclipse-theia/theia/pull/10546)
 - [plugin] Removed deprecated fields `id` and `label` from `theia.Command` [#10512](https://github.com/eclipse-theia/theia/pull/10512)
@@ -11,7 +14,7 @@
 - [plugin-ext] `PluginDeployerImpl` now uses the `UnresolvedPluginEntry: { id: string, type: PluginType }` interface as parameter types for resolving plugins. Affected methods: `deploy`, `deployMultipleEntries` and `resolvePlugins`.
 - [navigator] added `Open Containing Folder` command [#10523](https://github.com/eclipse-theia/theia/pull/10523)
 - [core] Removed deprecated API: `unfocusSearchFieldContainer`, `doUnfocusSearchFieldContainer()` [#10625](https://github.com/eclipse-theia/theia/pull/10625)
-
+- [preferences] `AbstractResourcePreferenceProvider#model, textModelService, workspace, messageService, acquireLocks, releaseLocks, readPreferences, singleChangeLock, transactionLock` removed. `AbstractResourcePreferenceProvider#handleDirtyEditor` moved to `PreferenceTransaction`. `AbstractResourcePreferenceProvider#getEditOperations` moved to `MonacoJSONCEditor`. [#10562](https://github.com/eclipse-theia/theia/pull/10562)
 
 ## v1.21.0 - 12/16/2021
 

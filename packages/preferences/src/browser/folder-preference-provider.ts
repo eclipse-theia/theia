@@ -46,7 +46,7 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
         }
         return this._folderUri;
     }
-    protected getScope(): PreferenceScope {
+    getScope(): PreferenceScope {
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             // when FolderPreferenceProvider is used as a delegate of WorkspacePreferenceProvider in a one-folder workspace
             return PreferenceScope.Workspace;

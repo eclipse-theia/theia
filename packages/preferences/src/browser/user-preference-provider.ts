@@ -29,7 +29,7 @@ export interface UserPreferenceProviderFactory {
  */
 @injectable()
 export class UserPreferenceProvider extends SectionPreferenceProvider {
-    protected getScope(): PreferenceScope {
+    getScope(): PreferenceScope {
         return PreferenceScope.User;
     }
 }
