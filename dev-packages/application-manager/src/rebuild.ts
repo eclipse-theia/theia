@@ -31,7 +31,7 @@ interface ExitToken {
 type NodeABI = string | number;
 
 export const DEFAULT_MODULES = [
-    '@theia/node-pty',
+    'node-pty',
     'nsfw',
     'native-keymap',
     'find-git-repositories',
