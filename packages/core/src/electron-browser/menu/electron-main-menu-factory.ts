@@ -184,15 +184,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
                 const bindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
 
-                let accelerator;
+                const accelerator = bindings[0] && this.acceleratorFor(bindings[0]);
 
-                /* Only consider the first keybinding. */
-                if (bindings.length > 0) {
-                    const binding = bindings[0];
-                    accelerator = this.acceleratorFor(binding);
-                }
-
-                const menuItem = {
+                const menuItem: Electron.MenuItemConstructorOptions = {
                     id: node.id,
                     label: node.label,
                     type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
@@ -201,7 +195,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     visible: true,
                     accelerator,
                     click: () => this.execute(commandId, args)
-                } as Electron.MenuItemConstructorOptions;
+                };
 
                 if (isOSX) {
                     const role = this.roleFor(node.id);
@@ -241,7 +235,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         }
 
         const keyCode = bindingKeySequence[0];
-        return this.keybindingRegistry.acceleratorForKeyCode(keyCode, '+');
+        return this.keybindingRegistry.acceleratorForKeyCode(keyCode, '+', true);
     }
 
     protected roleFor(id: string): ElectronMenuItemRole | undefined {
