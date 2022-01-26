@@ -150,7 +150,11 @@ export interface PreferenceProxyOptions {
     /**
      * Indicates whether the proxy should be disposable. Proxies that are shared between multiple callers should not be disposable.
      */
-    isDisposable?: boolean
+    isDisposable?: boolean;
+    /**
+     * Indicates whether the proxy will validate values before returning them to clients.
+     */
+    validated?: boolean;
 }
 
 /**
@@ -192,16 +196,14 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
                 const e = changes[key];
                 const overridden = preferences.overriddenPreferenceName(e.preferenceName);
                 const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
-                if (preferenceName.startsWith(prefix) && (!overridden || !opts.overrideIdentifier || overridden.overrideIdentifier === opts.overrideIdentifier)) {
+                if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || overridden?.overrideIdentifier === opts.overrideIdentifier)) {
                     if (schema.properties[preferenceName]) {
                         const { newValue, oldValue } = e;
                         listener({
                             newValue, oldValue, preferenceName,
                             affects: (resourceUri, overrideIdentifier) => {
-                                if (overrideIdentifier !== undefined) {
-                                    if (overridden && overridden.overrideIdentifier !== overrideIdentifier) {
-                                        return false;
-                                    }
+                                if (overrideIdentifier !== overridden?.overrideIdentifier) {
+                                    return false;
                                 }
                                 return e.affects(resourceUri);
                             }

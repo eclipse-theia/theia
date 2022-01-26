@@ -19,7 +19,7 @@ import { PreferenceSchema } from '../../common/preferences/preference-schema';
 import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceScope, PreferenceService } from './preference-service';
-import { OverridePreferenceName, PreferenceProxy } from '.';
+import { OverridePreferenceName, PreferenceChangeImpl, PreferenceChanges, PreferenceProviderDataChange, PreferenceProxy } from '.';
 import { JSONValue } from '@phosphor/coreutils';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
@@ -28,8 +28,21 @@ export interface PreferenceProxyFactory {
 }
 export const PreferenceProxyFactory = Symbol('PreferenceProxyFactory');
 
+export class PreferenceProxyChange extends PreferenceChangeImpl {
+    constructor(change: PreferenceProviderDataChange, protected readonly overrideIdentifier?: string) {
+        super(change);
+    }
+
+    override affects(resourceUri?: string, overrideIdentifier?: string): boolean {
+        if (overrideIdentifier !== this.overrideIdentifier) {
+            return false;
+        }
+        return super.affects(resourceUri);
+    }
+}
+
 @injectable()
-export class InjectablePreferenceProxy<T extends object> implements
+export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> implements
     ProxyHandler<T>, ProxyHandler<Disposable>, ProxyHandler<PreferenceEventEmitter<T>>, ProxyHandler<PreferenceRetrieval<T>> {
 
     @inject(PreferenceProxyOptions) protected readonly options: PreferenceProxyOptions;
@@ -92,28 +105,23 @@ export class InjectablePreferenceProxy<T extends object> implements
         if (typeof property !== 'string') { throw new Error(`Unexpected property: ${String(property)}`); }
         const preferenceName = this.prefix + property;
         if (this.schema && (this.isFlat || !property.includes('.')) && this.schema.properties[preferenceName]) {
-            let value;
-            if (this.overrideIdentifier) {
-                value = this.preferences.get(this.preferences.overridePreferenceName({
-                    overrideIdentifier: this.overrideIdentifier,
-                    preferenceName,
-                }), undefined, this.resourceUri);
-            }
-            return value ?? this.preferences.get(preferenceName, undefined, this.resourceUri);
+            const { overrideIdentifier } = this;
+            const toGet = overrideIdentifier ? this.preferences.overridePreferenceName({ overrideIdentifier, preferenceName }) : preferenceName;
+            return this.getValue(toGet as keyof T & string, undefined as any); // eslint-disable-line @typescript-eslint/no-explicit-any
         }
         switch (property) {
             case 'onPreferenceChanged':
                 return this.onPreferenceChanged;
             case 'dispose':
-                return this.dispose;
+                return this.dispose.bind(this);
             case 'ready':
                 return Promise.all([this.preferences.ready, this.promisedSchema]).then(() => undefined);
             case 'get':
-                return this.getValue;
+                return this.getValue.bind(this);
             case 'toJSON':
                 return this.toJSON.bind(this);
             case 'ownKeys':
-                return this.ownKeys;
+                return this.ownKeys.bind(this);
         }
         if (this.schema && this.isDeep) {
             const prefix = `${preferenceName}.`;
@@ -224,42 +232,43 @@ export class InjectablePreferenceProxy<T extends object> implements
     };
 
     protected subscribeToChangeEvents(): void {
-        this.toDispose.push(this.preferences.onPreferencesChanged(changes => {
-            if (this.schema) {
-                for (const change of Object.values(changes)) {
-                    const overrideInfo = this.preferences.overriddenPreferenceName(change.preferenceName);
-                    if (this.isRelevantChange(change, overrideInfo)) {
-                        this.fireChangeEvent(change, overrideInfo);
-                    }
+        this.toDispose.push(this.preferences.onPreferencesChanged(changes => this.handlePreferenceChanges(changes)));
+    }
+
+    protected handlePreferenceChanges(changes: PreferenceChanges): void {
+        if (this.schema) {
+            for (const change of Object.values(changes)) {
+                const overrideInfo = this.preferences.overriddenPreferenceName(change.preferenceName);
+                if (this.isRelevantChange(change, overrideInfo)) {
+                    this.fireChangeEvent(this.buildNewChangeEvent(change, overrideInfo));
                 }
             }
-        }));
+        }
     }
 
     protected isRelevantChange(change: PreferenceChange, overrideInfo?: OverridePreferenceName): boolean {
         const preferenceName = overrideInfo?.preferenceName ?? change.preferenceName;
         return preferenceName.startsWith(this.prefix)
-            && (!overrideInfo || !this.overrideIdentifier || overrideInfo.overrideIdentifier === this.overrideIdentifier)
+            && (!this.overrideIdentifier || overrideInfo?.overrideIdentifier === this.overrideIdentifier)
             && Boolean(this.schema?.properties[preferenceName]);
     }
 
-    protected fireChangeEvent(change: PreferenceChange, overrideInfo?: OverridePreferenceName): void {
-        const preferenceName = (overrideInfo?.preferenceName ?? change.preferenceName) as keyof T;
-        const { newValue, oldValue } = change;
-        this.onPreferenceChangedEmitter.fire({
-            newValue, oldValue, preferenceName,
-            affects: (resourceUri, overrideIdentifier) => {
-                if (overrideIdentifier !== undefined && overrideInfo !== undefined && overrideIdentifier !== overrideInfo.overrideIdentifier) {
-                    return false;
-                }
-                return change.affects(resourceUri);
-            }
-        });
+    protected fireChangeEvent(change: PreferenceChangeEvent<T>): void {
+        this.onPreferenceChangedEmitter.fire(change);
     }
 
-    protected getValue<K extends keyof T>(preferenceIdentifier: K | OverridePreferenceName & { preferenceName: K }, defaultValue: T[K], resourceUri?: string): T[K] {
+    protected buildNewChangeEvent(change: PreferenceProviderDataChange, overrideInfo?: OverridePreferenceName): PreferenceChangeEvent<T> {
+        const preferenceName = (overrideInfo?.preferenceName ?? change.preferenceName) as keyof T & string;
+        const { newValue, oldValue, scope, domain } = change;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new PreferenceProxyChange({ newValue, oldValue, preferenceName, scope, domain }, overrideInfo?.overrideIdentifier) as any;
+    }
+
+    protected getValue<K extends keyof T & string>(
+        preferenceIdentifier: K | OverridePreferenceName & { preferenceName: K }, defaultValue: T[K], resourceUri = this.resourceUri
+    ): T[K] {
         const preferenceName = OverridePreferenceName.is(preferenceIdentifier) ? this.preferences.overridePreferenceName(preferenceIdentifier) : preferenceIdentifier as string;
-        return this.preferences.get(preferenceName, defaultValue, resourceUri ?? this.resourceUri);
+        return this.preferences.get(preferenceName, defaultValue, resourceUri);
     }
 
     dispose(): void {

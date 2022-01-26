@@ -49,7 +49,6 @@ export class PreferenceValidationService {
             const validValue = this.validateByName(preferenceName, value);
             if (validValue !== value) {
                 problemsDetected = true;
-                console.warn(`While validating options, found impermissible value for ${preferenceName}. Using valid value`, validValue, 'instead of configured value', value);
             }
             valid[preferenceName] = validValue;
         }
@@ -57,6 +56,14 @@ export class PreferenceValidationService {
     }
 
     validateByName(preferenceName: string, value: JSONValue): JSONValue {
+        const validValue = this.doValidateByName(preferenceName, value);
+        if (validValue !== value) {
+            console.warn(`While validating options, found impermissible value for ${preferenceName}. Using valid value`, validValue, 'instead of configured value', value);
+        }
+        return validValue;
+    }
+
+    protected doValidateByName(preferenceName: string, value: JSONValue): JSONValue {
         const schema = this.getSchema(preferenceName);
         return this.validateBySchema(preferenceName, value, schema);
     }
