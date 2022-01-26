@@ -45,7 +45,7 @@
     "decompress": "^4.2.1",
     "https-proxy-agent": "^5.0.0",
     "mocha": "^7.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "proxy-from-env": "^1.1.0",
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
