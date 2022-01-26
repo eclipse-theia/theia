@@ -331,6 +331,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
                     if (workspaceRoot) {
                         return workspaceRoot.relative(uri);
+                    } else {
+                        return uri.path;
                     }
                 }).join(lineDelimiter);
                 await this.clipboardService.writeText(text);
