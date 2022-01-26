@@ -115,7 +115,10 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
         this.session = this.sessionManager.selectedSession;
         this.toDispose.push(this.sessionManager.onDidChangeSelectedSession(session => {
-            this.session = session;
+            // Do not clear the session output when `undefined`.
+            if (session) {
+                this.session = session;
+            }
         }));
 
         this.updateFont();
