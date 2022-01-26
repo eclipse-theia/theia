@@ -334,8 +334,9 @@ export class KeybindingRegistry {
      * @returns a string representing the {@link KeyCode}
      * @param keyCode the keycode
      * @param separator the separator used to separate keys (key and modifiers) in the returning string
+     * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
      */
-    acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' '): string {
+    acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false): string {
         const keyCodeResult = [];
         if (keyCode.meta && isOSX) {
             keyCodeResult.push('Cmd');
@@ -350,16 +351,18 @@ export class KeybindingRegistry {
             keyCodeResult.push('Shift');
         }
         if (keyCode.key) {
-            keyCodeResult.push(this.acceleratorForKey(keyCode.key));
+            keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }
         return keyCodeResult.join(separator);
     }
 
     /**
+     * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
+     *
      * Return a user visible representation of a single key.
      */
-    acceleratorForKey(key: Key): string {
-        if (isOSX) {
+    acceleratorForKey(key: Key, asciiOnly = false): string {
+        if (isOSX && !asciiOnly) {
             if (key === Key.ARROW_LEFT) {
                 return '←';
             }
