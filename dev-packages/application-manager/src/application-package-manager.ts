@@ -167,14 +167,14 @@ export class ApplicationPackageManager {
         }
         const expectedRange = theiaElectron.electronRange;
         const appPackageJsonPath = this.pck.path('package.json');
-        const appPackageJson = await fs.readJSON(appPackageJsonPath);
+        const appPackageJson = await fs.readJSON(appPackageJsonPath) as { devDependencies?: Record<string, string> };
         if (!appPackageJson.devDependencies) {
             appPackageJson.devDependencies = {};
         }
         const currentRange: string | undefined = appPackageJson.devDependencies.electron;
         if (!currentRange || semver.compare(semver.minVersion(currentRange), semver.minVersion(expectedRange)) < 0) {
             // Update the range with the recommended one and write it on disk.
-            appPackageJson.devDependencies['electron'] = expectedRange;
+            appPackageJson.devDependencies = this.insertAlphabetically(appPackageJson.devDependencies, 'electron', expectedRange);
             await fs.writeJSON(appPackageJsonPath, appPackageJson, { spaces: 2 });
             throw new AbortError('Updated dependencies, please run "install" again');
         }
@@ -185,12 +185,18 @@ export class ApplicationPackageManager {
         await ffmpeg.checkFfmpeg();
     }
 
-    protected sortObjectByKeys<T extends Record<string, unknown>>(object: T): T {
-        const sorted: Record<string, unknown> = {};
-        for (const key of Object.keys(object).sort()) {
-            sorted[key] = object[key];
+    protected insertAlphabetically<T extends Record<string, string>>(object: T, key: string, value: string): T {
+        const updated: Record<string, unknown> = {};
+        for (const property of Object.keys(object)) {
+            if (property.localeCompare(key) > 0) {
+                updated[key] = value;
+            }
+            updated[property] = object[property];
         }
-        return sorted as T;
+        if (!(key in updated)) {
+            updated[key] = value;
+        }
+        return updated as T;
     }
 
     private adjustArgs(args: string[], forkOptions: cp.ForkOptions = {}): Readonly<{ mainArgs: string[]; options: cp.ForkOptions }> {

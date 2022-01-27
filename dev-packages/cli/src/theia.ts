@@ -377,8 +377,8 @@ async function theiaCli(): Promise<void> {
                     choices: ['darwin', 'linux', 'win32'] as NodeJS.Platform[],
                 },
             },
-            handler: async ({ electronDist, electronVersion, ffmpegPath, platform }) => {
-                await ffmpeg.replaceFfmpeg({ electronDist, electronVersion, ffmpegPath, platform });
+            handler: async options => {
+                await ffmpeg.replaceFfmpeg(options);
             },
         })
         .command<{
@@ -405,8 +405,8 @@ async function theiaCli(): Promise<void> {
                     choices: ['darwin', 'linux', 'win32'] as NodeJS.Platform[],
                 },
             },
-            handler: ({ electronDist, ffmpegPath, json, platform }) => {
-                ffmpeg.checkFfmpeg({ electronDist, ffmpegPath, json, platform });
+            handler: options => {
+                ffmpeg.checkFfmpeg(options);
             },
         })
         .parserConfiguration({
