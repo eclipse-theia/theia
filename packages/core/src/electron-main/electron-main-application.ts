@@ -638,8 +638,7 @@ export class ElectronMainApplication {
     protected restart(id: number): void {
         this.restarting = true;
         const browserWindow = BrowserWindow.fromId(id);
-        // eslint-disable-next-line no-null/no-null
-        if (browserWindow === null) {
+        if (!browserWindow) {
             throw new Error(`no BrowserWindow with id: ${id}`);
         }
         browserWindow.on('closed', async () => {
@@ -655,8 +654,7 @@ export class ElectronMainApplication {
 
     protected async handleReload(event: Electron.IpcMainEvent): Promise<void> {
         const browserWindow = BrowserWindow.fromId(event.sender.id);
-        // eslint-disable-next-line no-null/no-null
-        if (browserWindow === null) {
+        if (!browserWindow) {
             throw new Error(`no BrowserWindow with id: ${event.sender.id}`);
         }
         this.reload(browserWindow);
