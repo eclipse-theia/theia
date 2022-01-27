@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as electron from '../../../shared/electron';
+import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { inject, injectable } from 'inversify';
 import {
     CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode,
@@ -56,7 +56,7 @@ export type ElectronMenuItemRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' |
 @injectable()
 export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
-    protected _menu: Electron.Menu | undefined;
+    protected _menu?: Electron.Menu;
     protected _toggledCommands: Set<string> = new Set();
 
     constructor(
@@ -73,9 +73,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 }
                 if (this._menu) {
                     for (const item of this._toggledCommands) {
-                        this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+                        const menuItem = this._menu.getMenuItemById(item);
+                        if (menuItem) {
+                            menuItem.checked = this.commandRegistry.isToggled(item);
+                        }
                     }
-                    electron.remote.getCurrentWindow().setMenu(this._menu);
+                    electronRemote.getCurrentWindow().setMenu(this._menu);
                 }
             }, 10)
         );
@@ -88,10 +91,10 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         await this.preferencesService.ready;
         if (isOSX) {
             const createdMenuBar = this.createElectronMenuBar();
-            electron.remote.Menu.setApplicationMenu(createdMenuBar);
+            electronRemote.Menu.setApplicationMenu(createdMenuBar);
         } else if (this.preferencesService.get('window.titleBarStyle') === 'native') {
             const createdMenuBar = this.createElectronMenuBar();
-            electron.remote.getCurrentWindow().setMenu(createdMenuBar);
+            electronRemote.getCurrentWindow().setMenu(createdMenuBar);
         }
     }
 
@@ -104,7 +107,10 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             if (isOSX) {
                 template.unshift(this.createOSXMenu());
             }
-            const menu = electron.remote.Menu.buildFromTemplate(template);
+            const menu = electronRemote.Menu.buildFromTemplate(template);
+            if (!menu) {
+                throw new Error('menu is null');
+            }
             this._menu = menu;
             return this._menu;
         }
@@ -116,7 +122,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     createElectronContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
         const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false });
-        return electron.remote.Menu.buildFromTemplate(template);
+        return electronRemote.Menu.buildFromTemplate(template);
     }
 
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[],
@@ -273,8 +279,11 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             if (this.commandRegistry.isEnabled(command, ...args)) {
                 await this.commandRegistry.executeCommand(command, ...args);
                 if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
-                    this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command, ...args);
-                    electron.remote.getCurrentWindow().setMenu(this._menu);
+                    const item = this._menu.getMenuItemById(command);
+                    if (item) {
+                        item.checked = this.commandRegistry.isToggled(command, ...args);
+                        electronRemote.getCurrentWindow().setMenu(this._menu);
+                    }
                 }
             }
         } catch {

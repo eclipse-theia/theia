@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { remote, FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/shared/electron';
+import { FileFilter, OpenDialogOptions, SaveDialogOptions } from '@theia/core/electron-shared/electron';
+import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
@@ -48,7 +49,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const { filePaths } = await remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
+            const { filePaths } = await electronRemote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
             if (filePaths.length === 0) {
                 return undefined;
             }
@@ -64,7 +65,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            const { filePath } = await remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+            const { filePath } = await electronRemote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
             if (!filePath) {
                 return undefined;
             }
@@ -106,13 +107,23 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     }
 
     protected toDialogOptions(uri: URI, props: SaveFileDialogProps | OpenFileDialogProps, dialogTitle: string): electron.FileDialogProps {
-        const title = props.title || dialogTitle;
-        const defaultPath = FileUri.fsPath(uri);
-        const filters: FileFilter[] = [{ name: 'All Files', extensions: ['*'] }];
-        if (props.filters) {
-            filters.unshift(...Object.keys(props.filters).map(key => ({ name: key, extensions: props.filters![key] })));
+        type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+        const electronProps: Mutable<electron.FileDialogProps> = {
+            title: props.title || dialogTitle,
+            defaultPath: FileUri.fsPath(uri),
+        };
+        const {
+            canSelectFiles = true,
+            canSelectFolders = false,
+        } = props as OpenFileDialogProps;
+        if (!isOSX && canSelectFiles && canSelectFolders) {
+            console.warn('canSelectFiles === true && canSelectFolders === true is only supported on OSX!');
         }
-        return { title, defaultPath, filters };
+        if ((isOSX && canSelectFiles) || !canSelectFolders) {
+            electronProps.filters = props.filters ? Object.entries(props.filters).map(([name, extensions]) => ({ name, extensions })) : [];
+            electronProps.filters.push({ name: 'All Files', extensions: ['*'] });
+        }
+        return electronProps;
     }
 
     protected toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {

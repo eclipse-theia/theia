@@ -19,6 +19,24 @@ For example:
 }
 ```
 
+### v1.22.0
+
+### Electron Update
+
+Electron got updated from 9 to 15, this might involve some modifications in your code based on the new APIs.
+
+See Electron's [documentation](https://github.com/electron/electron/tree/15-x-y/docs).
+
+Most notably the `electron.remote` API got deprecated and replaced with a `@electron/remote` package.
+
+Theia makes use of that package and re-exports it as `@theia/core/electron-shared/@electron/remote`.
+
+See `@theia/core` re-exports [documentation](../packages/core/README.md#re-exports).
+
+Lastly, Electron must now be defined in your application's `package.json` under `devDependencies`.
+
+`theia build` will automatically add the entry and prompt you to re-install your dependencies when out of sync.
+
 ### v1.21.0
 
 #### Frontend Source Maps

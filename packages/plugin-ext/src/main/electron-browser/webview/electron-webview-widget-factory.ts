@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { remote } from '@theia/core/shared/electron';
+import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
 import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory';
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
@@ -35,7 +35,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await remote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession!.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),
@@ -59,7 +59,7 @@ export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await remote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession!.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),

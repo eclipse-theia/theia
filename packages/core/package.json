@@ -82,40 +82,45 @@
     "access": "public"
   },
   "theiaReExports": {
-    "export *": [
-      "@phosphor/algorithm",
-      "@phosphor/commands",
-      "@phosphor/coreutils",
-      "@phosphor/domutils",
-      "@phosphor/dragdrop",
-      "@phosphor/messaging",
-      "@phosphor/properties",
-      "@phosphor/signaling",
-      "@phosphor/virtualdom",
-      "@phosphor/widgets",
-      "@theia/application-package/lib/api",
-      "@theia/application-package/lib/environment",
-      "@theia/application-package:@theia/application-package/index",
-      "fs-extra",
-      "fuzzy",
-      "inversify",
-      "react-dom",
-      "react-virtualized",
-      "vscode-languageserver-protocol",
-      "vscode-uri",
-      "vscode-ws-jsonrpc"
-    ],
-    "export =": [
-      "dompurify as DOMPurify",
-      "express",
-      "lodash.debounce as debounce",
-      "lodash.throttle as throttle",
-      "nsfw",
-      "markdown-it as markdownit",
-      "react as React",
-      "ws as WebSocket",
-      "yargs"
-    ]
+    "electron-shared": {
+      "copy": "@theia/electron#shared"
+    },
+    "shared": {
+      "export *": [
+        "@phosphor/algorithm",
+        "@phosphor/commands",
+        "@phosphor/coreutils",
+        "@phosphor/domutils",
+        "@phosphor/dragdrop",
+        "@phosphor/messaging",
+        "@phosphor/properties",
+        "@phosphor/signaling",
+        "@phosphor/virtualdom",
+        "@phosphor/widgets",
+        "@theia/application-package",
+        "@theia/application-package/lib/api",
+        "@theia/application-package/lib/environment",
+        "fs-extra",
+        "fuzzy",
+        "inversify",
+        "react-dom",
+        "react-virtualized",
+        "vscode-languageserver-protocol",
+        "vscode-uri",
+        "vscode-ws-jsonrpc"
+      ],
+      "export =": [
+        "dompurify as DOMPurify",
+        "express",
+        "lodash.debounce as debounce",
+        "lodash.throttle as throttle",
+        "nsfw",
+        "markdown-it as markdownit",
+        "react as React",
+        "ws as WebSocket",
+        "yargs"
+      ]
+    }
   },
   "theiaExtensions": [
     {
@@ -157,6 +162,7 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
+    "electron-shared",
     "lib",
     "shared",
     "src"
@@ -166,15 +172,16 @@
     "clean": "theiaext clean",
     "compile": "theiaext compile",
     "generate-layout": "electron ./scripts/generate-layout",
-    "generate-shared": "node scripts/generate-shared.js",
+    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README.in.md > README.md",
     "lint": "theiaext lint",
-    "prepare": "yarn generate-shared",
+    "prepare": "yarn -s generate-theia-re-exports",
     "test": "theiaext test",
-    "version": "yarn generate-shared",
+    "version": "yarn -s generate-theia-re-exports",
     "watch": "theiaext watch"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.21.0",
+    "@theia/re-exports": "1.21.0",
     "minimist": "^1.2.0"
   },
   "nyc": {

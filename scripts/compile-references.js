@@ -42,6 +42,15 @@ const YARN_WORKSPACES = JSON.parse(cp.execSync('yarn --silent workspaces info', 
 // Add the package name inside each package object.
 for (const [packageName, yarnWorkspace] of Object.entries(YARN_WORKSPACES)) {
     yarnWorkspace.name = packageName;
+    // For some reason Yarn doesn't report local peer dependencies, so we'll manually do it:
+    const { peerDependencies } = require(path.resolve(ROOT, yarnWorkspace.location, 'package.json'));
+    if (typeof peerDependencies === 'object') {
+        for (const peerDependency of Object.keys(peerDependencies)) {
+            if (peerDependency in YARN_WORKSPACES) {
+                yarnWorkspace.workspaceDependencies.push(peerDependency);
+            }
+        }
+    }
 }
 
 /** @type {YarnWorkspace} */

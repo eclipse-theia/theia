@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-18.04, macos-10.15]
-        node: ['12.x', '14.x']
+        node: ['12.x', '14.x', '16.x']
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -43,10 +43,9 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          yarn --skip-integrity-check --network-timeout 100000 --ignore-engines
+          yarn --ignore-engines --skip-integrity-check --network-timeout 100000
+          ./scripts/check_git_status.sh
           yarn lint
-          npx electron-replace-ffmpeg
-          npx electron-codecs-test
           yarn build:examples
           ./scripts/check_git_status.sh
         env:

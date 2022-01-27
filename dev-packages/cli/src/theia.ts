@@ -14,11 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as temp from 'temp';
 import * as yargs from 'yargs';
 import yargsFactory = require('yargs/yargs');
 import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 import { ApplicationProps, DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package';
+import * as ffmpeg from '@theia/ffmpeg';
 import checkHoisted from './check-hoisting';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
@@ -49,7 +52,7 @@ function toStringArray(argv?: (string | number)[]): string[] | undefined {
 function rebuildCommand(command: string, target: ApplicationProps.Target): yargs.CommandModule<unknown, {
     modules: string[]
     cacheRoot?: string
-    force?: boolean
+    forceAbi?: number,
 }> {
     return {
         command,
@@ -61,16 +64,15 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
             },
             'modules': {
                 alias: 'm',
-                array: true, // === `--modules/-m` can be specified multiple times
+                type: 'array', // === `--modules/-m` can be specified multiple times
                 describe: 'List of modules to rebuild/revert'
             },
-            'force': {
-                alias: 'f',
-                boolean: true,
-                describe: 'Rebuild modules for Electron anyway',
+            'forceAbi': {
+                type: 'number',
+                describe: 'The Node ABI version to rebuild for'
             }
         },
-        handler: ({ cacheRoot, modules, force }) => {
+        handler: ({ cacheRoot, modules, forceAbi }) => {
             // Note: `modules` is actually `string[] | undefined`.
             if (modules) {
                 // It is ergonomic to pass arguments as --modules="a,b,c,..."
@@ -85,7 +87,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                 }
                 modules = flattened;
             }
-            rebuild(target, { cacheRoot, modules, force });
+            rebuild(target, { cacheRoot, modules, forceAbi });
         }
     };
 }
@@ -100,9 +102,10 @@ function defineCommonOptions<T>(cli: yargs.Argv<T>): yargs.Argv<T & {
         });
 }
 
-function theiaCli(): void {
+async function theiaCli(): Promise<void> {
+    const { version } = await fs.promises.readFile(path.join(__dirname, '../package.json'), 'utf8').then(JSON.parse);
+    yargs.scriptName('theia').version(version);
     const projectPath = process.cwd();
-    yargs.scriptName('theia').version(require('../package.json').version);
     // Create a sub `yargs` parser to read `app-target` without
     // affecting the global `yargs` instance used by the CLI.
     const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
@@ -350,6 +353,61 @@ function theiaCli(): void {
                     coverage: testCoverage
                 });
             }
+        })
+        .command<{
+            electronVersion?: string
+            electronDist?: string
+            ffmpegPath?: string
+            platform?: NodeJS.Platform
+        }>({
+            command: 'ffmpeg:replace [ffmpeg-path]',
+            describe: '',
+            builder: {
+                'electronDist': {
+                    description: 'Electron distribution location.',
+                },
+                'electronVersion': {
+                    description: 'Electron version for which to pull the "clean" ffmpeg library.',
+                },
+                'ffmpegPath': {
+                    description: 'Absolute path to the ffmpeg shared library.',
+                },
+                'platform': {
+                    description: 'Dictates where the library is located within the Electron distribution.',
+                    choices: ['darwin', 'linux', 'win32'] as NodeJS.Platform[],
+                },
+            },
+            handler: async options => {
+                await ffmpeg.replaceFfmpeg(options);
+            },
+        })
+        .command<{
+            electronDist?: string
+            ffmpegPath?: string
+            json?: boolean
+            platform?: NodeJS.Platform
+        }>({
+            command: 'ffmpeg:check [ffmpeg-path]',
+            describe: '(electron-only) Check that ffmpeg doesn\'t contain proprietary codecs',
+            builder: {
+                'electronDist': {
+                    description: 'Electron distribution location',
+                },
+                'ffmpegPath': {
+                    describe: 'Absolute path to the ffmpeg shared library',
+                },
+                'json': {
+                    description: 'Output the found codecs as JSON on stdout',
+                    boolean: true,
+                },
+                'platform': {
+                    description: 'Dictates where the library is located within the Electron distribution',
+                    choices: ['darwin', 'linux', 'win32'] as NodeJS.Platform[],
+                },
+            },
+            handler: options => {
+                ffmpeg.checkFfmpeg(options);
+            },
         })
         .parserConfiguration({
             'unknown-options-as-args': true,

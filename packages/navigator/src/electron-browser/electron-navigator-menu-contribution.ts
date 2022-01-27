@@ -17,7 +17,8 @@
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import * as electron from '@theia/core/shared/electron';
+import * as electron from '@theia/core/electron-shared/electron';
+import * as electronRemote from '@theia/core/electron-shared/@electron/remote';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from '../browser';
@@ -45,7 +46,7 @@ export class ElectronNavigatorMenuContribution implements MenuContribution, Comm
             execute: () => {
                 // workaround for https://github.com/electron/electron/issues/4349:
                 // use electron.remote.shell to open the window in the foreground on Windows
-                const shell = electron.remote?.shell ?? electron.shell;
+                const shell = isWindows ? electronRemote.shell : electron.shell;
                 this.getSelectedFileStatNodes().forEach(node => {
                     shell.showItemInFolder(node.uri['codeUri'].fsPath);
                 });

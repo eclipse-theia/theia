@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Event as ElectronEvent, ipcRenderer } from '@theia/electron/shared/electron';
 import { injectable, interfaces } from 'inversify';
-import { Event as ElectronEvent, ipcRenderer } from '../../../shared/electron';
 import { JsonRpcProxy } from '../../common/messaging';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';

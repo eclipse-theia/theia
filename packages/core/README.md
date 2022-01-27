@@ -49,11 +49,11 @@ An extension module should have a default export of `ContainerModule | Promise<C
 
 A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
-## Re-exports
+## Re-Exports Mechanism
 
-In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use.
+In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use. This is especially useful when having to re-use the same dependencies as `@theia/core` does: Since those dependencies will be pulled by Theia, instead of trying to match the same version in your own packages, you can use re-exports to consume it from the framework directly.
 
-### Usage example
+### Usage Example
 
 Let's take inversify as an example since you will most likely use this package, you can import it by prefixing with `@theia/core/shared/`:
 
@@ -66,39 +66,46 @@ export class SomeClass {
 }
 ```
 
-### List of re-exported packages
+## Re-Exports
 
- - [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm)
- - [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands)
- - [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils)
- - [`@phosphor/domutils@1`](https://www.npmjs.com/package/@phosphor/domutils)
- - [`@phosphor/dragdrop@1`](https://www.npmjs.com/package/@phosphor/dragdrop)
- - [`@phosphor/messaging@1`](https://www.npmjs.com/package/@phosphor/messaging)
- - [`@phosphor/properties@1`](https://www.npmjs.com/package/@phosphor/properties)
- - [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling)
- - [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom)
- - [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets)
- - [`@theia/application-package@1.21.0`](https://www.npmjs.com/package/@theia/application-package)
- - [`@theia/application-package/lib/api@1.21.0`](https://www.npmjs.com/package/@theia/application-package)
- - [`@theia/application-package/lib/environment@1.21.0`](https://www.npmjs.com/package/@theia/application-package)
- - [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify)
- - [`electron@^9.0.2`](https://www.npmjs.com/package/electron)
- - [`express@^4.16.3`](https://www.npmjs.com/package/express)
- - [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra)
- - [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy)
- - [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify)
- - [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce)
- - [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle)
- - [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it)
- - [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw)
- - [`react@^16.8.0`](https://www.npmjs.com/package/react)
- - [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom)
- - [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized)
- - [`vscode-languageserver-protocol@~3.15.3`](https://www.npmjs.com/package/vscode-languageserver-protocol)
- - [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri)
- - [`vscode-ws-jsonrpc@^0.2.0`](https://www.npmjs.com/package/vscode-ws-jsonrpc)
- - [`ws@^7.1.2`](https://www.npmjs.com/package/ws)
- - [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs)
+- `@theia/core/electron-shared/...`
+    - `@electron/remote` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
+    - `@electron/remote/main` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
+    - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
+    - `electron` (from [`electron@^15.3.5`](https://www.npmjs.com/package/electron))
+    - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
+    - `fix-path` (from [`fix-path@^3.0.0`](https://www.npmjs.com/package/fix-path))
+- `@theia/core/shared/...`
+    - `@phosphor/algorithm` (from [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm))
+    - `@phosphor/commands` (from [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands))
+    - `@phosphor/coreutils` (from [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils))
+    - `@phosphor/domutils` (from [`@phosphor/domutils@1`](https://www.npmjs.com/package/@phosphor/domutils))
+    - `@phosphor/dragdrop` (from [`@phosphor/dragdrop@1`](https://www.npmjs.com/package/@phosphor/dragdrop))
+    - `@phosphor/messaging` (from [`@phosphor/messaging@1`](https://www.npmjs.com/package/@phosphor/messaging))
+    - `@phosphor/properties` (from [`@phosphor/properties@1`](https://www.npmjs.com/package/@phosphor/properties))
+    - `@phosphor/signaling` (from [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling))
+    - `@phosphor/virtualdom` (from [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom))
+    - `@phosphor/widgets` (from [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets))
+    - `@theia/application-package` (from [`@theia/application-package@1.21.0`](https://www.npmjs.com/package/@theia/application-package/v/1.21.0))
+    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.21.0`](https://www.npmjs.com/package/@theia/application-package/v/1.21.0))
+    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.21.0`](https://www.npmjs.com/package/@theia/application-package/v/1.21.0))
+    - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
+    - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
+    - `inversify` (from [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify))
+    - `react-dom` (from [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom))
+    - `react-virtualized` (from [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized))
+    - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@~3.15.3`](https://www.npmjs.com/package/vscode-languageserver-protocol))
+    - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
+    - `vscode-ws-jsonrpc` (from [`vscode-ws-jsonrpc@^0.2.0`](https://www.npmjs.com/package/vscode-ws-jsonrpc))
+    - `dompurify` (from [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify))
+    - `express` (from [`express@^4.16.3`](https://www.npmjs.com/package/express))
+    - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
+    - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
+    - `nsfw` (from [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw))
+    - `markdown-it` (from [`markdown-it@^12.3.2`](https://www.npmjs.com/package/markdown-it))
+    - `react` (from [`react@^16.8.0`](https://www.npmjs.com/package/react))
+    - `ws` (from [`ws@^7.1.2`](https://www.npmjs.com/package/ws))
+    - `yargs` (from [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs))
 
 ## Logging Configuration
 

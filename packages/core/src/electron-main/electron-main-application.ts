@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { screen, globalShortcut, ipcMain, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from '../../shared/electron';
+import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
+import { screen, globalShortcut, ipcMain, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -190,7 +191,9 @@ export class ElectronMainApplication {
     @inject(ElectronSecurityToken)
     protected readonly electronSecurityToken: ElectronSecurityToken;
 
-    protected readonly electronStore = new Storage();
+    protected readonly electronStore = new Storage<{
+        windowstate?: TheiaBrowserWindowOptions
+    }>();
 
     protected readonly _backendPort = new Deferred<number>();
     readonly backendPort = this._backendPort.promise;
@@ -266,6 +269,7 @@ export class ElectronMainApplication {
         this.attachGlobalShortcuts(electronWindow);
         this.restoreMaximizedState(electronWindow, options);
         this.attachCloseListeners(electronWindow, options);
+        electronRemoteMain.enable(electronWindow.webContents);
         return electronWindow;
     }
 
@@ -304,6 +308,8 @@ export class ElectronMainApplication {
             minWidth: 200,
             minHeight: 120,
             webPreferences: {
+                // `global` is undefined when `true`.
+                contextIsolation: false,
                 // https://github.com/eclipse-theia/theia/issues/2018
                 nodeIntegration: true,
                 // Setting the following option to `true` causes some features to break, somehow.
@@ -589,7 +595,12 @@ export class ElectronMainApplication {
 
         ipcMain.on(TitleBarStyleChanged, ({ sender }, titleBarStyle: string) => {
             this.useNativeWindowFrame = titleBarStyle === 'native';
-            this.saveWindowState(BrowserWindow.fromId(sender.id));
+            const browserWindow = BrowserWindow.fromId(sender.id);
+            if (browserWindow) {
+                this.saveWindowState(browserWindow);
+            } else {
+                console.warn(`no BrowserWindow with id: ${sender.id}`);
+            }
         });
 
         ipcMain.on(Restart, ({ sender }) => {
@@ -626,8 +637,11 @@ export class ElectronMainApplication {
 
     protected restart(id: number): void {
         this.restarting = true;
-        const window = BrowserWindow.fromId(id);
-        window.on('closed', async () => {
+        const browserWindow = BrowserWindow.fromId(id);
+        if (!browserWindow) {
+            throw new Error(`no BrowserWindow with id: ${id}`);
+        }
+        browserWindow.on('closed', async () => {
             await this.launch({
                 secondInstance: false,
                 argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
@@ -635,12 +649,15 @@ export class ElectronMainApplication {
             });
             this.restarting = false;
         });
-        this.handleStopRequest(window, () => this.doCloseWindow(window), StopReason.Restart);
+        this.handleStopRequest(browserWindow, () => this.doCloseWindow(browserWindow), StopReason.Restart);
     }
 
     protected async handleReload(event: Electron.IpcMainEvent): Promise<void> {
-        const window = BrowserWindow.fromId(event.sender.id);
-        this.reload(window);
+        const browserWindow = BrowserWindow.fromId(event.sender.id);
+        if (!browserWindow) {
+            throw new Error(`no BrowserWindow with id: ${event.sender.id}`);
+        }
+        this.reload(browserWindow);
     }
 
     protected reload(electronWindow: BrowserWindow): void {

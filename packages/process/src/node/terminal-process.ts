@@ -17,9 +17,9 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType, ProcessOptions, ProcessErrorEvent } from './process';
+import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process';
 import { ProcessManager } from './process-manager';
-import { IPty, spawn } from '@theia/node-pty';
+import { IPty, spawn } from 'node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
@@ -38,6 +38,11 @@ export interface TerminalProcessOptions extends ProcessOptions {
 export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
 export interface TerminalProcessFactory {
     (options: TerminalProcessOptions): TerminalProcess;
+}
+
+export enum NodePtyErrors {
+    EACCES = 'Permission denied',
+    ENOENT = 'No such file or directory'
 }
 
 /**
@@ -78,17 +83,10 @@ export class TerminalProcess extends Process {
             this.terminal = spawn(
                 options.command,
                 (isWindows && options.commandLine) || options.args || [],
-                options.options || {});
+                options.options || {}
+            );
 
-            this.terminal.on('exec', (reason: string | undefined) => {
-                if (reason === undefined) {
-                    this.emitOnStarted();
-                } else {
-                    const error = new Error(reason) as ProcessErrorEvent;
-                    error.code = reason;
-                    this.emitOnError(error);
-                }
-            });
+            process.nextTick(() => this.emitOnStarted());
 
             // node-pty actually wait for the underlying streams to be closed before emitting exit.
             // We should emulate the `exit` and `close` sequence.
@@ -133,9 +131,13 @@ export class TerminalProcess extends Process {
             // situation.
             const message: string = error.message;
 
-            if (message.startsWith('File not found: ')) {
+            if (message.startsWith('File not found: ') || message.endsWith(NodePtyErrors.ENOENT)) {
                 error.errno = 'ENOENT';
                 error.code = 'ENOENT';
+                error.path = options.command;
+            } else if (message.endsWith(NodePtyErrors.EACCES)) {
+                error.errno = 'EACCES';
+                error.code = 'EACCES';
                 error.path = options.command;
             }
 

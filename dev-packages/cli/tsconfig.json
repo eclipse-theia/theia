@@ -16,6 +16,9 @@
       "path": "../application-package"
     },
     {
+      "path": "../ffmpeg"
+    },
+    {
       "path": "../localization-manager"
     },
     {

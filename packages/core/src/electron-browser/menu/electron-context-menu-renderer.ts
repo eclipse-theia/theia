@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as electron from '../../../shared/electron';
+import * as electron from '../../../electron-shared/electron';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService
@@ -105,8 +105,10 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
             const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args);
             const { x, y } = coordinateFromAnchor(anchor);
             const zoom = electron.webFrame.getZoomFactor();
+            // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641
+            const offset = process.platform === 'win32' ? 0 : 2;
             // x and y values must be Ints or else there is a conversion error
-            menu.popup({ x: Math.round(x * zoom), y: Math.round(y * zoom) });
+            menu.popup({ x: Math.round(x * zoom) + offset, y: Math.round(y * zoom) + offset });
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
             if (onHide) {

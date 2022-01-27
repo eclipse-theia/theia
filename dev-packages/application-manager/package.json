@@ -34,17 +34,21 @@
     "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
     "@theia/application-package": "1.21.0",
+    "@theia/ffmpeg": "1.21.0",
     "@types/fs-extra": "^4.0.2",
+    "@types/semver": "^7.3.8",
     "babel-loader": "^8.2.2",
     "buffer": "^6.0.3",
     "circular-dependency-plugin": "^5.2.2",
     "compression-webpack-plugin": "^9.0.0",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.2.0",
-    "electron-rebuild": "^1.8.6",
+    "electron-rebuild": "^1.11.0",
     "fs-extra": "^4.0.2",
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
+    "node-abi": "*",
+    "semver": "^7.3.5",
     "setimmediate": "^1.0.5",
     "source-map-loader": "^2.0.1",
     "source-map-support": "^0.5.19",
@@ -55,8 +59,17 @@
     "worker-loader": "^3.0.8",
     "yargs": "^15.3.1"
   },
+  "peerDependencies": {
+    "@theia/electron": "1.21.0"
+  },
+  "peerDependenciesMeta": {
+    "@theia/electron": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@theia/ext-scripts": "1.21.0"
+    "@theia/ext-scripts": "1.21.0",
+    "@types/node-abi": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

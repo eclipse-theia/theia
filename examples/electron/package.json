@@ -57,21 +57,22 @@
     "@theia/workspace": "1.21.0"
   },
   "scripts": {
-    "build": "yarn compile && yarn bundle",
+    "build": "yarn -s compile && yarn -s bundle",
     "bundle": "theia build --mode development",
     "clean": "theia clean",
     "compile": "tsc -b",
     "lint": "theiaext lint",
     "rebuild": "theia rebuild:electron --cacheRoot ../..",
-    "start": "yarn rebuild && theia start --plugins=local-dir:../../plugins",
-    "start:debug": "yarn start --log-level=debug --remote-debugging-port=9222",
-    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\" \"yarn start\"",
-    "test": "yarn rebuild && electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\"",
-    "watch": "concurrently --kill-others -n tsc,bundle -c red,blue \"tsc -b -w --preserveWatchOutput\" \"yarn watch:bundle\"",
+    "start": "yarn -s rebuild && theia start --plugins=local-dir:../../plugins",
+    "start:debug": "yarn -s start --log-level=debug --remote-debugging-port=9222",
+    "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\" \"yarn -s start\"",
+    "test": "yarn -s rebuild && electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\"",
+    "watch": "concurrently --kill-others -n tsc,bundle -c red,blue \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\"",
     "watch:bundle": "theia build --watch --mode development",
     "watch:compile": "tsc -b -w"
   },
   "devDependencies": {
-    "@theia/cli": "1.21.0"
+    "@theia/cli": "1.21.0",
+    "electron": "^15.3.5"
   }
 }
