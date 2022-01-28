@@ -16,6 +16,7 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "main": "lib/index.js",
   "files": [
+    "binding.gyp",
     "lib",
     "native",
     "src"
