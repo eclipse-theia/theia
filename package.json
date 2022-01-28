@@ -69,7 +69,7 @@
     "lint:oneshot": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js --cache=true \"{dev-packages,packages,examples}/**/*.{ts,tsx}\"",
     "preinstall": "node-gyp install",
     "prepare": "yarn -s compile:references && lerna run prepare && yarn -s compile",
-    "publish:latest": "lerna publish --exact --yes --no-push --no-git-tag-version --no-git-reset && yarn -s publish:check",
+    "publish:latest": "lerna publish --exact --yes --no-push && yarn -s publish:check",
     "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && yarn -s publish:check",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
