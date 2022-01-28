@@ -172,7 +172,7 @@
     "clean": "theiaext clean",
     "compile": "theiaext compile",
     "generate-layout": "electron ./scripts/generate-layout",
-    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README.in.md > README.md",
+    "generate-theia-re-exports": "theia-re-exports generate && theia-re-exports template README_TEMPLATE.md > README.md",
     "lint": "theiaext lint",
     "prepare": "yarn -s generate-theia-re-exports",
     "test": "theiaext test",
