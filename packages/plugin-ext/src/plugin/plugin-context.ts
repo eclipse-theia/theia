@@ -416,7 +416,9 @@ export function createAPIFactory(
             onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
                 return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
             },
-            createTerminal(nameOrOptions: theia.TerminalOptions | theia.PseudoTerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
+            createTerminal(nameOrOptions: theia.TerminalOptions | theia.PseudoTerminalOptions | theia.ExtensionTerminalOptions | (string | undefined),
+                shellPath?: string,
+                shellArgs?: string[]): theia.Terminal {
                 return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
             },
             onDidCloseTerminal,
