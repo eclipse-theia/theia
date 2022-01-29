@@ -1,6 +1,6 @@
 {
   "name": "@theia/ffmpeg",
-  "version": "1.22.0",
+  "version": "1.22.1",
   "description": "Theia FFMPEG reader utility.",
   "publishConfig": {
     "access": "public"
@@ -16,6 +16,7 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "main": "lib/index.js",
   "files": [
+    "binding.gyp",
     "lib",
     "native",
     "src"
