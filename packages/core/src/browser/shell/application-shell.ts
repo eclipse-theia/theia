@@ -1744,6 +1744,9 @@ export class ApplicationShell extends Widget {
         if (!prevBar) {
             return false;
         }
+        if (!prevBar.currentTitle) {
+            prevBar.currentIndex = prevBar.titles.length - 1;
+        }
         if (prevBar.currentTitle) {
             this.activateWidget(prevBar.currentTitle.owner.id);
         }
