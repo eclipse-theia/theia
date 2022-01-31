@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
-import { Terminal, TerminalOptions, PseudoTerminalOptions } from '@theia/plugin';
+import { Terminal, TerminalOptions, PseudoTerminalOptions, ExtensionTerminalOptions } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Event, Emitter } from '@theia/core/lib/common/event';
@@ -54,7 +54,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return [...this._terminals.values()];
     }
 
-    createTerminal(nameOrOptions: TerminalOptions | PseudoTerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
+    createTerminal(nameOrOptions: TerminalOptions | PseudoTerminalOptions | ExtensionTerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
         let options: TerminalOptions;
         let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
         const id = `plugin-terminal-${UUID.uuid4()}`;

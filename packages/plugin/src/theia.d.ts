@@ -2745,8 +2745,25 @@ export module '@theia/plugin' {
 
     /**
      * Options a virtual process terminal.
+     * @deprecated since 1.23.0 - Use [ExtensionTerminalOptions](#ExtensionTerminalOptions) instead.
      */
     export interface PseudoTerminalOptions {
+        /**
+         * The name of the terminal.
+         */
+        name: string;
+
+        /**
+         * An implementation of [Pseudoterminal](#Pseudoterminal) where an extension can
+         * control it.
+         */
+        pty: Pseudoterminal;
+    }
+
+    /**
+     * Options a virtual process terminal.
+     */
+    export interface ExtensionTerminalOptions {
         /**
          * The name of the terminal.
          */
@@ -4438,6 +4455,14 @@ export module '@theia/plugin' {
          * @return A new Terminal.
          */
         export function createTerminal(options: PseudoTerminalOptions): Terminal;
+
+        /**
+         * Creates a pseudo where an extension controls its input and output.
+         *
+         * @param options ExtensionTerminalOptions.
+         * @return A new Terminal.
+         */
+         export function createTerminal(options: ExtensionTerminalOptions): Terminal;
 
         /**
          * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
