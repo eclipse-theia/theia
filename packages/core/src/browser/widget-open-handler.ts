@@ -160,8 +160,6 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
      * @returns a promise of all closed widgets that resolves after they have been closed.
      */
     async closeAll(options?: ApplicationShell.CloseOptions): Promise<W[]> {
-        const closed = await Promise.all(this.all.map(widget => this.shell.closeWidget(widget.id, options)));
-        return closed.filter(widget => !!widget) as W[];
+        return this.shell.closeMany(this.all, options) as Promise<W[]>;
     }
-
 }

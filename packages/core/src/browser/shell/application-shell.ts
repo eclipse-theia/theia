@@ -24,7 +24,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
 import { animationFrame } from '../browser';
-import { Saveable, SaveableWidget, SaveOptions } from '../saveable';
+import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
@@ -1025,7 +1025,7 @@ export class ApplicationShell extends Widget {
         }
         this.tracker.add(widget);
         this.checkActivation(widget);
-        Saveable.apply(widget);
+        Saveable.apply(widget, () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)));
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {
                 this.track(toTrack);
@@ -1036,6 +1036,11 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    /**
+     * @returns an array of Widgets, all of which are tracked by the focus tracker
+     * The first member of the array is the widget whose id is passed in, and the other widgets
+     * are its tracked parents in ascending order
+     */
     protected toTrackedStack(id: string): Widget[] {
         const tracked = new Map<string, Widget>(this.tracker.widgets.map(w => [w.id, w] as [string, Widget]));
         let current = tracked.get(id);
@@ -1392,24 +1397,23 @@ export class ApplicationShell extends Widget {
      * @param filter
      *      If undefined, all tabs are closed; otherwise only those tabs that match the filter are closed.
      */
-    closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
-        filter?: (title: Title<Widget>, index: number) => boolean): void {
+    async closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): Promise<void> {
+        const titles: Array<Title<Widget>> = [];
         if (tabBarOrArea === 'main') {
-            this.mainAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
+            this.mainAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
         } else if (tabBarOrArea === 'bottom') {
-            this.bottomAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
+            this.bottomAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
         } else if (typeof tabBarOrArea === 'string') {
-            const tabBar = this.getTabBarFor(tabBarOrArea);
-            if (tabBar) {
-                this.closeTabs(tabBar, filter);
+            const tabbar = this.getTabBarFor(tabBarOrArea);
+            if (tabbar) {
+                titles.push(...toArray(tabbar.titles));
             }
         } else if (tabBarOrArea) {
-            const titles = toArray(tabBarOrArea.titles);
-            for (let i = 0; i < titles.length; i++) {
-                if (filter === undefined || filter(titles[i], i)) {
-                    titles[i].owner.close();
-                }
-            }
+            titles.push(...toArray(tabBarOrArea.titles));
+        }
+        if (titles.length) {
+            await this.closeMany((filter ? titles.filter(filter) : titles).map(title => title.owner));
         }
     }
 
@@ -1436,6 +1440,22 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    /**
+     * @param targets the widgets to be closed
+     * @return an array of all the widgets that were actually closed.
+     */
+    async closeMany(targets: Widget[], options?: ApplicationShell.CloseOptions): Promise<Widget[]> {
+        if (options?.save === false || await Saveable.confirmSaveBeforeClose(targets, this.widgets.filter(widget => !targets.includes(widget)))) {
+            return (await Promise.all(targets.map(target => this.closeWidget(target.id, options)))).filter((widget): widget is Widget => widget !== undefined);
+        }
+        return [];
+    }
+
+    /**
+     * @returns the widget that was closed, if any, `undefined` otherwise.
+     *
+     * If your use case requires closing multiple widgets, use {@link ApplicationShell#closeMany} instead. That method handles closing saveable widgets more reliably.
+     */
     async closeWidget(id: string, options?: ApplicationShell.CloseOptions): Promise<Widget | undefined> {
         // TODO handle save for composite widgets, i.e. the preference widget has 2 editors
         const stack = this.toTrackedStack(id);
@@ -1443,17 +1463,10 @@ export class ApplicationShell extends Widget {
         if (!current) {
             return undefined;
         }
-        let pendingClose;
-        if (SaveableWidget.is(current)) {
-            let shouldSave;
-            if (options && 'save' in options) {
-                shouldSave = () => options.save;
-            }
-            pendingClose = current.closeWithSaving({ shouldSave });
-        } else {
-            current.close();
-            pendingClose = waitForClosed(current);
-        };
+        const saveableOptions = options && { shouldSave: () => options.save };
+        const pendingClose = SaveableWidget.is(current)
+            ? current.closeWithSaving(saveableOptions)
+            : (current.close(), waitForClosed(current));
         await Promise.all([
             pendingClose,
             this.pendingUpdates

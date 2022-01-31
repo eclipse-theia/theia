@@ -206,12 +206,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * @param uri URI of a selected resource.
      */
     protected async closeWithoutSaving(uri: URI): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pending: Promise<any>[] = [];
-        for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
-            pending.push(this.shell.closeWidget(widget.id, { save: false }));
-        }
-        await Promise.all(pending);
+        const toClose = [...NavigatableWidget.getAffected(this.shell.widgets, uri)].map(([, widget]) => widget);
+        await this.shell.closeMany(toClose, { save: false });
     }
-
 }
