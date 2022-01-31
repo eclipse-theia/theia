@@ -2745,7 +2745,7 @@ export module '@theia/plugin' {
 
     /**
      * Options a virtual process terminal.
-     * @deprecated Use [ExtensionTerminalOptions](#ExtensionTerminalOptions) instead.
+     * @deprecated since 1.23.0 - Use [ExtensionTerminalOptions](#ExtensionTerminalOptions) instead.
      */
     export interface PseudoTerminalOptions {
         /**
