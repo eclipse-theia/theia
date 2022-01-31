@@ -17,10 +17,10 @@
 import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
-import { injectable, postConstruct } from 'inversify';
-import { MaybePromise } from '../../common';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
+import { TestConnection } from '../../electron-common/electron-test-connection';
 
 /**
  * On Electron, we want to make sure that only Electron's browser-windows access the backend services.
@@ -30,12 +30,17 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
 
     protected electronSecurityToken: ElectronSecurityToken;
 
+    @inject(TestConnection)
+    protected readonly testConnection: TestConnection;
+
     @postConstruct()
     protected postConstruct(): void {
         this.electronSecurityToken = this.getToken();
     }
 
-    allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {
+    async allowWsUpgrade(request: http.IncomingMessage): Promise<boolean> {
+        console.log('Titles: ', await this.testConnection.runTest());
+        console.log('IPC test finished');
         return this.allowRequest(request);
     }
 

@@ -26,6 +26,10 @@ import { ElectronMessagingContribution } from './messaging/electron-messaging-co
 import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
+import { ElectronMainMessagingService } from './messaging/electron-main-messaging-service';
+import { ElectronMainConnectionHandler } from '../electron-common/messaging/electron-backend-connection-handler';
+import { TestConnection, TEST_CONNECTION_PATH } from '../electron-common/electron-test-connection';
+import { TestConnectionImpl } from './electron-test-connection';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,12 +38,14 @@ const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 export default new ContainerModule(bind => {
     bind(ElectronMainApplication).toSelf().inSingletonScope();
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();
+    bind(ElectronMainMessagingService).toSelf().inSingletonScope();
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
     bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, ElectronConnectionHandler);
     bindContributionProvider(bind, ElectronMessagingService.Contribution);
     bindContributionProvider(bind, ElectronMainApplicationContribution);
+    bindContributionProvider(bind, ElectronMainConnectionHandler);
 
     bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
 
@@ -50,4 +56,10 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
 
     bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
+
+    bind(TestConnection).to(TestConnectionImpl).inSingletonScope();
+    bind(ElectronMainConnectionHandler).toDynamicValue(context =>
+        new JsonRpcConnectionHandler(TEST_CONNECTION_PATH,
+            () => context.container.get(TestConnection))
+    ).inSingletonScope();
 });

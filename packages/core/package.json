@@ -147,6 +147,9 @@
     {
       "backend": "lib/node/hosting/backend-hosting-module",
       "backendElectron": "lib/electron-node/hosting/electron-backend-hosting-module"
+    },
+    {
+      "backendElectron": "lib/electron-node/messaging/electron-backend-connection-module"
     }
   ],
   "keywords": [

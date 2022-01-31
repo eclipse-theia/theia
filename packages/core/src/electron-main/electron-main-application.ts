@@ -41,6 +41,7 @@ import {
     TitleBarStyleChanged
 } from '../electron-common/messaging/electron-messages';
 import { DEFAULT_WINDOW_HASH } from '../common/window';
+import { ElectronMainMessagingService } from './messaging/electron-main-messaging-service';
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
@@ -184,6 +185,9 @@ export class ElectronMainApplication {
 
     @inject(ElectronMainProcessArgv)
     protected processArgv: ElectronMainProcessArgv;
+
+    @inject(ElectronMainMessagingService)
+    protected readonly mainMessagingService: ElectronMainMessagingService;
 
     @inject(ElectronSecurityTokenService)
     protected electronSecurityTokenService: ElectronSecurityTokenService;
@@ -533,6 +537,7 @@ export class ElectronMainApplication {
         // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
         if (noBackendFork) {
+            this.mainMessagingService.start();
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
             // The backend server main file is supposed to export a promise resolving with the port used by the http(s) server.
             const address: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
@@ -543,10 +548,13 @@ export class ElectronMainApplication {
                 this.processArgv.getProcessArgvWithoutBin(),
                 await this.getForkOptions(),
             );
+            this.mainMessagingService.start(backendProcess);
             return new Promise((resolve, reject) => {
                 // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
                 backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                    if ('port' in address) {
+                        resolve(address.port);
+                    }
                 });
                 backendProcess.on('error', error => {
                     reject(error);
