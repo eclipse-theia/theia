@@ -198,7 +198,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 sortedResults.sort((a, b) => this.compareItems(a, b));
 
                 if (sortedResults.length > 0) {
-                    result.unshift({ type: 'separator', label: 'file results' });
+                    result.push({ type: 'separator', label: 'file results' });
                     result.push(...sortedResults);
                 }
 
@@ -243,7 +243,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
             }, 0);
 
             // Check fuzzy matches.
-            const fuzzyMatch = fuzzy.match(queryJoin, str);
+            const fuzzyMatch = fuzzy.match(queryJoin, str) ?? { score: 0 };
             if (fuzzyMatch.score === Infinity && exactMatch) {
                 return MAX_SAFE_INTEGER;
             }
