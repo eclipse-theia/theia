@@ -57,9 +57,10 @@ export class StatusBarMessageRegistryExt {
 
     }
 
-    createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem {
-        return new StatusBarItemImpl(this.proxy, alignment, priority);
+    createStatusBarItem(alignment?: StatusBarAlignment, priority?: number, id?: string): StatusBarItem {
+        return new StatusBarItemImpl(this.proxy, alignment, priority, id);
     }
+
 }
 
 // copied from https://github.com/Microsoft/vscode/blob/6c8f02b41db9ae5c4d15df767d47755e5c73b9d5/src/vs/workbench/api/node/extHostStatusBar.ts#L122

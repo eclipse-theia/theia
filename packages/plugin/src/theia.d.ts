@@ -4553,13 +4553,23 @@ export module '@theia/plugin' {
         export function setStatusBarMessage(text: string, hideWhenDone: PromiseLike<any>): Disposable;
 
         /**
-         * Creates a status bar [item](#StatusBarItem).
+         * Creates a status bar {@link StatusBarItem item}.
          *
          * @param alignment The alignment of the item.
          * @param priority The priority of the item. Higher values mean the item should be shown more to the left.
          * @return A new status bar item.
          */
         export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
+
+        /**
+         * Creates a status bar {@link StatusBarItem item}.
+         *
+         * @param id The unique identifier of the item.
+         * @param alignment The alignment of the item.
+         * @param priority The priority of the item. Higher values mean the item should be shown more to the left.
+         * @return A new status bar item.
+         */
+        export function createStatusBarItem(id: string, alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
 
         /**
          * Create a new [output channel](#OutputChannel) with the given name.

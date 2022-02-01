@@ -20,7 +20,7 @@ import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 
 export class StatusBarItemImpl implements theia.StatusBarItem {
 
-    private readonly id = StatusBarItemImpl.nextId();
+    private _id: string;
 
     private _alignment: StatusBarAlignment;
     private _priority: number;
@@ -37,10 +37,16 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
 
     constructor(_proxy: StatusBarMessageRegistryMain,
         alignment: StatusBarAlignment = StatusBarAlignment.Left,
-        priority: number = 0) {
+        priority: number = 0,
+        id = StatusBarItemImpl.nextId()) {
         this._proxy = _proxy;
         this._alignment = alignment;
         this._priority = priority;
+        this._id = id;
+    }
+
+    public get id(): string {
+        return this._id;
     }
 
     public get alignment(): theia.StatusBarAlignment {
