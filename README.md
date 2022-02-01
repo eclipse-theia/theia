@@ -90,6 +90,7 @@ Read below how to engage with Theia community:
   - [API Integration Testing](doc/api-testing.md)
   - [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines)
   - [Code Organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization)
+  - [Plugin and VSCode API](doc/Plugin-API.md)
 
 ## License
 
