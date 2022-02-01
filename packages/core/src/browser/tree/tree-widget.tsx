@@ -303,21 +303,25 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 pruneSiblings: true
             })) {
                 if (this.shouldDisplayNode(node)) {
-                    const parentDepth = depths.get(node.parent);
-                    const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+                    const depth = this.getDepthForNode(node, depths);
                     if (CompositeTreeNode.is(node)) {
                         depths.set(node, depth);
                     }
-                    rowsToUpdate.push([node.id, {
-                        index: index++,
-                        node,
-                        depth
-                    }]);
+                    rowsToUpdate.push([node.id, this.toNodeRow(node, index++, depth)]);
                 }
             }
         }
         this.rows = new Map(rowsToUpdate);
         this.updateScrollToRow();
+    }
+
+    protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
+        const parentDepth = depths.get(node.parent);
+        return parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+    }
+
+    protected toNodeRow(node: TreeNode, index: number, depth: number): TreeWidget.NodeRow {
+        return { node, index, depth };
     }
 
     protected shouldDisplayNode(node: TreeNode): boolean {
@@ -585,6 +589,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param props the node properties.
      */
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+        const attrs = this.getCaptionAttributes(node, props);
+        const children = this.getCaptionChildren(node, props);
+        return React.createElement('div', attrs, children);
+    }
+
+    protected getCaptionAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const tooltip = this.getDecorationData(node, 'tooltip').filter(notEmpty).join(' • ');
         const classes = [TREE_NODE_SEGMENT_CLASS];
         if (!this.hasTrailingSuffixes(node)) {
@@ -600,7 +610,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 title: tooltip
             };
         }
-        const children: React.ReactNode[] = [];
+        return attrs;
+    }
+
+    protected getCaptionChildren(node: TreeNode, props: NodeProps): React.ReactNode {
+        const children = [];
         const caption = this.toNodeName(node);
         const highlight = this.getDecorationData(node, 'highlight')[0];
         if (highlight) {
@@ -612,7 +626,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         } else if (!highlight) {
             children.push(caption);
         }
-        return React.createElement('div', attrs, ...children);
+        return children;
     }
 
     /**
@@ -925,13 +939,17 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (this.isExpandable(node)) {
             classNames.push(EXPANDABLE_TREE_NODE_CLASS);
         }
-        if (SelectableTreeNode.isSelected(node)) {
+        if (this.rowIsSelected(node, props)) {
             classNames.push(SELECTED_CLASS);
         }
         if (SelectableTreeNode.hasFocus(node)) {
             classNames.push(FOCUS_CLASS);
         }
         return classNames;
+    }
+
+    protected rowIsSelected(node: TreeNode, props: NodeProps): boolean {
+        return SelectableTreeNode.isSelected(node);
     }
 
     /**
@@ -1096,7 +1114,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (! await this.model.collapseNode()) {
+        if (!await this.model.collapseNode()) {
             this.model.selectParent();
         }
     }
@@ -1109,7 +1127,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (! await this.model.expandNode()) {
+        if (!await this.model.expandNode()) {
             this.model.selectNextNode();
         }
     }

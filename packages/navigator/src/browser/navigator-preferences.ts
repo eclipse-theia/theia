@@ -18,6 +18,8 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 
+export const EXPLORER_COMPACT_FOLDERS = 'explorer.compactFolders';
+
 export const FileNavigatorConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
@@ -25,12 +27,19 @@ export const FileNavigatorConfigSchema: PreferenceSchema = {
             type: 'boolean',
             description: nls.localizeByDefault('Controls whether the explorer should automatically reveal and select files when opening them.'),
             default: true
+        },
+        [EXPLORER_COMPACT_FOLDERS]: {
+            type: 'boolean',
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('Controls whether the explorer should render folders in a compact form. In such a form, single child folders will be compressed in a combined tree element. Useful for Java package structures, for example.'),
+            default: true,
         }
-    }
+    },
 };
 
 export interface FileNavigatorConfiguration {
     'explorer.autoReveal': boolean;
+    [EXPLORER_COMPACT_FOLDERS]: boolean;
 }
 
 export const FileNavigatorPreferenceContribution = Symbol('FileNavigatorPreferenceContribution');

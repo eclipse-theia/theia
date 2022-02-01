@@ -147,8 +147,8 @@ export interface CompositeTreeNode extends TreeNode {
 }
 
 export namespace CompositeTreeNode {
-    export function is(node: Object | undefined): node is CompositeTreeNode {
-        return !!node && 'children' in node;
+    export function is(node: unknown): node is CompositeTreeNode {
+        return typeof node === 'object' && !!node && 'children' in node;
     }
 
     export function getFirstChild(parent: CompositeTreeNode): TreeNode | undefined {

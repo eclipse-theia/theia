@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { createTreeContainer, LabelProviderContribution, TreeProps, TreeWidget } from '@theia/core/lib/browser';
+import { createTreeContainer, LabelProviderContribution, TreeProps } from '@theia/core/lib/browser';
 import { interfaces } from '@theia/core/shared/inversify';
 import { PropertyDataService } from '../property-data-service';
 import { PropertyViewWidgetProvider } from '../property-view-widget-provider';
@@ -29,9 +29,10 @@ const RESOURCE_PROPERTY_VIEW_TREE_PROPS = {
 } as TreeProps;
 
 function createResourcePropertyViewTreeWidget(parent: interfaces.Container): ResourcePropertyViewTreeWidget {
-    const child = createTreeContainer(parent, RESOURCE_PROPERTY_VIEW_TREE_PROPS);
-    child.unbind(TreeWidget);
-    child.bind(ResourcePropertyViewTreeWidget).toSelf().inSingletonScope();
+    const child = createTreeContainer(parent, {
+        props: RESOURCE_PROPERTY_VIEW_TREE_PROPS,
+        widget: ResourcePropertyViewTreeWidget,
+    });
     return child.get(ResourcePropertyViewTreeWidget);
 }
 
