@@ -458,6 +458,7 @@ export class SidePanelHandler {
         const currentTitle = tabBar.currentTitle;
         // eslint-disable-next-line no-null/no-null
         const hideDockPanel = currentTitle === null;
+        this.updateSashState(this.container, hideDockPanel);
         let relativeSizes: number[] | undefined;
 
         if (hideDockPanel) {
@@ -657,6 +658,17 @@ export class SidePanelHandler {
     protected onWidgetRemoved(sender: DockPanel, widget: Widget): void {
         this.tabBar.removeTab(widget.title);
         this.refresh();
+    }
+
+    protected updateSashState(sidePanelElement: Panel | null, sidePanelCollapsed: boolean): void {
+        if (sidePanelElement) {
+            // Hide the sash when the left/right side panel is collapsed
+            if (sidePanelElement.id === 'theia-left-content-panel' && sidePanelElement.node.nextElementSibling) {
+                sidePanelElement.node.nextElementSibling.classList.toggle('sash-hidden', sidePanelCollapsed);
+            } else if (sidePanelElement.id === 'theia-right-content-panel' && sidePanelElement.node.previousElementSibling) {
+                sidePanelElement.node.previousElementSibling.classList.toggle('sash-hidden', sidePanelCollapsed);
+            }
+        }
     }
 
 }

@@ -63,14 +63,6 @@
     min-height: var(--theia-sash-width);
 }
 
-.p-SplitPanel[data-orientation='vertical'] > .p-SplitPanel-handle.sash-hidden {
-    visibility: hidden;
-}
-
-.p-SplitPanel[data-orientation='vertical'] > .p-SplitPanel-handle.sash-hidden::after {
-    min-height: 0px;
-}
-
 .theia-view-container .part {
     height: 100%;
 }
