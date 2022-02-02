@@ -34,7 +34,7 @@ import debounce = require('p-debounce');
 import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
-import { DebugConfiguration } from '../common/debug-common';
+import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common';
 import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
@@ -817,4 +817,19 @@ export class DebugSession implements CompositeTreeElement {
             contrib.register(configType, connection);
         }
     };
+
+    /**
+     * Returns the top-most parent session that is responsible for the console. If this session uses a {@link DebugConsoleMode.Separate separate console}
+     * or does not have any parent session, undefined is returned.
+     */
+    public findConsoleParent(): DebugSession | undefined {
+        if (this.configuration.consoleMode !== DebugConsoleMode.MergeWithParent) {
+            return undefined;
+        }
+        let debugSession: DebugSession | undefined = this;
+        do {
+            debugSession = this.parentSession;
+        } while (debugSession?.parentSession && debugSession.configuration.consoleMode === DebugConsoleMode.MergeWithParent);
+        return debugSession;
+    }
 }

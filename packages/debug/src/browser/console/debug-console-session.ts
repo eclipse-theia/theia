@@ -22,7 +22,8 @@ import { DebugSession } from '../debug-session';
 import URI from '@theia/core/lib/common/uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
-import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { DebugSessionManager } from '../debug-session-manager';
 
 export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');
 
@@ -32,6 +33,8 @@ export type DebugConsoleSessionFactory = (debugSession: DebugSession) => DebugCo
 export class DebugConsoleSession extends ConsoleSession {
 
     static uri = new URI().withScheme('debugconsole');
+
+    @inject(DebugSessionManager) protected readonly sessionManager: DebugSessionManager;
 
     protected items: ConsoleItem[] = [];
 
@@ -86,18 +89,46 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     protected async completions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList | undefined> {
-        const session = this.debugSession;
-        if (session && session.capabilities.supportsCompletionsRequest) {
+        const completionSession = this.findCompletionSession();
+        if (completionSession) {
             const column = position.column;
             const lineNumber = position.lineNumber;
             const word = model.getWordAtPosition({ column, lineNumber });
             const overwriteBefore = word ? word.word.length : 0;
             const text = model.getValue();
-            const items = await session.completions(text, column, lineNumber);
+            const items = await completionSession.completions(text, column, lineNumber);
             const suggestions = items.map(item => this.asCompletionItem(text, position, overwriteBefore, item));
             return { suggestions };
         }
         return undefined;
+    }
+
+    protected findCurrentSession(): DebugSession | undefined {
+        const currentSession = this.sessionManager.currentSession;
+        if (!currentSession) {
+            return undefined;
+        }
+        if (currentSession.id === this.debugSession.id) {
+            // perfect match
+            return this.debugSession;
+        }
+        const parentSession = currentSession.findConsoleParent();
+        if (parentSession?.id === this.debugSession.id) {
+            // child of our session
+            return currentSession;
+        }
+        return undefined;
+    }
+
+    protected findCompletionSession(): DebugSession | undefined {
+        let completionSession: DebugSession | undefined = this.findCurrentSession();
+        while (completionSession !== undefined) {
+            if (completionSession.capabilities.supportsCompletionsRequest) {
+                return completionSession;
+            }
+            completionSession = completionSession.parentSession;
+        }
+        return completionSession;
     }
 
     protected asCompletionItem(text: string, position: monaco.Position, overwriteBefore: number, item: DebugProtocol.CompletionItem): monaco.languages.CompletionItem {
@@ -112,7 +143,7 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     async execute(value: string): Promise<void> {
-        const expression = new ExpressionItem(value, () => this.debugSession);
+        const expression = new ExpressionItem(value, () => this.findCurrentSession());
         this.items.push(expression);
         await expression.evaluate();
         this.fireDidChange();
