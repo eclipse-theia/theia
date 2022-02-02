@@ -1,0 +1,38 @@
+{
+  "name": "@theia/playwright",
+  "version": "1.22.1",
+  "description": "System tests for Theia",
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "scripts": {
+    "prepare": "yarn clean && yarn build",
+    "clean": "rimraf lib",
+    "build": "tsc --incremental && yarn lint && npx playwright install chromium",
+    "theia:start": "yarn --cwd ../browser start",
+    "lint": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests",
+    "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests --fix",
+    "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",
+    "ui-tests-headful": "yarn && playwright test --config=./configs/playwright.headful.config.ts",
+    "ui-tests-report-generate": "allure generate ./allure-results --clean -o allure-results/allure-report",
+    "ui-tests-report": "yarn ui-tests-report-generate && allure open allure-results/allure-report"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@playwright/test": "1.17.1",
+    "fs-extra": "^9.0.8"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.8",
+    "allure-commandline": "^2.13.8",
+    "allure-playwright": "^2.0.0-beta.14"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "lib",
+    "baseUrl": ".",
+    "rootDir": "."
+  },
+  "include": [
+    "src",
+    "tests",
+    "configs"
+  ],
+  "references": []
+}
