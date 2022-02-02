@@ -20,7 +20,7 @@ import {
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
     StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget, codicon, ViewContainerPart
 } from '@theia/core/lib/browser';
-import { ViewContainer, View, ViewWelcome } from '../../../common';
+import { ViewContainer, View, ViewWelcome, PluginViewType } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
@@ -31,7 +31,7 @@ import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/d
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ViewContextKeyService } from './view-context-key-service';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
@@ -40,6 +40,11 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
+
+import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
+import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { v4 } from 'uuid';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -94,6 +99,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
+
+    private readonly webviewViewResolvers = new Map<string, WebviewViewResolver>();
 
     @postConstruct()
     protected init(): void {
@@ -333,6 +340,63 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    async registerWebviewView(viewId: string, resolver: WebviewViewResolver): Promise<Disposable> {
+        if (this.webviewViewResolvers.has(viewId)) {
+            throw new Error(`View resolver already registered for ${viewId}`);
+        }
+        this.webviewViewResolvers.set(viewId, resolver);
+
+        const webviewView = await this.createNewWebviewView();
+        const token = CancellationToken.None;
+        this.getView(viewId).then(async view => {
+            if (view) {
+                if (view.isVisible) {
+                    await this.prepareView(view, webviewView.webview.identifier.id);
+                } else {
+                    const toDisposeOnDidExpandView = new DisposableCollection(this.onDidExpandView(async id => {
+                        if (id === viewId) {
+                            dispose();
+                            await this.prepareView(view, webviewView.webview.identifier.id);
+                        }
+                    }));
+                    const dispose = () => toDisposeOnDidExpandView.dispose();
+                    view.disposed.connect(dispose);
+                    toDisposeOnDidExpandView.push(Disposable.create(() => view.disposed.disconnect(dispose)));
+                }
+            }
+        });
+
+        resolver.resolve(webviewView, token);
+
+        return Disposable.create(() => {
+            this.webviewViewResolvers.delete(viewId);
+        });
+    }
+
+    async createNewWebviewView(): Promise<WebviewView> {
+        const webview = await this.widgetManager.getOrCreateWidget<WebviewWidget>(
+            WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: v4() });
+        webview.setContentOptions({ allowScripts: true });
+
+        let _description: string | undefined;
+
+        return {
+            webview,
+
+            get onDidChangeVisibility(): Event<boolean> { return webview.onDidChangeVisibility; },
+            get onDidDispose(): Event<void> { return webview.onDidDispose; },
+
+            get title(): string | undefined { return webview.title.label; },
+            set title(value: string | undefined) { webview.title.label = value || ''; },
+
+            get description(): string | undefined { return _description; },
+            set description(value: string | undefined) { _description = value; },
+
+            dispose: webview.dispose,
+            show: webview.show
+        };
+    }
+
     registerViewWelcome(viewWelcome: ViewWelcome): Disposable {
         const toDispose = new DisposableCollection();
 
@@ -409,7 +473,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return this.getView(viewId);
     }
 
-    protected async prepareView(widget: PluginViewWidget): Promise<void> {
+    protected async prepareView(widget: PluginViewWidget, webviewId?: string): Promise<void> {
         const data = this.views.get(widget.options.viewId);
         if (!data) {
             return;
@@ -419,7 +483,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             widget.title.label = view.name;
         }
         const currentDataWidget = widget.widgets[0];
-        const viewDataWidget = await this.createViewDataWidget(view.id);
+        const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
         if (widget.isDisposed) {
             // eslint-disable-next-line no-unused-expressions
             viewDataWidget?.dispose();
@@ -701,8 +765,12 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
-    protected async createViewDataWidget(viewId: string): Promise<Widget | undefined> {
+    protected async createViewDataWidget(viewId: string, webviewId?: string): Promise<Widget | undefined> {
         const view = this.views.get(viewId);
+        if (view?.[1]?.type === PluginViewType.Webview) {
+            const webviewWidget = this.widgetManager.getWidget(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: webviewId });
+            return webviewWidget;
+        }
         const provider = this.viewDataProviders.get(viewId);
         if (!view || !provider) {
             return undefined;
