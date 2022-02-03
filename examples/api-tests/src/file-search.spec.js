@@ -31,6 +31,9 @@ describe('file-search', function () {
 
         describe('#compareItems', () => {
 
+            /** @type import ('@theia/file-search/lib/browser/quick-file-open').QuickFileOpenService['compareItems']*/
+            const sortByCompareItems = (a, b) => quickFileOpenService['compareItems'](a, b);
+
             it('should compare two quick-open-items by `label`', () => {
 
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
@@ -38,8 +41,8 @@ describe('file-search', function () {
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const b = { label: 'b', uri: new Uri.default('a') };
 
-                assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');
+                assert.deepEqual([a, b].sort(sortByCompareItems), [a, b], 'a should be before b');
+                assert.deepEqual([b, a].sort(sortByCompareItems), [a, b], 'a should be before b');
                 assert.equal(quickFileOpenService['compareItems'](a, a), 0, 'items should be equal');
             });
 
@@ -49,10 +52,23 @@ describe('file-search', function () {
                 const a = { label: 'a', uri: new Uri.default('a') };
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const b = { label: 'a', uri: new Uri.default('b') };
+                assert.deepEqual([a, b].sort(sortByCompareItems), [a, b], 'a should be before b');
+                assert.deepEqual([b, a].sort(sortByCompareItems), [a, b], 'a should be before b');
+                assert.equal(sortByCompareItems(a, a), 0, 'items should be equal');
+            });
 
-                assert.equal(quickFileOpenService['compareItems'](a, b), 1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](b, a), -1, 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](a, a), 0, 'items should be equal');
+            it('should not place very good matches above exact matches', () => {
+                const exactMatch = 'aa_bb_cc_dd.file';
+                const veryGoodMatch = 'aa_bb_cc_ed_fd.file';
+                quickFileOpenService['filterAndRange'] = { filter: exactMatch };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const a = { label: exactMatch, uri: new Uri.default(exactMatch) };
+                /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
+                const b = { label: veryGoodMatch, uri: new Uri.default(veryGoodMatch) };
+                assert.deepEqual([a, b].sort(sortByCompareItems), [a, b], 'a should be before b');
+                assert.deepEqual([b, a].sort(sortByCompareItems), [a, b], 'a should be before b');
+                assert.equal(sortByCompareItems(a, a), 0, 'items should be equal');
+                quickFileOpenService['filterAndRange'] = quickFileOpenService['filterAndRangeDefault'];
             });
 
         });

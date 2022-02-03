@@ -19,7 +19,7 @@ import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProv
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import { CancellationToken, Command } from '@theia/core/lib/common';
+import { CancellationToken, Command, MAX_SAFE_INTEGER } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
@@ -198,7 +198,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
                 sortedResults.sort((a, b) => this.compareItems(a, b));
 
                 if (sortedResults.length > 0) {
-                    result.unshift({ type: 'separator', label: 'file results' });
+                    result.push({ type: 'separator', label: 'file results' });
                     result.push(...sortedResults);
                 }
 
@@ -219,6 +219,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
             return roots.length !== 0 ? recentlyUsedItems : [];
         }
     }
+
     protected compareItems(
         left: FileQuickPickItem,
         right: FileQuickPickItem): number {
@@ -233,47 +234,35 @@ export class QuickFileOpenService implements QuickAccessProvider {
             if (!str) {
                 return 0;
             }
-            // Adjust for whitespaces in the query.
-            const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
-            const queryJoin = querySplit.join('');
 
-            // Check exact and partial exact matches.
             let exactMatch = true;
-            let partialMatch = false;
-            querySplit.forEach(part => {
+            const partialMatches = querySplit.reduce((matched, part) => {
                 const partMatches = str.includes(part);
                 exactMatch = exactMatch && partMatches;
-                partialMatch = partialMatch || partMatches;
-            });
+                return partMatches ? matched + QuickFileOpenService.Scores.partial : matched;
+            }, 0);
 
             // Check fuzzy matches.
-            const fuzzyMatch = fuzzy.match(queryJoin, str);
-            let matchScore = 0;
-            // eslint-disable-next-line no-null/no-null
-            if (!!fuzzyMatch && matchScore !== null) {
-                matchScore = (fuzzyMatch.score === Infinity) ? QuickFileOpenService.Scores.max : fuzzyMatch.score;
+            const fuzzyMatch = fuzzy.match(queryJoin, str) ?? { score: 0 };
+            if (fuzzyMatch.score === Infinity && exactMatch) {
+                return MAX_SAFE_INTEGER;
             }
 
-            // Prioritize exact matches, then partial exact matches, then fuzzy matches.
-            if (exactMatch) {
-                return matchScore + QuickFileOpenService.Scores.exact;
-            } else if (partialMatch) {
-                return matchScore + QuickFileOpenService.Scores.partial;
-            } else {
-                // eslint-disable-next-line no-null/no-null
-                return (fuzzyMatch === null) ? 0 : matchScore;
-            }
+            return fuzzyMatch.score + partialMatches + (exactMatch ? QuickFileOpenService.Scores.exact : 0);
         }
 
         const query: string = normalize(this.filterAndRange.filter);
+        // Adjust for whitespaces in the query.
+        const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
+        const queryJoin = querySplit.join('');
 
         const compareByLabelScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.label) - score(l.label);
         const compareByLabelIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.indexOf(query) - l.label.indexOf(query);
-        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => r.label.localeCompare(l.label);
+        const compareByLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.label.localeCompare(r.label);
 
         const compareByPathScore = (l: FileQuickPickItem, r: FileQuickPickItem) => score(r.uri.path.toString()) - score(l.uri.path.toString());
         const compareByPathIndex = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().indexOf(query) - l.uri.path.toString().indexOf(query);
-        const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => r.uri.path.toString().localeCompare(l.uri.path.toString());
+        const compareByPathLabel = (l: FileQuickPickItem, r: FileQuickPickItem) => l.uri.path.toString().localeCompare(r.uri.path.toString());
 
         return compareWithDiscriminators(left, right, compareByLabelScore, compareByLabelIndex, compareByLabel, compareByPathScore, compareByPathIndex, compareByPathLabel);
     }
