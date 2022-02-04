@@ -48,9 +48,12 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
+import { WorkspaceTrustService } from './workspace-trust-service';
+import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
+    bindWorkspaceTrustPreferences(bind);
 
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WorkspaceService);
@@ -100,4 +103,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
+
+    bind(WorkspaceTrustService).toSelf().inSingletonScope();
 });

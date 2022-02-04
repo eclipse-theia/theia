@@ -571,6 +571,15 @@ export function createAPIFactory(
             },
             registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
                 return timelineExt.registerTimelineProvider(plugin, scheme, provider);
+            },
+            get isTrusted(): boolean {
+                return workspaceExt.trusted;
+            },
+            async requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {
+                return workspaceExt.requestWorkspaceTrust(options);
+            },
+            get onDidGrantWorkspaceTrust(): theia.Event<void> {
+                return workspaceExt.onDidGrantWorkspaceTrust;
             }
         };
 

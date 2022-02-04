@@ -56,6 +56,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     private searchInWorkspaceEmitter: Emitter<{ result?: theia.TextSearchResult, searchId: number }> = new Emitter<{ result?: theia.TextSearchResult, searchId: number }>();
     protected workspaceSearchSequence: number = 0;
 
+    private _trusted?: boolean = undefined;
+    private didGrantWorkspaceTrustEmitter = new Emitter<void>();
+    public readonly onDidGrantWorkspaceTrust: Event<void> = this.didGrantWorkspaceTrustEmitter.event;
+
     constructor(rpc: RPCProtocol,
         private editorsAndDocuments: EditorsAndDocumentsExtImpl,
         private messageService: MessageRegistryExt) {
@@ -418,4 +422,23 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             this.workspaceFileUri = URI.parse(workspace.resource.toString());
         }
     }
+
+    get trusted(): boolean {
+        if (this._trusted === undefined) {
+            this.requestWorkspaceTrust();
+        }
+        return !!this._trusted;
+    }
+
+    requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {
+        return this.proxy.$requestWorkspaceTrust(options);
+    }
+
+    $onWorkspaceTrustChanged(trust: boolean | undefined): void {
+        if (!this._trusted && trust) {
+            this._trusted = trust;
+            this.didGrantWorkspaceTrustEmitter.fire();
+        }
+    }
+
 }
