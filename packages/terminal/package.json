@@ -6,7 +6,6 @@
     "@theia/core": "1.22.1",
     "@theia/editor": "1.22.1",
     "@theia/filesystem": "1.22.1",
-    "@theia/monaco": "1.22.1",
     "@theia/process": "1.22.1",
     "@theia/workspace": "1.22.1",
     "xterm": "^4.16.0",

@@ -29,9 +29,6 @@
       "path": "../plugin-ext"
     },
     {
-      "path": "../preferences"
-    },
-    {
       "path": "../workspace"
     }
   ]
