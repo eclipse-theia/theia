@@ -173,6 +173,7 @@ import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
 import { CustomEditorsExtImpl } from './custom-editors';
+import { WebviewViewsExtImpl } from './webview-views';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -211,6 +212,7 @@ export function createAPIFactory(
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
+    const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -409,6 +411,15 @@ export function createAPIFactory(
                 provider: theia.CustomTextEditorProvider | theia.CustomReadonlyEditorProvider,
                 options: { webviewOptions?: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument?: boolean } = {}): theia.Disposable {
                 return customEditorExt.registerCustomEditorProvider(viewType, provider, options, plugin);
+            },
+            registerWebviewViewProvider(viewType: string,
+                provider: theia.WebviewViewProvider,
+                options?: {
+                    webviewOptions?: {
+                        retainContextWhenHidden?: boolean
+                    }
+                }): theia.Disposable {
+                return webviewViewsExt.registerWebviewViewProvider(viewType, provider, plugin, options?.webviewOptions);
             },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();

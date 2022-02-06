@@ -1551,6 +1551,27 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface WebviewViewsExt {
+    $resolveWebviewView(handle: string,
+        viewType: string,
+        title: string | undefined,
+        state: any,
+        cancellation: CancellationToken): Promise<void>;
+    $onDidChangeWebviewViewVisibility(handle: string, visible: boolean): void;
+    $disposeWebviewView(handle: string): void;
+}
+
+export interface WebviewViewsMain extends Disposable {
+    $registerWebviewViewProvider(viewType: string,
+        options: { retainContextWhenHidden?: boolean, serializeBuffersForPostMessage: boolean }): void;
+    $unregisterWebviewViewProvider(viewType: string): void;
+
+    $setWebviewViewTitle(handle: string, value: string | undefined): void;
+    $setWebviewViewDescription(handle: string, value: string | undefined): void;
+
+    $show(handle: string, preserveFocus: boolean): void;
+}
+
 export interface CustomEditorsExt {
     $resolveWebviewEditor(
         resource: UriComponents,
@@ -1745,6 +1766,7 @@ export const PLUGIN_RPC_CONTEXT = {
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
     CUSTOM_EDITORS_MAIN: createProxyIdentifier<CustomEditorsMain>('CustomEditorsMain'),
+    WEBVIEW_VIEWS_MAIN: createProxyIdentifier<WebviewViewsMain>('WebviewViewsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
@@ -1779,6 +1801,7 @@ export const MAIN_RPC_CONTEXT = {
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
     CUSTOM_EDITORS_EXT: createProxyIdentifier<CustomEditorsExt>('CustomEditorsExt'),
+    WEBVIEW_VIEWS_EXT: createProxyIdentifier<WebviewViewsExt>('WebviewViewsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
