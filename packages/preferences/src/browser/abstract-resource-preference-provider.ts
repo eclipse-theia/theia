@@ -130,6 +130,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
+        const asOverride = this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
+        if (asOverride?.overrideIdentifier) {
+            return [this.preferenceOverrideService.markLanguageOverride(asOverride.overrideIdentifier), asOverride.preferenceName];
+        }
         return [preferenceName];
     }
 
