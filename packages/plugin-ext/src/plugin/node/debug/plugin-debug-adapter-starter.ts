@@ -18,7 +18,7 @@ import * as net from 'net';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
 import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
 import { DebugAdapterExecutable, DebugAdapterInlineImplementation, DebugAdapterNamedPipeServer, DebugAdapterServer } from '../../types-impl';
-import { InlineDebugAdapter } from '@theia/debug/lib/node/inline-debug-adapter';
+import { InlineDebugAdapter } from './plugin-inline-debug-adapter';
 import { ProcessDebugAdapter, SocketDebugAdapter } from '@theia/debug/lib/node/stream-debug-adapter';
 const isElectron = require('is-electron');
 
