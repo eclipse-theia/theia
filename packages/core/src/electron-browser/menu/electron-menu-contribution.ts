@@ -267,7 +267,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
 
         registry.registerCommand(ElectronCommands.RELOAD, {
-            execute: () => currentWindow.reload()
+            execute: () => this.windowService.reload()
         });
         registry.registerCommand(ElectronCommands.CLOSE_WINDOW, {
             execute: () => currentWindow.close()

@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
-import { screen, globalShortcut, ipcMain, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from '../../electron-shared/electron';
+import { screen, ipcMain, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -266,7 +266,6 @@ export class ElectronMainApplication {
         electronWindow.setMenuBarVisibility(false);
         this.attachReadyToShow(electronWindow);
         this.attachSaveWindowState(electronWindow);
-        this.attachGlobalShortcuts(electronWindow);
         this.restoreMaximizedState(electronWindow, options);
         this.attachCloseListeners(electronWindow, options);
         electronRemoteMain.enable(electronWindow.webContents);
@@ -443,26 +442,6 @@ export class ElectronMainApplication {
         return screen.getAllDisplays().map(
             display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`
         ).sort().join('-');
-    }
-
-    /**
-     * Catch certain keybindings to prevent reloading the window using keyboard shortcuts.
-     */
-    protected attachGlobalShortcuts(electronWindow: BrowserWindow): void {
-        const handler = this.config.electron?.disallowReloadKeybinding
-            ? () => { }
-            : () => this.reload(electronWindow);
-        const accelerators = ['CmdOrCtrl+R', 'F5'];
-        electronWindow.on('focus', () => {
-            for (const accelerator of accelerators) {
-                globalShortcut.register(accelerator, handler);
-            }
-        });
-        electronWindow.on('blur', () => {
-            for (const accelerator of accelerators) {
-                globalShortcut.unregister(accelerator);
-            }
-        });
     }
 
     protected restoreMaximizedState(electronWindow: BrowserWindow, options: TheiaBrowserWindowOptions): void {
