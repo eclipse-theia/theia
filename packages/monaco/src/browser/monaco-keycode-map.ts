@@ -19,10 +19,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as browser from '@theia/core/lib/browser';
+import { KeyCode } from 'monaco-editor-core';
+import { OperatingSystem } from 'monaco-editor-core/esm/vs/base/common/platform';
 
-const KeyCode = monaco.KeyCode;
-
-export const KEY_CODE_MAP: monaco.KeyCode[] = [];
+export const KEY_CODE_MAP: KeyCode[] = [];
 (function (): void {
     KEY_CODE_MAP[3] = KeyCode.PauseBreak; // VK_CANCEL 0x03 Control-break processing
     KEY_CODE_MAP[8] = KeyCode.Backspace;
@@ -155,12 +155,12 @@ export const KEY_CODE_MAP: monaco.KeyCode[] = [];
         KEY_CODE_MAP[59] = KeyCode.US_SEMICOLON;
         KEY_CODE_MAP[107] = KeyCode.US_EQUAL;
         KEY_CODE_MAP[109] = KeyCode.US_MINUS;
-        if (monaco.platform.OS === monaco.platform.OperatingSystem.Macintosh) {
+        if (monaco.platform.OS === OperatingSystem.Macintosh) {
             KEY_CODE_MAP[224] = KeyCode.Meta;
         }
     } else if (browser.isWebKit) {
         KEY_CODE_MAP[91] = KeyCode.Meta;
-        if (monaco.platform.OS === monaco.platform.OperatingSystem.Macintosh) {
+        if (monaco.platform.OS === OperatingSystem.Macintosh) {
             // the two meta keys in the Mac have different key codes (91 and 93)
             KEY_CODE_MAP[93] = KeyCode.Meta;
         } else {

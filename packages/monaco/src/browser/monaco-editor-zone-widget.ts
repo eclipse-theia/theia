@@ -20,8 +20,12 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
+import { editor, IPosition, Range } from 'monaco-editor-core';
+import { EditorLayoutInfo, EditorOption } from 'monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ScrollType } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { IStandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
-export interface MonacoEditorViewZone extends monaco.editor.IViewZone {
+export interface MonacoEditorViewZone extends editor.IViewZone {
     id: string;
 }
 
@@ -32,8 +36,8 @@ export class MonacoEditorZoneWidget implements Disposable {
     readonly zoneNode = document.createElement('div');
     readonly containerNode = document.createElement('div');
 
-    protected readonly onDidLayoutChangeEmitter = new Emitter<monaco.editor.IDimension>();
-    readonly onDidLayoutChange: Event<monaco.editor.IDimension> = this.onDidLayoutChangeEmitter.event;
+    protected readonly onDidLayoutChangeEmitter = new Emitter<editor.IDimension>();
+    readonly onDidLayoutChange: Event<editor.IDimension> = this.onDidLayoutChangeEmitter.event;
 
     protected viewZone: MonacoEditorViewZone | undefined;
 
@@ -44,9 +48,12 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
+    editor: IStandaloneCodeEditor;
+
     constructor(
-        readonly editor: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
+        editorInstance: IStandaloneCodeEditor, readonly showArrow: boolean = true
     ) {
+        this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');
         this.containerNode.classList.add('zone-widget-container');
         this.zoneNode.appendChild(this.containerNode);
@@ -70,7 +77,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
-        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(EditorOption.lineHeight);
         // adjust heightInLines to viewport
         const maxHeightInLines = Math.max(12, (this.editor.getLayoutInfo().height / lineHeight) * 0.8);
         heightInLines = Math.min(heightInLines, maxHeightInLines);
@@ -80,7 +87,7 @@ export class MonacoEditorZoneWidget implements Disposable {
             this.zoneNode.style.top = '-1000px';
             const domNode = document.createElement('div');
             domNode.style.overflow = 'hidden';
-            const zone: monaco.editor.IViewZone = {
+            const zone: editor.IViewZone = {
                 domNode,
                 afterLineNumber,
                 afterColumn,
@@ -104,7 +111,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
                 this.toHide.push(this.arrow);
             }
-            const widget: monaco.editor.IOverlayWidget = {
+            const widget: editor.IOverlayWidget = {
                 getId: () => 'editor-zone-widget-' + id,
                 getDomNode: () => this.zoneNode,
                 // eslint-disable-next-line no-null/no-null
@@ -120,7 +127,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         const model = this.editor.getModel();
         if (model) {
             const revealLineNumber = Math.min(model.getLineCount(), Math.max(1, afterLineNumber + 1));
-            this.editor.revealLine(revealLineNumber, monaco.editor.ScrollType.Smooth);
+            this.editor.revealLine(revealLineNumber, ScrollType.Smooth);
         }
     }
 
@@ -151,7 +158,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         height: number,
         frameWidth: number
     } {
-        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(EditorOption.lineHeight);
         const frameWidth = this._options && this._options.frameWidth;
         const frameThickness = this._options && this._options.showFrame ? Math.round(lineHeight / 9) : 0;
         return {
@@ -160,15 +167,15 @@ export class MonacoEditorZoneWidget implements Disposable {
         };
     }
 
-    protected updateWidth(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): void {
+    protected updateWidth(info: EditorLayoutInfo = this.editor.getLayoutInfo()): void {
         const width = this.computeWidth(info);
         this.zoneNode.style.width = width + 'px';
         this.zoneNode.style.left = this.computeLeft(info) + 'px';
     }
-    protected computeWidth(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeWidth(info: EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         return info.width - info.minimap.minimapWidth - info.verticalScrollbarWidth;
     }
-    protected computeLeft(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeLeft(info: EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         // If minimap is to the left, we move beyond it
         if (info.minimap.minimapWidth > 0 && info.minimap.minimapLeft === 0) {
             return info.minimap.minimapWidth;
@@ -198,8 +205,8 @@ class Arrow implements Disposable {
     private _height: number = -1;
 
     constructor(
-        private readonly _editor: monaco.editor.ICodeEditor
-    ) {}
+        private readonly _editor: editor.ICodeEditor
+    ) { }
 
     dispose(): void {
         this.hide();
@@ -223,10 +230,10 @@ class Arrow implements Disposable {
         (<CSSStyleSheet>style.sheet).insertRule(selector + '{' + cssText + '}', 0);
     }
 
-    show(where: monaco.IPosition): void {
+    show(where: IPosition): void {
         this.decorations = this._editor.deltaDecorations(
             this.decorations,
-            [{ range: monaco.Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
+            [{ range: Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
         );
     }
 

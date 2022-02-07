@@ -16,10 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
-
-import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
-import IDiffNavigatorOptions = monaco.editor.IDiffNavigatorOptions;
-
+import { IStandaloneDiffEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { createDiffNavigator, IDiffNavigatorOptions } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
 @injectable()
 export class MonacoDiffNavigatorFactory {
 
@@ -33,7 +31,7 @@ export class MonacoDiffNavigatorFactory {
     };
 
     createdDiffNavigator(editor: IStandaloneDiffEditor, options?: IDiffNavigatorOptions): DiffNavigator {
-        const navigator = monaco.editor.createDiffNavigator(editor, options);
+        const navigator = createDiffNavigator(editor, options);
         const ensureInitialized = (fwd: boolean) => {
             if (navigator.nextIdx < -1) {
                 navigator._initIdx(fwd);

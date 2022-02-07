@@ -19,12 +19,15 @@ import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
-import IReference = monaco.editor.IReference;
+import { Uri } from 'monaco-editor-core';
+import { IDisposable, IReference } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ITextModelService, IResolvedTextEditorModel, ITextModelContentProvider } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { ITextModelUpdateOptions } from 'monaco-editor-core/esm/vs/editor/common/model';
 export { IReference };
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
@@ -39,7 +42,7 @@ export interface MonacoEditorModelFactory {
 }
 
 @injectable()
-export class MonacoTextModelService implements monaco.editor.ITextModelService {
+export class MonacoTextModelService implements ITextModelService {
 
     protected readonly _ready = new Deferred<void>();
     /**
@@ -110,7 +113,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return this._models.onDidCreate;
     }
 
-    createModelReference(raw: monaco.Uri | URI): Promise<IReference<MonacoEditorModel>> {
+    createModelReference(raw: Uri | URI): Promise<IReference<IResolvedTextEditorModel>> {
         return this._models.acquire(raw.toString());
     }
 
@@ -131,7 +134,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger, this.editorPreferences);
     }
 
-    protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {
+    protected readonly modelOptions: { [name: string]: (keyof ITextModelUpdateOptions | undefined) } = {
         'editor.tabSize': 'tabSize',
         'editor.insertSpaces': 'insertSpaces'
     };
@@ -149,7 +152,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
             }
             const modelOption = this.modelOptions[change.preferenceName];
             if (modelOption) {
-                const options: monaco.editor.ITextModelUpdateOptions = {};
+                const options: ITextModelUpdateOptions = {};
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 options[modelOption] = change.newValue as any;
                 model.textEditorModel.updateOptions(options);
@@ -162,9 +165,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     /** @deprecated pass MonacoEditorModel instead  */
-    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(model: MonacoEditorModel): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(arg: string | MonacoEditorModel): monaco.editor.ITextModelUpdateOptions {
+    protected getModelOptions(uri: string): ITextModelUpdateOptions;
+    protected getModelOptions(model: MonacoEditorModel): ITextModelUpdateOptions;
+    protected getModelOptions(arg: string | MonacoEditorModel): ITextModelUpdateOptions {
         const uri = typeof arg === 'string' ? arg : arg.uri;
         const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
         return {
@@ -173,7 +176,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         };
     }
 
-    registerTextModelContentProvider(scheme: string, provider: monaco.editor.ITextModelContentProvider): monaco.IDisposable {
+    registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
         return {
             dispose(): void {
                 // no-op

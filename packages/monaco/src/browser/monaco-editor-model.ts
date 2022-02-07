@@ -24,18 +24,19 @@ import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
+import { IIdentifiedSingleEditOperation, ITextBufferFactory } from 'monaco-editor-core/esm/vs/editor/common/model';
+import { ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { editor, IEvent, Uri } from 'monaco-editor-core';
 
 export {
     TextDocumentSaveReason
 };
 
-type ITextEditorModel = monaco.editor.ITextEditorModel;
-
 export interface WillSaveMonacoModelEvent {
     readonly model: MonacoEditorModel;
     readonly reason: TextDocumentSaveReason;
     readonly options?: SaveOptions;
-    waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
+    waitUntil(thenable: Thenable<IIdentifiedSingleEditOperation[]>): void;
 }
 
 export interface MonacoModelContentChangedEvent {
@@ -54,7 +55,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     readonly onWillSaveLoopTimeOut = 1500;
     protected bufferSavedVersionId: number;
 
-    protected model: monaco.editor.IModel;
+    protected model: editor.ITextModel;
     protected readonly resolveModel: Promise<void>;
 
     protected readonly toDispose = new DisposableCollection();
@@ -63,7 +64,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onDidChangeContentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
-    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
+    protected readonly onDidSaveModelEmitter = new Emitter<editor.ITextModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
 
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
@@ -147,9 +148,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * Only this method can create an instance of `monaco.editor.IModel`,
      * there should not be other calls to `monaco.editor.createModel`.
      */
-    protected initialize(value: string | monaco.editor.ITextBufferFactory): void {
+    protected initialize(value: string | ITextBufferFactory): void {
         if (!this.toDispose.disposed) {
-            const uri = monaco.Uri.parse(this.resource.uri.toString());
+            const uri = Uri.parse(this.resource.uri.toString());
             let firstLine;
             if (typeof value === 'string') {
                 firstLine = value;
@@ -273,11 +274,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.resource.saveContents === undefined;
     }
 
-    get onDispose(): monaco.IEvent<void> {
+    get onDispose(): IEvent<void> {
         return this.toDispose.onDispose;
     }
 
-    get textEditorModel(): monaco.editor.IModel {
+    get textEditorModel(): editor.ITextModel {
         return this.model;
     }
 

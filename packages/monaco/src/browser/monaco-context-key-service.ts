@@ -15,16 +15,18 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
+import { VSCodeContextKeyService as MonacoContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { IContext } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 
 @injectable()
-export class MonacoContextKeyService implements ContextKeyService {
+export class MonacoContextKeyService implements TheiaContextKeyService {
     protected readonly onDidChangeEmitter = new Emitter<ContextKeyChangeEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+    protected readonly contextKeyService: MonacoContextKeyService;
 
     @postConstruct()
     protected init(): void {
@@ -39,7 +41,7 @@ export class MonacoContextKeyService implements ContextKeyService {
         return this.contextKeyService.createKey(key, defaultValue);
     }
 
-    activeContext?: HTMLElement | monaco.contextKeyService.IContext;
+    activeContext?: HTMLElement | IContext;
 
     match(expression: string, context?: HTMLElement): boolean {
         const parsed = this.parse(expression);
@@ -47,10 +49,10 @@ export class MonacoContextKeyService implements ContextKeyService {
         if (!ctx) {
             return this.contextKeyService.contextMatchesRules(parsed);
         }
-        return monaco.keybindings.KeybindingResolver.contextMatchesRules(ctx, parsed);
+        return monaco.keybindings.KeybindingResolver.contextMatchesRules(ctx, parsed); // Looks like this will have to go - it's no longer static?
     }
 
-    protected identifyContext(callersContext?: HTMLElement | monaco.contextKeyService.IContext): monaco.contextKeyService.IContext | undefined {
+    protected identifyContext(callersContext?: HTMLElement | IContext): IContext | undefined {
         if (callersContext && 'getValue' in callersContext) {
             return callersContext;
         } else if (this.activeContext && 'getValue' in this.activeContext) {

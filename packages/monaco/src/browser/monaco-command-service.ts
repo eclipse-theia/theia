@@ -18,8 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import ICommandEvent = monaco.commands.ICommandEvent;
-import ICommandService = monaco.commands.ICommandService;
+import { ICommandEvent, ICommandService } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneCommandService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IEvent } from 'monaco-editor-core';
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {
@@ -36,7 +37,7 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.onDidExecuteCommandEmitter
     );
 
-    protected delegate: monaco.services.StandaloneCommandService | undefined;
+    protected delegate: StandaloneCommandService | undefined;
     protected readonly delegateListeners = new DisposableCollection();
 
     constructor(
@@ -50,15 +51,15 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.toDispose.dispose();
     }
 
-    get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
+    get onWillExecuteCommand(): IEvent<ICommandEvent> {
         return this.onWillExecuteCommandEmitter.event;
     }
 
-    get onDidExecuteCommand(): monaco.IEvent<ICommandEvent> {
+    get onDidExecuteCommand(): IEvent<ICommandEvent> {
         return this.onDidExecuteCommandEmitter.event;
     }
 
-    setDelegate(delegate: monaco.services.StandaloneCommandService | undefined): void {
+    setDelegate(delegate: StandaloneCommandService | undefined): void {
         if (this.toDispose.disposed) {
             return;
         }
@@ -66,10 +67,10 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.toDispose.push(this.delegateListeners);
         this.delegate = delegate;
         if (this.delegate) {
-            this.delegateListeners.push(this.delegate['_onWillExecuteCommand'].event(event =>
+            this.delegateListeners.push(this.delegate.onWillExecuteCommand(event =>
                 this.onWillExecuteCommandEmitter.fire(event)
             ));
-            this.delegateListeners.push(this.delegate['_onDidExecuteCommand'].event(event =>
+            this.delegateListeners.push(this.delegate.onDidExecuteCommand(event =>
                 this.onDidExecuteCommandEmitter.fire(event)
             ));
         }

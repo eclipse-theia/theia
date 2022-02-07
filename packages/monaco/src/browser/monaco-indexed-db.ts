@@ -17,6 +17,7 @@
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { BuiltinThemeProvider, Theme, ThemeService, ThemeServiceSymbol } from '@theia/core/lib/browser/theming';
+import { editor } from 'monaco-editor-core';
 type ThemeMix = import('./textmate/monaco-theme-registry').ThemeMix;
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;
@@ -36,7 +37,7 @@ export interface MonacoThemeState {
     id: string,
     label: string,
     description?: string,
-    uiTheme: monaco.editor.BuiltinTheme
+    uiTheme: editor.BuiltinTheme
     data: ThemeMix
 }
 export namespace MonacoThemeState {

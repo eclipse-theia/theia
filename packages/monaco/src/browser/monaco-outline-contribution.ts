@@ -15,13 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import DocumentSymbol = monaco.languages.DocumentSymbol;
-import SymbolKind = monaco.languages.SymbolKind;
 import { FrontendApplicationContribution, FrontendApplication, TreeNode } from '@theia/core/lib/browser';
 import { Range, EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import DocumentSymbolProviderRegistry = monaco.modes.DocumentSymbolProviderRegistry;
-import CancellationTokenSource = monaco.CancellationTokenSource;
-import CancellationToken = monaco.CancellationToken;
 import { DisposableCollection, Disposable } from '@theia/core';
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
@@ -29,6 +24,8 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoEditor } from './monaco-editor';
 
 import debounce = require('@theia/core/shared/lodash.debounce');
+import { CancellationToken, CancellationTokenSource, editor, IRange } from 'monaco-editor-core';
+import { DocumentSymbol, SymbolKind } from 'monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
@@ -118,7 +115,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.publish(roots || []);
     }
 
-    protected async createRoots(model: monaco.editor.IModel, token: CancellationToken, editorSelection?: Range): Promise<MonacoOutlineSymbolInformationNode[]> {
+    protected async createRoots(model: editor.ITextModel, token: CancellationToken, editorSelection?: Range): Promise<MonacoOutlineSymbolInformationNode[]> {
         if (this.roots && this.roots.length > 0) {
             // Reset the selection on the tree nodes, so that we can apply the new ones based on the `editorSelection`.
             const resetSelection = (node: MonacoOutlineSymbolInformationNode) => {
@@ -233,7 +230,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     /**
      * `monaco` to LSP `Range` converter. Converts the `1-based` location indices into `0-based` ones.
      */
-    protected asRange(range: monaco.IRange): Range {
+    protected asRange(range: IRange): Range {
         const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
         return {
             start: {

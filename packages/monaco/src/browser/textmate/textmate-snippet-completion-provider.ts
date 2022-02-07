@@ -14,12 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { CancellationToken, editor, Position } from 'monaco-editor-core';
+import { CompletionContext, CompletionItem, CompletionItemKind, CompletionItemProvider, CompletionList } from 'monaco-editor-core/esm/vs/editor/common/languages';
+
 /**
  * @deprecated use MonacoSnippetSuggestProvider instead
  */
-export class TextmateSnippetCompletionProvider implements monaco.languages.CompletionItemProvider {
+export class TextmateSnippetCompletionProvider implements CompletionItemProvider {
 
-    private items: monaco.languages.CompletionItem[];
+    private items: CompletionItem[];
 
     constructor(protected config: TextmateSnippets, protected mdLanguage: string = '') {
         this.items = [];
@@ -29,7 +32,7 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
             this.items.push({
                 label: textmateSnippet.prefix,
                 detail: textmateSnippet.description,
-                kind: monaco.languages.CompletionItemKind.Snippet,
+                kind: CompletionItemKind.Snippet,
                 documentation: {
                     value: '```' + this.mdLanguage + '\n' + this.replaceVariables(insertText) + '```'
                 },
@@ -40,13 +43,13 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
     }
 
     protected replaceVariables(textmateSnippet: string): string {
-        return new monaco.snippetParser.SnippetParser().parse(textmateSnippet).toString();
+        return new monaco.snippetParser.SnippetParser().parse(textmateSnippet).toString(); // Not static anymore...
     }
 
-    provideCompletionItems(document: monaco.editor.ITextModel,
-        position: monaco.Position,
-        context: monaco.languages.CompletionContext,
-        token: monaco.CancellationToken): monaco.languages.CompletionList {
+    provideCompletionItems(document: editor.ITextModel,
+        position: Position,
+        context: CompletionContext,
+        token: CancellationToken): CompletionList {
         return {
             suggestions: this.items
         };

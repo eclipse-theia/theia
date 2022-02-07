@@ -21,11 +21,10 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-
-import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
-import IDiffEditorConstructionOptions = monaco.editor.IDiffEditorConstructionOptions;
-import IDiffNavigatorOptions = monaco.editor.IDiffNavigatorOptions;
-import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
+import { IDiffEditorConstructionOptions } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { IStandaloneDiffEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { IDiffNavigatorOptions, createDiffEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
+import { IEditorOverrideServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions, IDiffNavigatorOptions {
@@ -62,8 +61,8 @@ export class MonacoDiffEditor extends MonacoEditor {
         return this._diffNavigator;
     }
 
-    protected create(options?: IDiffEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
-        this._diffEditor = monaco.editor.createDiffEditor(this.node, <IDiffEditorConstructionOptions>{
+    protected create(options?: IDiffEditorConstructionOptions, override?: IEditorOverrideServices): Disposable {
+        this._diffEditor = createDiffEditor(this.node, <IDiffEditorConstructionOptions>{
             ...options,
             fixedOverflowWidgets: true
         }, override);

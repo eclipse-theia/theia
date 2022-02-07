@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ColorRegistry, ColorDefinition, Color } from '@theia/core/lib/browser/color-registry';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { ColorDefaults, ColorValue } from 'monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
 
 @injectable()
 export class MonacoColorRegistry extends ColorRegistry {
@@ -36,20 +37,21 @@ export class MonacoColorRegistry extends ColorRegistry {
     }
 
     protected doRegister(definition: ColorDefinition): Disposable {
-        let defaults: monaco.color.ColorDefaults | undefined;
+        let defaults: ColorDefaults | undefined;
         if (definition.defaults) {
-            defaults = {};
-            defaults.dark = this.toColor(definition.defaults.dark);
-            defaults.light = this.toColor(definition.defaults.light);
-            defaults.hc = this.toColor(definition.defaults.hc);
+            defaults = {
+                dark: this.toColor(definition.defaults.dark),
+                light: this.toColor(definition.defaults.light),
+                hc: this.toColor(definition.defaults.hc),
+            };
         }
         const identifier = this.monacoColorRegistry.registerColor(definition.id, defaults, definition.description);
         return Disposable.create(() => this.monacoColorRegistry.deregisterColor(identifier));
     }
 
-    protected toColor(value: Color | undefined): monaco.color.ColorValue | undefined {
+    protected toColor(value: Color | undefined): ColorValue | null {
         if (!value || typeof value === 'string') {
-            return value;
+            return null; // eslint-disable-line no-null/no-null
         }
         if ('kind' in value) {
             return monaco.color[value.kind](value.v, value.f);
