@@ -4,10 +4,14 @@
 
 [1.23.0 Milestone](https://github.com/eclipse-theia/theia/milestone/31)
 
+- [plugin-ext] add more detail to logging of backend and frontend start-up, especially in plugin management [#10407](https://github.com/eclipse-theia/theia/pull/10407) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.23.0">[Breaking Changes:](#breaking_changes_1.23.0)</a>
 
 - [plugin] Deprecated `PseudoTerminalOptions`. `ExternalTerminalOptions` should be used from now on instead. [#10683](https://github.com/eclipse-theia/theia/pull/10683) - Contributed on behalf of STMicroelectronics
 - [core] Removed method `attachGlobalShortcuts` from `ElectronMainApplication`. Attaching shortcuts in that way interfered with internal shortcuts. Use internal keybindings instead of global shortcuts. [#10704](https://github.com/eclipse-theia/theia/pull/10704)
+- [plugin-ext] function `logMeasurement` of `PluginDeployerImpl` class and browser class `HostedPluginSupport` is replaced by `measure` using the new `Stopwatch` API [#10407](https://github.com/eclipse-theia/theia/pull/10407)
+- [plugin-ext] the constructor of `BackendApplication` class no longer invokes the `initialize` method. Instead, the `@postConstruct configure` method now starts by calling `initialize` [#10407](https://github.com/eclipse-theia/theia/pull/10407)
 
 ## v1.22.0 - 1/27/2022
 

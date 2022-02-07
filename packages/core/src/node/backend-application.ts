@@ -20,9 +20,8 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
-import { performance, PerformanceObserver } from 'perf_hooks';
 import { inject, named, injectable, postConstruct } from 'inversify';
-import { ContributionProvider, MaybePromise } from '../common';
+import { ContributionProvider, MaybePromise, Stopwatch } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
@@ -152,13 +151,13 @@ export class BackendApplication {
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
 
-    private readonly _performanceObserver: PerformanceObserver;
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
-        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution
-    ) {
+        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution) {
         process.on('uncaughtException', error => {
             if (error) {
                 console.error('Uncaught Exception: ', error.toString());
@@ -185,23 +184,6 @@ export class BackendApplication {
         process.on('SIGINT', signalHandler);
         // Handles `kill pid`.
         process.on('SIGTERM', signalHandler);
-
-        // Create performance observer
-        this._performanceObserver = new PerformanceObserver(list => {
-            for (const item of list.getEntries()) {
-                const contribution = `Backend ${item.name}`;
-                if (item.duration > TIMER_WARNING_THRESHOLD) {
-                    console.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
-                } else {
-                    console.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
-                }
-            }
-        });
-        this._performanceObserver.observe({
-            entryTypes: ['measure']
-        });
-
-        this.initialize();
     }
 
     protected async initialize(): Promise<void> {
@@ -220,6 +202,10 @@ export class BackendApplication {
 
     @postConstruct()
     protected async configure(): Promise<void> {
+        // Do not await the initialization because contributions are expected to handle
+        // concurrent initialize/configure in undefined order if they provide both
+        this.initialize();
+
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
         this.app.get('*.css', this.serveGzipped.bind(this, 'text/css'));
@@ -309,7 +295,7 @@ export class BackendApplication {
                 }
             }
         }
-        return deferred.promise;
+        return this.stopwatch.startAsync('server', 'Finished starting backend application', () => deferred.promise);
     }
 
     protected onStop(): void {
@@ -324,7 +310,6 @@ export class BackendApplication {
             }
         }
         console.info('<<< All backend contributions have been stopped.');
-        this._performanceObserver.disconnect();
         this.processUtils.terminateProcessTree(process.pid);
     }
 
@@ -347,15 +332,7 @@ export class BackendApplication {
     }
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
-        const startMark = name + '-start';
-        const endMark = name + '-end';
-        performance.mark(startMark);
-        const result = await fn();
-        performance.mark(endMark);
-        performance.measure(name, startMark, endMark);
-        // Observer should immediately log the measurement, so we can clear it
-        performance.clearMarks(name);
-        return result;
+        return this.stopwatch.startAsync(name, `Backend ${name}`, fn, { thresholdMillis: TIMER_WARNING_THRESHOLD });
     }
 
 }
