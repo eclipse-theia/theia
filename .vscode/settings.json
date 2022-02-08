@@ -4,7 +4,6 @@
 // - Linux: $HOME/.config/Code/User/settings.json
 // - Mac: $HOME/Library/Application Support/Code/User/settings.json
 {
-  "tslint.enable": true,
   "editor.formatOnSave": true,
   "search.exclude": {
     "**/node_modules": true,
@@ -55,7 +54,8 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "files.insertFinalNewline": true,
   "clang-format.language.typescript.enable": false,
+  // ESLint `max-len` rule.
   "editor.rulers": [
     180
-  ], // ESLint `max-len` rule.
+  ],
 }
