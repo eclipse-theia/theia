@@ -3,7 +3,7 @@
   "version": "1.22.1",
   "description": "Theia - Electron utility package",
   "dependencies": {
-    "@electron/remote": "^2.0.1",
+    "@electron/remote": "^2.0.1 <2.0.4 || >2.0.4",
     "electron-store": "^8.0.0",
     "fix-path": "^3.0.0",
     "native-keymap": "^2.2.1"

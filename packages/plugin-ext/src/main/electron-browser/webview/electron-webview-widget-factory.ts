@@ -35,7 +35,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),
@@ -59,7 +59,7 @@ export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),

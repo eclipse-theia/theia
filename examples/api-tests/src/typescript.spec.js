@@ -751,7 +751,7 @@ SPAN {
         const editor = await openEditor(serverUri);
         const currentChar = () => editor.getControl().getModel().getLineContent(lineNumber).charAt(column - 1);
 
-        // container.load(modul)
+        // container.load(module)
         editor.getControl().getModel().applyEdits([{
             range: {
                 startLineNumber: lineNumber,
