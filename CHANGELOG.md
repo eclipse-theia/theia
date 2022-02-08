@@ -8,6 +8,7 @@
 
 - [plugin] Deprecated `PseudoTerminalOptions`. `ExternalTerminalOptions` should be used from now on instead. [#10683](https://github.com/eclipse-theia/theia/pull/10683) - Contributed on behalf of STMicroelectronics
 - [core] Removed method `attachGlobalShortcuts` from `ElectronMainApplication`. Attaching shortcuts in that way interfered with internal shortcuts. Use internal keybindings instead of global shortcuts. [#10704](https://github.com/eclipse-theia/theia/pull/10704)
+- [core] Moved methods `attachReadyToShow`, `restoreMaximizedState`, `attachCloseListeners`, `handleStopRequest`, `checkSafeToStop`, `handleReload`, `reload` from `ElectronMainAPplication` into new class `TheiaElectronWindow`. [#10600](https://github.com/eclipse-theia/theia/pull/10600)
 
 ## v1.22.0 - 1/27/2022
 
