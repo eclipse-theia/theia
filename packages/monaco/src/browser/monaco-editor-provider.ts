@@ -31,8 +31,6 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
-
-import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core';
 import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
@@ -42,11 +40,17 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
+import { ContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import * as Monaco from 'monaco-editor-core';
+import { OpenerService as MonacoOpenerService } from 'monaco-editor-core/esm/vs/editor/browser/services/openerService';
+import { StandaloneCommandService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { OpenExternalOptions, OpenInternalOptions } from 'monaco-editor-core/esm/vs/platform/opener/common/opener';
+import { SimpleKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybindings';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
     readonly scheme: string;
-    create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: IEditorOverrideServices): MonacoEditor;
+    create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: Monaco.editor.IEditorOverrideServices): MonacoEditor;
 }
 
 @injectable()
@@ -96,7 +100,7 @@ export class MonacoEditorProvider {
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         /** @deprecated since 1.6.0 */
         @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
-        @inject(monaco.contextKeyService.ContextKeyService) protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService
+        @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService
     ) {
         const staticServices = monaco.services.StaticServices;
         const init = staticServices.init.bind(monaco.services.StaticServices);
@@ -127,14 +131,16 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, (override, toDispose) => this.createEditor(uri, override, toDispose));
     }
 
-    protected async doCreateEditor(uri: URI, factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
+    protected async doCreateEditor(uri: URI, factory: (
+        override: Monaco.editor.IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>
+    ): Promise<MonacoEditor> {
         const commandService = this.commandServiceFactory();
         const domNode = document.createElement('div');
         const contextKeyService = this.contextKeyService.createScoped(domNode);
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection(commandService);
-        const openerService = new monaco.services.OpenerService(codeEditorService, commandService);
+        const openerService = new MonacoOpenerService(codeEditorService, commandService);
         openerService.registerOpener({
             open: (u, options) => this.interceptOpen(u, options)
         });
@@ -153,7 +159,7 @@ export class MonacoEditorProvider {
         this.suppressMonacoKeybindingListener(editor);
         this.injectKeybindingResolver(editor);
 
-        const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
+        const standaloneCommandService = new StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
         toDispose.push(this.installReferencesController(editor));
 
@@ -174,7 +180,7 @@ export class MonacoEditorProvider {
     /**
      * Intercept internal Monaco open calls and delegate to OpenerService.
      */
-    protected async interceptOpen(monacoUri: monaco.Uri | string, monacoOptions?: monaco.services.OpenInternalOptions | monaco.services.OpenExternalOptions): Promise<boolean> {
+    protected async interceptOpen(monacoUri: Monaco.Uri | string, monacoOptions?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {
         let options = undefined;
         if (monacoOptions) {
             if ('openToSide' in monacoOptions && monacoOptions.openToSide) {
@@ -206,7 +212,7 @@ export class MonacoEditorProvider {
      * to allow a user to customize them.
      */
     protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
-        let keydownListener: monaco.IDisposable | undefined;
+        let keydownListener: Monaco.IDisposable | undefined;
         const keybindingService = editor.getControl()._standaloneKeybindingService;
         for (const listener of keybindingService._store._toDispose) {
             if ((listener as any)['_type'] === 'keydown') {
@@ -223,7 +229,7 @@ export class MonacoEditorProvider {
         const keybindingService = editor.getControl()._standaloneKeybindingService;
         keybindingService.resolveKeybinding = keybinding => [new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry)];
         keybindingService.resolveKeyboardEvent = keyboardEvent => {
-            const keybinding = new monaco.keybindings.SimpleKeybinding(
+            const keybinding = SimpleKeybinding(
                 keyboardEvent.ctrlKey,
                 keyboardEvent.shiftKey,
                 keyboardEvent.altKey,
@@ -234,7 +240,7 @@ export class MonacoEditorProvider {
         };
     }
 
-    protected createEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
+    protected createEditor(uri: URI, override: Monaco.editor.IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         if (DiffUris.isDiffUri(uri)) {
             return this.createMonacoDiffEditor(uri, override, toDispose);
         }
@@ -244,7 +250,7 @@ export class MonacoEditorProvider {
     protected get preferencePrefixes(): string[] {
         return ['editor.'];
     }
-    protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
+    protected async createMonacoEditor(uri: URI, override: Monaco.editor.IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
         const factory = this.factories.getContributions().find(({ scheme }) => uri.scheme === scheme);
@@ -294,7 +300,7 @@ export class MonacoEditorProvider {
         return true;
     }
 
-    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<Monaco.editor.IIdentifiedSingleEditOperation[]> {
         if (!this.shouldFormat(editor, event)) {
             return [];
         }
@@ -318,7 +324,7 @@ export class MonacoEditorProvider {
     protected get diffPreferencePrefixes(): string[] {
         return [...this.preferencePrefixes, 'diffEditor.'];
     }
-    protected async createMonacoDiffEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoDiffEditor> {
+    protected async createMonacoDiffEditor(uri: URI, override: Monaco.editor.IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoDiffEditor> {
         const [original, modified] = DiffUris.decode(uri);
 
         const [originalModel, modifiedModel] = await Promise.all([this.getModel(original, toDispose), this.getModel(modified, toDispose)]);
@@ -406,7 +412,7 @@ export class MonacoEditorProvider {
             }
 
             referencesController._ignoreModelChangeEvent = true;
-            const range = monaco.Range.lift(ref.range).collapseToStart();
+            const range = Monaco.Range.lift(ref.range).collapseToStart();
 
             // preserve the model that it does not get disposed if an editor preview replaces an editor
             const model = referencesController._model;
@@ -487,7 +493,7 @@ export class MonacoEditorProvider {
         });
     }
 
-    static inlineOptions: monaco.editor.IEditorConstructionOptions = {
+    static inlineOptions: Monaco.editor.IEditorConstructionOptions = {
         wordWrap: 'on',
         overviewRulerLanes: 0,
         glyphMargin: false,

@@ -17,16 +17,17 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
-import { VSCodeContextKeyService as MonacoContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { IContext } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { ContextKeyExpr, ContextKeyExpression, IContext } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { KeybindingResolver } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybindingResolver';
 
 @injectable()
 export class MonacoContextKeyService implements TheiaContextKeyService {
     protected readonly onDidChangeEmitter = new Emitter<ContextKeyChangeEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
-    @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: MonacoContextKeyService;
+    @inject(VSCodeContextKeyService)
+    protected readonly contextKeyService: VSCodeContextKeyService;
 
     @postConstruct()
     protected init(): void {
@@ -49,7 +50,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         if (!ctx) {
             return this.contextKeyService.contextMatchesRules(parsed);
         }
-        return monaco.keybindings.KeybindingResolver.contextMatchesRules(ctx, parsed); // Looks like this will have to go - it's no longer static?
+        return KeybindingResolver.contextMatchesRules(ctx, parsed); // Looks like this will have to go - it's no longer static?
     }
 
     protected identifyContext(callersContext?: HTMLElement | IContext): IContext | undefined {
@@ -65,11 +66,11 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         return undefined;
     }
 
-    protected readonly expressions = new Map<string, monaco.contextkey.ContextKeyExpression>();
-    protected parse(when: string): monaco.contextkey.ContextKeyExpression | undefined {
+    protected readonly expressions = new Map<string, ContextKeyExpression>();
+    protected parse(when: string): ContextKeyExpression | undefined {
         let expression = this.expressions.get(when);
         if (!expression) {
-            expression = monaco.contextkey.ContextKeyExpr.deserialize(when);
+            expression = ContextKeyExpr.deserialize(when);
             if (expression) {
                 this.expressions.set(when, expression);
             }
@@ -78,7 +79,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
     }
 
     parseKeys(expression: string): Set<string> | undefined {
-        const expr = monaco.contextkey.ContextKeyExpr.deserialize(expression);
+        const expr = ContextKeyExpr.deserialize(expression);
         return expr ? new Set<string>(expr.keys()) : expr;
     }
 
@@ -99,7 +100,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
     }
 
     createScoped(target?: HTMLElement): ScopedValueStore {
-        return this.contextKeyService.createScoped(target);
+        return this.contextKeyService.createScoped(target); // Only myself to blame :-).
     }
 
     setContext(key: string, value: unknown): void {

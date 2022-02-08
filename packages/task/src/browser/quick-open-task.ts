@@ -27,6 +27,7 @@ import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { filterItems, QuickInputButton, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
+import { TriggerAction } from 'monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
 
 export namespace ConfigureTaskAction {
     export const ID = 'workbench.action.tasks.configureTaskRunner';
@@ -415,9 +416,9 @@ export class TaskRunQuickOpenItem implements QuickPickItem {
         }
     }
 
-    trigger(): monaco.quickInput.TriggerAction {
+    trigger(): TriggerAction {
         this.taskService.configure(this.token, this.task);
-        return monaco.quickInput.TriggerAction.CLOSE_PICKER;
+        return TriggerAction.CLOSE_PICKER;
     }
 }
 

@@ -28,6 +28,8 @@ import { OutputUri } from '../common/output-uri';
 import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
+import * as Monaco from 'monaco-editor-core';
+import { ScrollType } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 @injectable()
 export class OutputWidget extends BaseWidget implements StatefulWidget {
@@ -171,7 +173,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
             if (model) {
                 const endLine = model.getLineCount();
                 const endCharacter = model.getLineMaxColumn(endLine);
-                editor.getControl().setSelection(new monaco.Range(1, 1, endLine, endCharacter));
+                editor.getControl().setSelection(new Monaco.Range(1, 1, endLine, endCharacter));
             }
         }
     }
@@ -198,7 +200,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
             if (model) {
                 const lineNumber = model.getLineCount();
                 const column = model.getLineMaxColumn(lineNumber);
-                editor.getControl().revealPosition({ lineNumber, column }, monaco.editor.ScrollType.Smooth);
+                editor.getControl().revealPosition({ lineNumber, column }, ScrollType.Smooth);
             }
         }
     }

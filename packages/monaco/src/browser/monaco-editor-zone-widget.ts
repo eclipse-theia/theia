@@ -20,12 +20,12 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
-import { editor, IPosition, Range } from 'monaco-editor-core';
+import * as Monaco from 'monaco-editor-core';
 import { EditorLayoutInfo, EditorOption } from 'monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ScrollType } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { IStandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
-export interface MonacoEditorViewZone extends editor.IViewZone {
+export interface MonacoEditorViewZone extends Monaco.editor.IViewZone {
     id: string;
 }
 
@@ -36,8 +36,8 @@ export class MonacoEditorZoneWidget implements Disposable {
     readonly zoneNode = document.createElement('div');
     readonly containerNode = document.createElement('div');
 
-    protected readonly onDidLayoutChangeEmitter = new Emitter<editor.IDimension>();
-    readonly onDidLayoutChange: Event<editor.IDimension> = this.onDidLayoutChangeEmitter.event;
+    protected readonly onDidLayoutChangeEmitter = new Emitter<Monaco.editor.IDimension>();
+    readonly onDidLayoutChange: Event<Monaco.editor.IDimension> = this.onDidLayoutChangeEmitter.event;
 
     protected viewZone: MonacoEditorViewZone | undefined;
 
@@ -87,7 +87,7 @@ export class MonacoEditorZoneWidget implements Disposable {
             this.zoneNode.style.top = '-1000px';
             const domNode = document.createElement('div');
             domNode.style.overflow = 'hidden';
-            const zone: editor.IViewZone = {
+            const zone: Monaco.editor.IViewZone = {
                 domNode,
                 afterLineNumber,
                 afterColumn,
@@ -111,7 +111,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
                 this.toHide.push(this.arrow);
             }
-            const widget: editor.IOverlayWidget = {
+            const widget: Monaco.editor.IOverlayWidget = {
                 getId: () => 'editor-zone-widget-' + id,
                 getDomNode: () => this.zoneNode,
                 // eslint-disable-next-line no-null/no-null
@@ -205,7 +205,7 @@ class Arrow implements Disposable {
     private _height: number = -1;
 
     constructor(
-        private readonly _editor: editor.ICodeEditor
+        private readonly _editor: Monaco.editor.ICodeEditor
     ) { }
 
     dispose(): void {
@@ -230,10 +230,10 @@ class Arrow implements Disposable {
         (<CSSStyleSheet>style.sheet).insertRule(selector + '{' + cssText + '}', 0);
     }
 
-    show(where: IPosition): void {
+    show(where: Monaco.IPosition): void {
         this.decorations = this._editor.deltaDecorations(
             this.decorations,
-            [{ range: Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
+            [{ range: Monaco.Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
         );
     }
 

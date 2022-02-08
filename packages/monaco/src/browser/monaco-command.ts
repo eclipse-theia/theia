@@ -25,7 +25,7 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { nls } from '@theia/core/lib/common/nls';
-import { VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { EditorExtensionsRegistry } from 'monaco-editor-core/esm/vs/editor/browser/editorExtensions';
 import { CommandsRegistry } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { Uri } from 'monaco-editor-core';
@@ -72,7 +72,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
 
-    @inject(monaco.contextKeyService.ContextKeyService)
+    @inject(VSCodeContextKeyService)
     protected readonly contextKeyService: VSCodeContextKeyService;
 
     @inject(ApplicationShell)

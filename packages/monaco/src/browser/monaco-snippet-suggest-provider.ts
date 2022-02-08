@@ -24,9 +24,11 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
+import * as Monaco from 'monaco-editor-core';
+import { SnippetParser } from 'monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 
 @injectable()
-export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
+export class MonacoSnippetSuggestProvider implements Monaco.languages.CompletionItemProvider {
 
     private static readonly _maxPrefix = 10000;
 
@@ -36,26 +38,26 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
 
-    async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.languages.CompletionContext): Promise<monaco.languages.CompletionList | undefined> {
+    async provideCompletionItems(model: Monaco.editor.ITextModel, position: Monaco.Position,
+        context: Monaco.languages.CompletionContext): Promise<Monaco.languages.CompletionList | undefined> {
 
         // copied and modified from https://github.com/microsoft/vscode/blob/master/src/vs/workbench/contrib/snippets/browser/snippetCompletionProvider.ts
         if (position.column >= MonacoSnippetSuggestProvider._maxPrefix) {
             return undefined;
         }
 
-        if (context.triggerKind === monaco.languages.CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
+        if (context.triggerKind === Monaco.languages.CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
             // no snippets when suggestions have been triggered by space
             return undefined;
         }
 
-        const languageId = model.getModeId(); // TODO: look up a language id at the position
+        const languageId = model.getLanguageId(); // TODO: look up a language id at the position
         await this.loadSnippets(languageId);
         const snippetsForLanguage = this.snippets.get(languageId) || [];
 
         const pos = { lineNumber: position.lineNumber, column: 1 };
         const lineOffsets: number[] = [];
-        const linePrefixLow = model.getLineContent(position.lineNumber).substr(0, position.column - 1).toLowerCase();
+        const linePrefixLow = model.getLineContent(position.lineNumber).substring(0, position.column - 1).toLowerCase();
         const endsInWhitespace = linePrefixLow.match(/\s$/);
 
         while (pos.column < position.column) {
@@ -83,7 +85,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         for (const start of lineOffsets) {
             availableSnippets.forEach(snippet => {
                 if (this.isPatternInWord(linePrefixLow, start, linePrefixLow.length, snippet.prefix.toLowerCase(), 0, snippet.prefix.length)) {
-                    suggestions.push(new MonacoSnippetSuggestion(snippet, monaco.Range.fromPositions(position.delta(0, -(linePrefixLow.length - start)), position)));
+                    suggestions.push(new MonacoSnippetSuggestion(snippet, Monaco.Range.fromPositions(position.delta(0, -(linePrefixLow.length - start)), position)));
                     availableSnippets.delete(snippet);
                 }
             });
@@ -92,7 +94,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             // add remaining snippets when the current prefix ends in whitespace or when no
             // interesting positions have been found
             availableSnippets.forEach(snippet => {
-                suggestions.push(new MonacoSnippetSuggestion(snippet, monaco.Range.fromPositions(position)));
+                suggestions.push(new MonacoSnippetSuggestion(snippet, Monaco.Range.fromPositions(position)));
             });
         }
 
@@ -101,7 +103,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         return { suggestions };
     }
 
-    resolveCompletionItem?(item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.CompletionItem {
+    resolveCompletionItem?(item: Monaco.languages.CompletionItem, token: Monaco.CancellationToken): Monaco.languages.CompletionItem {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
@@ -261,21 +263,21 @@ export interface Snippet {
     readonly source: string
 }
 
-export class MonacoSnippetSuggestion implements monaco.languages.CompletionItem {
+export class MonacoSnippetSuggestion implements Monaco.languages.CompletionItem {
 
     readonly label: string;
     readonly detail: string;
     readonly sortText: string;
     readonly noAutoAccept = true;
-    readonly kind = monaco.languages.CompletionItemKind.Snippet;
-    readonly insertTextRules = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+    readonly kind = Monaco.languages.CompletionItemKind.Snippet;
+    readonly insertTextRules = Monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
 
     insertText: string;
-    documentation?: monaco.IMarkdownString;
+    documentation?: Monaco.IMarkdownString;
 
     constructor(
         protected readonly snippet: Snippet,
-        readonly range: monaco.Range
+        readonly range: Monaco.Range
     ) {
         this.label = snippet.prefix;
         this.detail = `${snippet.description || snippet.name} (${snippet.source})`;
@@ -287,7 +289,7 @@ export class MonacoSnippetSuggestion implements monaco.languages.CompletionItem 
     protected resolved = false;
     resolve(): MonacoSnippetSuggestion {
         if (!this.resolved) {
-            const codeSnippet = new monaco.snippetParser.SnippetParser().parse(this.snippet.body).toString();
+            const codeSnippet = new SnippetParser().parse(this.snippet.body).toString();
             this.documentation = { value: '```\n' + codeSnippet + '```' };
             this.resolved = true;
         }

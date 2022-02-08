@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.22.1",
     "@theia/monaco": "1.22.1",
+    "@theia/preferences": "1.22.1",
     "@theia/userstorage": "1.22.1",
     "@theia/workspace": "1.22.1",
     "@types/lodash.debounce": "4.0.3",

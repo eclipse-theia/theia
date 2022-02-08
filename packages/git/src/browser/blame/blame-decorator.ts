@@ -21,9 +21,10 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
+import * as Monaco from 'monaco-editor-core';
 
 @injectable()
-export class BlameDecorator implements monaco.languages.HoverProvider {
+export class BlameDecorator implements Monaco.languages.HoverProvider {
 
     constructor(
         protected blameDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('gitBlameDecorationsStyle')
@@ -38,16 +39,16 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
     protected readonly editorManager: EditorManager;
 
     protected registerHoverProvider(uri: string): Disposable {
-        return monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
+        return Monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
     }
 
-    protected emptyHover: monaco.languages.Hover = {
+    protected emptyHover: Monaco.languages.Hover = {
         contents: [{
             value: ''
         }]
     };
 
-    async provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Promise<monaco.languages.Hover> {
+    async provideHover(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Promise<Monaco.languages.Hover> {
         const line = position.lineNumber - 1;
         const uri = model.uri.toString();
         const applications = this.appliedDecorations.get(uri);
@@ -71,7 +72,7 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
 
         const hover = {
             contents: [{ value }],
-            range: monaco.Range.fromPositions(new monaco.Position(position.lineNumber, 1), new monaco.Position(position.lineNumber, 10 ^ 10))
+            range: Monaco.Range.fromPositions(new Monaco.Position(position.lineNumber, 1), new Monaco.Position(position.lineNumber, 10 ^ 10))
         };
         return hover;
     }

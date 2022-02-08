@@ -17,6 +17,8 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { ResourceTextEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { Uri } from 'monaco-editor-core';
 
 let disableJSDOM = enableJSDOM();
 
@@ -29,6 +31,7 @@ FrontendApplicationConfigProvider.set({
 import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
 
+// This is probably not going to work...
 global.monaco = sinon.stub() as unknown as typeof monaco;
 global.monaco.Uri = sinon.stub() as unknown as typeof monaco.Uri;
 global.monaco.Uri.isUri = sinon.stub().returns(true) as unknown as typeof monaco.Uri.isUri;
@@ -37,7 +40,7 @@ const expect = chai.expect;
 let bulkEditTree: BulkEditTree;
 let testContainer: Container;
 const fileContextsMap = new Map<string, string>();
-let resourceTextEdits: monaco.editor.ResourceTextEdit[];
+let resourceTextEdits: ResourceTextEdit[];
 
 disableJSDOM();
 
@@ -51,26 +54,26 @@ before(() => {
     fileContextsMap.set('/c:/test1.ts', 'aaaaaaaaaaaaaaaaaaa');
     fileContextsMap.set('/c:/test2.ts', 'bbbbbbbbbbbbbbbbbbb');
 
-    resourceTextEdits = <monaco.editor.ResourceTextEdit[]><unknown>[
-            {
-                'resource': {
-                    '$mid': 1,
-                    'path': '/c:/test1.ts',
-                    'scheme': 'file'
-                },
-            'textEdit': {
-                    'text': 'AAAAA', 'range': { 'startLineNumber': 1, 'startColumn': 5, 'endLineNumber': 1, 'endColumn': 10 }
-                }
+    resourceTextEdits = <ResourceTextEdit[]><unknown>[
+        {
+            'resource': {
+                '$mid': 1,
+                'path': '/c:/test1.ts',
+                'scheme': 'file'
             },
-            {
-                'resource': {
-                    '$mid': 1,
-                    'path': '/c:/test2.ts',
-                    'scheme': 'file'
-            }, 'textEdit': {
-                    'text': 'BBBBBB', 'range': { 'startLineNumber': 1, 'startColumn': 3, 'endLineNumber': 1, 'endColumn': 8 }
-                }
+            'textEdit': {
+                'text': 'AAAAA', 'range': { 'startLineNumber': 1, 'startColumn': 5, 'endLineNumber': 1, 'endColumn': 10 }
             }
+        },
+        {
+            'resource': {
+                '$mid': 1,
+                'path': '/c:/test2.ts',
+                'scheme': 'file'
+            }, 'textEdit': {
+                'text': 'BBBBBB', 'range': { 'startLineNumber': 1, 'startColumn': 3, 'endLineNumber': 1, 'endColumn': 8 }
+            }
+        }
     ];
 });
 

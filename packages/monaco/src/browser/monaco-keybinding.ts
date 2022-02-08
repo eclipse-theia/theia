@@ -20,6 +20,7 @@ import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { environment } from '@theia/core';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
+import { KeybindingsRegistry } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
 
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
@@ -28,7 +29,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     protected readonly commands: MonacoCommandRegistry;
 
     registerKeybindings(registry: KeybindingRegistry): void {
-        const defaultKeybindings = monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings();
+        const defaultKeybindings = KeybindingsRegistry.getDefaultKeybindings();
         for (const item of defaultKeybindings) {
             const command = this.commands.validate(item.command);
             if (command) {

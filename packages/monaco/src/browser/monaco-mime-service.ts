@@ -17,6 +17,10 @@
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
+import * as Monaco from 'monaco-editor-core';
+import { clearLanguageAssociations, registerLanguageAssociation } from 'monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
 
 @injectable()
 export class MonacoMimeService extends MimeService {
@@ -26,7 +30,7 @@ export class MonacoMimeService extends MimeService {
 
     constructor() {
         super();
-        monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.event(() => {
+        StandaloneServices.get(ILanguageService).onDidChange(() => {
             if (this.updatingAssociations) {
                 return;
             }
@@ -42,21 +46,21 @@ export class MonacoMimeService extends MimeService {
     protected updateAssociations = debounce(() => {
         this.updatingAssociations = true;
         try {
-            monaco.mime.clearTextMimes(true);
+            clearLanguageAssociations(true);
 
             for (const association of this.associations) {
                 const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
-                monaco.mime.registerTextMime({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
+                registerLanguageAssociation({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
             }
 
-            monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.fire(undefined);
+            StandaloneServices.get(ILanguageService)._onDidChange.fire(undefined);
         } finally {
             this.updatingAssociations = false;
         }
     });
 
     protected getMimeForMode(langId: string): string | undefined {
-        for (const language of monaco.languages.getLanguages()) {
+        for (const language of Monaco.languages.getLanguages()) {
             if (language.id === langId && language.mimetypes) {
                 return language.mimetypes[0];
             }

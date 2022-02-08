@@ -14,7 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-monaco.languages.register({
+import * as Monaco from 'monaco-editor-core';
+
+Monaco.languages.register({
     id: 'jsonc',
     'aliases': [
         'JSON with Comments'

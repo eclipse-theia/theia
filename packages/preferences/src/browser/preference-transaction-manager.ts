@@ -24,6 +24,7 @@ import { Mutex, MutexInterface } from 'async-mutex';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoJSONCEditor } from './monaco-jsonc-editor';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
+import { IReference } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
 
 export interface OnWillConcludeEvent<T> extends WaitUntilEvent {
     status: T | false;
@@ -158,7 +159,7 @@ export const PreferenceContext = Symbol('PreferenceContext');
 
 @injectable()
 export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
-    reference: monaco.editor.IReference<MonacoEditorModel> | undefined;
+    reference: IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;

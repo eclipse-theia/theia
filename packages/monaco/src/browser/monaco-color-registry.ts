@@ -17,13 +17,17 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ColorRegistry, ColorDefinition, Color } from '@theia/core/lib/browser/color-registry';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { ColorDefaults, ColorValue } from 'monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
+import { ColorDefaults, ColorValue, getColorRegistry } from 'monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { Color as MonacoColor, HSLA, RGBA } from 'monaco-editor-core/esm/vs/base/common/color';
+import * as Colors from 'monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
 
 @injectable()
 export class MonacoColorRegistry extends ColorRegistry {
 
-    protected readonly monacoThemeService = monaco.services.StaticServices.standaloneThemeService.get();
-    protected readonly monacoColorRegistry = monaco.color.getColorRegistry();
+    protected readonly monacoThemeService = StandaloneServices.get(IStandaloneThemeService);
+    protected readonly monacoColorRegistry = getColorRegistry();
 
     *getColors(): IterableIterator<string> {
         for (const { id } of this.monacoColorRegistry.getColors()) {
@@ -54,13 +58,13 @@ export class MonacoColorRegistry extends ColorRegistry {
             return null; // eslint-disable-line no-null/no-null
         }
         if ('kind' in value) {
-            return monaco.color[value.kind](value.v, value.f);
+            return Colors[value.kind](value.v, value.f);
         } else if ('r' in value) {
             const { r, g, b, a } = value;
-            return new monaco.color.Color(new monaco.color.RGBA(r, g, b, a));
+            return new MonacoColor(new RGBA(r, g, b, a));
         } else {
             const { h, s, l, a } = value;
-            return new monaco.color.Color(new monaco.color.HSLA(h, s, l, a));
+            return new MonacoColor(new HSLA(h, s, l, a));
         }
     }
 

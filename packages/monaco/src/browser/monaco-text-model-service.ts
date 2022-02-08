@@ -28,7 +28,6 @@ import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ITextModelService, IResolvedTextEditorModel, ITextModelContentProvider } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { ITextModelUpdateOptions } from 'monaco-editor-core/esm/vs/editor/common/model';
-export { IReference };
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
 export interface MonacoEditorModelFactory {

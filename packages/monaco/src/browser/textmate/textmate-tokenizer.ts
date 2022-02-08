@@ -15,18 +15,19 @@
  ********************************************************************************/
 
 import { INITIAL, StackElement, IGrammar } from 'vscode-textmate';
+import * as Monaco from 'monaco-editor-core';
 
-export class TokenizerState implements monaco.languages.IState {
+export class TokenizerState implements Monaco.languages.IState {
 
     constructor(
         public readonly ruleStack: StackElement
     ) { }
 
-    clone(): monaco.languages.IState {
+    clone(): Monaco.languages.IState {
         return new TokenizerState(this.ruleStack);
     }
 
-    equals(other: monaco.languages.IState): boolean {
+    equals(other: Monaco.languages.IState): boolean {
         return other instanceof TokenizerState && (other === this || other.ruleStack === this.ruleStack);
     }
 
@@ -59,17 +60,17 @@ export namespace TokenizerOption {
     };
 }
 
-export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.EncodedTokensProvider & monaco.languages.TokensProvider {
+export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): Monaco.languages.EncodedTokensProvider & Monaco.languages.TokensProvider {
     if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
     }
     return {
         getInitialState: () => new TokenizerState(INITIAL),
-        tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
+        tokenizeEncoded(line: string, state: TokenizerState): Monaco.languages.IEncodedLineTokens {
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
-                processedLine = line.substr(0, options.lineLimit);
+                processedLine = line.substring(0, options.lineLimit);
             }
             const result = grammar.tokenizeLine2(processedLine, state.ruleStack);
             return {
@@ -77,11 +78,11 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
                 tokens: result.tokens
             };
         },
-        tokenize(line: string, state: TokenizerState): monaco.languages.ILineTokens {
+        tokenize(line: string, state: TokenizerState): Monaco.languages.ILineTokens {
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
-                processedLine = line.substr(0, options.lineLimit);
+                processedLine = line.substring(0, options.lineLimit);
             }
             const result = grammar.tokenizeLine(processedLine, state.ruleStack);
             return {

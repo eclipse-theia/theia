@@ -29,37 +29,45 @@ import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import * as Monaco from 'monaco-editor-core';
+import {
+    IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
+    ResourceTextEdit as MonacoResourceTextEdit
+} from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IEditorWorkerService } from 'monaco-editor-core/esm/vs/editor/common/services/editorWorker';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { EndOfLineSequence } from 'monaco-editor-core/esm/vs/editor/common/model';
 
 export namespace WorkspaceFileEdit {
-    export function is(arg: Edit): arg is monaco.languages.WorkspaceFileEdit {
-        return ('oldUri' in arg && monaco.Uri.isUri(arg.oldUri)) ||
-            ('newUri' in arg && monaco.Uri.isUri(arg.newUri));
+    export function is(arg: Edit): arg is Monaco.languages.WorkspaceFileEdit {
+        return ('oldUri' in arg && Monaco.Uri.isUri(arg.oldUri)) ||
+            ('newUri' in arg && Monaco.Uri.isUri(arg.newUri));
     }
 }
 
 export namespace WorkspaceTextEdit {
-    export function is(arg: Edit): arg is monaco.languages.WorkspaceTextEdit {
+    export function is(arg: Edit): arg is Monaco.languages.WorkspaceTextEdit {
         return !!arg && typeof arg === 'object'
             && 'resource' in arg
-            && monaco.Uri.isUri(arg.resource)
+            && Monaco.Uri.isUri(arg.resource)
             && 'edit' in arg
             && arg.edit !== null
             && typeof arg.edit === 'object';
     }
 }
 
-export type Edit = monaco.languages.WorkspaceFileEdit | monaco.languages.WorkspaceTextEdit;
+export type Edit = Monaco.languages.WorkspaceFileEdit | Monaco.languages.WorkspaceTextEdit;
 
 export namespace ResourceFileEdit {
-    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceFileEdit {
-        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).oldResource)) ||
-            ('newResource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).newResource));
+    export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {
+        return typeof arg === 'object' && (('oldResource' in arg) && Monaco.Uri.isUri((arg as MonacoResourceFileEdit).oldResource)) ||
+            ('newResource' in arg && Monaco.Uri.isUri((arg as MonacoResourceFileEdit).newResource));
     }
 }
 
 export namespace ResourceTextEdit {
-    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceTextEdit {
-        return ('resource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceTextEdit).resource));
+    export function is(arg: ResourceEdit): arg is MonacoResourceTextEdit {
+        return ('resource' in arg && Monaco.Uri.isUri((arg as MonacoResourceTextEdit).resource));
     }
 }
 
@@ -205,7 +213,7 @@ export class MonacoWorkspace {
      * Applies given edits to the given model.
      * The model is saved if no editors is opened for it.
      */
-    applyBackgroundEdit(model: MonacoEditorModel, editOperations: monaco.editor.IIdentifiedSingleEditOperation[], shouldSave = true): Promise<void> {
+    applyBackgroundEdit(model: MonacoEditorModel, editOperations: Monaco.editor.IIdentifiedSingleEditOperation[], shouldSave = true): Promise<void> {
         return this.suppressOpenIfDirty(model, async () => {
             const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
             const cursorState = editor && editor.getControl().getSelections() || [];
@@ -218,19 +226,19 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(edits: monaco.editor.ResourceEdit[]): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(edits: ResourceEdit[]): Promise<IBulkEditResult & { success: boolean }> {
         try {
             let totalEdits = 0;
             let totalFiles = 0;
-            const fileEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceFileEdit);
-            const textEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceTextEdit);
+            const fileEdits = edits.filter(edit => edit instanceof MonacoResourceFileEdit);
+            const textEdits = edits.filter(edit => edit instanceof MonacoResourceTextEdit);
 
             if (fileEdits.length > 0) {
-                await this.performFileEdits(<monaco.editor.ResourceFileEdit[]>fileEdits);
+                await this.performFileEdits(<MonacoResourceFileEdit[]>fileEdits);
             }
 
             if (textEdits.length > 0) {
-                const result = await this.performTextEdits(<monaco.editor.ResourceTextEdit[]>textEdits);
+                const result = await this.performTextEdits(<MonacoResourceTextEdit[]>textEdits);
                 totalEdits += result.totalEdits;
                 totalFiles += result.totalFiles;
             }
@@ -256,13 +264,13 @@ export class MonacoWorkspace {
         return `Made ${totalEdits} text edits in one file`;
     }
 
-    protected async performTextEdits(edits: monaco.editor.ResourceTextEdit[]): Promise<{
+    protected async performTextEdits(edits: MonacoResourceTextEdit[]): Promise<{
         totalEdits: number,
         totalFiles: number
     }> {
         let totalEdits = 0;
         let totalFiles = 0;
-        const resourceEdits = new Map<string, monaco.editor.ResourceTextEdit[]>();
+        const resourceEdits = new Map<string, MonacoResourceTextEdit[]>();
         for (const edit of edits) {
             if (typeof edit.versionId === 'number') {
                 const model = this.textModelService.get(edit.resource.toString());
@@ -281,22 +289,22 @@ export class MonacoWorkspace {
         const pending: Promise<void>[] = [];
         for (const [key, value] of resourceEdits) {
             pending.push((async () => {
-                const uri = monaco.Uri.parse(key);
-                let eol: monaco.editor.EndOfLineSequence | undefined;
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const minimalEdits = await monaco.services.StaticServices.editorWorkerService.get().computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
+                const uri = Monaco.Uri.parse(key);
+                let eol: EndOfLineSequence | undefined;
+                const editOperations: Monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
                             eol = textEdit.eol;
                         }
-                        if (monaco.Range.isEmpty(textEdit.range) && !textEdit.text) {
+                        if (Monaco.Range.isEmpty(textEdit.range) && !textEdit.text) {
                             // skip no-op
                             continue;
                         }
                         editOperations.push({
                             forceMoveMarkers: false,
-                            range: monaco.Range.lift(textEdit.range),
+                            range: Monaco.Range.lift(textEdit.range),
                             text: textEdit.text
                         });
                     }
@@ -330,7 +338,7 @@ export class MonacoWorkspace {
         return { totalEdits, totalFiles };
     }
 
-    protected async performFileEdits(edits: monaco.editor.ResourceFileEdit[]): Promise<void> {
+    protected async performFileEdits(edits: MonacoResourceFileEdit[]): Promise<void> {
         for (const edit of edits) {
             const options = edit.options || {};
             if (edit.newResource && edit.oldResource) {

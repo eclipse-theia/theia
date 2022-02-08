@@ -17,7 +17,7 @@
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import { Uri } from 'monaco-editor-core';
+import * as Monaco from 'monaco-editor-core';
 import { IMarkerData } from 'monaco-editor-core/esm/vs/platform/markers/common/markers';
 
 export class MonacoDiagnosticCollection implements Disposable {
@@ -56,7 +56,7 @@ export class MonacoDiagnosticCollection implements Disposable {
 }
 
 export class MonacoModelDiagnostics implements Disposable {
-    readonly uri: Uri;
+    readonly uri: Monaco.Uri;
     protected _markers: IMarkerData[] = [];
     protected _diagnostics: Diagnostic[] = [];
     constructor(
@@ -65,9 +65,9 @@ export class MonacoModelDiagnostics implements Disposable {
         readonly owner: string,
         protected readonly p2m: ProtocolToMonacoConverter
     ) {
-        this.uri = Uri.parse(uri);
+        this.uri = Monaco.Uri.parse(uri);
         this.diagnostics = diagnostics;
-        monaco.editor.onDidCreateModel(model => this.doUpdateModelMarkers(model));
+        Monaco.editor.onDidCreateModel(model => this.doUpdateModelMarkers(model));
     }
 
     set diagnostics(diagnostics: Diagnostic[]) {
@@ -90,13 +90,13 @@ export class MonacoModelDiagnostics implements Disposable {
     }
 
     updateModelMarkers(): void {
-        const model = monaco.editor.getModel(this.uri);
+        const model = Monaco.editor.getModel(this.uri);
         this.doUpdateModelMarkers(model ? model : undefined);
     }
 
-    protected doUpdateModelMarkers(model: IModel | undefined): void {
+    protected doUpdateModelMarkers(model: Monaco.editor.ITextModel | undefined): void {
         if (model && this.uri.toString() === model.uri.toString()) {
-            monaco.editor.setModelMarkers(model, this.owner, this._markers);
+            Monaco.editor.setModelMarkers(model, this.owner, this._markers);
         }
     }
 }

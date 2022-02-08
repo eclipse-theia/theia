@@ -40,7 +40,7 @@ export class MonacoContextMenuService implements IContextMenuService {
             this.contextMenuRenderer.render({
                 menuPath: this.menuPath(),
                 anchor,
-                onHide: () => delegate.onHide(false)
+                onHide: () => delegate.onHide?.(false)
             });
         } else {
             const commands = new CommandRegistry();
@@ -53,7 +53,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                 commands.addCommand(commandId, {
                     label: action.label,
                     className: action.class,
-                    isToggled: () => action.checked,
+                    isToggled: () => Boolean(action.checked),
                     isEnabled: () => action.enabled,
                     execute: () => action.run()
                 });
@@ -62,7 +62,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                     command: commandId
                 });
             }
-            menu.aboutToClose.connect(() => delegate.onHide(false));
+            menu.aboutToClose.connect(() => delegate.onHide?.(false));
             menu.open(anchor.x, anchor.y);
         }
     }

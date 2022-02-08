@@ -17,6 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
+import * as Monaco from 'monaco-editor-core';
+import { setSnippetSuggestSupport } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -28,13 +30,13 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected readonly preferenceSchema: PreferenceSchemaProvider;
 
     async initialize(): Promise<void> {
-        monaco.suggest.setSnippetSuggestSupport(this.snippetSuggestProvider);
+        setSnippetSuggestSupport(this.snippetSuggestProvider);
 
-        for (const language of monaco.languages.getLanguages()) {
+        for (const language of Monaco.languages.getLanguages()) {
             this.preferenceSchema.registerOverrideIdentifier(language.id);
         }
-        const registerLanguage = monaco.languages.register.bind(monaco.languages);
-        monaco.languages.register = language => {
+        const registerLanguage = Monaco.languages.register.bind(Monaco.languages);
+        Monaco.languages.register = language => {
             // first register override identifier, because monaco will immediately update already opened documents and then initialize with bad preferences.
             this.preferenceSchema.registerOverrideIdentifier(language.id);
             registerLanguage(language);

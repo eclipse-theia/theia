@@ -25,11 +25,12 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import * as Monaco from 'monaco-editor-core';
 
 export interface MonacoTheme {
     id?: string;
     label?: string;
-    uiTheme?: monaco.editor.BuiltinTheme;
+    uiTheme?: Monaco.editor.BuiltinTheme;
     description?: string;
     uri: string;
 }
@@ -43,7 +44,7 @@ export interface MonacoThemeJson {
     /**
      * theme type, `vs-dark` if not provided
      */
-    uiTheme?: monaco.editor.BuiltinTheme;
+    uiTheme?: Monaco.editor.BuiltinTheme;
     description?: string;
     /**
      * Follow https://code.visualstudio.com/api/extension-guides/color-theme#create-a-new-color-theme to create a custom theme.
@@ -155,7 +156,7 @@ export class MonacoThemingService {
     protected static updateBodyUiTheme(): void {
         this.toUpdateUiTheme.dispose();
         const type = ThemeService.get().getCurrentTheme().type;
-        const uiTheme: monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
+        const uiTheme: Monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
         document.body.classList.add(uiTheme);
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }

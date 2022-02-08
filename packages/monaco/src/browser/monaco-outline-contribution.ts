@@ -22,9 +22,8 @@ import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditor } from './monaco-editor';
-
 import debounce = require('@theia/core/shared/lodash.debounce');
-import { CancellationToken, CancellationTokenSource, editor, IRange } from 'monaco-editor-core';
+import * as Monaco from 'monaco-editor-core';
 import { DocumentSymbol, SymbolKind } from 'monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
@@ -41,7 +40,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         // updateOutline and handleCurrentEditorChanged need to be called even when the outline view widget is closed
         // in order to update breadcrumbs.
-        DocumentSymbolProviderRegistry.onDidChange(
+        DocumentSymbolProviderRegistry.onDidChange( // Seems to have been removed?
             debounce(() => this.updateOutline())
         );
         this.editorManager.onCurrentEditorChanged(
@@ -97,13 +96,13 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.updateOutline();
     }
 
-    protected tokenSource = new CancellationTokenSource();
+    protected tokenSource = new Monaco.CancellationTokenSource();
     protected async updateOutline(editorSelection?: Range): Promise<void> {
         if (!this.canUpdateOutline) {
             return;
         }
         this.tokenSource.cancel();
-        this.tokenSource = new CancellationTokenSource();
+        this.tokenSource = new Monaco.CancellationTokenSource();
         const token = this.tokenSource.token;
 
         const editor = MonacoEditor.get(this.editorManager.currentEditor);
@@ -115,7 +114,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.publish(roots || []);
     }
 
-    protected async createRoots(model: editor.ITextModel, token: CancellationToken, editorSelection?: Range): Promise<MonacoOutlineSymbolInformationNode[]> {
+    protected async createRoots(model: Monaco.editor.ITextModel, token: Monaco.CancellationToken, editorSelection?: Range): Promise<MonacoOutlineSymbolInformationNode[]> {
         if (this.roots && this.roots.length > 0) {
             // Reset the selection on the tree nodes, so that we can apply the new ones based on the `editorSelection`.
             const resetSelection = (node: MonacoOutlineSymbolInformationNode) => {
@@ -230,7 +229,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     /**
      * `monaco` to LSP `Range` converter. Converts the `1-based` location indices into `0-based` ones.
      */
-    protected asRange(range: IRange): Range {
+    protected asRange(range: Monaco.IRange): Range {
         const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
         return {
             start: {

@@ -22,6 +22,7 @@ import { MonacoContextMenuService } from '@theia/monaco/lib/browser/monaco-conte
 import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { OutputUri } from '../common/output-uri';
 import { OutputContextMenuService } from './output-context-menu';
+import * as Monaco from 'monaco-editor-core';
 
 @injectable()
 export class OutputEditorFactory implements MonacoEditorFactory {
@@ -34,7 +35,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
 
     readonly scheme: string = OutputUri.SCHEME;
 
-    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: monaco.editor.IEditorOverrideServices): MonacoEditor {
+    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: Monaco.editor.IEditorOverrideServices): MonacoEditor {
         const uri = new URI(model.uri);
         const options = this.createOptions(model, defaultsOptions);
         const overrides = this.createOverrides(model, defaultOverrides);
@@ -61,7 +62,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
         };
     }
 
-    protected createOverrides(model: MonacoEditorModel, defaultOverrides: monaco.editor.IEditorOverrideServices): monaco.editor.IEditorOverrideServices {
+    protected createOverrides(model: MonacoEditorModel, defaultOverrides: Monaco.editor.IEditorOverrideServices): Monaco.editor.IEditorOverrideServices {
         const contextMenuService = this.contextMenuService;
         return {
             ...defaultOverrides,

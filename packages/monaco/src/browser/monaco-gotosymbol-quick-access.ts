@@ -16,23 +16,34 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
+import * as Monaco from 'monaco-editor-core';
+import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { ILanguageFeaturesService } from 'monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { IOutlineModelService } from 'monaco-editor-core/esm/vs/editor/contrib/documentSymbols/browser/outlineModel';
+import { StandaloneGotoSymbolQuickAccessProvider } from 'monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess';
+import { IQuickAccessRegistry, Extensions } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
 
-export class GotoSymbolQuickAccess extends monaco.quickInput.StandaloneGotoSymbolQuickAccessProvider {
+export class GotoSymbolQuickAccess extends StandaloneGotoSymbolQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...services: any[]);
-    constructor(@monaco.services.ICodeEditorService private readonly service: monaco.editor.ICodeEditorService) {
-        super(service);
+    constructor(
+        @ICodeEditorService protected readonly codeEditorService: ICodeEditorService,
+        @ILanguageFeaturesService protected readonly languageFeatures: ILanguageFeaturesService,
+        @IOutlineModelService protected readonly outlineService: IOutlineModelService,
+    ) {
+        super(codeEditorService, languageFeatures, outlineService);
     }
 
-    get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
-        return this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor();
+    get activeTextEditorControl(): Monaco.editor.ICodeEditor | undefined {
+        return this.codeEditorService.getFocusedCodeEditor() || this.codeEditorService.getActiveCodeEditor();
     }
 }
 
 @injectable()
 export class GotoSymbolQuickAccessContribution implements QuickAccessContribution {
     registerQuickAccessProvider(): void {
-        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
+        Registry.as<IQuickAccessRegistry>(Extensions.Quickaccess).registerQuickAccessProvider({
             ctor: GotoSymbolQuickAccess,
             prefix: '@',
             placeholder: '',

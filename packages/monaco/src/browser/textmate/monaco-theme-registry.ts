@@ -19,9 +19,13 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
+import * as Monaco from 'monaco-editor-core';
+import { IStandaloneTheme, IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { Color } from 'monaco-editor-core/esm/vs/base/common/color';
 
-export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
-export interface MixStandaloneTheme extends monaco.services.IStandaloneTheme {
+export interface ThemeMix extends IRawTheme, Monaco.editor.IStandaloneThemeData { }
+export interface MixStandaloneTheme extends IStandaloneTheme {
     themeData: ThemeMix
 }
 
@@ -42,20 +46,20 @@ export class MonacoThemeRegistry {
     }
 
     protected doGetTheme(name: string | undefined): MixStandaloneTheme | undefined {
-        const standaloneThemeService = monaco.services.StaticServices.standaloneThemeService.get();
+        const standaloneThemeService = StandaloneServices.get(IStandaloneThemeService);
         const theme = !name ? standaloneThemeService.getColorTheme() : standaloneThemeService._knownThemes.get(name);
         return theme as MixStandaloneTheme | undefined;
     }
 
     setTheme(name: string, data: ThemeMix): void {
         // monaco auto refreshes a theme with new data
-        monaco.editor.defineTheme(name, data);
+        Monaco.editor.defineTheme(name, data);
     }
 
     /**
      * Register VS Code compatible themes
      */
-    register(json: any, includes?: { [includePath: string]: any }, givenName?: string, monacoBase?: monaco.editor.BuiltinTheme): ThemeMix {
+    register(json: any, includes?: { [includePath: string]: any }, givenName?: string, monacoBase?: Monaco.editor.BuiltinTheme): ThemeMix {
         const name = givenName || json.name!;
         const result: ThemeMix = {
             name,
@@ -100,7 +104,7 @@ export class MonacoThemeRegistry {
             }
 
             // the default rule (scope empty) is always the first rule. Ignore all other default rules.
-            const defaultTheme = monaco.services.StaticServices.standaloneThemeService.get()._knownThemes.get(result.base)!;
+            const defaultTheme = StandaloneServices.get(IStandaloneThemeService)._knownThemes.get(result.base)!;
             const foreground = result.colors['editor.foreground'] || defaultTheme.getColor('editor.foreground');
             const background = result.colors['editor.background'] || defaultTheme.getColor('editor.background');
             result.settings.unshift({
@@ -121,7 +125,7 @@ export class MonacoThemeRegistry {
         return result;
     }
 
-    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void): void {
+    protected transform(tokenColor: any, acceptor: (rule: Monaco.editor.ITokenThemeRule) => void): void {
         if (typeof tokenColor.scope === 'undefined') {
             tokenColor.scope = [''];
         } else if (typeof tokenColor.scope === 'string') {
@@ -135,7 +139,7 @@ export class MonacoThemeRegistry {
         }
     }
 
-    protected normalizeColor(color: string | monaco.color.Color | undefined): string | undefined {
+    protected normalizeColor(color: string | Color | undefined): string | undefined {
         if (!color) {
             return undefined;
         }

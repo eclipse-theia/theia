@@ -21,12 +21,13 @@ import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } 
 import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { MonacoEditorModel } from './monaco-editor-model';
+import * as Monaco from 'monaco-editor-core';
+import { IResourceEditorInput } from 'monaco-editor-core/esm/vs/platform/editor/common/editor';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 
-import ICodeEditor = monaco.editor.ICodeEditor;
-import CommonCodeEditor = monaco.editor.CommonCodeEditor;
-import IResourceEditorInput = monaco.editor.IResourceEditorInput;
-
-decorate(injectable(), monaco.services.CodeEditorServiceImpl);
+import CommonCodeEditor = editor.CommonCodeEditor; // Seems to have been removed
+decorate(injectable(), monaco.services.CodeEditorServiceImpl); // Seems to have been removed
 
 @injectable()
 export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
@@ -49,13 +50,13 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     protected readonly preferencesService: PreferenceService;
 
     constructor() {
-        super(undefined, monaco.services.StaticServices.standaloneThemeService.get());
+        super(undefined, StandaloneServices.get(IStandaloneThemeService));
     }
 
     /**
      * Monaco active editor is either focused or last focused editor.
      */
-    getActiveCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
+    getActiveCodeEditor(): Monaco.editor.IStandaloneCodeEditor | undefined {
         let editor = MonacoEditor.getCurrent(this.editors);
         if (!editor && CustomEditorWidget.is(this.shell.activeWidget)) {
             const model = this.shell.activeWidget.modelRef.object;
@@ -66,7 +67,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return editor && editor.getControl();
     }
 
-    async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
+    async openCodeEditor(input: IResourceEditorInput, source?: Monaco.editor.ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
         const uri = new URI(input.resource.toString());
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);
         const widget = await open(this.openerService, uri, openerOptions);
@@ -95,7 +96,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return undefined;
     }
 
-    protected createEditorOpenerOptions(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): EditorOpenerOptions {
+    protected createEditorOpenerOptions(input: IResourceEditorInput, source?: Monaco.editor.ICodeEditor, sideBySide?: boolean): EditorOpenerOptions {
         const mode = this.getEditorOpenMode(input);
         const selection = input.options && this.m2p.asRange(input.options.selection);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
@@ -113,7 +114,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         }
         return options.revealIfVisible ? 'activate' : 'open';
     }
-    protected getWidgetOptions(source?: ICodeEditor, sideBySide?: boolean): ApplicationShell.WidgetOptions | undefined {
+    protected getWidgetOptions(source?: Monaco.editor.ICodeEditor, sideBySide?: boolean): ApplicationShell.WidgetOptions | undefined {
         const ref = MonacoEditor.getWidgetFor(this.editors, source);
         if (!ref) {
             return undefined;

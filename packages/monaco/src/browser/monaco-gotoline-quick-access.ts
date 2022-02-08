@@ -16,15 +16,20 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
+import * as Monaco from 'monaco-editor-core';
+import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { StandaloneGotoLineQuickAccessProvider } from 'monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess';
+import { IQuickAccessRegistry, Extensions } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
 
-export class GotoLineQuickAccess extends monaco.quickInput.StandaloneGotoLineQuickAccessProvider {
+export class GotoLineQuickAccess extends StandaloneGotoLineQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...services: any[]);
-    constructor(@monaco.services.ICodeEditorService private readonly service: monaco.editor.ICodeEditorService) {
+    constructor(@ICodeEditorService private readonly service: ICodeEditorService) {
         super(service);
     }
 
-    get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
+    get activeTextEditorControl(): Monaco.editor.ICodeEditor | undefined {
         return this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor();
     }
 }
@@ -32,7 +37,7 @@ export class GotoLineQuickAccess extends monaco.quickInput.StandaloneGotoLineQui
 @injectable()
 export class GotoLineQuickAccessContribution implements QuickAccessContribution {
     registerQuickAccessProvider(): void {
-        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
+        Registry.as<IQuickAccessRegistry>(Extensions.Quickaccess).registerQuickAccessProvider({
             ctor: GotoLineQuickAccess,
             prefix: ':',
             placeholder: '',
