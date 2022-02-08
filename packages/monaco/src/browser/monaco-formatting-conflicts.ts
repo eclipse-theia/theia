@@ -18,8 +18,10 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceService, FrontendApplicationContribution, PreferenceLanguageOverrideService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoQuickInputService } from './monaco-quick-input-service';
+import { languages, editor } from 'monaco-editor-core';
+import { FormattingConflicts, FormattingMode } from 'monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
 
-type FormattingEditProvider = monaco.languages.DocumentFormattingEditProvider | monaco.languages.DocumentRangeFormattingEditProvider;
+type FormattingEditProvider = languages.DocumentFormattingEditProvider | languages.DocumentRangeFormattingEditProvider;
 
 const PREFERENCE_NAME = 'editor.defaultFormatter';
 
@@ -39,12 +41,12 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     protected readonly editorManager: EditorManager;
 
     async initialize(): Promise<void> {
-        monaco.format.FormattingConflicts.setFormatterSelector(<T extends FormattingEditProvider>(
-            formatters: T[], document: monaco.editor.ITextModel, mode: monaco.format.FormattingMode) =>
+        FormattingConflicts.setFormatterSelector(<T extends FormattingEditProvider>(
+            formatters: T[], document: editor.ITextModel, mode: monaco.format.FormattingMode) =>
             this.selectFormatter(formatters, document, mode));
     }
 
-    private async setDefaultFormatter(language: string, formatter: string): Promise<void> {
+    protected async setDefaultFormatter(language: string, formatter: string): Promise<void> {
         const name = this.preferenceSchema.overridePreferenceName({
             preferenceName: PREFERENCE_NAME,
             overrideIdentifier: language
@@ -63,7 +65,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     }
 
     private async selectFormatter<T extends FormattingEditProvider>(
-        formatters: T[], document: monaco.editor.ITextModel, mode: monaco.format.FormattingMode): Promise<T | undefined> {
+        formatters: T[], document: editor.ITextModel, mode: FormattingMode): Promise<T | undefined> {
 
         if (formatters.length === 0) {
             return undefined;

@@ -24,9 +24,13 @@ import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
-import { IIdentifiedSingleEditOperation, ITextBufferFactory } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from 'monaco-editor-core/esm/vs/editor/common/model';
+import { IResolvedTextEditorModel, ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { editor, IEvent, Uri } from 'monaco-editor-core';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
+import { IModelService } from 'monaco-editor-core/esm/vs/editor/common/services/model';
+import { createTextBufferFactoryFromStream } from 'monaco-editor-core/esm/vs/editor/common/model/textModel';
 
 export {
     TextDocumentSaveReason
@@ -55,7 +59,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     readonly onWillSaveLoopTimeOut = 1500;
     protected bufferSavedVersionId: number;
 
-    protected model: editor.ITextModel;
+    protected model: ITextModel;
     protected readonly resolveModel: Promise<void>;
 
     protected readonly toDispose = new DisposableCollection();
@@ -64,7 +68,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onDidChangeContentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
-    protected readonly onDidSaveModelEmitter = new Emitter<editor.ITextModel>();
+    protected readonly onDidSaveModelEmitter = new Emitter<ITextModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
 
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
@@ -161,8 +165,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             } else {
                 firstLine = value.getFirstLineText(1000);
             }
-            const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
-            this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
+            const languageSelection = StandaloneServices.get(ILanguageService).createByFilepathOrFirstLine(uri, firstLine);
+            this.model = StandaloneServices.get(IModelService).createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
@@ -222,7 +226,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected _languageId: string | undefined;
     get languageId(): string {
-        return this._languageId !== undefined ? this._languageId : this.model.getModeId();
+        return this._languageId !== undefined ? this._languageId : this.model.getLanguageId();
     }
     /**
      * It's a hack to dispatch close notification with an old language id, don't use it.
@@ -278,7 +282,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.toDispose.onDispose;
     }
 
-    get textEditorModel(): editor.ITextModel {
+    get textEditorModel(): ITextModel {
         return this.model;
     }
 
@@ -290,7 +294,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
         const wordSeparators = this.editorPreferences ? this.editorPreferences['editor.wordSeparators'] : DEFAULT_WORD_SEPARATORS;
-        const results: monaco.editor.FindMatch[] = this.model.findMatches(
+        const results: editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,
             options.isRegex,
@@ -369,13 +373,13 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
 
         this.resourceVersion = this.resource.version;
-        this.updateModel(() => monaco.services.StaticServices.modelService.get().updateModel(this.model, value), {
+        this.updateModel(() => StandaloneServices.get(IModelService).updateModel(this.model, value), {
             ignoreDirty: true,
             ignoreContentChanges: true
         });
         this.trace(log => log('MonacoEditorModel.doSync - exit'));
     }
-    protected async readContents(): Promise<string | monaco.editor.ITextBufferFactory | undefined> {
+    protected async readContents(): Promise<string | ITextBufferFactory | undefined> {
         try {
             const options = { encoding: this.getEncoding() };
             const content = await (this.resource.readStream ? this.resource.readStream(options) : this.resource.readContents(options));
@@ -383,7 +387,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             if (typeof content === 'string') {
                 value = content;
             } else {
-                value = monaco.textModel.createTextBufferFactoryFromStream(content);
+                value = createTextBufferFactoryFromStream(content);
             }
             this.updateContentEncoding();
             this.setValid(true);
@@ -443,7 +447,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
-    protected fireDidChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
+    protected fireDidChangeContent(event: editor.IModelContentChangedEvent): void {
         this.trace(log => log(`MonacoEditorModel.fireDidChangeContent - enter - ${JSON.stringify(event, undefined, 2)}`));
         if (this.model.getAlternativeVersionId() === this.bufferSavedVersionId) {
             this.setDirty(false);
@@ -456,11 +460,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.pushContentChanges(changeContentEvent.contentChanges);
         this.trace(log => log('MonacoEditorModel.fireDidChangeContent - exit'));
     }
-    protected asContentChangedEvent(event: monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
+    protected asContentChangedEvent(event: editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));
         return { model: this, contentChanges };
     }
-    protected asTextDocumentContentChangeEvent(change: monaco.editor.IModelContentChange): TextDocumentContentChangeEvent {
+    protected asTextDocumentContentChangeEvent(change: editor.IModelContentChange): TextDocumentContentChangeEvent {
         const range = this.m2p.asRange(change.range);
         const rangeLength = change.rangeLength;
         const text = change.text;
@@ -468,7 +472,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected applyEdits(
-        operations: monaco.editor.IIdentifiedSingleEditOperation[],
+        operations: editor.IIdentifiedSingleEditOperation[],
         options?: Partial<MonacoEditorModel.ApplyEditsOptions>
     ): void {
         return this.updateModel(() => this.model.applyEdits(operations), options);
@@ -531,7 +535,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken, options?: SaveOptions): Promise<void> {
-        type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
+        type EditContributor = Thenable<editor.IIdentifiedSingleEditOperation[]>;
 
         const firing = this.onWillSaveModelEmitter.sequence(async listener => {
             if (token.isCancellationRequested) {
@@ -563,7 +567,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
             // Wait for all promises.
             const edits = await Promise.all(waitables).then(allOperations =>
-                ([] as monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
+                ([] as editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
             );
             if (token.isCancellationRequested) {
                 return false;
@@ -612,7 +616,13 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.trace(log => log('MonacoEditorModel.revert - exit'));
     }
 
-    createSnapshot(): object {
+    // createSnapshot(): object {
+    //     return {
+    //         value: this.getText()
+    //     };
+    // }
+
+    createSnapshot(): ITextSnapshot | null {
         return {
             value: this.getText()
         };
