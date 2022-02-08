@@ -130,7 +130,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_SKIP;
             }
         };
-        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
+        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter);
         if (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;
             return element;
@@ -198,7 +198,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_REJECT;
             }
         };
-        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
+        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter);
         const lineElements: HTMLElement[] = [];
         while (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;

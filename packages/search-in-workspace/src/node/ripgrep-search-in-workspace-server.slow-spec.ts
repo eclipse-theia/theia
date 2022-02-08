@@ -904,13 +904,16 @@ describe('ripgrep-search-in-workspace-server', function (): void {
     it('fails gracefully when rg isn\'t found', async function (): Promise<void> {
         const errorString = await new Promise<string>((resolve, reject) => {
             const rgServer = createInstance('/non-existent/rg');
-
             rgServer.setClient({
                 onResult: (searchId: number, result: SearchInWorkspaceResult): void => {
                     reject();
                 },
                 onDone: (searchId: number, error?: string): void => {
-                    resolve(error);
+                    if (typeof error === 'string') {
+                        resolve(error);
+                    } else {
+                        reject();
+                    }
                 },
             });
             rgServer.search('pattern', [rootDirA]);
@@ -934,7 +937,11 @@ describe('ripgrep-search-in-workspace-server', function (): void {
                     reject();
                 },
                 onDone: (searchId: number, error?: string): void => {
-                    resolve(error);
+                    if (typeof error === 'string') {
+                        resolve(error);
+                    } else {
+                        reject();
+                    }
                 },
             });
             rgServer.search('pattern', [rootDirA]);

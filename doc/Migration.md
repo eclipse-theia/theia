@@ -19,9 +19,16 @@ For example:
 }
 ```
 
+### v1.23.0
+
+#### TypeScript 4.5.5
+
+If you are using TypeScript <= 4.5.5 and you encounter issues when building your Theia application because your compiler fails to parse our type definitions,
+then you should upgrade to TypeScript >= 4.5.5.
+
 ### v1.22.0
 
-### Electron Update
+#### Electron Update
 
 Electron got updated from 9 to 15, this might involve some modifications in your code based on the new APIs.
 

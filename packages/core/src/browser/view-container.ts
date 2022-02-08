@@ -1310,6 +1310,7 @@ export class ViewContainerLayout extends SplitLayout {
         return map(this.items, item => item.widget);
     }
 
+    // @ts-expect-error TS2611 `SplitLayout.widgets` is declared as `readonly widgets` but is implemented as a getter.
     get widgets(): ViewContainerPart[] {
         return toArray(this.iter());
     }

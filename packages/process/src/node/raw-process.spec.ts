@@ -100,16 +100,13 @@ describe('RawProcess', function (): void {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise<number>((resolve, reject) => {
-            rawProcess.onError(error => {
-                reject();
-            });
-
+            rawProcess.onError(reject);
             rawProcess.onExit(event => {
                 if (event.code === undefined) {
-                    reject();
+                    reject(new Error('event.code is undefined'));
+                } else {
+                    resolve(event.code);
                 }
-
-                resolve(event.code);
             });
         });
 
