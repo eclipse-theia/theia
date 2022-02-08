@@ -4919,15 +4919,15 @@ drivelist@^9.0.2:
     nan "^2.14.0"
     prebuild-install "^5.2.4"
 
-dugite-extra@0.1.14:
-  version "0.1.14"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.14.tgz#514c89b6c597bf8b748b4febd53382559a2a8fdd"
-  integrity sha512-apUiaj322iSSBx5X7/8Dg3GP6mDLl5y6RaeEWBpLUHfBKxQyTTVHG0YpzYCKe2ke1EbrSmreVNo1FwDnIb3qlw==
+dugite-extra@0.1.15:
+  version "0.1.15"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.15.tgz#322406b628ea5515c5c6fcd65e4d040543d6268a"
+  integrity sha512-beLmQcIXLA8aXqWQZF/ooECoZvYKpBywIFwgqAoYnV04NdWUXDtZ6mMcjQf5eAz5PjXGXAYSuQ31zkPL8J85+A==
   dependencies:
     byline "^5.0.0"
     dugite-no-gpl "1.69.0"
-    find-git-exec "^0.0.3"
-    upath "^1.0.0"
+    find-git-exec "^0.0.4"
+    upath "^2.0.1"
 
 dugite-no-gpl@1.69.0:
   version "1.69.0"
@@ -5700,10 +5700,10 @@ find-cache-dir@^3.2.0, find-cache-dir@^3.3.1:
     make-dir "^3.0.2"
     pkg-dir "^4.1.0"
 
-find-git-exec@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/find-git-exec/-/find-git-exec-0.0.3.tgz#4ce941859ebe7f359fb8e56aafd2acf3c955b52c"
-  integrity sha512-cGsuku5hwdOpToV6axI0fRCABuw1yozFtQv13pVK0j7BjILU8buDtHKmSrsZN340Sjj3Z42n8fcF1Xu4nRuBbA==
+find-git-exec@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/find-git-exec/-/find-git-exec-0.0.4.tgz#f1d0d35f93ad99bc81aacd357388d00ae902bc92"
+  integrity sha512-klzQwno+dpdeahtHhvZZ5Yn6K+zme1Aj+YJ4ZD+DywSLrQoyCywTrsubUZa1hHRehmfwBThoeKjS7fsaxhpfNA==
   dependencies:
     "@types/node" "^10.14.22"
     "@types/which" "^1.3.2"
@@ -11202,7 +11202,7 @@ unzipper@^0.9.11:
     readable-stream "~2.3.6"
     setimmediate "~1.0.4"
 
-upath@^1.0.0, upath@^1.0.2:
+upath@^1.0.2:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/upath/-/upath-1.2.0.tgz#8f66dbcd55a883acdae4408af8b035a5044c1894"
   integrity sha512-aZwGpamFO61g3OlfT7OQCHqhGnW43ieH9WZeP7QxN/G/jS4jfqUkZxoryvJgVPEcrl5NL/ggHsSmLMHuH64Lhg==
