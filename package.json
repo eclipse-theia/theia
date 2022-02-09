@@ -44,8 +44,8 @@
     "sinon": "^12.0.0",
     "temp": "^0.8.3",
     "tslint": "^5.12.0",
-    "typedoc": "0.20.36",
-    "typedoc-plugin-external-module-map": "1.2.1",
+    "typedoc": "^0.22.11",
+    "typedoc-plugin-external-module-map": "1.3.2",
     "typescript": "~4.5.5",
     "uuid": "^8.0.0",
     "yargs": "^15.3.1"
