@@ -11,5 +11,6 @@
   "hideGenerator": true,
   "name": "Theia TypeDoc",
   "out": "gh-pages/docs/next",
-  "readme": "README.md"
+  "readme": "README.md",
+  "entryPointStrategy": "expand"
 }
