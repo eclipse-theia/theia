@@ -15,6 +15,22 @@
  ********************************************************************************/
 
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+export type Nullable<T> = { [P in keyof T]: T[P] | null };
+export type Undefinable<T> = { [P in keyof T]: T[P] | undefined };
+
+/**
+ * Mutates and returns the object so that all ownkeys that are null are made `undefined`
+ */
+export function nullToUndefined<T>(nullable: Nullable<T>): Undefinable<T> {
+    const undefinable = nullable as Undefinable<T>;
+    for (const key in nullable) {
+        // eslint-disable-next-line no-null/no-null
+        if (nullable[key] === null && Object.prototype.hasOwnProperty.call(nullable, key)) {
+            undefinable[key] = undefined;
+        }
+    }
+    return undefinable;
+}
 
 export type Deferred<T> = {
     [P in keyof T]: Promise<T[P]>

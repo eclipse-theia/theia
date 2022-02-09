@@ -26,8 +26,12 @@ import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import * as Monaco from 'monaco-editor-core';
 import { ITextModelService, IResolvedTextEditorModel, ITextModelContentProvider } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { ITextModelUpdateOptions } from 'monaco-editor-core/esm/vs/editor/common/model';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ITextResourcePropertiesService } from 'monaco-editor-core/esm/vs/editor/common/services/textResourceConfiguration';
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
 export interface MonacoEditorModelFactory {
@@ -42,6 +46,7 @@ export interface MonacoEditorModelFactory {
 
 @injectable()
 export class MonacoTextModelService implements ITextModelService {
+    declare readonly _serviceBrand: undefined;
 
     protected readonly _ready = new Deferred<void>();
     /**
@@ -75,6 +80,9 @@ export class MonacoTextModelService implements ITextModelService {
     @inject(ApplicationServer)
     protected readonly applicationServer!: ApplicationServer;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     @postConstruct()
     public init(): void {
         let isWindowsBackend = false;
@@ -83,17 +91,13 @@ export class MonacoTextModelService implements ITextModelService {
             isWindowsBackend = os === OS.Type.Windows;
         }, () => undefined).then(() => this._ready.resolve());
 
-        const staticServices = monaco.services.StaticServices;
+        const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
 
-        if (staticServices.resourcePropertiesService) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const original = staticServices.resourcePropertiesService.get() as any;
-            original.getEOL = () => {
+        if (resourcePropertiesService) {
+            resourcePropertiesService.getEOL = () => {
                 const eol = this.editorPreferences['files.eol'];
-                if (eol) {
-                    if (eol !== 'auto') {
-                        return eol;
-                    }
+                if (eol && eol !== 'auto') {
+                    return eol;
                 }
                 return isWindowsBackend ? '\r\n' : '\n';
             };
@@ -181,5 +185,9 @@ export class MonacoTextModelService implements ITextModelService {
                 // no-op
             }
         };
+    }
+
+    canHandleResource(resource: Monaco.Uri): boolean {
+        return this.fileService.canHandleResource(new URI(resource));
     }
 }

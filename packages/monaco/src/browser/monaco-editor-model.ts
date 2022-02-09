@@ -25,7 +25,7 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
 import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { IResolvedTextEditorModel, ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import * as Monaco from 'monaco-editor-core';
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
@@ -48,10 +48,10 @@ export interface MonacoModelContentChangedEvent {
     readonly contentChanges: TextDocumentContentChangeEvent[];
 }
 
-export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
+export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDocument {
 
     autoSave: 'on' | 'off' = 'on';
-    autoSaveDelay: number = 500;
+    autoSaveDelay = 500;
     suppressOpenEditorWhenDirty = false;
     lineNumbersMinChars = 3;
 
@@ -108,6 +108,18 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    isDisposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
+    resolve(): Promise<void> {
+        return this.resolveModel;
+    }
+
+    isResolved(): boolean {
+        return Boolean(this.model);
     }
 
     setEncoding(encoding: string, mode: EncodingMode): Promise<void> {
@@ -228,8 +240,13 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     get languageId(): string {
         return this._languageId !== undefined ? this._languageId : this.model.getLanguageId();
     }
+
+    getLanguageId(): string | undefined {
+        return this.languageId;
+    }
+
     /**
-     * It's a hack to dispatch close notification with an old language id, don't use it.
+     * It's a hack to dispatch close notification with an old language id; don't use it.
      */
     setLanguageId(languageId: string | undefined): void {
         this._languageId = languageId;
@@ -278,11 +295,22 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.resource.saveContents === undefined;
     }
 
+    isReadonly(): boolean {
+        return this.readOnly;
+    }
+
     get onDispose(): Monaco.IEvent<void> {
         return this.toDispose.onDispose;
     }
 
-    get textEditorModel(): ITextModel {
+    get onWillDispose(): Event<void> {
+        return this.toDispose.onDispose;
+    }
+
+    // We have a TypeScript problem here. There is a const enum `DefaultEndOfLine` used for ITextModel and a non-const redeclaration of that enum in the public API in
+    // Monaco.editor. The values will be the same, but TS won't accept that the two enums are equivalent, so it says these types are irreconcilable.
+    get textEditorModel(): Monaco.editor.ITextModel & ITextModel {
+        // @ts-expect-error ts(2322)
         return this.model;
     }
 
@@ -616,15 +644,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.trace(log => log('MonacoEditorModel.revert - exit'));
     }
 
-    // createSnapshot(): object {
-    //     return {
-    //         value: this.getText()
-    //     };
-    // }
-
+    createSnapshot(this: IResolvedTextEditorModel): ITextSnapshot;
+    createSnapshot(this: ITextEditorModel): ITextSnapshot | null;
     createSnapshot(): ITextSnapshot | null {
         return {
-            value: this.getText()
+            read: () => this.getText()
         };
     }
 

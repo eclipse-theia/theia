@@ -29,7 +29,7 @@ export interface MonacoCommandServiceFactory {
 
 @injectable()
 export class MonacoCommandService implements ICommandService, Disposable {
-
+    declare readonly _serviceBrand: undefined; // Required for type compliance.
     protected readonly onWillExecuteCommandEmitter = new Emitter<ICommandEvent>();
     protected readonly onDidExecuteCommandEmitter = new Emitter<ICommandEvent>();
     protected readonly toDispose = new DisposableCollection(

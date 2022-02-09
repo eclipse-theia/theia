@@ -21,6 +21,7 @@ import { IDisposable } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
 
 @injectable()
 export class MonacoBulkEditService implements IBulkEditService {
+    declare readonly _serviceBrand: undefined;
 
     @inject(MonacoWorkspace)
     protected readonly workspace: MonacoWorkspace;

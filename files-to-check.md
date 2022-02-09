@@ -1,12 +1,12 @@
-packages/monaco/src/browser/monaco-command-service.ts
-packages/monaco/src/browser/monaco-context-menu.ts
-packages/monaco/src/browser/monaco-editor-model.ts
-packages/monaco/src/browser/monaco-editor.ts
-packages/monaco/src/browser/monaco-diff-navigator-factory.ts
-packages/monaco/src/browser/monaco-editor-service.ts
-packages/monaco/src/browser/monaco-text-model-service.ts
-packages/monaco/src/browser/monaco-workspace.ts
-packages/monaco/src/browser/monaco-bulk-edit-service.ts
+- [x] packages/monaco/src/browser/monaco-command-service.ts
+- [x] packages/monaco/src/browser/monaco-context-menu.ts
+- [x] packages/monaco/src/browser/monaco-editor-model.ts
+- [x] packages/monaco/src/browser/monaco-editor.ts
+- [x] packages/monaco/src/browser/monaco-diff-navigator-factory.ts
+- [x] packages/monaco/src/browser/monaco-editor-service.ts
+- [x] packages/monaco/src/browser/monaco-text-model-service.ts
+- [x] packages/monaco/src/browser/monaco-workspace.ts
+- [x] packages/monaco/src/browser/monaco-bulk-edit-service.ts
 packages/monaco/src/browser/monaco-keycode-map.ts
 packages/monaco/src/browser/monaco-resolved-keybinding.ts
 packages/monaco/src/browser/monaco-quick-input-service.ts
@@ -35,3 +35,5 @@ packages/bulk-edit/src/browser/bulk-edit-tree/bulk-edit-tree.spec.ts
 packages/console/src/browser/console-widget.ts
 packages/keymaps/src/browser/keymaps-service.ts
 packages/git/src/browser/blame/blame-decorator.ts
+
+Check whether we can return something else for the ITextSnapshot

@@ -88,7 +88,12 @@ export interface DecorationOptions {
      * color of the decoration in the overview ruler.
      * use `rgba` values to play well with other decorations.
      */
-    color: string | { id: string };
+    color: string | { id: string } | undefined;
+
+    /**
+     * The color to use in dark themes. Will be favored over `color` except in light themes.
+     */
+    darkColor?: string | { id: string };
 }
 
 export enum MinimapPosition {
@@ -97,14 +102,14 @@ export enum MinimapPosition {
 }
 
 export interface DecorationMinimapOptions extends DecorationOptions {
-    position?: MinimapPosition;
+    position: MinimapPosition;
 }
 
 export interface DecorationOverviewRulerOptions extends DecorationOptions {
     /**
      * position in the overview ruler.
      */
-    position?: OverviewRulerLane;
+    position: OverviewRulerLane;
 }
 
 export enum OverviewRulerLane {

@@ -27,29 +27,9 @@ export class MonacoDiffNavigatorFactory {
         hasPrevious: () => false,
         next: () => { },
         previous: () => { },
-        revealFirst: false,
     };
 
     createdDiffNavigator(editor: IStandaloneDiffEditor, options?: IDiffNavigatorOptions): DiffNavigator {
-        const navigator = createDiffNavigator(editor, options);
-        const ensureInitialized = (fwd: boolean) => {
-            if (navigator.nextIdx < -1) {
-                navigator._initIdx(fwd);
-            }
-        };
-        return <DiffNavigator>{
-            canNavigate: () => navigator.canNavigate(),
-            hasNext: () => {
-                ensureInitialized(true);
-                return navigator.nextIdx + 1 < navigator.ranges.length;
-            },
-            hasPrevious: () => {
-                ensureInitialized(false);
-                return navigator.nextIdx > 0;
-            },
-            next: () => navigator.next(),
-            previous: () => navigator.previous(),
-            revealFirst: navigator.revealFirst,
-        };
+        return createDiffNavigator(editor, options);
     }
 }

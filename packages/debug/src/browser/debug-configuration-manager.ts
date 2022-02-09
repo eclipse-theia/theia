@@ -37,6 +37,7 @@ import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import * as Monaco from 'monaco-editor-core';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -208,7 +209,7 @@ export class DebugConfigurationManager {
         }
         const editor = widget.editor.getControl();
         const { commandService } = widget.editor;
-        let position: monaco.Position | undefined;
+        let position: Monaco.Position | undefined;
         let depthInArray = 0;
         let lastProperty = '';
         visit(editor.getValue(), {

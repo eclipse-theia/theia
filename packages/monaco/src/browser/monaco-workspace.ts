@@ -314,9 +314,10 @@ export class MonacoWorkspace {
                 }
                 const reference = await this.textModelService.createModelReference(uri);
                 try {
-                    const model = reference.object.textEditorModel;
-                    const editor = MonacoEditor.findByDocument(this.editorManager, reference.object)[0];
-                    const cursorState = editor?.getControl().getSelections() || [];
+                    const document = reference.object as MonacoEditorModel;
+                    const model = document.textEditorModel;
+                    const editor = MonacoEditor.findByDocument(this.editorManager, document)[0];
+                    const cursorState = editor?.getControl().getSelections() ?? [];
                     // start a fresh operation
                     model.pushStackElement();
                     if (editOperations.length) {

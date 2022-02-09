@@ -23,9 +23,20 @@ import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
 import { IContextMenuService } from 'monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { IContextMenuDelegate } from 'monaco-editor-core/esm/vs/base/browser/contextmenu';
 import { MenuItemAction } from 'monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { Event, Emitter } from 'monaco-editor-core/esm/vs/base/common/event';
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {
+    declare readonly _serviceBrand: undefined;
+
+    protected readonly onDidShowContextMenuEmitter = new Emitter<void>();
+    get onDidShowContextMenu(): Event<void> {
+        return this.onDidShowContextMenuEmitter.event;
+    };
+    protected readonly onDidHideContextMenuEmitter = new Emitter<void>();
+    get onDidHideContextMenu(): Event<void> {
+        return this.onDidShowContextMenuEmitter.event;
+    };
 
     constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
     }
@@ -33,6 +44,10 @@ export class MonacoContextMenuService implements IContextMenuService {
     showContextMenu(delegate: IContextMenuDelegate): void {
         const anchor = toAnchor(delegate.getAnchor());
         const actions = delegate.getActions();
+        const onHide = () => {
+            delegate.onHide?.(false);
+            this.onDidHideContextMenuEmitter.fire();
+        };
 
         // Actions for editor context menu come as 'MenuItemAction' items
         // In case of 'Quick Fix' actions come as 'CodeActionAction' items
@@ -40,7 +55,7 @@ export class MonacoContextMenuService implements IContextMenuService {
             this.contextMenuRenderer.render({
                 menuPath: this.menuPath(),
                 anchor,
-                onHide: () => delegate.onHide?.(false)
+                onHide
             });
         } else {
             const commands = new CommandRegistry();
@@ -62,9 +77,10 @@ export class MonacoContextMenuService implements IContextMenuService {
                     command: commandId
                 });
             }
-            menu.aboutToClose.connect(() => delegate.onHide?.(false));
+            menu.aboutToClose.connect(() => onHide);
             menu.open(anchor.x, anchor.y);
         }
+        this.onDidShowContextMenuEmitter.fire();
     }
 
     protected menuPath(): MenuPath {

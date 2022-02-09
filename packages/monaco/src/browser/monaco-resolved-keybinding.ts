@@ -14,15 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Monaco from 'monaco-editor-core';
+import { ChordKeybinding, Keybinding, KeybindingModifier, ResolvedKeybinding, ResolvedKeybindingPart, SimpleKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybindings';
+import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelProvider } from 'monaco-editor-core/esm/vs/base/common/keybindingLabels';
+import { USLayoutResolvedKeybinding } from 'monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
+import * as MonacoPlatform from 'monaco-editor-core/esm/vs/base/common/platform';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/browser/keys';
 import { isOSX } from '@theia/core/lib/common/os';
-import { ChordKeybinding, Keybinding, ResolvedKeybinding, ResolvedKeybindingPart, SimpleKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybindings';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelProvider } from 'monaco-editor-core/esm/vs/base/common/keybindingLabels';
-import { USLayoutResolvedKeybinding } from 'monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
-import * as Monaco from 'monaco-editor-core';
-import * as MonacoPlatform from 'monaco-editor-core/esm/vs/base/common/platform';
 
 export class MonacoResolvedKeybinding extends ResolvedKeybinding {
 
@@ -45,15 +45,15 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
         });
     }
 
-    public getLabel(): string | null {
+    getLabel(): string | null {
         return UILabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public getAriaLabel(): string | null {
+    getAriaLabel(): string | null {
         return UILabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyAriaLabel);
     }
 
-    public getElectronAccelerator(): string | null {
+    getElectronAccelerator(): string | null {
         if (this.isChord()) {
             // Electron cannot handle chords
             // eslint-disable-next-line no-null/no-null
@@ -62,25 +62,33 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
         return ElectronAcceleratorLabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public getUserSettingsLabel(): string | null {
+    getUserSettingsLabel(): string | null {
         return UserSettingsLabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public isWYSIWYG(): boolean {
+    isWYSIWYG(): boolean {
         return true;
     }
 
-    public isChord(): boolean {
+    isChord(): boolean {
         return this.parts.length > 1;
     }
 
-    public getDispatchParts(): (string | null)[] {
+    getDispatchParts(): (string | null)[] {
         return this.keySequence.map(keyCode => USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
     }
 
-    public getSingleModifierDispatchParts(): (string | null)[] {
-        return []; /* NOOP */
+    getSingleModifierDispatchParts(): (KeybindingModifier | null)[] {
+        this.parts.map(keybinding => this.getSingleModifierDispatchPart(keybinding));
     }
+
+    protected getSingleModifiedDispatchPart(keybinding: ResolvedKeybindingPart): KeybindingModifier | null {
+
+    }
+
+    // getSingleModifierDispatchParts(): (string | null)[] {
+    //     return []; /* NOOP */
+    // }
 
     private toKeybinding(keyCode: KeyCode): SimpleKeybinding {
         return new SimpleKeybinding(
