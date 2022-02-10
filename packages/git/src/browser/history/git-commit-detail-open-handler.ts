@@ -46,7 +46,7 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
         }
     }
 
-    protected async doOpen(widget: GitCommitDetailWidget, options: GitCommitDetailOpenerOptions): Promise<void> {
+    protected override async doOpen(widget: GitCommitDetailWidget, options: GitCommitDetailOpenerOptions): Promise<void> {
         await super.doOpen(widget, options);
     }
 

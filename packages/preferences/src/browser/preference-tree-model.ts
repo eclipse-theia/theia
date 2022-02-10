@@ -97,7 +97,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected override async init(): Promise<void> {
         super.init();
         this.toDispose.pushAll([
             this.treeGenerator.onSchemaChanged(newTree => this.handleNewSchema(newTree)),
@@ -184,7 +184,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
             || (node.preference.data.description ?? '').includes(this.lastSearchedLiteral);
     }
 
-    protected isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {
+    protected override isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {
         return CompositeTreeNode.is(node) && !!this._currentRows.get(node.id)?.visibleChildren;
     }
 

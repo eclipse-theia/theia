@@ -44,9 +44,9 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     @inject(MessageService) protected readonly messageService: MessageService;
 
-    async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
-    async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
-    async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
+    override async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
+    override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
+    override async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const { filePaths } = await electronRemote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
@@ -62,7 +62,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         return undefined;
     }
 
-    async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
+    override async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             const { filePath } = await electronRemote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));

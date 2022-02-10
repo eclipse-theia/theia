@@ -43,7 +43,7 @@ export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProv
         }
     }
 
-    openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
+    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         if (!this.stopping) {
             super.openChannel(path, handler, options);
         }

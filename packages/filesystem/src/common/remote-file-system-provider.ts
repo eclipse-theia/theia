@@ -82,7 +82,7 @@ export const RemoteFileSystemProviderError = ApplicationError.declare(-33005,
 export class RemoteFileSystemProxyFactory<T extends object> extends JsonRpcProxyFactory<T> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected serializeError(e: any): any {
+    protected override serializeError(e: any): any {
         if (e instanceof FileSystemProviderError) {
             const { code, name } = e;
             return super.serializeError(RemoteFileSystemProviderError(e.message, { code, name }, e.stack));
@@ -91,7 +91,7 @@ export class RemoteFileSystemProxyFactory<T extends object> extends JsonRpcProxy
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected deserializeError(capturedError: Error, e: any): any {
+    protected override deserializeError(capturedError: Error, e: any): any {
         const error = super.deserializeError(capturedError, e);
         if (RemoteFileSystemProviderError.is(error)) {
             const fileOperationError = new FileSystemProviderError(error.message, error.data.code);

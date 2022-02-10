@@ -17,13 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as electronRemote from '../../../electron-shared/@electron/remote';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import {
-    CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode,
-    MAIN_MENU_BAR, MenuModelRegistry, MenuPath, MenuNode
+    isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode
 } from '../../common';
 import { Keybinding } from '../../common/keybinding';
-import { PreferenceService, KeybindingRegistry, CommonCommands } from '../../browser';
+import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
 import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
@@ -59,14 +58,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     protected _menu?: Electron.Menu;
     protected _toggledCommands: Set<string> = new Set();
 
-    constructor(
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
-        @inject(PreferenceService) protected readonly preferencesService: PreferenceService,
-        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
-        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
-    ) {
-        super();
-        preferencesService.onPreferenceChanged(
+    @inject(PreferenceService)
+    protected preferencesService: PreferenceService;
+
+    @postConstruct()
+    postConstruct(): void {
+        this.preferencesService.onPreferenceChanged(
             debounce(e => {
                 if (e.preferenceName === 'window.menuBarVisibility') {
                     this.setMenuBar();
@@ -82,7 +79,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 }
             }, 10)
         );
-        keybindingRegistry.onKeybindingsChanged(() => {
+        this.keybindingRegistry.onKeybindingsChanged(() => {
             this.setMenuBar();
         });
     }

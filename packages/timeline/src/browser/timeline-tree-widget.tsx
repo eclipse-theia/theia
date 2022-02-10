@@ -36,10 +36,10 @@ export class TimelineTreeWidget extends TreeWidget {
     @inject(TimelineContextKeyService) protected readonly contextKeys: TimelineContextKeyService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
+        @inject(TreeProps) override readonly props: TreeProps,
         @inject(TimelineService) protected readonly timelineService: TimelineService,
-        @inject(TimelineTreeModel) readonly model: TimelineTreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TimelineTreeModel) override readonly model: TimelineTreeModel,
+        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
     ) {
         super(props, model, contextMenuRenderer);
@@ -47,7 +47,7 @@ export class TimelineTreeWidget extends TreeWidget {
         this.addClass('timeline-outer-container');
     }
 
-    protected renderNode(node: TimelineNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(node: TimelineNode, props: NodeProps): React.ReactNode {
         const attributes = this.createNodeAttributes(node, props);
         const content = <TimelineItemNode
             timelineItem={node.timelineItem}
@@ -57,7 +57,7 @@ export class TimelineTreeWidget extends TreeWidget {
         return React.createElement('div', attributes, content);
     }
 
-    protected handleEnter(event: KeyboardEvent): void {
+    protected override handleEnter(event: KeyboardEvent): void {
         const node = this.model.selectedNodes[0] as TimelineNode;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const command: any = node.timelineItem.command;
@@ -66,7 +66,7 @@ export class TimelineTreeWidget extends TreeWidget {
         }
     }
 
-    protected async handleLeft(event: KeyboardEvent): Promise<void> {
+    protected override async handleLeft(event: KeyboardEvent): Promise<void> {
         this.model.selectPrevNode();
     }
 }
@@ -81,7 +81,7 @@ export namespace TimelineItemNode {
 }
 
 export class TimelineItemNode extends React.Component<TimelineItemNode.Props> {
-    render(): JSX.Element | undefined {
+    override render(): JSX.Element | undefined {
         const { label, description, detail } = this.props.timelineItem;
         return <div className='timeline-item'
                     title={detail}

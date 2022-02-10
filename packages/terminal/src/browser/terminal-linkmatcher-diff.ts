@@ -19,14 +19,14 @@ import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
 
 @injectable()
 export class TerminalLinkmatcherDiffPre extends TerminalLinkmatcherFiles {
-    async getRegExp(): Promise<RegExp> {
+    override async getRegExp(): Promise<RegExp> {
         return /^--- a\/(\S*)/;
     }
 }
 
 @injectable()
 export class TerminalLinkmatcherDiffPost extends TerminalLinkmatcherFiles {
-    async getRegExp(): Promise<RegExp> {
+    override async getRegExp(): Promise<RegExp> {
         return /^\+\+\+ b\/(\S*)/;
     }
 }

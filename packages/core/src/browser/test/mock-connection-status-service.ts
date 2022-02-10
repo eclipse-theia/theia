@@ -16,19 +16,17 @@
 
 import { MockLogger } from '../../common/test/mock-logger';
 import { AbstractConnectionStatusService } from '../connection-status-service';
-import { ILogger } from '../../common/logger';
 
 export class MockConnectionStatusService extends AbstractConnectionStatusService {
-
-    protected readonly logger: ILogger = new MockLogger();
 
     constructor() {
         super({
             offlineTimeout: 10
         });
+        this.logger = new MockLogger();
     }
 
-    public set alive(alive: boolean) {
+    set alive(alive: boolean) {
         this.updateStatus(alive);
     }
 

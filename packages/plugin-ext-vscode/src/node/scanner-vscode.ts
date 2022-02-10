@@ -25,11 +25,11 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     private readonly VSCODE_TYPE: PluginEngine = 'vscode';
     private readonly VSCODE_PREFIX: string = 'vscode:extension/';
 
-    get apiType(): PluginEngine {
+    override get apiType(): PluginEngine {
         return this.VSCODE_TYPE;
     }
 
-    getModel(plugin: PluginPackage): PluginModel {
+    override getModel(plugin: PluginPackage): PluginModel {
         // publisher can be empty on vscode extension development
         const publisher = plugin.publisher || '';
         const result: PluginModel = {
@@ -59,7 +59,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     /**
      * Maps extension dependencies to deployable extension dependencies.
      */
-    getDependencies(plugin: PluginPackage): Map<string, string> | undefined {
+    override getDependencies(plugin: PluginPackage): Map<string, string> | undefined {
         // Store the list of dependencies.
         const dependencies = new Map<string, string>();
         // Iterate through the list of dependencies from `extensionDependencies` and `extensionPack`.
@@ -76,7 +76,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
         return dependencies.size > 0 ? dependencies : undefined;
     }
 
-    getLifecycle(plugin: PluginPackage): PluginLifecycle {
+    override getLifecycle(plugin: PluginPackage): PluginLifecycle {
         return {
             startMethod: 'activate',
             stopMethod: 'deactivate',

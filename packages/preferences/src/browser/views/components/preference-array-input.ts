@@ -149,7 +149,7 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
             .map(([value]) => value);
     }
 
-    dispose(): void {
+    override dispose(): void {
         this.existingValues.clear();
         super.dispose();
     }

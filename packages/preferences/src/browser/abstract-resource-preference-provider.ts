@@ -78,9 +78,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this._fileExists;
     }
 
-    getConfigUri(): URI;
-    getConfigUri(resourceUri: string | undefined): URI | undefined;
-    getConfigUri(resourceUri?: string): URI | undefined {
+    override getConfigUri(): URI;
+    override getConfigUri(resourceUri: string | undefined): URI | undefined;
+    override getConfigUri(resourceUri?: string): URI | undefined {
         if (!resourceUri) {
             return this.getUri();
         }

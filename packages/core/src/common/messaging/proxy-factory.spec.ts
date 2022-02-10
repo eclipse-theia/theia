@@ -25,7 +25,7 @@ const expect = chai.expect;
 class NoTransform extends stream.Transform {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public _transform(chunk: any, encoding: string, callback: Function): void {
+    override _transform(chunk: any, encoding: string, callback: Function): void {
         callback(undefined, chunk);
     }
 }

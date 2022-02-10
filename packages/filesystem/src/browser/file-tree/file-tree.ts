@@ -34,7 +34,7 @@ export class FileTree extends TreeImpl {
     @inject(MessageService)
     protected readonly messagingService: MessageService;
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
             const fileStat = await this.resolveFileStat(parent);
             if (fileStat) {

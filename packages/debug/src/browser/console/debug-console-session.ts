@@ -195,6 +195,6 @@ export class DebugConsoleSession extends ConsoleSession {
         this.fireDidChange();
     }
 
-    protected fireDidChange = throttle(() => super.fireDidChange(), 50);
+    protected override fireDidChange = throttle(() => super.fireDidChange(), 50);
 
 }

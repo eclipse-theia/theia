@@ -71,7 +71,7 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         return visibleItems.map(v => v.welcomeInfo);
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (this.shouldShowWelcomeView() && this.visibleItems.length) {
             return this.renderViewWelcome();
         }

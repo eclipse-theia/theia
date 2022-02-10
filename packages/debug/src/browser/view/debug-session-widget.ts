@@ -110,12 +110,12 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         layout.addWidget(this.viewContainer);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.toolbar.focus();
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.getTrackableWidgets().forEach(w => w.update());
     }

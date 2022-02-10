@@ -66,13 +66,13 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
         });
     }
 
-    async openView(args?: Partial<ScmHistoryOpenViewArguments>): Promise<ScmHistoryWidget> {
+    override async openView(args?: Partial<ScmHistoryOpenViewArguments>): Promise<ScmHistoryWidget> {
         const widget = await super.openView(args);
         this.refreshWidget(args!.uri);
         return widget;
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: ScmHistoryCommands.OPEN_FILE_HISTORY.id,
             label: SCM_HISTORY_LABEL
@@ -84,7 +84,7 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
         super.registerMenus(menus);
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ScmHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
             isEnabled: (uri: URI) => !!this.scmService.findRepository(uri),
             isVisible: (uri: URI) => !!this.scmService.findRepository(uri),

@@ -43,7 +43,7 @@ export class EnvNodeExtImpl extends EnvExtImpl {
     /**
      * override machineID
      */
-    get machineId(): string {
+    override get machineId(): string {
         return this.macMachineId;
     }
 

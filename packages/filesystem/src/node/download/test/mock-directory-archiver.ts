@@ -23,7 +23,7 @@ export class MockDirectoryArchiver extends DirectoryArchiver {
         super();
     }
 
-    protected async isDir(uri: URI): Promise<boolean> {
+    protected override async isDir(uri: URI): Promise<boolean> {
         return !!this.folders && this.folders.map(u => u.toString()).indexOf(uri.toString()) !== -1;
     }
 

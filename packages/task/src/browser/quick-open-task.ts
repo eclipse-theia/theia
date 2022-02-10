@@ -423,20 +423,20 @@ export class TaskRunQuickOpenItem implements QuickPickItem {
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
-        protected taskService: TaskService,
-        protected isMulti: boolean,
-        protected readonly taskNameResolver: TaskNameResolver,
+        public override readonly token: number,
+        public override readonly task: TaskConfiguration,
+        protected override readonly taskService: TaskService,
+        protected override readonly isMulti: boolean,
+        protected override readonly taskNameResolver: TaskNameResolver,
         protected readonly isBuildTask: boolean,
-        protected taskConfigurationManager: TaskConfigurationManager,
-        protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
-        protected readonly taskSourceResolver: TaskSourceResolver
+        protected override readonly taskConfigurationManager: TaskConfigurationManager,
+        protected override readonly taskDefinitionRegistry: TaskDefinitionRegistry,
+        protected override readonly taskSourceResolver: TaskSourceResolver
     ) {
         super(token, task, taskService, isMulti, taskDefinitionRegistry, taskNameResolver, taskSourceResolver, taskConfigurationManager);
     }
 
-    execute(): void {
+    override execute(): void {
         this.taskService.updateTaskConfiguration(this.token, this.task, { group: { kind: this.isBuildTask ? 'build' : 'test', isDefault: true } })
             .then(() => {
                 if (this.task._scope) {
@@ -698,4 +698,3 @@ export class TaskRestartRunningQuickOpen {
         this.quickInputService?.showQuickPick(items, { placeholder: 'Select task to restart' });
     }
 }
-

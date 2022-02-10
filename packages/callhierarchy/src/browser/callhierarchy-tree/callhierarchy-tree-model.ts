@@ -27,7 +27,7 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
 
     private _languageId: string | undefined;
 
-    @inject(CallHierarchyTree) protected readonly tree: CallHierarchyTree;
+    @inject(CallHierarchyTree) protected override readonly tree: CallHierarchyTree;
     @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
 
     getTree(): CallHierarchyTree {
@@ -63,7 +63,7 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
         }
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         // do nothing (in particular do not expand the node)
     }
 }

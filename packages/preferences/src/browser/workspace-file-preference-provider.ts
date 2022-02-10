@@ -44,7 +44,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected parse(content: string): any {
+    protected override parse(content: string): any {
         const data = super.parse(content);
         if (WorkspaceData.is(data)) {
             const settings = { ...data.settings };
@@ -64,7 +64,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return {};
     }
 
-    protected getPath(preferenceName: string): string[] {
+    protected override getPath(preferenceName: string): string[] {
         const firstSegment = preferenceName.split('.', 1)[0];
         const remainder = preferenceName.slice(firstSegment.length + 1);
         if (this.belongsInSection(firstSegment, remainder)) {
@@ -93,7 +93,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return PreferenceScope.Workspace;
     }
 
-    getDomain(): string[] {
+    override getDomain(): string[] {
         // workspace file is treated as part of the workspace
         return this.workspaceService.tryGetRoots().map(r => r.resource.toString()).concat([this.options.workspaceUri.toString()]);
     }

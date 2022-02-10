@@ -28,8 +28,8 @@ export class TerminalServer extends BaseTerminalServer implements ITerminalServe
 
     constructor(
         @inject(TerminalProcessFactory) protected readonly terminalFactory: TerminalProcessFactory,
-        @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
+        @inject(ProcessManager) protected override readonly processManager: ProcessManager,
+        @inject(ILogger) @named('terminal') protected override readonly logger: ILogger
     ) {
         super(processManager, logger);
     }

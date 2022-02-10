@@ -88,7 +88,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected historySupport: ScmHistorySupport | undefined;
 
     constructor(
-        @inject(ScmService) protected readonly scmService: ScmService,
+        @inject(ScmService) protected override readonly scmService: ScmService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(FileService) protected readonly fileService: FileService,
@@ -164,7 +164,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addListNavigationKeyListeners(this.node);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +176,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         });
     }
 
-    update(): void {
+    override update(): void {
         if (this.listView && this.listView.list) {
             this.listView.list.forceUpdateGrid();
         }
@@ -495,7 +495,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }} />;
     }
 
-    protected navigateLeft(): void {
+    protected override navigateLeft(): void {
         const selected = this.getSelected();
         if (selected && this.status.state === 'ready') {
             if (ScmCommitNode.is(selected)) {
@@ -515,7 +515,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected navigateRight(): void {
+    protected override navigateRight(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
@@ -527,7 +527,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected handleListEnter(): void {
+    protected override handleListEnter(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected)) {
@@ -570,7 +570,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
         return !!row;
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <InfiniteLoader
             isRowLoaded={this.checkIfRowIsLoaded}
             loadMoreRows={this.props.loadMoreRows}
@@ -608,7 +608,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
         </InfiniteLoader>;
     }
 
-    componentWillUpdate(): void {
+    override componentWillUpdate(): void {
         this.measureCache.clearAll();
     }
 

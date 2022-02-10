@@ -103,7 +103,7 @@ export class GitDiffTreeModel extends ScmTreeModel {
         await this.resourceOpener.open(uriToOpen);
     }
 
-    storeState(): GitDiffTreeModel.Options {
+    override storeState(): GitDiffTreeModel.Options {
         if (this.provider) {
             return {
                 ...super.storeState(),
@@ -115,7 +115,7 @@ export class GitDiffTreeModel extends ScmTreeModel {
         }
     }
 
-    restoreState(oldState: GitDiffTreeModel.Options): void {
+    override restoreState(oldState: GitDiffTreeModel.Options): void {
         super.restoreState(oldState);
         if (oldState.rootUri && oldState.diffOptions) {
             this.setContent(oldState);

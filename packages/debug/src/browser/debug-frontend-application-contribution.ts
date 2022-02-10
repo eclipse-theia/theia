@@ -422,9 +422,6 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
     @inject(DebugSessionWidgetFactory)
     protected readonly sessionWidgetFactory: DebugSessionWidgetFactory;
 
@@ -511,7 +508,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return this.preference['debug.confirmOnExit'] === 'always' && !!this.manager.currentSession;
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
             for (const [index, command] of commands.entries()) {
@@ -637,7 +634,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         );
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(DebugCommands.START, {
             execute: (config?: DebugSessionOptions) => this.start(false, config)
@@ -1027,7 +1024,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,

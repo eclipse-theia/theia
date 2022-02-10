@@ -83,7 +83,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
     protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
 
     @inject(ILogger)
-    protected readonly logger: ILogger;
+    protected logger: ILogger;
 
     constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
 
@@ -121,10 +121,6 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider;
     @inject(PingService) protected readonly pingService: PingService;
-
-    constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) {
-        super(options);
-    }
 
     @postConstruct()
     protected init(): void {

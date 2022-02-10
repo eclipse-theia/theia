@@ -28,7 +28,7 @@ export function createTerminalTestContainer(): Container {
     container.load(backendApplicationModule);
     container.rebind(ApplicationPackage).toConstantValue({} as ApplicationPackage);
     container.rebind(ProcessUtils).toConstantValue(new class extends ProcessUtils {
-        terminateProcessTree(): void { }
+        override terminateProcessTree(): void { }
     });
 
     bindLogger(container.bind.bind(container));

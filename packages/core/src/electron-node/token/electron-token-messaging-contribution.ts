@@ -32,7 +32,7 @@ export class ElectronMessagingContribution extends MessagingContribution {
     /**
      * Only allow token-bearers.
      */
-    protected async allowConnect(request: http.IncomingMessage): Promise<boolean> {
+    protected override async allowConnect(request: http.IncomingMessage): Promise<boolean> {
         if (this.tokenValidator.allowRequest(request)) {
             return super.allowConnect(request);
         }

@@ -149,11 +149,11 @@ export class TerminalSearchWidget extends ReactWidget {
         this.search(false, 'previous');
     };
 
-    onAfterHide(): void {
+    override onAfterHide(): void {
         this.terminal.focus();
     }
 
-    onAfterShow(): void {
+    override onAfterShow(): void {
         if (this.searchInput) {
             this.searchInput.select();
         }

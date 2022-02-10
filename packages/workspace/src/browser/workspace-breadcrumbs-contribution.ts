@@ -26,7 +26,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
+    override getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);
         return (location, index) => {
             if (location.isEqual(fileURI)) {
@@ -38,7 +38,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
         };
     }
 
-    getIconClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
+    override getIconClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);
         return (location, index) => {
             if (location.isEqual(fileURI) || workspaceRoot?.isEqual(location)) {
@@ -48,7 +48,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
         };
     }
 
-    protected filterBreadcrumbs(uri: URI, breadcrumb: FilepathBreadcrumb): boolean {
+    protected override filterBreadcrumbs(uri: URI, breadcrumb: FilepathBreadcrumb): boolean {
         const workspaceRootUri = this.workspaceService.getWorkspaceRootUri(uri);
         const firstCrumbToHide = this.workspaceService.isMultiRootWorkspaceOpened ? workspaceRootUri?.parent : workspaceRootUri;
         return super.filterBreadcrumbs(uri, breadcrumb) && (!firstCrumbToHide || !breadcrumb.uri.isEqualOrParent(firstCrumbToHide));

@@ -40,14 +40,14 @@ export class SidePanelToolbar extends BaseWidget {
         this.tabBarToolbarRegistry.onDidChange(() => this.update());
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         if (this.titleContainer) {
             this.addEventListener(this.titleContainer, 'contextmenu', e => this.onContextMenuEmitter.fire(e));
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         if (this.toolbar) {
             if (this.toolbar.isAttached) {
                 Widget.detach(this.toolbar);
@@ -57,7 +57,7 @@ export class SidePanelToolbar extends BaseWidget {
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         if (this.titleContainer) {
             this.node.removeChild(this.titleContainer);
         }
@@ -67,7 +67,7 @@ export class SidePanelToolbar extends BaseWidget {
         super.onBeforeDetach(msg);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.updateToolbar();
     }

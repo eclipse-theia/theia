@@ -20,7 +20,7 @@ import { ProblemMatcher, ProblemMatch, WatchingPattern } from '../common/problem
 export class StartStopLineMatcher extends AbstractLineMatcher {
 
     constructor(
-        protected matcher: ProblemMatcher
+        protected override matcher: ProblemMatcher
     ) {
         super(matcher);
     }
@@ -70,7 +70,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
     activeOnStart: boolean = false;
 
     constructor(
-        protected matcher: ProblemMatcher
+        protected override matcher: ProblemMatcher
     ) {
         super(matcher);
         this.beginsPattern = matcher.watching!.beginsPattern;
@@ -85,7 +85,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
      * @param line the line of text to find the problem from
      * @return the identified problem. If the problem is not found, `undefined` is returned.
      */
-    match(line: string): ProblemMatch | undefined {
+    override match(line: string): ProblemMatch | undefined {
         if (this.activeOnStart) {
             this.activeOnStart = false;
             this.resetActivePatternIndex(0);

@@ -152,7 +152,7 @@ export class PreferenceHeaderRenderer extends PreferenceNodeRenderer {
 export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, InteractableType extends HTMLElement>
     extends PreferenceNodeRenderer
     implements Required<GeneralPreferenceNodeRenderer> {
-    @inject(Preference.Node) protected readonly preferenceNode: Preference.LeafNode;
+    @inject(Preference.Node) protected override readonly preferenceNode: Preference.LeafNode;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ContextMenuRenderer) protected readonly menuRenderer: ContextMenuRenderer;
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
@@ -168,7 +168,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected markdownRenderer: markdownit;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         this.setId();
         this.updateInspection();
         this.markdownRenderer = this.buildMarkdownRenderer();

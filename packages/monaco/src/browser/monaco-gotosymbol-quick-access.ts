@@ -24,7 +24,7 @@ export class GotoSymbolQuickAccess extends monaco.quickInput.StandaloneGotoSymbo
         super(service);
     }
 
-    get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
+    override get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
         return this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor();
     }
 }

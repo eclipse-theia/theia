@@ -27,29 +27,29 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     protected readonly workspaceVariable: WorkspaceVariableContribution;
 
     @postConstruct()
-    async init(): Promise<void> {
+    override async init(): Promise<void> {
         // no-op, backward compatibility
     }
 
-    canHandle(element: object): number {
+    override canHandle(element: object): number {
         if ((element instanceof URI && element.scheme === 'file' || URIIconReference.is(element) || FileStat.is(element))) {
             return 10;
         }
         return 0;
     }
 
-    getIcon(element: URI | URIIconReference | FileStat): string {
+    override getIcon(element: URI | URIIconReference | FileStat): string {
         return super.getIcon(this.asURIIconReference(element));
     }
 
-    getName(element: URI | URIIconReference | FileStat): string | undefined {
+    override getName(element: URI | URIIconReference | FileStat): string | undefined {
         return super.getName(this.asURIIconReference(element));
     }
 
     /**
      * trims the workspace root from a file uri, if it is a child.
      */
-    getLongName(element: URI | URIIconReference | FileStat): string | undefined {
+    override getLongName(element: URI | URIIconReference | FileStat): string | undefined {
         const uri = this.getUri(element);
         if (uri) {
             const formatting = this.findFormatting(uri);
@@ -72,7 +72,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         return element;
     }
 
-    protected getUri(element: URI | URIIconReference | FileStat): URI | undefined {
+    protected override getUri(element: URI | URIIconReference | FileStat): URI | undefined {
         if (FileStat.is(element)) {
             return element.resource;
         }

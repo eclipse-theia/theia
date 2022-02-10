@@ -352,21 +352,21 @@ export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
     @inject(ContributionProvider) @named(Symbol.for(HostedPluginUriPostProcessorSymbolName))
     protected readonly uriPostProcessors: ContributionProvider<HostedPluginUriPostProcessor>;
 
-    protected async postProcessInstanceUri(uri: URI): Promise<URI> {
+    protected override async postProcessInstanceUri(uri: URI): Promise<URI> {
         for (const uriPostProcessor of this.uriPostProcessors.getContributions()) {
             uri = await uriPostProcessor.processUri(uri);
         }
         return uri;
     }
 
-    protected async postProcessInstanceOptions(options: object): Promise<object> {
+    protected override async postProcessInstanceOptions(options: object): Promise<object> {
         for (const uriPostProcessor of this.uriPostProcessors.getContributions()) {
             options = await uriPostProcessor.processOptions(options);
         }
         return options;
     }
 
-    protected async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
+    protected override async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
         if (!port) {
             port = process.env.HOSTED_PLUGIN_PORT ?
                 Number(process.env.HOSTED_PLUGIN_PORT) :

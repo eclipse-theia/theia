@@ -23,7 +23,7 @@ import { ExpandableTreeNode } from '../tree-expansion';
 import { TopDownTreeIterator, TreeIterator } from '../tree-iterator';
 
 export class TopDownCompressedTreeIterator extends TopDownTreeIterator {
-    protected isCollapsed(candidate: TreeNode): boolean {
+    protected override isCollapsed(candidate: TreeNode): boolean {
         return ExpandableTreeNode.isCollapsed(candidate) && !TreeCompressionService.prototype.isCompressionParent(candidate);
     }
 }
@@ -68,11 +68,11 @@ export class CompressedTreeModel extends TreeModelImpl {
         this.selectAdjacentRow(BackOrForward.Forward, type);
     }
 
-    protected createForwardIteratorForNode(node: TreeNode): TreeIterator {
+    protected override createForwardIteratorForNode(node: TreeNode): TreeIterator {
         return new TopDownCompressedTreeIterator(node, { pruneCollapsed: true });
     }
 
-    protected selectIfAncestorOfSelected(node: Readonly<ExpandableTreeNode>): void {
+    protected override selectIfAncestorOfSelected(node: Readonly<ExpandableTreeNode>): void {
         if (!this.compressionToggle.compress) { return super.selectIfAncestorOfSelected(node); }
         const tail = this.compressionService.getCompressionChain(node)?.tail() ?? node;
         if (SelectableTreeNode.is(tail) && !tail.expanded && this.selectedNodes.some(selectedNode => CompositeTreeNode.isAncestor(tail, selectedNode))) {

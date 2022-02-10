@@ -26,7 +26,7 @@ export class TypeHierarchyTreeModel extends TreeModelImpl {
     @inject(TypeHierarchyRegistry)
     protected readonly registry: TypeHierarchyRegistry;
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         // do nothing (in particular do not expand the node)
     }
 

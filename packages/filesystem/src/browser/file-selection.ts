@@ -28,8 +28,8 @@ export namespace FileSelection {
     export class CommandHandler extends SelectionCommandHandler<FileSelection> {
 
         constructor(
-            protected readonly selectionService: SelectionService,
-            protected readonly options: SelectionCommandHandler.Options<FileSelection>
+            protected override readonly selectionService: SelectionService,
+            protected override readonly options: SelectionCommandHandler.Options<FileSelection>
         ) {
             super(
                 selectionService,

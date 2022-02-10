@@ -267,7 +267,7 @@ export class DynamicMenuWidget extends MenuWidget {
         });
     }
 
-    public open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
+    public override open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
         const cb = () => {
             this.restoreFocusedElement();
             this.aboutToClose.disconnect(cb);

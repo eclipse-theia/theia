@@ -61,9 +61,9 @@ export class ProcessTask extends Task {
     protected command: string | undefined;
 
     constructor(
-        @inject(TaskManager) protected readonly taskManager: TaskManager,
-        @inject(ILogger) @named('task') protected readonly logger: ILogger,
-        @inject(TaskProcessOptions) protected readonly options: TaskProcessOptions
+        @inject(TaskManager) protected override readonly taskManager: TaskManager,
+        @inject(ILogger) @named('task') protected override readonly logger: ILogger,
+        @inject(TaskProcessOptions) protected override readonly options: TaskProcessOptions
     ) {
         super(taskManager, logger, options);
 

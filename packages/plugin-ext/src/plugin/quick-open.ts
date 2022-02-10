@@ -492,11 +492,12 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
     private _prompt: string | undefined;
     private _validationMessage: string | undefined;
 
-    constructor(readonly quickOpen: QuickOpenExtImpl,
-        readonly quickOpenMain: QuickOpenMain,
-        readonly plugin: Plugin,
-        onDispose: () => void) {
-
+    constructor(
+        override readonly quickOpen: QuickOpenExtImpl,
+        override readonly quickOpenMain: QuickOpenMain,
+        override readonly plugin: Plugin,
+        onDispose: () => void
+    ) {
         super(quickOpen, quickOpenMain, plugin, onDispose);
 
         this.buttons = [];
@@ -533,7 +534,7 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
         }
     }
 
-    async show(): Promise<void> {
+    override async show(): Promise<void> {
         super.show();
 
         const update = (value: string) => {
@@ -584,11 +585,12 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     private readonly _onDidChangeActiveEmitter = new Emitter<T[]>();
     private readonly _onDidChangeSelectionEmitter = new Emitter<T[]>();
 
-    constructor(readonly quickOpen: QuickOpenExtImpl,
-        readonly quickOpenMain: QuickOpenMain,
-        readonly plugin: Plugin,
-        onDispose: () => void) {
-
+    constructor(
+        override readonly quickOpen: QuickOpenExtImpl,
+        override readonly quickOpenMain: QuickOpenMain,
+        override readonly plugin: Plugin,
+        onDispose: () => void
+    ) {
         super(quickOpen, quickOpenMain, plugin, onDispose);
         this.buttons = [];
 

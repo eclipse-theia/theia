@@ -42,7 +42,7 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
         this.node.tabIndex = 0;
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.update();
         this.node.focus();
@@ -56,7 +56,7 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
         return this._scrollContainer;
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         if (!this.isAttached || !this.isVisible) {
             return;
         }
@@ -72,7 +72,7 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
         })();
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.update();
     }
@@ -170,7 +170,7 @@ export namespace ScmItemComponent {
 }
 export class ScmItemComponent extends React.Component<ScmItemComponent.Props> {
 
-    render(): JSX.Element {
+    override render(): JSX.Element {
         const { labelProvider, scmLabelProvider, change } = this.props;
         const icon = labelProvider.getIcon(change);
         const label = labelProvider.getName(change);

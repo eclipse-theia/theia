@@ -91,7 +91,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
-    async componentDidMount(): Promise<void> {
+    override async componentDidMount(): Promise<void> {
         this.toDisposeOnUnmount.push(Disposable.create(() => { /* mark as mounted */ }));
 
         const lastCommit = await this.getLastCommit();
@@ -105,7 +105,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         );
     }
 
-    componentWillUnmount(): void {
+    override componentWillUnmount(): void {
         this.toDisposeOnUnmount.dispose();
     }
 
@@ -273,7 +273,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         this.props.setCommitMessage(message);
     }
 
-    render(): JSX.Element {
+    override render(): JSX.Element {
         const neverShrink = this.state.amendingCommits.length <= 3;
 
         const style: React.CSSProperties = neverShrink

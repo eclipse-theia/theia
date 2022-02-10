@@ -18,7 +18,7 @@ import { TheiaDialog } from './theia-dialog';
 
 export class TheiaAboutDialog extends TheiaDialog {
 
-    async isVisible(): Promise<boolean> {
+    override async isVisible(): Promise<boolean> {
         const dialog = await this.page.$(`${this.blockSelector} .theia-aboutDialog`);
         return !!dialog && dialog.isVisible();
     }

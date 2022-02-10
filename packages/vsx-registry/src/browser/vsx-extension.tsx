@@ -416,7 +416,7 @@ const downloadFormatter = new Intl.NumberFormat();
 const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
 
 export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating, tooltipId, tooltip } = this.props.extension;
 
         return <div className='theia-vsx-extension noselect' data-for={tooltipId} data-tip={tooltip}>
@@ -452,7 +452,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         return this._scrollContainer;
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const {
             builtin, preview, id, iconUrl, publisher, displayName, description, version,
             averageRating, downloadCount, repository, license, readme

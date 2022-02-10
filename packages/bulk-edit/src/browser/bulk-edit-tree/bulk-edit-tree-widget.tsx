@@ -47,8 +47,8 @@ export class BulkEditTreeWidget extends TreeWidget {
 
     constructor(
         @inject(TreeProps) readonly treeProps: TreeProps,
-        @inject(BulkEditTreeModel) readonly model: BulkEditTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(BulkEditTreeModel) override readonly model: BulkEditTreeModel,
+        @inject(ContextMenuRenderer) override readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -68,14 +68,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         this.quickView?.showItem(BULK_EDIT_WIDGET_NAME);
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         super.handleClickEvent(node, event);
         if (BulkEditNode.is(node)) {
             this.doOpen(node);
         }
     }
 
-    protected handleDown(event: KeyboardEvent): void {
+    protected override handleDown(event: KeyboardEvent): void {
         const node = this.model.getNextSelectableNode();
         super.handleDown(event);
         if (BulkEditNode.is(node)) {
@@ -83,7 +83,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         }
     }
 
-    protected handleUp(event: KeyboardEvent): void {
+    protected override handleUp(event: KeyboardEvent): void {
         const node = this.model.getPrevSelectableNode();
         super.handleUp(event);
         if (BulkEditNode.is(node)) {
@@ -91,14 +91,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         }
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
         return <div className='theia-widget-noInfo noEdits'>{nls.localizeByDefault('No edits have been detected in the workspace so far.')}</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (BulkEditInfoNode.is(node)) {
             return this.decorateBulkEditInfoNode(node);
         } else if (BulkEditNode.is(node)) {

@@ -72,7 +72,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         this.setChildren(node, children);
     }
 
-    protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (MarkerRootNode.is(parent)) {
             const nodes: MarkerInfoNode[] = [];
             for (const id of this.markerManager.getUris()) {

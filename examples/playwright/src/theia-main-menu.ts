@@ -21,7 +21,7 @@ import { TheiaPageObject } from './theia-page-object';
 import { normalizeId, toTextContentArray } from './util';
 
 export class TheiaMainMenu extends TheiaMenu {
-    selector = '.p-Menu.p-MenuBar-menu';
+    override selector = '.p-Menu.p-MenuBar-menu';
 }
 
 export class TheiaMenuBar extends TheiaPageObject {

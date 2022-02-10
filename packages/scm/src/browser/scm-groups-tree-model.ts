@@ -28,7 +28,7 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
     protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.refreshOnRepositoryChange();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => {

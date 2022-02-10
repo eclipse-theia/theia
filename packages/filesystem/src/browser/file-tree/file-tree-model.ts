@@ -41,7 +41,7 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
     protected readonly environments: EnvVariablesServer;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.toDispose.push(this.fileService.onDidFilesChange(changes => this.onFilesChanged(changes)));
         this.toDispose.push(this.fileService.onDidRunOperation(event => this.onDidMove(event)));

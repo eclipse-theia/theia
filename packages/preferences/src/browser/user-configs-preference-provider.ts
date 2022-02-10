@@ -59,7 +59,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
         }
     }
 
-    getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
+    override getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.providers.values()) {
             const configUri = provider.getConfigUri(resourceUri);
             if (configUri && this.configurations.getName(configUri) === sectionName) {
@@ -69,7 +69,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
         return undefined;
     }
 
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+    override resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const provider of this.providers.values()) {
             const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);

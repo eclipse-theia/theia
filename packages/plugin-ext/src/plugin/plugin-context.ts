@@ -1098,7 +1098,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     extensionUri: theia.Uri;
     extensionKind: ExtensionKind;
 
-    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         super(pluginManager, plugin);
 
         this.extensionPath = this.pluginPath;
@@ -1106,15 +1106,15 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
         this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
     }
 
-    get isActive(): boolean {
+    override get isActive(): boolean {
         return this.pluginManager.isActive(this.id);
     }
 
-    get exports(): T {
+    override get exports(): T {
         return <T>this.pluginManager.getPluginExport(this.id);
     }
 
-    activate(): PromiseLike<T> {
+    override activate(): PromiseLike<T> {
         return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
     }
 }

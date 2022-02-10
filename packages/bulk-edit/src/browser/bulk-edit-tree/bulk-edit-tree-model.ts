@@ -20,10 +20,10 @@ import { TreeModelImpl, OpenerService, open, TreeNode } from '@theia/core/lib/br
 
 @injectable()
 export class BulkEditTreeModel extends TreeModelImpl {
-    @inject(BulkEditTree) protected readonly tree: BulkEditTree;
+    @inject(BulkEditTree) protected override readonly tree: BulkEditTree;
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         if (BulkEditNode.is(node)) {
             open(this.openerService, node.uri, undefined);
         } else {

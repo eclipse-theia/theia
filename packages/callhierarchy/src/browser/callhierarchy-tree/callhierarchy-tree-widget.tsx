@@ -36,10 +36,10 @@ export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
 export class CallHierarchyTreeWidget extends TreeWidget {
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(CallHierarchyTreeModel) readonly model: CallHierarchyTreeModel,
+        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(CallHierarchyTreeModel) override readonly model: CallHierarchyTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(LabelProvider) protected override readonly labelProvider: LabelProvider,
         @inject(EditorManager) readonly editorManager: EditorManager
     ) {
         super(props, model, contextMenuRenderer);
@@ -68,7 +68,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.model.initializeCallHierarchy(languageId, selection ? selection.uri : undefined, selection ? selection.range.start : undefined);
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (DefinitionNode.is(node)) {
             classNames.push(DEFINITION_NODE_CLASS);
@@ -76,19 +76,19 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
         };
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model)
             || <div className='theia-widget-noInfo'>No callers have been detected.</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (DefinitionNode.is(node)) {
             return this.decorateDefinitionCaption(node.definition);
         }
@@ -200,7 +200,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         });
     }
 
-    storeState(): object {
+    override storeState(): object {
         const callHierarchyService = this.model.getTree().callHierarchyService;
         if (this.model.root && callHierarchyService) {
             return {
@@ -212,7 +212,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
     }
 
-    restoreState(oldState: object): void {
+    override restoreState(oldState: object): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((oldState as any).root && (oldState as any).languageId) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

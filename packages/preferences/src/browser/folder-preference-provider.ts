@@ -35,7 +35,7 @@ export interface FolderPreferenceProviderOptions {
 @injectable()
 export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(WorkspaceService) protected override readonly workspaceService: WorkspaceService;
     @inject(FolderPreferenceProviderFolder) protected readonly folder: FileStat;
 
     private _folderUri: URI;
@@ -54,7 +54,7 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
         return PreferenceScope.Folder;
     }
 
-    getDomain(): string[] {
+    override getDomain(): string[] {
         return [this.folderUri.toString()];
     }
 }

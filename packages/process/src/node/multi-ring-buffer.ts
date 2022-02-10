@@ -39,12 +39,12 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
         this.setEncoding(encoding);
     }
 
-    _read(size: number): void {
+    override _read(size: number): void {
         this.more = true;
         this.deq(size);
     }
 
-    _destroy(err: Error | null, callback: (err: Error | null) => void): void {
+    override _destroy(err: Error | null, callback: (err: Error | null) => void): void {
         this.ringBuffer.closeStream(this);
         this.ringBuffer.closeReader(this.reader);
         this.disposed = true;

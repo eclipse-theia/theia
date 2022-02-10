@@ -133,7 +133,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
         this.addOrUpdateFolderTab();
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.addTabIndexToTabs();
     }
@@ -236,7 +236,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
         this.preferencesMenuFactory.createFolderWorkspacesMenu(workspaceRoots, this.currentSelection.uri);
     }
 
-    handleEvent(): void {
+    override handleEvent(): void {
         // Don't - the handlers are defined in PreferenceScopeTabbarWidget.addTabIndexToTabs()
     }
 
@@ -337,7 +337,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> implements StatefulWi
         this.toggleClass(SHADOW_CLASSNAME, showShadow);
     }
 
-    dispose(): void {
+    override dispose(): void {
         super.dispose();
         this.toDispose.dispose();
     }

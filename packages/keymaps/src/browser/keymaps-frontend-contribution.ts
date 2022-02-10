@@ -67,7 +67,7 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(KeymapsCommands.OPEN_KEYMAPS, {
             isEnabled: () => true,
             execute: () => this.openView({ activate: true })
@@ -88,7 +88,7 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
             order: 'a20'
@@ -99,7 +99,7 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: KeymapsCommands.OPEN_KEYMAPS.id,
             keybinding: 'ctrl+alt+,'
