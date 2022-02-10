@@ -18,7 +18,7 @@ import { interfaces, Container } from '@theia/core/shared/inversify';
 import { MarkerOptions } from '../marker-tree';
 import { ProblemWidget } from './problem-widget';
 import { ProblemTreeModel, ProblemTree } from './problem-tree-model';
-import { TreeWidget, TreeProps, defaultTreeProps, TreeModel, createTreeContainer, TreeModelImpl, TreeImpl, Tree } from '@theia/core/lib/browser';
+import { TreeProps, defaultTreeProps, createTreeContainer } from '@theia/core/lib/browser';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
@@ -32,20 +32,12 @@ export const PROBLEM_OPTIONS = <MarkerOptions>{
 };
 
 export function createProblemTreeContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
-
-    child.unbind(TreeImpl);
-    child.bind(ProblemTree).toSelf();
-    child.rebind(Tree).toService(ProblemTree);
-
-    child.unbind(TreeWidget);
-    child.bind(ProblemWidget).toSelf();
-
-    child.unbind(TreeModelImpl);
-    child.bind(ProblemTreeModel).toSelf();
-    child.rebind(TreeModel).toService(ProblemTreeModel);
-
-    child.rebind(TreeProps).toConstantValue(PROBLEM_TREE_PROPS);
+    const child = createTreeContainer(parent, {
+        tree: ProblemTree,
+        widget: ProblemWidget,
+        model: ProblemTreeModel,
+        props: PROBLEM_TREE_PROPS,
+    });
     child.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
     return child;
 }

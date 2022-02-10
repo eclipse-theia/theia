@@ -180,7 +180,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
      * Select the given node if it is the ancestor of a selected node.
      */
     protected selectIfAncestorOfSelected(node: Readonly<ExpandableTreeNode>): void {
-        if (!node.expanded && [...this.selectedNodes].some(selectedNode => CompositeTreeNode.isAncestor(node, selectedNode))) {
+        if (!node.expanded && this.selectedNodes.some(selectedNode => CompositeTreeNode.isAncestor(node, selectedNode))) {
             if (SelectableTreeNode.isVisible(node)) {
                 this.selectNode(node);
             }
@@ -273,7 +273,6 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         for (const node of raw ? [raw] : this.selectedNodes) {
             if (ExpandableTreeNode.is(node)) {
                 await this.expansionService.toggleNodeExpansion(node);
-                return;
             }
         }
     }
@@ -287,7 +286,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     getPrevSelectableNode(node: TreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
         const iterator = this.createBackwardIterator(node);
-        return iterator && this.doGetNextNode(iterator);
+        return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
 
     selectNextNode(type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT): void {
@@ -299,19 +298,18 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     getNextSelectableNode(node: TreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
         const iterator = this.createIterator(node);
-        return iterator && this.doGetNextNode(iterator);
+        return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
 
-    protected doGetNextNode(iterator: TreeIterator): SelectableTreeNode | undefined {
+    protected doGetNextNode<T extends TreeNode>(iterator: TreeIterator, criterion: (node: TreeNode) => node is T): T | undefined {
         // Skip the first item. // TODO: clean this up, and skip the first item in a different way without loading everything.
         iterator.next();
         let result = iterator.next();
-        while (!result.done && !this.isVisibleSelectableNode(result.value)) {
+        while (!result.done) {
+            if (criterion(result.value)) {
+                return result.value;
+            }
             result = iterator.next();
-        }
-        const node = result.value;
-        if (SelectableTreeNode.isVisible(node)) {
-            return node;
         }
         return undefined;
     }
@@ -334,12 +332,16 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
         const { filteredNodes } = this.treeSearch;
         if (filteredNodes.length === 0) {
-            return node ? new TopDownTreeIterator(node!, { pruneCollapsed: true }) : undefined;
+            return node && this.createForwardIteratorForNode(node);
         }
         if (node && filteredNodes.indexOf(node) === -1) {
             return undefined;
         }
         return Iterators.cycle(filteredNodes, node);
+    }
+
+    protected createForwardIteratorForNode(node: TreeNode): TreeIterator {
+        return new TopDownTreeIterator(node, { pruneCollapsed: true });
     }
 
     openNode(raw?: TreeNode | undefined): void {

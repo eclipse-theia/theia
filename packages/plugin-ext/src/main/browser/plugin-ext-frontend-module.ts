@@ -21,7 +21,7 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -145,21 +145,21 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_DATA_FACTORY_ID,
         createWidget: (identifier: TreeViewWidgetIdentifier) => {
-            const child = createTreeContainer(container, {
+            const props = {
                 contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
                 expandOnlyOnExpansionToggleClick: true,
                 expansionTogglePadding: 22,
                 globalSelection: true,
                 leftPadding: 8,
                 search: true
+            };
+            const child = createTreeContainer(container, {
+                props,
+                tree: PluginTree,
+                model: PluginTreeModel,
+                widget: TreeViewWidget,
             });
             child.bind(TreeViewWidgetIdentifier).toConstantValue(identifier);
-            child.bind(PluginTree).toSelf();
-            child.rebind(TreeImpl).toService(PluginTree);
-            child.bind(PluginTreeModel).toSelf();
-            child.rebind(TreeModelImpl).toService(PluginTreeModel);
-            child.bind(TreeViewWidget).toSelf();
-            child.rebind(TreeWidget).toService(TreeViewWidget);
             return child.get(TreeWidget);
         }
     })).inSingletonScope();

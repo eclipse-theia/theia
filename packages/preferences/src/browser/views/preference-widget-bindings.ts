@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { WidgetFactory, createTreeContainer, TreeWidget, TreeProps, defaultTreeProps, TreeModel, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WidgetFactory, createTreeContainer, LabelProviderContribution } from '@theia/core/lib/browser';
 import { PreferenceNodeRendererFactory, PreferenceHeaderRenderer } from './components/preference-node-renderer';
 import { PreferencesWidget } from './preference-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
@@ -51,12 +51,11 @@ export function bindPreferencesWidgets(bind: interfaces.Bind): void {
 }
 
 function createPreferencesWidgetContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
-    child.bind(PreferenceTreeModel).toSelf();
-    child.rebind(TreeModel).toService(PreferenceTreeModel);
-    child.unbind(TreeWidget);
-    child.bind(PreferencesTreeWidget).toSelf();
-    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: false });
+    const child = createTreeContainer(parent, {
+        model: PreferenceTreeModel,
+        widget: PreferencesTreeWidget,
+        props: { search: false }
+    });
     child.bind(PreferencesEditorWidget).toSelf();
 
     child.bind(PreferencesSearchbarWidget).toSelf();

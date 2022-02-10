@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
 import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeImpl, Tree, TreeModel } from '../tree';
+import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel } from '../tree';
 import { TreeSource, TreeElement } from './tree-source';
 import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 
@@ -25,14 +25,11 @@ import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 export class SourceTreeWidget extends TreeWidget {
 
     static createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
-        const child = createTreeContainer(parent, props);
-
-        child.unbind(TreeImpl);
-        child.bind(SourceTree).toSelf();
-        child.rebind(Tree).toService(SourceTree);
-
-        child.unbind(TreeWidget);
-        child.bind(SourceTreeWidget).toSelf();
+        const child = createTreeContainer(parent, {
+            props,
+            tree: SourceTree,
+            widget: SourceTreeWidget,
+        });
 
         return child;
     }

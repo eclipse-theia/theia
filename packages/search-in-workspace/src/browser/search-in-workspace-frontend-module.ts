@@ -20,10 +20,8 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
-    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
-    ApplicationShellLayoutMigration,
-    TreeProps,
-    defaultTreeProps
+    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
+    ApplicationShellLayoutMigration
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
@@ -70,11 +68,13 @@ export default new ContainerModule(bind => {
 });
 
 export function createSearchTreeWidget(parent: interfaces.Container): SearchInWorkspaceResultTreeWidget {
-    const child = createTreeContainer(parent);
-
-    child.unbind(TreeWidget);
-    child.bind(SearchInWorkspaceResultTreeWidget).toSelf();
-    child.rebind(TreeProps).toConstantValue(<TreeProps>{ ...defaultTreeProps, contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.BASE, globalSelection: true });
+    const child = createTreeContainer(parent, {
+        widget: SearchInWorkspaceResultTreeWidget,
+        props: {
+            contextMenuPath: SearchInWorkspaceResultTreeWidget.Menus.BASE,
+            globalSelection: true
+        }
+    });
 
     return child.get(SearchInWorkspaceResultTreeWidget);
 }

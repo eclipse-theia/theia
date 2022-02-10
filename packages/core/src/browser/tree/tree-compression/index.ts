@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2022 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './tree';
-export * from './tree-selection';
-export * from './tree-expansion';
-export * from './tree-navigation';
-export * from './tree-iterator';
-export * from './tree-model';
-export * from './tree-widget';
-export * from './tree-view-welcome-widget';
-export * from './tree-container';
-export * from './tree-decorator';
-export * from './tree-search';
-export * from './tree-compression';
+export * from './compressed-tree-expansion-service';
+export * from './compressed-tree-model';
+export * from './compressed-tree-widget';
+export * from './tree-compression-service';
