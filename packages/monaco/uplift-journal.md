@@ -5,11 +5,11 @@ I'm creating this file to track thoughts, observations, and discoveries as I wor
 
 ## 2/7/2022
 
-Today, my main goal is to figure out what obstacles are preventing us from consuming the 
+Today, my main goal is to figure out what obstacles are preventing us from consuming the published version of `monaco-editor-core` as ES modules rather than our home-cooked `@theia/monaco-editor-core` with module loading hijinks.
 
 ### Changes we make to Monaco
 
-I looked over the commits that were added to the theia-ide/vscode repository as part of the last uplift relative to the VSCode repo using `git merge-base`. It looks like the changes were mainly of two kinds:
+I looked over the commits that were added to the `theia-ide/vscode` repository as part of the last uplift relative to the VSCode repo using `git merge-base`. It looks like the changes were mainly of two kinds:
  - Most of the commits were tests of the NPM publishing system. They're not very interesting, but apparently they arrive at a functional GitHub task definition.
  - A [few changes](https://github.com/theia-ide/vscode/commit/ae832c2f8705d47596f9907828532d09354c8054) were made to include classes and interfaces that are not present in the normal `monaco-editor-core` build. It looks like Dan Arad did not include any commits that had been made to the theia-ide fork in previous work, but those may have been masked by the `git merge-base` command.
 
@@ -23,7 +23,7 @@ My next step was to see what would happen if we just replaced `@theia/monaco-edi
 
 Now I need to set up some stuff so that I can experiment with making changes to the VSCode repo and seeing their effect in Theia. I'll take some notes as I do that.
 
-1. Have the VSCode repo on your system [x]
+1. Have the VSCode repo on your system
 2. Read the docs about how to build. The operative bit is is in `vscode/build/monaco/README.md` and the command is `yarn run gulp editor-distro`
 3. In our docs there's mention of changing the treeshaking level. To do that, open `vscode/build/guplfile.editor.js` and find the `shakeLevel` setting. Set it to `0`. That should ensure that we don't accidentally end up referring to some class member that happens to have been optimized out.
 4. Point your dependency at the local copy, e.g.
