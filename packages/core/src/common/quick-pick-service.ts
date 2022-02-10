@@ -35,6 +35,7 @@ import * as fuzzy from 'fuzzy';
 import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
+import { URI as Uri } from 'vscode-uri';
 
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
@@ -61,7 +62,7 @@ export interface QuickPickItemHighlights {
 }
 
 export interface QuickPickItem {
-    type?: 'item' | 'separator';
+    type?: 'item';
     id?: string;
     label: string;
     meta?: string;
@@ -101,9 +102,13 @@ export interface QuickPickValue<V> extends QuickPickItem {
 }
 
 export interface QuickInputButton {
-    iconPath?: URI | { light: URI; dark: URI } | { id: string };
+    iconPath?: URI | { light?: URI | Uri; dark: URI | Uri } | { id: string };
     iconClass?: string;
     tooltip?: string;
+    /**
+     * Whether the button should be visible even when the user is not hovering.
+     */
+    alwaysVisible?: boolean;
 }
 
 export interface QuickInputButtonHandle extends QuickInputButton {

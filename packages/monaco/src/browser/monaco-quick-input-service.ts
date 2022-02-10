@@ -16,6 +16,7 @@
 
 import {
     InputBox, InputOptions, KeybindingRegistry, PickOptions,
+    QuickInputBackButton,
     QuickInputButton, QuickInputService, QuickPick, QuickPickItem,
     QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
@@ -37,6 +38,7 @@ import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/
 import { IMatch } from 'monaco-editor-core/esm/vs/base/common/filters';
 import { Event } from 'monaco-editor-core/esm/vs/base/common/event';
 import { IListRenderer, IListVirtualDelegate } from 'monaco-editor-core/esm/vs/base/browser/ui/list/list';
+import URI from '@theia/core/src/common/uri';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -492,7 +494,7 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickItem {
-    readonly type?: 'item' | 'separator';
+    readonly type?: 'item';
     readonly id?: string;
     readonly label: string;
     readonly meta?: string;
@@ -515,7 +517,20 @@ export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickI
         this.detail = item.detail;
         this.keybinding = item.keySequence ? new MonacoResolvedKeybinding(item.keySequence, kbRegistry) : undefined;
         this.iconClasses = item.iconClasses;
-        this.buttons = item.buttons;
+        this.buttons = item.buttons?.map(button => {
+            let iconPath: IQuickInputButton['iconPath'] = undefined;
+            if (button.iconPath instanceof URI) {
+                iconPath = { dark: button.iconPath['codeUri'] };
+            } else if (button.iconPath && 'dark' in button.iconPath) {
+                const dark = Monaco.Uri.isUri(button.iconPath.dark) ? button.iconPath.dark : button.iconPath.dark['codeUri'];
+                const light = Monaco.Uri.isUri(button.iconPath.light) ? button.iconPath.light : button.iconPath.light?.['codeUri'];
+                iconPath = { dark, light };
+            }
+            return {
+                ...button,
+                iconPath,
+            };
+        });
         this.alwaysShow = item.alwaysShow;
         this.highlights = item.highlights;
     }
