@@ -16,6 +16,13 @@
       "frontend": "lib/browser/getting-started-frontend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

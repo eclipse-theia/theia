@@ -21,6 +21,13 @@
       "frontend": "lib/browser/scm-frontend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

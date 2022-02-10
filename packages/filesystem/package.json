@@ -38,6 +38,13 @@
       "frontendElectron": "lib/electron-browser/file-dialog/electron-file-dialog-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

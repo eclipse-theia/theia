@@ -60,7 +60,7 @@
     "compile:clean": "ts-clean dev-packages/* packages/*",
     "compile:references": "node scripts/compile-references.js",
     "compile:tsc": "tsc -b",
-    "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig tsconfig.json --options configs/typedoc.json .",
+    "docs": "rimraf gh-pages/docs/next && typedoc --options configs/typedoc.json --entryPointStrategy packages",
     "download:plugins": "theia download:plugins",
     "electron": "yarn -s --cwd examples/electron",
     "license:check": "node scripts/check_3pp_licenses.js",

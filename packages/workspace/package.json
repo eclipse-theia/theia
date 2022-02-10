@@ -20,6 +20,13 @@
       "backend": "lib/node/workspace-backend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

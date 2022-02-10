@@ -17,6 +17,13 @@
       "backend": "lib/node/plugin-metrics-backend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

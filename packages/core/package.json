@@ -2,8 +2,8 @@
   "name": "@theia/core",
   "version": "1.22.1",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
-  "main": "lib/common/index.js",
-  "typings": "lib/common/index.d.ts",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
     "@phosphor/algorithm": "1",
@@ -149,6 +149,13 @@
       "backendElectron": "lib/electron-node/hosting/electron-backend-hosting-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

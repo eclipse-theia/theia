@@ -18,8 +18,8 @@
     "lib",
     "src"
   ],
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

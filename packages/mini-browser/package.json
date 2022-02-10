@@ -24,6 +24,13 @@
       "frontendElectron": "lib/electron-browser/environment/electron-mini-browser-environment-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

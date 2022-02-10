@@ -19,6 +19,7 @@
     "lib",
     "src"
   ],
+  "main": "./lib/index.js",
   "bin": {
     "theia": "./bin/theia"
   },

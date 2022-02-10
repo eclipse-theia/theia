@@ -28,32 +28,17 @@
  */
 
 
-const cp = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { getYarnWorkspaces } = require('./yarn-workspaces');
 
 const ROOT = path.join(__dirname, '..');
 
 const FORCE_REWRITE = process.argv.includes('--force-rewrite');
 
-/** @type {{ [packageName: string]: YarnWorkspace }} */
-const YARN_WORKSPACES = JSON.parse(cp.execSync('yarn --silent workspaces info', { cwd: ROOT }).toString());
+const YARN_WORKSPACES = getYarnWorkspaces(ROOT);
 
-// Add the package name inside each package object.
-for (const [packageName, yarnWorkspace] of Object.entries(YARN_WORKSPACES)) {
-    yarnWorkspace.name = packageName;
-    // For some reason Yarn doesn't report local peer dependencies, so we'll manually do it:
-    const { peerDependencies } = require(path.resolve(ROOT, yarnWorkspace.location, 'package.json'));
-    if (typeof peerDependencies === 'object') {
-        for (const peerDependency of Object.keys(peerDependencies)) {
-            if (peerDependency in YARN_WORKSPACES) {
-                yarnWorkspace.workspaceDependencies.push(peerDependency);
-            }
-        }
-    }
-}
-
-/** @type {YarnWorkspace} */
+/** @type {import('./yarn-workspaces').YarnWorkspace} */
 const THEIA_MONOREPO = {
     name: '@theia/monorepo',
     workspaceDependencies: Object.keys(YARN_WORKSPACES),
@@ -76,7 +61,7 @@ async function compileTypeScriptReferences() {
 }
 
 /**
- * @param {YarnWorkspace} requestedPackage
+ * @param {import('./yarn-workspaces').YarnWorkspace} requestedPackage
  * @returns {Promise<string[]>} TypeScript relative project references for `requestedPackage`.
  */
 async function getTypescriptReferences(requestedPackage) {
@@ -95,7 +80,7 @@ async function getTypescriptReferences(requestedPackage) {
  * Wires a given compilation tsconfig file according to the provided references.
  * This allows TypeScript to operate in build mode.
  *
- * @param {YarnWorkspace} targetPackage for debug purpose.
+ * @param {import('./yarn-workspaces').YarnWorkspace} targetPackage for debug purpose.
  * @param {string[]} expectedReferences list of paths to the related project roots.
  * @returns {Promise<boolean>} rewrite was needed.
  */
@@ -157,10 +142,3 @@ function fileExists(file) {
     return fs.promises.access(file, fs.constants.R_OK | fs.constants.W_OK)
         .then(ok => true, error => false)
 }
-
-/**
- * @typedef YarnWorkspace
- * @property {string} name
- * @property {string} location
- * @property {string[]} [workspaceDependencies]
- */

@@ -16,6 +16,13 @@
       "frontendElectron": "lib/electron-browser/external-terminal-frontend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

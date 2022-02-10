@@ -55,6 +55,31 @@
       "frontendElectron": "lib/plugin-ext-frontend-electron-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "export *": [
+        "./common"
+      ],
+      "lazy": {
+        "hosted": "./hosted",
+        "main": "./main",
+        "plugin": "./plugin"
+      }
+    },
+    "src/hosted/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    },
+    "src/main/index": {
+      "export *": [
+        "./common"
+      ],
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],

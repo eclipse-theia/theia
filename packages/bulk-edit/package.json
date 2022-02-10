@@ -9,6 +9,10 @@
     "@theia/monaco": "1.22.1",
     "@theia/workspace": "1.22.1"
   },
+  "main": "./lib/node/index.js",
+  "browser": {
+    "./lib/node/index.js": "./lib/browser/index.js"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -17,6 +21,13 @@
       "frontend": "lib/browser/bulk-edit-frontend-module"
     }
   ],
+  "theiaPackageEntryPoints": {
+    "src/index": {
+      "lazy": {
+        "+theia-runtimes": true
+      }
+    }
+  },
   "keywords": [
     "theia-extension"
   ],
