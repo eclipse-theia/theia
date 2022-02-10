@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -127,6 +127,12 @@ export class FrontendApplication {
     @inject(TooltipService)
     protected readonly tooltipService: TooltipService;
 
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
+
+    @inject(BackendStopwatch)
+    protected readonly backendStopwatch: BackendStopwatch;
+
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
@@ -152,7 +158,9 @@ export class FrontendApplication {
      * - reveal the application shell if it was hidden by a startup indicator
      */
     async start(): Promise<void> {
-        await this.startContributions();
+        const startup = this.backendStopwatch.start('frontend');
+
+        await this.measure('startContributions', () => this.startContributions(), 'Start frontend contributions', false);
         this.stateService.state = 'started_contributions';
 
         const host = await this.getHost();
@@ -161,13 +169,15 @@ export class FrontendApplication {
         await animationFrame();
         this.stateService.state = 'attached_shell';
 
-        await this.initializeLayout();
+        await this.measure('initializeLayout', () => this.initializeLayout(), 'Initialize the workbench layout', false);
         this.stateService.state = 'initialized_layout';
         await this.fireOnDidInitializeLayout();
 
-        await this.revealShell(host);
+        await this.measure('revealShell', () => this.revealShell(host), 'Replace loading indicator with ready workbench UI (animation)', false);
         this.registerEventListeners();
         this.stateService.state = 'ready';
+
+        startup.then(idToken => this.backendStopwatch.stop(idToken, 'Frontend application start', []));
     }
 
     /**
@@ -266,7 +276,6 @@ export class FrontendApplication {
             return new Promise(resolve => {
                 window.requestAnimationFrame(() => {
                     startupElem.classList.add('theia-hidden');
-                    console.log(`Finished loading frontend application after ${(performance.now() / 1000).toFixed(3)} seconds`);
                     const preloadStyle = window.getComputedStyle(startupElem);
                     const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
                     window.setTimeout(() => {
@@ -408,23 +417,9 @@ export class FrontendApplication {
         console.info('<<< All frontend contributions have been stopped.');
     }
 
-    protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
-        const startMark = name + '-start';
-        const endMark = name + '-end';
-        performance.mark(startMark);
-        const result = await fn();
-        performance.mark(endMark);
-        performance.measure(name, startMark, endMark);
-        for (const item of performance.getEntriesByName(name)) {
-            const contribution = `Frontend ${item.name}`;
-            if (item.duration > TIMER_WARNING_THRESHOLD) {
-                console.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
-            } else {
-                console.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
-            }
-        }
-        performance.clearMeasures(name);
-        return result;
+    protected async measure<T>(name: string, fn: () => MaybePromise<T>, message = `Frontend ${name}`, threshold = true): Promise<T> {
+        return this.stopwatch.startAsync(name, message, fn,
+            threshold ? { thresholdMillis: TIMER_WARNING_THRESHOLD, defaultLogLevel: LogLevel.DEBUG } : {});
     }
 
 }
