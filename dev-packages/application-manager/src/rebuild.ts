@@ -36,6 +36,7 @@ export const DEFAULT_MODULES = [
     'native-keymap',
     'find-git-repositories',
     'drivelist',
+    'keytar'
 ];
 
 export interface RebuildOptions {
@@ -214,6 +215,10 @@ async function runElectronRebuild(modules: string[], forceAbi: NodeABI | undefin
         let command = `npx --no-install electron-rebuild -f -w=${todo} -o=${todo}`;
         if (forceAbi) {
             command += ` --force-abi ${forceAbi}`;
+        }
+        if (process.env.ARCH) {
+            console.warn('WARN: rebuild for arm64');
+            command += ` --arch ${process.env.ARCH}`;
         }
         const electronRebuild = cp.spawn(command, {
             stdio: 'inherit',

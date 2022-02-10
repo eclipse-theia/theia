@@ -50,7 +50,8 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
     if (shouldDownload) {
         const ffmpegZipPath = await electronGet.downloadArtifact({
             version: electronVersion,
-            artifactName: 'ffmpeg'
+            artifactName: 'ffmpeg',
+            arch: process.env.ARCH
         });
         const ffmpegZip = await unzipper.Open.file(ffmpegZipPath);
         const file = ffmpegZip.files.find(f => f.path.endsWith(ffmpegName));

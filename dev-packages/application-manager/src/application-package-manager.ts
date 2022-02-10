@@ -182,7 +182,15 @@ export class ApplicationPackageManager {
             throw new AbortError('Dependencies are out of sync, please run "install" again');
         }
         await ffmpeg.replaceFfmpeg();
-        await ffmpeg.checkFfmpeg();
+        try {
+            await ffmpeg.checkFfmpeg();
+        } catch (error) {
+            if (error.message.includes('(have \'arm64\', need \'x86_64\')') && process.env.ARCH === 'arm64') {
+                console.warn('WARN: ffmpeg checking skipped because mac-o file incompatible in this step');
+            } else {
+                throw error;
+            }
+        }
     }
 
     protected insertAlphabetically<T extends Record<string, string>>(object: T, key: string, value: string): T {
