@@ -42,3 +42,12 @@ Getting VSCode to actually output the `.d.ts` files was a bit of a chore. The `v
 
 With that change, the problems with importing types are gone. Huzzah. Probably the rest of the day will be eaten up finding all references to the global `monaco` object and replacing them with imports.
 
+## 2/10/2022
+
+After a couple of days of mechanical replacements, I moved onto substantive fixes yesterday. A few observations:
+
+ - The way we've been consuming this code has made quite a muddle of things. Since _we_ wrote the `.d.ts` file, we could include private fields as public, write concrete returns for methods that are only guaranteed to return an interface, or add implementation details to interfaces where we knew what implementation we expect - and of course to mix references to API and non-API objects indiscriminately and without any indication of which is which. My principle in replacing the old system with the new has been to try to use the public API objects (`import * as Monaco from 'monaco-editor-core';`) where possible and fall back to private objects where necessary. There are still a lot of references to private API, and that has consequences for some areas of the code:
+    - In non-API code, VSCode uses `const enums` and translates them to non-`const enums` in the API. As a consequence, API and non-API interfaces and classes that refer to those enums are considered incomparable by TypeScript (requires `as unknown as X`').
+    - In non-API code, VSCode inlcudes `/** @internal */` JSDocs in interfaces to remove fields from the public interface. As a consequence, public API interfaces often can't satisfy the equivalent non-API interfaces.
+ - There are a number of places where it looks like we may have added fixes for problems that have fixed in VSCode in the meantime. I noticed this in the implementation of the `DiffNavigator`, where we were digging into private fields to do work that was already being done in the VSCode implementation. There are probably a lot of cases like that, and I'm not going to try to to catch them in this first round. It's a lot easier to find, now, though, since we can go look at the code.
+

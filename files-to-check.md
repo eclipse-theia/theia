@@ -7,7 +7,7 @@
 - [x] packages/monaco/src/browser/monaco-text-model-service.ts
 - [x] packages/monaco/src/browser/monaco-workspace.ts
 - [x] packages/monaco/src/browser/monaco-bulk-edit-service.ts
-packages/monaco/src/browser/monaco-keycode-map.ts
+- [x] packages/monaco/src/browser/monaco-keycode-map.ts
 packages/monaco/src/browser/monaco-resolved-keybinding.ts
 packages/monaco/src/browser/monaco-quick-input-service.ts
 packages/monaco/src/browser/monaco-editor-provider.ts

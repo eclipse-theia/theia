@@ -40,9 +40,12 @@ import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-
 import * as theia from '@theia/plugin';
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { getIconUris } from '../../plugin/quick-open';
+import * as Monaco from 'monaco-editor-core';
+import { IQuickPickItem, IQuickInput } from 'monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
+import { ThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService'
 
 export interface QuickInputSession {
-    input: monaco.quickInput.IQuickInput;
+    input: IQuickInput;
     handlesToItems: Map<number, TransferQuickPickItems>;
 }
 
@@ -203,10 +206,10 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 quickPick.onDidAccept(() => {
                     this.proxy.$acceptOnDidAccept(sessionId);
                 });
-                quickPick.onDidChangeActive((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                quickPick.onDidChangeActive((items: Array<IQuickPickItem>) => {
                     this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
                 });
-                quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                quickPick.onDidChangeSelection((items: Array<IQuickPickItem>) => {
                     this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
                 });
                 quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
@@ -273,16 +276,16 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                         const { iconPath, tooltip, handle } = button;
                         if ('id' in iconPath) {
                             return {
-                                iconClass: monaco.theme.ThemeIcon.asClassName(iconPath),
+                                iconClass: ThemeIcon.asClassName(iconPath),
                                 tooltip,
                                 handle
                             };
                         } else {
-                            const monacoIconPath = (iconPath as unknown as { light: monaco.Uri, dark: monaco.Uri });
+                            const monacoIconPath = (iconPath as unknown as { light: Monaco.Uri, dark: Monaco.Uri });
                             return {
                                 iconPath: {
-                                    dark: monaco.Uri.revive(monacoIconPath.dark),
-                                    light: monacoIconPath.light && monaco.Uri.revive(monacoIconPath.light)
+                                    dark: Monaco.Uri.revive(monacoIconPath.dark),
+                                    light: monacoIconPath.light && Monaco.Uri.revive(monacoIconPath.light)
                                 },
                                 tooltip,
                                 handle
