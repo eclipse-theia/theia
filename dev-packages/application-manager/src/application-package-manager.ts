@@ -186,7 +186,7 @@ export class ApplicationPackageManager {
             await ffmpeg.checkFfmpeg();
         } catch (error) {
             if (error.message.includes('(have \'arm64\', need \'x86_64\')') && process.env.ARCH === 'arm64') {
-                console.warn('WARN: ffmpeg checking skipped because mac-o file incompatible in this step');
+                console.warn('WARN: ffmpeg checking skipped because mach-o file incompatible in this step');
             } else {
                 throw error;
             }
