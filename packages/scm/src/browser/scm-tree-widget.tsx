@@ -57,17 +57,17 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
 
-    override model: ScmTreeModel;
+    // TODO: Make TreeWidget generic to better type those fields.
+    override readonly model: ScmTreeModel;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
-        @inject(TreeModel) readonly treeModel: TreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeProps) props: TreeProps,
+        @inject(TreeModel) treeModel: ScmTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, treeModel, contextMenuRenderer);
         this.id = ScmTreeWidget.ID;
         this.addClass('groups-outer-container');
-        this.model = treeModel as ScmTreeModel;
     }
 
     set viewMode(id: 'tree' | 'list') {

@@ -17,9 +17,9 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
+import { CommandService, notEmpty } from '@theia/core/lib/common';
 import {
-    CorePreferences, Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
+    Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
     TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode, DirNode, FileStatNode } from '@theia/filesystem/lib/browser';
@@ -40,21 +40,16 @@ export const CLASS = 'theia-Files';
 @injectable()
 export class FileNavigatorWidget extends FileTreeWidget {
 
-    @inject(CorePreferences) protected override corePreferences: CorePreferences;
-
-    @inject(NavigatorContextKeyService)
-    protected readonly contextKeyService: NavigatorContextKeyService;
-
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(CommandService) protected readonly commandService: CommandService;
+    @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(FileNavigatorModel) override readonly model: FileNavigatorModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(CommandService) protected readonly commandService: CommandService,
-        @inject(SelectionService) protected override readonly selectionService: SelectionService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;

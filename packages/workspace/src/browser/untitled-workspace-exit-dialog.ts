@@ -27,7 +27,7 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
     }
 
     constructor(
-        @inject(DialogProps) protected override readonly props: DialogProps
+        @inject(DialogProps) props: DialogProps
     ) {
         super(props);
         const messageNode = document.createElement('div');

@@ -19,9 +19,7 @@ import { ProblemMatcher, ProblemMatch, WatchingPattern } from '../common/problem
 
 export class StartStopLineMatcher extends AbstractLineMatcher {
 
-    constructor(
-        protected override matcher: ProblemMatcher
-    ) {
+    constructor(matcher: ProblemMatcher) {
         super(matcher);
     }
 
@@ -69,9 +67,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
     private endsPattern: WatchingPattern;
     activeOnStart: boolean = false;
 
-    constructor(
-        protected override matcher: ProblemMatcher
-    ) {
+    constructor(matcher: ProblemMatcher) {
         super(matcher);
         this.beginsPattern = matcher.watching!.beginsPattern;
         this.endsPattern = matcher.watching!.endsPattern;

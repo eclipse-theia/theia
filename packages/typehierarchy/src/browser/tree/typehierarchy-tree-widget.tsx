@@ -34,11 +34,12 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly icons = new Map(Array.from(Object.keys(SymbolKind)).map(key => [(SymbolKind as any)[key], key.toLocaleLowerCase()] as [number, string]));
 
+    @inject(EditorManager) readonly editorManager: EditorManager;
+
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(TypeHierarchyTreeModel) override readonly model: TypeHierarchyTreeModel,
-        @inject(ContextMenuRenderer) override readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(EditorManager) readonly editorManager: EditorManager
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
         this.id = TypeHierarchyTreeWidget.WIDGET_ID;

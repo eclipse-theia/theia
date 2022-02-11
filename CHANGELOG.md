@@ -15,6 +15,12 @@
 - [plugin] Added support for `vscode.window.createStatusBarItem` [#10754](https://github.com/eclipse-theia/theia/pull/10754) - Contributed on behalf of STMicroelectronics
 - [core] Replaced raw WebSocket transport with Socket.io protocol, changed internal APIs accordingly
 - [core] Removed all of our own custom HTTP Polling implementation
+- In order to cleanup the code base, the constructor signature of the following classes got changed in an API-breaking way:
+  - `ProblemWidget`
+  - `FileNavigatorWidget`
+  - `TerminalServer`
+  - `TimelineTreeWidget`
+  - `TypeHierarchyTreeWidget`
 
 ## v1.22.0 - 1/27/2022
 

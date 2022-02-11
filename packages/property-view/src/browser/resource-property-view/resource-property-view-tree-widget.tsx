@@ -16,7 +16,6 @@
 
 import {
     ContextMenuRenderer,
-    LabelProvider,
     NodeProps,
     TreeModel,
     TreeNode,
@@ -45,12 +44,10 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     protected propertiesTree: Map<string, ResourcePropertiesCategoryNode>;
     protected currentSelection: Object | undefined;
 
-    @inject(LabelProvider) protected override readonly labelProvider: LabelProvider;
-
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
 

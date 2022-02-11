@@ -250,9 +250,6 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(TooltipService)
     protected readonly tooltipService: TooltipService;
 
-    protected override readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
-    override readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
-
     @postConstruct()
     protected override init(): void {
         super.init();

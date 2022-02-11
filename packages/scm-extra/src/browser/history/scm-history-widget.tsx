@@ -21,7 +21,6 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
 import URI from '@theia/core/lib/common/uri';
-import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
 import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
 import { ScmHistoryCommit, ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
@@ -88,7 +87,6 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected historySupport: ScmHistorySupport | undefined;
 
     constructor(
-        @inject(ScmService) protected override readonly scmService: ScmService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(FileService) protected readonly fileService: FileService,

@@ -42,9 +42,9 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     @inject(TreeCompressionService) protected readonly compressionService: TreeCompressionService;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(CompressedTreeModel) override readonly model: CompressedTreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
     }

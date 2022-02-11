@@ -44,7 +44,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected readonly iconThemeService: IconThemeService;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {

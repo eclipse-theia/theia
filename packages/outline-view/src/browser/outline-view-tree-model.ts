@@ -14,14 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { CompositeTreeNode, TreeModelImpl, TreeExpansionService, ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
+import { injectable } from '@theia/core/shared/inversify';
+import { CompositeTreeNode, TreeModelImpl, ExpandableTreeNode, TreeNode } from '@theia/core/lib/browser';
 
 @injectable()
 export class OutlineViewTreeModel extends TreeModelImpl {
-
-    @inject(TreeExpansionService)
-    protected override readonly expansionService: TreeExpansionService;
 
     /**
      * Handle the expansion of the tree node.

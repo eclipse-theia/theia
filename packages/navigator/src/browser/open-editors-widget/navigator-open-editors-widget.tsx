@@ -79,9 +79,9 @@ export class OpenEditorsWidget extends FileTreeWidget {
     }
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(OpenEditorsModel) override readonly model: OpenEditorsModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
     }

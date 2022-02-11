@@ -34,13 +34,13 @@ export class TimelineTreeWidget extends TreeWidget {
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(TimelineContextKeyService) protected readonly contextKeys: TimelineContextKeyService;
+    @inject(TimelineService) protected readonly timelineService: TimelineService;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
-        @inject(TimelineService) protected readonly timelineService: TimelineService,
+        @inject(TreeProps) props: TreeProps,
         @inject(TimelineTreeModel) override readonly model: TimelineTreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
         this.id = TimelineTreeWidget.ID;

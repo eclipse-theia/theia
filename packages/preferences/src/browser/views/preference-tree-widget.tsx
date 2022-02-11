@@ -16,7 +16,6 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
-    ContextMenuRenderer,
     ExpandableTreeNode,
     TreeNode,
     TreeProps,
@@ -35,7 +34,6 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     @inject(PreferenceTreeModel) override readonly model: PreferenceTreeModel;
     @inject(TreeProps) protected readonly treeProps: TreeProps;
-    @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer;
 
     @postConstruct()
     override init(): void {

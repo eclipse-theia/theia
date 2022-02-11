@@ -362,8 +362,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     protected confirmed = true;
 
     constructor(
-        @inject(ConfirmDialogProps)
-        protected override readonly props: ConfirmDialogProps
+        @inject(ConfirmDialogProps) protected override readonly props: ConfirmDialogProps
     ) {
         super(props);
 
@@ -419,8 +418,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     protected readonly inputField: HTMLInputElement;
 
     constructor(
-        @inject(SingleTextInputDialogProps)
-        protected override props: SingleTextInputDialogProps
+        @inject(SingleTextInputDialogProps) protected override props: SingleTextInputDialogProps
     ) {
         super(props);
 

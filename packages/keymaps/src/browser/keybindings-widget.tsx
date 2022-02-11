@@ -694,7 +694,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     protected resetButton: HTMLButtonElement | undefined;
 
     constructor(
-        @inject(SingleTextInputDialogProps) protected override readonly props: SingleTextInputDialogProps,
+        @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
         item: KeybindingItem
     ) {

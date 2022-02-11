@@ -30,8 +30,8 @@ export namespace ProblemSelection {
     export class CommandHandler extends SelectionCommandHandler<ProblemSelection> {
 
         constructor(
-            protected override readonly selectionService: SelectionService,
-            protected override readonly options: SelectionCommandHandler.Options<ProblemSelection>
+            selectionService: SelectionService,
+            options: SelectionCommandHandler.Options<ProblemSelection>
         ) {
             super(
                 selectionService,

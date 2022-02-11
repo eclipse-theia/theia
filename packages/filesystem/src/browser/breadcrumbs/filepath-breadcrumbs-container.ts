@@ -40,7 +40,7 @@ export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
     protected readonly openerService: OpenerService;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {

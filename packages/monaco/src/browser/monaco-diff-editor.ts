@@ -37,8 +37,8 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected _diffNavigator: DiffNavigator;
 
     constructor(
-        override readonly uri: URI,
-        override readonly node: HTMLElement,
+        uri: URI,
+        node: HTMLElement,
         readonly originalModel: MonacoEditorModel,
         readonly modifiedModel: MonacoEditorModel,
         services: MonacoEditorServices,

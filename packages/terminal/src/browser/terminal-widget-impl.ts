@@ -70,7 +70,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
-    @inject('terminal-dom-id') public override readonly id: string;
+    @inject('terminal-dom-id') override readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;

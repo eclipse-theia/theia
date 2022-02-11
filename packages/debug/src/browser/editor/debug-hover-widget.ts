@@ -56,9 +56,6 @@ export function createDebugHoverWidgetContainer(parent: interfaces.Container, ed
 @injectable()
 export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.IContentWidget {
 
-    // TODO: Is this still needed?
-    // protected override toDispose = new DisposableCollection();
-
     @inject(DebugEditor)
     protected readonly editor: DebugEditor;
 

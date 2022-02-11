@@ -153,9 +153,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(FileService) protected readonly fileService: FileService;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
-        @inject(TreeModel) override readonly model: TreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) props: TreeProps,
+        @inject(TreeModel) model: TreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
 

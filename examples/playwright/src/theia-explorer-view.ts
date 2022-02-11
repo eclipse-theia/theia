@@ -64,7 +64,7 @@ export const DOT_FILES_FILTER: TheiaExplorerFileStatNodePredicate = async node =
 
 export class TheiaExplorerView extends TheiaView {
 
-    constructor(override app: TheiaApp) {
+    constructor(app: TheiaApp) {
         super(TheiaExplorerViewData, app);
     }
 

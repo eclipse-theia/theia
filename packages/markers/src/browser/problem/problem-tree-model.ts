@@ -29,9 +29,10 @@ import { ProblemUtils } from './problem-utils';
 export class ProblemTree extends MarkerTree<Diagnostic> {
 
     constructor(
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(MarkerOptions) protected override readonly markerOptions: MarkerOptions) {
-        super(problemManager, markerOptions);
+        @inject(ProblemManager) markerManager: ProblemManager,
+        @inject(MarkerOptions) markerOptions: MarkerOptions
+    ) {
+        super(markerManager, markerOptions);
     }
 
     protected override getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {

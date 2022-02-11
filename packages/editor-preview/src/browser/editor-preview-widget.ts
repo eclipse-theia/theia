@@ -35,8 +35,8 @@ export class EditorPreviewWidget extends EditorWidget {
     }
 
     constructor(
-        override readonly editor: TextEditor,
-        protected override readonly selectionService: SelectionService
+        editor: TextEditor,
+        selectionService: SelectionService
     ) {
         super(editor, selectionService);
         this.toDispose.push(this.onDidChangePreviewStateEmitter);

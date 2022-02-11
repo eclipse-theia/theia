@@ -383,15 +383,15 @@ export class QuickOpenTask implements QuickAccessProvider {
 
 export class TaskRunQuickOpenItem implements QuickPickItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
+        readonly token: number,
+        readonly task: TaskConfiguration,
         protected taskService: TaskService,
         protected isMulti: boolean,
         protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
         protected readonly taskNameResolver: TaskNameResolver,
         protected readonly taskSourceResolver: TaskSourceResolver,
         protected taskConfigurationManager: TaskConfigurationManager,
-        public readonly buttons?: Array<QuickInputButton>
+        readonly buttons?: Array<QuickInputButton>
     ) { }
 
     get label(): string {
@@ -423,15 +423,15 @@ export class TaskRunQuickOpenItem implements QuickPickItem {
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
     constructor(
-        public override readonly token: number,
-        public override readonly task: TaskConfiguration,
-        protected override readonly taskService: TaskService,
-        protected override readonly isMulti: boolean,
-        protected override readonly taskNameResolver: TaskNameResolver,
+        token: number,
+        task: TaskConfiguration,
+        taskService: TaskService,
+        isMulti: boolean,
+        taskNameResolver: TaskNameResolver,
         protected readonly isBuildTask: boolean,
-        protected override readonly taskConfigurationManager: TaskConfigurationManager,
-        protected override readonly taskDefinitionRegistry: TaskDefinitionRegistry,
-        protected override readonly taskSourceResolver: TaskSourceResolver
+        taskConfigurationManager: TaskConfigurationManager,
+        taskDefinitionRegistry: TaskDefinitionRegistry,
+        taskSourceResolver: TaskSourceResolver
     ) {
         super(token, task, taskService, isMulti, taskDefinitionRegistry, taskNameResolver, taskSourceResolver, taskConfigurationManager);
     }

@@ -42,11 +42,13 @@ export class ProblemWidget extends TreeWidget {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(ProblemManager)
+    protected readonly problemManager: ProblemManager;
+
     constructor(
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(TreeProps) readonly treeProps: TreeProps,
+        @inject(TreeProps) treeProps: TreeProps,
         @inject(ProblemTreeModel) override readonly model: ProblemTreeModel,
-        @inject(ContextMenuRenderer) override readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 

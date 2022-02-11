@@ -34,8 +34,8 @@ export type TaskFactory = (options: TaskCustomOptions) => CustomTask;
 export class CustomTask extends Task {
 
     constructor(
-        @inject(TaskManager) protected override readonly taskManager: TaskManager,
-        @inject(ILogger) @named('task') protected override readonly logger: ILogger,
+        @inject(TaskManager) taskManager: TaskManager,
+        @inject(ILogger) @named('task') logger: ILogger,
         @inject(TaskCustomOptions) protected override readonly options: TaskCustomOptions
     ) {
         super(taskManager, logger, options);

@@ -26,7 +26,7 @@ export abstract class ReactDialog<T> extends AbstractDialog<T> {
     protected readonly onRender = new DisposableCollection();
 
     constructor(
-        @inject(DialogProps) protected override readonly props: DialogProps
+        @inject(DialogProps) props: DialogProps
     ) {
         super(props);
         this.toDispose.push(Disposable.create(() => {

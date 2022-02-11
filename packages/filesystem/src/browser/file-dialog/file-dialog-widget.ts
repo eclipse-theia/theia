@@ -28,7 +28,7 @@ export class FileDialogWidget extends FileTreeWidget {
     private _disableFileSelection: boolean = false;
 
     constructor(
-        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(FileDialogModel) override readonly model: FileDialogModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {

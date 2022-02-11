@@ -566,8 +566,8 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
 
     constructor(
         protected readonly workspaceService: WorkspaceService,
-        protected override readonly selectionService: SelectionService,
-        protected override readonly handler: UriCommandHandler<URI>
+        selectionService: SelectionService,
+        handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
     }

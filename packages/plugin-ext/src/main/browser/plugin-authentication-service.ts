@@ -27,12 +27,12 @@ export function getAuthenticationProviderActivationEvent(id: string): string { r
 export class PluginAuthenticationServiceImpl extends AuthenticationServiceImpl implements AuthenticationService {
     @inject(HostedPluginSupport) protected readonly pluginService: HostedPluginSupport;
 
-    async getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>> {
+    override async getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>> {
         await this.tryActivateProvider(id);
         return super.getSessions(id, scopes);
     }
 
-    async login(id: string, scopes: string[]): Promise<AuthenticationSession> {
+    override async login(id: string, scopes: string[]): Promise<AuthenticationSession> {
         await this.tryActivateProvider(id);
         return super.login(id, scopes);
     }

@@ -79,9 +79,9 @@ export class OutlineViewWidget extends TreeWidget {
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
     constructor(
-        @inject(TreeProps) protected readonly treeProps: TreeProps,
-        @inject(OutlineViewTreeModel) model: OutlineViewTreeModel,
-        @inject(ContextMenuRenderer) protected override readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) treeProps: TreeProps,
+        @inject(OutlineViewTreeModel) override readonly model: OutlineViewTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
