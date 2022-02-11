@@ -25,7 +25,7 @@ import * as ffmpeg from '@theia/ffmpeg';
 import checkHoisted from './check-hoisting';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
-import { extract } from '@theia/localization-manager';
+import { LocalizationManager, extract } from '@theia/localization-manager';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
@@ -110,6 +110,7 @@ async function theiaCli(): Promise<void> {
     // affecting the global `yargs` instance used by the CLI.
     const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
+    const localizationManager = new LocalizationManager();
     const { target } = manager.pck;
     defineCommonOptions(yargs)
         .command<{
@@ -227,6 +228,46 @@ async function theiaCli(): Promise<void> {
             handler: async ({ packed }) => {
                 await downloadPlugins({ packed });
             },
+        })
+        .command<{
+            freeApi?: boolean,
+            deeplKey: string,
+            file: string,
+            languages: string[],
+            sourceLanguage?: string
+        }>({
+            command: 'nls-localize [languages...]',
+            describe: 'Localize json files using the DeepL API',
+            builder: {
+                'file': {
+                    alias: 'f',
+                    describe: 'The source file which should be translated',
+                    demandOption: true
+                },
+                'deepl-key': {
+                    alias: 'k',
+                    describe: 'DeepL key used for API access. See https://www.deepl.com/docs-api for more information',
+                    demandOption: true
+                },
+                'free-api': {
+                    describe: 'Indicates whether the specified DeepL API key belongs to the free API',
+                    boolean: true,
+                    default: false,
+                },
+                'source-language': {
+                    alias: 's',
+                    describe: 'The source language of the translation file'
+                }
+            },
+            handler: async ({ freeApi, deeplKey, file, sourceLanguage, languages = [] }) => {
+                await localizationManager.localize({
+                    sourceFile: file,
+                    freeApi: freeApi ?? true,
+                    authKey: deeplKey,
+                    targetLanguages: languages,
+                    sourceLanguage
+                });
+            }
         })
         .command<{
             root: string,

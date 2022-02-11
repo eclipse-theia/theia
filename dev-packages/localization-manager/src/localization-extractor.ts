@@ -21,12 +21,9 @@ import * as path from 'path';
 import { glob } from 'glob';
 import { promisify } from 'util';
 import deepmerge = require('deepmerge');
+import { Localization } from './common';
 
 const globPromise = promisify(glob);
-
-export interface Localization {
-    [key: string]: string | Localization
-}
 
 export interface ExtractionOptions {
     root: string
