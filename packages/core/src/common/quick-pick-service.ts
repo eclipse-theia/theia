@@ -77,6 +77,13 @@ export interface QuickPickItem {
     execute?: () => void;
 }
 
+export interface QuickPickSeparator {
+    type: 'separator';
+    label?: string;
+}
+
+export type QuickPickItemOrSeparator = QuickPickItem | QuickPickSeparator;
+
 export namespace QuickPickItem {
     export function is(item: QuickPickSeparator | QuickPickItem): item is QuickPickItem {
         // if it's not a separator, it's an item
@@ -144,7 +151,7 @@ export interface InputBox extends QuickInput {
     validationMessage: string | undefined;
 }
 
-export interface QuickPick<T extends QuickPickItem> extends QuickInput {
+export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInput {
     value: string;
     placeholder: string | undefined;
     items: ReadonlyArray<T | QuickPickSeparator>;
@@ -184,16 +191,16 @@ export interface InputOptions {
     validateInput?(input: string): Promise<string | null | undefined> | undefined;
 }
 
-export interface QuickPickItemButtonEvent<T extends QuickPickItem> {
+export interface QuickPickItemButtonEvent<T extends QuickPickItemOrSeparator> {
     button: QuickInputButton;
     item: T;
 }
 
-export interface QuickPickItemButtonContext<T extends QuickPickItem> extends QuickPickItemButtonEvent<T> {
+export interface QuickPickItemButtonContext<T extends QuickPickItemOrSeparator> extends QuickPickItemButtonEvent<T> {
     removeItem(): void;
 }
 
-export interface QuickPickOptions<T extends QuickPickItem> {
+export interface QuickPickOptions<T extends QuickPickItemOrSeparator> {
     busy?: boolean;
     enabled?: boolean;
     title?: string;
@@ -244,7 +251,7 @@ export interface QuickInputService {
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
     pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<T[]> | T[], options?: O, token?: CancellationToken):
         Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
-    showQuickPick<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T>;
+    showQuickPick<T extends QuickPickItemOrSeparator>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T>;
     hide(): void;
     /**
      * Provides raw access to the quick pick controller.

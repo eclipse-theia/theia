@@ -43,9 +43,13 @@ import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { ContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import * as Monaco from 'monaco-editor-core';
 import { OpenerService as MonacoOpenerService } from 'monaco-editor-core/esm/vs/editor/browser/services/openerService';
-import { StandaloneCommandService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneCommandService, StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { OpenExternalOptions, OpenInternalOptions } from 'monaco-editor-core/esm/vs/platform/opener/common/opener';
 import { SimpleKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybindings';
+import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { IInstantiationService } from 'monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { IKeybindingService } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
+import { ReferencesController } from 'monaco-editor-core/esm/vs/editor/contrib/gotoSymbol/browser/peek/referencesController';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -102,14 +106,9 @@ export class MonacoEditorProvider {
         @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
         @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService
     ) {
-        const staticServices = monaco.services.StaticServices;
-        const init = staticServices.init.bind(monaco.services.StaticServices);
-
-        monaco.services.StaticServices.init = o => {
-            const result = init(o);
-            result[0].set(monaco.services.ICodeEditorService, codeEditorService);
-            return result;
-        };
+        StandaloneServices.initialize({
+            [ICodeEditorService.toString()]: codeEditorService,
+        });
     }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -159,7 +158,7 @@ export class MonacoEditorProvider {
         this.suppressMonacoKeybindingListener(editor);
         this.injectKeybindingResolver(editor);
 
-        const standaloneCommandService = new StandaloneCommandService(editor.instantiationService);
+        const standaloneCommandService = new StandaloneCommandService(StandaloneServices.get(IInstantiationService));
         commandService.setDelegate(standaloneCommandService);
         toDispose.push(this.installReferencesController(editor));
 
@@ -213,7 +212,7 @@ export class MonacoEditorProvider {
      */
     protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
         let keydownListener: Monaco.IDisposable | undefined;
-        const keybindingService = editor.getControl()._standaloneKeybindingService;
+        const keybindingService = StandaloneServices.get(IKeybindingService);
         for (const listener of keybindingService._store._toDispose) {
             if ((listener as any)['_type'] === 'keydown') {
                 keydownListener = listener;
@@ -226,10 +225,10 @@ export class MonacoEditorProvider {
     }
 
     protected injectKeybindingResolver(editor: MonacoEditor): void {
-        const keybindingService = editor.getControl()._standaloneKeybindingService;
+        const keybindingService = StandaloneServices.get(IKeybindingService);
         keybindingService.resolveKeybinding = keybinding => [new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry)];
         keybindingService.resolveKeyboardEvent = keyboardEvent => {
-            const keybinding = SimpleKeybinding(
+            const keybinding = new SimpleKeybinding(
                 keyboardEvent.ctrlKey,
                 keyboardEvent.shiftKey,
                 keyboardEvent.altKey,
@@ -404,7 +403,7 @@ export class MonacoEditorProvider {
 
     protected installReferencesController(editor: MonacoEditor): Disposable {
         const control = editor.getControl();
-        const referencesController = control._contributions['editor.contrib.referencesController'];
+        const referencesController: ReferencesController = control._contributions['editor.contrib.referencesController'];
         const originalGotoReference = referencesController._gotoReference;
         referencesController._gotoReference = async ref => {
             if (referencesController._widget) {
@@ -412,7 +411,7 @@ export class MonacoEditorProvider {
             }
 
             referencesController._ignoreModelChangeEvent = true;
-            const range = Monaco.Range.lift(ref.range).collapseToStart();
+            const range = Monaco.Range.lift(ref.range)?.collapseToStart();
 
             // preserve the model that it does not get disposed if an editor preview replaces an editor
             const model = referencesController._model;

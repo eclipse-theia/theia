@@ -116,7 +116,7 @@ export class MonacoTextModelService implements ITextModelService {
         return this._models.onDidCreate;
     }
 
-    createModelReference(raw: Uri | URI): Promise<IReference<IResolvedTextEditorModel>> {
+    createModelReference(raw: Uri | URI): Promise<IReference<MonacoEditorModel>> {
         return this._models.acquire(raw.toString());
     }
 
