@@ -1,22 +1,12 @@
- - [x] packages/monaco/src/browser/monaco-diff-editor.ts
- - [x] packages/monaco/src/browser/monaco-editor-provider.ts
- - [x] packages/monaco/src/browser/monaco-resolved-keybinding.ts
- - [x] packages/monaco/src/browser/monaco-quick-input-service.ts
- - [x] packages/monaco/src/browser/monaco-command.ts
- - [x] packages/monaco/src/browser/monaco-keybinding.ts
- - [x] packages/monaco/src/browser/monaco-diagnostic-collection.ts
- - [x] packages/monaco/src/browser/monaco-outline-contribution.ts
- - [x] packages/monaco/src/browser/monaco-frontend-application-contribution.ts
- - [x] packages/monaco/src/browser/textmate/monaco-theme-registry.ts
- - [x] packages/monaco/src/browser/textmate/monaco-textmate-service.ts
- - [x] packages/monaco/src/browser/monaco-context-key-service.ts
- - [x] packages/monaco/src/browser/monaco-mime-service.ts
- - [x] packages/monaco/src/browser/monaco-color-registry.ts
- - [x] packages/monaco/src/browser/monaco-formatting-conflicts.ts
- - [x] packages/monaco/src/browser/monaco-gotoline-quick-access.ts
- - [x] packages/monaco/src/browser/monaco-gotosymbol-quick-access.ts
- - [x] packages/monaco/src/browser/monaco-quick-access-registry.ts
- - [x] packages/monaco/src/browser/monaco-frontend-module.ts
- - [x] packages/monaco/src/browser/monaco-editor-zone-widget.ts
- - [x] packages/monaco/src/browser/textmate/textmate-snippet-completion-provider.ts
- - [x] packages/scm/src/browser/scm-tree-widget.tsx
+packages/output/src/browser/output-resource.ts
+packages/output/src/browser/output-channel.ts
+packages/output/src/browser/output-widget.ts
+packages/output/src/browser/output-contribution.ts
+packages/bulk-edit/src/browser/bulk-edit-tree/bulk-edit-tree.spec.ts
+packages/console/src/browser/console-widget.ts
+packages/preferences/src/browser/monaco-jsonc-editor.ts
+packages/task/src/browser/task-service.ts
+packages/task/src/browser/quick-open-task.ts
+packages/plugin-ext-vscode/src/browser/plugin-vscode-commands-contribution.ts
+packages/keymaps/src/browser/keymaps-service.ts
+packages/git/src/browser/blame/blame-decorator.ts

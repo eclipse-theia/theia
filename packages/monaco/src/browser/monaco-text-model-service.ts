@@ -27,7 +27,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as Monaco from 'monaco-editor-core';
-import { ITextModelService, IResolvedTextEditorModel, ITextModelContentProvider } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { ITextModelService, ITextModelContentProvider } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { ITextModelUpdateOptions } from 'monaco-editor-core/esm/vs/editor/common/model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
