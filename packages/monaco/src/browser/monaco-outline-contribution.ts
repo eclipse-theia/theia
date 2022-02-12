@@ -24,7 +24,10 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoEditor } from './monaco-editor';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import * as Monaco from 'monaco-editor-core';
-import { DocumentSymbol, SymbolKind } from 'monaco-editor-core/esm/vs/editor/common/languages';
+import { ILanguageFeaturesService } from 'monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ITextModel } from 'monaco-editor-core/esm/vs/editor/common/model';
+import { DocumentSymbol } from 'monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
@@ -40,7 +43,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         // updateOutline and handleCurrentEditorChanged need to be called even when the outline view widget is closed
         // in order to update breadcrumbs.
-        DocumentSymbolProviderRegistry.onDidChange( // Seems to have been removed?
+        StandaloneServices.get(ILanguageFeaturesService).documentSymbolProvider.onDidChange(
             debounce(() => this.updateOutline())
         );
         this.editorManager.onCurrentEditorChanged(
@@ -114,7 +117,10 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.publish(roots || []);
     }
 
-    protected async createRoots(model: Monaco.editor.ITextModel, token: Monaco.CancellationToken, editorSelection?: Range): Promise<MonacoOutlineSymbolInformationNode[]> {
+    protected async createRoots(
+        model: Monaco.editor.ITextModel | ITextModel, token: Monaco.CancellationToken, editorSelection?: Range
+    ): Promise<MonacoOutlineSymbolInformationNode[]> {
+        model = model as ITextModel;
         if (this.roots && this.roots.length > 0) {
             // Reset the selection on the tree nodes, so that we can apply the new ones based on the `editorSelection`.
             const resetSelection = (node: MonacoOutlineSymbolInformationNode) => {
@@ -125,18 +131,18 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         } else {
             this.roots = [];
             // eslint-disable-next-line @typescript-eslint/await-thenable
-            const providers = await DocumentSymbolProviderRegistry.all(model);
+            const providers = await StandaloneServices.get(ILanguageFeaturesService).documentSymbolProvider.all(model);
             if (token.isCancellationRequested) {
                 return [];
             }
             const uri = new URI(model.uri.toString());
             for (const provider of providers) {
                 try {
-                    const symbols = await provider.provideDocumentSymbols(model, token);
+                    const symbols = await provider.provideDocumentSymbols(model, token) ?? [];
                     if (token.isCancellationRequested) {
                         return [];
                     }
-                    const nodes = this.createNodes(uri, symbols || []);
+                    const nodes = this.createNodes(uri, symbols);
                     this.roots.push(...nodes);
                 } catch {
                     /* collect symbols from other providers */
@@ -147,7 +153,8 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         return this.roots;
     }
 
-    protected createNodes(uri: URI, symbols: DocumentSymbol[]): MonacoOutlineSymbolInformationNode[] {
+    protected createNodes(uri: URI, symbols: Monaco.languages.DocumentSymbol[] | DocumentSymbol[]): MonacoOutlineSymbolInformationNode[] {
+        symbols = symbols as Monaco.languages.DocumentSymbol[];
         let rangeBased = false;
         const ids = new Map();
         const roots: MonacoOutlineSymbolInformationNode[] = [];
@@ -212,7 +219,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
      *
      * If the argument is a `DocumentSymbol`, then `getFullRange` will be used to retrieve the range of the underlying symbol.
      */
-    protected parentContains(candidate: DocumentSymbol | Range, parent: DocumentSymbol | Range, rangeBased: boolean): boolean {
+    protected parentContains(candidate: Monaco.languages.DocumentSymbol | Range, parent: Monaco.languages.DocumentSymbol | Range, rangeBased: boolean): boolean {
         // TODO: move this code to the `monaco-languageclient`: https://github.com/eclipse-theia/theia/pull/2885#discussion_r217800446
         const candidateRange = Range.is(candidate) ? candidate : this.getFullRange(candidate);
         const parentRange = Range.is(parent) ? parent : this.getFullRange(parent);
@@ -250,7 +257,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
      *
      * See: [`DocumentSymbol#range`](https://microsoft.github.io/language-server-protocol/specification#textDocument_documentSymbol) for more details.
      */
-    protected getFullRange(documentSymbol: DocumentSymbol): Range {
+    protected getFullRange(documentSymbol: Monaco.languages.DocumentSymbol): Range {
         return this.asRange(documentSymbol.range);
     }
 
@@ -259,17 +266,19 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
      *
      * See: [`DocumentSymbol#selectionRange`](https://microsoft.github.io/language-server-protocol/specification#textDocument_documentSymbol) for more details.
      */
-    protected getNameRange(documentSymbol: DocumentSymbol): Range {
+    protected getNameRange(documentSymbol: Monaco.languages.DocumentSymbol): Range {
         return this.asRange(documentSymbol.selectionRange);
     }
 
-    protected createNode(uri: URI, symbol: DocumentSymbol, ids: Map<string, number>, parent?: MonacoOutlineSymbolInformationNode): MonacoOutlineSymbolInformationNode {
+    protected createNode(
+        uri: URI, symbol: Monaco.languages.DocumentSymbol, ids: Map<string, number>, parent?: MonacoOutlineSymbolInformationNode
+    ): MonacoOutlineSymbolInformationNode {
         const id = this.createId(symbol.name, ids);
         const children: MonacoOutlineSymbolInformationNode[] = [];
         const node: MonacoOutlineSymbolInformationNode = {
             children,
             id,
-            iconClass: SymbolKind[symbol.kind].toString().toLowerCase(),
+            iconClass: Monaco.languages.SymbolKind[symbol.kind].toString().toLowerCase(),
             name: this.getName(symbol),
             detail: this.getDetail(symbol),
             parent,
@@ -287,11 +296,11 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         return node;
     }
 
-    protected getName(symbol: DocumentSymbol): string {
+    protected getName(symbol: Monaco.languages.DocumentSymbol): string {
         return symbol.name;
     }
 
-    protected getDetail(symbol: DocumentSymbol): string {
+    protected getDetail(symbol: Monaco.languages.DocumentSymbol): string {
         return symbol.detail;
     }
 
@@ -302,17 +311,17 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         return name + '_' + index;
     }
 
-    protected shouldExpand(symbol: DocumentSymbol): boolean {
+    protected shouldExpand(symbol: Monaco.languages.DocumentSymbol): boolean {
         return [
-            SymbolKind.Class,
-            SymbolKind.Enum, SymbolKind.File,
-            SymbolKind.Interface, SymbolKind.Module,
-            SymbolKind.Namespace, SymbolKind.Object,
-            SymbolKind.Package, SymbolKind.Struct
+            Monaco.languages.SymbolKind.Class,
+            Monaco.languages.SymbolKind.Enum, Monaco.languages.SymbolKind.File,
+            Monaco.languages.SymbolKind.Interface, Monaco.languages.SymbolKind.Module,
+            Monaco.languages.SymbolKind.Namespace, Monaco.languages.SymbolKind.Object,
+            Monaco.languages.SymbolKind.Package, Monaco.languages.SymbolKind.Struct
         ].indexOf(symbol.kind) !== -1;
     }
 
-    protected orderByPosition(symbol: DocumentSymbol, symbol2: DocumentSymbol): number {
+    protected orderByPosition(symbol: Monaco.languages.DocumentSymbol, symbol2: Monaco.languages.DocumentSymbol): number {
         const startLineComparison = symbol.range.startLineNumber - symbol2.range.startLineNumber;
         if (startLineComparison !== 0) {
             return startLineComparison;
@@ -332,7 +341,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 export namespace MonacoOutlineContribution {
     export interface NodeAndSymbol {
         node: MonacoOutlineSymbolInformationNode;
-        symbol: DocumentSymbol
+        symbol: Monaco.languages.DocumentSymbol
     }
 }
 

@@ -29,6 +29,8 @@ import { TokenizationRegistry } from 'monaco-editor-core/esm/vs/editor/common/la
 import { IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
+import { TokenizationSupportAdapter } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
+import { LanguageService } from 'monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
 export type OnigasmPromise = Promise<IOnigLib>;
@@ -189,8 +191,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             toDispose.push(Monaco.languages.setTokensProvider(languageId, tokenizer));
             const support = TokenizationRegistry.get(languageId);
             const themeService = StandaloneServices.get(IStandaloneThemeService);
-            const languageIdentifier = StandaloneServices.get(ILanguageService).getLanguageName(languageId);
-            const adapter = new monaco.services.TokenizationSupport2Adapter(themeService, languageIdentifier!, tokenizer); // Not present
+            const languageService = StandaloneServices.get(ILanguageService);
+            const adapter = new TokenizationSupportAdapter(languageId, tokenizer, languageService, themeService);
             support!.tokenize = adapter.tokenize.bind(adapter);
         } catch (error) {
             this.logger.warn('No grammar for this language id', languageId, error);
@@ -198,9 +200,10 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     }
 
     protected waitForLanguage(language: string, cb: () => {}): Disposable {
-        const modeService = StandaloneServices.get(ILanguageService);
-        for (const modeId of Object.keys(modeService['_instantiatedModes'])) { // Probably 'encounteredLanguages now
-            const mode = modeService['_instantiatedModes'][modeId];
+        const languageService = StandaloneServices.get(ILanguageService) as LanguageService;
+        // TODO: We probably shouldn't have to do this.
+        for (const languageId of Object.keys(languageService['_encounteredLanguages'])) {
+            const mode = languageService['_encounteredLanguages'][languageId];
             if (mode.getId() === language) {
                 cb();
                 return Disposable.NULL;

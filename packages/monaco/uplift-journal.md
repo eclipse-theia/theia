@@ -51,3 +51,6 @@ After a couple of days of mechanical replacements, I moved onto substantive fixe
     - In non-API code, VSCode inlcudes `/** @internal */` JSDocs in interfaces to remove fields from the public interface. As a consequence, public API interfaces often can't satisfy the equivalent non-API interfaces.
  - There are a number of places where it looks like we may have added fixes for problems that have fixed in VSCode in the meantime. I noticed this in the implementation of the `DiffNavigator`, where we were digging into private fields to do work that was already being done in the VSCode implementation. There are probably a lot of cases like that, and I'm not going to try to to catch them in this first round. It's a lot easier to find, now, though, since we can go look at the code.
 
+## 2/11/2022
+
+More private API munging. It's notable how inconsistent our use of Monaco is. In some cases, we delegate to its services, in some cases, we override them, and in others, we reimplement them, without obvious rhyme or reason in the decision. Not much to do about it in this pass, but it's worth considering.

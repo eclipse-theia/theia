@@ -1,22 +1,22 @@
  - [x] packages/monaco/src/browser/monaco-diff-editor.ts
-packages/monaco/src/browser/monaco-resolved-keybinding.ts
-packages/monaco/src/browser/monaco-quick-input-service.ts
-packages/monaco/src/browser/monaco-editor-provider.ts
-packages/monaco/src/browser/monaco-command.ts
-packages/monaco/src/browser/monaco-keybinding.ts
-packages/monaco/src/browser/monaco-diagnostic-collection.ts
-packages/monaco/src/browser/monaco-outline-contribution.ts
-packages/monaco/src/browser/monaco-frontend-application-contribution.ts
-packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-packages/monaco/src/browser/textmate/monaco-textmate-service.ts
-packages/monaco/src/browser/monaco-context-key-service.ts
-packages/monaco/src/browser/monaco-mime-service.ts
-packages/monaco/src/browser/monaco-color-registry.ts
-packages/monaco/src/browser/monaco-formatting-conflicts.ts
-packages/monaco/src/browser/monaco-gotoline-quick-access.ts
-packages/monaco/src/browser/monaco-gotosymbol-quick-access.ts
-packages/monaco/src/browser/monaco-quick-access-registry.ts
-packages/monaco/src/browser/monaco-frontend-module.ts
-packages/monaco/src/browser/monaco-editor-zone-widget.ts
-packages/monaco/src/browser/textmate/textmate-snippet-completion-provider.ts
-packages/scm/src/browser/scm-tree-widget.tsx
+ - [x] packages/monaco/src/browser/monaco-editor-provider.ts
+ - [x] packages/monaco/src/browser/monaco-resolved-keybinding.ts
+ - [x] packages/monaco/src/browser/monaco-quick-input-service.ts
+ - [x] packages/monaco/src/browser/monaco-command.ts
+ - [x] packages/monaco/src/browser/monaco-keybinding.ts
+ - [x] packages/monaco/src/browser/monaco-diagnostic-collection.ts
+ - [x] packages/monaco/src/browser/monaco-outline-contribution.ts
+ - [x] packages/monaco/src/browser/monaco-frontend-application-contribution.ts
+ - [x] packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+ - [x] packages/monaco/src/browser/textmate/monaco-textmate-service.ts
+ - [x] packages/monaco/src/browser/monaco-context-key-service.ts
+ - [x] packages/monaco/src/browser/monaco-mime-service.ts
+ - [x] packages/monaco/src/browser/monaco-color-registry.ts
+ - [x] packages/monaco/src/browser/monaco-formatting-conflicts.ts
+ - [x] packages/monaco/src/browser/monaco-gotoline-quick-access.ts
+ - [x] packages/monaco/src/browser/monaco-gotosymbol-quick-access.ts
+ - [x] packages/monaco/src/browser/monaco-quick-access-registry.ts
+ - [x] packages/monaco/src/browser/monaco-frontend-module.ts
+ - [x] packages/monaco/src/browser/monaco-editor-zone-widget.ts
+ - [x] packages/monaco/src/browser/textmate/textmate-snippet-completion-provider.ts
+ - [x] packages/scm/src/browser/scm-tree-widget.tsx

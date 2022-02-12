@@ -33,7 +33,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         for (const item of defaultKeybindings) {
             const command = this.commands.validate(item.command);
             if (command) {
-                const when = item.when && item.when.serialize();
+                const when = (item.when && item.when.serialize()) ?? undefined;
                 let keybinding;
                 if (item.command === MonacoCommands.GO_TO_DEFINITION && !environment.electron.is()) {
                     keybinding = 'ctrlcmd+f11';

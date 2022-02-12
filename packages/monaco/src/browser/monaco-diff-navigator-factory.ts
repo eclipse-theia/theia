@@ -17,8 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
 import * as Monaco from 'monaco-editor-core';
-import { IStandaloneDiffEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { createDiffNavigator, IDiffNavigatorOptions } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
+
+// TODO: Bring back the `hasNext` and `hasPrevious` methods: they were a neat feature in the SCM tree.
 @injectable()
 export class MonacoDiffNavigatorFactory {
 
@@ -30,7 +30,7 @@ export class MonacoDiffNavigatorFactory {
         previous: () => { },
     };
 
-    createdDiffNavigator(editor: IStandaloneDiffEditor | Monaco.editor.IStandaloneDiffEditor, options?: IDiffNavigatorOptions): DiffNavigator {
-        return createDiffNavigator(editor as IStandaloneDiffEditor, options);
+    createdDiffNavigator(editor: Monaco.editor.IStandaloneDiffEditor, options?: Monaco.editor.IDiffNavigatorOptions): DiffNavigator {
+        return Monaco.editor.createDiffNavigator(editor, options);
     }
 }

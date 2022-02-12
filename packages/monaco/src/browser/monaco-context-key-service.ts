@@ -17,9 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
-import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { AbstractContextKeyService, ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { ContextKeyExpr, ContextKeyExpression, IContext } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { KeybindingResolver } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybindingResolver';
 
 @injectable()
 export class MonacoContextKeyService implements TheiaContextKeyService {
@@ -46,11 +45,14 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
 
     match(expression: string, context?: HTMLElement): boolean {
         const parsed = this.parse(expression);
-        const ctx = this.identifyContext(context);
-        if (!ctx) {
-            return this.contextKeyService.contextMatchesRules(parsed);
+        if (parsed) {
+            const ctx = this.identifyContext(context);
+            if (!ctx) {
+                return this.contextKeyService.contextMatchesRules(parsed);
+            }
+            return parsed.evaluate(ctx);
         }
-        return KeybindingResolver.contextMatchesRules(ctx, parsed); // Looks like this will have to go - it's no longer static?
+        return true;
     }
 
     protected identifyContext(callersContext?: HTMLElement | IContext): IContext | undefined {
@@ -99,8 +101,13 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         }
     }
 
-    createScoped(target?: HTMLElement): ScopedValueStore {
-        return this.contextKeyService.createScoped(target); // Only myself to blame :-).
+    createScoped(target: HTMLElement): ScopedValueStore {
+        const scoped = this.contextKeyService.createScoped(target);
+        // TODO: We shouldn't have to do this. In VSCode, when they call `createScoped`, they then take a context key and say `key.bindTo(scoped).set(value)`
+        if (scoped instanceof AbstractContextKeyService) {
+            return scoped as AbstractContextKeyService & { createScoped(): ScopedValueStore };
+        }
+        return this;
     }
 
     setContext(key: string, value: unknown): void {

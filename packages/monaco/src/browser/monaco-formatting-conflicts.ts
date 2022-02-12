@@ -18,10 +18,12 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceService, FrontendApplicationContribution, PreferenceLanguageOverrideService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoQuickInputService } from './monaco-quick-input-service';
-import { languages, editor } from 'monaco-editor-core';
+import * as Monaco from 'monaco-editor-core';
 import { FormattingConflicts, FormattingMode } from 'monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
+import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from 'monaco-editor-core/esm/vs/editor/common/languages';
+import { ITextModel } from 'monaco-editor-core/esm/vs/editor/common/model';
 
-type FormattingEditProvider = languages.DocumentFormattingEditProvider | languages.DocumentRangeFormattingEditProvider;
+type FormattingEditProvider = DocumentFormattingEditProvider | DocumentRangeFormattingEditProvider;
 
 const PREFERENCE_NAME = 'editor.defaultFormatter';
 
@@ -41,8 +43,9 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     protected readonly editorManager: EditorManager;
 
     async initialize(): Promise<void> {
+
         FormattingConflicts.setFormatterSelector(<T extends FormattingEditProvider>(
-            formatters: T[], document: editor.ITextModel, mode: monaco.format.FormattingMode) =>
+            formatters: T[], document: ITextModel, mode: FormattingMode) =>
             this.selectFormatter(formatters, document, mode));
     }
 
@@ -65,7 +68,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     }
 
     private async selectFormatter<T extends FormattingEditProvider>(
-        formatters: T[], document: editor.ITextModel, mode: FormattingMode): Promise<T | undefined> {
+        formatters: T[], document: Monaco.editor.ITextModel | ITextModel, mode: FormattingMode): Promise<T | undefined> {
 
         if (formatters.length === 0) {
             return undefined;

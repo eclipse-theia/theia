@@ -41,14 +41,11 @@ export class MonacoColorRegistry extends ColorRegistry {
     }
 
     protected doRegister(definition: ColorDefinition): Disposable {
-        let defaults: ColorDefaults | undefined;
-        if (definition.defaults) {
-            defaults = {
-                dark: this.toColor(definition.defaults.dark),
-                light: this.toColor(definition.defaults.light),
-                hc: this.toColor(definition.defaults.hc),
-            };
-        }
+        const defaults: ColorDefaults = {
+            dark: this.toColor(definition.defaults?.dark),
+            light: this.toColor(definition.defaults?.light),
+            hc: this.toColor(definition.defaults?.hc),
+        };
         const identifier = this.monacoColorRegistry.registerColor(definition.id, defaults, definition.description);
         return Disposable.create(() => this.monacoColorRegistry.deregisterColor(identifier));
     }

@@ -49,7 +49,6 @@ import { SimpleKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybindi
 import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { IInstantiationService } from 'monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
-import { ReferencesController } from 'monaco-editor-core/esm/vs/editor/contrib/gotoSymbol/browser/peek/referencesController';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -155,12 +154,10 @@ export class MonacoEditorProvider {
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
-        this.suppressMonacoKeybindingListener(editor);
         this.injectKeybindingResolver(editor);
 
         const standaloneCommandService = new StandaloneCommandService(StandaloneServices.get(IInstantiationService));
         commandService.setDelegate(standaloneCommandService);
-        toDispose.push(this.installReferencesController(editor));
 
         toDispose.push(editor.onFocusChanged(focused => {
             if (focused) {
@@ -202,25 +199,6 @@ export class MonacoEditorProvider {
         } catch (e) {
             console.error(`Fail to open '${uri.toString()}':`, e);
             return false;
-        }
-    }
-
-    /**
-     * Suppresses Monaco keydown listener to avoid triggering default Monaco keybindings
-     * if they are overridden by a user. Monaco keybindings should be registered as Theia keybindings
-     * to allow a user to customize them.
-     */
-    protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
-        let keydownListener: Monaco.IDisposable | undefined;
-        const keybindingService = StandaloneServices.get(IKeybindingService);
-        for (const listener of keybindingService._store._toDispose) {
-            if ((listener as any)['_type'] === 'keydown') {
-                keydownListener = listener;
-                break;
-            }
-        }
-        if (keydownListener) {
-            keydownListener.dispose();
         }
     }
 
@@ -384,7 +362,7 @@ export class MonacoEditorProvider {
     protected toOptionName(preferenceName: string, prefixes: string[]): string {
         for (const prefix of prefixes) {
             if (preferenceName.startsWith(prefix)) {
-                return preferenceName.substr(prefix.length);
+                return preferenceName.substring(prefix.length);
             }
         }
         return preferenceName;
@@ -399,61 +377,6 @@ export class MonacoEditorProvider {
                 obj[name] = value;
             }
         }
-    }
-
-    protected installReferencesController(editor: MonacoEditor): Disposable {
-        const control = editor.getControl();
-        const referencesController: ReferencesController = control._contributions['editor.contrib.referencesController'];
-        const originalGotoReference = referencesController._gotoReference;
-        referencesController._gotoReference = async ref => {
-            if (referencesController._widget) {
-                referencesController._widget.hide();
-            }
-
-            referencesController._ignoreModelChangeEvent = true;
-            const range = Monaco.Range.lift(ref.range)?.collapseToStart();
-
-            // preserve the model that it does not get disposed if an editor preview replaces an editor
-            const model = referencesController._model;
-            referencesController._model = undefined;
-
-            referencesController._editorService.openCodeEditor({
-                resource: ref.uri,
-                options: { selection: range }
-            }, control).then(openedEditor => {
-                referencesController._model = model;
-                referencesController._ignoreModelChangeEvent = false;
-                if (!openedEditor) {
-                    referencesController.closeWidget();
-                    return;
-                }
-                if (openedEditor !== control) {
-                    // preserve the model that it does not get disposed in `referencesController.closeWidget`
-                    referencesController._model = undefined;
-
-                    // to preserve the active editor
-                    const focus = control.focus;
-                    control.focus = () => { };
-                    referencesController.closeWidget();
-                    control.focus = focus;
-
-                    const modelPromise = Promise.resolve(model) as any;
-                    modelPromise.cancel = () => { };
-                    openedEditor._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, true);
-                    return;
-                }
-
-                if (referencesController._widget) {
-                    referencesController._widget.show(range);
-                    referencesController._widget.focusOnReferenceTree();
-                }
-
-            }, (e: any) => {
-                referencesController._ignoreModelChangeEvent = false;
-                monaco.error.onUnexpectedError(e);
-            });
-        };
-        return Disposable.create(() => referencesController._gotoReference = originalGotoReference);
     }
 
     getDiffNavigator(editor: TextEditor): DiffNavigator {

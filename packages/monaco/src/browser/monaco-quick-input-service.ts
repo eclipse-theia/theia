@@ -16,14 +16,13 @@
 
 import {
     InputBox, InputOptions, KeybindingRegistry, PickOptions,
-    QuickInputBackButton,
     QuickInputButton, QuickInputService, QuickPick, QuickPickItem,
     QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     IInputBox, IInputOptions, IKeyMods, IPickOptions, IQuickInput, IQuickInputButton,
-    IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent, IQuickPickSeparator
+    IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent, IQuickPickSeparator, QuickPickInput
 } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { IQuickInputOptions, IQuickInputStyles, QuickInputController } from 'monaco-editor-core/esm/vs/base/parts/quickinput/browser/quickInput';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
@@ -36,9 +35,8 @@ import { ResolvedKeybinding } from 'monaco-editor-core/esm/vs/base/common/keybin
 import { IInstantiationService } from 'monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IMatch } from 'monaco-editor-core/esm/vs/base/common/filters';
-import { Event } from 'monaco-editor-core/esm/vs/base/common/event';
 import { IListRenderer, IListVirtualDelegate } from 'monaco-editor-core/esm/vs/base/browser/ui/list/list';
-import URI from '@theia/core/src/common/uri';
+import { Event } from '@theia/core';
 
 // Copied from @vscode/src/vs/base/parts/quickInput/browser/quickInputList.ts
 export interface IListElement {
@@ -105,7 +103,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     pick<T extends IQuickPickItem, O extends IPickOptions<T>>(
-        picks: Promise<T[]> | T[], options: O = <O>{}, token?: Monaco.CancellationToken): Promise<(O extends { canPickMany: true } ? T[] : T) | undefined> {
+        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: Monaco.CancellationToken
+    ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         return this.controller.pick(picks, options, token);
     }
 
@@ -205,15 +204,15 @@ export class MonacoQuickInputService implements QuickInputService {
         return this.monacoService.backButton;
     }
 
-    get onShow(): Monaco.IEvent<void> { return this.monacoService.onShow; }
-    get onHide(): Monaco.IEvent<void> { return this.monacoService.onHide; }
+    get onShow(): Event<void> { return this.monacoService.onShow as Event<void>; }
+    get onHide(): Event<void> { return this.monacoService.onHide as Event<void>; }
 
     open(filter: string): void {
         this.monacoService.open(filter);
     }
 
     createInputBox(): InputBox {
-        return this.monacoService.createInputBox();
+        return this.monacoService.createInputBox() as unknown as InputBox;
     }
 
     input(options?: InputOptions, token?: Monaco.CancellationToken): Promise<string | undefined> {
@@ -228,12 +227,20 @@ export class MonacoQuickInputService implements QuickInputService {
         return this.monacoService.input(inputOptions, token);
     }
 
-    pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: T[] | Promise<T[]>, options?: O, token?: Monaco.CancellationToken):
-        Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
-        return this.monacoService.pick(picks, options, token);
+    async pick<T extends QuickPickItem, O extends PickOptions<T>>(
+        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options: O = <O>{}, token?: Monaco.CancellationToken
+    ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
+        const monacoPicks = (await picks).map(pick => {
+            if (pick.type === 'separator') {
+                return pick;
+            }
+            return this.convertItems(pick);
+        });
+        // TODO This is very annoying.
+        return this.monacoService.pick(monacoPicks, options as any, token) as any; /* eslint-disable-line @typescript-eslint/no-explicit-any */
     }
 
-    showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions<T>): Promise<T> {
+    showQuickPick<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             const quickPick = this.monacoService.createQuickPick<MonacoQuickPickItem<T>>();
             const wrapped = this.wrapQuickPick(quickPick);
@@ -336,8 +343,8 @@ class MonacoQuickInput {
     constructor(protected readonly wrapped: IQuickInput) {
     }
 
-    get onDidHide(): Monaco.IEvent<void> { return this.wrapped.onDidHide; }
-    get onDispose(): Monaco.IEvent<void> { return this.wrapped.onDispose; }
+    get onDidHide(): Event<void> { return this.wrapped.onDidHide as unknown as Event<void>; }
+    get onDispose(): Event<void> { return this.wrapped.onDispose as Event<void>; }
 
     get title(): string | undefined {
         return this.wrapped.title;
@@ -481,16 +488,19 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         return this.wrapped.selectedItems.map(item => item.item);
     }
 
-    readonly onDidAccept: Monaco.IEvent<void> = this.wrapped.onDidAccept;
-    readonly onDidChangeValue: Monaco.IEvent<string> = this.wrapped.onDidChangeValue;
-    readonly onDidTriggerButton: Monaco.IEvent<QuickInputButton> = this.wrapped.onDidTriggerButton;
-    readonly onDidTriggerItemButton: Monaco.IEvent<QuickPickItemButtonEvent<T>> =
-        Event.map(this.wrapped.onDidTriggerItemButton, (evt: IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>) => ({
+    readonly onDidAccept: Event<void> = this.wrapped.onDidAccept as unknown as Event<void>;
+    readonly onDidChangeValue: Event<string> = this.wrapped.onDidChangeValue as Event<string>;
+    readonly onDidTriggerButton: Event<QuickInputButton> = this.wrapped.onDidTriggerButton as Event<QuickInputButton>;
+    readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>> =
+        Event.map(this.wrapped.onDidTriggerItemButton as Event<IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>>, (evt: IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>) => ({
             item: evt.item.item,
             button: evt.button
         }));
-    readonly onDidChangeActive: Monaco.IEvent<T[]> = Event.map(this.wrapped.onDidChangeActive, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
-    readonly onDidChangeSelection: Monaco.IEvent<T[]> = Event.map(this.wrapped.onDidChangeSelection, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+    readonly onDidChangeActive: Event<T[]> = Event.map(
+        this.wrapped.onDidChangeActive as Event<MonacoQuickPickItem<T>[]>,
+        (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+    readonly onDidChangeSelection: Event<T[]> = Event.map(
+        this.wrapped.onDidChangeSelection as Event<MonacoQuickPickItem<T>[]>, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickItem {
@@ -517,20 +527,7 @@ export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickI
         this.detail = item.detail;
         this.keybinding = item.keySequence ? new MonacoResolvedKeybinding(item.keySequence, kbRegistry) : undefined;
         this.iconClasses = item.iconClasses;
-        this.buttons = item.buttons?.map(button => {
-            let iconPath: IQuickInputButton['iconPath'] = undefined;
-            if (button.iconPath instanceof URI) {
-                iconPath = { dark: button.iconPath['codeUri'] };
-            } else if (button.iconPath && 'dark' in button.iconPath) {
-                const dark = Monaco.Uri.isUri(button.iconPath.dark) ? button.iconPath.dark : button.iconPath.dark['codeUri'];
-                const light = Monaco.Uri.isUri(button.iconPath.light) ? button.iconPath.light : button.iconPath.light?.['codeUri'];
-                iconPath = { dark, light };
-            }
-            return {
-                ...button,
-                iconPath,
-            };
-        });
+        this.buttons = item.buttons?.map(QuickInputButton.normalize);
         this.alwaysShow = item.alwaysShow;
         this.highlights = item.highlights;
     }

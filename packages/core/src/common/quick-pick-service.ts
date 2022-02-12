@@ -118,6 +118,32 @@ export interface QuickInputButton {
     alwaysVisible?: boolean;
 }
 
+export interface NormalizedQuickInputButton extends QuickInputButton {
+    iconPath?: { light?: Uri, dark: Uri };
+}
+
+export namespace QuickInputButton {
+    export function normalize(button: undefined): undefined;
+    export function normalize(button: QuickInputButton): NormalizedQuickInputButton;
+    export function normalize(button?: QuickInputButton): NormalizedQuickInputButton | undefined {
+        if (!button) {
+            return button;
+        }
+        let iconPath: NormalizedQuickInputButton['iconPath'] = undefined;
+        if (button.iconPath instanceof URI) {
+            iconPath = { dark: button.iconPath['codeUri'] };
+        } else if (button.iconPath && 'dark' in button.iconPath) {
+            const dark = Uri.isUri(button.iconPath.dark) ? button.iconPath.dark : button.iconPath.dark['codeUri'];
+            const light = Uri.isUri(button.iconPath.light) ? button.iconPath.light : button.iconPath.light?.['codeUri'];
+            iconPath = { dark, light };
+        }
+        return {
+            ...button,
+            iconPath,
+        };
+    }
+}
+
 export interface QuickInputButtonHandle extends QuickInputButton {
     index: number; // index of where they are in buttons array if QuickInputButton or -1 if QuickInputButtons.Back
 }
@@ -251,7 +277,7 @@ export interface QuickInputService {
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
     pick<T extends QuickPickItem, O extends PickOptions<T>>(picks: Promise<T[]> | T[], options?: O, token?: CancellationToken):
         Promise<(O extends { canPickMany: true } ? T[] : T) | undefined>;
-    showQuickPick<T extends QuickPickItemOrSeparator>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T>;
+    showQuickPick<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T>;
     hide(): void;
     /**
      * Provides raw access to the quick pick controller.

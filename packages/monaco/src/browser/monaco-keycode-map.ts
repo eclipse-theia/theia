@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as browser from '@theia/core/lib/browser';
-import { KeyCode } from 'monaco-editor-core';
+import { KeyCode } from 'monaco-editor-core/esm/vs/base/common/keyCodes';
 import * as MonacoPlatform from 'monaco-editor-core/esm/vs/base/common/platform';
 
 export const KEY_CODE_MAP: KeyCode[] = [];

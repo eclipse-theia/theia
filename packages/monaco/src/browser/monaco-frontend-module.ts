@@ -67,8 +67,9 @@ import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-acc
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
 import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { ConfigurationTarget, IConfigurationService } from 'monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from 'monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { StandaloneConfigurationService, StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { Configuration } from 'monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 
 decorate(injectable(), VSCodeContextKeyService);
 
@@ -168,8 +169,9 @@ export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): IConfigurationService {
     const preferences = container.get<PreferenceService>(PreferenceService);
     const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
-    const service = StandaloneServices.get(IConfigurationService);
-    const _configuration = service._configuration;
+    const service = StandaloneServices.get(IConfigurationService) as StandaloneConfigurationService;
+    // TODO: We shouldn't have to do this.
+    const _configuration: Configuration = service['_configuration'];
 
     _configuration.getValue = (section, overrides) => {
         const overrideIdentifier: string | undefined = (overrides && 'overrideIdentifier' in overrides && typeof overrides.overrideIdentifier === 'string')
@@ -215,7 +217,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
         for (const [override, values] of context.overrides) {
             overrides.push([override, [...values]]);
         }
-        service._onDidChangeConfiguration.fire({
+        service['_onDidChangeConfiguration'].fire(<IConfigurationChangeEvent>{
             change: {
                 keys: [...context.keys],
                 overrides

@@ -19,16 +19,24 @@ import { QuickAccessProviderDescriptor, QuickAccessRegistry } from '@theia/core/
 import { CancellationToken, Disposable } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoQuickPickItem } from './monaco-quick-input-service';
-import { IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks, Pick } from 'monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
 import {
+    IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks, Pick, IPickerQuickAccessItem
+} from 'monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
+import {
+    Extensions,
     IQuickAccessProvider,
     IQuickAccessProviderDescriptor,
     IQuickAccessProviderHelp,
-    IQuickAccessRegistry
+    IQuickAccessRegistry,
+    QuickAccessRegistry as VSCodeQuickAccessRegistry,
 } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { IQuickPickItem, IQuickPickItemWithResource } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
+import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
 
-abstract class MonacoPickerAccessProvider extends PickerQuickAccessProvider<QuickPickItem> {
-    constructor(prefix: string, options?: IPickerQuickAccessProviderOptions<QuickPickItem>) {
+interface IAnythingQuickPickItem extends IPickerQuickAccessItem, IQuickPickItemWithResource { }
+
+abstract class MonacoPickerAccessProvider extends PickerQuickAccessProvider<IQuickPickItem> {
+    constructor(prefix: string, options?: IPickerQuickAccessProviderOptions<IQuickPickItem>) {
         super(prefix, options);
     }
 
@@ -51,7 +59,7 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
     protected readonly keybindingRegistry: KeybindingRegistry;
 
     private get monacoRegistry(): IQuickAccessRegistry {
-        return platform.Registry.as<IQuickAccessRegistry>('workbench.contributions.quickaccess');
+        return Registry.as<IQuickAccessRegistry>(Extensions.Quickaccess);
     }
 
     registerQuickAccessProvider(descriptor: QuickAccessProviderDescriptor): Disposable {
@@ -72,8 +80,7 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
                     super(descriptor.prefix);
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                getPicks(filter: string, disposables: any, token: CancellationToken): Picks<QuickPickItem> | Promise<Picks<QuickPickItem>> {
+                protected _getPicks(filter: string, disposables: unknown, token: CancellationToken): Picks<IQuickPickItem> | Promise<Picks<IQuickPickItem>> {
                     const result = descriptor.getInstance().getPicks(filter, token);
                     if (result instanceof Promise) {
                         return result.then(picks => picks.map(toMonacoPick));
@@ -102,6 +109,9 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
         return monacoDescriptor ? (monacoDescriptor as TheiaQuickAccessDescriptor).theiaDescriptor : undefined;
     }
     clear(): void {
-        this.monacoRegistry.clear();
+        // TODO: We shouldn't really have to do this.
+        if (this.monacoRegistry instanceof VSCodeQuickAccessRegistry) {
+            this.monacoRegistry.clear();
+        }
     }
 }

@@ -21,9 +21,6 @@
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
 import * as Monaco from 'monaco-editor-core';
-import { EditorLayoutInfo, EditorOption } from 'monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { ScrollType } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { IStandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 export interface MonacoEditorViewZone extends Monaco.editor.IViewZone {
     id: string;
@@ -48,10 +45,10 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
-    editor: IStandaloneCodeEditor;
+    editor: Monaco.editor.IStandaloneCodeEditor;
 
     constructor(
-        editorInstance: IStandaloneCodeEditor, readonly showArrow: boolean = true
+        editorInstance: Monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
     ) {
         this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');
@@ -77,7 +74,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
-        const lineHeight = this.editor.getOption(EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(Monaco.editor.EditorOption.lineHeight);
         // adjust heightInLines to viewport
         const maxHeightInLines = Math.max(12, (this.editor.getLayoutInfo().height / lineHeight) * 0.8);
         heightInLines = Math.min(heightInLines, maxHeightInLines);
@@ -127,7 +124,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         const model = this.editor.getModel();
         if (model) {
             const revealLineNumber = Math.min(model.getLineCount(), Math.max(1, afterLineNumber + 1));
-            this.editor.revealLine(revealLineNumber, ScrollType.Smooth);
+            this.editor.revealLine(revealLineNumber, Monaco.editor.ScrollType.Smooth);
         }
     }
 
@@ -158,7 +155,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         height: number,
         frameWidth: number
     } {
-        const lineHeight = this.editor.getOption(EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(Monaco.editor.EditorOption.lineHeight);
         const frameWidth = this._options && this._options.frameWidth;
         const frameThickness = this._options && this._options.showFrame ? Math.round(lineHeight / 9) : 0;
         return {
@@ -167,15 +164,15 @@ export class MonacoEditorZoneWidget implements Disposable {
         };
     }
 
-    protected updateWidth(info: EditorLayoutInfo = this.editor.getLayoutInfo()): void {
+    protected updateWidth(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): void {
         const width = this.computeWidth(info);
         this.zoneNode.style.width = width + 'px';
         this.zoneNode.style.left = this.computeLeft(info) + 'px';
     }
-    protected computeWidth(info: EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeWidth(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         return info.width - info.minimap.minimapWidth - info.verticalScrollbarWidth;
     }
-    protected computeLeft(info: EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeLeft(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         // If minimap is to the left, we move beyond it
         if (info.minimap.minimapWidth > 0 && info.minimap.minimapLeft === 0) {
             return info.minimap.minimapWidth;

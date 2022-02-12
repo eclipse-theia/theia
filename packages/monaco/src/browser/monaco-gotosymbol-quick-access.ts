@@ -16,7 +16,7 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
-import * as Monaco from 'monaco-editor-core';
+import { ICodeEditor } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { ILanguageFeaturesService } from 'monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { IOutlineModelService } from 'monaco-editor-core/esm/vs/editor/contrib/documentSymbols/browser/outlineModel';
@@ -35,8 +35,8 @@ export class GotoSymbolQuickAccess extends StandaloneGotoSymbolQuickAccessProvid
         super(codeEditorService, languageFeatures, outlineService);
     }
 
-    get activeTextEditorControl(): Monaco.editor.ICodeEditor | undefined {
-        return this.codeEditorService.getFocusedCodeEditor() || this.codeEditorService.getActiveCodeEditor();
+    get activeTextEditorControl(): ICodeEditor | undefined {
+        return (this.codeEditorService.getFocusedCodeEditor() ?? this.codeEditorService.getActiveCodeEditor()) ?? undefined;
     }
 }
 

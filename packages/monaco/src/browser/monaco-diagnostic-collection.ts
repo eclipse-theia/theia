@@ -18,7 +18,6 @@ import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import * as Monaco from 'monaco-editor-core';
-import { IMarkerData } from 'monaco-editor-core/esm/vs/platform/markers/common/markers';
 
 export class MonacoDiagnosticCollection implements Disposable {
 
@@ -57,7 +56,7 @@ export class MonacoDiagnosticCollection implements Disposable {
 
 export class MonacoModelDiagnostics implements Disposable {
     readonly uri: Monaco.Uri;
-    protected _markers: IMarkerData[] = [];
+    protected _markers: Monaco.editor.IMarkerData[] = [];
     protected _diagnostics: Diagnostic[] = [];
     constructor(
         uri: string,
@@ -80,7 +79,7 @@ export class MonacoModelDiagnostics implements Disposable {
         return this._diagnostics;
     }
 
-    get markers(): ReadonlyArray<IMarkerData> {
+    get markers(): ReadonlyArray<Monaco.editor.IMarkerData> {
         return this._markers;
     }
 

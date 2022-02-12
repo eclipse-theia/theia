@@ -63,7 +63,7 @@ export interface ContextKeyService extends Disposable {
      * Creates a child service with a separate context scoped to the HTML element passed in.
      * Useful for e.g. setting the {view} context value for particular widgets.
      */
-    createScoped(target?: HTMLElement): ScopedValueStore;
+    createScoped(target: HTMLElement): ScopedValueStore;
 
     /**
      * Set or modify a value in the service's context.
@@ -110,7 +110,7 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
     /**
      * Details should implemented by an extension, e.g. by the monaco extension.
      */
-    createScoped(target?: HTMLElement): ContextKeyService {
+    createScoped(target: HTMLElement): ContextKeyService {
         return this;
     }
 

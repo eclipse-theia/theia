@@ -19,6 +19,7 @@ import { FrontendApplicationContribution, PreferenceSchemaProvider } from '@thei
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import * as Monaco from 'monaco-editor-core';
 import { setSnippetSuggestSupport } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
+import { CompletionItemProvider } from 'monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -30,7 +31,8 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected readonly preferenceSchema: PreferenceSchemaProvider;
 
     async initialize(): Promise<void> {
-        setSnippetSuggestSupport(this.snippetSuggestProvider);
+        // Incomparability of enum types between public and private API's
+        setSnippetSuggestSupport(this.snippetSuggestProvider as unknown as CompletionItemProvider);
 
         for (const language of Monaco.languages.getLanguages()) {
             this.preferenceSchema.registerOverrideIdentifier(language.id);
