@@ -48,6 +48,7 @@
     "ignore-loader": "^0.1.2",
     "less": "^3.0.3",
     "node-abi": "*",
+    "path-browserify": "^1.0.1",
     "semver": "^7.3.5",
     "setimmediate": "^1.0.5",
     "source-map": "^0.6.1",

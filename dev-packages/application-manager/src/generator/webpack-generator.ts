@@ -195,7 +195,7 @@ module.exports = {
             'child_process': false,
             'crypto': false,
             'net': false,
-            'path': false,
+            'path': require.resolve('path-browserify'),
             'process': false,
             'os': false,
             'timers': false
