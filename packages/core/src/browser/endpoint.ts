@@ -62,6 +62,10 @@ export class Endpoint {
         return 'localhost:' + this.port;
     }
 
+    get origin(): string {
+        return `${this.httpScheme}//${this.host}`;
+    }
+
     protected get port(): string {
         return this.getSearchParam('port', '3000');
     }
