@@ -16,7 +16,7 @@
 
 import { injectable, inject, optional } from 'inversify';
 import { Emitter } from '../../common/event';
-import { QuickPickService } from '../../common/quick-pick-service';
+import { QuickPickSeparator, QuickPickService } from '../../common/quick-pick-service';
 import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, QuickPickOptions } from './quick-input-service';
 
 @injectable()
@@ -46,7 +46,7 @@ export class QuickPickServiceImpl implements QuickPickService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private items: Array<any> = [];
 
-    async show<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T> {
+    async show<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T> {
         this.items = items;
         const opts = Object.assign({}, options, {
             onDidAccept: () => this.onDidAcceptEmitter.fire(),

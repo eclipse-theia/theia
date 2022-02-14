@@ -189,7 +189,7 @@ export class KeymapsService {
         const model = await this.deferredModel.promise;
         try {
             const keybindings = op();
-            if (keybindings) {
+            if (keybindings && this.model) {
                 await this.jsoncEditor.setValue(this.model, [], keybindings.map(binding => Keybinding.apiObjectify(binding)));
             }
         } catch (e) {

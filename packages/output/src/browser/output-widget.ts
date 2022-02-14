@@ -29,7 +29,6 @@ import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import * as Monaco from 'monaco-editor-core';
-import { ScrollType } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 @injectable()
 export class OutputWidget extends BaseWidget implements StatefulWidget {
@@ -200,7 +199,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
             if (model) {
                 const lineNumber = model.getLineCount();
                 const column = model.getLineMaxColumn(lineNumber);
-                editor.getControl().revealPosition({ lineNumber, column }, ScrollType.Smooth);
+                editor.getControl().revealPosition({ lineNumber, column }, Monaco.editor.ScrollType.Smooth);
             }
         }
     }

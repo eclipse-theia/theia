@@ -21,10 +21,11 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
-import { MonacoTextModelService, IReference } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { OutputUri } from '../common/output-uri';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
+import { IReference } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
 import * as Monaco from 'monaco-editor-core';
 
 @injectable()

@@ -25,7 +25,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
-import { filterItems, QuickInputButton, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickInputButton, QuickPickItem, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
 import { TriggerAction } from 'monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
 
@@ -38,7 +38,7 @@ export namespace ConfigureTaskAction {
 export class QuickOpenTask implements QuickAccessProvider {
     static readonly PREFIX = 'task ';
     readonly description: string = 'Run Task';
-    protected items: Array<QuickPickItem> = [];
+    protected items: Array<QuickPickItemOrSeparator> = [];
 
     @inject(TaskService)
     protected readonly taskService: TaskService;
@@ -227,7 +227,7 @@ export class QuickOpenTask implements QuickAccessProvider {
     }
 
     protected getTaskItems(): QuickPickItem[] {
-        return this.items.filter(item => item.type !== 'separator' && (item as TaskRunQuickOpenItem).task !== undefined);
+        return this.items.filter((item): item is QuickPickItem => item.type !== 'separator' && (item as TaskRunQuickOpenItem).task !== undefined);
     }
 
     async runBuildOrTestTask(buildOrTestType: 'build' | 'test'): Promise<void> {
@@ -317,8 +317,8 @@ export class QuickOpenTask implements QuickAccessProvider {
     }
 
     private getItems(tasks: TaskConfiguration[], groupLabel: string, token: number, isMulti: boolean):
-        QuickPickItem[] {
-        const items: QuickPickItem[] = tasks.map(task =>
+        QuickPickItemOrSeparator[] {
+        const items: QuickPickItemOrSeparator[] = tasks.map(task =>
             new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, this.taskDefinitionRegistry, this.taskNameResolver,
                 this.taskSourceResolver, this.taskConfigurationManager, [{
                     iconClass: 'codicon-gear',

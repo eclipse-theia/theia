@@ -19,7 +19,7 @@ import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { CommandService, ILogger } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -1011,7 +1011,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected getCustomizeProblemMatcherItems(): Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> {
-        const items: Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> = [];
+        const items: Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem | QuickPickSeparator> = [];
         items.push({
             label: 'Continue without scanning the task output',
             value: { problemMatchers: undefined }

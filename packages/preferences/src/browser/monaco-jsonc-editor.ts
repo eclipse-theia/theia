@@ -19,7 +19,6 @@ import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as Monaco from 'monaco-editor-core';
-import { DefaultEndOfLine } from 'monaco-editor-core/esm/vs/editor/common/model';
 
 @injectable()
 export class MonacoJSONCEditor {
@@ -52,7 +51,7 @@ export class MonacoJSONCEditor {
             formattingOptions: {
                 insertSpaces,
                 tabSize,
-                eol: defaultEOL === DefaultEndOfLine.LF ? '\n' : '\r\n'
+                eol: defaultEOL === Monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
             }
         };
         return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {

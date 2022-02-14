@@ -40,7 +40,7 @@ import { URI as Uri } from 'vscode-uri';
 export const quickPickServicePath = '/services/quickPick';
 export const QuickPickService = Symbol('QuickPickService');
 export interface QuickPickService {
-    show<T extends QuickPickItem>(items: Array<T>, options?: QuickPickOptions<T>): Promise<T | undefined>;
+    show<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T | undefined>;
     setItems<T extends QuickPickItem>(items: Array<T>): void;
     hide(): void
     readonly onDidHide: Event<void>;
@@ -97,8 +97,11 @@ export interface QuickPickSeparator {
 }
 
 export namespace QuickPickSeparator {
-    export function is(item: QuickPickSeparator | QuickPickItem): item is QuickPickSeparator {
+    export function is(item: QuickPickItemOrSeparator): item is QuickPickSeparator {
         return item.type === 'separator';
+    }
+    export function isNot(item: QuickPickItemOrSeparator): item is QuickPickItem {
+        return item.type !== 'separator';
     }
 }
 
@@ -296,19 +299,23 @@ export interface QuickInputService {
  * @param filter the filter to search for.
  * @returns the list of quick pick items that satisfy the filter.
  */
-export function filterItems(items: QuickPickItem[], filter: string): QuickPickItem[] {
+export function filterItems(items: QuickPickItemOrSeparator[], filter: string): QuickPickItemOrSeparator[] {
     filter = filter.trim().toLowerCase();
 
     if (filter.length === 0) {
         for (const item of items) {
-            item.highlights = undefined; // reset highlights from previous filtering.
+            if (item.type !== 'separator') {
+                item.highlights = undefined; // reset highlights from previous filtering.
+            }
         }
         return items;
     }
 
-    const filteredItems: QuickPickItem[] = [];
+    const filteredItems = [];
     for (const item of items) {
-        if (
+        if (item.type === 'separator') { // TODO: We should check if the separator still makes sense.
+            filteredItems.push(item);
+        } else if (
             fuzzy.test(filter, item.label) ||
             (item.description && fuzzy.test(filter, item.description)) ||
             (item.detail && fuzzy.test(filter, item.detail))

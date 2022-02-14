@@ -79,6 +79,7 @@ import {
 import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import * as Monaco from 'monaco-editor-core';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -318,7 +319,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
-            execute: (uri?: monaco.Uri) => {
+            execute: (uri?: Monaco.Uri) => {
                 if (uri) {
                     const uriString = uri.toString();
                     const widget = this.shell.widgets.find(w => {
@@ -340,7 +341,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand(CommonCommands.CLOSE_MAIN_TAB.id)
         });
         commands.registerCommand({ id: 'workbench.action.closeOtherEditors' }, {
-            execute: async (uri?: monaco.Uri) => {
+            execute: async (uri?: Monaco.Uri) => {
                 let editor = this.editorManager.currentEditor || this.shell.currentWidget;
                 if (uri) {
                     const uriString = uri.toString();
@@ -359,7 +360,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
                 filter?: ((title: Title<Widget>, index: number) => boolean) | undefined
             ) => void,
-            uri?: monaco.Uri
+            uri?: Monaco.Uri
         ): void => {
             let editor = this.editorManager.currentEditor || this.shell.currentWidget;
             if (uri) {
@@ -381,13 +382,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             id: 'workbench.action.closeEditorsInGroup',
             label: nls.localizeByDefault('Close All Editors in Group')
         }, {
-            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.closeTabs, uri)
+            execute: (uri?: Monaco.Uri) => performActionOnGroup(this.shell.closeTabs, uri)
         });
         commands.registerCommand({
             id: 'workbench.files.saveAllInGroup',
             label: nls.localizeByDefault('Save All in Group')
         }, {
-            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.saveTabs, uri)
+            execute: (uri?: Monaco.Uri) => performActionOnGroup(this.shell.saveTabs, uri)
         });
         commands.registerCommand({ id: 'workbench.action.closeEditorsInOtherGroups' }, {
             execute: () => {
@@ -498,7 +499,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<Location[]>('_executeDefinitionProvider', monaco.Uri.from(resource), position))
+                    commands.executeCommand<Location[]>('_executeDefinitionProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -507,7 +508,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<Location[]>('_executeDeclarationProvider', monaco.Uri.from(resource), position))
+                    commands.executeCommand<Location[]>('_executeDeclarationProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -516,7 +517,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<Location[]>('_executeTypeDefinitionProvider', monaco.Uri.from(resource), position))
+                    commands.executeCommand<Location[]>('_executeTypeDefinitionProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -525,7 +526,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<Location[]>('_executeImplementationProvider', monaco.Uri.from(resource), position))
+                    commands.executeCommand<Location[]>('_executeImplementationProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -534,7 +535,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<Hover[]>('_executeHoverProvider', monaco.Uri.from(resource), position))
+                    commands.executeCommand<Hover[]>('_executeHoverProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -543,7 +544,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position) =>
-                    commands.executeCommand<DocumentHighlight[]>('_executeDocumentHighlights', monaco.Uri.from(resource), position))
+                    commands.executeCommand<DocumentHighlight[]>('_executeDocumentHighlights', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -551,7 +552,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeReferenceProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => commands.executeCommand<Location[]>('_executeReferenceProvider', monaco.Uri.from(resource), position))
+                execute: ((resource: URI, position: Position) => commands.executeCommand<Location[]>('_executeReferenceProvider', Monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -560,7 +561,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: (resource: URI) => commands.executeCommand('_executeDocumentSymbolProvider',
-                    monaco.Uri.parse(resource.toString())
+                    Monaco.Uri.parse(resource.toString())
                 ).then((value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (!Array.isArray(value) || value === undefined) {
                         return undefined;
@@ -575,7 +576,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, options: FormattingOptions) =>
-                    commands.executeCommand<TextEdit[]>('_executeFormatDocumentProvider', monaco.Uri.from(resource), options))
+                    commands.executeCommand<TextEdit[]>('_executeFormatDocumentProvider', Monaco.Uri.from(resource), options))
             }
         );
         commands.registerCommand(
@@ -584,7 +585,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, range: Range, options: FormattingOptions) =>
-                    commands.executeCommand<TextEdit[]>('_executeFormatRangeProvider', monaco.Uri.from(resource), range, options))
+                    commands.executeCommand<TextEdit[]>('_executeFormatRangeProvider', Monaco.Uri.from(resource), range, options))
             }
         );
         commands.registerCommand(
@@ -593,7 +594,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: ((resource: URI, position: Position, ch: string, options: FormattingOptions) =>
-                    commands.executeCommand<TextEdit[]>('_executeFormatOnTypeProvider', monaco.Uri.from(resource), position, ch, options))
+                    commands.executeCommand<TextEdit[]>('_executeFormatOnTypeProvider', Monaco.Uri.from(resource), position, ch, options))
             }
         );
         commands.registerCommand(
@@ -707,7 +708,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({
             id: 'copyRelativeFilePath'
         }, {
-            execute: () => commands.executeCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id)
+            execute: () => commands.executeCommand(WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id)
         });
         commands.registerCommand({
             id: 'revealInExplorer'

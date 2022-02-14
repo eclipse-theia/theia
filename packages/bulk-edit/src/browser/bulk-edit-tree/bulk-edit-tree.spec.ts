@@ -16,9 +16,7 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import { ResourceTextEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
-import { Uri } from 'monaco-editor-core';
 
 let disableJSDOM = enableJSDOM();
 
@@ -32,10 +30,6 @@ import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
 
 // This is probably not going to work...
-global.monaco = sinon.stub() as unknown as typeof monaco;
-global.monaco.Uri = sinon.stub() as unknown as typeof monaco.Uri;
-global.monaco.Uri.isUri = sinon.stub().returns(true) as unknown as typeof monaco.Uri.isUri;
-
 const expect = chai.expect;
 let bulkEditTree: BulkEditTree;
 let testContainer: Container;
