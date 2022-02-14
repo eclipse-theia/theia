@@ -62,6 +62,9 @@ import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
+import { LanguageService } from 'monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -186,12 +189,12 @@ export class HostedPluginSupport {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
-        const modeService = monaco.services.StaticServices.modeService.get();
-        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
-            const mode = modeService['_instantiatedModes'][modeId];
-            this.activateByLanguage(mode.getId());
+        // TODO: Digging into private stuff.
+        const languageService = (StandaloneServices.get(ILanguageService) as LanguageService);
+        for (const language of languageService['_encounteredLanguages'] as Set<string>) {
+            this.activateByLanguage(language);
         }
-        modeService.onDidCreateMode(mode => this.activateByLanguage(mode.getId()));
+        languageService.onDidEncounterLanguage(language => this.activateByLanguage(language));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));

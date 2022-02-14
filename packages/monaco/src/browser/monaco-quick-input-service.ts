@@ -16,7 +16,7 @@
 
 import {
     InputBox, InputOptions, KeybindingRegistry, PickOptions,
-    QuickInputButton, QuickInputService, QuickPick, QuickPickItem,
+    QuickInputButton, QuickInputHideReason, QuickInputService, QuickPick, QuickPickItem,
     QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -227,7 +227,7 @@ export class MonacoQuickInputService implements QuickInputService {
         return this.monacoService.input(inputOptions, token);
     }
 
-    async pick<T extends QuickPickItem, O extends PickOptions<T>>(
+    async pick<T extends QuickPickItem, O extends PickOptions<T> = PickOptions<T>>(
         picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options: O = <O>{}, token?: Monaco.CancellationToken
     ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         const monacoPicks = (await picks).map(pick => {
@@ -343,7 +343,7 @@ class MonacoQuickInput {
     constructor(protected readonly wrapped: IQuickInput) {
     }
 
-    get onDidHide(): Event<void> { return this.wrapped.onDidHide as unknown as Event<void>; }
+    get onDidHide(): Event<{ reason: QuickInputHideReason }> { return this.wrapped.onDidHide as Event<{ reason: QuickInputHideReason }>; }
     get onDispose(): Event<void> { return this.wrapped.onDispose as Event<void>; }
 
     get title(): string | undefined {

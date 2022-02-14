@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
+import * as Monaco from 'monaco-editor-core';
 import { CommentingRangeDecorator } from './comments-decorator';
 import { EditorManager, EditorMouseEvent, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
@@ -129,7 +130,7 @@ export class CommentsContribution {
             return;
         }
 
-        if (e.target.type !== monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS) {
+        if (e.target.type !== Monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS) {
             return;
         }
 
@@ -176,7 +177,7 @@ export class CommentsContribution {
         this.commentInfos = commentInfos;
     }
 
-    get editor(): monaco.editor.IStandaloneCodeEditor | undefined {
+    get editor(): Monaco.editor.IStandaloneCodeEditor | undefined {
         const editor = this.getCurrentEditor();
         if (editor && editor.editor instanceof MonacoDiffEditor) {
             return editor.editor.diffEditor.getModifiedEditor();

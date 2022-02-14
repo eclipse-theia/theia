@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
+import * as Monaco from 'monaco-editor-core';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
@@ -254,7 +255,7 @@ export interface Hover {
 }
 
 export interface HoverProvider {
-    provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
+    provideHover(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
 
 export enum DocumentHighlightKind {
@@ -269,7 +270,7 @@ export interface DocumentHighlight {
 }
 
 export interface DocumentHighlightProvider {
-    provideDocumentHighlights(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): DocumentHighlight[] | undefined;
+    provideDocumentHighlights(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): DocumentHighlight[] | undefined;
 }
 
 export interface FormattingOptions {
@@ -280,7 +281,7 @@ export interface FormattingOptions {
 export interface TextEdit {
     range: Range;
     text: string;
-    eol?: monaco.editor.EndOfLineSequence;
+    eol?: Monaco.editor.EndOfLineSequence;
 }
 
 export interface Location {
@@ -298,11 +299,11 @@ export interface LocationLink {
 }
 
 export interface DefinitionProvider {
-    provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
+    provideDefinition(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Definition | undefined;
 }
 
 export interface DeclarationProvider {
-    provideDeclaration(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
+    provideDeclaration(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Definition | undefined;
 }
 
 /**
@@ -328,8 +329,8 @@ export interface DocumentLink {
 }
 
 export interface DocumentLinkProvider {
-    provideLinks(model: monaco.editor.ITextModel, token: monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
-    resolveLink?: (link: DocumentLink, token: monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
+    provideLinks(model: Monaco.editor.ITextModel, token: Monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
+    resolveLink?: (link: DocumentLink, token: Monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
 }
 
 export interface CodeLensSymbol {
@@ -351,10 +352,10 @@ export interface CodeActionContext {
 
 export interface CodeActionProvider {
     provideCodeActions(
-        model: monaco.editor.ITextModel,
+        model: Monaco.editor.ITextModel,
         range: Range | Selection,
-        context: monaco.languages.CodeActionContext,
-        token: monaco.CancellationToken
+        context: Monaco.languages.CodeActionContext,
+        token: Monaco.CancellationToken
     ): CodeAction[] | PromiseLike<CodeAction[]>;
 
     providedCodeActionKinds?: string[];
@@ -498,8 +499,8 @@ export interface ColorInformation {
 }
 
 export interface DocumentColorProvider {
-    provideDocumentColors(model: monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
-    provideColorPresentations(model: monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
+    provideDocumentColors(model: Monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
+    provideColorPresentations(model: Monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
 }
 
 export interface Rejection {

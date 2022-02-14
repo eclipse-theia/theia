@@ -40,6 +40,8 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
+import * as Monaco from 'monaco-editor-core';
+import { ThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class PluginContributionHandler {
@@ -152,7 +154,7 @@ export class PluginContributionHandler {
         if (languages && languages.length) {
             for (const lang of languages) {
                 // it is not possible to unregister a language
-                monaco.languages.register({
+                Monaco.languages.register({
                     id: lang.id,
                     aliases: lang.aliases,
                     extensions: lang.extensions,
@@ -163,7 +165,7 @@ export class PluginContributionHandler {
                 });
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
-                    pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
+                    pushContribution(`language.${lang.id}.configuration`, () => Monaco.languages.setLanguageConfiguration(lang.id, {
                         wordPattern: this.createRegex(langConfiguration.wordPattern),
                         autoClosingPairs: langConfiguration.autoClosingPairs,
                         brackets: langConfiguration.brackets,
@@ -360,13 +362,13 @@ export class PluginContributionHandler {
         const toDispose = new DisposableCollection();
         for (const { iconUrl, themeIcon, command, category, title, originalTitle } of contribution.commands) {
             const reference = iconUrl && this.style.toIconClass(iconUrl);
-            const icon = themeIcon && monaco.theme.ThemeIcon.fromString(themeIcon);
+            const icon = themeIcon && ThemeIcon.fromString(themeIcon);
             let iconClass;
             if (reference) {
                 toDispose.push(reference);
                 iconClass = reference.object.iconClass;
             } else if (icon) {
-                iconClass = monaco.theme.ThemeIcon.asClassName(icon);
+                iconClass = ThemeIcon.asClassName(icon);
             }
             toDispose.push(this.registerCommand({ id: command, category, label: title, originalLabel: originalTitle, iconClass }));
         }
@@ -454,7 +456,7 @@ export class PluginContributionHandler {
         return undefined;
     }
 
-    private convertIndentationRules(rules?: IndentationRules): monaco.languages.IndentationRule | undefined {
+    private convertIndentationRules(rules?: IndentationRules): Monaco.languages.IndentationRule | undefined {
         if (!rules) {
             return undefined;
         }
@@ -466,11 +468,11 @@ export class PluginContributionHandler {
         };
     }
 
-    private convertFolding(folding?: FoldingRules): monaco.languages.FoldingRules | undefined {
+    private convertFolding(folding?: FoldingRules): Monaco.languages.FoldingRules | undefined {
         if (!folding) {
             return undefined;
         }
-        const result: monaco.languages.FoldingRules = {
+        const result: Monaco.languages.FoldingRules = {
             offSide: folding.offSide
         };
 

@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Disposable } from '@theia/core/lib/common';
+import * as Monaco from 'monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -24,10 +25,10 @@ import { Disposable } from '@theia/core/lib/common';
 export class CommentGlyphWidget implements Disposable {
 
     private lineNumber!: number;
-    private editor: monaco.editor.ICodeEditor;
+    private editor: Monaco.editor.ICodeEditor;
     private commentsDecorations: string[] = [];
-    readonly commentsOptions: monaco.editor.IModelDecorationOptions;
-    constructor(editor: monaco.editor.ICodeEditor) {
+    readonly commentsOptions: Monaco.editor.IModelDecorationOptions;
+    constructor(editor: Monaco.editor.ICodeEditor) {
         this.commentsOptions = {
             isWholeLine: true,
             linesDecorationsClassName: 'comment-range-glyph comment-thread'

@@ -41,6 +41,9 @@ import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edi
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import * as Monaco from 'monaco-editor-core';
+import { ResourceEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IDecorationRenderOptions } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -105,7 +108,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
             return Promise.reject(disposed(`TextEditor(${id})`));
         }
 
-        this.editorsAndDocuments.getEditor(id)!.revealRange(new monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn), revealType);
+        this.editorsAndDocuments.getEditor(id)!.revealRange(new Monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn), revealType);
         return Promise.resolve();
     }
 
@@ -120,7 +123,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
         const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
-            const edits = monaco.editor.ResourceEdit.convert(workspaceEdit);
+            const edits = ResourceEdit.convert(workspaceEdit);
             const { success } = await this.bulkEditService.apply(edits);
             return success;
         } catch {
@@ -135,9 +138,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.insertSnippet(template, ranges, opts));
     }
 
-    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
+    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        this.monacoEditorService.registerDecorationType(key, options);
+        // TODO: We should be able to say what plugin it is.
+        this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 

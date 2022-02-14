@@ -35,6 +35,7 @@ import {
 } from '@theia/core/lib/common';
 import { CommentsContextKeyService } from './comments-context-key-service';
 import { RefObject } from '@theia/core/shared/react';
+import * as Monaco from 'monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -56,7 +57,7 @@ export class CommentThreadWidget extends BaseWidget {
     protected isExpanded?: boolean;
 
     constructor(
-        editor: monaco.editor.IStandaloneCodeEditor,
+        editor: Monaco.editor.IStandaloneCodeEditor,
         private _owner: string,
         private _commentThread: CommentThread,
         private commentService: CommentsService,
@@ -151,7 +152,7 @@ export class CommentThreadWidget extends BaseWidget {
         this.update();
     }
 
-    private onEditorMouseDown(e: monaco.editor.IEditorMouseEvent): void {
+    private onEditorMouseDown(e: Monaco.editor.IEditorMouseEvent): void {
         const range = e.target.range;
 
         if (!range) {
@@ -236,8 +237,8 @@ export class CommentThreadWidget extends BaseWidget {
             return;
         }
         this.render();
-        const headHeight = Math.ceil(this.zoneWidget.editor.getOption(monaco.editor.EditorOption.lineHeight) * 1.2);
-        const lineHeight = this.zoneWidget.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const headHeight = Math.ceil(this.zoneWidget.editor.getOption(Monaco.editor.EditorOption.lineHeight) * 1.2);
+        const lineHeight = this.zoneWidget.editor.getOption(Monaco.editor.EditorOption.lineHeight);
         const arrowHeight = Math.round(lineHeight / 3);
         const frameThickness = Math.round(lineHeight / 9) * 2;
         const body = this.zoneWidget.containerNode.getElementsByClassName('body')[0];
@@ -247,7 +248,7 @@ export class CommentThreadWidget extends BaseWidget {
     }
 
     protected render(): void {
-        const headHeight = Math.ceil(this.zoneWidget.editor.getOption(monaco.editor.EditorOption.lineHeight) * 1.2);
+        const headHeight = Math.ceil(this.zoneWidget.editor.getOption(Monaco.editor.EditorOption.lineHeight) * 1.2);
         ReactDOM.render(<div className={'review-widget'}>
             <div className={'head'} style={{ height: headHeight, lineHeight: `${headHeight}px` }}>
                 <div className={'review-title'}>

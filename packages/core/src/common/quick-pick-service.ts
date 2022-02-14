@@ -151,8 +151,23 @@ export interface QuickInputButtonHandle extends QuickInputButton {
     index: number; // index of where they are in buttons array if QuickInputButton or -1 if QuickInputButtons.Back
 }
 
+export enum QuickInputHideReason {
+    /**
+     * Focus was moved away from the input, but the user may not have explicitly closed it.
+     */
+    Blur = 1,
+    /**
+     * An explicit close gesture, like striking the Escape key
+     */
+    Gesture = 2,
+    /**
+     * Any other reason
+     */
+    Other = 3,
+}
+
 export interface QuickInput {
-    readonly onDidHide: Event<void>;
+    readonly onDidHide: Event<{ reason: QuickInputHideReason }>;
     readonly onDispose: Event<void>;
     title: string | undefined;
     description: string | undefined;
