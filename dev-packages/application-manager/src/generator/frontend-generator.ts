@@ -81,6 +81,14 @@ const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/f
 
 FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
 
+${this.ifMonaco(() => `
+self.MonacoEnvironment = {
+    getWorkerUrl: function (moduleId, label) {
+        return './editor.worker.js';
+    }
+}
+`)}
+
 const { ThemeService } = require('@theia/core/lib/browser/theming');
 ThemeService.get().loadUserTheme();
 

@@ -31,8 +31,6 @@ import { convertToTransferQuickPickItems } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';
 import { QuickInputButtonHandle } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import * as Monaco from 'monaco-editor-core';
-import { ThemeIcon as MonacoThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 const canceledName = 'Canceled';
 /**
@@ -422,10 +420,11 @@ export class QuickInputExt implements QuickInput {
         this.dispose();
     }
 
-    protected convertURL(iconPath: Monaco.Uri | { light: string | Monaco.Uri; dark: string | Monaco.Uri } | MonacoThemeIcon):
+    // TODO: Using our internal ThemeIcon for the arg is a fudge here. Previously it was taking the type from the declaration.
+    protected convertURL(iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon):
         URI | { light: string | URI; dark: string | URI } | ThemeIcon {
-        const toUrl = (arg: string | Monaco.Uri) => {
-            arg = arg instanceof Monaco.Uri && arg.scheme === 'file' ? arg.fsPath : arg;
+        const toUrl = (arg: string | URI) => {
+            arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
             if (typeof arg !== 'string') {
                 return arg.toString(true);
             }
@@ -437,10 +436,10 @@ export class QuickInputExt implements QuickInput {
         };
         if (ThemeIcon.is(iconPath)) {
             return iconPath;
-        } else if (typeof iconPath === 'string' || iconPath instanceof Monaco.Uri) {
+        } else if (typeof iconPath === 'string' || iconPath instanceof URI) {
             return URI.parse(toUrl(iconPath));
         } else {
-            const { light, dark } = iconPath as { light: string | Monaco.Uri, dark: string | Monaco.Uri };
+            const { light, dark } = iconPath as { light: string | URI, dark: string | URI };
             return {
                 light: toUrl(light),
                 dark: toUrl(dark)
