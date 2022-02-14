@@ -16,6 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
+import * as Monaco from 'monaco-editor-core';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
@@ -68,7 +69,7 @@ export class DebugExceptionWidget implements Disposable {
 
     show({ info, lineNumber, column }: ShowDebugExceptionParams): void {
         this.render(info, () => {
-            const fontInfo = this.editor.getControl().getOption(monaco.editor.EditorOption.fontInfo);
+            const fontInfo = this.editor.getControl().getOption(Monaco.editor.EditorOption.fontInfo);
             this.zone.containerNode.style.fontSize = `${fontInfo.fontSize}px`;
             this.zone.containerNode.style.lineHeight = `${fontInfo.lineHeight}px`;
 
@@ -99,7 +100,7 @@ export class DebugExceptionWidget implements Disposable {
         // reset height to match it to the content
         this.zone.containerNode.style.height = 'initial';
 
-        const lineHeight = this.editor.getControl().getOption(monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getControl().getOption(Monaco.editor.EditorOption.lineHeight);
         const heightInLines = Math.ceil(this.zone.containerNode.offsetHeight / lineHeight);
         this.zone.layout(heightInLines);
     }

@@ -21,9 +21,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { visit } from 'jsonc-parser';
+import * as Monaco from 'monaco-editor-core';
 import URI from '@theia/core/lib/common/uri';
 
-monaco.languages.register({
+Monaco.languages.register({
     id: 'jsonc',
     'aliases': [
         'JSON with Comments'
@@ -33,18 +34,18 @@ monaco.languages.register({
     ]
 });
 
-monaco.languages.registerDocumentSymbolProvider('jsonc', {
-    provideDocumentSymbols(model: monaco.editor.ITextModel): monaco.languages.DocumentSymbol[] {
+Monaco.languages.registerDocumentSymbolProvider('jsonc', {
+    provideDocumentSymbols(model: Monaco.editor.ITextModel): Monaco.languages.DocumentSymbol[] {
         if (new URI(model.uri.toString()).path.base !== 'launch.json') {
             return [];
         }
-        const children: monaco.languages.DocumentSymbol[] = [];
-        const result: monaco.languages.DocumentSymbol = {
+        const children: Monaco.languages.DocumentSymbol[] = [];
+        const result: Monaco.languages.DocumentSymbol = {
             name: 'Launch Configurations',
             detail: '',
-            kind: monaco.languages.SymbolKind.Object,
-            range: new monaco.Range(0, 0, 0, 0),
-            selectionRange: new monaco.Range(0, 0, 0, 0),
+            kind: Monaco.languages.SymbolKind.Object,
+            range: new Monaco.Range(0, 0, 0, 0),
+            selectionRange: new Monaco.Range(0, 0, 0, 0),
             children,
             tags: []
         };
@@ -70,11 +71,11 @@ monaco.languages.registerDocumentSymbolProvider('jsonc', {
             },
             onObjectEnd: (offset: number, _length: number) => {
                 if (name && depthInObjects === 2) {
-                    const range = monaco.Range.fromPositions(model.getPositionAt(startOffset), model.getPositionAt(offset));
+                    const range = Monaco.Range.fromPositions(model.getPositionAt(startOffset), model.getPositionAt(offset));
                     children.push({
                         name,
                         detail: '',
-                        kind: monaco.languages.SymbolKind.Object,
+                        kind: Monaco.languages.SymbolKind.Object,
                         range,
                         selectionRange: range,
                         tags: []

@@ -38,6 +38,8 @@ import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/work
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import * as Monaco from 'monaco-editor-core';
+import { ICommandService } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -208,7 +210,7 @@ export class DebugConfigurationManager {
             return;
         }
         const editor = widget.editor.getControl();
-        const { commandService } = widget.editor;
+        const commandService = StandaloneServices.get(ICommandService);
         let position: Monaco.Position | undefined;
         let depthInArray = 0;
         let lastProperty = '';

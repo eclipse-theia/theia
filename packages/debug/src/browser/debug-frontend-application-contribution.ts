@@ -16,6 +16,7 @@
 
 import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
+import * as Monaco from 'monaco-editor-core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
@@ -1279,8 +1280,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return watch && watch.selectedElement instanceof DebugWatchExpression && watch.selectedElement || undefined;
     }
 
-    protected isPosition(position: monaco.Position): boolean {
-        return (position instanceof monaco.Position);
+    protected isPosition(position: Monaco.Position): boolean {
+        return (position instanceof Monaco.Position);
     }
 
     registerColors(colors: ColorRegistry): void {

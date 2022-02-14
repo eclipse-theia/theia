@@ -20,6 +20,7 @@ import { SingleTextInputDialog } from '@theia/core/lib/browser';
 import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/console-session';
 import { DebugSession } from '../debug-session';
 import { Severity } from '@theia/core/lib/common/severity';
+import * as Monaco from 'monaco-editor-core';
 
 export type DebugSessionProvider = () => DebugSession | undefined;
 
@@ -366,10 +367,10 @@ export class DebugScope extends ExpressionContainer {
         return this.raw.expensive;
     }
 
-    get range(): monaco.Range | undefined {
+    get range(): Monaco.Range | undefined {
         const { line, column, endLine, endColumn } = this.raw;
         if (line !== undefined && column !== undefined && endLine !== undefined && endColumn !== undefined) {
-            return new monaco.Range(line, column, endLine, endColumn);
+            return new Monaco.Range(line, column, endLine, endColumn);
         }
         return undefined;
     }

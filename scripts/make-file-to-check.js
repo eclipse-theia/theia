@@ -8,9 +8,11 @@ const [input, output] = process.argv.slice(2);
     const files = new Set();
 
     for (const line of content.split('\n')) {
-        const index = line.indexOf('(');
-        if (index !== -1) {
-            files.add(line.substring(0, index));
+        if (line.startsWith('packages')) {
+            const index = line.indexOf('(');
+            if (index !== -1) {
+                files.add(line.substring(0, index));
+            }
         }
     }
 

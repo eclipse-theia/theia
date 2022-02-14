@@ -1,20 +1,3 @@
-packages/task/src/browser/task-service.ts
-packages/debug/src/browser/debug-configuration-manager.ts
-packages/debug/src/browser/console/debug-console-items.tsx
-packages/debug/src/browser/model/debug-stack-frame.tsx
-packages/debug/src/browser/debug-session-manager.ts
-packages/debug/src/browser/console/debug-console-session.ts
-packages/debug/src/browser/editor/debug-expression-provider.ts
-packages/debug/src/browser/editor/debug-hover-widget.ts
-packages/debug/src/browser/editor/debug-breakpoint-widget.tsx
-packages/debug/src/browser/editor/debug-exception-widget.tsx
-packages/debug/src/browser/editor/debug-inline-value-decorator.ts
-packages/debug/src/browser/editor/debug-editor-model.ts
-packages/debug/src/browser/editor/debug-editor-service.ts
-packages/debug/src/browser/debug-frontend-application-contribution.ts
-packages/debug/src/browser/debug-monaco-contribution.ts
-packages/debug/src/browser/debug-prefix-configuration.ts
-packages/debug/src/browser/debug-frontend-module.ts
 packages/plugin-ext/src/common/plugin-api-rpc-model.ts
 packages/plugin-ext/src/common/plugin-api-rpc.ts
 packages/plugin-ext/src/main/browser/comments/comment-glyph-widget.ts
@@ -34,6 +17,5 @@ packages/plugin-ext/src/main/browser/languages-main.ts
 packages/plugin-ext/src/main/browser/text-editors-main.ts
 packages/plugin-ext/src/hosted/browser/hosted-plugin.ts
 packages/plugin-ext/src/main/browser/view/plugin-tree-view-node-label-provider.ts
-packages/plugin-ext/src/plugin/node/debug/plugin-debug-adapter-starter.ts
 packages/plugin-ext/src/plugin/languages/selection-range.ts
 packages/plugin-ext/src/plugin/plugin-context.ts
