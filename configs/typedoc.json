@@ -1,9 +1,9 @@
 {
   "emit": false,
   "exclude": [
-    "+(dev-packages|examples|typings|scripts)",
-    "packages/*/lib",
-    "**/node_modules",
+    "../+(dev-packages|examples|typings|scripts)/**",
+    "../packages/*/lib/**",
+    "**/node_modules/**",
     "**/*spec.ts"
   ],
   "excludeExternals": true,
@@ -11,6 +11,6 @@
   "hideGenerator": true,
   "name": "Theia TypeDoc",
   "out": "gh-pages/docs/next",
-  "readme": "README.md",
+  "readme": "../README.md",
   "entryPointStrategy": "expand"
 }
