@@ -76,6 +76,8 @@ import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
+import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
+import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -234,4 +236,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(WebviewFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewFrontendSecurityWarnings);
+
+    bind(PluginAuthenticationServiceImpl).toSelf().inSingletonScope();
+    rebind(AuthenticationService).toService(PluginAuthenticationServiceImpl);
 });

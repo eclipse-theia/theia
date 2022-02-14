@@ -82,12 +82,6 @@ export module '@theia/plugin' {
         readonly supportsMultipleAccounts: boolean;
 
         /**
-         * An [event](#Event) which fires when the array of sessions has changed, or data
-         * within a session has changed.
-         */
-        readonly onDidChangeSessions: Event<AuthenticationProviderAuthenticationSessionsChangeEvent>;
-
-        /**
          * Returns an array of current sessions.
          */
         getSessions(): Thenable<ReadonlyArray<AuthenticationSession>>;

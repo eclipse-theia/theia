@@ -569,22 +569,22 @@ export interface LinePreview {
     character: number;
 }
 
-export interface AuthenticationSession {
-    id: string;
-    accessToken: string;
-    account: { id: string, label: string };
-    scopes: ReadonlyArray<string>;
+/**
+ * @deprecated Use {@link theia.AuthenticationSession} instead.
+ */
+export interface AuthenticationSession extends theia.AuthenticationSession {
 }
 
-export interface AuthenticationSessionsChangeEvent {
-    added: ReadonlyArray<string>;
-    removed: ReadonlyArray<string>;
-    changed: ReadonlyArray<string>;
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderAuthenticationSessionsChangeEvent} instead.
+ */
+export interface AuthenticationSessionsChangeEvent extends theia.AuthenticationProviderAuthenticationSessionsChangeEvent {
 }
 
-export interface AuthenticationProviderInformation {
-    id: string;
-    label: string;
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderInformation} instead.
+ */
+export interface AuthenticationProviderInformation extends theia.AuthenticationProviderInformation {
 }
 
 export interface CommentOptions {
