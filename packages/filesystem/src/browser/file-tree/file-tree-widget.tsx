@@ -20,7 +20,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, TreeViewWelcomeWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, CompressedTreeWidget, CompressedNodeProps } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
@@ -33,7 +33,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeViewWelcomeWidget {
+export class FileTreeWidget extends CompressedTreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -85,22 +85,35 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
     }
 
     protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        const elementAttrs = super.createNodeAttributes(node, props);
         return {
-            ...elementAttrs,
-            draggable: FileStatNode.is(node),
-            onDragStart: event => this.handleDragStartEvent(node, event),
-            onDragEnter: event => this.handleDragEnterEvent(node, event),
-            onDragOver: event => this.handleDragOverEvent(node, event),
-            onDragLeave: event => this.handleDragLeaveEvent(node, event),
-            onDrop: event => this.handleDropEvent(node, event),
+            ...super.createNodeAttributes(node, props),
+            ...this.getNodeDragHandlers(node, props),
             title: this.getNodeTooltip(node)
         };
     }
 
     protected getNodeTooltip(node: TreeNode): string | undefined {
-        const uri = UriSelection.getUri(node);
+        const operativeNode = this.compressionService.getCompressionChain(node)?.tail() ?? node;
+        const uri = UriSelection.getUri(operativeNode);
         return uri ? uri.path.toString() : undefined;
+    }
+
+    protected getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            ...super.getCaptionChildEventHandlers(node, props),
+            ...this.getNodeDragHandlers(node, props),
+        };
+    }
+
+    protected getNodeDragHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            onDragStart: event => this.handleDragStartEvent(node, event),
+            onDragEnter: event => this.handleDragEnterEvent(node, event),
+            onDragOver: event => this.handleDragOverEvent(node, event),
+            onDragLeave: event => this.handleDragLeaveEvent(node, event),
+            onDrop: event => this.handleDropEvent(node, event),
+            draggable: FileStatNode.is(node),
+        };
     }
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {

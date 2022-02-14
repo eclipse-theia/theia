@@ -21,7 +21,7 @@ import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,
     WidgetManager, ApplicationShellLayoutMigration,
-    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl
+    createTreeContainer, TreeModel, TreeModelImpl
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
@@ -130,16 +130,16 @@ export default new ContainerModule(bind => {
 
 export function createScmTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent, {
-        virtualized: true,
-        search: true,
-        multiSelect: true,
+        props: {
+            virtualized: true,
+            search: true,
+            multiSelect: true,
+        },
+        widget: ScmTreeWidget,
     });
 
-    child.unbind(TreeWidget);
     child.unbind(TreeModel);
     child.unbind(TreeModelImpl);
-
-    child.bind(ScmTreeWidget).toSelf();
 
     child.bind(ScmTreeModelProps).toConstantValue({
         defaultExpansion: 'expanded',

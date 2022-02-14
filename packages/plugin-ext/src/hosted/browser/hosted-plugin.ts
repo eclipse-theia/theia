@@ -65,6 +65,7 @@ import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-edi
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
 import { LanguageService } from 'monaco-editor-core/esm/vs/editor/common/services/languageService';
+import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -156,6 +157,9 @@ export class HostedPluginSupport {
 
     @inject(PluginCustomEditorRegistry)
     protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -305,15 +309,15 @@ export class HostedPluginSupport {
      */
     protected async syncPlugins(): Promise<void> {
         let initialized = 0;
-        const waitPluginsMeasurement = this.createMeasurement('waitForDeployment');
-        let syncPluginsMeasurement: () => number;
+        const waitPluginsMeasurement = this.measure('waitForDeployment');
+        let syncPluginsMeasurement: Measurement | undefined;
 
         const toUnload = new Set(this.contributions.keys());
         try {
             const pluginIds: string[] = [];
             const deployedPluginIds = await this.server.getDeployedPluginIds();
-            this.logMeasurement('Waiting for backend deployment', waitPluginsMeasurement);
-            syncPluginsMeasurement = this.createMeasurement('syncPlugins');
+            waitPluginsMeasurement.log('Waiting for backend deployment');
+            syncPluginsMeasurement = this.measure('syncPlugins');
             for (const pluginId of deployedPluginIds) {
                 toUnload.delete(pluginId);
                 if (!this.contributions.has(pluginId)) {
@@ -340,9 +344,14 @@ export class HostedPluginSupport {
             if (initialized || toUnload.size) {
                 this.onDidChangePluginsEmitter.fire(undefined);
             }
+
+            if (!syncPluginsMeasurement) {
+                // await didn't complete normally
+                waitPluginsMeasurement.error('Backend deployment failed.');
+            }
         }
 
-        this.logMeasurement(`Sync of ${this.getPluginCount(initialized)}`, syncPluginsMeasurement);
+        syncPluginsMeasurement?.log(`Sync of ${this.getPluginCount(initialized)}`);
     }
 
     /**
@@ -351,7 +360,7 @@ export class HostedPluginSupport {
      */
     protected loadContributions(toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
         let loaded = 0;
-        const loadPluginsMeasurement = this.createMeasurement('loadPlugins');
+        const loadPluginsMeasurement = this.measure('loadPlugins');
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
         for (const contributions of this.contributions.values()) {
@@ -380,14 +389,14 @@ export class HostedPluginSupport {
             }
         }
 
-        this.logMeasurement(`Load contributions of ${this.getPluginCount(loaded)}`, loadPluginsMeasurement);
+        loadPluginsMeasurement.log(`Load contributions of ${this.getPluginCount(loaded)}`);
 
         return hostContributions;
     }
 
     protected async startPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
         let started = 0;
-        const startPluginsMeasurement = this.createMeasurement('startPlugins');
+        const startPluginsMeasurement = this.measure('startPlugins');
 
         const [hostLogPath, hostStoragePath, hostGlobalStoragePath] = await Promise.all([
             this.pluginPathsService.getHostLogPath(),
@@ -450,7 +459,7 @@ export class HostedPluginSupport {
             return;
         }
 
-        this.logMeasurement(`Start of ${this.getPluginCount(started)}`, startPluginsMeasurement);
+        startPluginsMeasurement.log(`Start of ${this.getPluginCount(started)}`);
     }
 
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
@@ -696,37 +705,8 @@ export class HostedPluginSupport {
         await Promise.all(activation);
     }
 
-    protected createMeasurement(name: string): () => number {
-        const startMarker = `${name}-start`;
-        const endMarker = `${name}-end`;
-        performance.clearMeasures(name);
-        performance.clearMarks(startMarker);
-        performance.clearMarks(endMarker);
-
-        performance.mark(startMarker);
-        return () => {
-            performance.mark(endMarker);
-            performance.measure(name, startMarker, endMarker);
-
-            const entries = performance.getEntriesByName(name);
-            const duration = entries.length > 0 ? entries[0].duration : Number.NaN;
-
-            performance.clearMeasures(name);
-            performance.clearMarks(startMarker);
-            performance.clearMarks(endMarker);
-            return duration;
-        };
-    }
-
-    protected logMeasurement(measurementName: string, measurement: () => number): void {
-        const duration = measurement();
-        if (duration === Number.NaN) {
-            // Measurement was prevented by native API, do not log NaN duration
-            return;
-        }
-
-        const timeFromFrontendStart = `Finished ${(performance.now() / 1000).toFixed(3)} s after frontend start`;
-        console.log(`[${this.clientId}] ${measurementName} took: ${duration.toFixed(1)} ms [${timeFromFrontendStart}]`);
+    protected measure(name: string): Measurement {
+        return this.stopwatch.start(name, { context: this.clientId });
     }
 
     protected getPluginCount(plugins: number): string {

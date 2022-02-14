@@ -19,6 +19,7 @@
     "lint": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests",
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests --fix",
     "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",
+    "ui-tests-ci": "yarn && playwright test --config=./configs/playwright.ci.config.ts",
     "ui-tests-headful": "yarn && playwright test --config=./configs/playwright.headful.config.ts",
     "ui-tests-report-generate": "allure generate ./allure-results --clean -o allure-results/allure-report",
     "ui-tests-report": "yarn ui-tests-report-generate && allure open allure-results/allure-report"
@@ -34,5 +35,8 @@
     "@types/fs-extra": "^9.0.8",
     "allure-commandline": "^2.13.8",
     "allure-playwright": "^2.0.0-beta.14"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

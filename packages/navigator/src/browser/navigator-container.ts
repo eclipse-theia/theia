@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { Tree, TreeModel, TreeProps, defaultTreeProps, TreeDecoratorService } from '@theia/core/lib/browser';
-import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget } from '@theia/filesystem/lib/browser';
+import { TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
+import { createFileTreeContainer } from '@theia/filesystem/lib/browser';
 import { FileNavigatorTree } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorWidget } from './navigator-widget';
@@ -32,23 +32,13 @@ export const FILE_NAVIGATOR_PROPS = <TreeProps>{
 };
 
 export function createFileNavigatorContainer(parent: interfaces.Container): Container {
-    const child = createFileTreeContainer(parent);
-
-    child.unbind(FileTree);
-    child.bind(FileNavigatorTree).toSelf();
-    child.rebind(Tree).toService(FileNavigatorTree);
-
-    child.unbind(FileTreeModel);
-    child.bind(FileNavigatorModel).toSelf();
-    child.rebind(TreeModel).toService(FileNavigatorModel);
-
-    child.unbind(FileTreeWidget);
-    child.bind(FileNavigatorWidget).toSelf();
-
-    child.rebind(TreeProps).toConstantValue(FILE_NAVIGATOR_PROPS);
-
-    child.bind(NavigatorDecoratorService).toSelf().inSingletonScope();
-    child.rebind(TreeDecoratorService).toService(NavigatorDecoratorService);
+    const child = createFileTreeContainer(parent, {
+        tree: FileNavigatorTree,
+        model: FileNavigatorModel,
+        widget: FileNavigatorWidget,
+        decoratorService: NavigatorDecoratorService,
+        props: FILE_NAVIGATOR_PROPS,
+    });
 
     return child;
 }

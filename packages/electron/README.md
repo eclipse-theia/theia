@@ -17,8 +17,8 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 ## Re-Exports
 
 - `@theia/electron/shared/...`
-    - `@electron/remote` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
-    - `@electron/remote/main` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
+    - `@electron/remote` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
+    - `@electron/remote/main` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
     - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
     - `electron` (from [`electron@^15.3.5`](https://www.npmjs.com/package/electron))
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))

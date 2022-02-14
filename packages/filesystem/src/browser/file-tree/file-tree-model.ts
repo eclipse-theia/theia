@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
+import { CompositeTreeNode, TreeNode, ConfirmDialog, CompressedTreeModel } from '@theia/core/lib/browser';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -27,7 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemUtils } from '../../common';
 
 @injectable()
-export class FileTreeModel extends TreeModelImpl implements LocationService {
+export class FileTreeModel extends CompressedTreeModel implements LocationService {
 
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
@@ -142,7 +142,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         const nodes = new Map<string, CompositeTreeNode>();
         for (const uri of uris) {
             for (const node of this.getNodesByUri(uri.parent)) {
-                if (DirNode.is(node) && node.expanded) {
+                if (DirNode.is(node) && (node.expanded || (this.compressionToggle.compress && this.compressionService.isCompressionParticipant(node)))) {
                     nodes.set(node.id, node);
                 }
             }
@@ -172,6 +172,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const name = source.fileStat.name;
             const targetUri = target.uri.resolve(name);
+            if (source.uri.isEqual(targetUri)) { return; }
             try {
                 await this.fileService.move(source.uri, targetUri);
                 return targetUri;

@@ -484,7 +484,7 @@ You can fix it by modifying your `tsconfig.json`:
 ### Profile IPC servers
 
   - Pass `--${server-name}-inspect` arg to the backend server.
-    - For example `--nfsw-watcher-inspect=0` to inspect nfsw watcher processes with dynamic port allocation.
+    - For example `--nsfw-watcher-inspect=0` to inspect nsfw watcher processes with dynamic port allocation.
     - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
 
 ### Profile the plugin host

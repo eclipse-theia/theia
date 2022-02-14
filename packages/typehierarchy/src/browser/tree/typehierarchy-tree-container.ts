@@ -15,24 +15,17 @@
  ********************************************************************************/
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl, TreeWidget } from '@theia/core/lib/browser/tree';
+import { createTreeContainer, } from '@theia/core/lib/browser/tree';
 import { TypeHierarchyTree } from './typehierarchy-tree';
 import { TypeHierarchyTreeModel } from './typehierarchy-tree-model';
 import { TypeHierarchyTreeWidget } from './typehierarchy-tree-widget';
 
 function createHierarchyTreeContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
-
-    child.unbind(TreeImpl);
-    child.bind(TypeHierarchyTree).toSelf();
-    child.rebind(Tree).toService(TypeHierarchyTree);
-
-    child.unbind(TreeModelImpl);
-    child.bind(TypeHierarchyTreeModel).toSelf();
-    child.rebind(TreeModel).toService(TypeHierarchyTreeModel);
-
-    child.bind(TypeHierarchyTreeWidget).toSelf();
-    child.rebind(TreeWidget).toService(TypeHierarchyTreeWidget);
+    const child = createTreeContainer(parent, {
+        tree: TypeHierarchyTree,
+        model: TypeHierarchyTreeModel,
+        widget: TypeHierarchyTreeWidget
+    });
 
     return child;
 }

@@ -19,12 +19,7 @@ import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { TimelineService } from './timeline-service';
 import { TimelineWidget } from './timeline-widget';
 import { TimelineTreeWidget } from './timeline-tree-widget';
-import {
-    createTreeContainer,
-    TreeModel,
-    TreeModelImpl,
-    TreeWidget
-} from '@theia/core/lib/browser';
+import { createTreeContainer, } from '@theia/core/lib/browser';
 import { TimelineTreeModel } from './timeline-tree-model';
 import { TimelineEmptyWidget } from './timeline-empty-widget';
 import { TimelineContextKeyService } from './timeline-context-key-service';
@@ -64,15 +59,13 @@ export default new ContainerModule(bind => {
 
 export function createTimelineTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent, {
-        virtualized: true,
-        search: true
+        props: {
+            virtualized: true,
+            search: true
+        },
+        widget: TimelineTreeWidget,
+        model: TimelineTreeModel
     });
 
-    child.unbind(TreeWidget);
-    child.bind(TimelineTreeWidget).toSelf();
-
-    child.unbind(TreeModelImpl);
-    child.bind(TimelineTreeModel).toSelf();
-    child.rebind(TreeModel).toService(TimelineTreeModel);
     return child;
 }

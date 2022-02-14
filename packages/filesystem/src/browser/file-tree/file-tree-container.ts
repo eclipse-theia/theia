@@ -15,24 +15,22 @@
  ********************************************************************************/
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl, TreeWidget } from '@theia/core/lib/browser';
+import { CompressedExpansionService, CompressionToggle, createTreeContainer, TreeCompressionService, TreeContainerProps } from '@theia/core/lib/browser';
 import { FileTree } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { FileTreeWidget } from './file-tree-widget';
 
-export function createFileTreeContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
+const fileTreeDefaults: Partial<TreeContainerProps> = {
+    tree: FileTree,
+    model: FileTreeModel,
+    widget: FileTreeWidget,
+    expansionService: CompressedExpansionService,
+};
 
-    child.unbind(TreeImpl);
-    child.bind(FileTree).toSelf();
-    child.rebind(Tree).toService(FileTree);
-
-    child.unbind(TreeModelImpl);
-    child.bind(FileTreeModel).toSelf();
-    child.rebind(TreeModel).toService(FileTreeModel);
-
-    child.unbind(TreeWidget);
-    child.bind(FileTreeWidget).toSelf();
+export function createFileTreeContainer(parent: interfaces.Container, overrides?: Partial<TreeContainerProps>): Container {
+    const child = createTreeContainer(parent, { ...fileTreeDefaults, ...overrides });
+    child.bind(CompressionToggle).toConstantValue({ compress: false });
+    child.bind(TreeCompressionService).toSelf().inSingletonScope();
 
     return child;
 }
