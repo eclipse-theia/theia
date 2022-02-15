@@ -31,8 +31,9 @@ const THEIA_RUNTIME_FOLDERS = new Map([
     ['node', 'node']
 ]);
 
-const template = `/********************************************************************************
-* Copyright (C) 2022 Ericsson and others.
+const LICENSE_HEADER = `\
+/********************************************************************************
+* Copyright (C) 2022 Ericsson(autogen) and others.
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License v. 2.0 which is available at
@@ -45,7 +46,17 @@ const template = `/*************************************************************
 * https://www.gnu.org/software/classpath/license.html.
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************/
+********************************************************************************/`;
+
+const NESTED_INDEX_TS_TEMPLATE = `\
+${LICENSE_HEADER}
+
+export { };
+
+`;
+
+const ROOT_INDEX_TS_TEMPLATE = `\
+${LICENSE_HEADER}
 
 {{#exportStar}}
 {{#modules}}
@@ -56,18 +67,17 @@ export * from '{{&modulePath}}';
 {{#modules}}
 export declare const {{&variableName}}: typeof import('{{&modulePath}}');
 {{/modules}}
-const _cache: Record<string, unknown> = {};
-function _lazyRequire(path) {
+function _lazyProperty(get: () => unknown): PropertyDescriptor {
     return {
         configurable: true,
         enumerable: true,
         writable: true,
-        get: () => _cache[path] ??= require(path)
+        get
     };
 }
 Object.defineProperties(exports, {
     {{#modules}}
-    {{&variableName}}: _lazyRequire('{{&modulePath}}'),
+    {{&variableName}}: _lazyProperty(() => require('{{&modulePath}}')),
     {{/modules}}
 });
 {{/lazy}}
@@ -78,7 +88,7 @@ process.on('unhandledRejection', error => {
 });
 process.on('uncaughtException', error => {
     console.error(error);
-    process.exit(1);
+    process.exitCode = 1;
 });
 generateEntryPoints();
 
@@ -89,7 +99,10 @@ async function generateEntryPoints() {
         const packageJson = await fs.readJson(packageJsonPath);
         if (packageJson.theiaPackageEntryPoints) {
             await Promise.all(Object.entries(packageJson.theiaPackageEntryPoints).map(async ([file, description]) => {
-                const entryPointPath = path.resolve(packageRoot, file);
+                const entryPointPath = ensureExt(path.resolve(packageRoot, file), '.ts');
+                if ((await fs.stat(entryPointPath)).isDirectory()) {
+                    throw new Error(`Expected a file got a directory: ${entryPointPath}`);
+                }
                 const exportStar = description['export *'];
                 const lazy = description['lazy'];
                 const view = {};
@@ -105,23 +118,49 @@ async function generateEntryPoints() {
                     view.lazy = {
                         modules: []
                     };
-                    for (let [variableName, modulePath] of Object.entries(lazy)) {
+                    const entryPointDir = path.dirname(entryPointPath);
+                    const entries = Object.entries(lazy);
+                    let entry; while (entry = entries.shift()) {
+                        const [variableName, modulePath] = entry;
                         if (variableName === '+theia-runtimes') {
-                            for (const dir of await fs.readdir(path.dirname(entryPointPath))) {
-                                variableName = THEIA_RUNTIME_FOLDERS.get(dir);
-                                if (variableName && !lazy[variableName]) {
-                                    view.lazy.modules.push({ variableName, modulePath: `./${dir}` });
+                            for (const dir of await fs.readdir(entryPointDir)) {
+                                const name = THEIA_RUNTIME_FOLDERS.get(dir);
+                                if (name && !lazy[name]) {
+                                    entries.push([name, `./${dir}`]);
                                 }
                             }
-                        } else {
-                            view.lazy.modules.push({ variableName, modulePath });
+                            continue;
                         }
+                        let nestedIndexPath = path.resolve(entryPointDir, modulePath);
+                        if ((await fs.stat(nestedIndexPath)).isDirectory()) {
+                            nestedIndexPath = path.resolve(nestedIndexPath, 'index.ts');
+                        } else {
+                            nestedIndexPath = ensureExt(nestedIndexPath, '.ts');
+                        }
+                        if (!await fs.pathExists(nestedIndexPath)) {
+                            await write(nestedIndexPath, NESTED_INDEX_TS_TEMPLATE);
+                        }
+                        view.lazy.modules.push({ variableName, modulePath });
                     }
                 }
-                const rendered = mustache.render(template, view);
-                console.log(entryPointPath);
-                console.log(rendered);
+                const rendered = mustache.render(ROOT_INDEX_TS_TEMPLATE, view);
+                await write(entryPointPath, rendered);
             }))
         }
     }));
+}
+
+function ensureExt(filePath, ext) {
+    const { dir, name } = path.parse(filePath);
+    return path.resolve(dir, `${name}${ext}`);
+}
+
+async function write(filePath, content) {
+    if (process.env.THEIA_GENERATE_ENTRY_POINTS_DRY) {
+        console.log(filePath);
+        console.log(content);
+        process.exitCode = 1;
+        return;
+    }
+    await fs.writeFile(filePath, content);
 }

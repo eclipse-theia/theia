@@ -14,11 +14,10 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 
-export declare const browser: typeof import('./browser');
-export declare const electronBrowser: typeof import('./electron-browser');
-export declare const electronMain: typeof import('./electron-main');
-export declare const electronNode: typeof import('./electron-node');
-export declare const node: typeof import('./node');
+export * from './common';
+export declare const hosted: typeof import('./hosted');
+export declare const main: typeof import('./main');
+export declare const plugin: typeof import('./plugin');
 function _lazyProperty(get: () => unknown): PropertyDescriptor {
     return {
         configurable: true,
@@ -28,9 +27,7 @@ function _lazyProperty(get: () => unknown): PropertyDescriptor {
     };
 }
 Object.defineProperties(exports, {
-    browser: _lazyProperty(() => require('./browser')),
-    electronBrowser: _lazyProperty(() => require('./electron-browser')),
-    electronMain: _lazyProperty(() => require('./electron-main')),
-    electronNode: _lazyProperty(() => require('./electron-node')),
-    node: _lazyProperty(() => require('./node')),
+    hosted: _lazyProperty(() => require('./hosted')),
+    main: _lazyProperty(() => require('./main')),
+    plugin: _lazyProperty(() => require('./plugin')),
 });
