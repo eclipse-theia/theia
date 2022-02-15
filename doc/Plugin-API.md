@@ -1,9 +1,9 @@
-# Theia Plugin API and VSCode extensions support
+# Theia Plugin API and VS Code extensions support
 
 Eclipse Theia is designed for extensibility.
-Therefore, it supports [three extension mechanisms: VSCode extensions, Theia extensions, and Theia plugins](https://theia-ide.org/docs/extensions/).
-In the following, we focus on the mechanics of Theia plugins and Theia’s compatibility with the [VSCode Extension API](https://code.visualstudio.com/api) in order to support running VSCode extensions in Theia.
-This documentation aims to support developers extending Theia’s plugin API to either enhance the extensibility of Theia via plugins and/or increase Theia’s coverage of the VSCode Extension API – and with that the number of VSCode extensions that can be used in Theia.
+Therefore, it supports [three extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins](https://theia-ide.org/docs/extensions/).
+In the following, we focus on the mechanics of Theia plugins and Theia’s compatibility with the [VS Code Extension API](https://code.visualstudio.com/api) in order to support running VS Code extensions in Theia.
+This documentation aims to support developers extending Theia’s plugin API to either enhance the extensibility of Theia via plugins and/or increase Theia’s coverage of the VS Code Extension API – and with that the number of VS Code extensions that can be used in Theia.
 
 Theia plugins, as well as VS Code extensions, can be installed and removed from a Theia installation at runtime and may extend many different capabilities of Theia, such as theming, language support, debuggers, tree views, etc., via a clearly defined API.
 A plugin runs inside a "host process".
@@ -11,7 +11,7 @@ This is a sub-process spawned by Theia's backend to isolate the plugin from the 
 This encapsulates the plugin to prevent it from arbitrarily accessing Theia services and potentially harm performance or functionality of Theia’s main functionality.
 Instead, a plugin accesses Theia’s state and services via the plugin API.
 
-Theia’s plugin API thrives to be a super set of VSCode’s extension API to enable running VSCode extensions as Theia plugins.
+Theia’s plugin API thrives to be a super set of VS Code’s extension API to enable running VS Code extensions as Theia plugins.
 For many cases this already works well.
 A report on API compatibility is generated daily in the [vscode-theia-comparator repository](https://github.com/eclipse-theia/vscode-theia-comparator).
 Please note that the report only checks the API on an interface level – and not the compatibility of the interfaces’ implementation behaviour.
@@ -35,13 +35,13 @@ The plugin API is declared in the [plugin](https://github.com/eclipse-theia/thei
 
 The implementation of the API defined in the plugin package is passed to a plugin by manipulating the module loading mechanism in plugin containers to construct an API module object.
 This enables Theia plugins to import the API via the `@theia/plugin` module in node or via the `theia` namespace in web workers.
-For VSCode plugins, the same API is available via the `vscode` namespace as expected by them.
+For VS Code plugins, the same API is available via the `vscode` namespace as expected by them.
 
 Plugin containers are node processes (see [plugin-ext/src/hosted/node/plugin-host.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/hosted/node/plugin-host.ts))and web workers ([plugin-ext/src/hosted/browser/worker/worker-main.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/hosted/browser/worker/worker-main.ts)).
 These expose the API in the following places:
 
-- Browser: assign API object to `window[‘theia’]` in [plugin-ext/src/hosted/browser/worker/worker-main.ts](https://github.com/eclipse-theia/theia/blob/541b300adc029ab1dd729da1ca49179ace1447b2/packages/plugin-ext/src/hosted/browser/worker/worker-main.ts#L192)
-- Back-end/Node: Override module loading for Theia plugins in [plugin-ext/src/hosted/node/scanners/backend-init-theia.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/hosted/node/scanners/backend-init-theia.ts) and for VSCode plugins in [plugin-ext-vscode/src/node/plugin-vscode-init.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts)
+- Browser: assign API object to `window['theia']` in [plugin-ext/src/hosted/browser/worker/worker-main.ts](https://github.com/eclipse-theia/theia/blob/541b300adc029ab1dd729da1ca49179ace1447b2/packages/plugin-ext/src/hosted/browser/worker/worker-main.ts#L192)
+- Back-end/Node: Override module loading for Theia plugins in [plugin-ext/src/hosted/node/scanners/backend-init-theia.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/src/hosted/node/scanners/backend-init-theia.ts) and for VS Code plugins in [plugin-ext-vscode/src/node/plugin-vscode-init.ts](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext-vscode/src/node/plugin-vscode-init.ts)
 
 **Note** that it is not necessary to adapt these for implementing new plugin API.
 
@@ -49,7 +49,9 @@ These expose the API in the following places:
 
 As the plugin runs in a separate process, the plugin API cannot directly communicate with Theia.
 Instead, the plugin process and Theia’s main process communicate via RPC.
-Therefore, the following “Main-Ext” pattern is used.
+Therefore, the following "Main-Ext" pattern is used.
+
+![Communication between Theia and Plugin API](./images/plugin-api-diagram.png)
 
 `Ext` refers to the code running on the plugin side inside the isolated host process.
 Therefore, this code cannot directly use any Theia services (e.g. via dependency injection).
@@ -170,12 +172,14 @@ They can be added here and the added to the api object created in the API factor
 
 ## Additional Links
 
-Talk by Thomas Maeder on writing plugin API: https://www.youtube.com/watch?v=Z_65jy8_9SM
+Talk by Thomas Maeder on writing plugin API: <https://www.youtube.com/watch?v=Z_65jy8_9SM>
 
 Adding a new plugin api namespace outside of theia plugin api: [how-to-add-new-plugin-namespace.md](https://github.com/eclipse-theia/theia/blob/master/packages/plugin-ext/doc/how-to-add-new-plugin-namespace.md)
 
-Theia Plugin Implementation wiki page: https://github.com/eclipse-theia/theia/wiki/Theia-Plugin-Implementation
+Theia Plugin Implementation wiki page: <https://github.com/eclipse-theia/theia/wiki/Theia-Plugin-Implementation>
 
-Writing Plugin API wiki page in the che wiki: https://github.com/eclipse/che/wiki/Writing-Theia-plugin-API
+Writing Plugin API wiki page in the che wiki: <https://github.com/eclipse/che/wiki/Writing-Theia-plugin-API>
 
-Theia vs VSCode API Comparator: https://github.com/eclipse-theia/vscode-theia-comparator
+Theia vs VS Code API Comparator: <https://github.com/eclipse-theia/vscode-theia-comparator>
+
+Theia's extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins: <https://theia-ide.org/docs/extensions>
