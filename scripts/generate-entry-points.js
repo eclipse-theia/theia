@@ -23,13 +23,19 @@ const ROOT = path.join(__dirname, '..');
 
 const YARN_WORKSPACES = getYarnWorkspaces(ROOT);
 
-const THEIA_RUNTIME_FOLDERS = new Map([
-    ['browser', 'browser'],
-    ['electron-browser', 'electronBrowser'],
-    ['electron-main', 'electronMain'],
-    ['electron-node', 'electronNode'],
-    ['node', 'node']
-]);
+const THEIA_RUNTIME_FOLDERS = {
+    exportStar: new Set([
+        'common',
+        'electron-common'
+    ]),
+    lazy: new Map([
+        ['browser', 'browser'],
+        ['electron-browser', 'electronBrowser'],
+        ['electron-main', 'electronMain'],
+        ['electron-node', 'electronNode'],
+        ['node', 'node']
+    ])
+};
 
 const LICENSE_HEADER = `\
 /********************************************************************************
@@ -52,7 +58,6 @@ const NESTED_INDEX_TS_TEMPLATE = `\
 ${LICENSE_HEADER}
 
 export { };
-
 `;
 
 const ROOT_INDEX_TS_TEMPLATE = `\
@@ -103,43 +108,39 @@ async function generateEntryPoints() {
                 if ((await fs.stat(entryPointPath)).isDirectory()) {
                     throw new Error(`Expected a file got a directory: ${entryPointPath}`);
                 }
-                const exportStar = description['export *'];
-                const lazy = description['lazy'];
+                const entryPointDir = path.dirname(entryPointPath);
+                const exportStar = description['export *'] || [];
+                const lazy = description['lazy'] || [];
+                const _extends = description['extends'];
+                if (_extends && _extends.includes('+theia-runtimes')) {
+                    for (const dir of await fs.readdir(entryPointDir)) {
+                        if (THEIA_RUNTIME_FOLDERS.exportStar.has(dir) && !exportStar.includes(dir)) {
+                            exportStar.push(`./${dir}`);
+                        }
+                        if (lazy) {
+                            const variableName = THEIA_RUNTIME_FOLDERS.lazy.get(dir);
+                            if (variableName && !lazy[variableName]) {
+                                lazy[variableName] = `./${dir}`;
+                            }
+                        }
+                    }
+                }
                 const view = {};
-                if (exportStar) {
+                if (exportStar.length > 0) {
                     view.exportStar = {
                         modules: []
                     };
                     for (const modulePath of exportStar) {
+                        await ensureIndex(path.resolve(entryPointDir, modulePath));
                         view.exportStar.modules.push({ modulePath });
                     }
                 }
-                if (lazy) {
+                if (Object.keys(lazy).length > 0) {
                     view.lazy = {
                         modules: []
                     };
-                    const entryPointDir = path.dirname(entryPointPath);
-                    const entries = Object.entries(lazy);
-                    let entry; while (entry = entries.shift()) {
-                        const [variableName, modulePath] = entry;
-                        if (variableName === '+theia-runtimes') {
-                            for (const dir of await fs.readdir(entryPointDir)) {
-                                const name = THEIA_RUNTIME_FOLDERS.get(dir);
-                                if (name && !lazy[name]) {
-                                    entries.push([name, `./${dir}`]);
-                                }
-                            }
-                            continue;
-                        }
-                        let nestedIndexPath = path.resolve(entryPointDir, modulePath);
-                        if ((await fs.stat(nestedIndexPath)).isDirectory()) {
-                            nestedIndexPath = path.resolve(nestedIndexPath, 'index.ts');
-                        } else {
-                            nestedIndexPath = ensureExt(nestedIndexPath, '.ts');
-                        }
-                        if (!await fs.pathExists(nestedIndexPath)) {
-                            await write(nestedIndexPath, NESTED_INDEX_TS_TEMPLATE);
-                        }
+                    for (const [variableName, modulePath] of Object.entries(lazy)) {
+                        await ensureIndex(path.resolve(entryPointDir, modulePath));
                         view.lazy.modules.push({ variableName, modulePath });
                     }
                 }
@@ -153,6 +154,17 @@ async function generateEntryPoints() {
 function ensureExt(filePath, ext) {
     const { dir, name } = path.parse(filePath);
     return path.resolve(dir, `${name}${ext}`);
+}
+
+async function ensureIndex(modulePath) {
+    if ((await fs.stat(modulePath)).isDirectory()) {
+        modulePath = path.resolve(modulePath, 'index.ts');
+    } else {
+        modulePath = ensureExt(modulePath, '.ts');
+    }
+    if (!await fs.pathExists(modulePath)) {
+        await write(modulePath, NESTED_INDEX_TS_TEMPLATE);
+    }
 }
 
 async function write(filePath, content) {

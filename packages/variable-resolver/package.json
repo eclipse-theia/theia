@@ -15,9 +15,9 @@
   ],
   "theiaPackageEntryPoints": {
     "src/index": {
-      "lazy": {
-        "+theia-runtimes": true
-      }
+      "extends": [
+        "+theia-runtimes"
+      ]
     }
   },
   "keywords": [

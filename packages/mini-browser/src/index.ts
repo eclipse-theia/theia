@@ -14,6 +14,7 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************/
 
+export * from './common';
 export declare const browser: typeof import('./browser');
 export declare const electronBrowser: typeof import('./electron-browser');
 export declare const electronMain: typeof import('./electron-main');

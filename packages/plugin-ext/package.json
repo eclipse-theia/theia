@@ -67,17 +67,14 @@
       }
     },
     "src/hosted/index": {
-      "lazy": {
-        "+theia-runtimes": true
-      }
+      "extends": [
+        "+theia-runtimes"
+      ]
     },
     "src/main/index": {
-      "export *": [
-        "./common"
-      ],
-      "lazy": {
-        "+theia-runtimes": true
-      }
+      "extends": [
+        "+theia-runtimes"
+      ]
     }
   },
   "keywords": [

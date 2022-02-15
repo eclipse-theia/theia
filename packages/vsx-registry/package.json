@@ -33,9 +33,9 @@
   ],
   "theiaPackageEntryPoints": {
     "src/index": {
-      "lazy": {
-        "+theia-runtimes": true
-      }
+      "extends": [
+        "+theia-runtimes"
+      ]
     }
   },
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
