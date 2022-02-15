@@ -227,13 +227,16 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         // Selects the rendered html preference node that does not belong to the commonly used group
         const selector = `li[data-pref-id="${preferenceId}"]:not([data-node-id^="commonly-used@"])`;
         const element = document.querySelector(selector);
-        if (element) {
+        if (element instanceof HTMLElement) {
             if (element.classList.contains('hidden')) {
                 // We clear the search term as we have clicked on a hidden preference
                 await this.searchbar.updateSearchTerm('');
                 await animationFrame();
             }
-            element.scrollIntoView();
+            element.scrollIntoView({
+                block: 'center'
+            });
+            element.focus();
         }
     }
 
@@ -241,6 +244,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         const wrapper = document.createElement('li');
         wrapper.classList.add('single-pref');
         wrapper.id = `${this.id}-editor`;
+        wrapper.tabIndex = 0;
         wrapper.setAttribute('data-pref-id', this.id);
         wrapper.setAttribute('data-node-id', this.preferenceNode.id);
 

@@ -38,7 +38,6 @@
 /* Toasts */
 
 .theia-notifications-container.theia-notification-toasts .theia-notification-list-item {
-    background-color: var(--theia-notifications-background);
     box-shadow: 0px 0px 4px 0px var(--theia-widget-shadow);
     border: 1px solid var(--theia-notificationToast-border);
     margin-top: 6px;
@@ -93,6 +92,7 @@
 /* List > Item */
 
 .theia-notification-list-item {
+    background-color: var(--theia-notifications-background);
     width: 100%;
     cursor: pointer;
     flex-grow: 1;
@@ -101,9 +101,15 @@
     flex-wrap: nowrap;
     justify-content: space-between;
 }
-.theia-notification-list-item:hover {
+
+.theia-notification-list-item:focus {
+    border-color: var(--theia-focusBorder);
+}
+
+.theia-notification-list-item:hover:not(:focus) {
     background-color: var(--theia-list-hoverBackground);
 }
+
 .theia-notification-list > .theia-notification-list-item:not(:last-child) {
     border-top: 1px var(--theia-notifications-border) solid;
 }
