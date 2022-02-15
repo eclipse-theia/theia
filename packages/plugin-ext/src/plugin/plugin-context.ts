@@ -413,8 +413,22 @@ export function createAPIFactory(
             showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined> {
                 return quickOpenExt.showInput(options, token);
             },
-            createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
-                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
+            createStatusBarItem(alignmentOrId?: theia.StatusBarAlignment | string, priorityOrAlignment?: number | theia.StatusBarAlignment,
+                priorityArg?: number): theia.StatusBarItem {
+                let id: string | undefined;
+                let alignment: number | undefined;
+                let priority: number | undefined;
+
+                if (typeof alignmentOrId === 'string') {
+                    id = alignmentOrId;
+                    alignment = priorityOrAlignment;
+                    priority = priorityArg;
+                } else {
+                    alignment = alignmentOrId;
+                    priority = priorityOrAlignment;
+                }
+
+                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
             createOutputChannel(name: string): theia.OutputChannel {
                 return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));
