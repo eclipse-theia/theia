@@ -19,6 +19,17 @@ For example:
 }
 ```
 
+### v1.24.0
+
+#### From WebSocket to Socket.io
+
+This is a very important change to how Theia sends and receives messages with its backend.
+
+This new Socket.io protocol will try to establish a WebSocket connection whenever possible, but it may also
+setup HTTP polling. It may even try to connect through HTTP before attempting WebSocket.
+
+Make sure your network configurations support both WebSockets and/or HTTP polling.
+
 ### v1.23.0
 
 #### TypeScript 4.5.5
