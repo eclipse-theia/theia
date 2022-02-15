@@ -13,6 +13,8 @@
 - [plugin-ext] function `logMeasurement` of `PluginDeployerImpl` class and browser class `HostedPluginSupport` is replaced by `measure` using the new `Stopwatch` API [#10407](https://github.com/eclipse-theia/theia/pull/10407)
 - [plugin-ext] the constructor of `BackendApplication` class no longer invokes the `initialize` method. Instead, the `@postConstruct configure` method now starts by calling `initialize` [#10407](https://github.com/eclipse-theia/theia/pull/10407)
 - [plugin] Added support for `vscode.window.createStatusBarItem` [#10754](https://github.com/eclipse-theia/theia/pull/10754) - Contributed on behalf of STMicroelectronics
+- [core] Replaced raw WebSocket transport with Socket.io protocol, changed internal APIs accordingly
+- [core] Removed all of our own custom HTTP Polling implementation
 
 ## v1.22.0 - 1/27/2022
 
@@ -89,7 +91,7 @@
 - [plugin] added support for codicon icon references in view containers [#10491](https://github.com/eclipse-theia/theia/pull/10491)
 - [plugin] added support to set theme attributes in webviews [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] fixed running plugin hosts on `electron` for `Windows` [#10518](https://github.com/eclipse-theia/theia/pull/10518)
-- [preferences] updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files. 
+- [preferences] updated `AbstractResourcePreferenceProvider` to handle multiple preference settings in the same tick and handle open preference files.
   It will save the file exactly once, and prompt the user if the file is dirty when a programmatic setting is attempted. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
 - [preferences] added support for non-string enum values in schemas [#10511](https://github.com/eclipse-theia/theia/pull/10511)
 - [preferences] added support for rendering markdown descriptions [#10431](https://github.com/eclipse-theia/theia/pull/10431)
@@ -113,11 +115,11 @@
 - [plugin] changed return type of `WebviewThemeDataProvider.getActiveTheme()` to `Theme` instead of `WebviewThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
 - [plugin] removed the application prop `resolveSystemPlugins`, builtin plugins should now be resolved at build time [#10353](https://github.com/eclipse-theia/theia/pull/10353)
 - [plugin] renamed `WebviewThemeData.activeTheme` to `activeThemeType` [#10493](https://github.com/eclipse-theia/theia/pull/10493)
-- [preferences] removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions. 
-  If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system. 
+- [preferences] removed `PreferenceProvider#pendingChanges` field. It was previously set unreliably and caused race conditions.
+  If a `PreferenceProvider` needs a mechanism for deferring the resolution of `PreferenceProvider#setPreference`, it should implement its own system.
   See PR for example implementation in `AbstractResourcePreferenceProvider`. [#7775](https://github.com/eclipse-theia/theia/pull/7775)
 - [terminal] removed deprecated `activateTerminal` method in favor of `open`. [#10529](https://github.com/eclipse-theia/theia/pull/10529)
-- [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...` to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to 
+- [webpack] Source maps for the frontend renamed from `webpack://[namespace]/[resource-filename]...` to `webpack:///[resource-path]?[loaders]` where `resource-path` is the path to
   the file relative to your application package's root [#10480](https://github.com/eclipse-theia/theia/pull/10480)
 
 ## v1.20.0 - 11/25/2021
