@@ -20,9 +20,25 @@ import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider'
 import * as Monaco from 'monaco-editor-core';
 import { setSnippetSuggestSupport } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { CompletionItemProvider } from 'monaco-editor-core/esm/vs/editor/common/languages';
+import { MonacoEditorService } from './monaco-editor-service';
+import { MonacoTextModelService } from './monaco-text-model-service';
+import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { ITextModelService } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
+
+    @inject(MonacoEditorService)
+    protected readonly codeEditorService: MonacoEditorService;
+
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
+
+    @inject(VSCodeContextKeyService)
+    protected readonly contextKeyService: VSCodeContextKeyService;
 
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
@@ -31,6 +47,13 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected readonly preferenceSchema: PreferenceSchemaProvider;
 
     async initialize(): Promise<void> {
+        const { codeEditorService, textModelService, contextKeyService } = this;
+        StandaloneServices.initialize({
+            [ICodeEditorService.toString()]: codeEditorService,
+            [ITextModelService.toString()]: textModelService,
+            [IContextKeyService.toString()]: contextKeyService
+        });
+
         // Incomparability of enum types between public and private API's
         setSnippetSuggestSupport(this.snippetSuggestProvider as unknown as CompletionItemProvider);
 

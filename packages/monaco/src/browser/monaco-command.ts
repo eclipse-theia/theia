@@ -31,9 +31,6 @@ import { CommandsRegistry, ICommandService } from 'monaco-editor-core/esm/vs/pla
 import { Uri } from 'monaco-editor-core';
 import { EndOfLineSequence } from 'monaco-editor-core/esm/vs/editor/common/model';
 import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { ITextModelService } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 
 export namespace MonacoCommands {
 
@@ -140,12 +137,8 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected registerMonacoCommands(): void {
         const editorActions = new Map(EditorExtensionsRegistry.getEditorActions().map(({ id, label }) => [id, label]));
 
-        const { codeEditorService, textModelService, contextKeyService } = this;
-        const globalInstantiationService = StandaloneServices.initialize({
-            [ICodeEditorService.toString()]: codeEditorService,
-            [ITextModelService.toString()]: textModelService,
-            [IContextKeyService.toString()]: contextKeyService
-        });
+        const { codeEditorService } = this;
+        const globalInstantiationService = StandaloneServices.initialize({});
         const monacoCommands = CommandsRegistry.getCommands();
         for (const id of monacoCommands.keys()) {
             if (MonacoCommands.EXCLUDE_ACTIONS.has(id)) {
@@ -165,11 +158,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         }
                         return action.run();
                     }
-                    const instantiationService = globalInstantiationService;
-                    if (!instantiationService) {
+                    if (!globalInstantiationService) {
                         return;
                     }
-                    return instantiationService.invokeFunction(
+                    return globalInstantiationService.invokeFunction(
                         monacoCommands.get(id)!.handler,
                         ...args
                     );
