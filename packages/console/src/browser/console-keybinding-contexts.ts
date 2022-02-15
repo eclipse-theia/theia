@@ -65,9 +65,9 @@ export class ConsoleInputFocusContext implements KeybindingContext {
 @injectable()
 export class ConsoleContentFocusContext extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleContentFocus;
+    override readonly id: string = ConsoleKeybindingContexts.consoleContentFocus;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         return !console.input.isFocused();
     }
 
@@ -76,9 +76,9 @@ export class ConsoleContentFocusContext extends ConsoleInputFocusContext {
 @injectable()
 export class ConsoleNavigationBackEnabled extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleNavigationBackEnabled;
+    override readonly id: string = ConsoleKeybindingContexts.consoleNavigationBackEnabled;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         if (!super.isConsoleEnabled(console)) {
             return false;
         }
@@ -91,9 +91,9 @@ export class ConsoleNavigationBackEnabled extends ConsoleInputFocusContext {
 @injectable()
 export class ConsoleNavigationForwardEnabled extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleNavigationForwardEnabled;
+    override readonly id: string = ConsoleKeybindingContexts.consoleNavigationForwardEnabled;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         if (!super.isConsoleEnabled(console)) {
             return false;
         }

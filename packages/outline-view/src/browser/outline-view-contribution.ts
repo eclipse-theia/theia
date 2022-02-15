@@ -63,7 +63,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
         await this.openView();
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(OutlineViewCommands.COLLAPSE_ALL, {
             isEnabled: widget => this.withWidget(widget, () => true),

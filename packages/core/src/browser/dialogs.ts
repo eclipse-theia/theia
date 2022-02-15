@@ -219,7 +219,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         return button;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.closeButton) {
             this.addCloseAction(this.closeButton, 'click');
@@ -243,7 +243,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.accept();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.acceptButton) {
             this.acceptButton.focus();
@@ -268,7 +268,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         });
     }
 
-    close(): void {
+    override close(): void {
         if (this.resolve) {
             if (this.activeElement) {
                 this.activeElement.focus({ preventScroll: true });
@@ -278,7 +278,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.activeElement = undefined;
         super.close();
     }
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.validate();
     }
@@ -362,7 +362,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     protected confirmed = true;
 
     constructor(
-        @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
+        @inject(ConfirmDialogProps) protected override readonly props: ConfirmDialogProps
     ) {
         super(props);
 
@@ -371,7 +371,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
         this.appendAcceptButton(props.ok);
     }
 
-    protected onCloseRequest(msg: Message): void {
+    protected override onCloseRequest(msg: Message): void {
         super.onCloseRequest(msg);
         this.confirmed = false;
         this.accept();
@@ -418,7 +418,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     protected readonly inputField: HTMLInputElement;
 
     constructor(
-        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps
+        @inject(SingleTextInputDialogProps) protected override props: SingleTextInputDialogProps
     ) {
         super(props);
 
@@ -446,23 +446,23 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return this.inputField.value;
     }
 
-    protected isValid(value: string, mode: DialogMode): MaybePromise<DialogError> {
+    protected override isValid(value: string, mode: DialogMode): MaybePromise<DialogError> {
         if (this.props.validate) {
             return this.props.validate(value, mode);
         }
         return super.isValid(value, mode);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addUpdateListener(this.inputField, 'input');
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         this.inputField.focus();
     }
 
-    protected handleEnter(event: KeyboardEvent): boolean | void {
+    protected override handleEnter(event: KeyboardEvent): boolean | void {
         if (event.target instanceof HTMLInputElement) {
             return super.handleEnter(event);
         }

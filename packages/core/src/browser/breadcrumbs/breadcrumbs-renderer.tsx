@@ -84,7 +84,7 @@ export class BreadcrumbsRenderer extends ReactRenderer {
         this.toDispose.push(this.labelProvider.onDidChange(() => this.refresh(this.uri)));
     }
 
-    dispose(): void {
+    override dispose(): void {
         super.dispose();
         this.toDispose.dispose();
         if (this.popup) { this.popup.dispose(); }
@@ -149,7 +149,7 @@ export class BreadcrumbsRenderer extends ReactRenderer {
         }
     }
 
-    protected doRender(): React.ReactNode {
+    protected override doRender(): React.ReactNode {
         return <ul className={Styles.BREADCRUMBS}>{this.renderBreadcrumbs()}</ul>;
     }
 

@@ -153,9 +153,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(FileService) protected readonly fileService: FileService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(TreeModel) readonly model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) props: TreeProps,
+        @inject(TreeModel) model: TreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
 
@@ -178,7 +178,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.addClass('resultContainer');
 
@@ -612,7 +612,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
-    protected handleUp(event: KeyboardEvent): void {
+    protected override handleUp(event: KeyboardEvent): void {
         if (!this.model.getPrevSelectableNode(this.model.selectedNodes[0])) {
             this.focusInputEmitter.fire(true);
         } else {
@@ -717,7 +717,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (SearchInWorkspaceRootFolderNode.is(node)) {
             return this.renderRootFolderNode(node);
         } else if (SearchInWorkspaceFileNode.is(node)) {
@@ -728,7 +728,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return '';
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
         return <div className='result-node-buttons'>
             {this._showReplaceButtons && this.renderReplaceButton(node)}
             {this.renderRemoveButton(node)}

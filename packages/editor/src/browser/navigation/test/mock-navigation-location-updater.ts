@@ -22,7 +22,7 @@ import { NavigationLocationUpdater } from '../navigation-location-updater';
  */
 export class MockNavigationLocationUpdater extends NavigationLocationUpdater {
 
-    contained(subRange: Range, range: Range): boolean {
+    override contained(subRange: Range, range: Range): boolean {
         return super.contained(subRange, range);
     }
 
@@ -34,7 +34,7 @@ export class MockNavigationLocationUpdater extends NavigationLocationUpdater {
  */
 export class NoopNavigationLocationUpdater extends NavigationLocationUpdater {
 
-    affects(): false {
+    override affects(): false {
         return false;
     }
 

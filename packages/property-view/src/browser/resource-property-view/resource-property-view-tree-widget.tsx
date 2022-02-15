@@ -16,7 +16,6 @@
 
 import {
     ContextMenuRenderer,
-    LabelProvider,
     NodeProps,
     TreeModel,
     TreeNode,
@@ -45,12 +44,10 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     protected propertiesTree: Map<string, ResourcePropertiesCategoryNode>;
     protected currentSelection: Object | undefined;
 
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
+        @inject(TreeProps) props: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
 
@@ -66,7 +63,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
 
         this.id = ResourcePropertyViewTreeWidget.ID + '-treeContainer';
@@ -174,7 +171,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
         }
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (ResourcePropertiesCategoryNode.is(node)) {
             return this.renderExpandableNode(node);
         } else if (ResourcePropertiesItemNode.is(node)) {
@@ -198,7 +195,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
         </React.Fragment>;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         return {
             ...super.createNodeAttributes(node, props),
             title: this.getNodeTooltip(node)

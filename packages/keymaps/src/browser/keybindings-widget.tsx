@@ -152,7 +152,7 @@ export class KeybindingWidget extends ReactWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focusInputField();
     }
@@ -694,7 +694,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     protected resetButton: HTMLButtonElement | undefined;
 
     constructor(
-        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps,
+        @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
         item: KeybindingItem
     ) {
@@ -706,7 +706,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.resetButton) {
             this.addResetAction(this.resetButton, 'click');

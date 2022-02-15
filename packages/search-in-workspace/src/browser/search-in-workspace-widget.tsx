@@ -300,7 +300,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         ReactDOM.render(<React.Fragment>{this.renderSearchHeader()}{this.renderSearchInfo()}</React.Fragment>, this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
@@ -309,7 +309,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }));
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         const searchInfo = this.renderSearchInfo();
         if (searchInfo) {
@@ -318,23 +318,23 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         MessageLoop.sendMessage(this.resultTreeWidget, Widget.ResizeMessage.UnknownSize);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.focusInputField();
         this.contextKeyService.searchViewletVisible.set(true);
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.contextKeyService.searchViewletVisible.set(false);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focusInputField();
     }

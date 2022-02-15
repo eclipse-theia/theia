@@ -44,8 +44,8 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected readonly iconThemeService: IconThemeService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileTreeModel) readonly model: FileTreeModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
@@ -53,7 +53,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         this.toDispose.push(this.toCancelNodeExpansion);
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (FileStatNode.is(node)) {
             classNames.push(FILE_STAT_NODE_CLASS);
@@ -64,7 +64,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return classNames;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
             return <div className={icon + ' file-icon'}></div>;
@@ -73,7 +73,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return null;
     }
 
-    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+    protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         const attrs = super.createContainerAttributes();
         return {
             ...attrs,
@@ -84,7 +84,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         };
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         return {
             ...super.createNodeAttributes(node, props),
             ...this.getNodeDragHandlers(node, props),
@@ -98,7 +98,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return uri ? uri.path.toString() : undefined;
     }
 
-    protected getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+    protected override getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
         return {
             ...super.getCaptionChildEventHandlers(node, props),
             ...this.getNodeDragHandlers(node, props),
@@ -234,7 +234,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return !!theme && !!theme.hidesExplorerArrows;
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (this.hidesExplorerArrows) {
             // eslint-disable-next-line no-null/no-null
             return null;
@@ -242,7 +242,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return super.renderExpansionToggle(node, props);
     }
 
-    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+    protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
             // additional left padding instead of top-level expansion toggle
             return super.getPaddingLeft(node, props) + this.props.leftPadding;
@@ -250,7 +250,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
-    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+    protected override needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
             return false;
@@ -258,7 +258,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
         return super.needsExpansionTogglePadding(node);
     }
 
-    protected deflateForStorage(node: TreeNode): object {
+    protected override deflateForStorage(node: TreeNode): object {
         const deflated = super.deflateForStorage(node);
         if (FileStatNode.is(node) && FileStatNodeData.is(deflated)) {
             deflated.uri = node.uri.toString();
@@ -269,7 +269,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
+    protected override inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
         if (FileStatNodeData.is(node)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const fileStatNode: FileStatNode = node as any;

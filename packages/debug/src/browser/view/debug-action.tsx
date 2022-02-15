@@ -19,7 +19,7 @@ import { codiconArray, DISABLED_CLASS } from '@theia/core/lib/browser';
 
 export class DebugAction extends React.Component<DebugAction.Props> {
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { enabled, label, iconClass } = this.props;
         const classNames = ['debug-action', ...codiconArray(iconClass, true)];
         if (enabled === false) {

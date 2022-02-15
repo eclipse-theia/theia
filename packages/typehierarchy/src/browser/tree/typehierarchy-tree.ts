@@ -29,7 +29,7 @@ export class TypeHierarchyTree extends TreeImpl {
 
     provider: TypeHierarchyProvider | undefined;
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (TypeHierarchyTree.Node.is(parent)) {
             await this.ensureResolved(parent);
             if (parent.children.length === 0) {

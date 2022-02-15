@@ -69,7 +69,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
         }
     };
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { messageId, message, type, progress, collapsed, expandable, source, actions } = this.props.notification;
         const isProgress = typeof progress === 'number';
         return (<div key={messageId} className='theia-notification-list-item' tabIndex={0}>

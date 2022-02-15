@@ -43,7 +43,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     static readonly ID = 'settings.editor';
     static readonly LABEL = 'Settings Editor';
 
-    scrollOptions = DEFAULT_SCROLL_OPTIONS;
+    override scrollOptions = DEFAULT_SCROLL_OPTIONS;
 
     protected scrollContainer: HTMLDivElement;
     /**
@@ -307,7 +307,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         return { id, group, collection };
     }
 
-    protected getScrollContainer(): HTMLElement {
+    protected override getScrollContainer(): HTMLElement {
         return this.scrollContainer;
     }
 

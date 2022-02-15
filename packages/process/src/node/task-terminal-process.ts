@@ -28,7 +28,7 @@ export class TaskTerminalProcess extends TerminalProcess {
     public exited = false;
     public attachmentAttempted = false;
 
-    protected onTerminalExit(code: number | undefined, signal: string | undefined): void {
+    protected override onTerminalExit(code: number | undefined, signal: string | undefined): void {
         this.emitOnExit(code, signal);
         this.exited = true;
         // Unregister process only if task terminal already attached (or failed attach),

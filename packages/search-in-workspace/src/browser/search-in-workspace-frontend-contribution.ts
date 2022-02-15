@@ -140,7 +140,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         await this.openView({ activate: false });
     }
 
-    async registerCommands(commands: CommandRegistry): Promise<void> {
+    override async registerCommands(commands: CommandRegistry): Promise<void> {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
             isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
@@ -287,7 +287,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             : '';
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
@@ -295,7 +295,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id

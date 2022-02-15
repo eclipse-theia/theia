@@ -99,7 +99,7 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
         electron.ipcRenderer.send(RequestTitleBarStyle);
     }
 
-    protected doRender(options: RenderContextMenuOptions): ContextMenuAccess {
+    protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
         if (this.useNativeStyle) {
             const { menuPath, anchor, args, onHide } = options;
             const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args);

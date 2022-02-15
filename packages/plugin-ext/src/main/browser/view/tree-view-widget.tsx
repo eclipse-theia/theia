@@ -118,7 +118,7 @@ export class PluginTree extends TreeImpl {
         return this._isEmpty;
     }
 
-    protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!this._proxy) {
             return super.resolveChildren(parent);
         }
@@ -204,7 +204,7 @@ export class PluginTree extends TreeImpl {
 export class PluginTreeModel extends TreeModelImpl {
 
     @inject(PluginTree)
-    protected readonly tree: PluginTree;
+    protected override readonly tree: PluginTree;
 
     set proxy(proxy: TreeViewsExt | undefined) {
         this.tree.proxy = proxy;
@@ -242,7 +242,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     readonly identifier: TreeViewWidgetIdentifier;
 
     @inject(PluginTreeModel)
-    readonly model: PluginTreeModel;
+    override readonly model: PluginTreeModel;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -250,11 +250,8 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(TooltipService)
     protected readonly tooltipService: TooltipService;
 
-    protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
-    readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
-
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = this.identifier.id;
         this.addClass('theia-tree-view');
@@ -265,7 +262,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
             return <div className={icon + ' theia-tree-view-icon'}></div>;
@@ -273,7 +270,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return undefined;
     }
 
-    protected renderCaption(node: TreeViewNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeViewNode, props: NodeProps): React.ReactNode {
         const classes = [TREE_NODE_SEGMENT_CLASS];
         if (!this.hasTrailingSuffixes(node)) {
             classes.push(TREE_NODE_SEGMENT_GROW_CLASS);
@@ -325,7 +322,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return React.createElement('div', attrs, ...children);
     }
 
-    protected renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
+    protected override renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
         return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
             const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
             const arg = this.toTreeViewSelection(node);
@@ -352,30 +349,30 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         }} />;
     }
 
-    protected toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
+    protected override toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
         return [this.toTreeViewSelection(node)];
     }
 
-    setFlag(flag: Widget.Flag): void {
+    override setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);
         }
     }
 
-    clearFlag(flag: Widget.Flag): void {
+    override clearFlag(flag: Widget.Flag): void {
         super.clearFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);
         }
     }
 
-    handleEnter(event: KeyboardEvent): void {
+    override handleEnter(event: KeyboardEvent): void {
         super.handleEnter(event);
         this.tryExecuteCommand();
     }
 
-    handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
+    override handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
         super.handleClickEvent(node, event);
         // If clicked on item (not collapsable icon) - execute command or toggle expansion if item has no command
         const commandMap = this.findCommands(node);
@@ -418,7 +415,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         this.update();
     }
 
-    protected render(): React.ReactNode {
+    protected override render(): React.ReactNode {
         const node = React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
         this.tooltipService.update();
         return node;
@@ -431,7 +428,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return undefined;
     }
 
-    shouldShowWelcomeView(): boolean {
+    override shouldShowWelcomeView(): boolean {
         return (this.model.proxy === undefined || this.model.isTreeEmpty) && this.message === undefined;
     }
 }

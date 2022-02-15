@@ -22,7 +22,7 @@ import {
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls
 } from '../../common';
 import {
-    ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
+    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
     PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -93,13 +93,12 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected titleBarStyle?: string;
 
     constructor(
-        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory,
-        @inject(ApplicationShell) protected shell: ApplicationShell
+        @inject(ElectronMainMenuFactory) protected override readonly factory: ElectronMainMenuFactory
     ) {
         super(factory);
     }
 
-    onStart(app: FrontendApplication): void {
+    override onStart(app: FrontendApplication): void {
         this.handleTitleBarStyling(app);
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.

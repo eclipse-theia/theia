@@ -168,7 +168,7 @@ export class SearchBox extends BaseWidget {
         this.fireNext();
     }
 
-    onBeforeHide(): void {
+    override onBeforeHide(): void {
         this.removeClass(SearchBox.Styles.NO_MATCH);
         this.doFireFilterToggle(false);
         this.debounce.append(undefined);
@@ -304,7 +304,7 @@ export class SearchBox extends BaseWidget {
 
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener(this.input, 'selectstart' as any, () => false);

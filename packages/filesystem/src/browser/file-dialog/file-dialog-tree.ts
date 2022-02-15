@@ -37,7 +37,7 @@ export class FileDialogTree extends FileTree {
         this.refresh();
     }
 
-    protected async toNodes(fileStat: FileStat, parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected override async toNodes(fileStat: FileStat, parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!fileStat.children) {
             return [];
         }

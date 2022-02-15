@@ -79,9 +79,9 @@ export class OutlineViewWidget extends TreeWidget {
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
     constructor(
-        @inject(TreeProps) protected readonly treeProps: TreeProps,
-        @inject(OutlineViewTreeModel) model: OutlineViewTreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) treeProps: TreeProps,
+        @inject(OutlineViewTreeModel) override readonly model: OutlineViewTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -134,24 +134,24 @@ export class OutlineViewWidget extends TreeWidget {
         return nodes;
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.onDidChangeOpenStateEmitter.fire(false);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.onDidChangeOpenStateEmitter.fire(true);
     }
 
-    renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
             return <div className={'symbol-icon symbol-icon-center ' + node.iconClass}></div>;
         }
         return undefined;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
@@ -174,18 +174,18 @@ export class OutlineViewWidget extends TreeWidget {
         return undefined;
     }
 
-    protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
+    protected override isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
             return <div className='theia-widget-noInfo no-outline'>{nls.localizeByDefault('No outline information available.')}</div>;
         }
         return super.renderTree(model);
     }
 
-    protected deflateForStorage(node: TreeNode): object {
+    protected override deflateForStorage(node: TreeNode): object {
         const deflated = super.deflateForStorage(node) as { uri: string };
         if (UriSelection.is(node)) {
             deflated.uri = node.uri.toString();
@@ -193,7 +193,7 @@ export class OutlineViewWidget extends TreeWidget {
         return deflated;
     }
 
-    protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode { /* eslint-disable-line @typescript-eslint/no-explicit-any */
+    protected override inflateFromStorage(node: any, parent?: TreeNode): TreeNode { /* eslint-disable-line @typescript-eslint/no-explicit-any */
         const inflated = super.inflateFromStorage(node, parent) as Mutable<TreeNode & UriSelection>;
         if (node && 'uri' in node && typeof node.uri === 'string') {
             inflated.uri = new URI(node.uri);

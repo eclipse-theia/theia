@@ -26,10 +26,11 @@ import { TerminalProcessFactory, ProcessManager } from '@theia/process/lib/node'
 @injectable()
 export class TerminalServer extends BaseTerminalServer implements ITerminalServer {
 
+    @inject(TerminalProcessFactory) protected readonly terminalFactory: TerminalProcessFactory;
+
     constructor(
-        @inject(TerminalProcessFactory) protected readonly terminalFactory: TerminalProcessFactory,
-        @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
+        @inject(ProcessManager) processManager: ProcessManager,
+        @inject(ILogger) @named('terminal') logger: ILogger,
     ) {
         super(processManager, logger);
     }

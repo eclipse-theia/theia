@@ -52,7 +52,7 @@ export class PluginWidget extends ReactWidget {
         this.toDispose.push(this.pluginService.onDidChangePlugins(() => this.update()));
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
     }

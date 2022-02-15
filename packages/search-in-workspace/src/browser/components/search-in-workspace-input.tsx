@@ -128,7 +128,7 @@ export class SearchInWorkspaceInput extends React.Component<InputAttributes, His
         this.setIndex(history.length - 1);
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return (
             <input
                 {...this.props}

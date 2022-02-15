@@ -53,14 +53,14 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.input) {
             this.input.focus();
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.update();
     }

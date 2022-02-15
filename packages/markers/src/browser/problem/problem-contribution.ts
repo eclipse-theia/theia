@@ -127,7 +127,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(ProblemsCommands.COLLAPSE_ALL, {
             execute: () => this.collapseAllProblems()
@@ -160,7 +160,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY.id,

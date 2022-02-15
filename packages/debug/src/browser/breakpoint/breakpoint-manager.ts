@@ -53,7 +53,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     protected readonly onDidChangeFunctionBreakpointsEmitter = new Emitter<FunctionBreakpointsChangeEvent>();
     readonly onDidChangeFunctionBreakpoints = this.onDidChangeFunctionBreakpointsEmitter.event;
 
-    setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
+    override setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
         const result = super.setMarkers(uri, owner, newMarkers);
         const added: SourceBreakpoint[] = [];
         const removed: SourceBreakpoint[] = [];

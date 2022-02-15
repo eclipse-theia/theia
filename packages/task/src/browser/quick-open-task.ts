@@ -383,15 +383,15 @@ export class QuickOpenTask implements QuickAccessProvider {
 
 export class TaskRunQuickOpenItem implements QuickPickItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
+        readonly token: number,
+        readonly task: TaskConfiguration,
         protected taskService: TaskService,
         protected isMulti: boolean,
         protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
         protected readonly taskNameResolver: TaskNameResolver,
         protected readonly taskSourceResolver: TaskSourceResolver,
         protected taskConfigurationManager: TaskConfigurationManager,
-        public readonly buttons?: Array<QuickInputButton>
+        readonly buttons?: Array<QuickInputButton>
     ) { }
 
     get label(): string {
@@ -423,20 +423,20 @@ export class TaskRunQuickOpenItem implements QuickPickItem {
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
-        protected taskService: TaskService,
-        protected isMulti: boolean,
-        protected readonly taskNameResolver: TaskNameResolver,
+        token: number,
+        task: TaskConfiguration,
+        taskService: TaskService,
+        isMulti: boolean,
+        taskNameResolver: TaskNameResolver,
         protected readonly isBuildTask: boolean,
-        protected taskConfigurationManager: TaskConfigurationManager,
-        protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
-        protected readonly taskSourceResolver: TaskSourceResolver
+        taskConfigurationManager: TaskConfigurationManager,
+        taskDefinitionRegistry: TaskDefinitionRegistry,
+        taskSourceResolver: TaskSourceResolver
     ) {
         super(token, task, taskService, isMulti, taskDefinitionRegistry, taskNameResolver, taskSourceResolver, taskConfigurationManager);
     }
 
-    execute(): void {
+    override execute(): void {
         this.taskService.updateTaskConfiguration(this.token, this.task, { group: { kind: this.isBuildTask ? 'build' : 'test', isDefault: true } })
             .then(() => {
                 if (this.task._scope) {
@@ -698,4 +698,3 @@ export class TaskRestartRunningQuickOpen {
         this.quickInputService?.showQuickPick(items, { placeholder: 'Select task to restart' });
     }
 }
-

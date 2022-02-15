@@ -47,14 +47,14 @@ export class FileNavigatorTree extends FileTree {
         this.refresh();
     }
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (WorkspaceNode.is(parent)) {
             return parent.children;
         }
         return this.filter.filter(super.resolveChildren(parent));
     }
 
-    protected toNodeId(uri: URI, parent: CompositeTreeNode): string {
+    protected override toNodeId(uri: URI, parent: CompositeTreeNode): string {
         const workspaceRootNode = WorkspaceRootNode.find(parent);
         if (workspaceRootNode) {
             return this.createId(workspaceRootNode, uri);

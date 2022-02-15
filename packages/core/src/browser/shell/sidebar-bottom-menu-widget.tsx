@@ -24,7 +24,7 @@ import { injectable } from 'inversify';
 @injectable()
 export class SidebarBottomMenuWidget extends SidebarMenuWidget {
 
-    protected onClick(e: React.MouseEvent<HTMLElement, MouseEvent>, menuPath: MenuPath): void {
+    protected override onClick(e: React.MouseEvent<HTMLElement, MouseEvent>, menuPath: MenuPath): void {
         const button = e.currentTarget.getBoundingClientRect();
         this.contextMenuRenderer.render({
             menuPath,

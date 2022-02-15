@@ -65,8 +65,10 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
                     super(descriptor.prefix);
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                getPicks(filter: string, disposables: any, token: CancellationToken): monaco.quickInput.Picks<QuickPickItem> | Promise<monaco.quickInput.Picks<QuickPickItem>> {
+                override getPicks(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    filter: string, disposables: any, token: CancellationToken
+                ): monaco.quickInput.Picks<QuickPickItem> | Promise<monaco.quickInput.Picks<QuickPickItem>> {
                     const result = descriptor.getInstance().getPicks(filter, token);
                     if (result instanceof Promise) {
                         return result.then(picks => picks.map(toMonacoPick));

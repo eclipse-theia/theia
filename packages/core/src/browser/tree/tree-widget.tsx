@@ -383,7 +383,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus({ preventScroll: true });
     }
@@ -418,14 +418,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.model.getNextSelectableNode(root);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         if (!this.isAttached || !this.isVisible) {
             return;
         }
         super.onUpdateRequest(msg);
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.forceUpdate({ resize: true });
     }
@@ -1058,7 +1058,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     /**
      * Get the scroll container.
      */
-    protected getScrollContainer(): MaybePromise<HTMLElement> {
+    protected override getScrollContainer(): MaybePromise<HTMLElement> {
         this.toDisposeOnDetach.push(Disposable.create(() => {
             const { scrollTop, scrollLeft } = this.node;
             this.lastScrollState = { scrollTop, scrollLeft };
@@ -1071,7 +1071,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.node;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         const up = [
             Key.ARROW_UP,
             KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] })
@@ -1442,7 +1442,7 @@ export namespace TreeWidget {
         readonly cache = new CellMeasurerCache({
             fixedWidth: true
         });
-        render(): React.ReactNode {
+        override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, handleScroll } = this.props;
             return <List
                 ref={list => this.list = (list || undefined)}

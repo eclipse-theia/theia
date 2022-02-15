@@ -44,7 +44,7 @@ export function createTaskTestContainer(): Container {
     testContainer.rebind(TerminalProcess).to(TestTerminalProcess);
 
     testContainer.rebind(ProcessUtils).toConstantValue(new class extends ProcessUtils {
-        terminateProcessTree(): void { } // don't actually kill the tree, it breaks the tests.
+        override terminateProcessTree(): void { } // don't actually kill the tree, it breaks the tests.
     });
 
     return testContainer;
@@ -52,7 +52,7 @@ export function createTaskTestContainer(): Container {
 
 class TestTerminalProcess extends TerminalProcess {
 
-    protected emitOnStarted(): void {
+    protected override emitOnStarted(): void {
         if (process.env['THEIA_TASK_TEST_DEBUG']) {
             console.log(`START ${this.id} ${JSON.stringify([this.executable, this.options.commandLine, ...this.arguments])}`);
             this.outputStream.on('data', data => console.debug(`${this.id} OUTPUT: ${data.toString().trim()}`));

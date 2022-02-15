@@ -113,7 +113,7 @@ export class BaseWidget extends Widget {
     protected scrollBar?: PerfectScrollbar;
     protected scrollOptions?: PerfectScrollbar.Options;
 
-    dispose(): void {
+    override dispose(): void {
         if (this.isDisposed) {
             return;
         }
@@ -121,31 +121,31 @@ export class BaseWidget extends Widget {
         this.toDispose.dispose();
     }
 
-    protected onCloseRequest(msg: Message): void {
+    protected override onCloseRequest(msg: Message): void {
         super.onCloseRequest(msg);
         this.dispose();
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         if (this.title.iconClass === '') {
             this.title.iconClass = 'no-icon';
         }
         super.onBeforeAttach(msg);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         if (this.title.iconClass === 'no-icon') {
             this.title.iconClass = '';
         }
         super.onAfterDetach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.scrollOptions) {
             (async () => {
@@ -181,7 +181,7 @@ export class BaseWidget extends Widget {
         }
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         if (this.scrollBar) {
             this.scrollBar.update();
@@ -210,14 +210,14 @@ export class BaseWidget extends Widget {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
     }
 
-    setFlag(flag: Widget.Flag): void {
+    override setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);
         }
     }
 
-    clearFlag(flag: Widget.Flag): void {
+    override clearFlag(flag: Widget.Flag): void {
         super.clearFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
             this.onDidChangeVisibilityEmitter.fire(this.isVisible);

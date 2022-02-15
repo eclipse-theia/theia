@@ -60,7 +60,7 @@ export class TerminalProcess extends Process {
     readonly inputStream: Writable;
 
     constructor( // eslint-disable-next-line @typescript-eslint/indent
-        @inject(TerminalProcessOptions) protected readonly options: TerminalProcessOptions,
+        @inject(TerminalProcessOptions) protected override readonly options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
         @inject(ILogger) @named('process') logger: ILogger

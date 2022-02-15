@@ -44,7 +44,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return this.onSocketDidCloseEmitter.event;
     }
 
-    static createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
+    static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 
@@ -70,7 +70,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         this.socket = socket;
     }
 
-    openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
+    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         if (this.socket.connected) {
             super.openChannel(path, handler, options);
         } else {

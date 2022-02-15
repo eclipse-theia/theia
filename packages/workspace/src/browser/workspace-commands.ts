@@ -566,24 +566,24 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
 
     constructor(
         protected readonly workspaceService: WorkspaceService,
-        protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler<URI>
+        selectionService: SelectionService,
+        handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public isEnabled(...args: any[]): boolean {
+    public override isEnabled(...args: any[]): boolean {
         return super.isEnabled(...args) && !!this.workspaceService.tryGetRoots().length;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public isVisible(...args: any[]): boolean {
+    public override isVisible(...args: any[]): boolean {
         return super.isVisible(...args) && !!this.workspaceService.tryGetRoots().length;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected getUri(...args: any[]): URI | undefined {
+    protected override getUri(...args: any[]): URI | undefined {
         const uri = super.getUri(...args);
         // Return the `uri` immediately if the resource exists in any of the workspace roots and is of `file` scheme.
         if (uri && uri.scheme === 'file' && this.workspaceService.getWorkspaceRootUri(uri)) {

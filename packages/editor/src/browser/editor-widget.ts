@@ -54,25 +54,25 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         return this.editor.createMoveToUri(resourceUri);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.editor.focus();
         this.selectionService.selection = this.editor;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.isVisible) {
             this.editor.refresh();
         }
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.editor.refresh();
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         if (msg.width < 0 || msg.height < 0) {
             this.editor.resizeToFit();
         } else {

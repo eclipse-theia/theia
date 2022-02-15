@@ -24,7 +24,7 @@ import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source';
 @injectable()
 export class SourceTree extends TreeImpl {
 
-    async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
+    override async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
         const elements = await this.resolveElements(parent);
         const nodes: TreeNode[] = [];
         let index = 0;

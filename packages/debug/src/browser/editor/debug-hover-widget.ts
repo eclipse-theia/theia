@@ -56,8 +56,6 @@ export function createDebugHoverWidgetContainer(parent: interfaces.Container, ed
 @injectable()
 export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.IContentWidget {
 
-    protected readonly toDispose = new DisposableCollection();
-
     @inject(DebugEditor)
     protected readonly editor: DebugEditor;
 
@@ -85,7 +83,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.domNode.className = 'theia-debug-hover';
         this.titleNode.className = 'theia-debug-hover-title';
@@ -107,15 +105,15 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         ]);
     }
 
-    dispose(): void {
+    override dispose(): void {
         this.toDispose.dispose();
     }
 
-    show(options?: ShowDebugHoverOptions): void {
+    override show(options?: ShowDebugHoverOptions): void {
         this.schedule(() => this.doShow(options), options && options.immediate);
     }
 
-    hide(options?: HideDebugHoverOptions): void {
+    override hide(options?: HideDebugHoverOptions): void {
         this.schedule(() => this.doHide(), options && options.immediate);
     }
 
@@ -228,7 +226,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         } : undefined!;
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         const { expression } = this.hoverSource;
         const value = expression && expression.value || '';
@@ -236,7 +234,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         this.titleNode.title = value;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addKeyListener(this.domNode, Key.ESCAPE, () => this.hide());
     }

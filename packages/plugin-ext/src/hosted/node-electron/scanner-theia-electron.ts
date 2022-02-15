@@ -21,7 +21,7 @@ import { PluginPackage, PluginModel } from '../../common/plugin-protocol';
 
 @injectable()
 export class TheiaPluginScannerElectron extends TheiaPluginScanner {
-    getModel(plugin: PluginPackage): PluginModel {
+    override getModel(plugin: PluginPackage): PluginModel {
         const result = super.getModel(plugin);
         if (result.entryPoint.frontend) {
             result.entryPoint.frontend = path.resolve(plugin.packagePath, result.entryPoint.frontend);

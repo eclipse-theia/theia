@@ -52,7 +52,7 @@ export abstract class SectionPreferenceProvider extends AbstractResourcePreferen
         return this.uri;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected parse(content: string): any {
+    protected override parse(content: string): any {
         const prefs = super.parse(content);
         if (this.isSection) {
             if (prefs === undefined) {
@@ -68,7 +68,7 @@ export abstract class SectionPreferenceProvider extends AbstractResourcePreferen
         }
     }
 
-    protected getPath(preferenceName: string): string[] | undefined {
+    protected override getPath(preferenceName: string): string[] | undefined {
         if (!this.isSection) {
             return super.getPath(preferenceName);
         }

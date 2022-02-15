@@ -46,7 +46,7 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         });
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(SampleToolBarCommand, {
             execute: () => {

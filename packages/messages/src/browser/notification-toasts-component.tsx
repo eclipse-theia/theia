@@ -39,7 +39,7 @@ export class NotificationToastsComponent extends React.Component<NotificationToa
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
-    async componentDidMount(): Promise<void> {
+    override async componentDidMount(): Promise<void> {
         this.toDisposeOnUnmount.push(
             this.props.manager.onUpdated(({ toasts, visibilityState }) => {
                 visibilityState = this.props.corePreferences['workbench.silentNotifications'] ? 'hidden' : visibilityState;
@@ -50,11 +50,11 @@ export class NotificationToastsComponent extends React.Component<NotificationToa
             })
         );
     }
-    componentWillUnmount(): void {
+    override componentWillUnmount(): void {
         this.toDisposeOnUnmount.dispose();
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return (
             <div className={`theia-notifications-container theia-notification-toasts ${this.state.visibilityState === 'toasts' ? 'open' : 'closed'}`}>
                 <div className='theia-notification-list'>

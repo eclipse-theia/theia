@@ -36,7 +36,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         }, 1000);
     }
 
-    canHandle(element: object): number {
+    override canHandle(element: object): number {
         if (this.isActive && element.toString().includes('test')) {
             return 30;
         }
@@ -54,11 +54,11 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         });
     }
 
-    protected getUri(element: URI): URI {
+    protected override getUri(element: URI): URI {
         return new URI(element.toString());
     }
 
-    getIcon(element: URI): string {
+    override getIcon(element: URI): string {
         const uri = this.getUri(element);
         const icon = super.getFileIcon(uri);
         if (!icon) {
@@ -67,10 +67,10 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         return icon;
     }
 
-    protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
+    protected override readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     private x: number = 0;
 
-    getName(element: URI): string | undefined {
+    override getName(element: URI): string | undefined {
         const uri = this.getUri(element);
         if (this.isActive && uri.toString().includes('test')) {
             return super.getName(uri) + '-' + this.x.toString(10);
@@ -79,12 +79,12 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         }
     }
 
-    getLongName(element: URI): string | undefined {
+    override getLongName(element: URI): string | undefined {
         const uri = this.getUri(element);
         return super.getLongName(uri);
     }
 
-    get onDidChange(): Event<DidChangeLabelEvent> {
+    override get onDidChange(): Event<DidChangeLabelEvent> {
         return this.onDidChangeEmitter.event;
     }
 

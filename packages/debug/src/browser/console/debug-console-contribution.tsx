@@ -102,7 +102,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         }
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(DebugConsoleCommands.CLEAR, {
             isEnabled: widget => this.withWidget(widget, () => true),

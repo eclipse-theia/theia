@@ -26,10 +26,10 @@ export interface EditorPreviewOptions extends NavigatableWidgetOptions {
 
 @injectable()
 export class EditorPreviewWidgetFactory extends EditorWidgetFactory {
-    static ID: string = 'editor-preview-widget';
-    readonly id = EditorPreviewWidgetFactory.ID;
+    static override ID: string = 'editor-preview-widget';
+    override readonly id = EditorPreviewWidgetFactory.ID;
 
-    async createWidget(options: EditorPreviewOptions): Promise<EditorPreviewWidget> {
+    override async createWidget(options: EditorPreviewOptions): Promise<EditorPreviewWidget> {
         const uri = new URI(options.uri);
         const editor = await this.createEditor(uri, options) as EditorPreviewWidget;
         if (options.preview) {
@@ -38,7 +38,7 @@ export class EditorPreviewWidgetFactory extends EditorWidgetFactory {
         return editor;
     }
 
-    protected async constructEditor(uri: URI): Promise<EditorPreviewWidget> {
+    protected override async constructEditor(uri: URI): Promise<EditorPreviewWidget> {
         const textEditor = await this.editorProvider(uri);
         return new EditorPreviewWidget(textEditor, this.selectionService);
     }

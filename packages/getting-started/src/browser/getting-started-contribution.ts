@@ -56,13 +56,13 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         }
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GettingStartedCommand, {
             execute: () => this.openView({ reveal: true }),
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.HELP, {
             commandId: GettingStartedCommand.id,
             label: GettingStartedCommand.label,

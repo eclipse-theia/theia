@@ -42,11 +42,13 @@ export class ProblemWidget extends TreeWidget {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(ProblemManager)
+    protected readonly problemManager: ProblemManager;
+
     constructor(
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(TreeProps) readonly treeProps: TreeProps,
-        @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) treeProps: TreeProps,
+        @inject(ProblemTreeModel) override readonly model: ProblemTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -61,7 +63,7 @@ export class ProblemWidget extends TreeWidget {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.updateFollowActiveEditor();
         this.toDispose.push(this.preferences.onPreferenceChanged(e => {
@@ -96,14 +98,14 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    storeState(): object {
+    override storeState(): object {
         // no-op
         return {};
     }
     protected superStoreState(): object {
         return super.storeState();
     }
-    restoreState(state: object): void {
+    override restoreState(state: object): void {
         // no-op
     }
     protected superRestoreState(state: object): void {
@@ -111,7 +113,7 @@ export class ProblemWidget extends TreeWidget {
         return;
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         super.handleClickEvent(node, event);
         if (MarkerNode.is(node)) {
             this.model.revealNode(node);
@@ -126,7 +128,7 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected handleDown(event: KeyboardEvent): void {
+    protected override handleDown(event: KeyboardEvent): void {
         const node = this.model.getNextSelectableNode();
         super.handleDown(event);
         if (MarkerNode.is(node)) {
@@ -134,7 +136,7 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected handleUp(event: KeyboardEvent): void {
+    protected override handleUp(event: KeyboardEvent): void {
         const node = this.model.getPrevSelectableNode();
         super.handleUp(event);
         if (MarkerNode.is(node)) {
@@ -142,14 +144,14 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (MarkerRootNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
         return <div className='theia-widget-noInfo noMarkers'>No problems have been detected in the workspace so far.</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (MarkerInfoNode.is(node)) {
             return this.decorateMarkerFileNode(node);
         } else if (MarkerNode.is(node)) {
@@ -158,7 +160,7 @@ export class ProblemWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps): JSX.Element {
+    protected override renderTailDecorations(node: TreeNode, props: NodeProps): JSX.Element {
         return <div className='row-button-container'>
             {this.renderRemoveButton(node)}
         </div>;
@@ -224,7 +226,7 @@ export class ProblemWidget extends TreeWidget {
 
 export class ProblemMarkerRemoveButton extends React.Component<{ model: ProblemTreeModel, node: TreeNode }> {
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <span className={codicon('close')} onClick={this.remove}></span>;
     }
 

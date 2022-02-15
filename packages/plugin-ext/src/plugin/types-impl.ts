@@ -68,7 +68,7 @@ export class URI extends CodeURI implements theia.Uri {
     /**
      * Override to create the correct class.
      */
-    with(change: {
+    override with(change: {
         scheme?: string;
         authority?: string | null;
         path?: string | null;
@@ -90,19 +90,19 @@ export class URI extends CodeURI implements theia.Uri {
      * Override to create the correct class.
      * @param data
      */
-    static revive(data: UriComponents | CodeURI): URI;
-    static revive(data: UriComponents | CodeURI | null): URI | null;
-    static revive(data: UriComponents | CodeURI | undefined): URI | undefined
-    static revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
+    static override revive(data: UriComponents | CodeURI): URI;
+    static override revive(data: UriComponents | CodeURI | null): URI | null;
+    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined
+    static override revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
         const uri = CodeURI.revive(data);
         return uri ? new URI(uri) : undefined;
     }
 
-    static parse(value: string, _strict?: boolean): URI {
+    static override parse(value: string, _strict?: boolean): URI {
         return new URI(CodeURI.parse(value, _strict));
     }
 
-    static file(path: string): URI {
+    static override file(path: string): URI {
         return new URI(CodeURI.file(path));
     }
 
@@ -111,7 +111,7 @@ export class URI extends CodeURI implements theia.Uri {
      * transferring via JSON.stringify(). Making the CodeURI instance
      * makes sure we transfer this object as a vscode-uri URI.
      */
-    toJSON(): UriComponents {
+    override toJSON(): UriComponents {
         return CodeURI.from(this).toJSON();
     }
 }

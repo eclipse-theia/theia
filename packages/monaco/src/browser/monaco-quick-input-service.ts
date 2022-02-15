@@ -379,7 +379,7 @@ class MonacoQuickInput {
 }
 
 class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implements QuickPick<T> {
-    constructor(protected readonly wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>, protected readonly keybindingRegistry: KeybindingRegistry) {
+    constructor(protected override readonly wrapped: monaco.quickInput.IQuickPick<MonacoQuickPickItem<T>>, protected readonly keybindingRegistry: KeybindingRegistry) {
         super(wrapped);
     }
 
@@ -494,4 +494,3 @@ export class MonacoQuickPickItem<T extends QuickPickItem> implements monaco.quic
         }
     }
 }
-

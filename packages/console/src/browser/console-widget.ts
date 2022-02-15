@@ -216,14 +216,14 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this._input.focus();
     }
 
     protected totalHeight = -1;
     protected totalWidth = -1;
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.totalWidth = msg.width;
         this.totalHeight = msg.height;

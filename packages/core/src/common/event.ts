@@ -352,7 +352,7 @@ export class AsyncEmitter<T extends WaitUntilEvent> extends Emitter<T> {
     /**
      * Fire listeners async one after another.
      */
-    fire(event: Omit<T, 'waitUntil'>, token: CancellationToken = CancellationToken.None,
+    override fire(event: Omit<T, 'waitUntil'>, token: CancellationToken = CancellationToken.None,
         promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>): Promise<void> {
         const callbacks = this._callbacks;
         if (!callbacks) {

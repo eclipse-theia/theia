@@ -29,12 +29,13 @@ import { ProblemUtils } from './problem-utils';
 export class ProblemTree extends MarkerTree<Diagnostic> {
 
     constructor(
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(MarkerOptions) protected readonly markerOptions: MarkerOptions) {
-        super(problemManager, markerOptions);
+        @inject(ProblemManager) markerManager: ProblemManager,
+        @inject(MarkerOptions) markerOptions: MarkerOptions
+    ) {
+        super(markerManager, markerOptions);
     }
 
-    protected getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {
+    protected override getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {
         const nodes = super.getMarkerNodes(parent, markers);
         return nodes.sort((a, b) => this.sortMarkers(a, b));
     }
@@ -75,7 +76,7 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
         return 0;
     }
 
-    protected insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
+    protected override insertNodeWithMarkers(node: MarkerInfoNode, markers: Marker<Diagnostic>[]): void {
         ProblemCompositeTreeNode.addChild(node.parent, node, markers);
         const children = this.getMarkerNodes(node, markers);
         node.numberOfMarkers = markers.length;
@@ -89,7 +90,7 @@ export class ProblemTreeModel extends MarkerTreeModel {
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
 
-    protected getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
+    protected override getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
         if (ProblemMarker.is(node.marker)) {
             return {
                 selection: node.marker.data.range

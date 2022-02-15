@@ -16,7 +16,6 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
-    ContextMenuRenderer,
     ExpandableTreeNode,
     TreeNode,
     TreeProps,
@@ -33,12 +32,11 @@ export class PreferencesTreeWidget extends TreeWidget {
     protected shouldFireSelectionEvents: boolean = true;
     protected firstVisibleLeafNodeID: string;
 
-    @inject(PreferenceTreeModel) readonly model: PreferenceTreeModel;
+    @inject(PreferenceTreeModel) override readonly model: PreferenceTreeModel;
     @inject(TreeProps) protected readonly treeProps: TreeProps;
-    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     @postConstruct()
-    init(): void {
+    override init(): void {
         super.init();
         this.id = PreferencesTreeWidget.ID;
         this.toDispose.pushAll([
@@ -48,7 +46,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         ]);
     }
 
-    doUpdateRows(): void {
+    override doUpdateRows(): void {
         this.rows = new Map();
         let index = 0;
         for (const [id, nodeRow] of this.model.currentRows.entries()) {
@@ -59,11 +57,11 @@ export class PreferencesTreeWidget extends TreeWidget {
         this.updateScrollToRow();
     }
 
-    protected doRenderNodeRow({ depth, visibleChildren, node, isExpansible }: PreferenceTreeNodeRow): React.ReactNode {
+    protected override doRenderNodeRow({ depth, visibleChildren, node, isExpansible }: PreferenceTreeNodeRow): React.ReactNode {
         return this.renderNode(node, { depth, visibleChildren, isExpansible });
     }
 
-    protected renderNode(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
+    protected override renderNode(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
@@ -77,14 +75,14 @@ export class PreferencesTreeWidget extends TreeWidget {
         return React.createElement('div', attributes, content);
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
+    protected override renderExpansionToggle(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
         if (ExpandableTreeNode.is(node) && !props.isExpansible) {
             return <div className='preferences-tree-spacer' />;
         }
         return super.renderExpansionToggle(node, props);
     }
 
-    protected toNodeName(node: TreeNode): string {
+    protected override toNodeName(node: TreeNode): string {
         const visibleChildren = this.model.currentRows.get(node.id)?.visibleChildren;
         const baseName = this.labelProvider.getName(node);
         const printedNameWithVisibleChildren = this.model.isFiltered && visibleChildren !== undefined

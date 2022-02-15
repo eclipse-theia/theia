@@ -50,7 +50,6 @@ export class ScmTreeWidget extends TreeWidget {
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
-    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
     @inject(ScmContextKeyService) protected readonly contextKeys: ScmContextKeyService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
@@ -58,17 +57,17 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
     @inject(ColorRegistry) protected readonly colors: ColorRegistry;
 
-    model: ScmTreeModel;
+    // TODO: Make TreeWidget generic to better type those fields.
+    override readonly model: ScmTreeModel;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(TreeModel) readonly treeModel: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeProps) props: TreeProps,
+        @inject(TreeModel) treeModel: ScmTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, treeModel, contextMenuRenderer);
         this.id = ScmTreeWidget.ID;
         this.addClass('groups-outer-container');
-        this.model = treeModel as ScmTreeModel;
     }
 
     set viewMode(id: 'tree' | 'list') {
@@ -86,7 +85,7 @@ export class ScmTreeWidget extends TreeWidget {
      * @param node the tree node.
      * @param props the node properties.
      */
-    protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
@@ -163,7 +162,7 @@ export class ScmTreeWidget extends TreeWidget {
         return super.renderNode(node, props);
     }
 
-    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+    protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         if (this.model.canTabToWidget()) {
             return {
                 ...super.createContainerAttributes(),
@@ -192,7 +191,7 @@ export class ScmTreeWidget extends TreeWidget {
      * keys only, then they must press ARROW_UP repeatedly until the selected node is the folder
      * node and then press ARROW_LEFT.
      */
-    protected async handleLeft(event: KeyboardEvent): Promise<void> {
+    protected override async handleLeft(event: KeyboardEvent): Promise<void> {
         if (this.model.selectedNodes.length === 1) {
             const selectedNode = this.model.selectedNodes[0];
             if (ScmFileChangeNode.is(selectedNode)) {
@@ -236,7 +235,7 @@ export class ScmTreeWidget extends TreeWidget {
      * change chunks within each file.  If the selected chunk is the last chunk in the file
      * then the file selection is moved to the next file (no-op if no next file).
      */
-    protected async handleRight(event: KeyboardEvent): Promise<void> {
+    protected override async handleRight(event: KeyboardEvent): Promise<void> {
         if (this.model.selectedNodes.length === 0) {
             const firstNode = this.getFirstSelectableNode();
             // Selects the first visible resource as none are selected.
@@ -275,7 +274,7 @@ export class ScmTreeWidget extends TreeWidget {
         return super.handleRight(event);
     }
 
-    protected handleEnter(event: KeyboardEvent): void {
+    protected override handleEnter(event: KeyboardEvent): void {
         if (this.model.selectedNodes.length === 1) {
             const selectedNode = this.model.selectedNodes[0];
             if (ScmFileChangeNode.is(selectedNode)) {
@@ -417,7 +416,7 @@ export class ScmTreeWidget extends TreeWidget {
         return standaloneEditor;
     }
 
-    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+    protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.viewMode === 'list') {
             if (props.depth === 1) {
                 return this.props.expansionTogglePadding;
@@ -426,7 +425,7 @@ export class ScmTreeWidget extends TreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
-    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+    protected override needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
             return false;
@@ -471,10 +470,10 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
     }
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
-    componentDidMount(): void {
+    override componentDidMount(): void {
         this.toDisposeOnUnmount.push(Disposable.create(() => { /* mark as mounted */ }));
     }
-    componentWillUnmount(): void {
+    override componentWillUnmount(): void {
         this.toDisposeOnUnmount.dispose();
     }
 
@@ -516,7 +515,7 @@ export namespace ScmElement {
 
 export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props> {
 
-    render(): JSX.Element | undefined {
+    override render(): JSX.Element | undefined {
         const { hover } = this.state;
         const { model, treeNode, colors, parentPath, sourceUri, decoration, labelProvider, commands, menus, contextKeys, caption } = this.props;
         const resourceUri = new URI(sourceUri);
@@ -630,7 +629,7 @@ export namespace ScmResourceComponent {
 
 export class ScmResourceGroupElement extends ScmElement<ScmResourceGroupComponent.Props> {
 
-    render(): JSX.Element {
+    override render(): JSX.Element {
         const { hover } = this.state;
         const { model, treeNode, menus, commands, contextKeys, caption } = this.props;
         return <div className={`theia-header scm-theia-header ${TREE_NODE_SEGMENT_GROW_CLASS}`}
@@ -680,7 +679,7 @@ export namespace ScmResourceGroupComponent {
 
 export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElement.Props> {
 
-    render(): JSX.Element {
+    override render(): JSX.Element {
         const { hover } = this.state;
         const { model, treeNode, sourceUri, labelProvider, commands, menus, contextKeys, caption } = this.props;
         const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
@@ -737,7 +736,7 @@ export namespace ScmResourceFolderElement {
 }
 
 export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { hover, menu, args, commands, model, treeNode, contextKeys, children } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
@@ -762,7 +761,7 @@ export namespace ScmInlineActions {
 }
 
 export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { node, model, treeNode, args, commands, contextKeys } = this.props;
 
         let isActive: boolean = false;

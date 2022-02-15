@@ -24,7 +24,7 @@ import { GitRepositoryManager } from '../git-repository-manager';
 @injectable()
 export class NoSyncRepositoryManager extends GitRepositoryManager {
 
-    protected sync(repository: Repository): Promise<void> {
+    protected override sync(repository: Repository): Promise<void> {
         return Promise.resolve();
     }
 
