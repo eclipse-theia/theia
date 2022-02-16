@@ -27,6 +27,8 @@ import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/
 import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { ITextModelService } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IContextMenuService } from 'monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { MonacoContextMenuService } from './monaco-context-menu';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -49,12 +51,16 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;
 
+    @inject(MonacoContextMenuService)
+    protected readonly contextMenuService: MonacoContextMenuService;
+
     async initialize(): Promise<void> {
-        const { codeEditorService, textModelService, contextKeyService } = this;
+        const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
         StandaloneServices.initialize({
             [ICodeEditorService.toString()]: codeEditorService,
             [ITextModelService.toString()]: textModelService,
-            [IContextKeyService.toString()]: contextKeyService
+            [IContextKeyService.toString()]: contextKeyService,
+            [IContextMenuService.toString()]: contextMenuService,
         });
         // Monaco registers certain quick access providers (e.g. QuickCommandAccess) at import time, but we want to use our own.
         this.quickAccessRegistry.clear();

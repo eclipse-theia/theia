@@ -42,11 +42,17 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { TextEdit } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UTF8 } from '@theia/core/lib/common/encodings';
-import IBoxSizing = ElementExt.IBoxSizing;
 import * as Monaco from 'monaco-editor-core';
-import { IEditorOverrideServices, StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
+import { IInstantiationService, ServiceIdentifier } from 'monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ICodeEditor } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ServiceCollection } from 'monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { IStandaloneEditorConstructionOptions, StandaloneEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+
+export type ServicePair<T> = [ServiceIdentifier<T>, T];
+
+export interface EditorServiceOverrides extends Iterable<ServicePair<unknown>> { }
 
 @injectable()
 export class MonacoEditorServices {
@@ -94,7 +100,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         readonly node: HTMLElement,
         services: MonacoEditorServices,
         options?: MonacoEditor.IOptions,
-        override?: IEditorOverrideServices
+        override?: EditorServiceOverrides
     ) {
         super(services);
         this.toDispose.pushAll([
@@ -122,8 +128,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.document.setEncoding(encoding, mode);
     }
 
-    protected create(options?: Monaco.editor.IStandaloneEditorConstructionOptions, override?: Monaco.editor.IEditorOverrideServices): Disposable {
-        const combinedOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    protected create(options?: Monaco.editor.IStandaloneEditorConstructionOptions | IStandaloneEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
+        const combinedOptions = {
             ...options,
             lightbulb: { enabled: true },
             fixedOverflowWidgets: true,
@@ -134,8 +140,19 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
                 verticalScrollbarSize: 10,
                 horizontalScrollbarSize: 10
             }
-        };
-        return this.editor = Monaco.editor.create(this.node, combinedOptions, override);
+        } as IStandaloneEditorConstructionOptions;
+        const instantiator = this.getInstantiatorWithOverrides(override);
+        // Incomparability of internal and external interfaces.
+        return this.editor = instantiator.createInstance(StandaloneEditor, this.node, combinedOptions) as unknown as Monaco.editor.IStandaloneCodeEditor;
+    }
+
+    protected getInstantiatorWithOverrides(override?: EditorServiceOverrides): IInstantiationService {
+        const instantiator = StandaloneServices.initialize({});
+        if (override) {
+            const overrideServices = new ServiceCollection(...override);
+            return instantiator.createChild(overrideServices);
+        }
+        return instantiator;
     }
 
     protected addHandlers(codeEditor: Monaco.editor.IStandaloneCodeEditor): void {
@@ -383,11 +400,11 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return { width, height };
     }
 
-    protected getWidth(hostNode: HTMLElement, boxSizing: IBoxSizing): number {
+    protected getWidth(hostNode: HTMLElement, boxSizing: ElementExt.IBoxSizing): number {
         return hostNode.offsetWidth - boxSizing.horizontalSum;
     }
 
-    protected getHeight(hostNode: HTMLElement, boxSizing: IBoxSizing): number {
+    protected getHeight(hostNode: HTMLElement, boxSizing: ElementExt.IBoxSizing): number {
         if (!this.autoSizing) {
             return hostNode.offsetHeight - boxSizing.verticalSum;
         }

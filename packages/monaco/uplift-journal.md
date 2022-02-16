@@ -74,10 +74,12 @@ To do:
     > - ctrl+p + '>' does not bring up command list.
     > - ctrl+shift+p + search term -> always empty.  
     > We needed to clear the Monaco registry to allow our `QuickCommandService` to win out over one registered by Monaco at import time.
- - [] Commands not getting added to editor context menu
- - [] Colorization not working for TS
+ - [x] Commands not getting added to editor context menu
+    > Had to do with initialization. A thorny issue. Previous Monaco allowed users to pass in overrides any time they constructed an editor. New Monaco only applies the overrides _the first time_ an editor is constructed.
+ - [] Colorization not working for any language with an editor open _on start_.
     > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations. PS: although the colors were working yesterady for languages other than TS, they are not working today. 
     > This also seems to have been a problem with color registrations, and appears to be working now.
     > Agh! Nevermind, suddenly it's back to TS not working, everything else working.
+    > Nevermind that, too. Seems that any language that's open in an editor _on start_ won't work during that session. But anything in a language that wasn't open on start is fine.
  - [] Add new editor preferences.
  - [] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
