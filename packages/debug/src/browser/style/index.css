@@ -421,8 +421,11 @@
 /* Status Bar */
 .theia-mod-debugging #theia-statusBar {
     background: var(--theia-statusBar-debuggingBackground);
-    color: var(--theia-statusBar-debuggingForeground);
     border-top: var(--theia-border-width) solid var(--theia-statusBar-debuggingBorder);
+}
+
+.theia-mod-debugging #theia-statusBar .area .element {
+    color: var(--theia-statusBar-debuggingForeground);
 }
 
 /** Exception Widget */
