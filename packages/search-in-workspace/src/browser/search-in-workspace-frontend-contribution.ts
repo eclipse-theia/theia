@@ -50,10 +50,10 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Replace in Files'
     });
-    export const FIND_IN_FOLDER = Command.toLocalizedCommand({
+    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
-        label: 'Find in Folder'
+        label: 'Find in Folder...'
     });
     export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.refresh',
