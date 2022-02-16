@@ -99,12 +99,30 @@ blockquote {
   bottom: 0;
   z-index: 50000;
   background: var(--theia-editor-background);
-  background-image: var(--theia-preloader);
   background-size: 60px 60px;
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;
   transition: opacity 0.8s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.theia-preload::after {
+  animation: 1s theia-preload-rotate infinite;
+  color: #777; /* color works on both light and dark themes */
+  content: "\eb19"; /* codicon-load */
+  font: normal normal normal 72px/1 codicon;
+}
+
+@keyframes theia-preload-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .theia-preload.theia-hidden {
