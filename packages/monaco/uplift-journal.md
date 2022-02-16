@@ -61,15 +61,17 @@ Eventually eliminated all references to the old global `monaco` object and align
 
  - Plugin-side code was referring to the `monaco` namespace but doesn't include it when built. I referred to our `types-impl` code instead, but that's a bit of a fudge.
  - The quick pick code was a bit tricky to type correctly. Basically, VSCode splits the separators and the items, and then creates a union type to cover both. We were using a single type. I refactored to mirror the VSCode pattern, and things compile now, but it's probably worth circling back to check on whether those types have been handled as elegantly as they should be.
- - Part of the inelegance in the match between our quick input interfaces and the implementations was in the typing of events. We refer to our `Event` type, but Monaco usually exposes `IEvent` which lacks a (listed) public `maxListeners` field.
+ - Part of the inelegance in the match between our quick input interfaces and the implementations was in the typing of events. We refer to our `Event` type, but Monaco usually exposes `IEvent` which lacks a (listed) public `maxListeners` field. In general, we're a lot more dependent on implementations than VSCode.
 
 To do:
 
- - [] Editor context menu styling broken
- - [] Quick pick styling broken
+ - [x] Editor context menu styling broken
+ - [x] Quick pick styling broken
+    > Looks like the problem is not in the styling: the selector is still present. It looks like theme details are not being loaded into the stylesheet.
+    > 100% my fault, returning null instead of a string color value.
  - [] Commands not getting added to quick pick
  - [] Commands not getting added to editor context menu
- - [] Colorization not working for TS
-    > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations.
-
-
+ - [x] Colorization not working for TS
+    > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations. PS: although the colors were working yesterady for languages other than TS, they are not working today. 
+    > This also seems to have been a problem with color registrations, and appears to be working now.
+ - [] Add new editor preferences.

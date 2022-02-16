@@ -52,7 +52,7 @@ export class MonacoColorRegistry extends ColorRegistry {
 
     protected toColor(value: Color | undefined): ColorValue | null {
         if (!value || typeof value === 'string') {
-            return null; // eslint-disable-line no-null/no-null
+            return value ?? null; // eslint-disable-line no-null/no-null
         }
         if ('kind' in value) {
             return Colors[value.kind](value.v, value.f);
