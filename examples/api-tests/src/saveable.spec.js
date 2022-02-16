@@ -66,10 +66,10 @@ describe('Saveable', function () {
     const toTearDown = new DisposableCollection();
 
     /** @type {string | undefined} */
-    const autoSave = preferences.get('editor.autoSave', undefined, rootUri.toString());
+    const autoSave = preferences.get('files.autoSave', undefined, rootUri.toString());
 
     beforeEach(async () => {
-        await preferences.set('editor.autoSave', 'off', undefined, rootUri.toString());
+        await preferences.set('files.autoSave', 'off', undefined, rootUri.toString());
         await preferences.set(closeOnFileDelete, true);
         await editorManager.closeAll({ save: false });
         await fileService.create(fileUri, 'foo', { fromUserGesture: false, overwrite: true });
@@ -80,7 +80,7 @@ describe('Saveable', function () {
 
     afterEach(async () => {
         toTearDown.dispose();
-        await preferences.set('editor.autoSave', autoSave, undefined, rootUri.toString());
+        await preferences.set('files.autoSave', autoSave, undefined, rootUri.toString());
         // @ts-ignore
         editor = undefined;
         // @ts-ignore

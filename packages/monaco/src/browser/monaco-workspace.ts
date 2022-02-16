@@ -188,7 +188,7 @@ export class MonacoWorkspace {
             // acquired by the editor, thus losing the changes that made it dirty.
             this.textModelService.createModelReference(model.textEditorModel.uri).then(ref => {
                 (
-                    model.autoSave === 'on' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
+                    model.autoSave !== 'off' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
                         this.editorManager.open(new URI(model.uri), { mode: 'open' })
                 ).then(
                     () => ref.dispose()

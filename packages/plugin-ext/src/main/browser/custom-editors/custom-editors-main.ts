@@ -296,7 +296,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
 
-    autoSave: 'on' | 'off';
+    autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
     autoSaveDelay: number;
 
     static async create(
@@ -321,16 +321,16 @@ export class MainCustomEditorModel implements CustomEditorModel {
         private readonly fileService: FileService,
         private readonly editorPreferences: EditorPreferences
     ) {
-        this.autoSave = this.editorPreferences.get('editor.autoSave', undefined, editorResource.toString());
-        this.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, editorResource.toString());
+        this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
+        this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
 
         this.toDispose.push(
             this.editorPreferences.onPreferenceChanged(event => {
-                if (event.preferenceName === 'editor.autoSave') {
-                    this.autoSave = this.editorPreferences.get('editor.autoSave', undefined, editorResource.toString());
+                if (event.preferenceName === 'files.autoSave') {
+                    this.autoSave = this.editorPreferences.get('files.autoSave', undefined, editorResource.toString());
                 }
-                if (event.preferenceName === 'editor.autoSaveDelay') {
-                    this.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, editorResource.toString());
+                if (event.preferenceName === 'files.autoSaveDelay') {
+                    this.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, editorResource.toString());
                 }
             })
         );
@@ -505,7 +505,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
             this.onDirtyChangedEmitter.fire();
         }
 
-        if (this.autoSave === 'on') {
+        if (this.autoSave !== 'off') {
             const handle = window.setTimeout(() => {
                 this.save();
                 window.clearTimeout(handle);
@@ -520,7 +520,7 @@ export class CustomTextEditorModel implements CustomEditorModel {
     private readonly toDispose = new DisposableCollection();
     private readonly onDirtyChangedEmitter = new Emitter<void>();
     readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
-    readonly autoSave: 'on' | 'off';
+    readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
 
     static async create(
         viewType: string,

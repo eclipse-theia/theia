@@ -202,7 +202,7 @@ export namespace EditorCommands {
 @injectable()
 export class EditorCommandContribution implements CommandContribution {
 
-    public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
+    public static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -233,7 +233,7 @@ export class EditorCommandContribution implements CommandContribution {
     @postConstruct()
     protected init(): void {
         this.editorPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'editor.autoSave' && e.newValue === 'on') {
+            if (e.preferenceName === 'files.autoSave' && e.newValue !== 'off') {
                 this.shell.saveAll();
             }
         });

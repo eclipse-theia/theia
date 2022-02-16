@@ -29,6 +29,11 @@ import { ITextModelService } from 'monaco-editor-core/esm/vs/editor/common/servi
 import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { MonacoContextMenuService } from './monaco-context-menu';
+import { Extensions, IConfigurationRegistry } from 'monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
+import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { editorPreferenceSchema } from '@theia/editor/lib/browser';
+import { EditorOptions } from 'monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { monacoEditorPreferenceSchema } from './monaco-preference-contribution';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -55,6 +60,21 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected readonly contextMenuService: MonacoContextMenuService;
 
     async initialize(): Promise<void> {
+        const configRegistry = Registry.as<IConfigurationRegistry>(Extensions.Configuration);
+        console.log('SENTINEL FOR THE MONACO PREFERENCE SCHEMA', monacoEditorPreferenceSchema);
+        for (const key of Object.keys(editorPreferenceSchema.properties)) {
+            if (!(key in monacoEditorPreferenceSchema.properties)) {
+                console.log('SENTINEL FOR A KEY IN OLD SCHEME BUT NOT NEW SCHEME', key);
+            }
+        }
+
+        for (const key of Object.keys(EditorOptions)) {
+            if (!(`editor.${key}` in monacoEditorPreferenceSchema.properties)) {
+                console.log('SENTINEL FOR A KEY IN EDITOR OPTIONS BUT NOT NEW SCHEME', key);
+            }
+        }
+
+        setTimeout(() => console.log('And after a while...', configRegistry.getConfigurations()), 10_000);
         const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
         StandaloneServices.initialize({
             [ICodeEditorService.toString()]: codeEditorService,

@@ -26,6 +26,8 @@ import {
 } from '@theia/core/lib/browser/preferences';
 import { isWindows, isOSX, OS } from '@theia/core/lib/common/os';
 import { nls } from '@theia/core/lib/common/nls';
+// eslint-disable-next-line @theia/no-src-import
+import type { MonacoEditorOptions } from '@theia/monaco/src/browser/monaco-preference-contribution';
 
 const DEFAULT_WINDOWS_FONT_FAMILY = 'Consolas, \'Courier New\', monospace';
 const DEFAULT_MAC_FONT_FAMILY = 'Menlo, Monaco, \'Courier New\', monospace';
@@ -972,11 +974,11 @@ const codeEditorPreferenceProperties = {
         'type': 'boolean',
         'default': false
     },
-    'editor.renderIndentGuides': {
-        'description': nls.localizeByDefault('Controls whether the editor should render indent guides.'),
-        'type': 'boolean',
-        'default': true
-    },
+    // 'editor.renderIndentGuides': {
+    //     'description': nls.localizeByDefault('Controls whether the editor should render indent guides.'),
+    //     'type': 'boolean',
+    //     'default': true
+    // },
     'editor.renderFinalNewline': {
         'description': nls.localizeByDefault('Render last line number when the file ends with a newline.'),
         'type': 'boolean',
@@ -1105,21 +1107,21 @@ const codeEditorPreferenceProperties = {
         'type': 'boolean',
         'default': true
     },
-    'editor.inlineHints.enabled': {
-        'type': 'boolean',
-        'default': true,
-        'description': nls.localizeByDefault('Enables the inline hints in the editor.')
-    },
-    'editor.inlineHints.fontSize': {
-        'type': 'number',
-        'default': EDITOR_FONT_DEFAULTS.fontSize,
-        markdownDescription: nls.localizeByDefault('Controls font size of inline hints in the editor. When set to `0`, the 90% of `#editor.fontSize#` is used.')
-    },
-    'editor.inlineHints.fontFamily': {
-        'type': 'string',
-        'default': EDITOR_FONT_DEFAULTS.fontFamily,
-        'description': nls.localizeByDefault('Controls font family of inline hints in the editor.')
-    },
+    // 'editor.inlineHints.enabled': {
+    //     'type': 'boolean',
+    //     'default': true,
+    //     'description': nls.localizeByDefault('Enables the inline hints in the editor.')
+    // },
+    // 'editor.inlineHints.fontSize': {
+    //     'type': 'number',
+    //     'default': EDITOR_FONT_DEFAULTS.fontSize,
+    //     markdownDescription: nls.localizeByDefault('Controls font size of inline hints in the editor. When set to `0`, the 90% of `#editor.fontSize#` is used.')
+    // },
+    // 'editor.inlineHints.fontFamily': {
+    //     'type': 'string',
+    //     'default': EDITOR_FONT_DEFAULTS.fontFamily,
+    //     'description': nls.localizeByDefault('Controls font family of inline hints in the editor.')
+    // },
     'editor.snippetSuggestions': {
         'enumDescriptions': [
             nls.localizeByDefault('Show snippet suggestions on top of other suggestions.'),
@@ -1172,11 +1174,11 @@ const codeEditorPreferenceProperties = {
         'default': 'insert',
         'description': nls.localizeByDefault('Controls whether words are overwritten when accepting completions. Note that this depends on extensions opting into this feature.')
     },
-    'editor.suggest.insertHighlight': {
-        'type': 'boolean',
-        'default': false,
-        'markdownDescription': nls.localize('theia/editor/suggest.insertHighlight', 'Controls whether unexpected text modifications while accepting completions should be highlighted, e.g `insertMode` is `replace` but the completion only supports `insert`.')
-    },
+    // 'editor.suggest.insertHighlight': {
+    //     'type': 'boolean',
+    //     'default': false,
+    //     'markdownDescription': nls.localize('theia/editor/suggest.insertHighlight', 'Controls whether unexpected text modifications while accepting completions should be highlighted, e.g `insertMode` is `replace` but the completion only supports `insert`.')
+    // },
     'editor.suggest.filterGraceful': {
         'type': 'boolean',
         'default': true,
@@ -1344,11 +1346,11 @@ const codeEditorPreferenceProperties = {
         'default': true,
         'markdownDescription': nls.localizeByDefault('When enabled IntelliSense shows `snippet`-suggestions.')
     },
-    'editor.suggest.hideStatusBar': {
-        'type': 'boolean',
-        'default': true,
-        'markdownDescription': nls.localizeByDefault('Controls the visibility of the status bar at the bottom of the suggest widget.')
-    },
+    // 'editor.suggest.hideStatusBar': {
+    //     'type': 'boolean',
+    //     'default': true,
+    //     'markdownDescription': nls.localizeByDefault('Controls the visibility of the status bar at the bottom of the suggest widget.')
+    // },
     'editor.suggestFontSize': {
         'markdownDescription': nls.localizeByDefault('Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used.'),
         'type': 'integer',
@@ -1511,7 +1513,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
     'overridable': true,
     'properties': {
         ...(<PreferenceSchemaProperties>codeEditorPreferenceProperties),
-        'editor.autoSave': {
+        'files.autoSave': {
             'enum': [
                 'on',
                 'off'
@@ -1520,7 +1522,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': nls.localize('theia/editor/autoSaveSetting', 'Controls auto save of dirty files.'),
             overridable: false
         },
-        'editor.autoSaveDelay': {
+        'files.autoSaveDelay': {
             'type': 'number',
             'default': 500,
             'description': nls.localize('theia/editor/autoSaveDelay', 'Configure the auto save delay in milliseconds.'),
@@ -1563,19 +1565,13 @@ export const editorPreferenceSchema: PreferenceSchema = {
 type CodeEditorPreferenceProperties = typeof codeEditorPreferenceProperties;
 export type CodeEditorConfiguration = {
     [P in keyof CodeEditorPreferenceProperties]:
-    CodeEditorPreferenceProperties[P] extends { enum: string[] } ?
-    CodeEditorPreferenceProperties[P]['enum'][number] : // eslint-disable-line @typescript-eslint/indent
-    CodeEditorPreferenceProperties[P]['default']; // eslint-disable-line @typescript-eslint/indent
+    CodeEditorPreferenceProperties[P] extends { enum: string[] }
+    ? CodeEditorPreferenceProperties[P]['enum'][number]
+    : CodeEditorPreferenceProperties[P]['default'];
 };
 
-export interface EditorConfiguration extends CodeEditorConfiguration {
-    'editor.autoSave': 'on' | 'off'
-    'editor.autoSaveDelay': number
-    'editor.formatOnSave': boolean
-    'editor.formatOnSaveTimeout': number
-    'editor.history.persistClosedEditors': boolean
-    'files.eol': EndOfLinePreference
-}
+export interface EditorConfiguration extends MonacoEditorOptions { }
+
 export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;

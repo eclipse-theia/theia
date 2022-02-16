@@ -2857,25 +2857,25 @@
 				"comment": [
 					"This is the description for a setting. Values surrounded by single quotes are not to be translated."
 				],
-				"key": "files.autoSave.off"
+				"key": "editor.autoSave.off"
 			},
 			{
 				"comment": [
 					"This is the description for a setting. Values surrounded by single quotes are not to be translated."
 				],
-				"key": "files.autoSave.afterDelay"
+				"key": "editor.autoSave.afterDelay"
 			},
 			{
 				"comment": [
 					"This is the description for a setting. Values surrounded by single quotes are not to be translated."
 				],
-				"key": "files.autoSave.onFocusChange"
+				"key": "editor.autoSave.onFocusChange"
 			},
 			{
 				"comment": [
 					"This is the description for a setting. Values surrounded by single quotes are not to be translated."
 				],
-				"key": "files.autoSave.onWindowChange"
+				"key": "editor.autoSave.onWindowChange"
 			},
 			{
 				"comment": [
@@ -13209,11 +13209,11 @@
 			"When enabled, insert a final new line at the end of the file when saving it.",
 			"When enabled, will trim all new lines after the final new line at the end of the file when saving it.",
 			"A dirty editor is never automatically saved.",
-			"A dirty editor is automatically saved after the configured `#files.autoSaveDelay#`.",
+			"A dirty editor is automatically saved after the configured `#editor.autoSaveDelay#`.",
 			"A dirty editor is automatically saved when the editor loses focus.",
 			"A dirty editor is automatically saved when the window loses focus.",
 			"Controls auto save of dirty editors. Read more about autosave [here](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save).",
-			"Controls the delay in ms after which a dirty editor is saved automatically. Only applies when `#files.autoSave#` is set to `{0}`.",
+			"Controls the delay in ms after which a dirty editor is saved automatically. Only applies when `#editor.autoSave#` is set to `{0}`.",
 			"Configure glob patterns of file paths to exclude from file watching. Patterns must match on absolute paths (i.e. prefix with ** or the full path to match properly). Changing this setting requires a restart. When you experience Code consuming lots of CPU time on startup, you can exclude large folders to reduce the initial load.",
 			"The default language mode that is assigned to new files. If configured to `${activeEditorLanguage}`, will use the language mode of the currently active text editor if any.",
 			"Controls the memory available to VS Code after restart when trying to open large files. Same effect as specifying `--max-memory=NEWSIZE` on the command line.",

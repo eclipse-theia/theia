@@ -50,7 +50,7 @@ export interface MonacoModelContentChangedEvent {
 
 export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDocument {
 
-    autoSave: 'on' | 'off' = 'on';
+    autoSave: EditorPreferences['files.autoSave'] = 'afterDelay';
     autoSaveDelay = 500;
     suppressOpenEditorWhenDirty = false;
     lineNumbersMinChars = 3;
@@ -321,7 +321,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      * @returns the list of matches.
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
-        const wordSeparators = this.editorPreferences ? this.editorPreferences['editor.wordSeparators'] : DEFAULT_WORD_SEPARATORS;
+        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? DEFAULT_WORD_SEPARATORS;
         const results: Monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,
@@ -443,7 +443,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected doAutoSave(): void {
-        if (this.autoSave === 'on') {
+        if (this.autoSave !== 'off') {
             const token = this.cancelSave();
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {

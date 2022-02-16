@@ -83,3 +83,4 @@ To do:
     > Nevermind that, too. Seems that any language that's open in an editor _on start_ won't work during that session. But anything in a language that wasn't open on start is fine.
  - [] Add new editor preferences.
  - [] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
+ - [] Editor context menu 'goto' commands not working (no peek editor shown).
