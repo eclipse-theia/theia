@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandRegistry, CommandService } from '@theia/core';
+import { Command, CommandRegistry, CommandService, nls } from '@theia/core';
 import { QuickCommandService, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MainToolbarIconDialogFactory } from './main-toolbar-icon-selector-dialog';
@@ -35,22 +35,31 @@ export class MainToolbarCommandQuickInputService {
     protected iconClass: string | undefined;
     protected commandToAdd: Command | undefined;
 
-    protected columnQuickPickItems: QuickPickItem[] = [ToolbarAlignment.LEFT, ToolbarAlignment.CENTER, ToolbarAlignment.RIGHT]
-        .map(column => ({
-            label: `${column.toUpperCase()} Column`,
-            id: column,
-        }));
+    protected columnQuickPickItems: QuickPickItem[] = [
+        {
+            label: nls.localize('theia/toolbar/leftColumn', 'Left Column'),
+            id: ToolbarAlignment.LEFT,
+        },
+        {
+            label: nls.localize('theia/toolbar/centerColumn', 'Center Column'),
+            id: ToolbarAlignment.CENTER,
+        },
+        {
+            label: nls.localize('theia/toolbar/rightColumn', 'Right Column'),
+            id: ToolbarAlignment.RIGHT
+        },
+    ];
 
     openIconDialog(): void {
         this.quickPickItems = this.generateCommandsList();
         this.quickInputService.showQuickPick(this.quickPickItems, {
-            placeholder: 'Find a command to add to the toolbar',
+            placeholder: nls.localize('theia/toolbar/addCommandPlaceholder', 'Find a command to add to the toolbar'),
         });
     }
 
     protected openColumnQP(): Promise<QuickPickItem> {
         return this.quickInputService.showQuickPick(this.columnQuickPickItems, {
-            placeholder: 'Where would you like the command added?',
+            placeholder: nls.localize('theia/toolbar/toolbarLocationPlaceholder', 'Where would you like the command added?')
         });
     }
 

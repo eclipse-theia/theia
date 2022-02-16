@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CommandContribution, CommandRegistry, CommandService, MenuContribution, MenuModelRegistry } from '@theia/core';
-import { ContextMenuRenderer, quickCommand } from '@theia/core/lib/browser';
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { quickCommand } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { quickFileOpen } from '@theia/file-search/lib/browser/quick-file-open';
@@ -29,31 +29,22 @@ import {
     ToolbarAlignment,
 } from './main-toolbar-interfaces';
 
-export const SEARCH_FOR_FILE = {
-    id: 'main.toolbar.search.for.file',
-    category: 'Search',
-    label: 'Search for a File',
-};
-
-export const FIND_IN_WORKSPACE_ROOT = {
+export const FIND_IN_WORKSPACE_ROOT = Command.toLocalizedCommand({
     id: 'main.toolbar.find.in.workspace.root',
     category: 'Search',
     label: 'Search Workspace Root for Text',
-};
+}, 'theia/toolbar/searchWorkspaceRootForText', nls.getDefaultKey('Search'));
 
 @injectable()
 export class EasySearchToolbarItem extends AbstractMainToolbarContribution
     implements CommandContribution,
     MenuContribution {
+    @inject(SearchInWorkspaceQuickInputService) protected readonly searchPickService: SearchInWorkspaceQuickInputService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+
     id = 'easy-search-toolbar-widget';
     column = ToolbarAlignment.RIGHT;
     priority = 1;
-    newGroup = true;
-
-    @inject(CommandService) protected readonly commandService: CommandService;
-    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @inject(SearchInWorkspaceQuickInputService) protected readonly searchPickService: SearchInWorkspaceQuickInputService;
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     protected handleOnClick = (e: ReactInteraction<HTMLSpanElement>): void => this.doHandleOnClick(e);
     protected doHandleOnClick(e: ReactInteraction<HTMLSpanElement>): void {
@@ -63,6 +54,7 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
             const { bottom } = toolbar.getBoundingClientRect();
             const { left } = e.currentTarget.getBoundingClientRect();
             this.contextMenuRenderer.render({
+                includeAnchorArg: false,
                 menuPath: MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU,
                 anchor: { x: left, y: bottom },
             });
@@ -74,9 +66,9 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
             <div
                 role='button'
                 tabIndex={0}
-                className='icon-wrapper'
+                className='icon-wrapper action-item item enabled'
                 onClick={this.handleOnClick}
-                title='Search for files, text, commands, and more... '
+                title={nls.localize('theia/toolbar/search/icon', 'Search for files, text, commands, and more...')}
             >
                 <div
                     className='codicon codicon-search'
@@ -103,36 +95,27 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
                 }
             },
         });
-        registry.registerCommand(SEARCH_FOR_FILE, {
-            execute: () => {
-                this.commandService.executeCommand(quickFileOpen.id);
-            },
-        });
     }
 
     registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: quickCommand.id,
-            label: 'Find a Command',
+            label: nls.localize('theia/toolbar/search/findACommand', 'Find a Command'),
             order: 'a',
         });
         registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
-            commandId: SEARCH_FOR_FILE.id,
+            commandId: quickFileOpen.id,
             order: 'b',
+            label: nls.localize('theia/toolbar/search/searchForAFile', 'Search for a file')
         });
         registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
-            label: 'Search Entire Workspace For Text',
+            label: nls.localize('theia/toolbar/search/searchWorkspaceForText', 'Search Entire Workspace for Text'),
             order: 'c',
         });
         registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: FIND_IN_WORKSPACE_ROOT.id,
             order: 'd',
-        });
-        registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
-            commandId: 'languages.workspace.symbol',
-            label: 'Search for a Symbol',
-            order: 'e',
         });
     }
 }

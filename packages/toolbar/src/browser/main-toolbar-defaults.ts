@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MainToolbarTreeSchema, ToolbarAlignment } from './main-toolbar-interfaces';
+import { DeflatedMainToolbarTreeSchema, ToolbarAlignment } from './main-toolbar-interfaces';
 
 /* eslint-disable max-lines-per-function */
 export const MainToolbarDefaultsFactory = Symbol('MainToolbarDefaultsFactory');
-export const MainToolbarDefaults: () => MainToolbarTreeSchema = () => ({
+export const MainToolbarDefaults: () => DeflatedMainToolbarTreeSchema = () => ({
     items: {
         [ToolbarAlignment.LEFT]: [
             [
@@ -47,7 +47,7 @@ export const MainToolbarDefaults: () => MainToolbarTreeSchema = () => ({
                     id: 'terminal:new',
                     command: 'terminal:new',
                     icon: 'codicon codicon-terminal',
-                },
+                }
             ],
         ],
         [ToolbarAlignment.RIGHT]: [],

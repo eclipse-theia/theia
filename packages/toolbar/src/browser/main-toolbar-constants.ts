@@ -14,46 +14,53 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MenuPath } from '@theia/core';
+import { Command, MenuPath, nls } from '@theia/core';
+import { CommonCommands } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
 export namespace MainToolbarCommands {
-    export const TOGGLE_MAIN_TOOLBAR = {
+    export const TOGGLE_MAIN_TOOLBAR = Command.toLocalizedCommand({
         id: 'main.toolbar.view.toggle',
-        category: 'View',
+        category: CommonCommands.VIEW_CATEGORY,
         label: 'Toggle Main Toolbar',
-    };
-    export const REMOVE_COMMAND_FROM_TOOLBAR = {
+    }, 'theia/toolbar/toggleToolbar', nls.getDefaultKey(CommonCommands.VIEW_CATEGORY));
+
+    export const REMOVE_COMMAND_FROM_TOOLBAR = Command.toLocalizedCommand({
         id: 'main.toolbar.remove.command',
-        category: 'Edit',
+        category: 'Toolbar',
         label: 'Remove Command From Toolbar',
-    };
-    export const INSERT_GROUP_LEFT = {
+    }, 'theia/toolbar/removeCommand');
+
+    export const INSERT_GROUP_LEFT = Command.toLocalizedCommand({
         id: 'main.toolbar.insert.group.left',
-        category: 'Edit',
+        category: 'Toolbar',
         label: 'Insert Group Separator (Left)',
-    };
-    export const INSERT_GROUP_RIGHT = {
+    }, 'theia/toolbar/insertGroupLeft');
+
+    export const INSERT_GROUP_RIGHT = Command.toLocalizedCommand({
         id: 'main.toolbar.insert.group.right',
-        category: 'Edit',
+        category: 'Toolbar',
         label: 'Insert Group Separator (Right)',
-    };
-    export const ADD_COMMAND_TO_TOOLBAR = {
+    }, 'theia/toolbar/insertGroupRight');
+
+    export const ADD_COMMAND_TO_TOOLBAR = Command.toLocalizedCommand({
         id: 'main.toolbar.add.command',
-        category: 'Edit',
+        category: 'Toolbar',
         label: 'Add Command to Toolbar',
-    };
-    export const RESET_TOOLBAR = {
+    }, 'theia/toolbar/addCommand');
+
+    export const RESET_TOOLBAR = Command.toLocalizedCommand({
         id: 'main.toolbar.restore.defaults',
         category: 'Toolbar',
         label: 'Restore Toolbar Defaults',
-    };
-    export const CUSTOMIZE_TOOLBAR = {
+    }, 'theia/toolbar/restoreDefaults');
+
+    export const CUSTOMIZE_TOOLBAR = Command.toLocalizedCommand({
         id: 'main.toolbar.customize.toolbar',
         category: 'Toolbar',
         label: 'Customize Toolbar (Open JSON)',
-    };
+    }, 'theia/toolbar/openJSON');
 }
 
 export const UserToolbarURI = Symbol('UserToolbarURI');
@@ -66,8 +73,7 @@ export namespace MainToolbarMenus {
 
 export type ReactInteraction<T = Element, U = MouseEvent> = React.MouseEvent<T, U> | React.KeyboardEvent<T>;
 export namespace ReactKeyboardEvent {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(obj: any): obj is React.KeyboardEvent {
-        return typeof obj === 'object' && 'key' in obj;
+    export function is(obj: unknown): obj is React.KeyboardEvent {
+        return typeof obj === 'object' && !!obj && 'key' in obj;
     }
 }

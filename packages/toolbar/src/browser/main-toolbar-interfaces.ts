@@ -40,19 +40,12 @@ export namespace ToolbarAlignmentString {
         || obj === ToolbarAlignment.CENTER
         || obj === ToolbarAlignment.RIGHT;
 }
-export namespace DeflatedMainToolbarTreeSchema {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export const is = (obj: any): obj is DeflatedMainToolbarTreeSchema => !!obj && 'items' in obj
-        && 'left' in obj.items
-        && 'center' in obj.items
-        && 'right' in obj.items;
-}
 
 export interface MainToolbarContributionProperties {
     column: ToolbarAlignment;
     priority: number;
     newGroup: boolean;
-    toJSON(): { id: string; group: string };
+    toJSON(): DeflatedContributedToolbarItem;
 }
 
 export type ReactTabBarToolbarContribution = ReactTabBarToolbarItem & MainToolbarContributionProperties;
@@ -68,7 +61,8 @@ export interface DockPanelRendererFactoryWithToolbar extends DockPanelRendererFa
 }
 
 export type ValidMainToolbarItem = ReactTabBarToolbarContribution | TabBarToolbarItem;
-export type ValidMainToolbarItemDeflated = { id: string; group: 'contributed' } | TabBarToolbarItem;
+export interface DeflatedContributedToolbarItem { id: string; group: 'contributed' };
+export type ValidMainToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
 
 export const LateInjector = Symbol('LateInjector');
 

@@ -149,7 +149,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         this.deferredRef.resolve(element);
     }
 
-    protected render(): React.ReactNode {
+    protected override render(): React.ReactNode {
         const leftGroups = this.model.toolbarItems?.items[ToolbarAlignment.LEFT];
         const centerGroups = this.model.toolbarItems?.items[ToolbarAlignment.CENTER];
         const rightGroups = this.model.toolbarItems?.items[ToolbarAlignment.RIGHT];
@@ -243,7 +243,7 @@ export class MainToolbarImpl extends TabBarToolbar {
                 id={item.id}
                 data-position={stringifiedPosition}
                 key={`${item.id}-${stringifiedPosition}`}
-                className={`${toolbarItemClassNames} main-toolbar-item`}
+                className={`${toolbarItemClassNames} main-toolbar-item action-item`}
                 onMouseDown={this.onMouseDownEvent}
                 onMouseUp={this.onMouseUpEvent}
                 onMouseOut={this.onMouseUpEvent}
@@ -262,7 +262,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         );
     }
 
-    protected renderItem(
+    protected override renderItem(
         item: TabBarToolbarItem,
     ): React.ReactNode {
         const classNames = [];

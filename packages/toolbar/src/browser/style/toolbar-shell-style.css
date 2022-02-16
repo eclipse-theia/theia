@@ -14,28 +14,39 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-
-
 #main-toolbar {
-    --toolbarHeight: calc(var(--theia-private-menubar-height) - 3px);
+    --toolbar-height: calc(var(--theia-private-menubar-height) - 2px);
     --toolbar-item-padding: 5px;
     --dropzone-background: rgb(0, 0, 0, 0.3);
+    --toolbar-icon-size: 20px;
 
-    min-height: var(--toolbarHeight);
-    color: var(--theia-activityBar-foreground);
-    background: var(--theia-activityBar-background);
-    box-shadow: 0px 4px 2px -2px var(--theia-widget-shadow);
+    min-height: var(--toolbar-height);
+    color: var(--theia-mainToolbar-foreground);
+    background: var(--theia-mainToolbar-background);
     padding: 2px 4px;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    position: relative;
 }
+
+#main-toolbar .theia-progress-bar-container {
+    position: absolute;
+    bottom: 0;
+}
+
+#main-toolbar .codicon-split-horizontal:before {
+    content: '\eb56';
+    position: relative;
+    top: 1px;
+    right: 1px;
+  }
 
 .main-toolbar-wrapper {
     display: flex;
     flex-direction: row;
     width: 100%;
     overflow: hidden;
-    margin-top: 1px;
 }
 
 .main-toolbar-wrapper .toolbar-column {
@@ -68,20 +79,19 @@
     cursor: pointer;
 }
 
-#main-toolbar .main-toolbar-item#workbench\.action\.splitEditorRight {
-    opacity: 1;
-}
-
 #main-toolbar .empty-column-space {
     flex-grow: 1;
 }
 
 #main-toolbar .main-toolbar-item .codicon {
-    font-size: 20px;
+    font-size: var(--toolbar-icon-size);
+    width: var(--toolbar-icon-size);
+    height: var(--toolbar-icon-size);
+    line-height: var(--toolbar-icon-size);
 }
 
-#main-toolbar .main-toolbar-item.enabled:hover:not(.dragging):not(.active) {
-    transform: scale(1.1);
+#main-toolbar .main-toolbar-item.action-item.enabled:hover:not(.dragging):not(.active) {
+    background-color: var(--theia-toolbar-hoverBackground);
 }
 
 #main-toolbar .main-toolbar-item .hover-overlay {
@@ -124,7 +134,7 @@
 #main-toolbar .separator {
     width: 1px;
     background-color: var(--theia-activityBar-foreground);
-    opacity: 0.8;
+    opacity: var(--theia-mod-disabled-opacity);
     margin: 0 5px;
 }
 

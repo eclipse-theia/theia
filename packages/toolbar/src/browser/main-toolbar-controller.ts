@@ -182,7 +182,7 @@ export class MainToolbarController {
     }
 
     async clearAll(): Promise<boolean> {
-        return this.withBusy<boolean>(async () => this.storageProvider.clearAll());
+        return this.withBusy<boolean>(() => this.storageProvider.clearAll());
     }
 
     async openOrCreateJSONFile(doOpen = false): Promise<Widget | undefined> {

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as jsoncParser from 'jsonc-parser';
-import { Command, deepClone, Disposable, DisposableCollection, Emitter, MessageService } from '@theia/core';
+import { Command, deepClone, Disposable, DisposableCollection, Emitter, MessageService, nls } from '@theia/core';
 import { injectable, postConstruct, inject, interfaces } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
@@ -36,6 +36,7 @@ import {
     LateInjector,
 } from './main-toolbar-interfaces';
 import { UserToolbarURI } from './main-toolbar-constants';
+import { isToolbarPreferences } from './main-toolbar-preference-schema';
 
 export const TOOLBAR_BAD_JSON_ERROR_MESSAGE = 'There was an error reading your toolbar.json file. Please check if it is corrupt'
     + ' by right-clicking the toolbar and selecting "Customize Toolbar". You can also reset it to its defaults by selecting'
@@ -46,9 +47,7 @@ export class MainToolbarStorageProvider implements Disposable {
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(LateInjector)
-    protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
-
+    @inject(LateInjector) protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
     @inject(UserToolbarURI) protected readonly USER_TOOLBAR_URI: URI;
 
     get ready(): Promise<void> {
@@ -293,7 +292,7 @@ export class MainToolbarStorageProvider implements Disposable {
                 await this.model.save();
                 return true;
             } catch (e) {
-                const message = `Failed to update the value of '${path.join('.')}' in '${this.USER_TOOLBAR_URI}'.`;
+                const message = nls.localize('theia/toolbar/failedUpdate', "Failed to update the value of '{0}' in '{1}'.", path.join('.'), this.USER_TOOLBAR_URI.path.toString());
                 this.messageService.error(TOOLBAR_BAD_JSON_ERROR_MESSAGE);
                 console.error(`${message}`, e);
                 return false;
@@ -304,7 +303,7 @@ export class MainToolbarStorageProvider implements Disposable {
 
     protected parseContent(fileContent: string): DeflatedMainToolbarTreeSchema | undefined {
         const rawConfig = this.parse(fileContent);
-        if (!DeflatedMainToolbarTreeSchema.is(rawConfig)) {
+        if (!isToolbarPreferences(rawConfig)) {
             return undefined;
         }
         return rawConfig;

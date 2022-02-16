@@ -18,10 +18,14 @@ import * as React from '@theia/core/shared/react';
 import { CommandService, Emitter } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ContextMenuRenderer, KeybindingRegistry } from '@theia/core/lib/browser';
-import { ReactTabBarToolbarContribution, ToolbarAlignment } from './main-toolbar-interfaces';
+import { DeflatedContributedToolbarItem, ReactTabBarToolbarContribution, ToolbarAlignment } from './main-toolbar-interfaces';
 
 @injectable()
 export abstract class AbstractMainToolbarContribution implements ReactTabBarToolbarContribution {
+    @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(CommandService) protected readonly commandService: CommandService;
+
     abstract id: string;
     abstract column: ToolbarAlignment;
     abstract priority: number;
@@ -30,13 +34,9 @@ export abstract class AbstractMainToolbarContribution implements ReactTabBarTool
     protected didChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.didChangeEmitter.event;
 
-    @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
-    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @inject(CommandService) protected readonly commandService: CommandService;
-
     abstract render(): React.ReactNode;
 
-    toJSON(): { id: string; group: string } {
+    toJSON(): DeflatedContributedToolbarItem {
         return { id: this.id, group: 'contributed' };
     }
 

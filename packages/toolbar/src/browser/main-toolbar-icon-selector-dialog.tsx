@@ -19,8 +19,8 @@ import * as ReactDOM from '@theia/core/shared/react-dom';
 import { injectable, interfaces, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
-import { DEFAULT_SCROLL_OPTIONS, DialogProps, Message } from '@theia/core/lib/browser';
-import { Command, Disposable } from '@theia/core';
+import { DEFAULT_SCROLL_OPTIONS, Dialog, DialogProps, Message } from '@theia/core/lib/browser';
+import { Command, Disposable, nls } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import PerfectScrollbar from 'perfect-scrollbar';
@@ -50,7 +50,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
 
     static ID = 'main-toolbar-icon-selector-dialog';
     protected deferredScrollContainer = new Deferred<HTMLDivElement>();
-    scrollOptions: PerfectScrollbar.Options = { ...DEFAULT_SCROLL_OPTIONS };
+    override scrollOptions: PerfectScrollbar.Options = { ...DEFAULT_SCROLL_OPTIONS };
     protected filterRef: HTMLInputElement;
 
     protected selectedIcon: string | undefined;
@@ -61,7 +61,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
     protected debounceHandleSearch = debounce(this.doHandleSearch.bind(this), FIFTY_MS, { trailing: true });
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps,
+        @inject(DialogProps) protected override readonly props: DialogProps,
     ) {
         super(props);
         this.toDispose.push(Disposable.create(() => {
@@ -69,7 +69,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
         }));
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         ReactDOM.render(this.renderControls(), this.controlPanel);
     }
@@ -86,7 +86,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
         }
     }
 
-    async getScrollContainer(): Promise<HTMLElement> {
+    override async getScrollContainer(): Promise<HTMLElement> {
         return this.deferredScrollContainer.promise;
     }
 
@@ -117,8 +117,8 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
         return (
             <div className='icon-selector-options'>
                 <div className='icon-set-selector-wrapper'>
-                    Icon Set:
-                    {' '}
+                    {nls.localize('theia/toolbar/iconSet', 'Icon Set')}
+                    {': '}
                     <select
                         className='main-toolbar-icon-select theia-select'
                         onChange={this.handleSelectOnChange}
@@ -131,14 +131,14 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                 <div className='icon-fuzzy-filter'>
                     <input
                         ref={this.assignFilterRef}
-                        placeholder='Filter Icons'
+                        placeholder={nls.localize('theia/toolbar/filterIcons', 'Filter Icons')}
                         type='text'
                         className='icon-filter-input theia-input'
                         onChange={this.debounceHandleSearch}
                         spellCheck={false}
                     />
                 </div>
-            </div>
+            </div >
         );
     }
 
@@ -166,7 +166,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                             <div className={`${this.activeIconPrefix} ${icon}`} />
                         </div>
                     ))
-                        : <div className='search-placeholder'>The search returned no results</div>}
+                        : <div className='search-placeholder'>nls.localizeByDefault('No results found')</div>}
                 </div>
             </div>
         );
@@ -247,7 +247,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                                 onClick={this.doAccept}
                             >
                                 <span>
-                                    Use Default Icon:
+                                    {`${nls.localize('theia/toolbar/useDefaultIcon', 'Use Default Icon')}:`}
                                 </span>
                                 <div className={`main-toolbar-default-icon ${this.toolbarCommand.iconClass}`} />
                             </button>
@@ -260,23 +260,19 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                         className='theia-button main'
                         onClick={this.doAccept}
                     >
-                        Select Icon
+                        {nls.localize('theia/toolbar/selectIcon', 'Select Icon')}
                     </button>
                     <button
                         type='button'
                         className='theia-button secondary'
                         onClick={this.doClose}
                     >
-                        Cancel
+                        {Dialog.CANCEL}
                     </button>
 
                 </div>
             </div>
         );
-    }
-
-    dispose(): void {
-        super.dispose();
     }
 }
 

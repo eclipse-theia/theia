@@ -34,7 +34,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
     protected mainToolbar: MainToolbar;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected override async init(): Promise<void> {
         this.mainToolbar = this.mainToolbarFactory();
         this.mainToolbar.id = 'main-toolbar';
         super.init();
@@ -64,7 +64,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         return false;
     }
 
-    protected createLayout(): Layout {
+    protected override createLayout(): Layout {
         const bottomSplitLayout = this.createSplitLayout(
             [this.mainPanel, this.bottomPanel],
             [1, 0],

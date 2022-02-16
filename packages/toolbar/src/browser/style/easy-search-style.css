@@ -18,6 +18,10 @@
 #easy-search-toolbar-widget {
     position: relative;
 }
+#easy-search-toolbar-widget .icon-wrapper {
+    cursor: pointer;
+    margin-left: 0;
+}
 
 #easy-search-toolbar-widget:focus,
 #easy-search-toolbar-widget .icon-wrapper:focus,
@@ -25,15 +29,19 @@
     outline: none;
 }
 
+
+#easy-search-toolbar-widget  .icon-wrapper.action-item.item.enabled:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
 #easy-search-toolbar-widget #easy-search-item-icon.codicon-search {
     position: relative;
-    top: 2px;
     font-size: 20px;
 }
 
 #easy-search-toolbar-widget .icon-wrapper .codicon-triangle-down {
     position: absolute;
-    font-size: 11px;
-    top: 14px;
-    right: -1px;
+    font-size: 10px;
+    bottom: -8px;
+    right: 2px;
 }
