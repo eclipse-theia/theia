@@ -54,3 +54,22 @@ After a couple of days of mechanical replacements, I moved onto substantive fixe
 ## 2/11/2022
 
 More private API munging. It's notable how inconsistent our use of Monaco is. In some cases, we delegate to its services, in some cases, we override them, and in others, we reimplement them, without obvious rhyme or reason in the decision. Not much to do about it in this pass, but it's worth considering.
+
+## 2/16/2022
+
+Eventually eliminated all references to the old global `monaco` object and aligned type signatures sufficiently that the application builds and runs. A few notes on that:
+
+ - Plugin-side code was referring to the `monaco` namespace but doesn't include it when built. I referred to our `types-impl` code instead, but that's a bit of a fudge.
+ - The quick pick code was a bit tricky to type correctly. Basically, VSCode splits the separators and the items, and then creates a union type to cover both. We were using a single type. I refactored to mirror the VSCode pattern, and things compile now, but it's probably worth circling back to check on whether those types have been handled as elegantly as they should be.
+ - Part of the inelegance in the match between our quick input interfaces and the implementations was in the typing of events. We refer to our `Event` type, but Monaco usually exposes `IEvent` which lacks a (listed) public `maxListeners` field.
+
+To do:
+
+ - [] Editor context menu styling broken
+ - [] Quick pick styling broken
+ - [] Commands not getting added to quick pick
+ - [] Commands not getting added to editor context menu
+ - [] Colorization not working for TS
+    > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations.
+
+
