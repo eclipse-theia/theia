@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import * as Monaco from 'monaco-editor-core';
 import { setSnippetSuggestSupport } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
@@ -46,6 +46,9 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(PreferenceSchemaProvider)
     protected readonly preferenceSchema: PreferenceSchemaProvider;
 
+    @inject(QuickAccessRegistry)
+    protected readonly quickAccessRegistry: QuickAccessRegistry;
+
     async initialize(): Promise<void> {
         const { codeEditorService, textModelService, contextKeyService } = this;
         StandaloneServices.initialize({
@@ -53,6 +56,8 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
             [ITextModelService.toString()]: textModelService,
             [IContextKeyService.toString()]: contextKeyService
         });
+        // Monaco registers certain quick access providers (e.g. QuickCommandAccess) at import time, but we want to use our own.
+        this.quickAccessRegistry.clear();
 
         // Incomparability of enum types between public and private API's
         setSnippetSuggestSupport(this.snippetSuggestProvider as unknown as CompletionItemProvider);

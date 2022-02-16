@@ -69,9 +69,15 @@ To do:
  - [x] Quick pick styling broken
     > Looks like the problem is not in the styling: the selector is still present. It looks like theme details are not being loaded into the stylesheet.
     > 100% my fault, returning null instead of a string color value.
- - [] Commands not getting added to quick pick
+ - [x] Commands palette pretty broken.
+    > - ctrl+shift+p brings up the command palette.
+    > - ctrl+p + '>' does not bring up command list.
+    > - ctrl+shift+p + search term -> always empty.  
+    > We needed to clear the Monaco registry to allow our `QuickCommandService` to win out over one registered by Monaco at import time.
  - [] Commands not getting added to editor context menu
- - [x] Colorization not working for TS
+ - [] Colorization not working for TS
     > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations. PS: although the colors were working yesterady for languages other than TS, they are not working today. 
     > This also seems to have been a problem with color registrations, and appears to be working now.
+    > Agh! Nevermind, suddenly it's back to TS not working, everything else working.
  - [] Add new editor preferences.
+ - [] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
