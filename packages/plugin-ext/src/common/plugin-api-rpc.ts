@@ -69,7 +69,7 @@ import {
     CommentOptions,
     CommentThreadCollapsibleState,
     CommentThread,
-    CommentThreadChangedEvent,
+    CommentThreadChangedEvent
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1444,6 +1444,8 @@ export interface LanguagesExt {
         context: CodeActionContext,
         token: CancellationToken
     ): Promise<CodeAction[] | undefined>;
+    $releaseCodeActions(handle: number, cacheIds: number[]): void;
+    $resolveCodeAction(handle: number, cacheId: number, token: CancellationToken): Promise<WorkspaceEditDto | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation | undefined>;

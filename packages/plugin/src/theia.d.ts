@@ -7836,6 +7836,22 @@ export module '@theia/plugin' {
             context: CodeActionContext,
             token: CancellationToken | undefined
         ): ProviderResult<(Command | CodeAction)[]>;
+
+        /**
+         * Given a code action fill in its `edit`-property. Changes to
+         * all other properties, like title, are ignored. A code action that has an edit
+         * will not be resolved.
+         *
+         * *Note* that a code action provider that returns commands, not code actions, cannot successfully
+         * implement this function. Returning commands is deprecated and instead code actions should be
+         * returned.
+         *
+         * @param codeAction A code action.
+         * @param token A cancellation token.
+         * @return The resolved code action or a thenable that resolves to such. It is OK to return the given
+         * `item`. When no result is returned, the given `item` will be used.
+         */
+        resolveCodeAction?(codeAction: CodeAction, token: CancellationToken | undefined): ProviderResult<CodeAction>;
     }
 
     /**
