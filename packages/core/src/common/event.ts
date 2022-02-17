@@ -31,17 +31,27 @@ export interface Event<T> {
      * @param disposables An array to which a {{IDisposable}} will be added.
      * @return a disposable to remove the listener again.
      */
-    (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
-    /**
-     * An emitter will print a warning if more listeners are added for this event.
-     * The event.maxListeners allows the limit to be modified for this specific event.
-     * The value can be set to 0 to indicate an unlimited number of listener.
-     */
-    maxListeners: number
+    (listener: (e: T) => any, thisArgs?: any, disposables?: { push(disposable: Disposable): void }): Disposable;
 }
 
 export namespace Event {
     const _disposable = { dispose(): void { } };
+    export function getMaxListeners(event: Event<unknown>): number {
+        const { maxListeners } = event as any;
+        return typeof maxListeners === 'number' ? maxListeners : 0;
+    }
+    export function setMaxListeners<N extends number>(event: Event<unknown>, maxListeners: N): N {
+        if (typeof (event as any).maxListeners === 'number') {
+            return (event as any).maxListeners = maxListeners;
+        }
+        return maxListeners;
+    }
+    export function addMaxListeners(event: Event<unknown>, add: number): number {
+        if (typeof (event as any).maxListeners === 'number') {
+            return (event as any).maxListeners += add;
+        }
+        return add;
+    }
     export const None: Event<any> = Object.assign(function (): { dispose(): void } { return _disposable; }, {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
@@ -53,7 +63,8 @@ export namespace Event {
      */
     export function map<I, O>(event: Event<I>, mapFunc: (i: I) => O): Event<O> {
         return Object.assign((listener: (e: O) => any, thisArgs?: any, disposables?: Disposable[]) => event(i => listener.call(thisArgs, mapFunc(i)), undefined, disposables), {
-            maxListeners: 0,
+            get maxListeners(): number { return 0; },
+            set maxListeners(maxListeners: number) { }
         });
     }
 }
@@ -176,7 +187,7 @@ export class Emitter<T = any> {
                     this._options.onFirstListenerAdd(this);
                 }
                 this._callbacks.add(listener, thisArgs);
-                const removeMaxListenersCheck = this.checkMaxListeners(this._event.maxListeners);
+                const removeMaxListenersCheck = this.checkMaxListeners(Event.getMaxListeners(this._event));
 
                 const result: Disposable = {
                     dispose: () => {
@@ -200,8 +211,7 @@ export class Emitter<T = any> {
                 return result;
             }, {
                 maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
-            }
-            );
+            });
         }
         return this._event;
     }
