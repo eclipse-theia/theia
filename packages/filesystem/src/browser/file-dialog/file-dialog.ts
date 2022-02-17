@@ -70,6 +70,12 @@ export class FileDialogProps extends DialogProps {
      */
     filters?: FileDialogTreeFilters;
 
+    /**
+     * Determines if the dialog window should be modal.
+     * Defaults to `true`.
+     */
+    modal?: boolean;
+
 }
 
 @injectable()
