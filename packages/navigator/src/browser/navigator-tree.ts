@@ -18,27 +18,43 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import URI from '@theia/core/lib/common/uri';
-import { TreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, CompressionToggle } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
+import { EXPLORER_COMPACT_FOLDERS, FileNavigatorPreferences } from './navigator-preferences';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {
 
     @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter;
 
+    @inject(FileNavigatorPreferences) protected readonly navigatorPreferences: FileNavigatorPreferences;
+
+    @inject(CompressionToggle) protected readonly compressionToggle: CompressionToggle;
+
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.filter.onFilterChanged(() => this.refresh()));
+        this.navigatorPreferences.ready.then(() => this.toggleCompression());
+        this.toDispose.push(this.navigatorPreferences.onPreferenceChanged(({ preferenceName }) => {
+            if (preferenceName === EXPLORER_COMPACT_FOLDERS) {
+                this.toggleCompression();
+            }
+        }));
     }
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected toggleCompression(): void {
+        this.compressionToggle.compress = this.navigatorPreferences.get(EXPLORER_COMPACT_FOLDERS, true);
+        this.refresh();
+    }
+
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (WorkspaceNode.is(parent)) {
             return parent.children;
         }
         return this.filter.filter(super.resolveChildren(parent));
     }
 
-    protected toNodeId(uri: URI, parent: CompositeTreeNode): string {
+    protected override toNodeId(uri: URI, parent: CompositeTreeNode): string {
         const workspaceRootNode = WorkspaceRootNode.find(parent);
         if (workspaceRootNode) {
             return this.createId(workspaceRootNode, uri);

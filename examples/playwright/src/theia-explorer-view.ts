@@ -31,7 +31,7 @@ const TheiaExplorerViewData = {
 
 export class TheiaExplorerFileStatNode extends TheiaTreeNode {
 
-    constructor(protected elementHandle: ElementHandle<SVGElement | HTMLElement>, protected explorerView: TheiaExplorerView) {
+    constructor(protected override elementHandle: ElementHandle<SVGElement | HTMLElement>, protected explorerView: TheiaExplorerView) {
         super(elementHandle, explorerView.app);
     }
 
@@ -64,11 +64,11 @@ export const DOT_FILES_FILTER: TheiaExplorerFileStatNodePredicate = async node =
 
 export class TheiaExplorerView extends TheiaView {
 
-    constructor(public app: TheiaApp) {
+    constructor(app: TheiaApp) {
         super(TheiaExplorerViewData, app);
     }
 
-    async activate(): Promise<void> {
+    override async activate(): Promise<void> {
         await super.activate();
         const viewElement = await this.viewElement();
         await viewElement?.waitForSelector('.theia-TreeContainer');

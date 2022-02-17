@@ -52,10 +52,9 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     renderContent(params: RenderContentParams): HTMLElement {
         const content = params.content;
         const renderedContent = this.getEngine().render(content, params);
-        const sanitizedContent = DOMPurify.sanitize(renderedContent);
         const contentElement = document.createElement('div');
         contentElement.classList.add(this.contentClass);
-        contentElement.innerHTML = sanitizedContent;
+        contentElement.innerHTML = DOMPurify.sanitize(renderedContent);
         this.addLinkClickedListener(contentElement, params);
         return contentElement;
     }

@@ -79,15 +79,15 @@ export class OpenEditorsWidget extends FileTreeWidget {
     }
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(OpenEditorsModel) readonly model: OpenEditorsModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) props: TreeProps,
+        @inject(OpenEditorsModel) override readonly model: OpenEditorsModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
     }
 
     @postConstruct()
-    init(): void {
+    override init(): void {
         super.init();
         this.id = OpenEditorsWidget.ID;
         this.title.label = OpenEditorsWidget.LABEL;
@@ -102,7 +102,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
     // eslint-disable-next-line no-null/no-null
     protected activeTreeNodePrefixElement: string | undefined | null;
 
-    protected renderNode(node: OpenEditorNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(node: OpenEditorNode, props: NodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
@@ -129,7 +129,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return node.id.startsWith(OpenEditorsModel.AREA_NODE_ID_PREFIX);
     }
 
-    protected doRenderNodeRow({ node, depth }: OpenEditorsNodeRow): React.ReactNode {
+    protected override doRenderNodeRow({ node, depth }: OpenEditorsNodeRow): React.ReactNode {
         let groupClass = '';
         if (this.isGroupNode(node)) {
             groupClass = 'group-node';
@@ -221,7 +221,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         }
     }
 
-    protected handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (OpenEditorNode.is(node)) {
             const { widget } = node;
             this.applicationShell.activateWidget(widget.id);
@@ -229,7 +229,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         super.handleClickEvent(node, event);
     }
 
-    protected handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         super.handleContextMenuEvent(node, event);
         if (node) {
             // Since the CommonCommands used in the context menu act on the shell's activeWidget, this is necessary to ensure

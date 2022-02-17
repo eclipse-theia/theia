@@ -125,7 +125,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         }
     }
 
-    async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+    override async open(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const widget = await super.open(uri, options);
         const area = this.shell.getAreaFor(widget);
         if (area === 'right' || area === 'left') {
@@ -138,7 +138,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         return widget;
     }
 
-    protected async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
+    protected override async getOrCreateWidget(uri: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
         const props = await this.options(uri, options);
         const widget = await super.getOrCreateWidget(uri, props);
         widget.setProps(props);

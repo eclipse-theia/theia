@@ -94,7 +94,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
 
     constructor(
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
+        @inject(WidgetManager) protected override readonly widgetManager: WidgetManager,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
         @inject(FileService) protected readonly fileService: FileService,
@@ -112,13 +112,13 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: GitDiffCommands.OPEN_FILE_DIFF.id
         });
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newWorkspaceRootUriAwareCommandHandler({
             isVisible: uri => !!this.findGitRepository(uri),
             isEnabled: uri => !!this.findGitRepository(uri),

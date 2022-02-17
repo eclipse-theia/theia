@@ -16,9 +16,9 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, MaybePromise } from '../../common';
+import { Socket } from 'socket.io';
 
 import * as http from 'http';
-import * as ws from 'ws';
 
 /**
  * Bind components to this symbol to subscribe to WebSocket events.
@@ -31,7 +31,7 @@ export interface MessagingListenerContribution {
      * @param request The HTTP connection upgrade request received by the server.
      * @param socket The WebSocket that the connection was upgraded to.
      */
-    onDidWebSocketUpgrade(request: http.IncomingMessage, socket: ws): MaybePromise<void>;
+    onDidWebSocketUpgrade(request: http.IncomingMessage, socket: Socket): MaybePromise<void>;
 }
 
 /**
@@ -46,7 +46,7 @@ export class MessagingListener {
     /**
      * Notify all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
      */
-    async onDidWebSocketUpgrade(request: http.IncomingMessage, socket: ws): Promise<void> {
+    async onDidWebSocketUpgrade(request: http.IncomingMessage, socket: Socket): Promise<void> {
         await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.onDidWebSocketUpgrade(request, socket)));
     }
 }

@@ -161,14 +161,14 @@ export class TimelineWidget extends BaseWidget {
         return this.panel.layout as PanelLayout;
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         MessageLoop.sendMessage(this.resourceWidget, msg);
         MessageLoop.sendMessage(this.timelineEmptyWidget, msg);
         this.refresh();
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         this.node.appendChild(this.resourceWidget.node);
         this.node.appendChild(this.timelineEmptyWidget.node);
         super.onAfterAttach(msg);

@@ -107,13 +107,13 @@ export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget 
         this.onUpdateRequest(Widget.Msg.UpdateRequest);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         MessageLoop.sendMessage(this.commitDetailHeaderWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         this.node.appendChild(this.commitDetailHeaderWidget.node);
         this.node.appendChild(this.resourceWidget.node);
 

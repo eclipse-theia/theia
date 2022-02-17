@@ -25,11 +25,11 @@ export class MockMenuModelRegistry extends MenuModelRegistry {
         super({ getContributions: () => [] }, commands);
     }
 
-    registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
+    override registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         return Disposable.NULL;
     }
 
-    registerSubmenu(menuPath: MenuPath, label: string): Disposable {
+    override registerSubmenu(menuPath: MenuPath, label: string): Disposable {
         return Disposable.NULL;
     }
 }

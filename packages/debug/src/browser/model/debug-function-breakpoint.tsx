@@ -37,7 +37,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         }
     }
 
-    protected isEnabled(): boolean {
+    protected override isEnabled(): boolean {
         return super.isEnabled() && this.isSupported();
     }
 
@@ -62,7 +62,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         return <span className='line-info'>{this.name}</span>;
     }
 
-    protected doGetDecoration(): DebugBreakpointDecoration {
+    protected override doGetDecoration(): DebugBreakpointDecoration {
         if (!this.isSupported()) {
             return this.getDisabledBreakpointDecoration(nls.localizeByDefault('Function breakpoints are not supported by this debug type'));
         }

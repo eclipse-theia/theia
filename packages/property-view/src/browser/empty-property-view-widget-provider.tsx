@@ -54,8 +54,8 @@ class EmptyPropertyViewWidget extends ReactWidget implements PropertyViewContent
 export class EmptyPropertyViewWidgetProvider extends DefaultPropertyViewWidgetProvider {
 
     static readonly ID = 'no-properties';
-    readonly id = EmptyPropertyViewWidgetProvider.ID;
-    readonly label = 'DefaultPropertyViewWidgetProvider';
+    override readonly id = EmptyPropertyViewWidgetProvider.ID;
+    override readonly label = 'DefaultPropertyViewWidgetProvider';
 
     private emptyWidget: EmptyPropertyViewWidget;
 
@@ -64,15 +64,15 @@ export class EmptyPropertyViewWidgetProvider extends DefaultPropertyViewWidgetPr
         this.emptyWidget = new EmptyPropertyViewWidget();
     }
 
-    canHandle(selection: Object | undefined): number {
+    override canHandle(selection: Object | undefined): number {
         return selection === undefined ? 1 : 0;
     }
 
-    provideWidget(selection: Object | undefined): Promise<EmptyPropertyViewWidget> {
+    override provideWidget(selection: Object | undefined): Promise<EmptyPropertyViewWidget> {
         return Promise.resolve(this.emptyWidget);
     }
 
-    updateContentWidget(selection: Object | undefined): void {
+    override updateContentWidget(selection: Object | undefined): void {
         this.emptyWidget.updatePropertyViewContent();
     }
 }

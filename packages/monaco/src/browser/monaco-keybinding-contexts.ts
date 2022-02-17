@@ -32,7 +32,7 @@ import { MonacoEditor } from './monaco-editor';
 @injectable()
 export class MonacoStrictEditorTextFocusContext extends StrictEditorTextFocusContext {
 
-    protected canHandle(widget: EditorWidget): boolean {
+    protected override canHandle(widget: EditorWidget): boolean {
         const { editor } = widget;
         if (editor instanceof MonacoEditor) {
             return editor.isFocused({ strict: true });

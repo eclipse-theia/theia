@@ -19,7 +19,7 @@ import { TheiaStatusIndicator } from './theia-status-indicator';
 const TOGGLE_BOTTOM_ICON = 'codicon-window';
 
 export class TheiaToggleBottomIndicator extends TheiaStatusIndicator {
-    async isVisible(): Promise<boolean> {
+    override async isVisible(): Promise<boolean> {
         return super.isVisible(TOGGLE_BOTTOM_ICON);
     }
 }

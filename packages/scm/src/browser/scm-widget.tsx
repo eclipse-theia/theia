@@ -130,7 +130,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.onUpdateRequest(Widget.Msg.UpdateRequest);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         MessageLoop.sendMessage(this.commitWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         MessageLoop.sendMessage(this.amendWidget, msg);
@@ -138,7 +138,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         this.node.appendChild(this.commitWidget.node);
         this.node.appendChild(this.resourceWidget.node);
         this.node.appendChild(this.amendWidget.node);
@@ -148,7 +148,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.refresh();
         if (this.commitWidget.isVisible) {

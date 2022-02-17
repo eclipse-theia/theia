@@ -21,7 +21,7 @@ const PROBLEM_ICON = 'codicon-error';
 
 export class TheiaProblemIndicator extends TheiaStatusIndicator {
 
-    async isVisible(): Promise<boolean> {
+    override async isVisible(): Promise<boolean> {
         const handle = await super.getElementHandleByIcon(PROBLEM_ICON);
         return !!handle && handle.isVisible();
     }

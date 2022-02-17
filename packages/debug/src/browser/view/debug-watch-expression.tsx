@@ -33,17 +33,17 @@ export class DebugWatchExpression extends ExpressionItem {
         this.id = options.id;
     }
 
-    async evaluate(): Promise<void> {
+    override async evaluate(): Promise<void> {
         await super.evaluate('watch');
     }
 
-    protected setResult(body?: DebugProtocol.EvaluateResponse['body']): void {
+    protected override setResult(body?: DebugProtocol.EvaluateResponse['body']): void {
         // overridden to ignore error
         super.setResult(body);
         this.options.onDidChange();
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <div className='theia-debug-console-variable'>
             <span title={this.type || this._expression} className='name'>{this._expression}: </span>
             <span title={this._value} ref={this.setValueRef}>{this._value}</span>

@@ -27,7 +27,7 @@ export class GitQuickOpenPrompt extends GitPrompt {
 
     protected readonly queue = new PQueue({ autoStart: true, concurrency: 1 });
 
-    async ask(question: GitPrompt.Question): Promise<GitPrompt.Answer> {
+    override async ask(question: GitPrompt.Question): Promise<GitPrompt.Answer> {
         return this.queue.add(() => {
             const { details, text, password } = question;
             return new Promise<GitPrompt.Answer>(async resolve => {
@@ -40,7 +40,7 @@ export class GitQuickOpenPrompt extends GitPrompt {
             });
         });
     }
-    dispose(): void {
+    override dispose(): void {
         if (!this.queue.isPaused) {
             this.queue.pause();
         }

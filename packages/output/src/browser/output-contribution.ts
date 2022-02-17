@@ -68,7 +68,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             open(this.openerService, OutputUri.create(name), { activate: !preserveFocus, reveal: true }));
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(OutputCommands.CLEAR__WIDGET, {
             isEnabled: arg => {
@@ -217,7 +217,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
         });
     }
 
-    registerMenus(registry: MenuModelRegistry): void {
+    override registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
         registry.registerMenuAction(OutputContextMenu.TEXT_EDIT_GROUP, {
             commandId: CommonCommands.COPY.id

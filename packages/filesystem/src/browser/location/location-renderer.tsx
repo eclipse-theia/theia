@@ -117,7 +117,7 @@ export class LocationListRenderer extends ReactRenderer {
         this.homeDir = (new URI(homeDirWithPrefix)).path.toString();
     }
 
-    render(): void {
+    override render(): void {
         ReactDOM.render(this.doRender(), this.host, this.doAfterRender);
     }
 
@@ -153,7 +153,7 @@ export class LocationListRenderer extends ReactRenderer {
     protected readonly handleTextInputOnBlur = () => this.toggleToSelectInput();
     protected readonly handleTextInputMouseDown = (e: React.MouseEvent<HTMLSpanElement>) => this.toggleToTextInputOnMouseDown(e);
 
-    protected doRender(): React.ReactElement {
+    protected override doRender(): React.ReactElement {
         return (
             <>
                 {this.renderInputIcon()}
@@ -372,7 +372,7 @@ export class LocationListRenderer extends ReactRenderer {
         return undefined;
     }
 
-    dispose(): void {
+    override dispose(): void {
         super.dispose();
         this.toDisposeOnNewCache.dispose();
     }

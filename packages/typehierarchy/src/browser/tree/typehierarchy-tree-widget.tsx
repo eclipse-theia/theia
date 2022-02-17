@@ -34,11 +34,12 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly icons = new Map(Array.from(Object.keys(SymbolKind)).map(key => [(SymbolKind as any)[key], key.toLocaleLowerCase()] as [number, string]));
 
+    @inject(EditorManager) readonly editorManager: EditorManager;
+
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(TypeHierarchyTreeModel) readonly model: TypeHierarchyTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(EditorManager) readonly editorManager: EditorManager
+        @inject(TreeProps) props: TreeProps,
+        @inject(TypeHierarchyTreeModel) override readonly model: TypeHierarchyTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
         this.id = TypeHierarchyTreeWidget.WIDGET_ID;
@@ -66,7 +67,7 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     /**
      * See: `TreeWidget#renderIcon`.
      */
-    protected renderIcon(node: TreeNode): React.ReactNode {
+    protected override renderIcon(node: TreeNode): React.ReactNode {
         if (TypeHierarchyTree.Node.is(node)) {
             return <div className={'symbol-icon ' + this.icons.get(node.item.kind) || 'unknown'}></div>;
         }

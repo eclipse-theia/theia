@@ -77,7 +77,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         }
     }
 
-    getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
+    override getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri(resourceUri);
             if (configUri && this.configurations.getName(configUri) === sectionName) {
@@ -87,7 +87,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return undefined;
     }
 
-    getContainingConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
+    override getContainingConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri();
             if (provider.contains(resourceUri) && this.configurations.getName(configUri) === sectionName) {
@@ -97,11 +97,11 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return undefined;
     }
 
-    getDomain(): string[] {
+    override getDomain(): string[] {
         return this.workspaceService.tryGetRoots().map(root => root.resource.toString());
     }
 
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+    override resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         const groups = this.groupProvidersByConfigName(resourceUri);
         for (const group of groups.values()) {

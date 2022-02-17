@@ -21,13 +21,9 @@ import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import {
     FrontendApplicationContribution,
     createTreeContainer,
-    TreeWidget,
     bindViewContribution,
     TreeProps,
     defaultTreeProps,
-    TreeDecoratorService,
-    TreeModel,
-    TreeModelImpl,
     BreadcrumbsContribution
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -62,19 +58,12 @@ export default new ContainerModule(bind => {
 });
 
 function createOutlineViewWidgetContainer(parent: interfaces.Container): interfaces.Container {
-    const child = createTreeContainer(parent);
-
-    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, expandOnlyOnExpansionToggleClick: true, search: true });
-
-    child.unbind(TreeWidget);
-    child.bind(OutlineViewWidget).toSelf();
-
-    child.unbind(TreeModelImpl);
-    child.bind(OutlineViewTreeModel).toSelf();
-    child.rebind(TreeModel).toService(OutlineViewTreeModel);
-
-    child.bind(OutlineDecoratorService).toSelf().inSingletonScope();
-    child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(OutlineDecoratorService)).inSingletonScope();
+    const child = createTreeContainer(parent, {
+        props: { expandOnlyOnExpansionToggleClick: true, search: true },
+        widget: OutlineViewWidget,
+        model: OutlineViewTreeModel,
+        decoratorService: OutlineDecoratorService,
+    });
     bindContributionProvider(child, OutlineTreeDecorator);
     return child;
 }

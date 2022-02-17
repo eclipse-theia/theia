@@ -240,7 +240,7 @@ export class MiniBrowserContent extends BaseWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.getToolbarProps() !== 'hide') {
             this.input.focus();

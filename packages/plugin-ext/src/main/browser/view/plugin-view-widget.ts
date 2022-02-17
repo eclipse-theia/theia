@@ -66,7 +66,7 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         this.toDispose.push(localContext);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         const widget = this.widgets[0];
         if (widget) {
@@ -144,17 +144,17 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         }
     }
 
-    addWidget(widget: Widget): void {
+    override addWidget(widget: Widget): void {
         super.addWidget(widget);
         this.updateWidgetMessage();
     }
 
-    insertWidget(index: number, widget: Widget): void {
+    override insertWidget(index: number, widget: Widget): void {
         super.insertWidget(index, widget);
         this.updateWidgetMessage();
     }
 
-    dispose(): void {
+    override dispose(): void {
         this.toDispose.dispose();
         super.dispose();
     }

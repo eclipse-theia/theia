@@ -106,7 +106,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.update();
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.toDispose.push(this.startScrollSync());
         this.toDispose.push(this.startDoubleClickListener());
@@ -153,13 +153,13 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         return this.uri.withPath(resourceUri.path);
     }
 
-    onActivateRequest(msg: Message): void {
+    override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
         this.update();
     }
 
-    onUpdateRequest(msg: Message): void {
+    override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.performUpdate();
     }

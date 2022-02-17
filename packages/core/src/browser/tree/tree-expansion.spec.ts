@@ -132,7 +132,7 @@ describe('TreeExpansionService', () => {
         const container = createTreeTestContainer();
         container.rebind(Tree).to(class extends TreeImpl {
 
-            protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+            protected override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
                 await timeout(200);
                 return [{
                     id: 'child',

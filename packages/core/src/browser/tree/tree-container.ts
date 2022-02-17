@@ -25,45 +25,123 @@ import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
-import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
+import { SearchBox, SearchBoxFactory } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
-import { TreeViewWelcomeWidget } from './tree-view-welcome-widget';
 
-export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
+function isTreeServices(candidate?: Partial<TreeProps> | Partial<TreeContainerProps>): candidate is TreeContainerProps {
+    if (candidate) {
+        const maybeServices = candidate as TreeContainerProps;
+        for (const key of Object.keys(maybeServices)) {
+            if (key in defaultImplementations) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeContainerProps>): Container;
+/**
+ * @deprecated Please use TreeContainerProps instead of TreeProps
+ * @since 1.23.0
+ */
+export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container;
+export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps> | Partial<TreeContainerProps>): Container {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = parent;
-
-    child.bind(TreeImpl).toSelf();
-    child.bind(Tree).toService(TreeImpl);
-
-    child.bind(TreeSelectionServiceImpl).toSelf();
-    child.bind(TreeSelectionService).toService(TreeSelectionServiceImpl);
-
-    child.bind(TreeExpansionServiceImpl).toSelf();
-    child.bind(TreeExpansionService).toService(TreeExpansionServiceImpl);
-
-    child.bind(TreeNavigationService).toSelf();
-
-    child.bind(TreeModelImpl).toSelf();
-    child.bind(TreeModel).toService(TreeModelImpl);
-
-    child.bind(TreeWidget).toSelf();
-    child.bind(TreeProps).toConstantValue({
-        ...defaultTreeProps,
-        ...props
-    });
-
-    child.bind(TreeViewWelcomeWidget).toSelf();
-
-    child.bind(TreeSearch).toSelf().inSingletonScope();
-    child.bind(FuzzySearch).toSelf().inSingletonScope();
-    child.bind(SearchBoxFactory).toFactory(context =>
-        (options: SearchBoxProps) => {
-            const debounce = new SearchBoxDebounce(options);
-            return new SearchBox(options, debounce);
+    const overrideServices: Partial<TreeServiceProviders> = isTreeServices(props) ? props : {};
+    for (const key of Object.keys(serviceIdentifiers) as (keyof TreeIdentifiers)[]) {
+        if (key === 'props') {
+            const { service, identifier } = getServiceAndIdentifier(key, overrideServices);
+            child.bind(identifier).toConstantValue({
+                ...defaultImplementations.props,
+                ...service
+            });
+        } else if (key === 'searchBoxFactory') {
+            const { service, identifier } = getServiceAndIdentifier(key, overrideServices);
+            child.bind(identifier).toFactory(context => service(context));
+        } else {
+            const { service, identifier } = getServiceAndIdentifier(key, overrideServices);
+            child.bind(service).toSelf().inSingletonScope();
+            if (identifier !== service) {
+                child.bind(identifier as interfaces.ServiceIdentifier<typeof service>).toService(service);
+            }
         }
-    );
-
-    child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
+    }
     return child;
 }
+
+function getServiceAndIdentifier<Key extends keyof TreeIdentifiers>(
+    key: Key, overrides: Partial<TreeContainerProps>
+): { service: TreeContainerProps[Key], identifier: TreeIdentifiers[Key] } {
+    const override = overrides[key] as TreeContainerProps[Key] | undefined;
+    const service = override ?? defaultImplementations[key];
+    return {
+        service,
+        identifier: serviceIdentifiers[key]
+    };
+}
+
+export interface SearchBoxFactoryFactory {
+    (context: interfaces.Context): SearchBoxFactory;
+}
+
+const defaultSearchBoxFactoryFactory: SearchBoxFactoryFactory = () => options => {
+    const debounce = new SearchBoxDebounce(options);
+    return new SearchBox(options, debounce);
+};
+
+interface TreeConstants {
+    searchBoxFactory: SearchBoxFactory,
+    props: TreeProps,
+}
+
+interface TreeServices {
+    tree: Tree,
+    selectionService: TreeSelectionService,
+    expansionService: TreeExpansionService,
+    navigationService: TreeNavigationService,
+    model: TreeModel,
+    widget: TreeWidget,
+    search: TreeSearch,
+    fuzzy: FuzzySearch,
+    decoratorService: TreeDecoratorService,
+}
+
+interface TreeTypes extends TreeServices, TreeConstants { }
+
+export type TreeIdentifiers = { [K in keyof TreeTypes]: interfaces.ServiceIdentifier<TreeTypes[K]>; };
+type TreeServiceProviders = { [K in keyof TreeServices]: interfaces.Newable<TreeServices[K]> };
+
+export interface TreeContainerProps extends TreeServiceProviders {
+    props: Partial<TreeProps>,
+    searchBoxFactory: SearchBoxFactoryFactory;
+}
+
+const defaultImplementations: TreeContainerProps & { props: TreeProps } = {
+    tree: TreeImpl,
+    selectionService: TreeSelectionServiceImpl,
+    expansionService: TreeExpansionServiceImpl,
+    navigationService: TreeNavigationService,
+    model: TreeModelImpl,
+    widget: TreeWidget,
+    search: TreeSearch,
+    fuzzy: FuzzySearch,
+    decoratorService: NoopTreeDecoratorService,
+    props: defaultTreeProps,
+    searchBoxFactory: defaultSearchBoxFactoryFactory,
+};
+
+const serviceIdentifiers: TreeIdentifiers = {
+    tree: Tree,
+    selectionService: TreeSelectionService,
+    expansionService: TreeExpansionService,
+    navigationService: TreeNavigationService,
+    model: TreeModel,
+    widget: TreeWidget,
+    props: TreeProps,
+    search: TreeSearch,
+    fuzzy: FuzzySearch,
+    searchBoxFactory: SearchBoxFactory,
+    decoratorService: TreeDecoratorService,
+};

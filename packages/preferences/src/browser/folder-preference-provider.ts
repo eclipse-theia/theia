@@ -18,7 +18,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { SectionPreferenceProvider } from './section-preference-provider';
 
 export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
@@ -35,7 +34,6 @@ export interface FolderPreferenceProviderOptions {
 @injectable()
 export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
-    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FolderPreferenceProviderFolder) protected readonly folder: FileStat;
 
     private _folderUri: URI;
@@ -54,7 +52,7 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
         return PreferenceScope.Folder;
     }
 
-    getDomain(): string[] {
+    override getDomain(): string[] {
         return [this.folderUri.toString()];
     }
 }

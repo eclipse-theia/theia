@@ -43,11 +43,11 @@ export class OutputEditorModelFactory implements MonacoEditorModelFactory {
 
 export class OutputEditorModel extends MonacoEditorModel {
 
-    get readOnly(): boolean {
+    override get readOnly(): boolean {
         return true;
     }
 
-    protected setDirty(dirty: boolean): void {
+    protected override setDirty(dirty: boolean): void {
         // NOOP
     }
 

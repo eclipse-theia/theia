@@ -108,7 +108,9 @@ module.exports = {
         };
         function checkModuleImport(node) {
             const module = /** @type {string} */(node.value);
-            if (matchedImportRule.restricted.some(restricted => module.includes(`/${restricted}/`))) {
+            if (matchedImportRule.restricted.some(
+                restricted => restricted.includes(`/${restricted}/`) || restricted.endsWith(`/${restricted}`)
+            )) {
                 context.report({
                     node,
                     message: `'${module}' cannot be imported in '${matchedFolder}', only '${matchedImportRule.allowed.join(', ')}' ${matchedImportRule.allowed.length === 1 ? 'is' : 'are'} allowed.`

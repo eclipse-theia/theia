@@ -23,7 +23,7 @@ import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-w
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
-    async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
+    override async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
         const widget = await super.createWidget(identifier);
         await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;
@@ -35,7 +35,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),
@@ -47,7 +47,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
 export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory {
 
-    async createWidget(identifier: WebviewWidgetIdentifier): Promise<CustomEditorWidget> {
+    override async createWidget(identifier: WebviewWidgetIdentifier): Promise<CustomEditorWidget> {
         const widget = await super.createWidget(identifier);
         await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;
@@ -59,7 +59,7 @@ export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory
      * @param endpoint cookie's target url
      */
     protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        await electronRemote.session.defaultSession!.cookies.set({
+        await electronRemote.session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,
             value: JSON.stringify(this.container.get(ElectronSecurityToken)),

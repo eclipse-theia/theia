@@ -21,7 +21,7 @@ import { FrontendApplicationState, FrontendApplicationStateService } from '../..
 
 @injectable()
 export class ElectronFrontendApplicationStateService extends FrontendApplicationStateService {
-    protected doSetState(state: FrontendApplicationState): void {
+    protected override doSetState(state: FrontendApplicationState): void {
         super.doSetState(state);
         ipcRenderer.send(APPLICATION_STATE_CHANGE_SIGNAL, state);
     }

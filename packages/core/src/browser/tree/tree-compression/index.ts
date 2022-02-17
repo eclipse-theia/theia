@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2022 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// eslint-disable-next-line spaced-comment
-/// <reference types='@theia/monaco/src/typings/monaco'/>
+export * from './compressed-tree-expansion-service';
+export * from './compressed-tree-model';
+export * from './compressed-tree-widget';
+export * from './tree-compression-service';

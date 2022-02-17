@@ -30,7 +30,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     static ID = 'vsx-extensions-view-container';
     static LABEL = nls.localizeByDefault('Extensions');
 
-    disableDNDBetweenContainers = true;
+    override disableDNDBetweenContainers = true;
 
     @inject(VSXExtensionsSearchBar)
     protected readonly searchBar: VSXExtensionsSearchBar;
@@ -39,7 +39,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     protected readonly model: VSXExtensionsModel;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = VSXExtensionsViewContainer.ID;
         this.addClass('theia-vsx-extensions-view-container');
@@ -51,17 +51,17 @@ export class VSXExtensionsViewContainer extends ViewContainer {
         });
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         this.searchBar.activate();
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.updateMode();
         this.toDisposeOnDetach.push(this.model.search.onDidChangeQuery(() => this.updateMode()));
     }
 
-    protected configureLayout(layout: PanelLayout): void {
+    protected override configureLayout(layout: PanelLayout): void {
         layout.addWidget(this.searchBar);
         super.configureLayout(layout);
     }
@@ -98,7 +98,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
         }
     }
 
-    protected registerPart(part: ViewContainerPart): void {
+    protected override registerPart(part: ViewContainerPart): void {
         super.registerPart(part);
         this.applyModeToPart(part);
     }
@@ -135,7 +135,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected doStoreState(): any {
+    protected override doStoreState(): any {
         const modes: VSXExtensionsViewContainer.State['modes'] = {};
         for (const mode of this.lastModeState.keys()) {
             modes[mode] = this.lastModeState.get(mode);
@@ -147,7 +147,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected doRestoreState(state: any): void {
+    protected override doRestoreState(state: any): void {
         // eslint-disable-next-line guard-for-in
         for (const key in state.modes) {
             const mode = Number(key) as VSXSearchMode;
@@ -159,13 +159,13 @@ export class VSXExtensionsViewContainer extends ViewContainer {
         this.model.search.query = state.query;
     }
 
-    protected updateToolbarItems(allParts: ViewContainerPart[]): void {
+    protected override updateToolbarItems(allParts: ViewContainerPart[]): void {
         super.updateToolbarItems(allParts);
         this.registerToolbarItem(VSXExtensionsCommands.INSTALL_FROM_VSIX.id, { tooltip: VSXExtensionsCommands.INSTALL_FROM_VSIX.label, group: 'other_1' });
         this.registerToolbarItem(VSXExtensionsCommands.CLEAR_ALL.id, { tooltip: VSXExtensionsCommands.CLEAR_ALL.label, priority: 1, onDidChange: this.model.onDidChange });
     }
 
-    protected getToggleVisibilityGroupLabel(): string {
+    protected override getToggleVisibilityGroupLabel(): string {
         return 'a/' + nls.localizeByDefault('Views');
     }
 }

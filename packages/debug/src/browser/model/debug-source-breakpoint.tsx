@@ -38,7 +38,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         this.origins = [origin];
     }
 
-    update(data: Partial<DebugSourceBreakpointData>): void {
+    override update(data: Partial<DebugSourceBreakpointData>): void {
         super.update(data);
     }
 
@@ -140,7 +140,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         }
     }
 
-    protected readonly setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
+    protected override setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.setEnabled(event.target.checked);
     };
 
@@ -158,7 +158,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return this.line + (typeof this.column === 'number' ? ':' + this.column : '');
     }
 
-    doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
+    override doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
         if (this.logMessage || this.condition || this.hitCondition) {
             const { session } = this;
             if (this.logMessage) {

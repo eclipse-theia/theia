@@ -286,7 +286,7 @@
 	background: url('breakpoint-log.svg') center center no-repeat;
 }
 .theia-debug-logpoint-disabled,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-logpoint-disabled-columne {
+.monaco-editor .theia-debug-breakpoint-column.theia-debug-logpoint-disabled-column {
     background: url('breakpoint-log-disabled.svg') center center no-repeat;
 }
 .theia-debug-logpoint-unverified,

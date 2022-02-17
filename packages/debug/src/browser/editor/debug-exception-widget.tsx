@@ -30,7 +30,7 @@ export interface ShowDebugExceptionParams {
 
 export class DebugExceptionMonacoEditorZoneWidget extends MonacoEditorZoneWidget {
 
-    protected computeContainerHeight(zoneHeight: number): {
+    protected override computeContainerHeight(zoneHeight: number): {
         height: number,
         frameWidth: number
     } {

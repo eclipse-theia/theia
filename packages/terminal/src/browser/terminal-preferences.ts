@@ -143,12 +143,13 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
-            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions'),
+            // nls-todo: Will be included by default in VSCode version 1.58.0
+            description: nls.localize('theia/terminal/confirmClose', 'Controls whether to confirm when the window closes if there are active terminal sessions.'),
             enum: ['never', 'always', 'hasChildProcesses'],
             enumDescriptions: [
-                nls.localizeByDefault('Never confirm.'),
-                nls.localizeByDefault('Always confirm if there are terminals.'),
-                nls.localizeByDefault('Confirm if there are any terminals that have child processes.'),
+                nls.localize('theia/terminal/confirmCloseNever', 'Never confirm.'),
+                nls.localize('theia/terminal/confirmCloseAlways', 'Always confirm if there are terminals.'),
+                nls.localize('theia/terminal/confirmCloseChildren', 'Confirm if there are any terminals that have child processes.'),
             ],
             default: 'never'
         }

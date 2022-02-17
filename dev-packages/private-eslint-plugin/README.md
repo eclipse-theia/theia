@@ -17,6 +17,12 @@ The plugin helps identify problems during development through static analysis in
 
 ## Rules
 
+### `localization-check`:
+
+The rule prevents the following localization related issues:
+- incorrect usage of the `nls.localizeByDefault` function by using an incorrect default value.
+- unnecessary call to `nls.localize` which could be replaced by `nls.localizeByDefault`.
+
 ### `no-src-import`:
 
 The rule prevents imports using `/src/` rather than `/lib/` as it causes build failures.

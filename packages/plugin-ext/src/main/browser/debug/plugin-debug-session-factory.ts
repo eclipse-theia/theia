@@ -34,22 +34,22 @@ import { Channel } from '@theia/debug/lib/common/debug-service';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
-        readonly id: string,
-        readonly options: DebugSessionOptions,
-        readonly parentSession: DebugSession | undefined,
-        protected readonly connection: DebugSessionConnection,
-        protected readonly terminalServer: TerminalService,
-        protected readonly editorManager: EditorManager,
-        protected readonly breakpoints: BreakpointManager,
-        protected readonly labelProvider: LabelProvider,
-        protected readonly messages: MessageClient,
-        protected readonly fileService: FileService,
+        override readonly id: string,
+        override readonly options: DebugSessionOptions,
+        override readonly parentSession: DebugSession | undefined,
+        protected override readonly connection: DebugSessionConnection,
+        protected override readonly terminalServer: TerminalService,
+        protected override readonly editorManager: EditorManager,
+        protected override readonly breakpoints: BreakpointManager,
+        protected override readonly labelProvider: LabelProvider,
+        protected override readonly messages: MessageClient,
+        protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>) {
+        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>) {
         super(id, options, parentSession, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService, debugContributionProvider);
     }
 
-    protected async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
+    protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
         terminalWidgetOptions = Object.assign({}, terminalWidgetOptions, this.terminalOptionsExt);
         return super.doCreateTerminal(terminalWidgetOptions);
     }
@@ -61,22 +61,22 @@ export class PluginDebugSession extends DebugSession {
  */
 export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
     constructor(
-        protected readonly terminalService: TerminalService,
-        protected readonly editorManager: EditorManager,
-        protected readonly breakpoints: BreakpointManager,
-        protected readonly labelProvider: LabelProvider,
-        protected readonly messages: MessageClient,
-        protected readonly outputChannelManager: OutputChannelManager,
-        protected readonly debugPreferences: DebugPreferences,
+        protected override readonly terminalService: TerminalService,
+        protected override readonly editorManager: EditorManager,
+        protected override readonly breakpoints: BreakpointManager,
+        protected override readonly labelProvider: LabelProvider,
+        protected override readonly messages: MessageClient,
+        protected override readonly outputChannelManager: OutputChannelManager,
+        protected override readonly debugPreferences: DebugPreferences,
         protected readonly connectionFactory: (sessionId: string) => Promise<Channel>,
-        protected readonly fileService: FileService,
+        protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>
+        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>
     ) {
         super();
     }
 
-    get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
+    override get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
             this.connectionFactory,

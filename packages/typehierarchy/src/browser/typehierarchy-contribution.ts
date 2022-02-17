@@ -34,7 +34,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
     protected readonly editorAccess: EditorAccess;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected override readonly shell: ApplicationShell;
 
     constructor() {
         super({
@@ -48,7 +48,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    async openView(args?: Partial<TypeHierarchyOpenViewArguments>): Promise<TypeHierarchyTreeWidget> {
+    override async openView(args?: Partial<TypeHierarchyOpenViewArguments>): Promise<TypeHierarchyTreeWidget> {
         const widget = await super.openView(args);
         const { selection, languageId } = this.editorAccess;
         const direction = this.getDirection(args);
@@ -56,7 +56,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         return widget;
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(TypeHierarchyCommands.OPEN_SUBTYPE, {
             execute: () => this.openViewOrFlipHierarchyDirection(TypeHierarchyDirection.Children),
@@ -68,7 +68,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const menuPath = [...EDITOR_CONTEXT_MENU, 'type-hierarchy'];
         menus.registerMenuAction(menuPath, {
@@ -79,7 +79,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: TypeHierarchyCommands.OPEN_SUBTYPE.id,

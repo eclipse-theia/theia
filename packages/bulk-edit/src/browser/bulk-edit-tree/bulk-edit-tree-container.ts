@@ -18,22 +18,14 @@ import { interfaces, Container } from '@theia/core/shared/inversify';
 import { BulkEditTreeWidget } from './bulk-edit-tree-widget';
 import { BulkEditTree } from './bulk-edit-tree';
 import { BulkEditTreeModel } from './bulk-edit-tree-model';
-import { TreeWidget, TreeProps, defaultTreeProps, TreeModel, createTreeContainer, TreeModelImpl, TreeImpl, Tree } from '@theia/core/lib/browser';
+import { createTreeContainer } from '@theia/core/lib/browser';
 
 export function createBulkEditContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
-
-    child.unbind(TreeImpl);
-    child.bind(BulkEditTree).toSelf();
-    child.rebind(Tree).toService(BulkEditTree);
-
-    child.unbind(TreeWidget);
-    child.bind(BulkEditTreeWidget).toSelf();
-
-    child.unbind(TreeModelImpl);
-    child.bind(BulkEditTreeModel).toSelf();
-    child.rebind(TreeModel).toService(BulkEditTreeModel);
-    child.rebind(TreeProps).toConstantValue(defaultTreeProps);
+    const child = createTreeContainer(parent, {
+        tree: BulkEditTree,
+        widget: BulkEditTreeWidget,
+        model: BulkEditTreeModel,
+    });
 
     return child;
 }

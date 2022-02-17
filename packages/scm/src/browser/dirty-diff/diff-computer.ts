@@ -77,15 +77,15 @@ export class DiffComputer {
 
 class ArrayDiff extends jsdiff.Diff {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tokenize(value: any): any {
+    override tokenize(value: any): any {
         return value;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    join(value: any): any {
+    override join(value: any): any {
         return value;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    removeEmpty(value: any): any {
+    override removeEmpty(value: any): any {
         return value;
     }
 }

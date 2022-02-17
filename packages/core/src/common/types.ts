@@ -68,8 +68,48 @@ export namespace Prioritizeable {
     }
 }
 
+export namespace ArrayUtils {
+    export interface Head<T> extends Array<T> {
+        head(): T;
+    }
+
+    export interface Tail<T> extends Array<T> {
+        tail(): T;
+    }
+
+    export interface Children<T> extends Array<T> {
+        children(): Tail<T>
+    }
+
+    export const TailImpl = {
+        tail<T>(this: Array<T>): T {
+            return this[this.length - 1];
+        },
+    };
+
+    export const HeadAndChildrenImpl = {
+        head<T>(this: Array<T>): T {
+            return this[0];
+        },
+
+        children<T>(this: Array<T>): Tail<T> {
+            return Object.assign(this.slice(1), TailImpl);
+        }
+    };
+
+    export interface HeadAndTail<T> extends Head<T>, Tail<T>, Children<T> { }
+
+    export function asTail<T>(array: Array<T>): Tail<T> {
+        return Object.assign(array, TailImpl);
+    }
+
+    export function asHeadAndTail<T>(array: Array<T>): HeadAndTail<T> {
+        return Object.assign(array, HeadAndChildrenImpl, TailImpl);
+    }
+}
+
 /**
- * Throws when called and statically make sure that all variants of a type were consumed.
+ * Throws when called and statically makes sure that all variants of a type were consumed.
  */
 export function unreachable(_never: never, message: string = 'unhandled case'): never {
     throw new Error(message);

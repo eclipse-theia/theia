@@ -25,10 +25,10 @@ export class ResourcePropertyViewWidgetProvider extends DefaultPropertyViewWidge
 
     @inject(ResourcePropertyViewTreeWidget) protected treeWidget: ResourcePropertyViewTreeWidget;
 
-    readonly id = 'resources';
-    readonly label = 'ResourcePropertyViewWidgetProvider';
+    override readonly id = 'resources';
+    override readonly label = 'ResourcePropertyViewWidgetProvider';
 
-    canHandle(selection: Object | undefined): number {
+    override canHandle(selection: Object | undefined): number {
         return (this.isFileSelection(selection) || this.isNavigatableSelection(selection)) ? 1 : 0;
     }
 
@@ -40,11 +40,11 @@ export class ResourcePropertyViewWidgetProvider extends DefaultPropertyViewWidge
         return !!selection && Navigatable.is(selection);
     }
 
-    provideWidget(selection: Object | undefined): Promise<ResourcePropertyViewTreeWidget> {
+    override provideWidget(selection: Object | undefined): Promise<ResourcePropertyViewTreeWidget> {
         return Promise.resolve(this.treeWidget);
     }
 
-    updateContentWidget(selection: Object | undefined): void {
+    override updateContentWidget(selection: Object | undefined): void {
         this.getPropertyDataService(selection).then(service => this.treeWidget.updatePropertyViewContent(service, selection));
     }
 

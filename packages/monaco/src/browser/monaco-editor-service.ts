@@ -55,7 +55,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     /**
      * Monaco active editor is either focused or last focused editor.
      */
-    getActiveCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
+    override getActiveCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
         let editor = MonacoEditor.getCurrent(this.editors);
         if (!editor && CustomEditorWidget.is(this.shell.activeWidget)) {
             const model = this.shell.activeWidget.modelRef.object;
@@ -66,7 +66,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return editor && editor.getControl();
     }
 
-    async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
+    override async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
         const uri = new URI(input.resource.toString());
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);
         const widget = await open(this.openerService, uri, openerOptions);

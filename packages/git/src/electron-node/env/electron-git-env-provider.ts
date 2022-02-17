@@ -32,12 +32,12 @@ export class ElectronGitEnvProvider extends DefaultGitEnvProvider {
     protected _env: Object | undefined;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.toDispose.push(this.askpass);
     }
 
-    async getEnv(): Promise<Object> {
+    override async getEnv(): Promise<Object> {
         if (!this._env) {
             this._env = this.askpass.getEnv();
         }

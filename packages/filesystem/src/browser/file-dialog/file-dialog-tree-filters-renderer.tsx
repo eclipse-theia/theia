@@ -64,7 +64,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);
 
-    protected doRender(): React.ReactNode {
+    protected override doRender(): React.ReactNode {
         if (!this.appliedFilters) {
             return undefined;
         }

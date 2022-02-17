@@ -30,7 +30,7 @@ export interface ElectronIpcOptions {
 @injectable()
 export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<ElectronIpcOptions> {
 
-    static createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
+    static override createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
         return container.get(ElectronIpcConnectionProvider).createProxy<T>(path, arg);
     }
 

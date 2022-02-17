@@ -40,7 +40,7 @@ export interface AlertMessageProps {
 
 export class AlertMessage extends React.Component<AlertMessageProps> {
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <div className='theia-alert-message-container'>
             <div className={`theia-${this.props.type.toLowerCase()}-alert`}>
                 <div className='theia-message-header'>

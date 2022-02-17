@@ -30,7 +30,7 @@ export class WorkspaceInputDialogProps extends SingleTextInputDialogProps {
 export class WorkspaceInputDialog extends SingleTextInputDialog {
 
     constructor(
-        @inject(WorkspaceInputDialogProps) protected readonly props: WorkspaceInputDialogProps,
+        @inject(WorkspaceInputDialogProps) protected override readonly props: WorkspaceInputDialogProps,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
     ) {
         super(props);

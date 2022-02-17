@@ -28,8 +28,8 @@ export class FileDialogWidget extends FileTreeWidget {
     private _disableFileSelection: boolean = false;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileDialogModel) readonly model: FileDialogModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileDialogModel) override readonly model: FileDialogModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
@@ -41,7 +41,7 @@ export class FileDialogWidget extends FileTreeWidget {
         this.model.disableFileSelection = isSelectable;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const attr = super.createNodeAttributes(node, props) as any;
         if (this.shouldDisableSelection(node)) {
@@ -55,7 +55,7 @@ export class FileDialogWidget extends FileTreeWidget {
         return attr;
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (this.shouldDisableSelection(node)) {
             [SELECTED_CLASS, FOCUS_CLASS].forEach(name => {

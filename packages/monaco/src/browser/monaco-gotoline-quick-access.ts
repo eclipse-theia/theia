@@ -24,7 +24,7 @@ export class GotoLineQuickAccess extends monaco.quickInput.StandaloneGotoLineQui
         super(service);
     }
 
-    get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
+    override get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
         return this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor();
     }
 }

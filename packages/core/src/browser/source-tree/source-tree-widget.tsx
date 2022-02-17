@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
 import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeImpl, Tree, TreeModel } from '../tree';
+import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel } from '../tree';
 import { TreeSource, TreeElement } from './tree-source';
 import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 
@@ -25,20 +25,17 @@ import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 export class SourceTreeWidget extends TreeWidget {
 
     static createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
-        const child = createTreeContainer(parent, props);
-
-        child.unbind(TreeImpl);
-        child.bind(SourceTree).toSelf();
-        child.rebind(Tree).toService(SourceTree);
-
-        child.unbind(TreeWidget);
-        child.bind(SourceTreeWidget).toSelf();
+        const child = createTreeContainer(parent, {
+            props,
+            tree: SourceTree,
+            widget: SourceTreeWidget,
+        });
 
         return child;
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.addClass('theia-source-tree');
         this.toDispose.push(this.model.onOpenNode(node => {
@@ -70,7 +67,7 @@ export class SourceTreeWidget extends TreeWidget {
         return TreeElementNode.is(node) && node.element || undefined;
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (TreeSourceNode.is(model.root) && model.root.children.length === 0) {
             const { placeholder } = model.root.source;
             if (placeholder) {
@@ -81,7 +78,7 @@ export class SourceTreeWidget extends TreeWidget {
 
     }
 
-    protected renderCaption(node: TreeNode): React.ReactNode {
+    protected override renderCaption(node: TreeNode): React.ReactNode {
         if (TreeElementNode.is(node)) {
             const classNames = this.createTreeElementNodeClassNames(node);
             return <div className={classNames.join(' ')}>{node.element.render()}</div>;
@@ -92,14 +89,14 @@ export class SourceTreeWidget extends TreeWidget {
         return ['theia-tree-element-node'];
     }
 
-    storeState(): object {
+    override storeState(): object {
         // no-op
         return {};
     }
     protected superStoreState(): object {
         return super.storeState();
     }
-    restoreState(state: object): void {
+    override restoreState(state: object): void {
         // no-op
     }
     protected superRestoreState(state: object): void {

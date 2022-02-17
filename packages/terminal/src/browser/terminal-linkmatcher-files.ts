@@ -45,7 +45,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
         return new RegExp(`${baseLocalLinkClause}(${lineAndColumnClause})`);
     }
 
-    getValidate(terminalWidget: TerminalWidgetImpl): (link: string) => Promise<boolean> {
+    override getValidate(terminalWidget: TerminalWidgetImpl): (link: string) => Promise<boolean> {
         return async match => {
             try {
                 const toOpen = await this.toURI(match, await terminalWidget.cwd);

@@ -24,13 +24,13 @@ import { FileDialogTree } from './file-dialog-tree';
 @injectable()
 export class FileDialogModel extends FileTreeModel {
 
-    @inject(FileDialogTree) readonly tree: FileDialogTree;
+    @inject(FileDialogTree) override readonly tree: FileDialogTree;
     protected readonly onDidOpenFileEmitter = new Emitter<void>();
     protected _initialLocation: URI | undefined;
     private _disableFileSelection: boolean = false;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.toDispose.push(this.onDidOpenFileEmitter);
     }
@@ -47,7 +47,7 @@ export class FileDialogModel extends FileTreeModel {
         this._disableFileSelection = isSelectable;
     }
 
-    async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
+    override async navigateTo(nodeOrId: TreeNode | string | undefined): Promise<TreeNode | undefined> {
         const result = await super.navigateTo(nodeOrId);
         if (!this._initialLocation && FileStatNode.is(result)) {
             this._initialLocation = result.uri;
@@ -59,7 +59,7 @@ export class FileDialogModel extends FileTreeModel {
         return this.onDidOpenFileEmitter.event;
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
             this.onDidOpenFileEmitter.fire(undefined);
         } else if (DirNode.is(node)) {
@@ -69,7 +69,7 @@ export class FileDialogModel extends FileTreeModel {
         }
     }
 
-    getNextSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getNextSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
         let nextNode: SelectableTreeNode | undefined = node;
         do {
             nextNode = super.getNextSelectableNode(nextNode);
@@ -77,7 +77,7 @@ export class FileDialogModel extends FileTreeModel {
         return nextNode;
     }
 
-    getPrevSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
+    override getPrevSelectableNode(node: SelectableTreeNode = this.selectedNodes[0]): SelectableTreeNode | undefined {
         let prevNode: SelectableTreeNode | undefined = node;
         do {
             prevNode = super.getPrevSelectableNode(prevNode);

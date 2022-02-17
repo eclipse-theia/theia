@@ -42,6 +42,7 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -304,7 +305,7 @@ export class MonacoEditorProvider {
         if (formatOnSave) {
             const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
             await Promise.race([
-                new Promise((_, reject) => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
+                timeoutReject(formatOnSaveTimeout, `Aborted format on save after ${formatOnSaveTimeout}ms`),
                 editor.runAction('editor.action.formatDocument')
             ]);
         }

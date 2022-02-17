@@ -28,8 +28,8 @@ export namespace BulkEditNodeSelection {
     export class CommandHandler extends SelectionCommandHandler<BulkEditNodeSelection> {
 
         constructor(
-            protected readonly selectionService: SelectionService,
-            protected readonly options: SelectionCommandHandler.Options<BulkEditNodeSelection>
+            protected override readonly selectionService: SelectionService,
+            protected override readonly options: SelectionCommandHandler.Options<BulkEditNodeSelection>
         ) {
             super(
                 selectionService,

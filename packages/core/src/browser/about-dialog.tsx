@@ -39,7 +39,7 @@ export class AboutDialog extends ReactDialog<void> {
     protected readonly appServer: ApplicationServer;
 
     constructor(
-        @inject(AboutDialogProps) protected readonly props: AboutDialogProps
+        @inject(AboutDialogProps) protected override readonly props: AboutDialogProps
     ) {
         super({
             title: FrontendApplicationConfigProvider.get().applicationName,
@@ -81,7 +81,7 @@ export class AboutDialog extends ReactDialog<void> {
         </div>;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.update();
     }

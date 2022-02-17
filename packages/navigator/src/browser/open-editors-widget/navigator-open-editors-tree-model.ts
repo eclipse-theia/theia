@@ -75,7 +75,7 @@ export class OpenEditorsModel extends FileTreeModel {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.setupHandlers();
         this.initializeRoot();
@@ -245,7 +245,7 @@ export class OpenEditorsModel extends FileTreeModel {
         return rootNode;
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected override doOpenNode(node: TreeNode): void {
         if (node.visible === false) {
             return;
         } else if (FileNode.is(node)) {

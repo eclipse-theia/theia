@@ -31,7 +31,7 @@ export class PropertyViewWidget extends BaseWidget {
 
     protected contentWidget: PropertyViewContentWidget;
 
-    protected toDisposeOnDetach = new DisposableCollection();
+    protected override toDisposeOnDetach = new DisposableCollection();
 
     @inject(PropertyViewService) protected readonly propertyViewService: PropertyViewService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
@@ -91,12 +91,12 @@ export class PropertyViewWidget extends BaseWidget {
         this.update();
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.initializeContentWidget(this.selectionService.selection);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
         if (this.contentWidget) {
@@ -104,7 +104,7 @@ export class PropertyViewWidget extends BaseWidget {
         }
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         if (this.contentWidget) {
             MessageLoop.sendMessage(this.contentWidget, msg);

@@ -685,7 +685,7 @@ const codeEditorPreferenceProperties = {
         'default': false
     },
     'editor.highlightActiveIndentGuide': {
-        'description': nls.localize('theia/editor/highlightActiveIndentGuide', 'Controls whether the editor should highlight the active indent guide.'),
+        'description': nls.localizeByDefault('Controls whether the editor should highlight the active indent guide.'),
         'type': 'boolean',
         'default': true
     },
@@ -743,7 +743,7 @@ const codeEditorPreferenceProperties = {
         'description': nls.localizeByDefault('Controls the display of line numbers.')
     },
     'editor.lineNumbersMinChars': {
-        'description': nls.localize('theia/editor/lineNumbersMinChars', 'Controls the line height. Use 0 to compute the line height from the font size.'),
+        'description': nls.localizeByDefault('Controls the line height. Use 0 to compute the line height from the font size.'),
         'type': 'integer',
         'default': 5,
         'minimum': 1,
@@ -900,15 +900,13 @@ const codeEditorPreferenceProperties = {
     'editor.peekWidgetDefaultFocus': {
         'enumDescriptions': [
             nls.localizeByDefault('Focus the tree when opening peek'),
-            nls.localizeByDefault('Focus the editor when opening peek'),
-            nls.localizeByDefault('Focus the webview when opening peek')
+            nls.localizeByDefault('Focus the editor when opening peek')
         ],
         'description': nls.localizeByDefault('Controls whether to focus the inline editor or the tree in the peek widget.'),
         'type': 'string',
         'enum': [
             'tree',
-            'editor',
-            'webview'
+            'editor'
         ],
         'default': 'tree'
     },
@@ -1399,7 +1397,7 @@ const codeEditorPreferenceProperties = {
         'default': 'off'
     },
     'editor.tabIndex': {
-        'markdownDescription': nls.localize('theia/editor/tabIndex', 'Controls the wrapping column of the editor when `#editor.wordWrap#` is `wordWrapColumn` or `bounded`.'),
+        'markdownDescription': nls.localizeByDefault('Controls the wrapping column of the editor when `#editor.wordWrap#` is `wordWrapColumn` or `bounded`.'),
         'type': 'integer',
         'default': 0,
         'minimum': -1,
@@ -1407,9 +1405,9 @@ const codeEditorPreferenceProperties = {
     },
     'editor.unusualLineTerminators': {
         'markdownEnumDescriptions': [
-            nls.localize('unusualLineTerminators.auto', 'Unusual line terminators are automatically removed.'),
-            nls.localize('unusualLineTerminators.off', 'Unusual line terminators are ignored.'),
-            nls.localize('unusualLineTerminators.prompt', 'Unusual line terminators prompt to be removed.')
+            nls.localizeByDefault('Unusual line terminators are automatically removed.'),
+            nls.localizeByDefault('Unusual line terminators are ignored.'),
+            nls.localizeByDefault('Unusual line terminators prompt to be removed.')
         ],
         'description': nls.localizeByDefault('Remove unusual line terminators that might cause problems.'),
         'type': 'string',

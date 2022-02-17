@@ -67,9 +67,9 @@ export class EditorTextFocusContext implements KeybindingContext {
 @injectable()
 export class DiffEditorTextFocusContext extends EditorTextFocusContext {
 
-    readonly id: string = EditorKeybindingContexts.diffEditorTextFocus;
+    override readonly id: string = EditorKeybindingContexts.diffEditorTextFocus;
 
-    protected canHandle(widget: EditorWidget): boolean {
+    protected override canHandle(widget: EditorWidget): boolean {
         return super.canHandle(widget) && DiffUris.isDiffUri(widget.editor.uri);
     }
 
@@ -82,6 +82,6 @@ export class DiffEditorTextFocusContext extends EditorTextFocusContext {
 @injectable()
 export class StrictEditorTextFocusContext extends EditorTextFocusContext {
 
-    readonly id: string = EditorKeybindingContexts.strictEditorTextFocus;
+    override readonly id: string = EditorKeybindingContexts.strictEditorTextFocus;
 
 }

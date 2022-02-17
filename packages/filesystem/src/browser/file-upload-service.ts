@@ -245,9 +245,9 @@ export class FileUploadService {
 
     protected async confirmOverwrite(fileUri: URI): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: nls.localizeByDefault('Replace file'),
-            msg: nls.localizeByDefault('File "{0}" already exists in the destination folder. Do you want to replace it?', fileUri.path.base),
-            ok: nls.localizeByDefault('Replace file'),
+            title: nls.localizeByDefault('Replace'),
+            msg: nls.localizeByDefault("A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?", fileUri.path.base),
+            ok: nls.localizeByDefault('Replace'),
             cancel: Dialog.CANCEL
         });
         return !!await dialog.open();

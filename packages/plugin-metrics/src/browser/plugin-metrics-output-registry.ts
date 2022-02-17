@@ -26,7 +26,7 @@ export class PluginMetricsOutputChannelRegistry extends OutputChannelRegistryMai
     @inject(PluginMetricsCreator)
     protected readonly pluginMetricsCreator: PluginMetricsCreator;
 
-    $append(channelName: string, errorOrValue: string, pluginInfo: PluginInfo): PromiseLike<void> {
+    override $append(channelName: string, errorOrValue: string, pluginInfo: PluginInfo): PromiseLike<void> {
         if (errorOrValue.startsWith('[Error')) {
             const createdMetric = createDefaultRequestData(pluginInfo.id, errorOrValue);
             this.pluginMetricsCreator.createErrorMetric(createdMetric);

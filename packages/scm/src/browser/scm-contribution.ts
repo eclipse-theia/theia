@@ -138,7 +138,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         this.scmFocus.set(this.shell.currentWidget instanceof ScmWidget);
     }
 
-    registerCommands(commandRegistry: CommandRegistry): void {
+    override registerCommands(commandRegistry: CommandRegistry): void {
         super.registerCommands(commandRegistry);
         commandRegistry.registerCommand(SCM_COMMANDS.CHANGE_REPOSITORY, {
             execute: () => this.scmQuickOpenService.changeRepository(),
@@ -200,7 +200,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SCM_COMMANDS.ACCEPT_INPUT.id,

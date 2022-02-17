@@ -21,6 +21,7 @@ import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedP
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { Stopwatch } from '@theia/core/lib/common';
 
 @injectable()
 export class HostedPluginDeployerHandler implements PluginDeployerHandler {
@@ -33,6 +34,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     @inject(HostedPluginLocalizationService)
     private readonly localizationService: HostedPluginLocalizationService;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     private readonly deployedLocations = new Map<string, Set<string>>();
 
@@ -118,9 +122,11 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
      */
     protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<void> {
         const pluginPath = entry.path();
+        const deployPlugin = this.stopwatch.start('deployPlugin');
         try {
             const manifest = await this.reader.readPackage(pluginPath);
             if (!manifest) {
+                deployPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}''`);
                 return;
             }
 
@@ -132,6 +138,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
             const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
             if (deployedPlugins.has(metadata.model.id)) {
+                deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
                 return;
             }
 
@@ -140,9 +147,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             deployed.contributes = this.reader.readContribution(manifest);
             this.localizationService.deployLocalizations(deployed);
             deployedPlugins.set(metadata.model.id, deployed);
-            this.logger.info(`Deploying ${entryPoint} plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
+            deployPlugin.log(`Deployed ${entryPoint} plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {
-            console.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
+            deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
         }
     }
 
@@ -153,14 +160,27 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         if (!deployedLocations) {
             return false;
         }
+
+        const undeployPlugin = this.stopwatch.start('undeployPlugin');
         this.deployedLocations.delete(pluginId);
+        let undeployError: unknown;
+        const failedLocations: string[] = [];
+
         for (const location of deployedLocations) {
             try {
                 await fs.remove(location);
             } catch (e) {
-                console.error(`[${pluginId}]: failed to undeploy from "${location}", reason`, e);
+                failedLocations.push(location);
+                undeployError = undeployError ?? e;
             }
         }
+
+        if (undeployError) {
+            undeployPlugin.error(`[${pluginId}]: failed to undeploy from locations "${failedLocations}". First reason:`, undeployError);
+        } else {
+            undeployPlugin.log(`[${pluginId}]: undeployed from "${location}"`);
+        }
+
         return true;
     }
 }

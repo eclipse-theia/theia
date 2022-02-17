@@ -14,11 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as ws from 'ws';
-import * as url from 'url';
-import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
+import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
 import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
@@ -33,9 +31,6 @@ import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
-import { HttpWebsocketAdapter, HttpWebsocketAdapterFactory } from './http-websocket-adapter';
-import { Application } from 'express';
-import { json } from 'body-parser';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -57,13 +52,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     @inject(MessagingListener)
     protected readonly messagingListener: MessagingListener;
 
-    @inject(HttpWebsocketAdapterFactory)
-    protected readonly httpWebsocketAdapterFactory: () => HttpWebsocketAdapter;
-
-    protected webSocketServer: ws.Server | undefined;
-    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws | HttpWebsocketAdapter>();
+    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<Socket>();
     protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
-    protected readonly httpWebsocketAdapters = new Map<string, HttpWebsocketAdapter>();
 
     @postConstruct()
     protected init(): void {
@@ -91,108 +81,50 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
-    ws(spec: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void {
+    ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void {
         this.wsHandlers.push(spec, callback);
     }
 
-    protected checkAliveTimeout = 30000;
+    protected checkAliveTimeout = 30000; // 30 seconds
+    protected maxHttpBufferSize = 1e8; // 100 MB
+
     onStart(server: http.Server | https.Server): void {
-        this.webSocketServer = new ws.Server({
-            noServer: true,
-            perMessageDeflate: {
-                // don't compress if a message is less than 256kb
-                threshold: 256 * 1024
-            }
+        const socketServer = new Server(server, {
+            pingInterval: this.checkAliveTimeout,
+            pingTimeout: this.checkAliveTimeout * 2,
+            maxHttpBufferSize: this.maxHttpBufferSize
         });
-        server.on('upgrade', this.handleHttpUpgrade.bind(this));
-        interface CheckAliveWS extends ws {
-            alive: boolean;
-        }
-        this.webSocketServer.on('connection', (socket: CheckAliveWS, request) => {
-            socket.alive = true;
-            socket.on('pong', () => socket.alive = true);
-            this.handleConnection(socket, request);
-        });
-        setInterval(() => {
-            this.webSocketServer!.clients.forEach((socket: CheckAliveWS) => {
-                if (socket.alive === false) {
-                    socket.terminate();
-                    return;
-                }
-                socket.alive = false;
-                socket.ping();
-            });
-            this.httpWebsocketAdapters.forEach((adapter, id) => {
-                if (adapter.alive === false) {
-                    this.httpWebsocketAdapters.delete(id);
-                    adapter.onclose();
-                    return;
-                }
-                adapter.alive = false;
-            });
-        }, this.checkAliveTimeout);
-    }
-
-    configure(app: Application): void {
-        interface HttpRequestBody {
-            id?: string,
-            polling?: boolean,
-            content?: string
-        }
-        app.use(json({ limit: '50mb' }));
-        app.use(async (req, res, next) => {
-            const body: HttpRequestBody = req.body;
-            if (body && typeof body.id === 'string') {
-                let adapter = this.httpWebsocketAdapters.get(body.id);
-                if (!adapter) {
-                    adapter = this.httpWebsocketAdapterFactory();
-                    this.httpWebsocketAdapters.set(body.id, adapter);
-                    this.handleConnection(adapter, req);
-                }
-                if (typeof body.polling === 'boolean' && body.polling) {
-                    res.send(await adapter.getPendingMessages());
-                } else {
-                    if (typeof body.content === 'string') {
-                        adapter.onmessage(body.content);
-                    }
-                    // Send empty message array
-                    res.send([]);
-                }
-            }
-            next();
-        });
-    }
-
-    /**
-     * Route HTTP upgrade requests to the WebSocket server.
-     */
-    protected handleHttpUpgrade(request: http.IncomingMessage, socket: net.Socket, head: Buffer): void {
-        this.wsRequestValidator.allowWsUpgrade(request).then(allowed => {
-            if (allowed) {
-                this.webSocketServer!.handleUpgrade(request, socket, head, client => {
-                    this.webSocketServer!.emit('connection', client, request);
-                    this.messagingListener.onDidWebSocketUpgrade(request, client);
-                });
+        // Accept every namespace by using /.*/
+        socketServer.of(/.*/).on('connection', async socket => {
+            const request = socket.request;
+            // Socket.io strips the `origin` header of the incoming request
+            // We provide a `fix-origin` header in the `WebSocketConnectionProvider`
+            request.headers.origin = request.headers['fix-origin'] as string;
+            if (await this.allowConnect(socket.request)) {
+                this.handleConnection(socket);
+                this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
             } else {
-                console.error(`refused a websocket connection: ${request.connection.remoteAddress}`);
-                socket.write('HTTP/1.1 403 Forbidden\n\n');
-                socket.destroy();
+                socket.disconnect(true);
             }
-        }, error => {
-            console.error(error);
-            socket.write('HTTP/1.1 500 Internal Error\n\n');
-            socket.destroy();
         });
     }
 
-    protected handleConnection(socket: ws | HttpWebsocketAdapter, request: http.IncomingMessage): void {
-        const pathname = request.url && url.parse(request.url).pathname;
+    protected handleConnection(socket: Socket): void {
+        const pathname = socket.nsp.name;
         if (pathname && !this.wsHandlers.route(pathname, socket)) {
             console.error('Cannot find a ws handler for the path: ' + pathname);
         }
     }
 
-    protected handleChannels(socket: ws): void {
+    protected async allowConnect(request: http.IncomingMessage): Promise<boolean> {
+        try {
+            return this.wsRequestValidator.allowWsUpgrade(request);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    protected handleChannels(socket: Socket): void {
         const channelHandlers = this.getConnectionChannelHandlers(socket);
         const channels = new Map<number, WebSocketChannel>();
         socket.on('message', data => {
@@ -230,21 +162,21 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 channel.fireError(err);
             }
         });
-        socket.on('close', (code, reason) => {
-            for (const channel of [...channels.values()]) {
-                channel.close(code, reason);
+        socket.on('disconnect', reason => {
+            for (const channel of channels.values()) {
+                channel.close(undefined, reason);
             }
             channels.clear();
         });
     }
 
-    protected createSocketContainer(socket: ws): Container {
+    protected createSocketContainer(socket: Socket): Container {
         const connectionContainer: Container = this.container.createChild() as Container;
-        connectionContainer.bind(ws).toConstantValue(socket);
+        connectionContainer.bind(Socket).toConstantValue(socket);
         return connectionContainer;
     }
 
-    protected getConnectionChannelHandlers(socket: ws): MessagingContribution.ConnectionHandlers<WebSocketChannel> {
+    protected getConnectionChannelHandlers(socket: Socket): MessagingContribution.ConnectionHandlers<WebSocketChannel> {
         const connectionContainer = this.createSocketContainer(socket);
         bindContributionProvider(connectionContainer, ConnectionHandler);
         connectionContainer.load(...this.connectionModules.getContributions());
@@ -259,19 +191,16 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         return connectionChannelHandlers;
     }
 
-    protected createChannel(id: number, socket: ws): WebSocketChannel {
+    protected createChannel(id: number, socket: Socket): WebSocketChannel {
         return new WebSocketChannel(id, content => {
-            if (socket.readyState < ws.CLOSING) {
-                socket.send(content, err => {
-                    if (err) {
-                        throw err;
-                    }
-                });
+            if (socket.connected) {
+                socket.send(content);
             }
         });
     }
 
 }
+
 export namespace MessagingContribution {
     export class ConnectionHandlers<T> {
         protected readonly handlers: ((path: string, connection: T) => string | false)[] = [];

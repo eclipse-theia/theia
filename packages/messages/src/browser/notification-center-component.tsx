@@ -41,7 +41,7 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
-    async componentDidMount(): Promise<void> {
+    override async componentDidMount(): Promise<void> {
         this.toDisposeOnUnmount.push(
             this.props.manager.onUpdated(({ notifications, visibilityState }) => {
                 this.setState({
@@ -51,11 +51,11 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
             })
         );
     }
-    componentWillUnmount(): void {
+    override componentWillUnmount(): void {
         this.toDisposeOnUnmount.dispose();
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const empty = this.state.notifications.length === 0;
         const title = empty
             ? nls.localizeByDefault('No New Notifications')

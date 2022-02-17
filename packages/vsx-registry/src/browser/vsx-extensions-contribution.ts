@@ -75,7 +75,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         await this.openView({ activate: false });
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(VSXExtensionsCommands.CLEAR_ALL, {
             execute: () => this.model.search.query = '',
@@ -108,7 +108,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
             commandId: VSXExtensionsCommands.COPY.id,

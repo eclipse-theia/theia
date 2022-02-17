@@ -718,6 +718,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 const markers = monaco.services.StaticServices.markerService.get().read({ resource: model.uri }).filter(m => monaco.Range.areIntersectingOrTouching(m, range));
                 return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
             },
+            resolveCodeAction: (codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> =>
+                this.resolveCodeAction(handle, codeAction, token),
             providedCodeActionKinds
         };
         this.register(handle, monaco.modes.CodeActionProviderRegistry.register(languageSelector, quickFixProvider));
@@ -734,10 +736,18 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
         return {
             actions: actions.map(a => toMonacoAction(a)),
-            dispose: () => {
-                // TODO this.proxy.$releaseCodeActions(handle, cacheId);
-            }
+            dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
         };
+    }
+
+    protected async resolveCodeAction(handle: number, codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> {
+        // The cacheId is kept in toMonacoAction when converting a received CodeAction DTO to a monaco code action
+        const cacheId = (codeAction as CodeAction).cacheId;
+        if (cacheId !== undefined) {
+            const resolvedEdit = await this.proxy.$resolveCodeAction(handle, cacheId, token);
+            codeAction.edit = resolvedEdit && toMonacoWorkspaceEdit(resolvedEdit);
+        }
+        return codeAction;
     }
 
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveLocation: boolean): void {

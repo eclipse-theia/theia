@@ -27,7 +27,7 @@ class ConsistencyTestTree extends TreeImpl {
 
     public resolveCounter = 0;
 
-    protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (parent.id === 'expandable') {
             const step: () => Promise<TreeNode[]> = async () => {
                 // a predicate to emulate bad timing, i.e.
