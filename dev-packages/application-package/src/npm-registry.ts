@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as request from 'request';
-const ChangesStream = require('changes-stream');
+import * as nano from 'nano';
 import { NpmRegistryProps } from './application-props';
 
 export interface IChangeStream {
@@ -92,7 +92,7 @@ export class NpmRegistry {
     readonly props: NpmRegistryProps = { ...NpmRegistryProps.DEFAULT };
     protected readonly options: NpmRegistryOptions;
 
-    protected changes: undefined | IChangeStream;
+    protected changes?: nano.ChangesReaderScope;
     protected readonly index = new Map<string, Promise<ViewResult>>();
 
     constructor(options?: Partial<NpmRegistryOptions>) {
@@ -115,13 +115,11 @@ export class NpmRegistry {
         this.index.clear();
         if (this.options.watchChanges && this.props.registry === NpmRegistryProps.DEFAULT.registry) {
             if (this.changes) {
-                this.changes.destroy();
+                this.changes.stop();
             }
-            // invalidate index with NPM registry web hooks
-            // see: https://github.com/npm/registry-follower-tutorial
-            const db = 'https://replicate.npmjs.com';
-            this.changes = new ChangesStream({ db }) as IChangeStream;
-            this.changes.on('data', change => this.invalidate(change.id));
+            // Invalidate index with NPM registry web hooks
+            this.changes = nano('https://replicate.npmjs.com').use('registry').changesReader;
+            this.changes.get({}).on('change', change => this.invalidate(change.id));
         }
     }
     protected invalidate(name: string): void {
