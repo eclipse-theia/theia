@@ -36,12 +36,9 @@
     "@theia/localization-manager": "1.22.1",
     "@theia/ovsx-client": "1.22.1",
     "@types/chai": "^4.2.7",
-    "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.7",
     "@types/node-fetch": "^2.5.7",
     "@types/puppeteer": "^2.0.0",
-    "@types/requestretry": "^1.12.3",
-    "@types/tar": "^4.0.3",
     "chai": "^4.2.0",
     "chalk": "4.0.0",
     "decompress": "^4.2.1",
@@ -52,18 +49,13 @@
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
     "temp": "^0.9.1",
-    "unzipper": "^0.9.11",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/chai": "^4.2.7",
-    "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.7",
     "@types/node-fetch": "^2.5.7",
     "@types/proxy-from-env": "^1.0.1",
-    "@types/puppeteer": "^2.0.0",
-    "@types/requestretry": "^1.12.3",
-    "@types/tar": "^4.0.3",
-    "@types/unzipper": "^0.9.2"
+    "@types/puppeteer": "^2.0.0"
   }
 }

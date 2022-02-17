@@ -6,14 +6,10 @@
     "@theia/core": "1.22.1",
     "@theia/monaco": "1.22.1",
     "@theia/userstorage": "1.22.1",
-    "@theia/workspace": "1.22.1",
-    "@types/lodash.debounce": "4.0.3",
     "jsonc-parser": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.22.1",
-    "@types/temp": "^0.8.29",
-    "temp": "^0.8.3"
+    "@theia/ext-scripts": "1.22.1"
   },
   "publishConfig": {
     "access": "public"

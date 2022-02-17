@@ -10,7 +10,6 @@
     "@theia/filesystem": "1.22.1",
     "@theia/output": "1.22.1",
     "@theia/plugin-ext": "1.22.1",
-    "@theia/preferences": "1.22.1",
     "@theia/workspace": "1.22.1",
     "@types/request": "^2.0.3",
     "ps-tree": "^1.2.0",

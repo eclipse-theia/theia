@@ -10,9 +10,7 @@
     "@theia/plugin-ext-vscode": "1.22.1",
     "@theia/preferences": "1.22.1",
     "@theia/workspace": "1.22.1",
-    "@types/bent": "^7.0.1",
     "@types/showdown": "^1.7.1",
-    "bent": "^7.1.0",
     "p-debounce": "^2.1.0",
     "requestretry": "^3.1.0",
     "semver": "^5.4.1",
@@ -53,7 +51,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.22.1"
+    "@theia/ext-scripts": "1.22.1",
+    "@types/requestretry": "^1.12.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

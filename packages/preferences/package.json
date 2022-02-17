@@ -10,6 +10,7 @@
     "@theia/userstorage": "1.22.1",
     "@theia/workspace": "1.22.1",
     "async-mutex": "^0.3.1",
+    "p-debounce": "^2.1.0",
     "jsonc-parser": "^2.2.0"
   },
   "publishConfig": {
