@@ -52,7 +52,7 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
     protected async chooseLayout(): Promise<KeyboardLayoutData | undefined> {
         const current = this.layoutProvider.currentLayoutData;
         const autodetect: QuickPickValue<'autodetect'> = {
-            label: nls.localizeByDefault('Auto-detect'),
+            label: nls.localizeByDefault('Auto Detect'),
             description: this.layoutProvider.currentLayoutSource !== 'user-choice' ? nls.localize('theia/core/keyboard/current', '(current: {0})', current.name) : undefined,
             detail: nls.localize('theia/core/keyboard/tryDetect', 'Try to detect the keyboard layout from browser information and pressed keys.'),
             value: 'autodetect'

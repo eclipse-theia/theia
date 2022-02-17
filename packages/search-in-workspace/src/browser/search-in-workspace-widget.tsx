@@ -686,7 +686,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 message = nls.localizeByDefault("No results found excluding '{0}' - ",
                     this.searchInWorkspaceOptions.exclude!.toString());
             } else {
-                message = nls.localizeByDefault('No results found. - ');
+                message = nls.localizeByDefault('No results found') + ' - ';
             }
             // We have to trim here as vscode will always add a trailing " - " string
             return message.substring(0, message.length - 2).trim();

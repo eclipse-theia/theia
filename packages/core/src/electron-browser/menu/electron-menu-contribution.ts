@@ -232,7 +232,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected async handleRequiredRestart(): Promise<void> {
         const msgNode = document.createElement('div');
         const message = document.createElement('p');
-        message.textContent = nls.localizeByDefault('A setting has changed that requires a restart to take effect');
+        message.textContent = nls.localizeByDefault('A setting has changed that requires a restart to take effect.');
         const detail = document.createElement('p');
         detail.textContent = nls.localizeByDefault(
             'Press the restart button to restart {0} and enable the setting.', FrontendApplicationConfigProvider.get().applicationName);

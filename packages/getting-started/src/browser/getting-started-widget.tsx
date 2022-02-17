@@ -245,7 +245,7 @@ export class GettingStartedWidget extends ReactWidget {
             <h3 className='gs-section-header'>
                 <i className={codicon('history')}></i>{nls.localizeByDefault('Recent')}
             </h3>
-            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localizeByDefault('No Recent Workspaces')}</p>}
+            {items.length > 0 ? content : <p className='gs-no-recent'>{nls.localizeByDefault('No recent folders')}</p>}
             {more}
         </div>;
     }
