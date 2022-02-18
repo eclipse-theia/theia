@@ -48,6 +48,7 @@ export interface PluginPackage {
         backend?: string;
     };
     main?: string;
+    browser?: string;
     displayName: string;
     description: string;
     contributes?: PluginPackageContribution;
@@ -56,6 +57,7 @@ export interface PluginPackage {
     extensionDependencies?: string[];
     extensionPack?: string[];
     icon?: string;
+    extensionKind?: Array<'ui' | 'workspace'>
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
