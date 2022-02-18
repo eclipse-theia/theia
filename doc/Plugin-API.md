@@ -183,3 +183,5 @@ Writing Plugin API wiki page in the che wiki: <https://github.com/eclipse/che/wi
 Theia vs VS Code API Comparator: <https://github.com/eclipse-theia/vscode-theia-comparator>
 
 Theia's extension mechanisms: VS Code extensions, Theia extensions, and Theia plugins: <https://theia-ide.org/docs/extensions>
+
+Example of creating a custom namespace API and using in VS Code extensions: https://github.com/thegecko/vscode-theia-extension
