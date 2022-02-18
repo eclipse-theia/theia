@@ -26,6 +26,10 @@ export const CLOSE_REQUESTED_SIGNAL = 'close-requested';
  * Emitted by window when a reload is requested.
  */
 export const RELOAD_REQUESTED_SIGNAL = 'reload-requested';
+/**
+ * Emitted by the window when the application changes state
+ */
+export const APPLICATION_STATE_CHANGE_SIGNAL = 'application-state-changed';
 
 export enum StopReason {
     /**

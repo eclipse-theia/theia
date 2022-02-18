@@ -18,14 +18,9 @@ import { injectable, inject } from 'inversify';
 import { Emitter, Event } from '../common/event';
 import { Deferred } from '../common/promise-util';
 import { ILogger } from '../common/logger';
+import { FrontendApplicationState } from '../common/frontend-application-state';
 
-export type FrontendApplicationState =
-    'init'
-    | 'started_contributions'
-    | 'attached_shell'
-    | 'initialized_layout'
-    | 'ready'
-    | 'closing_window';
+export { FrontendApplicationState };
 
 @injectable()
 export class FrontendApplicationStateService {
@@ -44,22 +39,26 @@ export class FrontendApplicationStateService {
 
     set state(state: FrontendApplicationState) {
         if (state !== this._state) {
-            if (this.deferred[this._state] === undefined) {
-                this.deferred[this._state] = new Deferred();
-            }
-            const oldState = this._state;
-            this._state = state;
-            if (this.deferred[state] === undefined) {
-                this.deferred[state] = new Deferred();
-            }
-            this.deferred[state].resolve();
-            this.logger.info(`Changed application state from '${oldState}' to '${this._state}'.`);
-            this.stateChanged.fire(state);
+            this.doSetState(state);
         }
     }
 
     get onStateChanged(): Event<FrontendApplicationState> {
         return this.stateChanged.event;
+    }
+
+    protected doSetState(state: FrontendApplicationState): void {
+        if (this.deferred[this._state] === undefined) {
+            this.deferred[this._state] = new Deferred();
+        }
+        const oldState = this._state;
+        this._state = state;
+        if (this.deferred[state] === undefined) {
+            this.deferred[state] = new Deferred();
+        }
+        this.deferred[state].resolve();
+        this.logger.info(`Changed application state from '${oldState}' to '${this._state}'.`);
+        this.stateChanged.fire(state);
     }
 
     reachedState(state: FrontendApplicationState): Promise<void> {
@@ -72,5 +71,4 @@ export class FrontendApplicationStateService {
     reachedAnyState(...states: FrontendApplicationState[]): Promise<void> {
         return Promise.race(states.map(s => this.reachedState(s)));
     }
-
 }
