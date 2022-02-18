@@ -16,11 +16,13 @@
 
 import fs = require('fs');
 import mustache = require('mustache');
+import os = require('os');
 import path = require('path');
 import semver = require('semver');
 import yargs = require('yargs');
 import { parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
+type EOL = '\r\n' | '\n' | '\r';
 
 yargs
     .command(
@@ -33,18 +35,19 @@ yargs
             }),
         async ({ packageName }) => {
             if (!packageName) {
-                packageName = JSON.parse(await fs.promises.readFile(path.resolve('package.json'), 'utf8')).name as string;
+                packageName = JSON.parse(await readFile(path.resolve('package.json'))).name as string;
             }
             const packageReExports = await PackageReExports.FromPackage(packageName);
+            const writer = new FileWriter(findEol(await readFile(packageReExports.resolvePath('package.json'))));
             await Promise.all(packageReExports.all.map(async reExport => {
                 const reExportPath = packageReExports.resolvePath(reExport.reExportDir, reExport.moduleName, 'index');
-                await writeFile(`${reExportPath}.js`, `module.exports = require('${reExport.internalImport}');\n`);
+                await writer.write(`${reExportPath}.js`, `module.exports = require('${reExport.internalImport}');\n`);
                 if (reExport.reExportStyle === '*') {
                     const content = `export * from '${reExport.internalImport}';\n`;
-                    await writeFile(`${reExportPath}.d.ts`, content);
+                    await writer.write(`${reExportPath}.d.ts`, content);
                 } else if (reExport.reExportStyle === '=') {
                     const content = `import ${reExport.exportNamespace} = require('${reExport.internalImport}');\nexport = ${reExport.exportNamespace};\n`;
-                    await writeFile(`${reExportPath}.d.ts`, content);
+                    await writer.write(`${reExportPath}.d.ts`, content);
                 } else {
                     console.warn('unexpected re-export');
                 }
@@ -66,10 +69,11 @@ yargs
             }),
         async ({ inputFile, packageName }) => {
             if (!packageName) {
-                packageName = JSON.parse(await fs.promises.readFile(path.resolve('package.json'), 'utf8')).name as string;
+                packageName = JSON.parse(await readFile(path.resolve('package.json'))).name as string;
             }
-            const template = await fs.promises.readFile(inputFile, 'utf8');
+            const template = await readFile(inputFile);
             const packageReExports = await PackageReExports.FromPackage(packageName);
+            const eol = findEol(await readFile(packageReExports.resolvePath('package.json')));
             // Organize `ReExport`s by `reExportsDir` then by `packageName`:
             const reExportsDirectories: Record<string, Record<string, ReExport[]>> = {};
             for (const reExport of packageReExports.all) {
@@ -99,7 +103,7 @@ yargs
                 }))
             };
             // `console.log` replaces CRLF with LF which is problematic on Windows
-            process.stdout.write(replaceEolForWindows(mustache.render(template, reExportsView)));
+            process.stdout.write(convertEol(eol, mustache.render(template, reExportsView)));
         }
     )
     .parse();
@@ -129,12 +133,28 @@ function getNpmUrl(moduleName: string, versionRange: string | null | undefined):
     return url;
 }
 
-function replaceEolForWindows(content: string): string {
-    return process.platform === 'win32' ? content.replace(/(?<!\r)\n/g, '\r\n') : content;
+async function readFile(filePath: string): Promise<string> {
+    return fs.promises.readFile(filePath, 'utf8');
 }
 
-async function writeFile(filePath: string, content: string): Promise<void> {
-    const dirPath = path.dirname(filePath);
-    await fs.promises.mkdir(dirPath, { recursive: true });
-    await fs.promises.writeFile(filePath, replaceEolForWindows(content));
+function findEol(content: string): EOL {
+    const match = content.match(/\r\n?|\n/);
+    return (match ? match[0] : os.EOL) as EOL;
+}
+
+function convertEol(eol: EOL, content: string): string {
+    switch (eol) {
+        case '\r\n': return content.replace(/(?<!\r)\n|\r(?!\n)/g, '\r\n');
+        case '\n': return content.replace(/\r\n?/g, '\n');
+        case '\r': return content.replace(/\r?\n/g, '\r');
+    }
+}
+
+class FileWriter {
+    constructor(public eol: EOL) { }
+    async write(filePath: string, content: string): Promise<void> {
+        const dirPath = path.dirname(filePath);
+        await fs.promises.mkdir(dirPath, { recursive: true });
+        await fs.promises.writeFile(filePath, convertEol(this.eol, content));
+    }
 }
