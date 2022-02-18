@@ -352,6 +352,8 @@ export interface CodeActionContext {
     only?: string;
 }
 
+export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, kind: string }>;
+
 export interface CodeActionProvider {
     provideCodeActions(
         model: monaco.editor.ITextModel,
