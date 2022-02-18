@@ -164,6 +164,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoColorRegistry).toSelf().inSingletonScope();
     rebind(ColorRegistry).toService(MonacoColorRegistry);
+
+    // Utility to assist with Monaco uplifts to generate preference schema. Not for regular use in the application.
+    // bind(MonacoEditorPreferenceSchemaExtractor).toSelf().inSingletonScope();
+    // bind(CommandContribution).to(MonacoEditorPreferenceSchemaExtractor);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

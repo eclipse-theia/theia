@@ -69,7 +69,6 @@ interface RegistrationFunction<T> {
     (languageId: MonacoLanguageSelector.LanguageSelector, service: T): Disposable;
 }
 
-
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
@@ -736,7 +735,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     .filter(m => Monaco.Range.areIntersectingOrTouching(m, range)) as Monaco.editor.IMarkerData[];
                 return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
             },
-            resolveCodeAction: (codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> =>
+            resolveCodeAction: (codeAction: Monaco.languages.CodeAction, token: Monaco.CancellationToken): Promise<Monaco.languages.CodeAction> =>
                 this.resolveCodeAction(handle, codeAction, token),
             providedCodeActionKinds
         };
@@ -758,7 +757,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         };
     }
 
-    protected async resolveCodeAction(handle: number, codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> {
+    protected async resolveCodeAction(handle: number, codeAction: Monaco.languages.CodeAction, token: Monaco.CancellationToken): Promise<Monaco.languages.CodeAction> {
         // The cacheId is kept in toMonacoAction when converting a received CodeAction DTO to a monaco code action
         const cacheId = (codeAction as CodeAction).cacheId;
         if (cacheId !== undefined) {

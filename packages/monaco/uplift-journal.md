@@ -84,3 +84,16 @@ To do:
  - [] Add new editor preferences.
  - [] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
  - [] Editor context menu 'goto' commands not working (no peek editor shown).
+
+## 2/18/2022
+
+Spent a couple of days on editor preferences. There are some annoyances. We want to follow Monaco's preferences, but two separate systems are in play there. They register one set of preferences to the general ConfigRegistry using special JSON schemata. They _also_ register preferences with a tracker for editor-specific preferences that are stored in an array accessed through a labeled enum whose fields are matched to those of `IEditorOptions`. It would be fine if those two types of registration matched each other, but there are a few unflattenings. E.g. the preference `editor.brackedPairColorization.enabled` is registered as a boolean, but the equivalent value in `IEditorOptions` is `bracketPairColorization: {enabled: boolean}`. As a consequence, we can't use `IEditorOptions` as a basis for the interface that applies to our preference proxy `EditorPreferences` - they just won't really match up. At the same time, we've got a big list of preferences that we're maintaining mostly by hand, so we can probably do better. What I've settled on is an in-app command to generate a schema and interface. There are a few complications:
+
+ - We have to check for preferences that have platform-specific features
+   > Look for references to `platform` in `src/vs/editor/common/config/editorOptions.ts` and use the code-dequoting utilities to transform the code from string to executable.
+ - There are a few preferences that we want to use that are registered either outside of `monaco-editor-core` entirely or not marked as editor preferences, even though we treat them as such.
+   > For preferences registered elsewhere in VSCode, look for references to the `editorConfigurationBaseNode` object defined in `src/vs/editor/common/config/editorConfigurationSchema.ts`
+
+With that system, what we get from Monaco will be in `packages/editor/src/browser/editor-generated-preference-schema.ts`, and anything we need to modify by hand will be in `packages/editor/src/browser/editor-preferences.ts`. Hopefully the latter will be quite a bit shorter, now :-).
+
+TODO: Make sure (i.e. write tests that prove) that our preference proxy can handle the de-flattening expected by VSCode. I think they may already exist...

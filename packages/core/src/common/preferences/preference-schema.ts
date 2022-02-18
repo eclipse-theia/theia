@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { JSONPrimitive } from '@phosphor/coreutils';
 import { PreferenceScope } from './preference-scope';
 
 export interface PreferenceSchema {
@@ -70,7 +71,7 @@ export interface PreferenceItem {
      * preference default value, if `undefined` then `default`
      */
     defaultValue?: any;
-    enum?: string[];
+    enum?: JSONPrimitive[];
     items?: PreferenceItem;
     properties?: { [name: string]: PreferenceItem };
     additionalProperties?: object | boolean;

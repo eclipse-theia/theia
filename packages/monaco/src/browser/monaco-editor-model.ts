@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Position, Range, TextDocumentSaveReason, TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences, DEFAULT_WORD_SEPARATORS } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -31,6 +31,7 @@ import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/
 import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from 'monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from 'monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { generatedEditorPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export {
     TextDocumentSaveReason
@@ -321,7 +322,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      * @returns the list of matches.
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
-        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? DEFAULT_WORD_SEPARATORS;
+        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? generatedEditorPreferenceProperties['editor.wordSeparators'].default;
         const results: Monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,
