@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
-import { screen, ipcMain, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from '../../electron-shared/electron';
+import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -31,32 +31,21 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { isOSX, isWindows } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
 import {
-    CLOSE_REQUESTED_SIGNAL,
-    RELOAD_REQUESTED_SIGNAL,
     RequestTitleBarStyle,
     Restart, StopReason,
     TitleBarStyleAtStartup,
     TitleBarStyleChanged
 } from '../electron-common/messaging/electron-messages';
 import { DEFAULT_WINDOW_HASH } from '../common/window';
+import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
+import { ElectronMainApplicationGlobals } from './electron-main-constants';
+import { createDisposableListener } from './event-utils';
+
+export { ElectronMainApplicationGlobals };
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
-
-/**
- * Theia tracks the maximized state of Electron Browser Windows.
- */
-export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptions {
-    isMaximized?: boolean;
-    isFullScreen?: boolean;
-    /**
-     * Represents the complete screen layout for all available displays.
-     * This field is used to determine if the layout was updated since the electron window was last opened,
-     * in which case we want to invalidate the stored options and use the default options instead.
-     */
-    screenLayout?: string;
-}
 
 /**
  * Options passed to the main/default command handler.
@@ -81,13 +70,6 @@ export interface ElectronMainExecutionParams {
     readonly secondInstance: boolean;
     readonly argv: string[];
     readonly cwd: string;
-}
-
-export const ElectronMainApplicationGlobals = Symbol('ElectronMainApplicationGlobals');
-export interface ElectronMainApplicationGlobals {
-    readonly THEIA_APP_PROJECT_PATH: string
-    readonly THEIA_BACKEND_MAIN_PATH: string
-    readonly THEIA_FRONTEND_HTML_PATH: string
 }
 
 /**
@@ -191,6 +173,9 @@ export class ElectronMainApplication {
     @inject(ElectronSecurityToken)
     protected readonly electronSecurityToken: ElectronSecurityToken;
 
+    @inject(TheiaElectronWindowFactory)
+    protected readonly windowFactory: TheiaElectronWindowFactory;
+
     protected readonly electronStore = new Storage<{
         windowstate?: TheiaBrowserWindowOptions
     }>();
@@ -201,9 +186,8 @@ export class ElectronMainApplication {
     protected _config: FrontendApplicationConfig | undefined;
     protected useNativeWindowFrame: boolean = true;
     protected didUseNativeWindowFrameOnStart = new Map<number, boolean>();
+    protected windows = new Map<number, TheiaElectronWindow>();
     protected restarting = false;
-    protected closeIsConfirmed = new Set<number>();
-    protected closeRequested = 0;
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
@@ -262,14 +246,13 @@ export class ElectronMainApplication {
     async createWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions> = this.getDefaultTheiaWindowOptions()): Promise<BrowserWindow> {
         let options = await asyncOptions;
         options = this.avoidOverlap(options);
-        const electronWindow = new BrowserWindow(options);
-        electronWindow.setMenuBarVisibility(false);
-        this.attachReadyToShow(electronWindow);
-        this.attachSaveWindowState(electronWindow);
-        this.restoreMaximizedState(electronWindow, options);
-        this.attachCloseListeners(electronWindow, options);
-        electronRemoteMain.enable(electronWindow.webContents);
-        return electronWindow;
+        const electronWindow = this.windowFactory(options, this.config);
+        const { window: { id } } = electronWindow;
+        this.windows.set(id, electronWindow);
+        electronWindow.onDidClose(() => this.windows.delete(id));
+        this.attachSaveWindowState(electronWindow.window);
+        electronRemoteMain.enable(electronWindow.window.webContents);
+        return electronWindow.window;
     }
 
     async getLastWindowOptions(): Promise<TheiaBrowserWindowOptions> {
@@ -387,16 +370,10 @@ export class ElectronMainApplication {
     }
 
     /**
-     * Only show the window when the content is ready.
-     */
-    protected attachReadyToShow(electronWindow: BrowserWindow): void {
-        electronWindow.on('ready-to-show', () => electronWindow.show());
-    }
-
-    /**
      * Save the window geometry state on every change.
      */
     protected attachSaveWindowState(electronWindow: BrowserWindow): void {
+        const windowStateListeners = new DisposableCollection();
         let delayedSaveTimeout: NodeJS.Timer | undefined;
         const saveWindowStateDelayed = () => {
             if (delayedSaveTimeout) {
@@ -404,13 +381,14 @@ export class ElectronMainApplication {
             }
             delayedSaveTimeout = setTimeout(() => this.saveWindowState(electronWindow), 1000);
         };
-        electronWindow.on('close', () => {
+        createDisposableListener(electronWindow, 'close', () => {
             this.saveWindowState(electronWindow);
-            this.didUseNativeWindowFrameOnStart.delete(electronWindow.id);
-        });
-        electronWindow.on('resize', saveWindowStateDelayed);
-        electronWindow.on('move', saveWindowStateDelayed);
+        }, windowStateListeners);
+        createDisposableListener(electronWindow, 'resize', saveWindowStateDelayed, windowStateListeners);
+        createDisposableListener(electronWindow, 'move', saveWindowStateDelayed, windowStateListeners);
+        windowStateListeners.push(Disposable.create(() => { try { this.didUseNativeWindowFrameOnStart.delete(electronWindow.id); } catch { } }));
         this.didUseNativeWindowFrameOnStart.set(electronWindow.id, this.useNativeWindowFrame);
+        electronWindow.once('closed', () => windowStateListeners.dispose());
     }
 
     protected saveWindowState(electronWindow: BrowserWindow): void {
@@ -420,7 +398,7 @@ export class ElectronMainApplication {
         }
         try {
             const bounds = electronWindow.getBounds();
-            this.electronStore.set('windowstate', {
+            const options: TheiaBrowserWindowOptions = {
                 isFullScreen: electronWindow.isFullScreen(),
                 isMaximized: electronWindow.isMaximized(),
                 width: bounds.width,
@@ -429,7 +407,8 @@ export class ElectronMainApplication {
                 y: bounds.y,
                 frame: this.useNativeWindowFrame,
                 screenLayout: this.getCurrentScreenLayout(),
-            } as TheiaBrowserWindowOptions);
+            };
+            this.electronStore.set('windowstate', options);
         } catch (e) {
             console.error('Error while saving window state:', e);
         }
@@ -442,58 +421,6 @@ export class ElectronMainApplication {
         return screen.getAllDisplays().map(
             display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`
         ).sort().join('-');
-    }
-
-    protected restoreMaximizedState(electronWindow: BrowserWindow, options: TheiaBrowserWindowOptions): void {
-        if (options.isMaximized) {
-            electronWindow.maximize();
-        } else {
-            electronWindow.unmaximize();
-        }
-    }
-
-    protected attachCloseListeners(electronWindow: BrowserWindow, options: TheiaBrowserWindowOptions): void {
-        electronWindow.on('close', async event => {
-            // User has already indicated that it is OK to close this window.
-            if (this.closeIsConfirmed.has(electronWindow.id)) {
-                this.closeIsConfirmed.delete(electronWindow.id);
-                return;
-            }
-
-            event.preventDefault();
-            this.handleStopRequest(electronWindow, () => this.doCloseWindow(electronWindow), StopReason.Close);
-        });
-    }
-
-    protected doCloseWindow(electronWindow: BrowserWindow): void {
-        this.closeIsConfirmed.add(electronWindow.id);
-        electronWindow.close();
-    }
-
-    protected async handleStopRequest(electronWindow: BrowserWindow, onSafeCallback: () => unknown, reason: StopReason): Promise<void> {
-        // Only confirm close to windows that have loaded our front end.
-        let currentUrl = electronWindow.webContents.getURL();
-        let frontendUri = this.globals.THEIA_FRONTEND_HTML_PATH;
-        // Since our resolved frontend HTML path might contain backward slashes on Windows, we normalize everything first.
-        if (isWindows) {
-            currentUrl = currentUrl.replace(/\\/g, '/');
-            frontendUri = frontendUri.replace(/\\/g, '/');
-        }
-        const safeToClose = !currentUrl.includes(frontendUri) || await this.checkSafeToStop(electronWindow, reason);
-        if (safeToClose) {
-            onSafeCallback();
-        }
-    }
-
-    protected checkSafeToStop(electronWindow: BrowserWindow, reason: StopReason): Promise<boolean> {
-        const closeRequest = this.closeRequested++;
-        const confirmChannel = `safeToClose-${electronWindow.id}-${closeRequest}`;
-        const cancelChannel = `notSafeToClose-${electronWindow.id}-${closeRequest}`;
-        return new Promise<boolean>(resolve => {
-            electronWindow.webContents.send(CLOSE_REQUESTED_SIGNAL, { confirmChannel, cancelChannel, reason });
-            ipcMain.once(confirmChannel, () => resolve(true));
-            ipcMain.once(cancelChannel, () => resolve(false));
-        });
     }
 
     /**
@@ -586,8 +513,6 @@ export class ElectronMainApplication {
             this.restart(sender.id);
         });
 
-        ipcMain.on(RELOAD_REQUESTED_SIGNAL, event => this.handleReload(event));
-
         ipcMain.on(RequestTitleBarStyle, ({ sender }) => {
             sender.send(TitleBarStyleAtStartup, this.didUseNativeWindowFrameOnStart.get(sender.id) ? 'native' : 'custom');
         });
@@ -614,33 +539,25 @@ export class ElectronMainApplication {
         }
     }
 
-    protected restart(id: number): void {
+    protected async restart(id: number): Promise<void> {
         this.restarting = true;
-        const browserWindow = BrowserWindow.fromId(id);
-        if (!browserWindow) {
-            throw new Error(`no BrowserWindow with id: ${id}`);
-        }
-        browserWindow.on('closed', async () => {
-            await this.launch({
-                secondInstance: false,
-                argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
-                cwd: process.cwd()
+        const window = BrowserWindow.fromId(id);
+        const wrapper = this.windows.get(window?.id as number); // If it's not a number, we won't get anything.
+        if (wrapper) {
+            const listener = wrapper.onDidClose(async () => {
+                listener.dispose();
+                await this.launch({
+                    secondInstance: false,
+                    argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
+                    cwd: process.cwd()
+                });
+                this.restarting = false;
             });
-            this.restarting = false;
-        });
-        this.handleStopRequest(browserWindow, () => this.doCloseWindow(browserWindow), StopReason.Restart);
-    }
-
-    protected async handleReload(event: Electron.IpcMainEvent): Promise<void> {
-        const browserWindow = BrowserWindow.fromId(event.sender.id);
-        if (!browserWindow) {
-            throw new Error(`no BrowserWindow with id: ${event.sender.id}`);
+            // If close failed or was cancelled on this occasion, don't keep listening for it.
+            if (!await wrapper.close(StopReason.Restart)) {
+                listener.dispose();
+            }
         }
-        this.reload(browserWindow);
-    }
-
-    protected reload(electronWindow: BrowserWindow): void {
-        this.handleStopRequest(electronWindow, () => electronWindow.reload(), StopReason.Reload);
     }
 
     protected async startContributions(): Promise<void> {
