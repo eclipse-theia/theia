@@ -81,9 +81,11 @@ To do:
     > This also seems to have been a problem with color registrations, and appears to be working now.
     > Agh! Nevermind, suddenly it's back to TS not working, everything else working.
     > Nevermind that, too. Seems that any language that's open in an editor _on start_ won't work during that session. But anything in a language that wasn't open on start is fine.
- - [] Add new editor preferences.
- - [] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
- - [] Editor context menu 'goto' commands not working (no peek editor shown).
+ - [x] Add new editor preferences.
+ - [x] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
+    > Not a problem after fixing the registration of commands. That command is no longer in the context menu.
+ - [x] Editor context menu 'goto' commands not working (no peek editor shown).
+    > Seems this was just a consequence of slow plugin loading.
 
 ## 2/18/2022
 
@@ -97,3 +99,7 @@ Spent a couple of days on editor preferences. There are some annoyances. We want
 With that system, what we get from Monaco will be in `packages/editor/src/browser/editor-generated-preference-schema.ts`, and anything we need to modify by hand will be in `packages/editor/src/browser/editor-preferences.ts`. Hopefully the latter will be quite a bit shorter, now :-).
 
 TODO: Make sure (i.e. write tests that prove) that our preference proxy can handle the de-flattening expected by VSCode. I think they may already exist...
+
+### New Errors
+
+I pulled master today, and it appears that plugins are working less well. Previously, I was getting good hovers etc. for TS, but today, the `Initializing JS/TS language features` spinner just spins. But eventually, it did stop, and then all plugin features, including peek views, appeared to be working.
