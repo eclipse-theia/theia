@@ -5,6 +5,7 @@
     "declaration": true,
     "declarationMap": true,
     "noImplicitAny": true,
+    "noImplicitOverride": true,
     "noEmitOnError": false,
     "noImplicitThis": true,
     "noUnusedLocals": true,

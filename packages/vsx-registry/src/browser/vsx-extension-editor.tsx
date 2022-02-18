@@ -46,21 +46,21 @@ export class VSXExtensionEditor extends ReactWidget {
         this.toDispose.push(this.model.onDidChange(() => this.update()));
     }
 
-    getScrollContainer(): Promise<HTMLElement> {
+    override getScrollContainer(): Promise<HTMLElement> {
         return this.deferredScrollContainer.promise;
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.updateTitle();
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.update();
     }
@@ -71,7 +71,7 @@ export class VSXExtensionEditor extends ReactWidget {
         this.title.caption = label;
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.update();
     };

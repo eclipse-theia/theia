@@ -66,9 +66,9 @@ export class BreakpointWidgetInputFocusContext implements KeybindingContext {
 @injectable()
 export class BreakpointWidgetInputStrictFocusContext extends BreakpointWidgetInputFocusContext {
 
-    readonly id: string = DebugKeybindingContexts.breakpointWidgetInputStrictFocus;
+    override readonly id: string = DebugKeybindingContexts.breakpointWidgetInputStrictFocus;
 
-    protected isFocused(model: DebugEditorModel): boolean {
+    protected override isFocused(model: DebugEditorModel): boolean {
         return super.isFocused(model) || model.editor.isFocused({ strict: true });
     }
 

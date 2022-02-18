@@ -33,8 +33,8 @@ export namespace VSXExtensionsCommands {
         category: nls.localizeByDefault(EXTENSIONS_CATEGORY),
         originalCategory: EXTENSIONS_CATEGORY,
         originalLabel: 'Install from VSIX...',
-        label: nls.localize('theia/vsx-registry/installFromVSIX', 'Install from VSIX') + '...',
-        dialogLabel: nls.localize('theia/vsx-registry/installFromVSIX', 'Install from VSIX')
+        label: nls.localizeByDefault('Install from VSIX') + '...',
+        dialogLabel: nls.localizeByDefault('Install from VSIX')
     };
     export const COPY: Command = {
         id: 'vsxExtensions.copy'

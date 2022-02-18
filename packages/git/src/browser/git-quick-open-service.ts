@@ -22,6 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { GitErrorHandler } from './git-error-handler';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core/lib/common/nls';
 import { LabelProvider, QuickInputService, QuickPick, QuickPickItem } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -67,9 +68,14 @@ export class GitQuickOpenService {
                 return repo.localUri;
             }
 
-            this.quickInputService?.showQuickPick([new GitQuickPickItem('Please provide a Git repository location. Press \'Enter\' to confirm or \'Escape\' to cancel.')],
+            this.quickInputService?.showQuickPick(
+                [
+                    new GitQuickPickItem(
+                        nls.localize('theia/git/cloneQuickInputLabel', 'Please provide a Git repository location. Press \'Enter\' to confirm or \'Escape\' to cancel.')
+                    )
+                ],
                 {
-                    placeholder: 'Git repository location:',
+                    placeholder: nls.localize('vscode.git/dist/commands/selectFolder', 'Select Repository Location'),
                     onDidChangeValue: (quickPick: QuickPick<QuickPickItem>, filter: string) => this.query(quickPick, filter, folder)
                 });
         });
@@ -81,22 +87,31 @@ export class GitQuickOpenService {
         const { git, buildDefaultProjectPath, gitErrorHandler, wrapWithProgress } = this;
 
         try {
-            const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
-
             if (filter === undefined || filter.length === 0) {
-                quickPick.items = [new GitQuickPickItem(`Please provide a Git repository location. ${suffix}`)];
+                quickPick.items = [
+                    new GitQuickPickItem(
+                        nls.localize('theia/git/cloneQuickInputLabel', 'Please provide a Git repository location. Press \'Enter\' to confirm or \'Escape\' to cancel.')
+                    )
+                ];
             } else {
-                quickPick.items = [new GitQuickPickItem(`Clone the Git repository: ${filter}. ${suffix}`,
-                    wrapWithProgress(async () => {
-                        try {
-                            await git.clone(filter, { localUri: await buildDefaultProjectPath(folder, filter) });
-                        } catch (error) {
-                            gitErrorHandler.handleError(error);
-                        }
-                    }))];
+                quickPick.items = [
+                    new GitQuickPickItem(
+                        nls.localize(
+                            'theia/git/cloneRepository',
+                            'Clone the Git repository: {0}. Press \'Enter\' to confirm or \'Escape\' to cancel.',
+                            filter
+                        ),
+                        wrapWithProgress(async () => {
+                            try {
+                                await git.clone(filter, { localUri: await buildDefaultProjectPath(folder, filter) });
+                            } catch (error) {
+                                gitErrorHandler.handleError(error);
+                            }
+                        }))
+                ];
             }
         } catch (err) {
-            quickPick.items = [new GitQuickPickItem(`$(error) Error: ${err.message}`)];
+            quickPick.items = [new GitQuickPickItem('$(error) ' + nls.localizeByDefault('Error: {0}', err.message))];
             console.error(err);
         } finally {
             quickPick.busy = false;
@@ -132,7 +147,7 @@ export class GitQuickOpenService {
                 }
             };
             const items = remotes.map(remote => new GitQuickPickItem<Remote>(remote.name, execute, remote, remote.fetch));
-            this.quickInputService?.showQuickPick(items, { placeholder: 'Pick a remote to fetch from:' });
+            this.quickInputService?.showQuickPick(items, { placeholder: nls.localize('theia/git/fetchPickRemote', 'Pick a remote to fetch from:') });
         });
     }
 
@@ -174,7 +189,9 @@ export class GitQuickOpenService {
             };
             const items = remotes.map(remote => new GitQuickPickItem<Remote>(remote.name, execute, remote, remote.push));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.quickInputService?.showQuickPick(items, { placeholder: `Pick a remote to push the currently active branch ${branchName}to:` });
+            this.quickInputService?.showQuickPick(items, {
+                placeholder: nls.localize('vscode.git/dist/commands/pick remote', "Pick a remote to publish the branch '{0}' to:", branchName)
+            });
         });
     }
 
@@ -209,11 +226,15 @@ export class GitQuickOpenService {
                         .filter(branch => (branch.name || '').startsWith(`${remoteItem.label}/`))
                         .map(branch => new GitQuickPickItem(branch.name, executeBranch, branch));
 
-                    this.quickInputService?.showQuickPick(branchItems, { placeholder: 'Select the branch to pull the changes from:' });
+                    this.quickInputService?.showQuickPick(branchItems, {
+                        placeholder: nls.localize('vscode.git/dist/commands/pick branch pull', 'Pick a branch to pull from')
+                    });
                 }
             };
             const remoteItems = remotes.map(remote => new GitQuickPickItem(remote.name, executeRemote, remote, remote.fetch));
-            this.quickInputService?.showQuickPick(remoteItems, { placeholder: 'Pick a remote to pull the branch from:' });
+            this.quickInputService?.showQuickPick(remoteItems, {
+                placeholder: nls.localize('vscode.git/dist/commands/pick remote pull repo', 'Pick a remote to pull the branch from')
+            });
         });
     }
 
@@ -233,7 +254,12 @@ export class GitQuickOpenService {
             };
             const items = branches.map(branch => new GitQuickPickItem<Branch>(branch.name, execute, branch));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.quickInputService?.showQuickPick(items, { placeholder: `Pick a branch to merge into the currently active ${branchName}branch:` });
+            this.quickInputService?.showQuickPick(
+                items,
+                {
+                    placeholder: nls.localize('theia/git/mergeQuickPickPlaceholder', 'Pick a branch to merge into the currently active {0} branch:', branchName)
+                }
+            );
         });
     }
 
@@ -260,18 +286,26 @@ export class GitQuickOpenService {
             const items = branches.map(branch => new GitQuickPickItem<Branch>(
                 branch.type === BranchType.Remote ? branch.name : branch.nameWithoutRemote, switchBranch,
                 branch,
-                branch.type === BranchType.Remote ? 'Remote branch at' : '' + `${(branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : '')}`));
+                branch.type === BranchType.Remote
+                    ? nls.localize('vscode.git/dist/commands/remote branch at', 'Remote branch at {0}', (branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : ''))
+                    : (branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : '')));
 
             const createBranchItem = async <T>() => {
                 const { git, gitErrorHandler, wrapWithProgress } = this;
                 const getItems = (lookFor?: string) => {
-                    const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
                     const dynamicItems: GitQuickPickItem<T>[] = [];
                     if (lookFor === undefined || lookFor.length === 0) {
-                        dynamicItems.push(new GitQuickPickItem(`Please provide a branch name. ${suffix}`, () => { }));
+                        dynamicItems.push(new GitQuickPickItem(
+                            nls.localize('theia/git/checkoutProvideBranchName', 'Please provide a branch name. '),
+                            () => { })
+                        );
                     } else {
                         dynamicItems.push(new GitQuickPickItem(
-                            `Create a new local branch with name: ${lookFor}. ${suffix}`,
+                            nls.localize(
+                                'theia/git/checkoutCreateLocalBranchWithName',
+                                "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
+                                lookFor
+                            ),
                             wrapWithProgress(async () => {
                                 try {
                                     await git.branch(repository, { toCreate: lookFor });
@@ -285,15 +319,15 @@ export class GitQuickOpenService {
                     return dynamicItems;
                 };
                 this.quickInputService?.showQuickPick(getItems(), {
-                    placeholder: 'The name of the branch:',
+                    placeholder: nls.localize('vscode.git/dist/commands/branch name', 'Branch name'),
                     onDidChangeValue: (quickPick: QuickPick<QuickPickItem>, filter: string) => {
                         quickPick.items = getItems(filter);
                     }
                 });
             };
 
-            items.unshift(new GitQuickPickItem('Create new branch...', createBranchItem));
-            this.quickInputService?.showQuickPick(items, { placeholder: 'Select a ref to checkout or create a new local branch:' });
+            items.unshift(new GitQuickPickItem(nls.localize('vscode.git/dist/commands/create branch', 'Create new branch...'), createBranchItem));
+            this.quickInputService?.showQuickPick(items, { placeholder: nls.localize('theia/git/checkoutSelectRef', 'Select a ref to checkout or create a new local branch:') });
         });
     }
 
@@ -311,29 +345,32 @@ export class GitQuickOpenService {
             const tagItems = tags.map(tag => new GitQuickPickItem<Tag>(tag.name, execute, tag));
 
             this.quickInputService?.showQuickPick([...branchItems, ...tagItems],
-                { placeholder: `Pick a branch or tag to compare with the currently active ${branchName} branch:` });
+                { placeholder: nls.localize('theia/git/compareWithBranchOrTag', 'Pick a branch or tag to compare with the currently active {0} branch:', branchName) });
         });
     }
 
     async commitMessageForAmend(): Promise<string> {
         const repository = this.getRepository();
         if (!repository) {
-            throw new Error('No repositories were selected.');
+            throw new Error(nls.localize('theia/git/noRepositoriesSelected', 'No repositories were selected.'));
         }
         return this.withProgress(async () => {
             const lastMessage = (await this.git.exec(repository, ['log', '--format=%B', '-n', '1'])).stdout.trim();
             if (lastMessage.length === 0) {
-                throw new Error(`Repository ${repository.localUri} is not yet initialized.`);
+                throw new Error(nls.localize('theia/git/repositoryNotInitialized', 'Repository {0} is not yet initialized.', repository.localUri));
             }
             const message = lastMessage.replace(/[\r\n]+/g, ' ');
             const result = await new Promise<string>(async (resolve, reject) => {
                 const getItems = (lookFor?: string) => {
                     const items = [];
                     if (!lookFor) {
-                        const label = "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.";
+                        const label = nls.localize('theia/git/amendReuseMessag', "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.");
                         items.push(new GitQuickPickItem(label, () => resolve(lastMessage), label));
                     } else {
-                        items.push(new GitQuickPickItem("Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.", () => resolve(lookFor)));
+                        items.push(new GitQuickPickItem(
+                            nls.localize('theia/git/amendRewrite', "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel."),
+                            () => resolve(lookFor))
+                        );
                     }
                     return items;
                 };
@@ -357,18 +394,22 @@ export class GitQuickOpenService {
             });
             const getItems = (lookFor?: string) => {
                 const items = [];
-                const suffix = "Press 'Enter' to confirm or 'Escape' to cancel.";
                 if (lookFor === undefined || lookFor.length === 0) {
-                    items.push(new GitQuickPickItem(`Stash changes. ${suffix}`, () => doStash('')));
+                    items.push(new GitQuickPickItem(nls.localize('theia/git/stashChanges', "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel."), () => doStash('')));
                 } else {
-                    items.push(new GitQuickPickItem(`Stash changes with message: ${lookFor}. ${suffix}`, () => doStash(lookFor)));
+                    items.push(new GitQuickPickItem(
+                        nls.localize('theia/git/stashChangesWithMessage', "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.", lookFor),
+                        () => doStash(lookFor))
+                    );
                 }
                 return items;
             };
             const updateItems = (quickPick: QuickPick<QuickPickItem>, filter: string) => {
                 quickPick.items = getItems(filter);
             };
-            this.quickInputService?.showQuickPick(getItems(), { placeholder: 'Stash message', onDidChangeValue: updateItems });
+            this.quickInputService?.showQuickPick(getItems(), {
+                placeholder: nls.localize('vscode.git/dist/commands/stash message', 'Stash message'), onDidChangeValue: updateItems
+            });
         });
     }
 
@@ -397,11 +438,11 @@ export class GitQuickOpenService {
     }
 
     async applyStash(): Promise<void> {
-        this.doStashAction('apply', 'Select a stash to \'apply\'.');
+        this.doStashAction('apply', nls.localize('vscode.git/dist/commands/pick stash to apply', 'Pick a stash to apply'));
     }
 
     async popStash(): Promise<void> {
-        this.doStashAction('pop', 'Select a stash to \'pop\'.');
+        this.doStashAction('pop', nls.localize('pick stash to pop', 'Pick a stash to pop'));
     }
 
     async dropStash(): Promise<void> {
@@ -409,17 +450,11 @@ export class GitQuickOpenService {
         if (!repository) {
             return;
         }
-        this.doStashAction('drop', 'Select a stash entry to remove it from the list of stash entries.',
-            async () => {
-                const list = await this.git.stash(repository, { action: 'list' });
-                let listString = '';
-                list.forEach(stashEntry => {
-                    listString += stashEntry.message + '\n';
-                });
-                return `Stash successfully removed.
-                There ${list.length === 1 ? 'is' : 'are'} ${list.length || 'no'} more entry in stash list.
-                \n${listString}`;
-            });
+        this.doStashAction(
+            'drop',
+            nls.localize('vscode.git/dist/commands/pick stash to drop', 'Pick a stash to drop'),
+            async () => nls.localize('theia/git/dropStashMessage', 'Stash successfully removed.')
+        );
     }
 
     async applyLatestStash(): Promise<void> {
@@ -458,7 +493,7 @@ export class GitQuickOpenService {
         const wsRoots = await this.workspaceService.roots;
         if (wsRoots && wsRoots.length > 1) {
             const items = wsRoots.map<GitQuickPickItem<URI>>(root => this.toRepositoryPathQuickOpenItem(root));
-            this.quickInputService?.showQuickPick(items, { placeholder: 'Choose workspace root to initialize git repo in' });
+            this.quickInputService?.showQuickPick(items, { placeholder: nls.localize('vscode.git/dist/commands/init', 'Pick workspace folder to initialize git repo in') });
         } else {
             const rootUri = wsRoots[0].resource;
             this.doInitRepository(rootUri.toString());

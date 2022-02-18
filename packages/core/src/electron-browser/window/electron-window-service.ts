@@ -42,12 +42,12 @@ export class ElectronWindowService extends DefaultWindowService {
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
+    override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
         return undefined;
     }
 
-    openNewDefaultWindow(): void {
+    override openNewDefaultWindow(): void {
         this.delegate.openNewDefaultWindow();
     }
 
@@ -61,7 +61,7 @@ export class ElectronWindowService extends DefaultWindowService {
         });
     }
 
-    protected registerUnloadListeners(): void {
+    protected override registerUnloadListeners(): void {
         electron.ipcRenderer.on(CLOSE_REQUESTED_SIGNAL, (_event, closeRequestEvent: CloseRequestArguments) => this.handleCloseRequestedEvent(closeRequestEvent));
         window.addEventListener('unload', () => this.onUnloadEmitter.fire());
     }
@@ -92,7 +92,7 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 
-    reload(): void {
+    override reload(): void {
         electron.ipcRenderer.send(RELOAD_REQUESTED_SIGNAL);
     }
 }

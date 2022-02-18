@@ -110,7 +110,7 @@ async function getThemeFromDB(id: string): Promise<Theme | undefined> {
 }
 
 export class ThemeServiceWithDB extends ThemeService {
-    static get(): ThemeService {
+    static override get(): ThemeService {
         const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         if (!global[ThemeServiceSymbol]) {
             const themeService = new ThemeServiceWithDB();
@@ -121,7 +121,7 @@ export class ThemeServiceWithDB extends ThemeService {
         return global[ThemeServiceSymbol];
     }
 
-    loadUserTheme(): void {
+    override loadUserTheme(): void {
         this.loadUserThemeWithDB();
     }
 

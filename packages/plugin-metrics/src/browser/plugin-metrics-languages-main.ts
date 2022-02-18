@@ -33,7 +33,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
     // Map of handle to extension id
     protected readonly handleToExtensionID = new Map<number, string>();
 
-    $unregister(handle: number): void {
+    override $unregister(handle: number): void {
         this.handleToExtensionID.delete(handle);
         super.$unregister(handle);
     }
@@ -213,103 +213,103 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.resolveRenameLocation(handle, model, position, token));
     }
 
-    $registerCompletionSupport(handle: number, pluginInfo: PluginInfo,
+    override $registerCompletionSupport(handle: number, pluginInfo: PluginInfo,
         selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerCompletionSupport(handle, pluginInfo, selector, triggerCharacters, supportsResolveDetails);
     }
 
-    $registerDefinitionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDefinitionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDefinitionProvider(handle, pluginInfo, selector);
     }
 
-    $registerDeclarationProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDeclarationProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDeclarationProvider(handle, pluginInfo, selector);
     }
 
-    $registerReferenceProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerReferenceProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerReferenceProvider(handle, pluginInfo, selector);
     }
 
-    $registerSignatureHelpProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void {
+    override $registerSignatureHelpProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerSignatureHelpProvider(handle, pluginInfo, selector, metadata);
     }
 
-    $registerImplementationProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerImplementationProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerImplementationProvider(handle, pluginInfo, selector);
     }
 
-    $registerTypeDefinitionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerTypeDefinitionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerTypeDefinitionProvider(handle, pluginInfo, selector);
     }
 
-    $registerHoverProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerHoverProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerHoverProvider(handle, pluginInfo, selector);
     }
 
-    $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDocumentHighlightProvider(handle, pluginInfo, selector);
     }
 
-    $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void {
+    override $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerWorkspaceSymbolProvider(handle, pluginInfo);
     }
 
-    $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDocumentLinkProvider(handle, pluginInfo, selector);
     }
 
-    $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number): void {
+    override $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle: number): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerCodeLensSupport(handle, pluginInfo, selector, eventHandle);
     }
 
-    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerOutlineSupport(handle, pluginInfo, selector);
     }
 
-    $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDocumentFormattingSupport(handle, pluginInfo, selector);
     }
 
-    $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerRangeFormattingSupport(handle, pluginInfo, selector);
     }
 
-    $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void {
+    override $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerOnTypeFormattingProvider(handle, pluginInfo, selector, autoFormatTriggerCharacters);
     }
 
-    $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerFoldingRangeProvider(handle, pluginInfo, selector);
     }
 
-    $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerDocumentColorProvider(handle, pluginInfo, selector);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
+    override $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerQuickFixProvider(handle, pluginInfo, selector);
     }
 
-    $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveLocation: boolean): void {
+    override $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveLocation: boolean): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
         super.$registerRenameProvider(handle, pluginInfo, selector, supportsResolveLocation);
     }

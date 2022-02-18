@@ -224,20 +224,28 @@
 
 .theia-settings-container li.single-pref {
     list-style-type: none;
-    margin: 12px 0 18px 0;
+    padding: 12px 14px 18px;
     width: 100%;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    padding-left: calc(2 * var(--theia-ui-padding));
     position: relative;
+}
+
+.theia-settings-container li.single-pref:hover:not(:focus) {
+    background-color: var(--theia-settings-rowHoverBackground);
+}
+
+.theia-settings-container li.single-pref:focus {
+    background-color: var(--theia-settings-focusedRowBackground);
+    outline: 1px solid var(--theia-settings-focusedRowBorder);
 }
 
 .theia-settings-container li.single-pref .pref-context-gutter {
     position: absolute;
-    height: 100%;
-    left: -16px;
-    padding-right: 4px;
+    height: calc(100% - 36px);
+    left: -22px;
+    padding-right: 8px;
     border-right: 2px hidden;
 }
 

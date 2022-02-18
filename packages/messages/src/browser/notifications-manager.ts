@@ -169,7 +169,7 @@ export class NotificationManager extends MessageClient {
         this.fireUpdatedEvent();
     }
 
-    showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
+    override showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
         const messageId = this.getMessageId(plainMessage);
 
         let notification = this.notifications.get(messageId);
@@ -240,7 +240,7 @@ export class NotificationManager extends MessageClient {
         return String(Md5.hashStr(`[${m.type}] ${m.text} : ${(m.actions || []).join(' | ')};`));
     }
 
-    async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+    override async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         let notification = this.notifications.get(messageId);
         if (!notification) {
             const message = this.contentRenderer.renderMessage(plainMessage.text);
@@ -268,7 +268,7 @@ export class NotificationManager extends MessageClient {
         return result.promise;
     }
 
-    async reportProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
+    override async reportProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
         const notification = this.find(messageId);
         if (!notification) {
             return;

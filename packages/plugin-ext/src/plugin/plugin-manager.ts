@@ -371,9 +371,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const storagePath = configStorage.hostStoragePath ? join(configStorage.hostStoragePath, plugin.model.id) : undefined;
         const secrets = new SecretStorageExt(plugin, this.secrets);
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
+        const extension = new PluginExt(this, plugin);
         const pluginContext: theia.PluginContext = {
-            extensionPath: plugin.pluginFolder,
-            extensionUri: Uri.file(plugin.pluginFolder),
+            extensionPath: extension.extensionPath,
+            extensionUri: extension.extensionUri,
             globalState: new GlobalState(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
@@ -386,7 +387,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: 1, // @todo: implement proper `extensionMode`.
-            extension: new PluginExt(this, plugin),
+            extension,
             logUri: Uri.file(logPath)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);

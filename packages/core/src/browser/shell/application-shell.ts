@@ -307,14 +307,14 @@ export class ApplicationShell extends Widget {
         this.topPanel.setHidden(hiddenPreferences.includes(preference));
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         document.addEventListener('p-dragenter', this, true);
         document.addEventListener('p-dragover', this, true);
         document.addEventListener('p-dragleave', this, true);
         document.addEventListener('p-drop', this, true);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         document.removeEventListener('p-dragenter', this, true);
         document.removeEventListener('p-dragover', this, true);
         document.removeEventListener('p-dragleave', this, true);

@@ -56,7 +56,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
   - Changes are thoroughly tested by an author.
   - Changes thoroughly reviewed following the [review checklist](#review-checklist) by an author.
 <a name="review-request-gh"></a>
-- [2.](#review-request-gh) A review can be requested explicitly using GitHub: https://help.github.com/en/articles/requesting-a-pull-request-reviewed
+- [2.](#review-request-gh) A review can be requested explicitly [using GitHub](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/requesting-a-pull-request-review).
 <a name="review-request-comment"></a>
 - [3.](#review-request-comment) A review can be also requested as a comment from any GitHub users.
   - For example to invite the person who originally filed an issue for testing.

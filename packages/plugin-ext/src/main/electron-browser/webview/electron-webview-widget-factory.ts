@@ -23,7 +23,7 @@ import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-w
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
-    async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
+    override async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
         const widget = await super.createWidget(identifier);
         await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;
@@ -47,7 +47,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
 export class ElectronCustomEditorWidgetFactory extends CustomEditorWidgetFactory {
 
-    async createWidget(identifier: WebviewWidgetIdentifier): Promise<CustomEditorWidget> {
+    override async createWidget(identifier: WebviewWidgetIdentifier): Promise<CustomEditorWidget> {
         const widget = await super.createWidget(identifier);
         await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;

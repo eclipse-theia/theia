@@ -70,6 +70,12 @@ export class FileDialogProps extends DialogProps {
      */
     filters?: FileDialogTreeFilters;
 
+    /**
+     * Determines if the dialog window should be modal.
+     * Defaults to `true`.
+     */
+    modal?: boolean;
+
 }
 
 @injectable()
@@ -127,7 +133,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
     @inject(FileDialogTreeFiltersRendererFactory) readonly treeFiltersFactory: FileDialogTreeFiltersRendererFactory;
 
     constructor(
-        @inject(FileDialogProps) readonly props: FileDialogProps
+        @inject(FileDialogProps) override readonly props: FileDialogProps
     ) {
         super(props);
     }
@@ -177,7 +183,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         return this.widget.model;
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         setEnabled(this.back, this.model.canNavigateBackward());
         setEnabled(this.forward, this.model.canNavigateForward());
@@ -194,14 +200,14 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         this.widget.update();
     }
 
-    protected handleEnter(event: KeyboardEvent): boolean | void {
+    protected override handleEnter(event: KeyboardEvent): boolean | void {
         if (event.target instanceof HTMLTextAreaElement || this.targetIsDirectoryInput(event.target) || this.targetIsInputToggle(event.target)) {
             return false;
         }
         this.accept();
     }
 
-    protected handleEscape(event: KeyboardEvent): boolean | void {
+    protected override handleEscape(event: KeyboardEvent): boolean | void {
         if (event.target instanceof HTMLTextAreaElement || this.targetIsDirectoryInput(event.target)) {
             return false;
         }
@@ -232,7 +238,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         Widget.attach(this.treePanel, this.contentNode);
         this.toDisposeOnDetach.push(Disposable.create(() => {
             Widget.detach(this.treePanel);
@@ -279,7 +285,7 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 
     protected abstract getAcceptButtonLabel(): string;
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         this.widget.activate();
     }
 
@@ -288,12 +294,12 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
 @injectable()
 export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
 
-    constructor(@inject(OpenFileDialogProps) readonly props: OpenFileDialogProps) {
+    constructor(@inject(OpenFileDialogProps) override readonly props: OpenFileDialogProps) {
         super(props);
     }
 
     @postConstruct()
-    init(): void {
+    override init(): void {
         super.init();
         const { props } = this;
         if (props.canSelectFiles !== undefined) {
@@ -305,7 +311,7 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         return this.props.openLabel ? this.props.openLabel : 'Open';
     }
 
-    protected isValid(value: MaybeArray<FileStatNode>): string {
+    protected override isValid(value: MaybeArray<FileStatNode>): string {
         if (value && !this.props.canSelectMany && value instanceof Array) {
             return 'You can select only one item';
         }
@@ -320,7 +326,7 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         }
     }
 
-    protected async accept(): Promise<void> {
+    protected override async accept(): Promise<void> {
         const selection = this.value;
         if (!this.props.canSelectFolders
             && !Array.isArray(selection)
@@ -340,12 +346,12 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    constructor(@inject(SaveFileDialogProps) readonly props: SaveFileDialogProps) {
+    constructor(@inject(SaveFileDialogProps) override readonly props: SaveFileDialogProps) {
         super(props);
     }
 
     @postConstruct()
-    init(): void {
+    override init(): void {
         super.init();
         const { widget } = this;
         widget.addClass(SAVE_DIALOG_CLASS);
@@ -355,7 +361,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         return this.props.saveLabel ? this.props.saveLabel : 'Save';
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         // Update file name field when changing a selection
         if (this.fileNameField) {
             if (this.widget.model.selectedFileStatNodes.length === 1) {
@@ -372,7 +378,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         super.onUpdateRequest(msg);
     }
 
-    protected isValid(value: URI | undefined): string | boolean {
+    protected override isValid(value: URI | undefined): string | boolean {
         if (this.fileNameField && this.fileNameField.value) {
             return '';
         }
@@ -393,7 +399,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         return undefined;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
 
         const fileNamePanel = document.createElement('div');

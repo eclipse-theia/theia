@@ -38,7 +38,7 @@ export class ConsoleContentWidget extends SourceTreeWidget {
         return this._shouldScrollToEnd;
     }
 
-    static createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
+    static override createContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: ConsoleContentWidget.CONTEXT_MENU,
             ...props
@@ -48,7 +48,7 @@ export class ConsoleContentWidget extends SourceTreeWidget {
         return child;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.toDisposeOnDetach.push(this.onScrollUp(() => this.shouldScrollToEnd = false));
         this.toDisposeOnDetach.push(this.onScrollYReachEnd(() => this.shouldScrollToEnd = true));
@@ -62,7 +62,7 @@ export class ConsoleContentWidget extends SourceTreeWidget {
         }
     }
 
-    protected createTreeElementNodeClassNames(node: TreeElementNode): string[] {
+    protected override createTreeElementNodeClassNames(node: TreeElementNode): string[] {
         const classNames = super.createTreeElementNodeClassNames(node);
         if (node.element) {
             const className = this.toClassName((node.element as ConsoleItem));

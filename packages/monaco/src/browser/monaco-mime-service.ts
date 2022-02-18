@@ -39,7 +39,7 @@ export class MonacoMimeService extends MimeService {
         });
     }
 
-    setAssociations(associations: MimeAssociation[]): void {
+    override setAssociations(associations: MimeAssociation[]): void {
         this.associations = associations;
         this.updateAssociations();
     }

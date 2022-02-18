@@ -1740,6 +1740,27 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'input.border', light: 'input.border', hc: 'input.border'
                 }, description: 'Settings editor number input box border.'
             },
+            {
+                id: 'settings.focusedRowBackground', defaults: {
+                    dark: Color.transparent('#808080', 0.14),
+                    light: Color.transparent('#808080', 0.03),
+                    hc: undefined
+                }, description: 'The background color of a settings row when focused.'
+            },
+            {
+                id: 'settings.rowHoverBackground', defaults: {
+                    dark: Color.transparent('#808080', 0.07),
+                    light: Color.transparent('#808080', 0.05),
+                    hc: undefined
+                }, description: 'The background color of a settings row when hovered.'
+            },
+            {
+                id: 'settings.focusedRowBorder', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.12),
+                    light: Color.rgba(0, 0, 0, 0.12),
+                    hc: 'focusBorder'
+                }, description: "The color of the row's top and bottom border when the row is focused."
+            },
 
             // Theia Variable colors
             {

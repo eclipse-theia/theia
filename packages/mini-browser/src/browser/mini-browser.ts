@@ -84,7 +84,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
         this.toDisposeOnProps.push(content);
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         const widget = (this.layout as PanelLayout).widgets[0];
         if (widget) {

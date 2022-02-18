@@ -63,7 +63,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
             execute: async (query?: string) => {
                 const widget = await this.openView({ activate: true });
@@ -138,7 +138,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_OPEN, {
             commandId: CommonCommands.OPEN_PREFERENCES.id,
             label: CommonCommands.OPEN_PREFERENCES.label,
@@ -166,7 +166,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: CommonCommands.OPEN_PREFERENCES.id,
             keybinding: (isOSX && !isFirefox) ? 'cmd+,' : 'ctrl+,'

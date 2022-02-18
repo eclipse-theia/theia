@@ -35,7 +35,7 @@ export class SourceTreeWidget extends TreeWidget {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.addClass('theia-source-tree');
         this.toDispose.push(this.model.onOpenNode(node => {
@@ -67,7 +67,7 @@ export class SourceTreeWidget extends TreeWidget {
         return TreeElementNode.is(node) && node.element || undefined;
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (TreeSourceNode.is(model.root) && model.root.children.length === 0) {
             const { placeholder } = model.root.source;
             if (placeholder) {
@@ -78,7 +78,7 @@ export class SourceTreeWidget extends TreeWidget {
 
     }
 
-    protected renderCaption(node: TreeNode): React.ReactNode {
+    protected override renderCaption(node: TreeNode): React.ReactNode {
         if (TreeElementNode.is(node)) {
             const classNames = this.createTreeElementNodeClassNames(node);
             return <div className={classNames.join(' ')}>{node.element.render()}</div>;
@@ -89,14 +89,14 @@ export class SourceTreeWidget extends TreeWidget {
         return ['theia-tree-element-node'];
     }
 
-    storeState(): object {
+    override storeState(): object {
         // no-op
         return {};
     }
     protected superStoreState(): object {
         return super.storeState();
     }
-    restoreState(state: object): void {
+    override restoreState(state: object): void {
         // no-op
     }
     protected superRestoreState(state: object): void {

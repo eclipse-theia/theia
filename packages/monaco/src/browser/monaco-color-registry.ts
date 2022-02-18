@@ -29,18 +29,18 @@ export class MonacoColorRegistry extends ColorRegistry {
     protected readonly monacoThemeService = StandaloneServices.get(IStandaloneThemeService);
     protected readonly monacoColorRegistry = getColorRegistry();
 
-    *getColors(): IterableIterator<string> {
+    override *getColors(): IterableIterator<string> {
         for (const { id } of this.monacoColorRegistry.getColors()) {
             yield id;
         }
     }
 
-    getCurrentColor(id: string): string | undefined {
+    override getCurrentColor(id: string): string | undefined {
         const color = this.monacoThemeService.getColorTheme().getColor(id);
         return color && color.toString();
     }
 
-    protected doRegister(definition: ColorDefinition): Disposable {
+    protected override doRegister(definition: ColorDefinition): Disposable {
         const defaults: ColorDefaults = {
             dark: this.toColor(definition.defaults?.dark),
             light: this.toColor(definition.defaults?.light),

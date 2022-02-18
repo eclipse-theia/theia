@@ -364,7 +364,7 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
-            this.messageService.info(nls.localize('theia/editor/reopenDirty', 'The file is dirty. Please save it first before reopening it with another encoding.'));
+            this.messageService.info(nls.localizeByDefault('The file is dirty. Please save it first before reopening it with another encoding.'));
             return;
         } else if (selectedFileEncoding.value) {
             editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);

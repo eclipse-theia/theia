@@ -62,7 +62,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
-    lastCwd = new URI();
+    override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -70,7 +70,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
-    @inject('terminal-dom-id') public readonly id: string;
+    @inject('terminal-dom-id') override readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
@@ -441,7 +441,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         throw new Error('Error creating terminal widget, see the backend error log for more information.');
     }
 
-    processMessage(msg: Message): void {
+    override processMessage(msg: Message): void {
         super.processMessage(msg);
         switch (msg.type) {
             case 'fit-request':
@@ -451,35 +451,35 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 break;
         }
     }
-    protected onFitRequest(msg: Message): void {
+    protected override onFitRequest(msg: Message): void {
         super.onFitRequest(msg);
         MessageLoop.sendMessage(this, Widget.ResizeMessage.UnknownSize);
     }
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.term.focus();
     }
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.update();
     }
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         Widget.attach(this.searchBox, this.node);
         super.onAfterAttach(msg);
         this.update();
     }
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         Widget.detach(this.searchBox);
         super.onBeforeDetach(msg);
     }
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.needsResize = true;
         this.update();
     }
 
     protected needsResize = true;
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         if (!this.isVisible || !this.isAttached) {
             return;
@@ -625,7 +625,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.onTermDidClose.event;
     }
 
-    dispose(): void {
+    override dispose(): void {
         /* Close the backend terminal only when explicitly closing the terminal
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {

@@ -55,7 +55,7 @@ export class TheiaPreferenceView extends TheiaView {
         super(TheiaSettingsViewData, app);
     }
 
-    async open(preferenceScope = TheiaPreferenceScope.Workspace): Promise<TheiaView> {
+    override async open(preferenceScope = TheiaPreferenceScope.Workspace): Promise<TheiaView> {
         await this.app.quickCommandPalette.trigger('Preferences: Open Settings (UI)');
         await this.waitForVisible();
         await this.openPreferenceScope(preferenceScope);

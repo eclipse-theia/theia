@@ -339,6 +339,7 @@ export interface CodeLensSymbol {
 }
 
 export interface CodeAction {
+    cacheId: number;
     title: string;
     command?: Command;
     edit?: WorkspaceEdit;

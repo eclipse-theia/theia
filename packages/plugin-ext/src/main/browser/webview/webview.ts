@@ -198,14 +198,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.doShow();
         // iframe has to be reloaded when moved to another DOM element
         this.toDisposeOnDetach.push(Disposable.create(() => this.forceHide()));
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addEventListener(this.node, 'focus', () => {
             if (this.element) {
@@ -214,12 +214,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         });
     }
 
-    protected onBeforeShow(msg: Message): void {
+    protected override onBeforeShow(msg: Message): void {
         super.onBeforeShow(msg);
         this.doShow();
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.doHide();
     }
@@ -410,7 +410,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             });
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
     }

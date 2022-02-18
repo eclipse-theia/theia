@@ -27,7 +27,7 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
     }
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps
+        @inject(DialogProps) props: DialogProps
     ) {
         super(props);
         const messageNode = document.createElement('div');
@@ -40,12 +40,12 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
         this.appendAcceptButton(nls.localizeByDefault(UntitledWorkspaceExitDialog.Values.Save));
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addAction(this.dontSaveButton, () => this.dontSave(), 'click');
     }
 
-    protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
+    protected override addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
         this.addAction(element, () => this.doSave(), 'click');
     }
 

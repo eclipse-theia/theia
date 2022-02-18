@@ -35,8 +35,8 @@ export class EditorPreviewWidget extends EditorWidget {
     }
 
     constructor(
-        readonly editor: TextEditor,
-        protected readonly selectionService: SelectionService
+        editor: TextEditor,
+        selectionService: SelectionService
     ) {
         super(editor, selectionService);
         this.toDispose.push(this.onDidChangePreviewStateEmitter);
@@ -64,7 +64,7 @@ export class EditorPreviewWidget extends EditorWidget {
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this._isPreview) {
             this.checkForTabbarChange();
@@ -87,12 +87,12 @@ export class EditorPreviewWidget extends EditorWidget {
         }
     }
 
-    storeState(): { isPreview: boolean, editorState: object } {
+    override storeState(): { isPreview: boolean, editorState: object } {
         const { _isPreview: isPreview } = this;
         return { isPreview, editorState: this.editor.storeViewState() };
     }
 
-    restoreState(oldState: { isPreview: boolean, editorState: object }): void {
+    override restoreState(oldState: { isPreview: boolean, editorState: object }): void {
         if (!oldState.isPreview) {
             this.convertToNonPreview();
         }

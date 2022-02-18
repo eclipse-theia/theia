@@ -23,7 +23,7 @@ export class TheiaNotificationOverlay extends TheiaPageObject {
     protected readonly HEADER_NOTIFICATIONS = 'NOTIFICATIONS';
     protected readonly HEADER_NO_NOTIFICATIONS = 'NO NEW NOTIFICATIONS';
 
-    constructor(public app: TheiaApp, protected notificationIndicator: TheiaNotificationIndicator) {
+    constructor(app: TheiaApp, protected notificationIndicator: TheiaNotificationIndicator) {
         super(app);
     }
 

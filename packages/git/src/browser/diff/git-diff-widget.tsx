@@ -112,13 +112,13 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
         this.onUpdateRequest(Widget.Msg.UpdateRequest);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         MessageLoop.sendMessage(this.diffHeaderWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         this.node.appendChild(this.diffHeaderWidget.node);
         this.node.appendChild(this.resourceWidget.node);
 

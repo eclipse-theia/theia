@@ -115,7 +115,7 @@ export class TheiaDockPanel extends DockPanel {
         }
     }
 
-    addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
+    override addWidget(widget: Widget, options?: DockPanel.IAddOptions): void {
         if (this.mode === 'single-document' && widget.parent === this) {
             return;
         }
@@ -123,12 +123,12 @@ export class TheiaDockPanel extends DockPanel {
         this.widgetAdded.emit(widget);
     }
 
-    activateWidget(widget: Widget): void {
+    override activateWidget(widget: Widget): void {
         super.activateWidget(widget);
         this.widgetActivated.emit(widget);
     }
 
-    protected onChildRemoved(msg: Widget.ChildMessage): void {
+    protected override onChildRemoved(msg: Widget.ChildMessage): void {
         super.onChildRemoved(msg);
         this.widgetRemoved.emit(msg.child);
     }

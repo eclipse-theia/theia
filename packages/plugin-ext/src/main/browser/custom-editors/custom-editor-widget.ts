@@ -25,9 +25,9 @@ import { CustomEditorModel } from './custom-editors-main';
 
 @injectable()
 export class CustomEditorWidget extends WebviewWidget implements SaveableSource, NavigatableWidget {
-    static FACTORY_ID = 'plugin-custom-editor';
+    static override FACTORY_ID = 'plugin-custom-editor';
 
-    id: string;
+    override id: string;
     resource: URI;
 
     protected _modelRef: Reference<CustomEditorModel>;
@@ -47,7 +47,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     protected readonly undoRedoService: UndoRedoService;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = CustomEditorWidget.FACTORY_ID + ':' + this.identifier.id;
         this.toDispose.push(this.fileService.onDidRunOperation(e => {
@@ -83,14 +83,14 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
         return this.resource.withPath(resourceUri.path);
     }
 
-    storeState(): CustomEditorWidget.State {
+    override storeState(): CustomEditorWidget.State {
         return {
             ...super.storeState(),
             strResource: this.resource.toString(),
         };
     }
 
-    restoreState(oldState: CustomEditorWidget.State): void {
+    override restoreState(oldState: CustomEditorWidget.State): void {
         const { strResource } = oldState;
         this.resource = new URI(strResource);
         super.restoreState(oldState);

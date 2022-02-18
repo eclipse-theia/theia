@@ -174,6 +174,8 @@ import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
 import { CustomEditorsExtImpl } from './custom-editors';
 import { WebviewViewsExtImpl } from './webview-views';
+import { PluginPackage } from '../common';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -1075,9 +1077,15 @@ export class Plugin<T> implements theia.Plugin<T> {
     constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
-        this.pluginUri = URI.parse(plugin.pluginUri);
         this.packageJSON = plugin.rawModel;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
+
+        if (this.pluginType === 'frontend') {
+            const { origin } = new Endpoint();
+            this.pluginUri = URI.parse(origin + '/' + PluginPackage.toPluginUrl(plugin.model, ''));
+        } else {
+            this.pluginUri = URI.parse(plugin.pluginUri);
+        }
     }
 
     get isActive(): boolean {
@@ -1098,7 +1106,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     extensionUri: theia.Uri;
     extensionKind: ExtensionKind;
 
-    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         super(pluginManager, plugin);
 
         this.extensionPath = this.pluginPath;
@@ -1106,15 +1114,15 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
         this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
     }
 
-    get isActive(): boolean {
+    override get isActive(): boolean {
         return this.pluginManager.isActive(this.id);
     }
 
-    get exports(): T {
+    override get exports(): T {
         return <T>this.pluginManager.getPluginExport(this.id);
     }
 
-    activate(): PromiseLike<T> {
+    override activate(): PromiseLike<T> {
         return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
     }
 }

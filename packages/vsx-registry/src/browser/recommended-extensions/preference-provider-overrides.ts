@@ -38,7 +38,7 @@ import { SectionPreferenceProviderSection, SectionPreferenceProviderUri } from '
 
 @injectable()
 export class FolderPreferenceProviderWithExtensions extends FolderPreferenceProvider {
-    protected getPath(preferenceName: string): string[] | undefined {
+    protected override getPath(preferenceName: string): string[] | undefined {
         const path = super.getPath(preferenceName);
         if (this.section !== 'extensions' || !path?.length) {
             return path;
@@ -53,7 +53,7 @@ export class FolderPreferenceProviderWithExtensions extends FolderPreferenceProv
 
 @injectable()
 export class UserPreferenceProviderWithExtensions extends UserPreferenceProvider {
-    protected getPath(preferenceName: string): string[] | undefined {
+    protected override getPath(preferenceName: string): string[] | undefined {
         const path = super.getPath(preferenceName);
         if (this.section !== 'extensions' || !path?.length) {
             return path;
@@ -68,7 +68,7 @@ export class UserPreferenceProviderWithExtensions extends UserPreferenceProvider
 
 @injectable()
 export class WorkspaceFilePreferenceProviderWithExtensions extends WorkspaceFilePreferenceProvider {
-    protected belongsInSection(firstSegment: string, remainder: string): boolean {
+    protected override belongsInSection(firstSegment: string, remainder: string): boolean {
         if (firstSegment === 'extensions') {
             return remainder in extensionsConfigurationSchema.properties!;
         }

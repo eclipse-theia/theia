@@ -26,7 +26,7 @@ export class TheiaNotificationIndicator extends TheiaStatusIndicator {
         return 'Notification';
     }
 
-    async isVisible(): Promise<boolean> {
+    override async isVisible(): Promise<boolean> {
         return super.isVisible(NOTIFICATION_ICONS, this.title);
     }
 
@@ -34,7 +34,7 @@ export class TheiaNotificationIndicator extends TheiaStatusIndicator {
         return super.isVisible(NOTIFICATION_DOT_ICON, this.title);
     }
 
-    async waitForVisible(expectNotifications = false): Promise<void> {
+    override async waitForVisible(expectNotifications = false): Promise<void> {
         await super.waitForVisibleByIcon(expectNotifications ? NOTIFICATION_DOT_ICON : NOTIFICATION_ICON);
     }
 

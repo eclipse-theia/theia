@@ -42,14 +42,14 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     @inject(TreeCompressionService) protected readonly compressionService: TreeCompressionService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(CompressedTreeModel) readonly model: CompressedTreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeProps) props: TreeProps,
+        @inject(CompressedTreeModel) override readonly model: CompressedTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
     }
 
-    protected rows = new Map<string, CompressedNodeRow>();
+    protected override rows = new Map<string, CompressedNodeRow>();
 
     toggleCompression(newCompression = !this.compressionToggle.compress): void {
         if (newCompression !== this.compressionToggle.compress) {
@@ -58,21 +58,21 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         }
     }
 
-    protected shouldDisplayNode(node: TreeNode): boolean {
+    protected override shouldDisplayNode(node: TreeNode): boolean {
         if (this.compressionToggle.compress && this.compressionService.isCompressionParticipant(node) && !this.compressionService.isCompressionHead(node)) {
             return false;
         }
         return super.shouldDisplayNode(node);
     }
 
-    protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
+    protected override getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
         if (!this.compressionToggle.compress) { return super.getDepthForNode(node, depths); }
         const parent = this.compressionService.getCompressionHead(node.parent) ?? node.parent;
         const parentDepth = depths.get(parent);
         return parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
     }
 
-    protected toNodeRow(node: TreeNode, index: number, depth: number): CompressedNodeRow {
+    protected override toNodeRow(node: TreeNode, index: number, depth: number): CompressedNodeRow {
         if (!this.compressionToggle.compress) { return super.toNodeRow(node, index, depth); }
         const row: CompressedNodeRow = { node, index, depth };
         if (this.compressionService.isCompressionHead(node)) {
@@ -81,7 +81,7 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         return row;
     }
 
-    protected doRenderNodeRow({ node, depth, compressionChain }: CompressedNodeRow): React.ReactNode {
+    protected override doRenderNodeRow({ node, depth, compressionChain }: CompressedNodeRow): React.ReactNode {
         const nodeProps: CompressedNodeProps = { depth, compressionChain };
         return <>
             {this.renderIndent(node, nodeProps)}
@@ -89,19 +89,19 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         </>;
     }
 
-    protected rowIsSelected(node: TreeNode, props: CompressedNodeProps): boolean {
+    protected override rowIsSelected(node: TreeNode, props: CompressedNodeProps): boolean {
         if (this.compressionToggle.compress && props.compressionChain) {
             return props.compressionChain.some(participant => SelectableTreeNode.isSelected(participant));
         }
         return SelectableTreeNode.isSelected(node);
     }
 
-    protected getCaptionAttributes(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override getCaptionAttributes(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const operativeNode = props.compressionChain?.tail() ?? node;
         return super.getCaptionAttributes(operativeNode, props);
     }
 
-    protected getCaptionChildren(node: TreeNode, props: CompressedNodeProps): React.ReactNode {
+    protected override getCaptionChildren(node: TreeNode, props: CompressedNodeProps): React.ReactNode {
         if (!this.compressionToggle.compress || !props.compressionChain) { return super.getCaptionChildren(node, props); }
         return props.compressionChain.map((subNode, index, self) => {
             const classes = ['theia-tree-compressed-label-part'];
@@ -128,19 +128,19 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         };
     }
 
-    protected handleUp(event: KeyboardEvent): void {
+    protected override handleUp(event: KeyboardEvent): void {
         if (!this.compressionToggle.compress) { return super.handleUp(event); }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectPrevRow(type);
     }
 
-    protected handleDown(event: KeyboardEvent): void {
+    protected override handleDown(event: KeyboardEvent): void {
         if (!this.compressionToggle.compress) { return super.handleDown(event); }
         const type = this.props.multiSelect && this.hasShiftMask(event) ? TreeSelection.SelectionType.RANGE : undefined;
         this.model.selectNextRow(type);
     }
 
-    protected async handleLeft(event: KeyboardEvent): Promise<void> {
+    protected override async handleLeft(event: KeyboardEvent): Promise<void> {
         if (!this.compressionToggle.compress) { return super.handleLeft(event); }
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
@@ -157,7 +157,7 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
         }
     }
 
-    protected async handleRight(event: KeyboardEvent): Promise<void> {
+    protected override async handleRight(event: KeyboardEvent): Promise<void> {
         if (!this.compressionToggle.compress) { return super.handleRight(event); }
         if (Boolean(this.props.multiSelect) && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;

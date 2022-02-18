@@ -27,7 +27,7 @@ export namespace OutputContextMenu {
 @injectable()
 export class OutputContextMenuService extends MonacoContextMenuService {
 
-    protected menuPath(): MenuPath {
+    protected override menuPath(): MenuPath {
         return OutputContextMenu.MENU_PATH;
     }
 

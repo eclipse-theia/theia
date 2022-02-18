@@ -58,7 +58,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         this.tabBarWidget.setScope(scope);
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         if (msg.width < 600 && this.treeWidget && !this.treeWidget.isHidden) {
             this.treeWidget.hide();
@@ -69,7 +69,7 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.searchbarWidget.focus();
     }

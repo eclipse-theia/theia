@@ -34,20 +34,20 @@ export class TimelineTreeWidget extends TreeWidget {
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(TimelineContextKeyService) protected readonly contextKeys: TimelineContextKeyService;
+    @inject(TimelineService) protected readonly timelineService: TimelineService;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(TimelineService) protected readonly timelineService: TimelineService,
-        @inject(TimelineTreeModel) readonly model: TimelineTreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
+        @inject(TreeProps) props: TreeProps,
+        @inject(TimelineTreeModel) override readonly model: TimelineTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
     ) {
         super(props, model, contextMenuRenderer);
         this.id = TimelineTreeWidget.ID;
         this.addClass('timeline-outer-container');
     }
 
-    protected renderNode(node: TimelineNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(node: TimelineNode, props: NodeProps): React.ReactNode {
         const attributes = this.createNodeAttributes(node, props);
         const content = <TimelineItemNode
             timelineItem={node.timelineItem}
@@ -57,7 +57,7 @@ export class TimelineTreeWidget extends TreeWidget {
         return React.createElement('div', attributes, content);
     }
 
-    protected handleEnter(event: KeyboardEvent): void {
+    protected override handleEnter(event: KeyboardEvent): void {
         const node = this.model.selectedNodes[0] as TimelineNode;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const command: any = node.timelineItem.command;
@@ -66,7 +66,7 @@ export class TimelineTreeWidget extends TreeWidget {
         }
     }
 
-    protected async handleLeft(event: KeyboardEvent): Promise<void> {
+    protected override async handleLeft(event: KeyboardEvent): Promise<void> {
         this.model.selectPrevNode();
     }
 }
@@ -81,7 +81,7 @@ export namespace TimelineItemNode {
 }
 
 export class TimelineItemNode extends React.Component<TimelineItemNode.Props> {
-    render(): JSX.Element | undefined {
+    override render(): JSX.Element | undefined {
         const { label, description, detail } = this.props.timelineItem;
         return <div className='timeline-item'
                     title={detail}

@@ -42,7 +42,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         super({ title: FrontendApplicationConfigProvider.get().applicationName });
     }
 
-    protected onCloseRequest(msg: Message): void {
+    protected override onCloseRequest(msg: Message): void {
         this.actionTitle = undefined;
         this.accept();
     }

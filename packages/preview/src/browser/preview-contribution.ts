@@ -187,11 +187,11 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         return this.preferences['preview.openByDefault'];
     }
 
-    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
+    override async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
         const resolvedOptions = await this.resolveOpenerOptions(options);
         return super.open(uri, resolvedOptions);
     }
-    protected serializeUri(uri: URI): string {
+    protected override serializeUri(uri: URI): string {
         return super.serializeUri(PreviewUri.decode(uri));
     }
 

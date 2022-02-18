@@ -108,6 +108,7 @@ export namespace GitFileStatus {
             case GitFileStatus.New: return !!staged ? nls.localize('theia/git/added', 'Added') : nls.localize('theia/git/unstaged', 'Unstaged');
             case GitFileStatus.Renamed: return nls.localize('theia/git/renamed', 'Renamed');
             case GitFileStatus.Copied: return nls.localize('theia/git/copied', 'Copied');
+            // eslint-disable-next-line @theia/localization-check
             case GitFileStatus.Modified: return nls.localize('vscode.git/repository/modified', 'Modified');
             case GitFileStatus.Deleted: return nls.localize('vscode.git/repository/deleted', 'Deleted');
             case GitFileStatus.Conflicted: return nls.localize('theia/git/conflicted', 'Conflicted');

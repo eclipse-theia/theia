@@ -35,7 +35,7 @@ export class GotoSymbolQuickAccess extends StandaloneGotoSymbolQuickAccessProvid
         super(codeEditorService, languageFeatures, outlineService);
     }
 
-    get activeTextEditorControl(): ICodeEditor | undefined {
+    override get activeTextEditorControl(): ICodeEditor | undefined {
         return (this.codeEditorService.getFocusedCodeEditor() ?? this.codeEditorService.getActiveCodeEditor()) ?? undefined;
     }
 }

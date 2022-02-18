@@ -300,7 +300,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         return button;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addKeyListener(this.dontSaveButton, Key.ENTER, () => {
             this.shouldSave = false;

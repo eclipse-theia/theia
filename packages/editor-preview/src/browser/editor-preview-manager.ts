@@ -25,7 +25,7 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 
 @injectable()
 export class EditorPreviewManager extends EditorManager {
-    readonly id = EditorPreviewWidgetFactory.ID;
+    override readonly id = EditorPreviewWidgetFactory.ID;
 
     @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
     @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
@@ -38,7 +38,7 @@ export class EditorPreviewManager extends EditorManager {
     protected layoutIsSet = false;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         // All editors are created, but not all are opened. This sets up the logic to swap previews when the editor is attached.
         this.onCreated((widget: EditorPreviewWidget) => {
@@ -70,7 +70,7 @@ export class EditorPreviewManager extends EditorManager {
         document.addEventListener('dblclick', this.convertEditorOnDoubleClick.bind(this));
     }
 
-    protected async doOpen(widget: EditorPreviewWidget, options?: EditorOpenerOptions): Promise<void> {
+    protected override async doOpen(widget: EditorPreviewWidget, options?: EditorOpenerOptions): Promise<void> {
         const { preview, widgetOptions = { area: 'main' }, mode = 'activate' } = options ?? {};
         if (!widget.isAttached) {
             if (preview) {
@@ -98,19 +98,19 @@ export class EditorPreviewManager extends EditorManager {
         this.toDisposeOnPreviewChange.push(widget.onDidDispose(() => this.toDisposeOnPreviewChange.dispose()));
     }
 
-    protected tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
+    protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
         return super.tryGetPendingWidget(uri, { ...options, preview: true }) ?? super.tryGetPendingWidget(uri, { ...options, preview: false });
     }
 
-    protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         return (await super.getWidget(uri, { ...options, preview: true })) ?? super.getWidget(uri, { ...options, preview: false });
     }
 
-    protected async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+    protected override async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         return this.tryGetPendingWidget(uri, options) ?? super.getOrCreateWidget(uri, options);
     }
 
-    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorPreviewOptions {
+    protected override createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorPreviewOptions {
         const navigatableOptions = super.createWidgetOptions(uri, options) as EditorPreviewOptions;
         navigatableOptions.preview = !!(options?.preview && this.preferences['editor.enablePreview']);
         return navigatableOptions;

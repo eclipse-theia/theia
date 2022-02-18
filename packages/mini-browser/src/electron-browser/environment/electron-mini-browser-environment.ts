@@ -26,7 +26,7 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
     @inject(ElectronSecurityToken)
     protected readonly electronSecurityToken: ElectronSecurityToken;
 
-    getEndpoint(uuid: string, hostname?: string): Endpoint {
+    override getEndpoint(uuid: string, hostname?: string): Endpoint {
         const endpoint = super.getEndpoint(uuid, hostname);
         // Note: This call is async, but clients expect sync logic.
         electronRemote.session.defaultSession.cookies.set({
@@ -38,7 +38,7 @@ export class ElectronMiniBrowserEnvironment extends MiniBrowserEnvironment {
         return endpoint;
     }
 
-    protected getDefaultHostname(): string {
+    protected override getDefaultHostname(): string {
         const query = self.location.search
             .substr(1) // remove leading `?`
             .split('&')

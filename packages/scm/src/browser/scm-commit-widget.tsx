@@ -55,7 +55,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
         this.id = ScmCommitWidget.ID;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.refreshOnRepositoryChange();
         this.toDisposeOnDetach.push(this.scmService.onDidChangeSelectedRepository(() => {
@@ -77,7 +77,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focus();
     }

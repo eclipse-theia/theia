@@ -81,7 +81,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'debug' }));
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.toolbar.focus();
     }

@@ -36,7 +36,7 @@ export class CallHierarchyTree extends TreeImpl {
         return this._callHierarchyService;
     }
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    override async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!this.callHierarchyService) {
             return Promise.resolve([]);
         }

@@ -266,7 +266,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         await this.openView();
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(FileNavigatorCommands.FOCUS, {
             execute: () => this.openView({ activate: true })
@@ -399,7 +399,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         return false;
     }
 
-    registerMenus(registry: MenuModelRegistry): void {
+    override registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_REVEAL, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
@@ -533,7 +533,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
     }
 
-    registerKeybindings(registry: KeybindingRegistry): void {
+    override registerKeybindings(registry: KeybindingRegistry): void {
         super.registerKeybindings(registry);
         registry.registerKeybinding({
             command: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,

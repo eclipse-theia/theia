@@ -23,10 +23,11 @@ import {
     WidgetManager
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
+import { nls } from '@theia/core/lib/common/nls';
 
 export const SEARCH_VIEW_CONTAINER_ID = 'search-view-container';
 export const SEARCH_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
-    label: 'Search',
+    label: nls.localizeByDefault('Search'),
     iconClass: codicon('search'),
     closeable: true
 };

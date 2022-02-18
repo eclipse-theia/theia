@@ -31,7 +31,7 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
     private edits: ResourceEdit[];
 
     @inject(QuickViewService) @optional()
-    protected readonly quickView: QuickViewService;
+    protected override readonly quickView: QuickViewService;
 
     constructor(private readonly bulkEditService: MonacoBulkEditService) {
         super({
@@ -44,7 +44,7 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
         this.bulkEditService.setPreviewHandler((edits: ResourceEdit[]) => this.previewEdit(edits));
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         this.quickView?.hideItem(BULK_EDIT_WIDGET_NAME);
 

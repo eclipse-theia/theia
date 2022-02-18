@@ -648,7 +648,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return part;
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.currentPart) {
             this.currentPart.activate();
@@ -657,7 +657,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         const orientation = this.orientation;
         this.containerLayout.orientation = orientation;
         if (orientation === 'horizontal') {
@@ -668,18 +668,18 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeHide(msg: Message): void {
+    protected override onBeforeHide(msg: Message): void {
         super.onBeforeHide(msg);
         this.lastVisibleState = this.storeState();
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.updateTitle();
         this.lastVisibleState = undefined;
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.node.addEventListener('p-dragenter', this, true);
         this.node.addEventListener('p-dragover', this, true);
@@ -687,7 +687,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.node.addEventListener('p-drop', this, true);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         super.onAfterDetach(msg);
         this.node.removeEventListener('p-dragenter', this, true);
         this.node.removeEventListener('p-dragover', this, true);
@@ -1049,7 +1049,7 @@ export class ViewContainerPart extends BaseWidget {
         this.onPartMovedEmitter.fire(newContainer);
     }
 
-    setHidden(hidden: boolean): void {
+    override setHidden(hidden: boolean): void {
         if (!this.canHide) {
             return;
         }
@@ -1100,7 +1100,7 @@ export class ViewContainerPart extends BaseWidget {
         return !this.toShowHeader.disposed || this.collapsed;
     }
 
-    protected getScrollContainer(): HTMLElement {
+    protected override getScrollContainer(): HTMLElement {
         return this.body;
     }
 
@@ -1188,21 +1188,21 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }
         super.onResize(msg);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         if (!this.wrapped.isAttached) {
             UnsafeWidgetUtilities.attach(this.wrapped, this.body);
         }
@@ -1210,7 +1210,7 @@ export class ViewContainerPart extends BaseWidget {
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
         if (this.toolbar.isAttached) {
             Widget.detach(this.toolbar);
@@ -1220,42 +1220,42 @@ export class ViewContainerPart extends BaseWidget {
         }
     }
 
-    protected onBeforeShow(msg: Message): void {
+    protected override onBeforeShow(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }
 
-    protected onBeforeHide(msg: Message): void {
+    protected override onBeforeHide(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }
 
-    protected onChildRemoved(msg: Widget.ChildMessage): void {
+    protected override onChildRemoved(msg: Widget.ChildMessage): void {
         super.onChildRemoved(msg);
         // if wrapped is not disposed, but detached then we should not dispose it, but only get rid of this part
         this.toNoDisposeWrapped.dispose();
         this.dispose();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.collapsed) {
             this.header.focus();
@@ -1306,7 +1306,7 @@ export class ViewContainerLayout extends SplitLayout {
         return (this as any)._items as Array<LayoutItem & ViewContainerLayout.Item>;
     }
 
-    iter(): IIterator<ViewContainerPart> {
+    override iter(): IIterator<ViewContainerPart> {
         return map(this.items, item => item.widget);
     }
 
@@ -1315,7 +1315,7 @@ export class ViewContainerLayout extends SplitLayout {
         return toArray(this.iter());
     }
 
-    attachWidget(index: number, widget: ViewContainerPart): void {
+    override attachWidget(index: number, widget: ViewContainerPart): void {
         super.attachWidget(index, widget);
         if (index > -1 && this.parent && this.parent.node.contains(this.widgets[index + 1]?.node)) {
             // Set the correct attach index to the DOM elements.
@@ -1326,7 +1326,7 @@ export class ViewContainerLayout extends SplitLayout {
         }
     }
 
-    moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
+    override moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
         const ref = this.widgets[toIndex < fromIndex ? toIndex : toIndex + 1];
         super.moveWidget(fromIndex, toIndex, widget);
         // Keep the order of `_widgets` array just as done before (by `super`) for the `_items` array -
@@ -1511,7 +1511,7 @@ export class ViewContainerLayout extends SplitLayout {
         requestAnimationFrame(updateFunc);
     }
 
-    protected onFitRequest(msg: Message): void {
+    protected override onFitRequest(msg: Message): void {
         for (const part of this.widgets) {
             const style = part.node.style;
             if (part.animatedSize !== undefined) {

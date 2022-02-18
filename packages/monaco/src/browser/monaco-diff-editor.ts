@@ -36,8 +36,8 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected _diffNavigator: DiffNavigator;
 
     constructor(
-        readonly uri: URI,
-        readonly node: HTMLElement,
+        uri: URI,
+        node: HTMLElement,
         readonly originalModel: MonacoEditorModel,
         readonly modifiedModel: MonacoEditorModel,
         services: MonacoEditorServices,
@@ -61,7 +61,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         return this._diffNavigator;
     }
 
-    protected create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
+    protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
         const instantiator = this.getInstantiatorWithOverrides(override);
         this._diffEditor = instantiator
             .createInstance(StandaloneDiffEditor, this.node, { ...options, fixedOverflowWidgets: true }) as unknown as Monaco.editor.IStandaloneDiffEditor;
@@ -69,27 +69,27 @@ export class MonacoDiffEditor extends MonacoEditor {
         return this._diffEditor;
     }
 
-    protected resize(dimension: Dimension | null): void {
+    protected override resize(dimension: Dimension | null): void {
         if (this.node) {
             const layoutSize = this.computeLayoutSize(this.node, dimension);
             this._diffEditor.layout(layoutSize);
         }
     }
 
-    isActionSupported(id: string): boolean {
+    override isActionSupported(id: string): boolean {
         const action = this._diffEditor.getSupportedActions().find(a => a.id === id);
         return !!action && action.isSupported() && super.isActionSupported(id);
     }
 
-    deltaDecorations(params: DeltaDecorationParams): string[] {
+    override deltaDecorations(params: DeltaDecorationParams): string[] {
         console.warn('`deltaDecorations` should be called on either the original, or the modified editor.');
         return [];
     }
 
-    getResourceUri(): URI {
+    override getResourceUri(): URI {
         return new URI(this.originalModel.uri);
     }
-    createMoveToUri(resourceUri: URI): URI {
+    override createMoveToUri(resourceUri: URI): URI {
         const [left, right] = DiffUris.decode(this.uri);
         return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
     }

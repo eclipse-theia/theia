@@ -253,7 +253,7 @@ export class TextFileOperationError extends FileOperationError {
     constructor(
         message: string,
         public textFileOperationResult: TextFileOperationResult,
-        public options?: ReadTextFileOptions & WriteTextFileOptions
+        override options?: ReadTextFileOptions & WriteTextFileOptions
     ) {
         super(message, FileOperationResult.FILE_OTHER_ERROR);
         Object.setPrototypeOf(this, TextFileOperationError.prototype);

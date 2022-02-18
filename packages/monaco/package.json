@@ -8,7 +8,6 @@
     "@theia/filesystem": "1.22.1",
     "@theia/markers": "1.22.1",
     "@theia/outline-view": "1.22.1",
-    "@theia/workspace": "1.22.1",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
     "jsonc-parser": "^2.2.0",

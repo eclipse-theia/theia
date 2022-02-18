@@ -127,13 +127,13 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onAfterAttach(message: Message): void {
+    protected override onAfterAttach(message: Message): void {
         super.onAfterAttach(message);
         Widget.attach(this.editorContainer, this.node);
         this.toDisposeOnDetach.push(Disposable.create(() => Widget.detach(this.editorContainer)));
     }
 
-    protected onActivateRequest(message: Message): void {
+    protected override onActivateRequest(message: Message): void {
         super.onActivateRequest(message);
         if (this.editor) {
             this.editor.focus();
@@ -142,7 +142,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onResize(message: Widget.ResizeMessage): void {
+    protected override onResize(message: Widget.ResizeMessage): void {
         super.onResize(message);
         MessageLoop.sendMessage(this.editorContainer, Widget.ResizeMessage.UnknownSize);
         for (const widget of toArray(this.editorContainer.widgets())) {
@@ -150,7 +150,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.onResize(Widget.ResizeMessage.UnknownSize); // Triggers an editor widget resize. (#8361)
     }

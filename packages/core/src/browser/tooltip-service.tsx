@@ -86,12 +86,12 @@ export class TooltipServiceImpl extends ReactRenderer implements TooltipService 
         ReactTooltip.rebuild();
     }
 
-    protected doRender(): React.ReactNode {
+    protected override doRender(): React.ReactNode {
         const hoverDelay = this.corePreferences.get(DELAY_PREFERENCE);
         return <ReactTooltip id={this.tooltipId} className='theia-tooltip' html={true} delayShow={hoverDelay} />;
     }
 
-    public dispose(): void {
+    public override dispose(): void {
         this.toDispose.dispose();
         super.dispose();
     }

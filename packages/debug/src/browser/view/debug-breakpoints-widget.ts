@@ -30,7 +30,7 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
     static EDIT_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'a_edit'];
     static REMOVE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'b_remove'];
     static ENABLE_MENU = [...DebugBreakpointsWidget.CONTEXT_MENU, 'c_enable'];
-    static createContainer(parent: interfaces.Container): Container {
+    static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugBreakpointsWidget.CONTEXT_MENU,
             virtualized: false,
@@ -55,7 +55,7 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
     protected readonly breakpointsSource: DebugBreakpointsSource;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = 'debug:breakpoints:' + this.viewModel.id;
         this.title.label = nls.localizeByDefault('Breakpoints');
@@ -63,7 +63,7 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
         this.source = this.breakpointsSource;
     }
 
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
+    protected override getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         return undefined;
     }
 

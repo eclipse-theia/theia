@@ -39,7 +39,7 @@ export abstract class ConsoleSession extends TreeSource {
     protected selectedSeverity?: Severity;
     protected readonly selectionEmitter: Emitter<void> = new Emitter<void>();
     readonly onSelectionChange = this.selectionEmitter.event;
-    id: string;
+    override id: string;
 
     get severity(): Severity | undefined {
         return this.selectedSeverity;
@@ -55,7 +55,7 @@ export abstract class ConsoleSession extends TreeSource {
         this.fireDidChange();
     }
 
-    abstract getElements(): MaybePromise<IterableIterator<ConsoleItem>>;
+    abstract override getElements(): MaybePromise<IterableIterator<ConsoleItem>>;
     abstract execute(value: string): MaybePromise<void>;
     abstract clear(): MaybePromise<void>;
 }

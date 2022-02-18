@@ -68,14 +68,14 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId, new URI(selection.uri));
     }
 
-    async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
+    override async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
         const widget = await super.openView(args);
         const { selection, languageId } = this.editorAccess;
         widget.initializeModel(selection, languageId);
         return widget;
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CallHierarchyCommands.OPEN, {
             execute: () => this.openView({
                 toggle: false,
@@ -86,7 +86,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         super.registerCommands(commands);
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         const menuPath = [...EDITOR_CONTEXT_MENU, 'navigation'];
         menus.registerMenuAction(menuPath, {
             commandId: CallHierarchyCommands.OPEN.id,
@@ -95,7 +95,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         super.registerMenus(menus);
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: CallHierarchyCommands.OPEN.id,

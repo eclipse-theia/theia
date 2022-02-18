@@ -165,9 +165,9 @@ export class BlameAnnotationsKeybindingContext extends EditorTextFocusContext {
     @inject(StrictEditorTextFocusContext)
     protected readonly base: StrictEditorTextFocusContext;
 
-    id = BlameAnnotationsKeybindingContext.showsBlameAnnotations;
+    override id = BlameAnnotationsKeybindingContext.showsBlameAnnotations;
 
-    protected canHandle(widget: EditorWidget): boolean {
+    protected override canHandle(widget: EditorWidget): boolean {
         return this.base.isEnabled() && this.blameContribution.showsBlameAnnotations(widget.editor.uri);
     }
 }

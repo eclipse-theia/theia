@@ -50,11 +50,11 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         this.workspaceService.onWorkspaceChanged(() => this.ensureDelegateUpToDate());
     }
 
-    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
+    override getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
         return this.delegate?.getConfigUri(resourceUri, sectionName);
     }
 
-    getContainingConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
+    override getContainingConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
         return this.delegate?.getContainingConfigUri?.(resourceUri, sectionName);
     }
 
@@ -101,12 +101,12 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         });
     }
 
-    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
+    override get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
         const delegate = this.delegate;
         return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
     }
 
-    resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
+    override resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
         const delegate = this.delegate;
         return delegate ? delegate.resolve<T>(preferenceName, resourceUri) : {};
     }

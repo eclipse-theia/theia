@@ -80,7 +80,7 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
                     super(descriptor.prefix);
                 }
 
-                protected async _getPicks(filter: string, disposables: unknown, token: CancellationToken): Promise<Picks<IQuickPickItem>> {
+                protected override async _getPicks(filter: string, disposables: unknown, token: CancellationToken): Promise<Picks<IQuickPickItem>> {
                     const result = await Promise.resolve(descriptor.getInstance().getPicks(filter, token));
                     return result.map(toMonacoPick);
                 }

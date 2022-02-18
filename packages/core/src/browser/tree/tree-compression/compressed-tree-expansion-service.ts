@@ -23,7 +23,7 @@ export class CompressedExpansionService extends TreeExpansionServiceImpl {
     @inject(CompressionToggle) protected readonly compressionToggle: CompressionToggle;
     @inject(TreeCompressionService) protected readonly compressionService: TreeCompressionService;
 
-    async expandNode(raw: ExpandableTreeNode): Promise<ExpandableTreeNode | undefined> {
+    override async expandNode(raw: ExpandableTreeNode): Promise<ExpandableTreeNode | undefined> {
         if (!this.compressionToggle.compress) { return super.expandNode(raw); }
         const participants = this.compressionService.getCompressionChain(raw);
         let expansionRoot;
@@ -34,7 +34,7 @@ export class CompressedExpansionService extends TreeExpansionServiceImpl {
         return expansionRoot;
     }
 
-    async collapseNode(raw: ExpandableTreeNode): Promise<boolean> {
+    override async collapseNode(raw: ExpandableTreeNode): Promise<boolean> {
         if (!this.compressionToggle.compress) { return super.collapseNode(raw); }
         const participants = this.compressionService.getCompressionChain(raw);
         let didCollapse = false;

@@ -38,7 +38,7 @@ export const electronWindowPreferencesSchema: PreferenceSchema = {
             'maximum': ZoomLevel.MAX,
             'scope': 'application',
             // eslint-disable-next-line max-len
-            'description': nls.localizeByDefault('Adjust the zoom level of the window. The original size is 0 and each increment above (e.g. 1.0) or below (e.g. -1.0) represents zooming 20% larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity.')
+            'description': nls.localizeByDefault('Adjust the zoom level of the window. The original size is 0 and each increment above (e.g. 1) or below (e.g. -1) represents zooming 20% larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity.')
         },
         'window.titleBarStyle': {
             type: 'string',

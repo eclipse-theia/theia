@@ -28,7 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export class DebugStackFramesWidget extends SourceTreeWidget {
 
     static CONTEXT_MENU: MenuPath = ['debug-frames-context-menu'];
-    static createContainer(parent: interfaces.Container): Container {
+    static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugStackFramesWidget.CONTEXT_MENU,
             virtualized: false,
@@ -53,7 +53,7 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = 'debug:frames:' + this.viewModel.id;
         this.title.label = nls.localizeByDefault('Call Stack');
@@ -101,7 +101,7 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
         }
     }
 
-    protected toContextMenuArgs(node: SelectableTreeNode): [string | number] | undefined {
+    protected override toContextMenuArgs(node: SelectableTreeNode): [string | number] | undefined {
         if (TreeElementNode.is(node)) {
             if (node.element instanceof DebugStackFrame) {
                 const source = node.element.source;
@@ -120,14 +120,14 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
         return undefined;
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (TreeElementNode.is(node) && node.element instanceof LoadMoreStackFrames) {
             node.element.open();
         }
         super.handleClickEvent(node, event);
     }
 
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
+    protected override getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         return undefined;
     }
 

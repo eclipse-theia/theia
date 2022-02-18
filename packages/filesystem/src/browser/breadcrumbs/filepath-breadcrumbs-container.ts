@@ -40,15 +40,15 @@ export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
     protected readonly openerService: OpenerService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileTreeModel) readonly model: FileTreeModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
         this.addClass(BREADCRUMBS_FILETREE_CLASS);
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
@@ -56,7 +56,7 @@ export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
         };
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (FileStatNode.is(node) && !node.fileStat.isDirectory) {
             open(this.openerService, node.uri, { preview: true });
         } else {

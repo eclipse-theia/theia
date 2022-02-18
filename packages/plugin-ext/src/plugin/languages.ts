@@ -463,6 +463,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     ): Promise<CodeAction[] | undefined> {
         return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context, token), undefined);
     }
+
+    $releaseCodeActions(handle: number, cacheIds: number[]): void {
+        this.withAdapter(handle, CodeActionAdapter, adapter => adapter.releaseCodeActions(cacheIds), undefined);
+    }
+
+    $resolveCodeAction(handle: number, cacheId: number, token: theia.CancellationToken): Promise<WorkspaceEditDto | undefined> {
+        return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.resolveCodeAction(cacheId, token), undefined);
+    };
+
     // ### Code Actions Provider end
 
     // ### Code Lens Provider begin

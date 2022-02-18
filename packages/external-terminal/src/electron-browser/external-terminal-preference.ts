@@ -92,7 +92,7 @@ export async function getExternalTerminalSchema(externalTerminalService: Externa
             },
             'terminal.external.osxExec': {
                 type: 'string',
-                description: nls.localizeByDefault('Customizes which terminal to run on macOS.'),
+                description: nls.localizeByDefault('Customizes which terminal application to run on macOS.'),
                 default: `${isOSX ? hostExec : 'Terminal.app'}`
             },
             'terminal.external.linuxExec': {

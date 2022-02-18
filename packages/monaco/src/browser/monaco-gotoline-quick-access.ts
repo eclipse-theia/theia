@@ -29,7 +29,7 @@ export class GotoLineQuickAccess extends StandaloneGotoLineQuickAccessProvider {
         super(service);
     }
 
-    get activeTextEditorControl(): ICodeEditor | undefined {
+    override get activeTextEditorControl(): ICodeEditor | undefined {
         return (this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor()) ?? undefined;
     }
 }
