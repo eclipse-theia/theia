@@ -57,8 +57,16 @@ const rpc = new RPCProtocolImpl({
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
 });
+
+const scripts = new Set<string>();
+
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-    ctx.importScripts('/context/' + contextPath);
+    const path = '/context/' + contextPath;
+
+    if (!scripts.has(path)) {
+        ctx.importScripts(path);
+        scripts.add(path);
+    }
 }
 const envExt = new WorkerEnvExtImpl(rpc);
 const storageProxy = new KeyValueStorageProxy(rpc);
@@ -79,6 +87,11 @@ const pluginManager = new PluginManagerExtImpl({
             if (isElectron()) {
                 ctx.importScripts(plugin.pluginPath);
             } else {
+                if (plugin.lifecycle.frontendModuleName) {
+                    // Set current module name being imported
+                    ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
+                }
+
                 ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
             }
         }

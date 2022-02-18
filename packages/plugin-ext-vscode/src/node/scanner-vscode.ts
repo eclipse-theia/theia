@@ -16,8 +16,11 @@
 
 import * as path from 'path';
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '@theia/plugin-ext';
+import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle, PluginEntryPoint, buildFrontendModuleName, UIKind } from '@theia/plugin-ext';
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
+
+const uiKind = environment.electron.is() ? UIKind.Desktop : UIKind.Web;
 
 @injectable()
 export class VsCodePluginScanner extends TheiaPluginScanner implements PluginScanner {
@@ -32,6 +35,23 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     override getModel(plugin: PluginPackage): PluginModel {
         // publisher can be empty on vscode extension development
         const publisher = plugin.publisher || '';
+
+        // Only one entrypoint is valid in vscode extensions
+        // Mimic choosing frontend (web extension) and backend (local/remote extension) as described here:
+        // https://code.visualstudio.com/api/advanced-topics/extension-host#preferred-extension-location
+        const entryPoint: PluginEntryPoint = {};
+
+        // Act like codespaces when run in the browser (UIKind === 'web' and extensionKind is ['ui'])
+        const preferFrontend = uiKind === UIKind.Web && (plugin.extensionKind?.length === 1 && plugin.extensionKind[0] === 'ui');
+
+        if (plugin.browser && (!plugin.main || preferFrontend)) {
+            // Use frontend if available and there is no backend or frontend is preferred
+            entryPoint.frontend = plugin.browser;
+        } else {
+            // Default to using backend
+            entryPoint.backend = plugin.main;
+        }
+
         const result: PluginModel = {
             packagePath: plugin.packagePath,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
@@ -46,9 +66,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
                 type: this.VSCODE_TYPE,
                 version: plugin.engines[this.VSCODE_TYPE]
             },
-            entryPoint: {
-                backend: plugin.main
-            },
+            entryPoint,
             iconUrl: plugin.icon && PluginPackage.toPluginUrl(plugin, plugin.icon),
             readmeUrl: PluginPackage.toPluginUrl(plugin, './README.md'),
             licenseUrl: PluginPackage.toPluginUrl(plugin, './LICENSE')
@@ -80,7 +98,9 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
         return {
             startMethod: 'activate',
             stopMethod: 'deactivate',
+            frontendModuleName: buildFrontendModuleName(plugin),
 
+            frontendInitPath: 'plugin-vscode-init-fe.js',
             backendInitPath: path.join(__dirname, 'plugin-vscode-init'),
         };
     }

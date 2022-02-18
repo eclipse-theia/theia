@@ -6,6 +6,7 @@
 
 - [plugin-ext] add more detail to logging of backend and frontend start-up, especially in plugin management [#10407](https://github.com/eclipse-theia/theia/pull/10407) - Contributed on behalf of STMicroelectronics
 - [plugin] Added support for `vscode.CodeActionProvider.resolveCodeAction` [#10730](https://github.com/eclipse-theia/theia/pull/10730) - Contributed on behalf of STMicroelectronics
+- [electron] The Open and Save file dialogs are now modal by default [#10769](https://github.com/eclipse-theia/theia/pull/10769)
 
 <a name="breaking_changes_1.23.0">[Breaking Changes:](#breaking_changes_1.23.0)</a>
 
