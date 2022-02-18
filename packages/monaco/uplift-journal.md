@@ -81,6 +81,7 @@ To do:
     > This also seems to have been a problem with color registrations, and appears to be working now.
     > Agh! Nevermind, suddenly it's back to TS not working, everything else working.
     > Nevermind that, too. Seems that any language that's open in an editor _on start_ won't work during that session. But anything in a language that wasn't open on start is fine.
+    > Problem seems to be that at start up, mime type associations are not yet registered, so the editor gets labeled as plain text. We may not be hooking up listeners correctly to update that once more languages are known?
  - [x] Add new editor preferences.
  - [x] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
     > Not a problem after fixing the registration of commands. That command is no longer in the context menu.
