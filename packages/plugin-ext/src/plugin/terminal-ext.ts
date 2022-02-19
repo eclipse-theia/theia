@@ -131,7 +131,8 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             terminal.deferredProcessId = new Deferred<number>();
             terminal.deferredProcessId.resolve(processId);
         }
-        const pseudoTerminal = this._pseudoTerminals.get(terminalId.toString());
+        // Pseudoterminal is keyed on ID
+        const pseudoTerminal = this._pseudoTerminals.get(id);
         if (pseudoTerminal) {
             pseudoTerminal.emitOnOpen(cols, rows);
         }
