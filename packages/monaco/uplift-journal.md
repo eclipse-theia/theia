@@ -115,4 +115,6 @@ Language identification does fail on startup (all editors other than JSONC are i
 
 In the end, it turned out that we had just missed a change in the type of a particular field, and it wasn't nicely typed in the declaration file. I'm not sure how it wasn't throwing an error: apparently `Object.keys` always returns an empty array on a `Set`, so we were never trying to call methods that didn't exist; we just also weren't doing anything at all.
 
+### Setting definite version
 
+I pulled the 1.64.2 tag of VSCode today to pin my implementations to that. It is a couple of weeks behind what I'd pulled from `main`, and in n just that couple of weeks,a number of private API references were broken. We really shouldn't rely on private API.
