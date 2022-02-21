@@ -31,10 +31,10 @@ export namespace EditorCommands {
     const EDITOR_CATEGORY = 'Editor';
     const EDITOR_CATEGORY_KEY = nls.getDefaultKey(EDITOR_CATEGORY);
 
-    export const GOTO_LINE_COLUMN = Command.toLocalizedCommand({
+    export const GOTO_LINE_COLUMN = Command.toDefaultLocalizedCommand({
         id: 'editor.action.gotoLine',
         label: 'Go to Line/Column'
-    }, 'vscode/gotoLineQuickAccess/gotoLineQuickAccess');
+    });
 
     /**
      * Show editor references

@@ -442,7 +442,7 @@ export class GitQuickOpenService {
     }
 
     async popStash(): Promise<void> {
-        this.doStashAction('pop', nls.localize('pick stash to pop', 'Pick a stash to pop'));
+        this.doStashAction('pop', nls.localize('vscode.git/dist/commands/pick stash to pop', 'Pick a stash to pop'));
     }
 
     async dropStash(): Promise<void> {

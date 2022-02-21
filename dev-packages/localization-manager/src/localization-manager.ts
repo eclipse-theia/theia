@@ -17,6 +17,7 @@
 import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { sortLocalization } from '.';
 import { Localization } from './common';
 import { deepl, DeeplLanguage, DeeplParameters, isSupportedLanguage, supportedLanguages } from './deepl-api';
 
@@ -36,8 +37,10 @@ export class LocalizationManager {
 
     async localize(options: LocalizationOptions): Promise<void> {
         let source: Localization = {};
+        const cwd = process.env.INIT_CWD || process.cwd();
+        const sourceFile = path.resolve(cwd, options.sourceFile);
         try {
-            source = await fs.readJson(options.sourceFile);
+            source = await fs.readJson(sourceFile);
         } catch {
             console.log(chalk.red(`Could not read file "${options.sourceFile}"`));
             process.exit(1);
@@ -56,7 +59,7 @@ export class LocalizationManager {
         const existingTranslations: Map<string, Localization> = new Map();
         for (const targetLanguage of languages) {
             try {
-                const targetPath = this.translationFileName(options.sourceFile, targetLanguage);
+                const targetPath = this.translationFileName(sourceFile, targetLanguage);
                 existingTranslations.set(targetLanguage, await fs.readJson(targetPath));
             } catch {
                 existingTranslations.set(targetLanguage, {});
@@ -65,9 +68,10 @@ export class LocalizationManager {
         await Promise.all(languages.map(language => this.translateLanguage(source, existingTranslations.get(language)!, language, options)));
 
         for (const targetLanguage of languages) {
-            const targetPath = this.translationFileName(options.sourceFile, targetLanguage);
+            const targetPath = this.translationFileName(sourceFile, targetLanguage);
             try {
-                await fs.writeFile(targetPath, JSON.stringify(existingTranslations.get(targetLanguage)!, undefined, 4));
+                const translation = existingTranslations.get(targetLanguage)!;
+                await fs.writeJson(targetPath, sortLocalization(translation), { spaces: 2 });
             } catch {
                 console.error(chalk.red(`Error writing translated file to '${targetPath}'`));
             }

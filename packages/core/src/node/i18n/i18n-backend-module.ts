@@ -21,6 +21,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider }
 import { LocalizationRegistry, LocalizationContribution } from './localization-contribution';
 import { LocalizationBackendContribution } from './localization-backend-contribution';
 import { BackendApplicationContribution } from '../backend-application';
+import { TheiaLocalizationContribution } from './theia-localization-contribution';
 
 export default new ContainerModule(bind => {
     bind(LocalizationProvider).toSelf().inSingletonScope();
@@ -31,4 +32,6 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, LocalizationContribution);
     bind(LocalizationBackendContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(LocalizationBackendContribution);
+    bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
+    bind(LocalizationContribution).toService(TheiaLocalizationContribution);
 });

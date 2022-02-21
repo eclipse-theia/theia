@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2021 TypeFox and others.
+ * Copyright (C) 2022 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export interface Localization {
-    [key: string]: string | Localization
-}
+import { injectable } from 'inversify';
+import { LocalizationContribution, LocalizationRegistry } from './localization-contribution';
 
-export function sortLocalization(localization: Localization): Localization {
-    return Object.keys(localization).sort().reduce((result: Localization, key: string) => {
-        const value = localization[key];
-        result[key] = typeof value === 'string' ? value : sortLocalization(value);
-        return result;
-    }, {});
+@injectable()
+export class TheiaLocalizationContribution implements LocalizationContribution {
+    async registerLocalizations(registry: LocalizationRegistry): Promise<void> {
+        registry.registerLocalizationFromRequire('de', require('../../../i18n/nls.de.json'));
+    }
 }

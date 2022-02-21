@@ -112,16 +112,15 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
             return nls.localizeByDefault('No Problems');
         }
-        const localize = (text: string, value: number): string => nls.localize(`vscode/markers.contribution/total${text}`, `{0} ${text}`, value.toString());
         const tooltip: string[] = [];
         if (stat.errors > 0) {
-            tooltip.push(localize('Errors', stat.errors));
+            tooltip.push(nls.localizeByDefault('{0} Errors', stat.errors));
         }
         if (stat.warnings > 0) {
-            tooltip.push(localize('Warnings', stat.warnings));
+            tooltip.push(nls.localizeByDefault('{0} Warnings', stat.warnings));
         }
         if (stat.infos > 0) {
-            tooltip.push(localize('Infos', stat.infos));
+            tooltip.push(nls.localizeByDefault('{0} Infos', stat.infos));
         }
         return tooltip.join(', ');
 

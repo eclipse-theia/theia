@@ -47,11 +47,13 @@ export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
 };
 
 export namespace SCM_COMMANDS {
-    export const CHANGE_REPOSITORY = Command.toLocalizedCommand({
+    export const CHANGE_REPOSITORY = {
         id: 'scm.change.repository',
-        category: 'SCM',
-        label: nls.localize('theia/scm/changeRepository', 'Change Repository...')
-    });
+        category: nls.localizeByDefault('SCM'),
+        originalCategory: 'SCM',
+        label: nls.localize('theia/scm/changeRepository', 'Change Repository...'),
+        originalLabel: 'Change Repository...'
+    };
     export const ACCEPT_INPUT = {
         id: 'scm.acceptInput'
     };
@@ -71,7 +73,8 @@ export namespace SCM_COMMANDS {
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
-        category: 'SCM',
+        category: nls.localizeByDefault('SCM'),
+        originalCategory: 'SCM',
         tooltip: nls.localizeByDefault('Collapse All'),
         iconClass: codicon('collapse-all'),
         label: nls.localizeByDefault('Collapse All'),

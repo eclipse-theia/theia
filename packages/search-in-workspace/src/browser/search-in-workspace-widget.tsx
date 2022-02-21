@@ -607,9 +607,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderGlobField(kind: 'include' | 'exclude'): React.ReactNode {
         const currentValue = this.searchInWorkspaceOptions[kind];
         const value = currentValue && currentValue.join(', ') || '';
-        const labelKey = `vscode/searchView/searchScope.${kind}s`;
         return <div className='glob-field'>
-            <div className='label'>{nls.localize(labelKey, 'files to ' + kind)}</div>
+            <div className='label'>{nls.localizeByDefault('files to ' + kind)}</div>
             <SearchInWorkspaceInput
                 className='theia-input'
                 type='text'

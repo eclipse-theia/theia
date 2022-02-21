@@ -275,7 +275,8 @@ async function theiaCli(): Promise<void> {
             merge: boolean,
             exclude?: string,
             logs?: string,
-            files?: string[]
+            files?: string[],
+            quiet: boolean
         }>({
             command: 'nls-extract',
             describe: 'Extract translation key/value pairs from source code',
@@ -308,6 +309,12 @@ async function theiaCli(): Promise<void> {
                 'logs': {
                     alias: 'l',
                     describe: 'File path to a log file'
+                },
+                'quiet': {
+                    alias: 'q',
+                    describe: 'Prevents errors from being logged to console',
+                    boolean: true,
+                    default: false
                 }
             },
             handler: async options => {
