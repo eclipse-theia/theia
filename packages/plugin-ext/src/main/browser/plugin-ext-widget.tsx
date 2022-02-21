@@ -24,6 +24,9 @@ import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browse
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { codicon } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common';
+
+export const PLUGINS_LABEL = nls.localize('theia/plugin-ext/plugins', 'Plugins');
 
 @injectable()
 export class PluginWidget extends ReactWidget {
@@ -37,8 +40,8 @@ export class PluginWidget extends ReactWidget {
     constructor() {
         super();
         this.id = 'plugins';
-        this.title.label = 'Plugins';
-        this.title.caption = 'Plugins';
+        this.title.label = PLUGINS_LABEL;
+        this.title.caption = PLUGINS_LABEL;
         this.title.iconClass = codicon('diff-added');
         this.title.closable = true;
         this.node.tabIndex = 0;

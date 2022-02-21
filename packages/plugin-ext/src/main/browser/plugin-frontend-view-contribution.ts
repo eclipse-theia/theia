@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { PluginWidget } from './plugin-ext-widget';
+import { PLUGINS_LABEL, PluginWidget } from './plugin-ext-widget';
 
 @injectable()
 export class PluginFrontendViewContribution extends AbstractViewContribution<PluginWidget> {
@@ -26,7 +26,7 @@ export class PluginFrontendViewContribution extends AbstractViewContribution<Plu
     constructor() {
         super({
             widgetId: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
-            widgetName: 'Plugins',
+            widgetName: PLUGINS_LABEL,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 400

@@ -179,6 +179,7 @@
       "watchMode": "Run watcher on plugin under development"
     },
     "plugin-ext": {
+      "plugins": "Plugins",
       "signInAgain": "The extension '{0}' wants you to sign in again using {1}.",
       "webviewTrace": "Controls communication tracing with webviews.",
       "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
@@ -201,6 +202,7 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Amend last commit",
       "changeRepository": "Change Repository...",
+      "history": "History",
       "noRepositoryFound": "No repository found",
       "unamend": "Unamend",
       "unamendCommit": "Unamend commit"

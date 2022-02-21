@@ -179,6 +179,7 @@
       "watchMode": "Watcher auf Plugin in Entwicklung ausführen"
     },
     "plugin-ext": {
+      "plugins": "Plugins",
       "signInAgain": "Die Erweiterung '{0}' möchte, dass Sie sich erneut mit {1} anmelden.",
       "webviewTrace": "Steuert die Kommunikationsverfolgung mit Webviews.",
       "webviewWarnIfUnsecure": "Warnt Benutzer, dass Webviews derzeit unsicher eingesetzt werden."
@@ -201,6 +202,7 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Letzte Übertragung ändern",
       "changeRepository": "Repository ändern...",
+      "history": "Geschichte",
       "noRepositoryFound": "Kein Repository gefunden",
       "unamend": "Ändern",
       "unamendCommit": "Commit ändern"

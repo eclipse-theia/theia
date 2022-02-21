@@ -26,8 +26,7 @@ import { EDITOR_CONTEXT_MENU_SCM } from '../scm-extra-contribution';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const SCM_HISTORY_ID = 'scm-history';
-export const SCM_HISTORY_KEY = 'theia/scm/history';
-export const SCM_HISTORY_LABEL = 'History';
+export const SCM_HISTORY_LABEL = nls.localize('theia/scm/history', 'History');
 export const SCM_HISTORY_TOGGLE_KEYBINDING = 'alt+h';
 export const SCM_HISTORY_MAX_COUNT = 100;
 
@@ -35,10 +34,10 @@ export namespace ScmHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
         id: 'scm-history:open-file-history',
     };
-    export const OPEN_BRANCH_HISTORY = Command.toLocalizedCommand({
+    export const OPEN_BRANCH_HISTORY: Command = {
         id: 'scm-history:open-branch-history',
         label: SCM_HISTORY_LABEL
-    }, SCM_HISTORY_KEY);
+    };
 }
 
 export interface ScmHistoryOpenViewArguments extends OpenViewArguments {
@@ -56,7 +55,7 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
     constructor() {
         super({
             widgetId: SCM_HISTORY_ID,
-            widgetName: nls.localize(SCM_HISTORY_KEY, SCM_HISTORY_LABEL),
+            widgetName: SCM_HISTORY_LABEL,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 500
