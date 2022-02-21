@@ -38,7 +38,6 @@
 .t-siw-search-container .theia-input {
     flex: 1;
     line-height: var(--theia-content-line-height);
-    padding-left: 8px;
     padding: 3px 0 3px 4px;
 }
 
