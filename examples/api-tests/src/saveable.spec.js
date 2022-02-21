@@ -31,6 +31,7 @@ describe('Saveable', function () {
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
+    const { Range } = require('monaco-editor-core');
 
     const container = window.theia.container;
     /** @type {EditorManager} */
@@ -112,7 +113,7 @@ describe('Saveable', function () {
 
         // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber: 1, column: 1 }, { lineNumber: 1, column: 4 }),
+            range: Range.fromPositions({ lineNumber: 1, column: 1 }, { lineNumber: 1, column: 4 }),
             forceMoveMarkers: false,
             text: ''
         }]);

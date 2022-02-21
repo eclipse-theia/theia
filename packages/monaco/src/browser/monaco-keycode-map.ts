@@ -19,6 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as browser from '@theia/core/lib/browser';
+// This is exported as part of the public API, but we use it with private API's so we need to refer to the private version.
 import { KeyCode } from 'monaco-editor-core/esm/vs/base/common/keyCodes';
 import * as MonacoPlatform from 'monaco-editor-core/esm/vs/base/common/platform';
 
