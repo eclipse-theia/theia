@@ -202,14 +202,10 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     protected waitForLanguage(language: string, cb: () => {}): Disposable {
         const languageService = StandaloneServices.get(ILanguageService) as LanguageService;
         // TODO: We probably shouldn't have to do this.
-        for (const languageId of Object.keys(languageService['_encounteredLanguages'])) {
-            const mode = languageService['_encounteredLanguages'][languageId];
-            if (mode.getId() === language) {
-                cb();
-                return Disposable.NULL;
-            }
+        if (languageService['_encounteredLanguages'].has(language)) {
+            cb();
+            return Disposable.NULL;
         }
         return Monaco.languages.onLanguage(language, cb);
     }
-
 }

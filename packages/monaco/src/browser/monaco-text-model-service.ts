@@ -146,7 +146,6 @@ export class MonacoTextModelService implements ITextModelService {
         switch (editorPreference) {
             case 'editor.tabSize': return 'tabSize';
             case 'editor.insertSpaces': return 'insertSpaces';
-            // @ts-ignore // TODO
             case 'editor.bracketPairColorization.enabled': return 'bracketColorizationOptions';
             case 'editor.trimAutoWhitespace': return 'trimAutoWhitespace';
 
@@ -170,7 +169,6 @@ export class MonacoTextModelService implements ITextModelService {
                 const options: ITextModelUpdateOptions = {};
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const newValue = change.newValue as any;
-                // @ts-ignore // TODO
                 options[modelOption] = change.preferenceName === 'editor.bracketPairColorization.enabled' ? { enabled: newValue } : newValue;
                 model.textEditorModel.updateOptions(options);
             }
@@ -190,7 +188,6 @@ export class MonacoTextModelService implements ITextModelService {
         return {
             tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
             insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri),
-            // @ts-ignore // TODO
             bracketColorizationOptions: { enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri) },
             trimAutoWhitespace: this.editorPreferences.get({ preferenceName: 'editor.trimAutoWhitespace', overrideIdentifier }, undefined, uri),
         };

@@ -76,12 +76,13 @@ To do:
     > We needed to clear the Monaco registry to allow our `QuickCommandService` to win out over one registered by Monaco at import time.
  - [x] Commands not getting added to editor context menu
     > Had to do with initialization. A thorny issue. Previous Monaco allowed users to pass in overrides any time they constructed an editor. New Monaco only applies the overrides _the first time_ an editor is constructed.
- - [] Colorization not working for any language with an editor open _on start_.
+ - [x] Colorization not working for any language with an editor open _on start_.
     > Got confusing results here. Colorization seems to be failing at a check whether the model has any associated editors. But it really looks like its editor count is being incremented, and the same thing doesn't seem to be interfering with other language colorizations. PS: although the colors were working yesterady for languages other than TS, they are not working today. 
     > This also seems to have been a problem with color registrations, and appears to be working now.
     > Agh! Nevermind, suddenly it's back to TS not working, everything else working.
     > Nevermind that, too. Seems that any language that's open in an editor _on start_ won't work during that session. But anything in a language that wasn't open on start is fine.
     > Problem seems to be that at start up, mime type associations are not yet registered, so the editor gets labeled as plain text. We may not be hooking up listeners correctly to update that once more languages are known?
+    > It turned out to be a problem with the handling of a private field in the `monaco-textmate-service.ts`. We were never activating tokenization for any language that had been seen before plugins were all loaded.
  - [x] Add new editor preferences.
  - [x] There's a context-menu command to open the command palette. In VSCode, that opens in the same place as the keyboard shortcut, but in Theia it's opening inside the editor.
     > Not a problem after fixing the registration of commands. That command is no longer in the context menu.
@@ -104,3 +105,14 @@ TODO: Make sure (i.e. write tests that prove) that our preference proxy can hand
 ### New Errors
 
 I pulled master today, and it appears that plugins are working less well. Previously, I was getting good hovers etc. for TS, but today, the `Initializing JS/TS language features` spinner just spins. But eventually, it did stop, and then all plugin features, including peek views, appeared to be working.
+
+## 2/21/2022
+
+Working on the colorization-on-load bug. Definitely a problem with mime-type association timing. I also noticed as part of my debugging that there are various `-monaco-contribution.ts` files that register associations with specific files for e.g. `launch.json`, `tasks.json`. There is also a monkeypatch of the `Monaco.languages.register` function in the `monaco-frontend-application-contribution` that adds all registered languages to our list of potential language override identifiers. The former run before the latter, however, so those languages (`jsonc`, exclusively), don't get registered as language overrides - at least not that way. That may require implementing an override of the `PreferenceSchemaProvider` in the `monaco` package or `preferences` package (which depends on Monaco), so that we can get the correct behavior.
+
+### Observations re: colorization
+Language identification does fail on startup (all editors other than JSONC are incorrectly identified as `plaintext`), but events appear to be hooked up correctly so that editor languages are updated as plugins are processed, and colorization even fails for JSONC. It must not be a problem with mime-types, but something to do with colorization / tokenization itself.
+
+In the end, it turned out that we had just missed a change in the type of a particular field, and it wasn't nicely typed in the declaration file. I'm not sure how it wasn't throwing an error: apparently `Object.keys` always returns an empty array on a `Set`, so we were never trying to call methods that didn't exist; we just also weren't doing anything at all.
+
+
