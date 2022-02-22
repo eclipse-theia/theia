@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, ContributionProvider, deepClone, Emitter, MaybePromise, MessageService, Prioritizeable } from '@theia/core';
+import { Command, ContributionProvider, Emitter, MaybePromise, MessageService } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -23,7 +23,7 @@ import { injectable, inject, postConstruct, named } from '@theia/core/shared/inv
 import { MainToolbarDefaultsFactory } from './main-toolbar-defaults';
 import {
     DeflatedMainToolbarTreeSchema,
-    ReactTabBarToolbarContribution,
+    MainToolbarContribution,
     MainToolbarTreeSchema,
     ValidMainToolbarItem,
     ToolbarAlignment,
@@ -36,9 +36,9 @@ export class MainToolbarController {
     @inject(MainToolbarStorageProvider) protected readonly storageProvider: MainToolbarStorageProvider;
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(MainToolbarDefaultsFactory) protected readonly defaultsFactory: () => MainToolbarTreeSchema;
-    @inject(ContributionProvider) @named(ReactTabBarToolbarContribution)
-    protected widgetContributions: ContributionProvider<ReactTabBarToolbarContribution>;
+    @inject(MainToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedMainToolbarTreeSchema;
+    @inject(ContributionProvider) @named(MainToolbarContribution)
+    protected widgetContributions: ContributionProvider<MainToolbarContribution>;
 
     protected toolbarModelDidUpdateEmitter = new Emitter<void>();
     readonly onToolbarModelDidUpdate = this.toolbarModelDidUpdateEmitter.event;
@@ -88,7 +88,7 @@ export class MainToolbarController {
         return newTree;
     }
 
-    getContributionByID(id: string): ReactTabBarToolbarContribution | undefined {
+    getContributionByID(id: string): MainToolbarContribution | undefined {
         return this.widgetContributions.getContributions().find(contribution => contribution.id === id);
     }
 
@@ -110,6 +110,7 @@ export class MainToolbarController {
 
     protected async resolveToolbarItems(): Promise<MainToolbarTreeSchema> {
         await this.storageProvider.ready;
+
         if (this.storageProvider.toolbarItems) {
             try {
                 return this.inflateItems(this.storageProvider.toolbarItems);
@@ -117,56 +118,7 @@ export class MainToolbarController {
                 this.messageService.error(TOOLBAR_BAD_JSON_ERROR_MESSAGE);
             }
         }
-        return this.getDefaultItemsAndContributions();
-    }
-
-    protected async getDefaultItemsAndContributions(): Promise<MainToolbarTreeSchema> {
-        let defaultToolbarTree = this.defaultsFactory();
-        const toolbarContributions = this.widgetContributions.getContributions();
-        const prioritizedItems = await this.sortAndPrioritizeContributions(toolbarContributions);
-        defaultToolbarTree = this.groupAndAppendContributions(defaultToolbarTree, prioritizedItems);
-        return defaultToolbarTree;
-    }
-
-    protected async sortAndPrioritizeContributions(
-        contributions: ReactTabBarToolbarContribution[],
-    ): Promise<Array<[ToolbarAlignment, ReactTabBarToolbarContribution[]]>> {
-        const prioritizedContributionsPromise: Array<Promise<[ToolbarAlignment, ReactTabBarToolbarContribution[]]>> = [];
-        [ToolbarAlignment.LEFT, ToolbarAlignment.CENTER, ToolbarAlignment.RIGHT].forEach(column => {
-            prioritizedContributionsPromise.push(this.prioritizeContributionsPerColumn(contributions, column));
-        });
-        return Promise.all(prioritizedContributionsPromise);
-    }
-
-    protected async prioritizeContributionsPerColumn(
-        contributions: ReactTabBarToolbarContribution[],
-        column: ToolbarAlignment,
-    ): Promise<[ToolbarAlignment, ReactTabBarToolbarContribution[]]> {
-        const filteredContributions = contributions.filter(contribution => contribution.column === column);
-        const prioritized = (await Prioritizeable.prioritizeAll(filteredContributions, contribution => contribution.priority))
-            .map(p => p.value);
-        return [column, prioritized];
-    }
-
-    protected groupAndAppendContributions(
-        toolbarDefaults: MainToolbarTreeSchema,
-        prioritizedItems: Array<[ToolbarAlignment, ReactTabBarToolbarContribution[]]>,
-    ): MainToolbarTreeSchema {
-        const toolbarDefaultsCopy = deepClone(toolbarDefaults);
-        prioritizedItems.forEach(([column, prioritizedContributions]) => {
-            const currentColumn = toolbarDefaultsCopy.items[column];
-            const indexOfLastGroupInColumn = toolbarDefaultsCopy.items[column].length - 1;
-            let currentGroup = currentColumn[indexOfLastGroupInColumn];
-            prioritizedContributions.forEach(contribution => {
-                if (!contribution.newGroup) {
-                    currentGroup.push(contribution);
-                } else {
-                    currentGroup = [contribution];
-                    currentColumn.push(currentGroup);
-                }
-            });
-        });
-        return toolbarDefaultsCopy;
+        return this.inflateItems(this.defaultsFactory());
     }
 
     async swapValues(

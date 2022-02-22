@@ -166,7 +166,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                             <div className={`${this.activeIconPrefix} ${icon}`} />
                         </div>
                     ))
-                        : <div className='search-placeholder'>nls.localizeByDefault('No results found')</div>}
+                        : <div className='search-placeholder'>{nls.localizeByDefault('No results found')}</div>}
                 </div>
             </div>
         );
@@ -283,7 +283,7 @@ export const bindToolbarIconDialog = (bind: interfaces.Bind): void => {
     bind(MainToolbarIconDialogFactory).toFactory(ctx => (command: Command): MainToolbarIconSelectorDialog => {
         const child = ctx.container.createChild();
         child.bind(DialogProps).toConstantValue({
-            title: `Select an Icon for "${command.label}"` ?? 'Select an Icon',
+            title: nls.localize('theia/toolbar/iconSelectDialog', "Select an Icon for '{0}'", command.label),
             maxWidth: ICON_DIALOG_WIDTH + ICON_DIALOG_PADDING,
         });
         child.bind(FontAwesomeIcons).toConstantValue(fontAwesomeIcons);

@@ -65,7 +65,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         this.model.onToolbarDidChangeBusyState(isBusy => {
             if (isBusy) {
                 this.isBusyDeferred = new Deferred<void>();
-                this.progressService.withProgress('test', TOOLBAR_PROGRESSBAR_ID, async () => this.isBusyDeferred.promise);
+                this.progressService.withProgress('', TOOLBAR_PROGRESSBAR_ID, async () => this.isBusyDeferred.promise);
             } else {
                 this.isBusyDeferred.resolve();
             }

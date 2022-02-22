@@ -40,7 +40,7 @@ import { bindEasySearchToolbarWidget } from './easy-search-toolbar-item';
 import { MainToolbarImpl } from './main-toolbar';
 import { bindToolbarIconDialog } from './main-toolbar-icon-selector-dialog';
 import {
-    ReactTabBarToolbarContribution,
+    MainToolbarContribution,
     ToolbarItemPosition,
     MainToolbarFactory,
     MainToolbar,
@@ -59,7 +59,7 @@ import { toolbarConfigurationSchema, toolbarSchemaId } from './main-toolbar-pref
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class MainToolbarContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {
+export class MainToolbarCommandContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {
     @inject(MainToolbarController) protected readonly model: MainToolbarController;
     @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
     @inject(MainToolbarCommandQuickInputService) protected toolbarCommandPickService: MainToolbarCommandQuickInputService;
@@ -184,11 +184,11 @@ export function bindMainToolbar(bind: interfaces.Bind): void {
         child.bind(MainToolbar).to(MainToolbarImpl);
         return child.get(MainToolbar);
     });
-    bind(MainToolbarContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).to(MainToolbarContribution);
-    bind(MenuContribution).toService(MainToolbarContribution);
-    bind(KeybindingContribution).toService(MainToolbarContribution);
-    bind(JsonSchemaContribution).toService(MainToolbarContribution);
+    bind(MainToolbarCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).to(MainToolbarCommandContribution);
+    bind(MenuContribution).toService(MainToolbarCommandContribution);
+    bind(KeybindingContribution).toService(MainToolbarCommandContribution);
+    bind(JsonSchemaContribution).toService(MainToolbarCommandContribution);
 
     bind(MainToolbarCommandQuickInputService).toSelf().inSingletonScope();
     bind(SearchInWorkspaceQuickInputService).toSelf().inSingletonScope();
@@ -207,7 +207,7 @@ export function bindMainToolbar(bind: interfaces.Bind): void {
 
     bind(MainToolbarController).toSelf().inSingletonScope();
     bind(MainToolbarStorageProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, ReactTabBarToolbarContribution);
+    bindContributionProvider(bind, MainToolbarContribution);
     bindEasySearchToolbarWidget(bind);
     bind(LateInjector).toFactory(
         <T>(context: interfaces.Context) => (id: interfaces.ServiceIdentifier<T>): T => lateInjector(context.container, id),

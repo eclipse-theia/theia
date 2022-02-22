@@ -18,18 +18,17 @@ import * as React from '@theia/core/shared/react';
 import { CommandService, Emitter } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ContextMenuRenderer, KeybindingRegistry } from '@theia/core/lib/browser';
-import { DeflatedContributedToolbarItem, ReactTabBarToolbarContribution, ToolbarAlignment } from './main-toolbar-interfaces';
+import { DeflatedContributedToolbarItem, MainToolbarContribution } from './main-toolbar-interfaces';
 
+// Toolbar Contribution should extend this class and bind to MainToolbarContribution.
+// The MainToolbarDefaultsFactory should be overridden to include new contributions
 @injectable()
-export abstract class AbstractMainToolbarContribution implements ReactTabBarToolbarContribution {
+export abstract class AbstractMainToolbarContribution implements MainToolbarContribution {
     @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(CommandService) protected readonly commandService: CommandService;
 
     abstract id: string;
-    abstract column: ToolbarAlignment;
-    abstract priority: number;
-    newGroup = true;
 
     protected didChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.didChangeEmitter.event;

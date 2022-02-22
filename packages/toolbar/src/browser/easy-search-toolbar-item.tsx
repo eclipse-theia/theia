@@ -25,8 +25,7 @@ import { AbstractMainToolbarContribution } from './abstract-main-toolbar-contrib
 import { SearchInWorkspaceQuickInputService } from './search-in-workspace-root-quick-input-service';
 import { MainToolbarMenus, ReactInteraction } from './main-toolbar-constants';
 import {
-    ReactTabBarToolbarContribution,
-    ToolbarAlignment,
+    MainToolbarContribution,
 } from './main-toolbar-interfaces';
 
 export const FIND_IN_WORKSPACE_ROOT = Command.toLocalizedCommand({
@@ -43,8 +42,6 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     id = 'easy-search-toolbar-widget';
-    column = ToolbarAlignment.RIGHT;
-    priority = 1;
 
     protected handleOnClick = (e: ReactInteraction<HTMLSpanElement>): void => this.doHandleOnClick(e);
     protected doHandleOnClick(e: ReactInteraction<HTMLSpanElement>): void {
@@ -122,7 +119,7 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
 
 export const bindEasySearchToolbarWidget = (bind: interfaces.Bind): void => {
     bind(EasySearchToolbarItem).toSelf().inSingletonScope();
-    bind(ReactTabBarToolbarContribution).to(EasySearchToolbarItem);
+    bind(MainToolbarContribution).to(EasySearchToolbarItem);
     bind(CommandContribution).to(EasySearchToolbarItem);
     bind(MenuContribution).to(EasySearchToolbarItem);
 };

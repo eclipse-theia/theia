@@ -42,15 +42,12 @@ export namespace ToolbarAlignmentString {
 }
 
 export interface MainToolbarContributionProperties {
-    column: ToolbarAlignment;
-    priority: number;
-    newGroup: boolean;
     toJSON(): DeflatedContributedToolbarItem;
 }
 
-export type ReactTabBarToolbarContribution = ReactTabBarToolbarItem & MainToolbarContributionProperties;
+export type MainToolbarContribution = ReactTabBarToolbarItem & MainToolbarContributionProperties;
 
-export const ReactTabBarToolbarContribution = Symbol('ReactTabBarToolbarContribution');
+export const MainToolbarContribution = Symbol('MainToolbarContribution');
 
 export const MainToolbar = Symbol('MainToolbar');
 export const MainToolbarFactory = Symbol('MainToolbarFactory');
@@ -60,7 +57,7 @@ export interface DockPanelRendererFactoryWithToolbar extends DockPanelRendererFa
     (toolbar: boolean): MainToolbar;
 }
 
-export type ValidMainToolbarItem = ReactTabBarToolbarContribution | TabBarToolbarItem;
+export type ValidMainToolbarItem = MainToolbarContribution | TabBarToolbarItem;
 export interface DeflatedContributedToolbarItem { id: string; group: 'contributed' };
 export type ValidMainToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
 

@@ -16,7 +16,8 @@
 
 import { DeflatedMainToolbarTreeSchema, ToolbarAlignment } from './main-toolbar-interfaces';
 
-/* eslint-disable max-lines-per-function */
+// This file specifies the default layout of the toolbar. This binding should be overridden for extenders.
+// Both Toolbar Command Items and Toolbar Contributions can be specified here.
 export const MainToolbarDefaultsFactory = Symbol('MainToolbarDefaultsFactory');
 export const MainToolbarDefaults: () => DeflatedMainToolbarTreeSchema = () => ({
     items: {
@@ -50,6 +51,13 @@ export const MainToolbarDefaults: () => DeflatedMainToolbarTreeSchema = () => ({
                 }
             ],
         ],
-        [ToolbarAlignment.RIGHT]: [],
+        [ToolbarAlignment.RIGHT]: [
+            [
+                {
+                    id: 'easy-search-toolbar-widget',
+                    group: 'contributed'
+                }
+            ]
+        ]
     },
 });

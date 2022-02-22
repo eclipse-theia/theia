@@ -293,7 +293,7 @@ export class MainToolbarStorageProvider implements Disposable {
                 return true;
             } catch (e) {
                 const message = nls.localize('theia/toolbar/failedUpdate', "Failed to update the value of '{0}' in '{1}'.", path.join('.'), this.USER_TOOLBAR_URI.path.toString());
-                this.messageService.error(TOOLBAR_BAD_JSON_ERROR_MESSAGE);
+                this.messageService.error(nls.localize('theia/toolbar/jsonError', TOOLBAR_BAD_JSON_ERROR_MESSAGE));
                 console.error(`${message}`, e);
                 return false;
             }
