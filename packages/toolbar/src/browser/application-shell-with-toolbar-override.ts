@@ -22,21 +22,21 @@ import {
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/theia-dock-panel';
-import { MainToolbar, MainToolbarFactory } from './main-toolbar-interfaces';
-import { MainToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './main-toolbar-preference-contribution';
+import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
+import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 
 @injectable()
 export class ApplicationShellWithToolbarOverride extends ApplicationShell {
-    @inject(MainToolbarPreferences) protected toolbarPreferences: MainToolbarPreferences;
+    @inject(ToolbarPreferences) protected toolbarPreferences: ToolbarPreferences;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(MainToolbarFactory) protected readonly mainToolbarFactory: () => MainToolbar;
+    @inject(ToolbarFactory) protected readonly toolbarFactory: () => Toolbar;
 
-    protected mainToolbar: MainToolbar;
+    protected toolbar: Toolbar;
 
     @postConstruct()
     protected override async init(): Promise<void> {
-        this.mainToolbar = this.mainToolbarFactory();
-        this.mainToolbar.id = 'main-toolbar';
+        this.toolbar = this.toolbarFactory();
+        this.toolbar.id = 'main-toolbar';
         super.init();
         await this.toolbarPreferences.ready;
         this.tryShowToolbar();
@@ -57,10 +57,10 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         const doShowToolbarFromPreference = this.toolbarPreferences[TOOLBAR_ENABLE_PREFERENCE_ID];
         const isShellMaximized = this.mainPanel.hasClass(MAXIMIZED_CLASS) || this.bottomPanel.hasClass(MAXIMIZED_CLASS);
         if (doShowToolbarFromPreference && !isShellMaximized) {
-            this.mainToolbar.show();
+            this.toolbar.show();
             return true;
         }
-        this.mainToolbar.hide();
+        this.toolbar.hide();
         return false;
     }
 
@@ -81,7 +81,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
         return this.createBoxLayout(
-            [this.topPanel, this.mainToolbar, panelForSideAreas, this.statusBar],
+            [this.topPanel, this.toolbar, panelForSideAreas, this.statusBar],
             [0, 0, 1, 0],
             { direction: 'top-to-bottom', spacing: 0 },
         );

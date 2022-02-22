@@ -27,28 +27,28 @@ import PerfectScrollbar from 'perfect-scrollbar';
 import { FuzzySearch } from '@theia/core/lib/browser/tree/fuzzy-search';
 import { codicons } from './codicons';
 import { fontAwesomeIcons } from './font-awesome-icons';
-import { IconSet } from './main-toolbar-interfaces';
-import { ReactInteraction, ReactKeyboardEvent } from './main-toolbar-constants';
+import { IconSet } from './toolbar-interfaces';
+import { ReactInteraction, ReactKeyboardEvent } from './toolbar-constants';
 
-export interface MainToolbarIconDialogFactory {
-    (command: Command): MainToolbarIconSelectorDialog;
+export interface ToolbarIconDialogFactory {
+    (command: Command): ToolbarIconSelectorDialog;
 }
 
-export const MainToolbarIconDialogFactory = Symbol('MainToolbarIconDialogFactory');
+export const ToolbarIconDialogFactory = Symbol('ToolbarIconDialogFactory');
 export const ToolbarCommand = Symbol('ToolbarCommand');
 export const FontAwesomeIcons = Symbol('FontAwesomeIcons');
 export const CodiconIcons = Symbol('CodiconIcons');
 
 const FIFTY_MS = 50;
 @injectable()
-export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
+export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
     @inject(ToolbarCommand) protected readonly toolbarCommand: Command;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(FontAwesomeIcons) protected readonly faIcons: string[];
     @inject(CodiconIcons) protected readonly codiconIcons: string[];
     @inject(FuzzySearch) protected readonly fuzzySearch: FuzzySearch;
 
-    static ID = 'main-toolbar-icon-selector-dialog';
+    static ID = 'toolbar-icon-selector-dialog';
     protected deferredScrollContainer = new Deferred<HTMLDivElement>();
     override scrollOptions: PerfectScrollbar.Options = { ...DEFAULT_SCROLL_OPTIONS };
     protected filterRef: HTMLInputElement;
@@ -76,7 +76,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
 
     @postConstruct()
     protected init(): void {
-        this.node.id = MainToolbarIconSelectorDialog.ID;
+        this.node.id = ToolbarIconSelectorDialog.ID;
         this.iconSets.set(IconSet.FA, this.faIcons);
         this.iconSets.set(IconSet.CODICON, this.codiconIcons);
         this.activeIconPrefix = IconSet.CODICON;
@@ -120,7 +120,7 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
                     {nls.localize('theia/toolbar/iconSet', 'Icon Set')}
                     {': '}
                     <select
-                        className='main-toolbar-icon-select theia-select'
+                        className='toolbar-icon-select theia-select'
                         onChange={this.handleSelectOnChange}
                         defaultValue={IconSet.CODICON}
                     >
@@ -145,11 +145,11 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
     protected renderIconGrid(): React.ReactNode {
         return (
             <div
-                className='main-toolbar-scroll-container'
+                className='toolbar-scroll-container'
                 ref={this.assignScrollContainerRef}
             >
                 <div
-                    className={`main-toolbar-icon-dialog-content ${this.doShowFilterPlaceholder ? '' : 'grid'}`}
+                    className={`toolbar-icon-dialog-content ${this.doShowFilterPlaceholder ? '' : 'grid'}`}
                 >
                     {!this.doShowFilterPlaceholder ? this.filteredIcons?.map(icon => (
                         <div
@@ -236,20 +236,20 @@ export class MainToolbarIconSelectorDialog extends ReactDialog<string | undefine
 
     protected renderControls(): React.ReactElement {
         return (
-            <div className='main-toolbar-icon-controls'>
+            <div className='toolbar-icon-controls'>
                 <div>
                     {this.toolbarCommand.iconClass
                         && (
                             <button
                                 type='button'
-                                className='theia-button main'
+                                className='theia-button main default-button'
                                 data-id='default-accept'
                                 onClick={this.doAccept}
                             >
                                 <span>
                                     {`${nls.localize('theia/toolbar/useDefaultIcon', 'Use Default Icon')}:`}
                                 </span>
-                                <div className={`main-toolbar-default-icon ${this.toolbarCommand.iconClass}`} />
+                                <div className={`toolbar-default-icon ${this.toolbarCommand.iconClass}`} />
                             </button>
                         )}
                 </div>
@@ -280,7 +280,7 @@ export const ICON_DIALOG_WIDTH = 600;
 export const ICON_DIALOG_PADDING = 24;
 
 export const bindToolbarIconDialog = (bind: interfaces.Bind): void => {
-    bind(MainToolbarIconDialogFactory).toFactory(ctx => (command: Command): MainToolbarIconSelectorDialog => {
+    bind(ToolbarIconDialogFactory).toFactory(ctx => (command: Command): ToolbarIconSelectorDialog => {
         const child = ctx.container.createChild();
         child.bind(DialogProps).toConstantValue({
             title: nls.localize('theia/toolbar/iconSelectDialog', "Select an Icon for '{0}'", command.label),
@@ -290,7 +290,7 @@ export const bindToolbarIconDialog = (bind: interfaces.Bind): void => {
         child.bind(CodiconIcons).toConstantValue(codicons);
         child.bind(ToolbarCommand).toConstantValue(command);
         child.bind(FuzzySearch).toSelf().inSingletonScope();
-        child.bind(MainToolbarIconSelectorDialog).toSelf().inSingletonScope();
-        return child.get(MainToolbarIconSelectorDialog);
+        child.bind(ToolbarIconSelectorDialog).toSelf().inSingletonScope();
+        return child.get(ToolbarIconSelectorDialog);
     });
 };

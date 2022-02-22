@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { DockPanelRenderer, DockPanelRendererFactory } from '@theia/core/lib/browser';
 import { ReactTabBarToolbarItem, TabBarToolbar, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export enum ToolbarAlignment {
@@ -24,15 +23,15 @@ export enum ToolbarAlignment {
     RIGHT = 'right'
 }
 
-export interface MainToolbarTreeSchema {
+export interface ToolbarTreeSchema {
     items: {
-        [key in ToolbarAlignment]: ValidMainToolbarItem[][];
+        [key in ToolbarAlignment]: ToolbarItem[][];
     };
 }
 
-export interface DeflatedMainToolbarTreeSchema {
+export interface DeflatedToolbarTree {
     items: {
-        [key in ToolbarAlignment]: ValidMainToolbarItemDeflated[][];
+        [key in ToolbarAlignment]: ToolbarItemDeflated[][];
     };
 }
 export namespace ToolbarAlignmentString {
@@ -41,25 +40,21 @@ export namespace ToolbarAlignmentString {
         || obj === ToolbarAlignment.RIGHT;
 }
 
-export interface MainToolbarContributionProperties {
+export interface ToolbarContributionProperties {
     toJSON(): DeflatedContributedToolbarItem;
 }
 
-export type MainToolbarContribution = ReactTabBarToolbarItem & MainToolbarContributionProperties;
+export type ToolbarContribution = ReactTabBarToolbarItem & ToolbarContributionProperties;
 
-export const MainToolbarContribution = Symbol('MainToolbarContribution');
+export const ToolbarContribution = Symbol('ToolbarContribution');
 
-export const MainToolbar = Symbol('MainToolbar');
-export const MainToolbarFactory = Symbol('MainToolbarFactory');
-export type MainToolbar = TabBarToolbar;
-export interface DockPanelRendererFactoryWithToolbar extends DockPanelRendererFactory {
-    (): DockPanelRenderer;
-    (toolbar: boolean): MainToolbar;
-}
+export const Toolbar = Symbol('Toolbar');
+export const ToolbarFactory = Symbol('ToolbarFactory');
+export type Toolbar = TabBarToolbar;
 
-export type ValidMainToolbarItem = MainToolbarContribution | TabBarToolbarItem;
+export type ToolbarItem = ToolbarContribution | TabBarToolbarItem;
 export interface DeflatedContributedToolbarItem { id: string; group: 'contributed' };
-export type ValidMainToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
+export type ToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
 
 export const LateInjector = Symbol('LateInjector');
 

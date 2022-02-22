@@ -41,7 +41,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/main-toolbar-frontend-module"
+      "frontend": "lib/browser/toolbar-frontend-module"
     }
   ],
   "publishConfig": {

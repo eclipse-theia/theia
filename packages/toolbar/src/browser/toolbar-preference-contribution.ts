@@ -14,34 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { PreferenceSchema, PreferenceProxy, PreferenceScope } from '@theia/core/lib/browser';
 
-#easy-search-toolbar-widget {
-    position: relative;
-}
-#easy-search-toolbar-widget .icon-wrapper {
-    cursor: pointer;
-    margin-left: 0;
-}
+export const TOOLBAR_ENABLE_PREFERENCE_ID = 'toolbar.showToolbar';
 
-#easy-search-toolbar-widget:focus,
-#easy-search-toolbar-widget .icon-wrapper:focus,
-#easy-search-toolbar-widget .codicon-search:focus {
-    outline: none;
-}
+export const ToolbarPreferencesSchema: PreferenceSchema = {
+    type: 'object',
+    properties: {
+        [TOOLBAR_ENABLE_PREFERENCE_ID]: {
+            'type': 'boolean',
+            'description': 'Show toolbar',
+            'default': false,
+            'scope': PreferenceScope.Workspace,
+        },
+    },
+};
 
-
-#easy-search-toolbar-widget  .icon-wrapper.action-item.item.enabled:hover {
-    background-color: var(--theia-toolbar-hoverBackground);
-}
-
-#easy-search-toolbar-widget #easy-search-item-icon.codicon-search {
-    position: relative;
-    font-size: 20px;
+class ToolbarPreferencesContribution {
+    [TOOLBAR_ENABLE_PREFERENCE_ID]: boolean;
 }
 
-#easy-search-toolbar-widget .icon-wrapper .codicon-triangle-down {
-    position: absolute;
-    font-size: 10px;
-    bottom: -8px;
-    right: 2px;
-}
+export const ToolbarPreferences = Symbol('ToolbarPreferences');
+export type ToolbarPreferences = PreferenceProxy<ToolbarPreferencesContribution>;

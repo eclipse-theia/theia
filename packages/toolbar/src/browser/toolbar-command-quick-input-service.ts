@@ -17,18 +17,18 @@
 import { Command, CommandRegistry, CommandService, nls } from '@theia/core';
 import { QuickCommandService, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MainToolbarIconDialogFactory } from './main-toolbar-icon-selector-dialog';
-import { ToolbarAlignment, ToolbarAlignmentString } from './main-toolbar-interfaces';
-import { MainToolbarController } from './main-toolbar-controller';
+import { ToolbarIconDialogFactory } from './toolbar-icon-selector-dialog';
+import { ToolbarAlignment, ToolbarAlignmentString } from './toolbar-interfaces';
+import { ToolbarController } from './toolbar-controller';
 
 @injectable()
-export class MainToolbarCommandQuickInputService {
+export class ToolbarCommandQuickInputService {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(QuickCommandService) protected readonly quickCommandService: QuickCommandService;
-    @inject(MainToolbarController) protected readonly model: MainToolbarController;
-    @inject(MainToolbarIconDialogFactory) protected readonly iconDialogFactory: MainToolbarIconDialogFactory;
+    @inject(ToolbarController) protected readonly model: ToolbarController;
+    @inject(ToolbarIconDialogFactory) protected readonly iconDialogFactory: ToolbarIconDialogFactory;
 
     protected quickPickItems: QuickPickItem[] = [];
 

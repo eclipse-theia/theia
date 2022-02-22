@@ -20,25 +20,25 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 import { TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import { MainToolbarDefaultsFactory } from './main-toolbar-defaults';
+import { ToolbarDefaultsFactory } from './toolbar-defaults';
 import {
-    DeflatedMainToolbarTreeSchema,
-    MainToolbarContribution,
-    MainToolbarTreeSchema,
-    ValidMainToolbarItem,
+    DeflatedToolbarTree,
+    ToolbarContribution,
+    ToolbarTreeSchema,
+    ToolbarItem,
     ToolbarAlignment,
     ToolbarItemPosition,
-} from './main-toolbar-interfaces';
-import { MainToolbarStorageProvider, TOOLBAR_BAD_JSON_ERROR_MESSAGE } from './main-toolbar-storage-provider';
+} from './toolbar-interfaces';
+import { ToolbarStorageProvider, TOOLBAR_BAD_JSON_ERROR_MESSAGE } from './toolbar-storage-provider';
 
 @injectable()
-export class MainToolbarController {
-    @inject(MainToolbarStorageProvider) protected readonly storageProvider: MainToolbarStorageProvider;
+export class ToolbarController {
+    @inject(ToolbarStorageProvider) protected readonly storageProvider: ToolbarStorageProvider;
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(MainToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedMainToolbarTreeSchema;
-    @inject(ContributionProvider) @named(MainToolbarContribution)
-    protected widgetContributions: ContributionProvider<MainToolbarContribution>;
+    @inject(ToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedToolbarTree;
+    @inject(ContributionProvider) @named(ToolbarContribution)
+    protected widgetContributions: ContributionProvider<ToolbarContribution>;
 
     protected toolbarModelDidUpdateEmitter = new Emitter<void>();
     readonly onToolbarModelDidUpdate = this.toolbarModelDidUpdateEmitter.event;
@@ -48,18 +48,18 @@ export class MainToolbarController {
 
     readonly ready = new Deferred<void>();
 
-    protected _toolbarItems: MainToolbarTreeSchema;
-    get toolbarItems(): MainToolbarTreeSchema {
+    protected _toolbarItems: ToolbarTreeSchema;
+    get toolbarItems(): ToolbarTreeSchema {
         return this._toolbarItems;
     }
 
-    set toolbarItems(newTree: MainToolbarTreeSchema) {
+    set toolbarItems(newTree: ToolbarTreeSchema) {
         this._toolbarItems = newTree;
         this.toolbarModelDidUpdateEmitter.fire();
     }
 
-    protected inflateItems(schema: DeflatedMainToolbarTreeSchema): MainToolbarTreeSchema {
-        const newTree: MainToolbarTreeSchema = {
+    protected inflateItems(schema: DeflatedToolbarTree): ToolbarTreeSchema {
+        const newTree: ToolbarTreeSchema = {
             items: {
                 [ToolbarAlignment.LEFT]: [],
                 [ToolbarAlignment.CENTER]: [],
@@ -69,7 +69,7 @@ export class MainToolbarController {
         for (const column of Object.keys(schema.items)) {
             const currentColumn = schema.items[column as ToolbarAlignment];
             for (const group of currentColumn) {
-                const newGroup: ValidMainToolbarItem[] = [];
+                const newGroup: ToolbarItem[] = [];
                 for (const item of group) {
                     if (item.group === 'contributed') {
                         const contribution = this.getContributionByID(item.id);
@@ -88,7 +88,7 @@ export class MainToolbarController {
         return newTree;
     }
 
-    getContributionByID(id: string): MainToolbarContribution | undefined {
+    getContributionByID(id: string): ToolbarContribution | undefined {
         return this.widgetContributions.getContributions().find(contribution => contribution.id === id);
     }
 
@@ -108,7 +108,7 @@ export class MainToolbarController {
         });
     }
 
-    protected async resolveToolbarItems(): Promise<MainToolbarTreeSchema> {
+    protected async resolveToolbarItems(): Promise<ToolbarTreeSchema> {
         await this.storageProvider.ready;
 
         if (this.storageProvider.toolbarItems) {

@@ -16,7 +16,7 @@
 
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import * as Ajv from '@theia/core/shared/ajv';
-import { DeflatedMainToolbarTreeSchema } from './main-toolbar-interfaces';
+import { DeflatedToolbarTree } from './toolbar-interfaces';
 
 const toolbarColumnGroup: IJSONSchema = {
     'type': 'array',
@@ -69,6 +69,6 @@ export const toolbarConfigurationSchema: IJSONSchema = {
 };
 
 const validator = new Ajv().compile(toolbarConfigurationSchema);
-export function isToolbarPreferences(candidate: unknown): candidate is DeflatedMainToolbarTreeSchema {
+export function isToolbarPreferences(candidate: unknown): candidate is DeflatedToolbarTree {
     return Boolean(validator(candidate));
 }

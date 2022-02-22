@@ -21,27 +21,38 @@ import * as React from '@theia/core/shared/react';
 import { quickFileOpen } from '@theia/file-search/lib/browser/quick-file-open';
 import { SearchInWorkspaceCommands } from '@theia/search-in-workspace/lib/browser/search-in-workspace-frontend-contribution';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { AbstractMainToolbarContribution } from './abstract-main-toolbar-contribution';
+import { AbstractToolbarContribution } from '@theia/toolbar/lib/browser/abstract-toolbar-contribution';
+import { ToolbarMenus, ReactInteraction } from '@theia/toolbar/lib/browser/toolbar-constants';
+import { ToolbarContribution } from '@theia/toolbar/lib/browser/toolbar-interfaces';
+import { ToolbarDefaultsFactory } from '@theia/toolbar/lib/browser/toolbar-defaults';
 import { SearchInWorkspaceQuickInputService } from './search-in-workspace-root-quick-input-service';
-import { MainToolbarMenus, ReactInteraction } from './main-toolbar-constants';
-import {
-    MainToolbarContribution,
-} from './main-toolbar-interfaces';
+import '../../../src/browser/toolbar-contribution-example/easy-search-style.css';
+import { ToolbarDefaultsOverride } from './toolbar-defaults-override';
+
+export const bindSampleToolbarContribution = (bind: interfaces.Bind, rebind: interfaces.Rebind) => {
+    bind(EasySearchToolbarItem).toSelf().inSingletonScope();
+    bind(ToolbarContribution).to(EasySearchToolbarItem);
+    bind(CommandContribution).to(EasySearchToolbarItem);
+    bind(MenuContribution).to(EasySearchToolbarItem);
+    bind(SearchInWorkspaceQuickInputService).toSelf().inSingletonScope();
+    rebind(ToolbarDefaultsFactory).toConstantValue(ToolbarDefaultsOverride);
+};
 
 export const FIND_IN_WORKSPACE_ROOT = Command.toLocalizedCommand({
-    id: 'main.toolbar.find.in.workspace.root',
+    id: 'easy.search.find.in.workspace.root',
     category: 'Search',
     label: 'Search Workspace Root for Text',
 }, 'theia/toolbar/searchWorkspaceRootForText', nls.getDefaultKey('Search'));
 
 @injectable()
-export class EasySearchToolbarItem extends AbstractMainToolbarContribution
+export class EasySearchToolbarItem extends AbstractToolbarContribution
     implements CommandContribution,
     MenuContribution {
     @inject(SearchInWorkspaceQuickInputService) protected readonly searchPickService: SearchInWorkspaceQuickInputService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
-    id = 'easy-search-toolbar-widget';
+    static ID = 'theia-easy-search-toolbar-widget';
+    id = EasySearchToolbarItem.ID;
 
     protected handleOnClick = (e: ReactInteraction<HTMLSpanElement>): void => this.doHandleOnClick(e);
     protected doHandleOnClick(e: ReactInteraction<HTMLSpanElement>): void {
@@ -52,7 +63,7 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
             const { left } = e.currentTarget.getBoundingClientRect();
             this.contextMenuRenderer.render({
                 includeAnchorArg: false,
-                menuPath: MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU,
+                menuPath: ToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU,
                 anchor: { x: left, y: bottom },
             });
         }
@@ -63,17 +74,11 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
             <div
                 role='button'
                 tabIndex={0}
-                className='icon-wrapper action-item item enabled'
+                className='icon-wrapper action-item item enabled codicon codicon-search'
+                id='easy-search-item-icon'
                 onClick={this.handleOnClick}
                 title={nls.localize('theia/toolbar/search/icon', 'Search for files, text, commands, and more...')}
             >
-                <div
-                    className='codicon codicon-search'
-                    id='easy-search-item-icon'
-                    role='button'
-                    tabIndex={0}
-                    onClick={this.handleOnClick}
-                />
                 <div className='codicon codicon-triangle-down' />
             </div>);
     }
@@ -95,31 +100,25 @@ export class EasySearchToolbarItem extends AbstractMainToolbarContribution
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
+        registry.registerMenuAction(ToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: quickCommand.id,
             label: nls.localize('theia/toolbar/search/findACommand', 'Find a Command'),
             order: 'a',
         });
-        registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
+        registry.registerMenuAction(ToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: quickFileOpen.id,
             order: 'b',
             label: nls.localize('theia/toolbar/search/searchForAFile', 'Search for a file')
         });
-        registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
+        registry.registerMenuAction(ToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
             label: nls.localize('theia/toolbar/search/searchWorkspaceForText', 'Search Entire Workspace for Text'),
             order: 'c',
         });
-        registry.registerMenuAction(MainToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
+        registry.registerMenuAction(ToolbarMenus.SEARCH_WIDGET_DROPDOWN_MENU, {
             commandId: FIND_IN_WORKSPACE_ROOT.id,
             order: 'd',
         });
     }
 }
 
-export const bindEasySearchToolbarWidget = (bind: interfaces.Bind): void => {
-    bind(EasySearchToolbarItem).toSelf().inSingletonScope();
-    bind(MainToolbarContribution).to(EasySearchToolbarItem);
-    bind(CommandContribution).to(EasySearchToolbarItem);
-    bind(MenuContribution).to(EasySearchToolbarItem);
-};

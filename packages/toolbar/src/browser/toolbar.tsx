@@ -24,23 +24,23 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
-    ValidMainToolbarItem,
+    ToolbarItem,
     ToolbarAlignment,
     ToolbarAlignmentString,
     ToolbarItemPosition,
-} from './main-toolbar-interfaces';
-import { MainToolbarController } from './main-toolbar-controller';
-import { MainToolbarMenus } from './main-toolbar-constants';
+} from './toolbar-interfaces';
+import { ToolbarController } from './toolbar-controller';
+import { ToolbarMenus } from './toolbar-constants';
 
-const TOOLBAR_BACKGROUND_DATA_ID = 'main-toolbar-wrapper';
+const TOOLBAR_BACKGROUND_DATA_ID = 'toolbar-wrapper';
 export const TOOLBAR_PROGRESSBAR_ID = 'main-toolbar-progress';
 @injectable()
-export class MainToolbarImpl extends TabBarToolbar {
+export class ToolbarImpl extends TabBarToolbar {
     @inject(TabBarToolbarFactory) protected readonly tabbarToolbarFactory: TabBarToolbarFactory;
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
-    @inject(MainToolbarController) protected readonly model: MainToolbarController;
+    @inject(ToolbarController) protected readonly model: ToolbarController;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
     @inject(ProgressBarFactory) protected readonly progressFactory: ProgressBarFactory;
@@ -105,11 +105,11 @@ export class MainToolbarImpl extends TabBarToolbar {
         let menuPath: MenuPath;
         let anchor: Anchor;
         if (clickId === TOOLBAR_BACKGROUND_DATA_ID) {
-            menuPath = MainToolbarMenus.MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU;
+            menuPath = ToolbarMenus.TOOLBAR_BACKGROUND_CONTEXT_MENU;
             const { clientX, clientY } = event;
             anchor = { x: clientX, y: clientY };
         } else {
-            menuPath = MainToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU;
+            menuPath = ToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU;
             const { left, bottom } = event.currentTarget.getBoundingClientRect();
             anchor = { x: left, y: bottom };
         }
@@ -130,7 +130,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         return args;
     }
 
-    protected renderGroupsInColumn(groups: ValidMainToolbarItem[][], alignment: ToolbarAlignment): React.ReactNode {
+    protected renderGroupsInColumn(groups: ToolbarItem[][], alignment: ToolbarAlignment): React.ReactNode {
         const nodes: React.ReactNodeArray = [];
         groups.forEach((group, groupIndex) => {
             if (nodes.length && group.length) {
@@ -155,7 +155,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         const rightGroups = this.model.toolbarItems?.items[ToolbarAlignment.RIGHT];
         return (
             <div
-                className='main-toolbar-wrapper'
+                className='toolbar-wrapper'
                 onContextMenu={this.handleContextMenu}
                 data-id={TOOLBAR_BACKGROUND_DATA_ID}
                 role='menu'
@@ -169,7 +169,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         );
     }
 
-    protected renderColumnWrapper(alignment: ToolbarAlignment, columnGroup: ValidMainToolbarItem[][]): React.ReactNode {
+    protected renderColumnWrapper(alignment: ToolbarAlignment, columnGroup: ToolbarItem[][]): React.ReactNode {
         let children: React.ReactNode;
         if (alignment === ToolbarAlignment.LEFT) {
             children = (
@@ -221,7 +221,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         );
     }
 
-    protected renderItemWithDraggableWrapper(item: ValidMainToolbarItem, position: ToolbarItemPosition): React.ReactNode {
+    protected renderItemWithDraggableWrapper(item: ToolbarItem, position: ToolbarItemPosition): React.ReactNode {
         const stringifiedPosition = JSON.stringify(position);
         let toolbarItemClassNames = '';
         let renderBody: React.ReactNode;
@@ -243,7 +243,7 @@ export class MainToolbarImpl extends TabBarToolbar {
                 id={item.id}
                 data-position={stringifiedPosition}
                 key={`${item.id}-${stringifiedPosition}`}
-                className={`${toolbarItemClassNames} main-toolbar-item action-item`}
+                className={`${toolbarItemClassNames} toolbar-item action-item`}
                 onMouseDown={this.onMouseDownEvent}
                 onMouseUp={this.onMouseUpEvent}
                 onMouseOut={this.onMouseUpEvent}
@@ -330,7 +330,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         const targetItemId = e.currentTarget.getAttribute('data-id');
         if (targetItemDOMElement.classList.contains('empty-column-space')) {
             targetItemDOMElement.classList.add('drag-over');
-        } else if (targetItemDOMElement.classList.contains('main-toolbar-item') && targetItemHoverOverlay) {
+        } else if (targetItemDOMElement.classList.contains('toolbar-item') && targetItemHoverOverlay) {
             const { clientX } = e;
             const { left, right } = e.currentTarget.getBoundingClientRect();
             const targetMiddleX = (left + right) / 2;
@@ -355,7 +355,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         const targetItemHoverOverlay = targetItemDOMElement.querySelector('.hover-overlay');
         if (targetItemDOMElement.classList.contains('empty-column-space')) {
             targetItemDOMElement.classList.remove('drag-over');
-        } else if (targetItemHoverOverlay && targetItemDOMElement.classList.contains('main-toolbar-item')) {
+        } else if (targetItemHoverOverlay && targetItemDOMElement.classList.contains('toolbar-item')) {
             targetItemHoverOverlay?.classList.remove('drag-over', 'location-left', 'location-right');
         }
     }
@@ -369,7 +369,7 @@ export class MainToolbarImpl extends TabBarToolbar {
         if (targetItemDOMElement.classList.contains('empty-column-space')) {
             this.handleDropInEmptySpace(targetItemDOMElement);
             targetItemDOMElement.classList.remove('drag-over');
-        } else if (targetItemHoverOverlay && targetItemDOMElement.classList.contains('main-toolbar-item')) {
+        } else if (targetItemHoverOverlay && targetItemDOMElement.classList.contains('toolbar-item')) {
             this.handleDropInExistingGroup(targetItemDOMElement);
             targetItemHoverOverlay.classList.remove('drag-over', 'location-left', 'location-right');
         }

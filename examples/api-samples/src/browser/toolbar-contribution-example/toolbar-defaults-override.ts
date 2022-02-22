@@ -14,12 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DeflatedMainToolbarTreeSchema, ToolbarAlignment } from './main-toolbar-interfaces';
+import { nls } from '@theia/core';
+import { DeflatedToolbarTree, ToolbarAlignment } from '@theia/toolbar/lib/browser/toolbar-interfaces';
+import { EasySearchToolbarItem } from './easy-search-toolbar-item';
 
-// This file specifies the default layout of the toolbar. This binding should be overridden for extenders.
-// Both Toolbar Command Items and Toolbar Contributions can be specified here.
-export const MainToolbarDefaultsFactory = Symbol('MainToolbarDefaultsFactory');
-export const MainToolbarDefaults: () => DeflatedMainToolbarTreeSchema = () => ({
+export const ToolbarDefaultsOverride: () => DeflatedToolbarTree = () => ({
     items: {
         [ToolbarAlignment.LEFT]: [
             [
@@ -42,21 +41,20 @@ export const MainToolbarDefaults: () => DeflatedMainToolbarTreeSchema = () => ({
                 },
             ],
         ],
-        [ToolbarAlignment.CENTER]: [
-            [
-                {
-                    id: 'terminal:new',
-                    command: 'terminal:new',
-                    icon: 'codicon codicon-terminal',
-                }
-            ],
-        ],
+        [ToolbarAlignment.CENTER]: [[
+            {
+                id: EasySearchToolbarItem.ID,
+                group: 'contributed'
+            }
+        ]],
         [ToolbarAlignment.RIGHT]: [
             [
                 {
-                    id: 'easy-search-toolbar-widget',
-                    group: 'contributed'
-                }
+                    id: 'workbench.action.showCommands',
+                    command: 'workbench.action.showCommands',
+                    icon: 'codicon codicon-terminal',
+                    tooltip: nls.localizeByDefault('Command Palette'),
+                },
             ]
         ]
     },

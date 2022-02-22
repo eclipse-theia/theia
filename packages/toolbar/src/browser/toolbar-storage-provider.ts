@@ -27,22 +27,22 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
 import {
-    DeflatedMainToolbarTreeSchema,
-    MainToolbarTreeSchema,
-    ValidMainToolbarItem,
-    ValidMainToolbarItemDeflated,
+    DeflatedToolbarTree,
+    ToolbarTreeSchema,
+    ToolbarItem,
+    ToolbarItemDeflated,
     ToolbarAlignment,
     ToolbarItemPosition,
     LateInjector,
-} from './main-toolbar-interfaces';
-import { UserToolbarURI } from './main-toolbar-constants';
-import { isToolbarPreferences } from './main-toolbar-preference-schema';
+} from './toolbar-interfaces';
+import { UserToolbarURI } from './toolbar-constants';
+import { isToolbarPreferences } from './toolbar-preference-schema';
 
 export const TOOLBAR_BAD_JSON_ERROR_MESSAGE = 'There was an error reading your toolbar.json file. Please check if it is corrupt'
     + ' by right-clicking the toolbar and selecting "Customize Toolbar". You can also reset it to its defaults by selecting'
     + ' "Restore Toolbar Defaults"';
 @injectable()
-export class MainToolbarStorageProvider implements Disposable {
+export class ToolbarStorageProvider implements Disposable {
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(FileService) protected readonly fileService: FileService;
@@ -64,7 +64,7 @@ export class MainToolbarStorageProvider implements Disposable {
     protected toDispose = new DisposableCollection();
     protected toolbarItemsUpdatedEmitter = new Emitter<void>();
     readonly onToolbarItemsChanged = this.toolbarItemsUpdatedEmitter.event;
-    toolbarItems: DeflatedMainToolbarTreeSchema | undefined;
+    toolbarItems: DeflatedToolbarTree | undefined;
 
     @postConstruct()
     async init(): Promise<void> {
@@ -115,7 +115,7 @@ export class MainToolbarStorageProvider implements Disposable {
 
     async addItem(command: Command, alignment: ToolbarAlignment): Promise<boolean> {
         if (this.toolbarItems) {
-            const itemFromCommand: ValidMainToolbarItem = {
+            const itemFromCommand: ToolbarItem = {
                 id: command.id,
                 command: command.id,
                 icon: command.iconClass,
@@ -159,7 +159,7 @@ export class MainToolbarStorageProvider implements Disposable {
         return false;
     }
 
-    async addItemToEmptyColumn(item: ValidMainToolbarItemDeflated, alignment: ToolbarAlignment): Promise<boolean> {
+    async addItemToEmptyColumn(item: ToolbarItemDeflated, alignment: ToolbarAlignment): Promise<boolean> {
         if (this.toolbarItems) {
             const modifiedConfiguration = deepClone(this.toolbarItems);
             modifiedConfiguration.items[alignment].push([item]);
@@ -211,7 +211,7 @@ export class MainToolbarStorageProvider implements Disposable {
             if (originalColumn) {
                 const existingGroup = originalColumn[groupIndex];
                 const existingGroupLength = existingGroup.length;
-                let poppedGroup: ValidMainToolbarItemDeflated[] = [];
+                let poppedGroup: ToolbarItemDeflated[] = [];
                 let numItemsToRemove: number;
                 if (insertDirection === 'left' && itemIndex !== 0) {
                     numItemsToRemove = existingGroupLength - itemIndex;
@@ -230,8 +230,8 @@ export class MainToolbarStorageProvider implements Disposable {
     }
 
     protected removeEmptyGroupsFromToolbar(
-        toolbarItems: DeflatedMainToolbarTreeSchema | undefined,
-    ): DeflatedMainToolbarTreeSchema | undefined {
+        toolbarItems: DeflatedToolbarTree | undefined,
+    ): DeflatedToolbarTree | undefined {
         if (toolbarItems) {
             const modifiedConfiguration = deepClone(toolbarItems);
             const columns = [ToolbarAlignment.LEFT, ToolbarAlignment.CENTER, ToolbarAlignment.RIGHT];
@@ -301,7 +301,7 @@ export class MainToolbarStorageProvider implements Disposable {
         return false;
     }
 
-    protected parseContent(fileContent: string): DeflatedMainToolbarTreeSchema | undefined {
+    protected parseContent(fileContent: string): DeflatedToolbarTree | undefined {
         const rawConfig = this.parse(fileContent);
         if (!isToolbarPreferences(rawConfig)) {
             return undefined;
@@ -309,7 +309,7 @@ export class MainToolbarStorageProvider implements Disposable {
         return rawConfig;
     }
 
-    protected parse(fileContent: string): MainToolbarTreeSchema | undefined {
+    protected parse(fileContent: string): DeflatedToolbarTree | undefined {
         let strippedContent = fileContent.trim();
         if (!strippedContent) {
             return undefined;
@@ -318,7 +318,7 @@ export class MainToolbarStorageProvider implements Disposable {
         return jsoncParser.parse(strippedContent);
     }
 
-    async openOrCreateJSONFile(state: MainToolbarTreeSchema, doOpen = false): Promise<Widget | undefined> {
+    async openOrCreateJSONFile(state: ToolbarTreeSchema, doOpen = false): Promise<Widget | undefined> {
         const fileExists = await this.fileService.exists(this.USER_TOOLBAR_URI);
         let doWriteStateToFile = false;
         if (fileExists) {

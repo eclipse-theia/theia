@@ -14,25 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceSchema, PreferenceProxy, PreferenceScope } from '@theia/core/lib/browser';
+import '../../src/browser/style/toolbar.css';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
+import { bindToolbarApplicationShell } from './application-shell-with-toolbar-override';
+import { bindToolbar } from './toolbar-command-contribution';
 
-export const TOOLBAR_ENABLE_PREFERENCE_ID = 'mainToolbar.showToolbar';
-
-export const MainToolbarPreferencesSchema: PreferenceSchema = {
-    type: 'object',
-    properties: {
-        [TOOLBAR_ENABLE_PREFERENCE_ID]: {
-            'type': 'boolean',
-            'description': 'Show main toolbar',
-            'default': false,
-            'scope': PreferenceScope.Workspace,
-        },
-    },
-};
-
-class MainToolbarPreferencesContribution {
-    [TOOLBAR_ENABLE_PREFERENCE_ID]: boolean;
-}
-
-export const MainToolbarPreferences = Symbol('MainToolbarPreferences');
-export type MainToolbarPreferences = PreferenceProxy<MainToolbarPreferencesContribution>;
+export default new ContainerModule((
+    bind: interfaces.Bind,
+    unbind: interfaces.Unbind,
+    _isBound: interfaces.IsBound,
+    rebind: interfaces.Rebind,
+) => {
+    bindToolbarApplicationShell(bind, rebind, unbind);
+    bindToolbar(bind);
+});

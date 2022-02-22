@@ -14,18 +14,32 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import '../../src/browser/style/toolbar-shell-style.css';
-import '../../src/browser/style/easy-search-style.css';
-import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindToolbarApplicationShell } from './application-shell-with-toolbar-override';
-import { bindMainToolbar } from './main-toolbar-command-contribution';
+#theia-easy-search-toolbar-widget {
+    position: relative;
+}
 
-export default new ContainerModule((
-    bind: interfaces.Bind,
-    unbind: interfaces.Unbind,
-    _isBound: interfaces.IsBound,
-    rebind: interfaces.Rebind,
-) => {
-    bindToolbarApplicationShell(bind, rebind, unbind);
-    bindMainToolbar(bind);
-});
+#theia-easy-search-toolbar-widget .icon-wrapper {
+    cursor: pointer;
+    margin-left: 0;
+}
+
+#theia-easy-search-toolbar-widget:focus,
+#theia-easy-search-toolbar-widget .icon-wrapper:focus,
+#theia-easy-search-toolbar-widget .codicon-search:focus {
+    outline: none;
+}
+
+#theia-easy-search-toolbar-widget  .icon-wrapper.action-item.item.enabled:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+#theia-easy-search-toolbar-widget #easy-search-item-icon.codicon-search {
+    position: relative;
+}
+
+#theia-easy-search-toolbar-widget .icon-wrapper .codicon-triangle-down {
+    position: absolute;
+    font-size: 10px;
+    bottom: -7px;
+    right: -2px;
+}

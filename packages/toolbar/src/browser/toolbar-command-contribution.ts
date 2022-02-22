@@ -36,37 +36,35 @@ import {
 } from '@theia/core/lib/browser';
 import { injectable, inject, interfaces, Container } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { bindEasySearchToolbarWidget } from './easy-search-toolbar-item';
-import { MainToolbarImpl } from './main-toolbar';
-import { bindToolbarIconDialog } from './main-toolbar-icon-selector-dialog';
+import { ToolbarImpl } from './toolbar';
+import { bindToolbarIconDialog } from './toolbar-icon-selector-dialog';
 import {
-    MainToolbarContribution,
+    ToolbarContribution,
     ToolbarItemPosition,
-    MainToolbarFactory,
-    MainToolbar,
+    ToolbarFactory,
+    Toolbar,
     LateInjector,
     lateInjector,
-} from './main-toolbar-interfaces';
-import { MainToolbarCommandQuickInputService } from './main-toolbar-command-quick-input-service';
-import { MainToolbarStorageProvider } from './main-toolbar-storage-provider';
-import { MainToolbarController } from './main-toolbar-controller';
-import { SearchInWorkspaceQuickInputService } from './search-in-workspace-root-quick-input-service';
-import { MainToolbarPreferencesSchema, MainToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './main-toolbar-preference-contribution';
-import { MainToolbarDefaults, MainToolbarDefaultsFactory } from './main-toolbar-defaults';
-import { MainToolbarCommands, MainToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from './main-toolbar-constants';
+} from './toolbar-interfaces';
+import { ToolbarCommandQuickInputService } from './toolbar-command-quick-input-service';
+import { ToolbarStorageProvider } from './toolbar-storage-provider';
+import { ToolbarController } from './toolbar-controller';
+import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
+import { ToolbarDefaults, ToolbarDefaultsFactory } from './toolbar-defaults';
+import { ToolbarCommands, ToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from './toolbar-constants';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { toolbarConfigurationSchema, toolbarSchemaId } from './main-toolbar-preference-schema';
+import { toolbarConfigurationSchema, toolbarSchemaId } from './toolbar-preference-schema';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class MainToolbarCommandContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {
-    @inject(MainToolbarController) protected readonly model: MainToolbarController;
+export class ToolbarCommandContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {
+    @inject(ToolbarController) protected readonly model: ToolbarController;
     @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
-    @inject(MainToolbarCommandQuickInputService) protected toolbarCommandPickService: MainToolbarCommandQuickInputService;
+    @inject(ToolbarCommandQuickInputService) protected toolbarCommandPickService: ToolbarCommandQuickInputService;
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(MainToolbarController) protected readonly toolbarModel: MainToolbarController;
+    @inject(ToolbarController) protected readonly toolbarModel: ToolbarController;
     @inject(InMemoryResources) protected readonly inMemoryResources: InMemoryResources;
     protected readonly schemaURI = new URI(toolbarSchemaId);
 
@@ -79,24 +77,24 @@ export class MainToolbarCommandContribution implements CommandContribution, Keyb
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(MainToolbarCommands.CUSTOMIZE_TOOLBAR, {
+        registry.registerCommand(ToolbarCommands.CUSTOMIZE_TOOLBAR, {
             execute: () => this.model.openOrCreateJSONFile(true),
         });
-        registry.registerCommand(MainToolbarCommands.RESET_TOOLBAR, {
+        registry.registerCommand(ToolbarCommands.RESET_TOOLBAR, {
             execute: () => this.model.clearAll(),
         });
-        registry.registerCommand(MainToolbarCommands.TOGGLE_MAIN_TOOLBAR, {
+        registry.registerCommand(ToolbarCommands.TOGGLE_TOOLBAR, {
             execute: () => {
                 const isVisible = this.preferenceService.get<boolean>(TOOLBAR_ENABLE_PREFERENCE_ID);
                 this.preferenceService.set(TOOLBAR_ENABLE_PREFERENCE_ID, !isVisible, PreferenceScope.User);
             },
         });
 
-        registry.registerCommand(MainToolbarCommands.REMOVE_COMMAND_FROM_TOOLBAR, {
+        registry.registerCommand(ToolbarCommands.REMOVE_COMMAND_FROM_TOOLBAR, {
             execute: async (_widget, position: ToolbarItemPosition | undefined, id?: string) => position && this.model.removeItem(position, id),
             isVisible: (...args) => this.isToolbarWidget(args[0]),
         });
-        registry.registerCommand(MainToolbarCommands.INSERT_GROUP_LEFT, {
+        registry.registerCommand(ToolbarCommands.INSERT_GROUP_LEFT, {
             execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.model.insertGroup(position, 'left'),
             isVisible: (widget: Widget, position: ToolbarItemPosition | undefined) => {
                 if (position) {
@@ -107,7 +105,7 @@ export class MainToolbarCommandContribution implements CommandContribution, Keyb
                 return false;
             },
         });
-        registry.registerCommand(MainToolbarCommands.INSERT_GROUP_RIGHT, {
+        registry.registerCommand(ToolbarCommands.INSERT_GROUP_RIGHT, {
             execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.model.insertGroup(position, 'right'),
             isVisible: (widget: Widget, position: ToolbarItemPosition | undefined) => {
                 if (position) {
@@ -119,96 +117,94 @@ export class MainToolbarCommandContribution implements CommandContribution, Keyb
                 return false;
             },
         });
-        registry.registerCommand(MainToolbarCommands.ADD_COMMAND_TO_TOOLBAR, {
+        registry.registerCommand(ToolbarCommands.ADD_COMMAND_TO_TOOLBAR, {
             execute: () => this.toolbarCommandPickService.openIconDialog(),
         });
     }
 
     protected isToolbarWidget(arg: unknown): boolean {
-        return arg instanceof MainToolbarImpl;
+        return arg instanceof ToolbarImpl;
     }
 
     registerKeybindings(keys: KeybindingRegistry): void {
         keys.registerKeybinding({
-            command: MainToolbarCommands.TOGGLE_MAIN_TOOLBAR.id,
+            command: ToolbarCommands.TOGGLE_TOOLBAR.id,
             keybinding: 'alt+t',
         });
     }
 
     registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
-            commandId: MainToolbarCommands.TOGGLE_MAIN_TOOLBAR.id,
+            commandId: ToolbarCommands.TOGGLE_TOOLBAR.id,
             order: 'z',
         });
 
-        registry.registerMenuAction(MainToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.ADD_COMMAND_TO_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
+            commandId: ToolbarCommands.ADD_COMMAND_TO_TOOLBAR.id,
             order: 'a',
         });
-        registry.registerMenuAction(MainToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.INSERT_GROUP_LEFT.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
+            commandId: ToolbarCommands.INSERT_GROUP_LEFT.id,
             order: 'b',
         });
-        registry.registerMenuAction(MainToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.INSERT_GROUP_RIGHT.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
+            commandId: ToolbarCommands.INSERT_GROUP_RIGHT.id,
             order: 'c',
         });
-        registry.registerMenuAction(MainToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.REMOVE_COMMAND_FROM_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_ITEM_CONTEXT_MENU, {
+            commandId: ToolbarCommands.REMOVE_COMMAND_FROM_TOOLBAR.id,
             order: 'd',
         });
 
-        registry.registerMenuAction(MainToolbarMenus.MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.ADD_COMMAND_TO_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_BACKGROUND_CONTEXT_MENU, {
+            commandId: ToolbarCommands.ADD_COMMAND_TO_TOOLBAR.id,
             order: 'a',
         });
-        registry.registerMenuAction(MainToolbarMenus.MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.CUSTOMIZE_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_BACKGROUND_CONTEXT_MENU, {
+            commandId: ToolbarCommands.CUSTOMIZE_TOOLBAR.id,
             order: 'b',
         });
-        registry.registerMenuAction(MainToolbarMenus.MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.TOGGLE_MAIN_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_BACKGROUND_CONTEXT_MENU, {
+            commandId: ToolbarCommands.TOGGLE_TOOLBAR.id,
             order: 'c',
         });
-        registry.registerMenuAction(MainToolbarMenus.MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU, {
-            commandId: MainToolbarCommands.RESET_TOOLBAR.id,
+        registry.registerMenuAction(ToolbarMenus.TOOLBAR_BACKGROUND_CONTEXT_MENU, {
+            commandId: ToolbarCommands.RESET_TOOLBAR.id,
             order: 'd',
         });
     }
 }
 
-export function bindMainToolbar(bind: interfaces.Bind): void {
-    bind(MainToolbarFactory).toFactory(({ container }) => (): MainToolbar => {
+export function bindToolbar(bind: interfaces.Bind): void {
+    bind(ToolbarFactory).toFactory(({ container }) => (): Toolbar => {
         const child = new Container({ defaultScope: 'Singleton' });
         child.parent = container;
-        child.bind(MainToolbar).to(MainToolbarImpl);
-        return child.get(MainToolbar);
+        child.bind(Toolbar).to(ToolbarImpl);
+        return child.get(Toolbar);
     });
-    bind(MainToolbarCommandContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).to(MainToolbarCommandContribution);
-    bind(MenuContribution).toService(MainToolbarCommandContribution);
-    bind(KeybindingContribution).toService(MainToolbarCommandContribution);
-    bind(JsonSchemaContribution).toService(MainToolbarCommandContribution);
+    bind(ToolbarCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).to(ToolbarCommandContribution);
+    bind(MenuContribution).toService(ToolbarCommandContribution);
+    bind(KeybindingContribution).toService(ToolbarCommandContribution);
+    bind(JsonSchemaContribution).toService(ToolbarCommandContribution);
 
-    bind(MainToolbarCommandQuickInputService).toSelf().inSingletonScope();
-    bind(SearchInWorkspaceQuickInputService).toSelf().inSingletonScope();
+    bind(ToolbarCommandQuickInputService).toSelf().inSingletonScope();
 
     bindToolbarIconDialog(bind);
-    bind(MainToolbarDefaultsFactory).toConstantValue(MainToolbarDefaults);
-    bind(MainToolbarPreferences).toDynamicValue(({ container }) => {
+    bind(ToolbarDefaultsFactory).toConstantValue(ToolbarDefaults);
+    bind(ToolbarPreferences).toDynamicValue(({ container }) => {
         const preferences = container.get<PreferenceService>(PreferenceService);
-        return createPreferenceProxy(preferences, MainToolbarPreferencesSchema);
+        return createPreferenceProxy(preferences, ToolbarPreferencesSchema);
     }).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({
-        schema: MainToolbarPreferencesSchema,
+        schema: ToolbarPreferencesSchema,
     });
 
     bind(UserToolbarURI).toConstantValue(USER_TOOLBAR_URI);
 
-    bind(MainToolbarController).toSelf().inSingletonScope();
-    bind(MainToolbarStorageProvider).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MainToolbarContribution);
-    bindEasySearchToolbarWidget(bind);
+    bind(ToolbarController).toSelf().inSingletonScope();
+    bind(ToolbarStorageProvider).toSelf().inSingletonScope();
+    bindContributionProvider(bind, ToolbarContribution);
     bind(LateInjector).toFactory(
         <T>(context: interfaces.Context) => (id: interfaces.ServiceIdentifier<T>): T => lateInjector(context.container, id),
     );

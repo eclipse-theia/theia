@@ -19,45 +19,45 @@ import { CommonCommands } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
-export namespace MainToolbarCommands {
-    export const TOGGLE_MAIN_TOOLBAR = Command.toLocalizedCommand({
-        id: 'main.toolbar.view.toggle',
+export namespace ToolbarCommands {
+    export const TOGGLE_TOOLBAR = Command.toLocalizedCommand({
+        id: 'toolbar.view.toggle',
         category: CommonCommands.VIEW_CATEGORY,
-        label: 'Toggle Main Toolbar',
+        label: 'Toggle Toolbar',
     }, 'theia/toolbar/toggleToolbar', nls.getDefaultKey(CommonCommands.VIEW_CATEGORY));
 
     export const REMOVE_COMMAND_FROM_TOOLBAR = Command.toLocalizedCommand({
-        id: 'main.toolbar.remove.command',
+        id: 'toolbar.remove.command',
         category: 'Toolbar',
         label: 'Remove Command From Toolbar',
     }, 'theia/toolbar/removeCommand');
 
     export const INSERT_GROUP_LEFT = Command.toLocalizedCommand({
-        id: 'main.toolbar.insert.group.left',
+        id: 'toolbar.insert.group.left',
         category: 'Toolbar',
         label: 'Insert Group Separator (Left)',
     }, 'theia/toolbar/insertGroupLeft');
 
     export const INSERT_GROUP_RIGHT = Command.toLocalizedCommand({
-        id: 'main.toolbar.insert.group.right',
+        id: 'toolbar.insert.group.right',
         category: 'Toolbar',
         label: 'Insert Group Separator (Right)',
     }, 'theia/toolbar/insertGroupRight');
 
     export const ADD_COMMAND_TO_TOOLBAR = Command.toLocalizedCommand({
-        id: 'main.toolbar.add.command',
+        id: 'toolbar.add.command',
         category: 'Toolbar',
         label: 'Add Command to Toolbar',
     }, 'theia/toolbar/addCommand');
 
     export const RESET_TOOLBAR = Command.toLocalizedCommand({
-        id: 'main.toolbar.restore.defaults',
+        id: 'toolbar.restore.defaults',
         category: 'Toolbar',
         label: 'Restore Toolbar Defaults',
     }, 'theia/toolbar/restoreDefaults');
 
     export const CUSTOMIZE_TOOLBAR = Command.toLocalizedCommand({
-        id: 'main.toolbar.customize.toolbar',
+        id: 'toolbar.customize',
         category: 'Toolbar',
         label: 'Customize Toolbar (Open JSON)',
     }, 'theia/toolbar/openJSON');
@@ -65,9 +65,9 @@ export namespace MainToolbarCommands {
 
 export const UserToolbarURI = Symbol('UserToolbarURI');
 export const USER_TOOLBAR_URI = new URI().withScheme(UserStorageUri.scheme).withPath('/user/toolbar.json');
-export namespace MainToolbarMenus {
-    export const TOOLBAR_ITEM_CONTEXT_MENU: MenuPath = ['mainToolbar:toolbarItemContextMenu'];
-    export const MAIN_TOOLBAR_BACKGROUND_CONTEXT_MENU: MenuPath = ['mainToolbar:backgroundContextMenu'];
+export namespace ToolbarMenus {
+    export const TOOLBAR_ITEM_CONTEXT_MENU: MenuPath = ['toolbar:toolbarItemContextMenu'];
+    export const TOOLBAR_BACKGROUND_CONTEXT_MENU: MenuPath = ['toolbar:backgroundContextMenu'];
     export const SEARCH_WIDGET_DROPDOWN_MENU: MenuPath = ['searchToolbar:dropdown'];
 }
 
