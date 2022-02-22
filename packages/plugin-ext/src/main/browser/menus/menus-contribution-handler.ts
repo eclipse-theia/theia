@@ -21,7 +21,7 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MENU } from '../view/tree-view-widget';
@@ -359,19 +359,19 @@ export class MenusContributionPointHandler {
 
         const { when } = action;
         const whenKeys = when && this.contextKeyService.parseKeys(when);
-        let onDidChange;
+        let onDidChange: Event<void> | undefined;
         if (whenKeys && whenKeys.size) {
             const onDidChangeEmitter = new Emitter<void>();
             toDispose.push(onDidChangeEmitter);
             onDidChange = onDidChangeEmitter.event;
-            this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners + 1;
+            Event.addMaxListeners(this.contextKeyService.onDidChange, 1);
+            toDispose.push(Disposable.create(() => {
+                Event.addMaxListeners(this.contextKeyService.onDidChange, -1);
+            }));
             toDispose.push(this.contextKeyService.onDidChange(event => {
                 if (event.affects(whenKeys)) {
                     onDidChangeEmitter.fire(undefined);
                 }
-            }));
-            toDispose.push(Disposable.create(() => {
-                this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners - 1;
             }));
         }
 

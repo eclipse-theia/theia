@@ -33,7 +33,10 @@ export interface CancellationToken {
 const shortcutEvent: Event<void> = Object.freeze(Object.assign(function (callback: any, context?: any): any {
     const handle = setTimeout(callback.bind(context), 0);
     return { dispose(): void { clearTimeout(handle); } };
-}, { maxListeners: 0 }));
+}, {
+    get maxListeners(): number { return 0; },
+    set maxListeners(maxListeners: number) { }
+}));
 
 export namespace CancellationToken {
 
