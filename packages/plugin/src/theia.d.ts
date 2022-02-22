@@ -8036,7 +8036,7 @@ export module '@theia/plugin' {
         /**
          * String value of the kind, e.g. `"refactor.extract.function"`.
          */
-        readonly value?: string;
+        readonly value: string;
 
         /**
          * Create a new kind by appending a more specific selector to the current kind.

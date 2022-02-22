@@ -455,7 +455,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         if (metadata && metadata.documentation) {
             disposables = new DisposableCollection();
             documentation = metadata.documentation.map(doc => ({
-                kind: doc.kind.value!,
+                kind: doc.kind.value,
                 command: this.commands.converter.toSafeCommand(doc.command, disposables!)
             }));
         }
@@ -464,7 +464,7 @@ export class LanguagesExtImpl implements LanguagesExt {
             callId,
             pluginInfo,
             this.transformDocumentSelector(selector),
-            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value!) : undefined,
+            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value) : undefined,
             documentation
         );
 
