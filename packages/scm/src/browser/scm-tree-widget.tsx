@@ -137,7 +137,19 @@ export class ScmTreeWidget extends TreeWidget {
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
                     ? new URI(node.parent.sourceUri) : new URI(this.model.rootUri);
 
-            const content = <ScmResourceComponent
+            const groupId = ScmFileChangeNode.getGroupId(node);
+            const fragment = (groupId === 'index' || groupId === 'workingTree') ? groupId : undefined;
+
+            let decorations: Decoration[] = [];
+            if (fragment) {
+                decorations = this.decorationsService.getDecoration(new URI(node.sourceUri).withFragment(fragment), true);
+            }
+            if (decorations.length === 0) {
+                decorations = this.decorationsService.getDecoration(new URI(node.sourceUri), true);
+            }
+
+            const content = (
+              <ScmResourceComponent
                 key={node.sourceUri}
                 model={this.model}
                 treeNode={node}
@@ -152,11 +164,12 @@ export class ScmTreeWidget extends TreeWidget {
                     ...this.props,
                     parentPath,
                     sourceUri: node.sourceUri,
-                    decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
+                    decoration: decorations[0],
                     colors: this.colors,
                     renderExpansionToggle: () => this.renderExpansionToggle(node, props),
                 }}
-            />;
+              />
+            );
             return React.createElement('div', attributes, content);
         }
         return super.renderNode(node, props);
