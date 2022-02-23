@@ -39,6 +39,7 @@ Now I need to set up some stuff so that I can experiment with making changes to 
 You could probably symlink it and reduce the burden on your file system.
 
 Getting VSCode to actually output the `.d.ts` files was a bit of a chore. The `vscode/build/lib/standalone.ts` has a line that sets the `declaration` compiler option to `false`. I wanted to make that `true`, so I changed the line in the TS file and tried to recompile and rebuild. No luck. Tried a few variants of that approach, all without success. Eventually I looked for the JS file that must be generated, and changed the code there. It would only show up in the file explorer when actually open, so somehow it's _super_ hidden. TODO: this shouldn't be that hard! Why were changes to the TS file not getting picked up?
+> It turns out that the .js file is checked in to speed up build times by omitting the build of the scripts that do the building.
 
 With that change, the problems with importing types are gone. Huzzah. Probably the rest of the day will be eaten up finding all references to the global `monaco` object and replacing them with imports.
 
@@ -118,3 +119,7 @@ In the end, it turned out that we had just missed a change in the type of a part
 ### Setting definite version
 
 I pulled the 1.64.2 tag of VSCode today to pin my implementations to that. It is a couple of weeks behind what I'd pulled from `main`, and in n just that couple of weeks,a number of private API references were broken. We really shouldn't rely on private API.
+
+## Tweaking monaco-editor-core
+
+In the end, some additional tweaks were necessary to get everything working with `monaco-editor-core`. We compile to `commonjs` modules, and `monaco-editor-core` uses ESM. In the application, that's fine: we only use Monaco in the browser, and Webpack handles the interface between the two styles. In our tests, however, we're running in a Node environment without packing, so `require` calls that refer to Monaco code fail. To fix that, I made the Monaco build output `commonjs` instead of ESM by changing the line in `vscode/build/lib/standalone.js` that sets `module = 'es6'` to `module = 'commonjs'`. In addition, I had to add a `main` field in the `package.json` to help `require('monaco-editor-core')` calls find the right entry point. Finally, Monaco ships built versions of two dependencies, `marked` and `dompurify` as `.js` files in ESM style, and since those don't get built with the rest of the code, they didn't undergo the same change to `commonjs`. In those cases, I just manually rewrote the exports to `commonjs` style in the generated code. Those files are checked in at `src/vs/base/browser/dompurify/dompurify.js` and `src/vs/base/common/marked/marked.js`, so the changes can also be made in the 'source'.
