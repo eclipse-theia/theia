@@ -23,6 +23,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
+import { CALL_HIERARCHY_LABEL } from '../callhierarchy-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -45,8 +46,8 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         super(props, model, contextMenuRenderer);
 
         this.id = CALLHIERARCHY_ID;
-        this.title.label = 'Call Hierarchy';
-        this.title.caption = 'Call Hierarchy';
+        this.title.label = CALL_HIERARCHY_LABEL;
+        this.title.caption = CALL_HIERARCHY_LABEL;
         this.title.iconClass = codicon('references');
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);

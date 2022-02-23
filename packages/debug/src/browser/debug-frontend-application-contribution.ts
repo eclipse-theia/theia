@@ -64,23 +64,20 @@ export namespace DebugMenus {
     export const DEBUG_BREAKPOINTS = [...DEBUG, 'f_breakpoints'];
 }
 
-function nlsEditBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Edit {0}...', nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsEditBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Edit {0}...', nls.localizeByDefault(breakpoint));
 }
 
-function nlsRemoveBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Remove {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsRemoveBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Remove {0}', nls.localizeByDefault(breakpoint));
 }
 
-function nlsEnableBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Enable {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsEnableBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Enable {0}', nls.localizeByDefault(breakpoint));
 }
 
-function nlsDisableBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Disable {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsDisableBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Disable {0}', nls.localizeByDefault(breakpoint));
 }
 
 export namespace DebugCommands {
@@ -204,25 +201,25 @@ export namespace DebugCommands {
         id: 'debug.breakpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Breakpoint...',
-        label: nlsEditBreakpoint('breakpoint', 'Breakpoint')
+        label: nlsEditBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const EDIT_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Logpoint...',
-        label: nlsEditBreakpoint('logPoint', 'Logpoint')
+        label: nlsEditBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Breakpoint',
-        label: nlsRemoveBreakpoint('breakpoint', 'Breakpoint')
+        label: nlsRemoveBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Logpoint',
-        label: nlsRemoveBreakpoint('logPoint', 'Logpoint')
+        label: nlsRemoveBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.removeAll',
@@ -625,12 +622,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugEditorContextCommands.ADD_LOGPOINT, label: DebugCommands.ADD_LOGPOINT.label },
             { ...DebugEditorContextCommands.REMOVE_BREAKPOINT, label: DebugCommands.REMOVE_BREAKPOINT.label },
             { ...DebugEditorContextCommands.EDIT_BREAKPOINT, label: DebugCommands.EDIT_BREAKPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: nlsEnableBreakpoint('breakpoint', 'Breakpoint') },
-            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: nlsDisableBreakpoint('breakpoint', 'Breakpoint') },
+            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: nlsEnableBreakpoint('Breakpoint') },
+            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: nlsDisableBreakpoint('Breakpoint') },
             { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
             { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('logPoint', 'Logpoint') },
-            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('logPoint', 'Logpoint') }
+            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('Logpoint') },
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') }
         );
     }
 

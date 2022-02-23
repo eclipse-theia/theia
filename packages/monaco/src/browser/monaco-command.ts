@@ -216,7 +216,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
     protected configureIndentation(editor: MonacoEditor): void {
         const items = [true, false].map(useSpaces => ({
-            label: nls.localize(`vscode/indentation/indentUsing${useSpaces ? 'Spaces' : 'Tabs'}`, `Indent Using ${useSpaces ? 'Spaces' : 'Tabs'}`),
+            label: nls.localizeByDefault(`Indent Using ${useSpaces ? 'Spaces' : 'Tabs'}`),
             execute: () => this.configureTabSize(editor, useSpaces)
         }));
         this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select Action') });
