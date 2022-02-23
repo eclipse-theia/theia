@@ -20,8 +20,6 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ContextMenuRenderer, KeybindingRegistry } from '@theia/core/lib/browser';
 import { DeflatedContributedToolbarItem, ToolbarContribution } from './toolbar-interfaces';
 
-// Toolbar Contribution should extend this class and bind to ToolbarContribution.
-// The ToolbarDefaultsFactory should be overridden to include new contributions
 @injectable()
 export abstract class AbstractToolbarContribution implements ToolbarContribution {
     @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
