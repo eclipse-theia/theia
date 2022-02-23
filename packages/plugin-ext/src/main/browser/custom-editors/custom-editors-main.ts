@@ -308,7 +308,7 @@ export class MainCustomEditorModel implements CustomEditorModel {
         editorPreferences: EditorPreferences,
         cancellation: CancellationToken,
     ): Promise<MainCustomEditorModel> {
-        const { editable } = await proxy.$createCustomDocument(URI.file(resource.path.toString()), viewType, undefined, cancellation);
+        const { editable } = await proxy.$createCustomDocument(URI.file(resource.path.toString()), viewType, {}, cancellation);
         return new MainCustomEditorModel(proxy, viewType, resource, editable, undoRedoService, fileService, editorPreferences);
     }
 

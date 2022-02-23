@@ -1587,7 +1587,7 @@ export interface CustomEditorsExt {
         widgetOpenerOptions: WidgetOpenerOptions | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
-    $createCustomDocument(resource: UriComponents, viewType: string, backupId: string | undefined, cancellation: CancellationToken): Promise<{ editable: boolean }>;
+    $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
     $disposeCustomDocument(resource: UriComponents, viewType: string): Promise<void>;
     $undo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
     $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;

@@ -81,7 +81,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         );
     }
 
-    async $createCustomDocument(resource: UriComponents, viewType: string, backupId: string | undefined, cancellation: CancellationToken): Promise<{
+    async $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{
         editable: boolean;
     }> {
         const entry = this.editorProviders.get(viewType);
@@ -94,7 +94,7 @@ export class CustomEditorsExtImpl implements CustomEditorsExt {
         }
 
         const revivedResource = URI.revive(resource);
-        const document = await entry.provider.openCustomDocument(revivedResource, { backupId }, cancellation);
+        const document = await entry.provider.openCustomDocument(revivedResource, openContext, cancellation);
         this.documents.add(viewType, document);
 
         return { editable: this.supportEditing(entry.provider) };
