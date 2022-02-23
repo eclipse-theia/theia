@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -725,7 +725,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[]): void {
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
+        documentation?: CodeActionProviderDocumentation): void {
+
         const languageSelector = this.toLanguageSelector(selector);
         const quickFixProvider = {
             provideCodeActions: (model: Monaco.editor.ITextModel, range: Monaco.Range,
@@ -737,7 +739,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             },
             resolveCodeAction: (codeAction: Monaco.languages.CodeAction, token: Monaco.CancellationToken): Promise<Monaco.languages.CodeAction> =>
                 this.resolveCodeAction(handle, codeAction, token),
-            providedCodeActionKinds
+            providedCodeActionKinds,
+            documentation
         };
         this.register(handle, (Monaco.languages.registerCodeActionProvider as RegistrationFunction<Monaco.languages.CodeActionProvider>)(languageSelector, quickFixProvider));
     }
@@ -1041,6 +1044,7 @@ function toMonacoAction(action: CodeAction): Monaco.languages.CodeAction {
     return {
         ...action,
         diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        disabled: action.disabled?.reason,
         edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
     };
 }

@@ -24,6 +24,8 @@
   - `TimelineTreeWidget`
   - `TypeHierarchyTreeWidget`
 - [core] Moved methods `attachReadyToShow`, `restoreMaximizedState`, `attachCloseListeners`, `handleStopRequest`, `checkSafeToStop`, `handleReload`, `reload` from `ElectronMainAPplication` into new class `TheiaElectronWindow`. [#10600](https://github.com/eclipse-theia/theia/pull/10600)
+- [core] Removed the `Event.maxListeners` field; The feature still exists but please use `Event.getMaxListeners(event)` and `Event.setMaxListeners(event, maxListeners)` instead.
+
 ## v1.22.0 - 1/27/2022
 
 [1.22.0 Milestone](https://github.com/eclipse-theia/theia/milestone/30)

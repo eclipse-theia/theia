@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // This file is heavily inspired by VSCode 'vscode.d.ts' - https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // 'vscode.d.ts' copyright:
@@ -7808,6 +7808,16 @@ export module '@theia/plugin' {
         kind?: CodeActionKind;
 
         /**
+         * Marks that the code action cannot currently be applied.
+         */
+        disabled?: { reason: string };
+
+        /**
+         * Marks this as a preferred action.
+         */
+        isPreferred?: boolean;
+
+        /**
          * Creates a new code action.
          *
          * A code action must have at least a [title](#CodeAction.title) and [edits](#CodeAction.edit)
@@ -7872,6 +7882,13 @@ export module '@theia/plugin' {
          * may list our every specific kind they provide, such as `CodeActionKind.Refactor.Extract.append('function`)`
          */
         readonly providedCodeActionKinds?: ReadonlyArray<CodeActionKind>;
+
+        /**
+         * Documentation from the provider is shown in the code actions menu
+         *
+         * At most one documentation entry will be shown per provider.
+         */
+        documentation?: ReadonlyArray<{ command: Command, kind: CodeActionKind }>
     }
 
     /**
@@ -8026,7 +8043,7 @@ export module '@theia/plugin' {
         /**
          * String value of the kind, e.g. `"refactor.extract.function"`.
          */
-        readonly value?: string;
+        readonly value: string;
 
         /**
          * Create a new kind by appending a more specific selector to the current kind.
