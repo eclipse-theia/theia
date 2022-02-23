@@ -64,7 +64,7 @@ export class ToolbarCommandQuickInputService {
     }
 
     protected generateCommandsList(): QuickPickItem[] {
-        const { recent, other } = this.quickCommandService['getCommands']();
+        const { recent, other } = this.quickCommandService.getCommands();
         return [...recent, ...other].map(command => {
             const formattedItem = this.quickCommandService.toItem(command) as QuickPickItem;
             return {

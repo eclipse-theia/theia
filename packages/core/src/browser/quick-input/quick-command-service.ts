@@ -182,7 +182,7 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
      *
      * @returns the list of recently used commands and other commands.
      */
-    protected getCommands(): { recent: Command[], other: Command[] } {
+    getCommands(): { recent: Command[], other: Command[] } {
 
         // Get the list of recent commands.
         const recentCommands = this.commandRegistry.recent;

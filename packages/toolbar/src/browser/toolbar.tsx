@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { Anchor, ContextMenuAccess, KeybindingRegistry, PreferenceService, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { LabelIcon } from '@theia/core/lib/browser/label-parser';
-import { TabBarToolbar, TabBarToolbarFactory, TabBarToolbarItem, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbar, TabBarToolbarFactory, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { MenuPath, ProgressService } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -37,7 +37,6 @@ export const TOOLBAR_PROGRESSBAR_ID = 'main-toolbar-progress';
 @injectable()
 export class ToolbarImpl extends TabBarToolbar {
     @inject(TabBarToolbarFactory) protected readonly tabbarToolbarFactory: TabBarToolbarFactory;
-    @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
     @inject(ToolbarController) protected readonly model: ToolbarController;
@@ -59,6 +58,10 @@ export class ToolbarImpl extends TabBarToolbar {
         this.updateInlineItems();
         this.update();
         this.model.onToolbarModelDidUpdate(() => {
+            this.updateInlineItems();
+            this.update();
+        });
+        this.toolbarRegistry.onDidChange(() => {
             this.updateInlineItems();
             this.update();
         });
