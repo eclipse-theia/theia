@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Range, SerializedDocumentFilter, WorkspaceSymbolParams } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
+import { CodeActionProviderDocumentation, Range, SerializedDocumentFilter, WorkspaceSymbolParams } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { PluginMetricsResolver } from './plugin-metrics-resolver';
 import { LanguagesMainImpl } from '@theia/plugin-ext/lib/main/browser/languages-main';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -303,9 +303,10 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
         super.$registerDocumentColorProvider(handle, pluginInfo, selector);
     }
 
-    override $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
+    override $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[],
+        documentation?: CodeActionProviderDocumentation): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
-        super.$registerQuickFixProvider(handle, pluginInfo, selector);
+        super.$registerQuickFixProvider(handle, pluginInfo, selector, codeActionKinds, documentation);
     }
 
     override $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveLocation: boolean): void {

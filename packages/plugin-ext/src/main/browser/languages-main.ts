@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -710,7 +710,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[]): void {
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
+        documentation?: CodeActionProviderDocumentation): void {
+
         const languageSelector = this.toLanguageSelector(selector);
         const quickFixProvider = {
             provideCodeActions: (model: monaco.editor.ITextModel, range: monaco.Range,
@@ -720,7 +722,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             },
             resolveCodeAction: (codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> =>
                 this.resolveCodeAction(handle, codeAction, token),
-            providedCodeActionKinds
+            providedCodeActionKinds,
+            documentation
         };
         this.register(handle, monaco.modes.CodeActionProviderRegistry.register(languageSelector, quickFixProvider));
     }
@@ -1022,6 +1025,7 @@ function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {
     return {
         ...action,
         diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        disabled: action.disabled?.reason,
         edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
     };
 }

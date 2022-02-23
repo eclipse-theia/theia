@@ -344,11 +344,15 @@ export interface CodeAction {
     edit?: WorkspaceEdit;
     diagnostics?: MarkerData[];
     kind?: string;
+    disabled?: { reason: string };
+    isPreferred?: boolean;
 }
 
 export interface CodeActionContext {
     only?: string;
 }
+
+export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, kind: string }>;
 
 export interface CodeActionProvider {
     provideCodeActions(

@@ -35,6 +35,7 @@ import { PluginModel } from '../common/plugin-protocol';
 import { Disposable, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import {
+    CodeActionProviderDocumentation,
     CompletionContext,
     CompletionResultDto,
     Completion,
@@ -91,6 +92,7 @@ import { CallHierarchyAdapter } from './languages/call-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 import { isReadonlyArray } from '../common/arrays';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -179,10 +181,11 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.callId++;
     }
 
-    private createDisposable(callId: number): theia.Disposable {
+    private createDisposable(callId: number, onDispose?: () => void): theia.Disposable {
         return new Disposable(() => {
             this.adaptersMap.delete(callId);
             this.proxy.$unregister(callId);
+            onDispose?.();
         });
     }
 
@@ -446,13 +449,26 @@ export class LanguagesExtImpl implements LanguagesExt {
         metadata?: theia.CodeActionProviderMetadata
     ): theia.Disposable {
         const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : '', this.commands));
+
+        let documentation: CodeActionProviderDocumentation | undefined;
+        let disposables: DisposableCollection | undefined;
+        if (metadata && metadata.documentation) {
+            disposables = new DisposableCollection();
+            documentation = metadata.documentation.map(doc => ({
+                kind: doc.kind.value,
+                command: this.commands.converter.toSafeCommand(doc.command, disposables!)
+            }));
+        }
+
         this.proxy.$registerQuickFixProvider(
             callId,
             pluginInfo,
             this.transformDocumentSelector(selector),
-            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value!) : undefined
+            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value) : undefined,
+            documentation
         );
-        return this.createDisposable(callId);
+
+        return this.createDisposable(callId, disposables?.dispose);
     }
 
     $provideCodeActions(handle: number,

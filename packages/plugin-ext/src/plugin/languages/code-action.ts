@@ -104,7 +104,9 @@ export class CodeActionAdapter {
                     command: this.commands.converter.toSafeCommand(candidate.command, toDispose),
                     diagnostics: candidate.diagnostics && candidate.diagnostics.map(Converter.convertDiagnosticToMarkerData),
                     edit: candidate.edit && Converter.fromWorkspaceEdit(candidate.edit),
-                    kind: candidate.kind && candidate.kind.value
+                    kind: candidate.kind && candidate.kind.value,
+                    disabled: candidate.disabled,
+                    isPreferred: candidate.isPreferred
                 });
             }
         }
