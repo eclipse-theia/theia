@@ -24,6 +24,7 @@ import {
     PreferenceChangeEvent,
     PreferenceSchemaProperties
 } from '@theia/core/lib/browser/preferences';
+import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { isWindows, isOSX, OS } from '@theia/core/lib/common/os';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -81,7 +82,7 @@ const codeEditorPreferenceProperties = {
         'markdownDescription': nls.localizeByDefault('The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.')
     },
     'editor.defaultFormatter': {
-        'type': 'string',
+        'type': ['string', 'null'],
         'default': null,
         'description': 'Default formatter.'
     },
@@ -320,7 +321,7 @@ const codeEditorPreferenceProperties = {
     'editor.codeLensFontFamily': {
         'description': nls.localizeByDefault('Controls the font family for CodeLens.'),
         'type': 'string',
-        'default': true
+        'default': ''
     },
     'editor.codeLensFontSize': {
         'type': 'integer',
@@ -1588,9 +1589,8 @@ export function createEditorPreferences(preferences: PreferenceService, schema: 
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(EditorPreferenceContribution);
-        return createEditorPreferences(preferences, contribution.schema);
+        const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);
+        return factory(editorPreferenceSchema, { validated: true });
     }).inSingletonScope();
     bind(EditorPreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
     bind(PreferenceContribution).toService(EditorPreferenceContribution);

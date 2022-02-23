@@ -276,14 +276,7 @@ export interface PluginPackageLanguageContributionConfiguration {
 export interface PluginTaskDefinitionContribution {
     type: string;
     required: string[];
-    properties?: {
-        [name: string]: {
-            type: string;
-            description?: string;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [additionalProperty: string]: any;
-        }
-    }
+    properties?: IJSONSchema['properties'];
 }
 
 export interface PluginProblemMatcherContribution extends ProblemMatcherContribution {

@@ -33,6 +33,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskServer } from '../common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
@@ -156,11 +157,11 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
         customizedDetectedTasks.length = 0;
         const definitions = this.taskDefinitionRegistry.getAll();
         definitions.forEach(def => {
-            const customizedDetectedTask = {
+            const customizedDetectedTask: IJSONSchema = {
                 type: 'object',
                 required: ['type'],
                 properties: {}
-            } as IJSONSchema;
+            };
             const taskType = {
                 ...defaultTaskType,
                 enum: [def.taskType],
@@ -187,7 +188,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
     }
 
     /** Returns the task's JSON schema */
-    getTaskSchema(): IJSONSchema {
+    getTaskSchema(): IJSONSchema & { default: JSONObject } {
         return {
             type: 'object',
             default: { version: '2.0.0', tasks: [] },
@@ -274,23 +275,23 @@ const commandOptionsSchema: IJSONSchema = {
 const problemMatcherNames: string[] = [];
 const defaultTaskTypes = ['shell', 'process'];
 const supportedTaskTypes = [...defaultTaskTypes];
-const taskLabel = {
+const taskLabel: IJSONSchema = {
     type: 'string',
     description: 'A unique string that identifies the task that is also used as task\'s user interface label'
 };
-const defaultTaskType = {
+const defaultTaskType: IJSONSchema = {
     type: 'string',
     enum: supportedTaskTypes,
     default: defaultTaskTypes[0],
     description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
-};
+} as const;
 const commandAndArgs = {
     command: commandSchema,
     args: commandArgSchema,
     options: commandOptionsSchema
 };
 
-const group = {
+const group: IJSONSchema = {
     oneOf: [
         {
             type: 'string'
@@ -527,7 +528,7 @@ const problemMatcherObject: IJSONSchema = {
     }
 };
 
-const problemMatcher = {
+const problemMatcher: IJSONSchema = {
     anyOf: [
         {
             type: 'string',

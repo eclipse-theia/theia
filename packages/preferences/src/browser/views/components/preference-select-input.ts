@@ -41,7 +41,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         parent.appendChild(interactable);
     }
 
-    protected getFallbackValue(): string {
+    protected getFallbackValue(): JSONValue {
         return this.preferenceNode.preference.data.enum![0];
     }
 
