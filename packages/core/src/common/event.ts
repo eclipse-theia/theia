@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable } from './disposable';
+import { Disposable, DisposableGroup } from './disposable';
 import { MaybePromise } from './types';
 
 /**
@@ -31,7 +31,7 @@ export interface Event<T> {
      * @param disposables An array to which a {{IDisposable}} will be added.
      * @return a disposable to remove the listener again.
      */
-    (listener: (e: T) => any, thisArgs?: any, disposables?: { push(disposable: Disposable): void }): Disposable;
+    (listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup): Disposable;
 }
 
 export namespace Event {
@@ -179,7 +179,7 @@ export class Emitter<T = any> {
      */
     get event(): Event<T> {
         if (!this._event) {
-            this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]) => {
+            this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup) => {
                 if (!this._callbacks) {
                     this._callbacks = new CallbackList();
                 }
@@ -204,8 +204,10 @@ export class Emitter<T = any> {
                         }
                     }
                 };
-                if (Array.isArray(disposables)) {
+                if (DisposableGroup.canPush(disposables)) {
                     disposables.push(result);
+                } else if (DisposableGroup.canAdd(disposables)) {
+                    disposables.add(result);
                 }
 
                 return result;

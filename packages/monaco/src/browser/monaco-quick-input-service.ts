@@ -204,8 +204,8 @@ export class MonacoQuickInputService implements QuickInputService {
         return this.monacoService.backButton;
     }
 
-    get onShow(): Event<void> { return this.monacoService.onShow as Event<void>; }
-    get onHide(): Event<void> { return this.monacoService.onHide as Event<void>; }
+    get onShow(): Event<void> { return this.monacoService.onShow; }
+    get onHide(): Event<void> { return this.monacoService.onHide; }
 
     open(filter: string): void {
         this.monacoService.open(filter);
@@ -343,8 +343,8 @@ class MonacoQuickInput {
     constructor(protected readonly wrapped: IQuickInput) {
     }
 
-    get onDidHide(): Event<{ reason: QuickInputHideReason }> { return this.wrapped.onDidHide as Event<{ reason: QuickInputHideReason }>; }
-    get onDispose(): Event<void> { return this.wrapped.onDispose as Event<void>; }
+    get onDidHide(): Event<{ reason: QuickInputHideReason }> { return this.wrapped.onDidHide; }
+    get onDispose(): Event<void> { return this.wrapped.onDispose; }
 
     get title(): string | undefined {
         return this.wrapped.title;
@@ -488,19 +488,19 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
         return this.wrapped.selectedItems.map(item => item.item);
     }
 
-    readonly onDidAccept: Event<void> = this.wrapped.onDidAccept as unknown as Event<void>;
-    readonly onDidChangeValue: Event<string> = this.wrapped.onDidChangeValue as Event<string>;
-    readonly onDidTriggerButton: Event<QuickInputButton> = this.wrapped.onDidTriggerButton as Event<QuickInputButton>;
+    readonly onDidAccept: Event<{ inBackground: boolean }> = this.wrapped.onDidAccept;
+    readonly onDidChangeValue: Event<string> = this.wrapped.onDidChangeValue;
+    readonly onDidTriggerButton: Event<QuickInputButton> = this.wrapped.onDidTriggerButton;
     readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>> =
-        Event.map(this.wrapped.onDidTriggerItemButton as Event<IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>>, (evt: IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>) => ({
+        Event.map(this.wrapped.onDidTriggerItemButton, (evt: IQuickPickItemButtonEvent<MonacoQuickPickItem<T>>) => ({
             item: evt.item.item,
             button: evt.button
         }));
     readonly onDidChangeActive: Event<T[]> = Event.map(
-        this.wrapped.onDidChangeActive as Event<MonacoQuickPickItem<T>[]>,
+        this.wrapped.onDidChangeActive,
         (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
     readonly onDidChangeSelection: Event<T[]> = Event.map(
-        this.wrapped.onDidChangeSelection as Event<MonacoQuickPickItem<T>[]>, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
+        this.wrapped.onDidChangeSelection, (items: MonacoQuickPickItem<T>[]) => items.map(item => item.item));
 }
 
 export class MonacoQuickPickItem<T extends QuickPickItem> implements IQuickPickItem {
