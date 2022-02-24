@@ -5,8 +5,11 @@
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
     "@theia/core": "1.22.1",
+    "@theia/file-search": "1.22.1",
     "@theia/filesystem": "1.22.1",
     "@theia/output": "1.22.1",
+    "@theia/search-in-workspace": "1.22.1",
+    "@theia/toolbar": "1.22.1",
     "@theia/vsx-registry": "1.22.1",
     "@theia/workspace": "1.22.1"
   },

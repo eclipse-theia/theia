@@ -13,10 +13,19 @@
       "path": "../../packages/core"
     },
     {
+      "path": "../../packages/file-search"
+    },
+    {
       "path": "../../packages/filesystem"
     },
     {
       "path": "../../packages/output"
+    },
+    {
+      "path": "../../packages/search-in-workspace"
+    },
+    {
+      "path": "../../packages/toolbar"
     },
     {
       "path": "../../packages/vsx-registry"
