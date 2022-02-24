@@ -1761,6 +1761,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'focusBorder'
                 }, description: "The color of the row's top and bottom border when the row is focused."
             },
+            // Toolbar Action colors should be aligned with https://code.visualstudio.com/api/references/theme-color#action-colors
+            {
+                id: 'toolbar.hoverBackground', defaults: {
+                    dark: '#5a5d5e50', light: '#b8b8b850', hc: undefined
+                }, description: 'Toolbar background when hovering over actions using the mouse.'
+            },
 
             // Theia Variable colors
             {
@@ -2042,7 +2048,23 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'editorWidget.background',
                 },
                 description: 'Background color of breadcrumb item picker'
-            }
+            },
+            {
+                id: 'mainToolbar.background',
+                defaults: {
+                    dark: Color.lighten('activityBar.background', 0.1),
+                    light: Color.darken('activityBar.background', 0.1),
+                    hc: Color.lighten('activityBar.background', 0.1),
+                },
+                description: 'Background color of shell\'s global toolbar'
+            },
+            {
+                id: 'mainToolbar.foreground', defaults: {
+                    dark: Color.darken('activityBar.foreground', 0.1),
+                    light: Color.lighten('activityBar.foreground', 0.1),
+                    hc: Color.lighten('activityBar.foreground', 0.1),
+                }, description: 'Foreground color of active toolbar item',
+            },
         );
     }
 }

@@ -188,7 +188,7 @@ blockquote {
 }
 
 .action-item:hover {
-    background-color: rgba(50%, 50%, 50%, 0.2);
+    background-color: var(--theia-toolbar-hoverBackground);
 }
 
 button.theia-button, .theia-button {
