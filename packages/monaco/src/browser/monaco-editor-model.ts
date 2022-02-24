@@ -322,7 +322,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      * @returns the list of matches.
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
-        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? generatedEditorPreferenceProperties['editor.wordSeparators'].default;
+        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? generatedEditorPreferenceProperties['editor.wordSeparators'].default as string;
         const results: Monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,

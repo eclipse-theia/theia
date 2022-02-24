@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JSONPrimitive, JSONValue } from '@phosphor/coreutils';
+import { JSONValue } from '@phosphor/coreutils';
 
 export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
 
@@ -65,7 +65,7 @@ export interface IJSONSchema {
     allOf?: IJSONSchema[];
     oneOf?: IJSONSchema[];
     not?: IJSONSchema;
-    enum?: JSONPrimitive[];
+    enum?: JSONValue[];
     format?: string;
 
     // schema draft 06

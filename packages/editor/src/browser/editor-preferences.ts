@@ -59,7 +59,7 @@ const codeActionsContributionSchema: PreferenceSchema['properties'] = {
 };
 
 interface CodeActionsContributionProperties {
-    'editor.codeActionsOnSave': string[] | ({ 'source.fixAll': boolean } & { [Key: string]: boolean | undefined })
+    'editor.codeActionsOnSave': string[] | ({ 'source.fixAll': boolean } & Record<string, boolean>)
 }
 
 // #endregion
@@ -199,6 +199,13 @@ export const EditorPreferenceContribution = Symbol('EditorPreferenceContribution
 export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
+/**
+ * @deprecated @since 1.23.0
+ *
+ * By default, editor preferences now use a validated preference proxy created by the PreferenceProxyFactory binding.
+ * This function will create an unvalidated preference proxy.
+ * See {@link bindEditorPreferences}
+ */
 export function createEditorPreferences(preferences: PreferenceService, schema: PreferenceSchema = editorPreferenceSchema): EditorPreferences {
     return createPreferenceProxy(preferences, schema);
 }

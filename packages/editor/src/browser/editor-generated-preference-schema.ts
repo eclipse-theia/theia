@@ -16,6 +16,7 @@
 
 import { isOSX, isWindows, nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser';
+import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
 /* eslint-disable @typescript-eslint/quotes,max-len,@theia/localization-check,no-null/no-null */
 
@@ -2305,7 +2306,7 @@ export interface GeneratedEditorPreferences {
     'editor.suggest.preview': boolean;
     'editor.suggest.showInlineDetails': boolean;
     'editor.suggest.maxVisibleSuggestions': number;
-    'editor.suggest.filteredTypes': object;
+    'editor.suggest.filteredTypes': JSONObject;
     'editor.suggest.showMethods': boolean;
     'editor.suggest.showFunctions': boolean;
     'editor.suggest.showConstructors': boolean;
