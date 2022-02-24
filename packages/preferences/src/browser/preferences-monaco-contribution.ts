@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 Monaco.languages.register({
     id: 'jsonc',

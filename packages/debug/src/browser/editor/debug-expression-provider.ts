@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462

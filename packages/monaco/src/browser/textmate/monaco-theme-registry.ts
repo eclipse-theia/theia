@@ -19,11 +19,11 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
-import * as Monaco from 'monaco-editor-core';
-import { IStandaloneTheme, IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { StandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
-import { Color } from 'monaco-editor-core/esm/vs/base/common/color';
+import * as Monaco from '@theia/monaco-editor-core';
+import { IStandaloneTheme, IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
+import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 
 export interface ThemeMix extends IRawTheme, Monaco.editor.IStandaloneThemeData { }
 export interface MixStandaloneTheme extends IStandaloneTheme {

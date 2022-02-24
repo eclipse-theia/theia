@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ResourceFileEdit, ResourceTextEdit } from '@theia/monaco/lib/browser/monaco-workspace';
 import {
     ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit, ResourceTextEdit as MonacoResourceTextEdit
-} from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 @injectable()
 export class BulkEditTree extends TreeImpl {

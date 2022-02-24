@@ -71,7 +71,7 @@ export abstract class AbstractGenerator {
     }
 
     protected ifMonaco(value: () => string, defaultValue: () => string = () => ''): string {
-        return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue)();
+        return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco' || e.name === '@theia/monaco-editor-core') ? value : defaultValue)();
     }
 
     protected prettyStringify(object: object): string {

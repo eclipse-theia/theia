@@ -17,17 +17,17 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
-import * as Monaco from 'monaco-editor-core';
-import { setSnippetSuggestSupport } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
-import { CompletionItemProvider } from 'monaco-editor-core/esm/vs/editor/common/languages';
+import * as Monaco from '@theia/monaco-editor-core';
+import { setSnippetSuggestSupport } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
+import { CompletionItemProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
-import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { ITextModelService } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { IContextMenuService } from 'monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { MonacoContextMenuService } from './monaco-context-menu';
 
 @injectable()

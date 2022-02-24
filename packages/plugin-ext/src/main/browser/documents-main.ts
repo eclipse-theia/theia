@@ -31,7 +31,7 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

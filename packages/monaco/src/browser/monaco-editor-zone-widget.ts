@@ -20,7 +20,7 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 export interface MonacoEditorViewZone extends Monaco.editor.IViewZone {
     id: string;

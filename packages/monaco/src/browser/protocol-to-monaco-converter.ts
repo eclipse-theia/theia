@@ -17,7 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { Position, Range, Location, TextEdit, Diagnostic, DiagnosticRelatedInformation } from '@theia/core/shared/vscode-languageserver-protocol';
 import { RecursivePartial } from '@theia/core/lib/common/types';
-import { Range as MonacoRange, IRange, Position as MonacoPosition, languages, IPosition, MarkerSeverity, editor, Uri } from 'monaco-editor-core';
+import { Range as MonacoRange, IRange, Position as MonacoPosition, languages, IPosition, MarkerSeverity, editor, Uri } from '@theia/monaco-editor-core';
 
 @injectable()
 export class ProtocolToMonacoConverter {

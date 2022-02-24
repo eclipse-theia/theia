@@ -21,13 +21,13 @@ import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } 
 import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { MonacoEditorModel } from './monaco-editor-model';
-import { IResourceEditorInput } from 'monaco-editor-core/esm/vs/platform/editor/common/editor';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IStandaloneThemeService } from 'monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import { StandaloneCodeEditorService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
-import { IContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { StandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { ICodeEditor } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { IResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 
 decorate(injectable(), StandaloneCodeEditorService);
 

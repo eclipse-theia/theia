@@ -2152,6 +2152,11 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
+"@theia/monaco-editor-core@alpha":
+  version "0.31.2-alpha0"
+  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-0.31.2-alpha0.tgz#ffc64a0bdaf3ea085ee77f3fab8a95732dbe44a0"
+  integrity sha512-YErC7h9KaXtO8RKYZtfJKv7dMWlxYpM2beQtwTH1aH9ncYfUXzaU8o4ClGItVOBxLujkh6viSSsKWu9puw1rdw==
+
 "@tootallnate/once@1":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
@@ -7979,9 +7984,6 @@ moment@2.24.0:
   version "2.24.0"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
   integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
-
-"monaco-editor-core@file:../vscode/out-monaco-editor-core":
-  version "0.0.0"
 
 mount-point@^3.0.0:
   version "3.0.0"

@@ -25,12 +25,12 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { nls } from '@theia/core/lib/common/nls';
-import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { EditorExtensionsRegistry } from 'monaco-editor-core/esm/vs/editor/browser/editorExtensions';
-import { CommandsRegistry, ICommandService } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { Uri } from 'monaco-editor-core';
-import { EndOfLineSequence } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
+import { CommandsRegistry, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { Uri } from '@theia/monaco-editor-core';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export namespace MonacoCommands {
 

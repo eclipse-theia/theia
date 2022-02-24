@@ -23,11 +23,11 @@ import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/ou
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditor } from './monaco-editor';
 import debounce = require('@theia/core/shared/lodash.debounce');
-import * as Monaco from 'monaco-editor-core';
-import { ILanguageFeaturesService } from 'monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ITextModel } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { DocumentSymbol } from 'monaco-editor-core/esm/vs/editor/common/languages';
+import * as Monaco from '@theia/monaco-editor-core';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { DocumentSymbol } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {

@@ -39,7 +39,7 @@ describe('TypeScript', function () {
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
-    const { Range } = require('monaco-editor-core');
+    const { Range } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);

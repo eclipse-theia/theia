@@ -16,11 +16,11 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
-import { ICodeEditor } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ICodeEditorService } from 'monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { StandaloneGotoLineQuickAccessProvider } from 'monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess';
-import { IQuickAccessRegistry, Extensions } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
-import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { StandaloneGotoLineQuickAccessProvider } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess';
+import { IQuickAccessRegistry, Extensions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
 
 export class GotoLineQuickAccess extends StandaloneGotoLineQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

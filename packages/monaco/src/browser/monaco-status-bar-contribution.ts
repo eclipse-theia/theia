@@ -19,7 +19,7 @@ import { DisposableCollection, nls } from '@theia/core';
 import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class MonacoStatusBarContribution implements FrontendApplicationContribution {

@@ -17,7 +17,7 @@
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 export class MonacoDiagnosticCollection implements Disposable {
 

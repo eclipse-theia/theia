@@ -21,7 +21,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
 import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 let index = 0;
 

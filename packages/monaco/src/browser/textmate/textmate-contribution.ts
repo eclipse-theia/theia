@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { TextmateRegistry } from './textmate-registry';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 /**
  * Callback for extensions to contribute language grammar definitions

@@ -19,7 +19,7 @@ import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@t
 import { EditorMainMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { nls } from '@theia/core/lib/common/nls';
-import { isIMenuItem, MenuId, MenuRegistry } from 'monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { isIMenuItem, MenuId, MenuRegistry } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
 
 export interface MonacoActionGroup {
     id: string;

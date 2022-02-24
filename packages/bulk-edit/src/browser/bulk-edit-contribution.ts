@@ -24,7 +24,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, BULK_EDIT_WIDGET_NAME } from './bulk-edit-tree';
 import { QuickViewService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { ResourceEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 @injectable()
 export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeWidget> implements TabBarToolbarContribution {

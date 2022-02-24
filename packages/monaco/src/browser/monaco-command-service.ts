@@ -18,9 +18,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ICommandEvent, ICommandService } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { StandaloneCommandService } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IEvent } from 'monaco-editor-core';
+import { ICommandEvent, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneCommandService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IEvent } from '@theia/monaco-editor-core';
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {

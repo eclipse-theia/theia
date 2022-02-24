@@ -93,7 +93,7 @@ module.exports = {
     devtool: 'source-map',
     entry: {
         bundle: path.resolve(__dirname, 'src-gen/frontend/index.js'),
-        ${this.ifMonaco(() => "'editor.worker': 'monaco-editor-core/esm/vs/editor/editor.worker.js'")}
+        ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/editor.worker.js'")}
     },
     output: {
         filename: '[name].js',

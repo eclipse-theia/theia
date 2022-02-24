@@ -17,7 +17,6 @@
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
-import './style/monaco-style-imports';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import {
@@ -67,10 +66,10 @@ import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access'
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
-import { ContextKeyService as VSCodeContextKeyService } from 'monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from 'monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { StandaloneConfigurationService, StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { Configuration } from 'monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 
 decorate(injectable(), VSCodeContextKeyService);
 

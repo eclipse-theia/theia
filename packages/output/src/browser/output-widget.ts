@@ -28,7 +28,7 @@ import { OutputUri } from '../common/output-uri';
 import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class OutputWidget extends BaseWidget implements StatefulWidget {

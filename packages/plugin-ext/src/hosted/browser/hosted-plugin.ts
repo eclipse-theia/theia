@@ -62,9 +62,9 @@ import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
-import { LanguageService } from 'monaco-editor-core/esm/vs/editor/common/services/languageService';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 export type PluginHost = 'frontend' | string;

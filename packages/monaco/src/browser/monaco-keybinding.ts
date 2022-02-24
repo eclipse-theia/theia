@@ -20,7 +20,7 @@ import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { environment } from '@theia/core';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
-import { KeybindingsRegistry } from 'monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
+import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
 
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {

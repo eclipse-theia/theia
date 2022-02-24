@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { INITIAL, StackElement, IGrammar } from 'vscode-textmate';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 export class TokenizerState implements Monaco.languages.IState {
 

@@ -21,7 +21,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { visit } from 'jsonc-parser';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 import URI from '@theia/core/lib/common/uri';
 
 Monaco.languages.register({

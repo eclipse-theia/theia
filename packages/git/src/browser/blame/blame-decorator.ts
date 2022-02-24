@@ -21,8 +21,8 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
-import * as Monaco from 'monaco-editor-core';
-import { LanguageSelector } from 'monaco-editor-core/esm/vs/editor/common/languageSelector';
+import * as Monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 
 @injectable()
 export class BlameDecorator implements Monaco.languages.HoverProvider {

@@ -40,9 +40,9 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { getIconUris } from '../../plugin/quick-open';
-import * as Monaco from 'monaco-editor-core';
-import { IQuickPickItem, IQuickInput } from 'monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
-import { ThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService'
+import * as Monaco from '@theia/monaco-editor-core';
+import { IQuickPickItem, IQuickInput } from '@theia/monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 export interface QuickInputSession {
     input: IQuickInput;

@@ -25,8 +25,8 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { OutputUri } from '../common/output-uri';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
-import { IReference } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
-import * as Monaco from 'monaco-editor-core';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import * as Monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class OutputChannelManager implements Disposable, ResourceResolver {

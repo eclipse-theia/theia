@@ -20,7 +20,7 @@ import { LabelProviderContribution, LabelProvider, URIIconReference } from '@the
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { TreeViewNode } from './tree-view-widget';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
-import { ThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class PluginTreeViewNodeLabelProvider implements LabelProviderContribution {

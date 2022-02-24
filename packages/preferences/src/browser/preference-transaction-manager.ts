@@ -24,7 +24,7 @@ import { Mutex, MutexInterface } from 'async-mutex';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoJSONCEditor } from './monaco-jsonc-editor';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { IReference } from 'monaco-editor-core/esm/vs/base/common/lifecycle';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 
 export interface OnWillConcludeEvent<T> extends WaitUntilEvent {
     status: T | false;

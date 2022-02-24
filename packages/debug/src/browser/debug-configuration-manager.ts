@@ -37,9 +37,9 @@ import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import * as Monaco from 'monaco-editor-core';
-import { ICommandService } from 'monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import * as Monaco from '@theia/monaco-editor-core';
+import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }

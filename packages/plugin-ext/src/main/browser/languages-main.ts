@@ -57,13 +57,13 @@ import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
 import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
-import * as Monaco from 'monaco-editor-core';
-import { ExtensionIdentifier } from 'monaco-editor-core/esm/vs/platform/extensions/common/extensions';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IMarkerService } from 'monaco-editor-core/esm/vs/platform/markers/common/markers';
-import * as MonacoLanguageSelector from 'monaco-editor-core/esm/vs/editor/common/languageSelector';
-import * as MonacoPath from 'monaco-editor-core/esm/vs/base/common/path';
-import { IRelativePattern } from 'monaco-editor-core/esm/vs/base/common/glob';
+import * as Monaco from '@theia/monaco-editor-core';
+import { ExtensionIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/extensions/common/extensions';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IMarkerService } from '@theia/monaco-editor-core/esm/vs/platform/markers/common/markers';
+import * as MonacoLanguageSelector from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
+import * as MonacoPath from '@theia/monaco-editor-core/esm/vs/base/common/path';
+import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/glob';
 
 interface RegistrationFunction<T> {
     (languageId: MonacoLanguageSelector.LanguageSelector, service: T): Disposable;

@@ -16,10 +16,10 @@
 
 import debounce = require('p-debounce');
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
-import * as Monaco from 'monaco-editor-core';
-import { IConfigurationService } from 'monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { StandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { IDecorationOptions } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
+import * as Monaco from '@theia/monaco-editor-core';
+import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';

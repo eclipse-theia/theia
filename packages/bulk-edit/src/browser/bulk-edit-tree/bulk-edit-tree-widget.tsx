@@ -28,7 +28,7 @@ import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
-import { ResourceEdit, ResourceFileEdit, ResourceTextEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceEdit, ResourceFileEdit, ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 export const BULK_EDIT_TREE_WIDGET_ID = 'bulkedit';
 export const BULK_EDIT_WIDGET_NAME = nls.localizeByDefault('Refactor Preview');

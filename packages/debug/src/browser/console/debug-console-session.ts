@@ -24,8 +24,8 @@ import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DebugSessionManager } from '../debug-session-manager';
-import * as Monaco from 'monaco-editor-core';
-import { LanguageSelector } from 'monaco-editor-core/esm/vs/editor/common/languageSelector';
+import * as Monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import { Disposable } from '@theia/core';
 
 export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');

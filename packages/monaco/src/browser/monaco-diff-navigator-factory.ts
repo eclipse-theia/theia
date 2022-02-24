@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 // TODO: Bring back the `hasNext` and `hasPrevious` methods: they were a neat feature in the SCM tree.
 @injectable()

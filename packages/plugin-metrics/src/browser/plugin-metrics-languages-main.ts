@@ -22,7 +22,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import * as vst from '@theia/core/shared/vscode-languageserver-protocol';
 import { PluginInfo } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class LanguagesMainPluginMetrics extends LanguagesMainImpl {

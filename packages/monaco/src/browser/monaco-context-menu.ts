@@ -20,10 +20,10 @@ import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer, toAnchor } from '@theia/core/lib/browser';
 import { Menu } from '@theia/core/shared/@phosphor/widgets';
 import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
-import { IContextMenuService } from 'monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
-import { IContextMenuDelegate } from 'monaco-editor-core/esm/vs/base/browser/contextmenu';
-import { MenuItemAction } from 'monaco-editor-core/esm/vs/platform/actions/common/actions';
-import { Event, Emitter } from 'monaco-editor-core/esm/vs/base/common/event';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { IContextMenuDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/contextmenu';
+import { MenuItemAction } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { Event, Emitter } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {

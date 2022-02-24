@@ -21,7 +21,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoQuickPickItem } from './monaco-quick-input-service';
 import {
     IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks, Pick, IPickerQuickAccessItem
-} from 'monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
+} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/pickerQuickAccess';
 import {
     Extensions,
     IQuickAccessProvider,
@@ -29,9 +29,9 @@ import {
     IQuickAccessProviderHelp,
     IQuickAccessRegistry,
     QuickAccessRegistry as VSCodeQuickAccessRegistry,
-} from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
-import { IQuickPickItem, IQuickPickItemWithResource } from 'monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
-import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
+} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { IQuickPickItem, IQuickPickItemWithResource } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
 
 interface IAnythingQuickPickItem extends IPickerQuickAccessItem, IQuickPickItemWithResource { }
 

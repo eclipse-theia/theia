@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, editor, Position } from 'monaco-editor-core';
-import * as Monaco from 'monaco-editor-core';
-import { SnippetParser } from 'monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import { CancellationToken, editor, Position } from '@theia/monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 
 /**
  * @deprecated use MonacoSnippetSuggestProvider instead

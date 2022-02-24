@@ -8,6 +8,7 @@
     "@theia/filesystem": "1.22.1",
     "@theia/markers": "1.22.1",
     "@theia/monaco": "1.22.1",
+    "@theia/monaco-editor-core": "alpha",
     "@theia/process": "1.22.1",
     "@theia/terminal": "1.22.1",
     "@theia/userstorage": "1.22.1",

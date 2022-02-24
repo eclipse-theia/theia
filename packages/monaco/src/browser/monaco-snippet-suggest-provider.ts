@@ -24,8 +24,8 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
-import * as Monaco from 'monaco-editor-core';
-import { SnippetParser } from 'monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+import * as Monaco from '@theia/monaco-editor-core';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements Monaco.languages.CompletionItemProvider {

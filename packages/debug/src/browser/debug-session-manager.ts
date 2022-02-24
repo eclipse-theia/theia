@@ -37,7 +37,7 @@ import { DebugThread } from './model/debug-thread';
 import { TaskIdentifier } from '@theia/task/lib/common';
 import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }

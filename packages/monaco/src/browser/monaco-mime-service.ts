@@ -17,11 +17,11 @@
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
-import * as Monaco from 'monaco-editor-core';
-import { clearLanguageAssociations, registerLanguageAssociation } from 'monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
-import { LanguageService } from 'monaco-editor-core/esm/vs/editor/common/services/languageService';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import * as Monaco from '@theia/monaco-editor-core';
+import { clearLanguageAssociations, registerLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 @injectable()
 export class MonacoMimeService extends MimeService {

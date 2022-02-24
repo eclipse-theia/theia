@@ -21,11 +21,11 @@
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as Monaco from 'monaco-editor-core';
-import { IDecorationOptions } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { ITextModel } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { StandardTokenType } from 'monaco-editor-core/esm/vs/editor/common/languages';
-import { DEFAULT_WORD_REGEXP } from 'monaco-editor-core/esm/vs/editor/common/core/wordHelper'
+import * as Monaco from '@theia/monaco-editor-core';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { StandardTokenType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { DEFAULT_WORD_REGEXP } from '@theia/monaco-editor-core/esm/vs/editor/common/core/wordHelper';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { ExpressionContainer, DebugVariable } from '../console/debug-console-items';

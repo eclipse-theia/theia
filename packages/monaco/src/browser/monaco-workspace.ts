@@ -29,14 +29,14 @@ import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
-import * as Monaco from 'monaco-editor-core';
+import * as Monaco from '@theia/monaco-editor-core';
 import {
     IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
     ResourceTextEdit as MonacoResourceTextEdit
-} from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
-import { IEditorWorkerService } from 'monaco-editor-core/esm/vs/editor/common/services/editorWorker';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { EndOfLineSequence } from 'monaco-editor-core/esm/vs/editor/common/model';
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is Monaco.languages.WorkspaceFileEdit {

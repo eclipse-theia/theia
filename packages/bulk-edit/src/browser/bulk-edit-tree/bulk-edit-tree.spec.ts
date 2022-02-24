@@ -16,7 +16,7 @@
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
-import { ResourceTextEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 let disableJSDOM = enableJSDOM();
 

@@ -26,12 +26,12 @@ describe('Monaco API', async function () {
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
     const { CommandRegistry } = require('@theia/core/lib/common/command');
-    const { SimpleKeybinding } = require('monaco-editor-core/esm/vs/base/common/keybindings');
-    const { IKeybindingService } = require('monaco-editor-core/esm/vs/platform/keybinding/common/keybinding');
-    const { StandaloneServices } = require('monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
-    const { KeyCode } = require('monaco-editor-core/esm/vs/base/common/keyCodes');
-    const { TokenizationRegistry } = require('monaco-editor-core/esm/vs/editor/common/languages');
-    const { Uri } = require('monaco-editor-core');
+    const { SimpleKeybinding } = require('@theia/monaco-editor-core/esm/vs/base/common/keybindings');
+    const { IKeybindingService } = require('@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding');
+    const { StandaloneServices } = require('@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
+    const { KeyCode } = require('@theia/monaco-editor-core/esm/vs/base/common/keyCodes');
+    const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
+    const { Uri } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -154,7 +154,7 @@ describe('Monaco API', async function () {
             assert.fail('hoverContribution does not have OpenerService');
             return;
         }
-        /** @type {import('monaco-editor-core/esm/vs/editor/browser/services/openerService').OpenerService} */
+        /** @type {import('@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService').OpenerService} */
         const openerService = hoverContribution['_openerService'];
 
         let opened = false;

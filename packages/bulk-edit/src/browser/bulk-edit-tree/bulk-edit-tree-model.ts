@@ -17,7 +17,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { BulkEditNode, BulkEditTree } from './bulk-edit-tree';
 import { TreeModelImpl, OpenerService, open, TreeNode } from '@theia/core/lib/browser';
-import { ResourceEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 @injectable()
 export class BulkEditTreeModel extends TreeModelImpl {

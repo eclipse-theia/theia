@@ -16,7 +16,7 @@
 
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
-import { ResourceFileEdit, ResourceTextEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { ResourceFileEdit, ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 export interface BulkEditNodeSelection {
     bulkEdit: ResourceFileEdit | ResourceTextEdit;

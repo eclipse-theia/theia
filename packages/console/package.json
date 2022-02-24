@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.22.1",
     "@theia/monaco": "1.22.1",
+    "@theia/monaco-editor-core": "alpha",
     "anser": "^2.0.1"
   },
   "publishConfig": {

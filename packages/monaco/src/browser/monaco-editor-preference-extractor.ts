@@ -22,8 +22,8 @@
  * The only manual work required during a Monaco uplift is to run the command and then update any fields of the interface where the
  * schema type is `array` or `object`, since it is tricky to extract the type details for such fields automatically.
  */
-import { ConfigurationScope, Extensions, IConfigurationRegistry } from 'monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
-import { Registry } from 'monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
 import { CommandContribution, CommandRegistry, MessageService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

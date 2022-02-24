@@ -9,6 +9,7 @@
     "@theia/filesystem": "1.22.1",
     "@theia/markers": "1.22.1",
     "@theia/monaco": "1.22.1",
+    "@theia/monaco-editor-core": "alpha",
     "@theia/output": "1.22.1",
     "@theia/process": "1.22.1",
     "@theia/task": "1.22.1",

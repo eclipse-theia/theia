@@ -40,8 +40,8 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
-import * as Monaco from 'monaco-editor-core';
-import { ThemeIcon } from 'monaco-editor-core/esm/vs/platform/theme/common/themeService';
+import * as Monaco from '@theia/monaco-editor-core';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class PluginContributionHandler {

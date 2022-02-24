@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as Monaco from 'monaco-editor-core';
-import { StandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import * as Monaco from '@theia/monaco-editor-core';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {

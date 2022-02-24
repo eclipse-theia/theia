@@ -107,7 +107,7 @@ export class DisposableCollection implements Disposable {
 
 }
 
-export type DisposableGroup = { push(disposable: Disposable): void } | { add(disposable: Disposable): void }
+export type DisposableGroup = { push(disposable: Disposable): void } | { add(disposable: Disposable): void };
 export namespace DisposableGroup {
     export function canPush(candidate?: DisposableGroup): candidate is { push(disposable: Disposable): void } {
         return Boolean(candidate && (candidate as { push(): void }).push);

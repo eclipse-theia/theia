@@ -42,13 +42,13 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { TextEdit } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UTF8 } from '@theia/core/lib/common/encodings';
-import * as Monaco from 'monaco-editor-core';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
-import { IInstantiationService, ServiceIdentifier } from 'monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ICodeEditor } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ServiceCollection } from 'monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
-import { IStandaloneEditorConstructionOptions, StandaloneEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import * as Monaco from '@theia/monaco-editor-core';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { IStandaloneEditorConstructionOptions, StandaloneEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 export type ServicePair<T> = [ServiceIdentifier<T>, T];
 

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { editor } from 'monaco-editor-core';
+import { editor } from '@theia/monaco-editor-core';
 
 export type MonacoThemeColor = editor.IColors;
 export interface MonacoTokenRule extends editor.ITokenThemeRule { };

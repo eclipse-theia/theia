@@ -26,15 +26,15 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
-import * as Monaco from 'monaco-editor-core';
-import { LanguageSelector } from 'monaco-editor-core/esm/vs/editor/common/languageSelector';
-import { provideSuggestionItems, CompletionOptions } from 'monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
-import { IDecorationOptions } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { StandaloneCodeEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
-import { CompletionItemKind, CompletionContext } from 'monaco-editor-core/esm/vs/editor/common/languages';
-import { ILanguageFeaturesService } from 'monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { TextModel } from 'monaco-editor-core/esm/vs/editor/common/model/textModel';
+import * as Monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
+import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     position: Monaco.Position,

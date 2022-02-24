@@ -41,9 +41,9 @@ import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edi
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import * as Monaco from 'monaco-editor-core';
-import { ResourceEdit } from 'monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
-import { IDecorationRenderOptions } from 'monaco-editor-core/esm/vs/editor/common/editorCommon';
+import * as Monaco from '@theia/monaco-editor-core';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 

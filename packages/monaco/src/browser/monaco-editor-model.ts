@@ -24,13 +24,13 @@ import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
-import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from 'monaco-editor-core/esm/vs/editor/common/model';
-import { IResolvedTextEditorModel, ITextEditorModel } from 'monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import * as Monaco from 'monaco-editor-core';
-import { StandaloneServices } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from 'monaco-editor-core/esm/vs/editor/common/languages/language';
-import { IModelService } from 'monaco-editor-core/esm/vs/editor/common/services/model';
-import { createTextBufferFactoryFromStream } from 'monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { IResolvedTextEditorModel, ITextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import * as Monaco from '@theia/monaco-editor-core';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
+import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 import { generatedEditorPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export {

@@ -21,10 +21,10 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import * as Monaco from 'monaco-editor-core';
-import { IDiffEditorConstructionOptions } from 'monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { IDiffNavigatorOptions } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
-import { StandaloneDiffEditor } from 'monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import * as Monaco from '@theia/monaco-editor-core';
+import { IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { IDiffNavigatorOptions } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
+import { StandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions, IDiffNavigatorOptions {
