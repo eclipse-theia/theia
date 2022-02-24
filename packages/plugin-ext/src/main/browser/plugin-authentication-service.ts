@@ -22,7 +22,7 @@ import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 export function getAuthenticationProviderActivationEvent(id: string): string { return `onAuthenticationRequest:${id}`; }
 
 /**
- * Plugin authentiction service that aims to activate additional plugins if sessions are created or queried.
+ * Plugin authentication service that aims to activate additional plugins if sessions are created or queried.
  */
 export class PluginAuthenticationServiceImpl extends AuthenticationServiceImpl implements AuthenticationService {
     @inject(HostedPluginSupport) protected readonly pluginService: HostedPluginSupport;
