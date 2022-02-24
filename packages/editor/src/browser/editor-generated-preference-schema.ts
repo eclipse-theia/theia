@@ -715,7 +715,7 @@ export const generatedEditorPreferenceProperties: PreferenceSchema['properties']
     "editor.fontFamily": {
         "description": nls.localizeByDefault("Controls the font family."),
         "type": "string",
-        "default": isOSX ? 'Menlo, Monaco, \'Courier New\', monospace' : isWindows ? 'Consolas, \'Courier New\', monospace' : '\'Droid Sans Mono\', \'monospace\\, monospace',
+        "default": isOSX ? 'Menlo, Monaco, \'Courier New\', monospace' : isWindows ? 'Consolas, \'Courier New\', monospace' : '\'Droid Sans Mono\', \'monospace\', monospace',
         "scope": "language-overridable",
         "restricted": false
     },
