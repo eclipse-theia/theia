@@ -61,10 +61,6 @@ export class ToolbarImpl extends TabBarToolbar {
             this.updateInlineItems();
             this.update();
         });
-        this.toolbarRegistry.onDidChange(() => {
-            this.updateInlineItems();
-            this.update();
-        });
         this.model.onToolbarDidChangeBusyState(isBusy => {
             if (isBusy) {
                 this.isBusyDeferred = new Deferred<void>();
@@ -229,8 +225,7 @@ export class ToolbarImpl extends TabBarToolbar {
         let toolbarItemClassNames = '';
         let renderBody: React.ReactNode;
         if (TabBarToolbarItem.is(item)) {
-            const command = this.commands.getCommand(item.command);
-            toolbarItemClassNames = this.getToolbarItemClassNames(command?.id);
+            toolbarItemClassNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM, 'enabled'].join(' ');
             renderBody = this.renderItem(item);
         } else {
             const contribution = this.model.getContributionByID(item.id);

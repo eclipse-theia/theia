@@ -63,8 +63,8 @@
 }
 
 #main-toolbar .toolbar-item {
-    margin: 0;
-    padding: 0 var(--theia-toolbar-item-padding);
+    padding: 2px;
+    margin: 0 2px;
     box-sizing: border-box;
     position: relative;
     background: unset;

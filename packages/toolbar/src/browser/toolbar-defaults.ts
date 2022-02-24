@@ -38,7 +38,7 @@ export const ToolbarDefaults: () => DeflatedToolbarTree = () => ({
             [
                 {
                     id: 'workbench.action.splitEditorRight',
-                    command: 'workbench.action.splitEditor',
+                    command: 'workbench.action.splitEditorRight',
                     icon: 'codicon codicon-split-horizontal',
                 },
             ],

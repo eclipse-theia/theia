@@ -22,7 +22,7 @@ import { bindSampleOutputChannelWithSeverity } from './output/sample-output-chan
 import { bindSampleMenu } from './menu/sample-menu-contribution';
 import { bindSampleFileWatching } from './file-watching/sample-file-watching-contribution';
 import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
-import { bindSampleToolbarContribution } from './toolbar-contribution-example/easy-search-toolbar-item';
+import { bindSampleToolbarContribution } from './toolbar/sample-toolbar-contribution';
 
 import '../../src/browser/style/branding.css';
 

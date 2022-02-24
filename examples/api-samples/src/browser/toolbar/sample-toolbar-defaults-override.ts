@@ -14,11 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { nls } from '@theia/core';
 import { DeflatedToolbarTree, ToolbarAlignment } from '@theia/toolbar/lib/browser/toolbar-interfaces';
-import { EasySearchToolbarItem } from './easy-search-toolbar-item';
 
-export const ToolbarDefaultsOverride: () => DeflatedToolbarTree = () => ({
+export const SampleToolbarDefaultsOverride: () => DeflatedToolbarTree = () => ({
     items: {
         [ToolbarAlignment.LEFT]: [
             [
@@ -43,7 +41,7 @@ export const ToolbarDefaultsOverride: () => DeflatedToolbarTree = () => ({
         ],
         [ToolbarAlignment.CENTER]: [[
             {
-                id: EasySearchToolbarItem.ID,
+                id: 'theia-sample-toolbar-contribution',
                 group: 'contributed'
             }
         ]],
@@ -53,7 +51,7 @@ export const ToolbarDefaultsOverride: () => DeflatedToolbarTree = () => ({
                     id: 'workbench.action.showCommands',
                     command: 'workbench.action.showCommands',
                     icon: 'codicon codicon-terminal',
-                    tooltip: nls.localizeByDefault('Command Palette'),
+                    tooltip: 'Command Palette',
                 },
             ]
         ]
