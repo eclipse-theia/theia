@@ -15,12 +15,17 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { bindContributionProvider, DefaultResourceProvider, MessageClient, MessageService, ResourceProvider, ResourceResolver } from '../common';
+import {
+    bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
+    MessageService, ResourceProvider, ResourceResolver
+} from '../common';
 import {
     bindPreferenceSchemaProvider, PreferenceProvider,
-    PreferenceProviderProvider, PreferenceSchemaProvider, PreferenceScope,
-    PreferenceService, PreferenceServiceImpl
+    PreferenceProviderProvider, PreferenceProxyOptions, PreferenceSchema, PreferenceSchemaProvider, PreferenceScope,
+    PreferenceService, PreferenceServiceImpl, PreferenceValidationService
 } from './preferences';
+import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './preferences/injectable-preference-proxy';
+import { ValidatedPreferenceProxy } from './preferences/validated-preference-proxy';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
     bind(MessageClient).toSelf().inSingletonScope();
@@ -40,6 +45,16 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bindPreferenceSchemaProvider(bind);
+    bind(PreferenceValidationService).toSelf().inSingletonScope();
+    bind(InjectablePreferenceProxy).toSelf();
+    bind(ValidatedPreferenceProxy).toSelf();
+    bind(PreferenceProxyFactory).toFactory(({ container }) => (schema: MaybePromise<PreferenceSchema>, options: PreferenceProxyOptions = {}) => {
+        const child = container.createChild();
+        child.bind(PreferenceProxyOptions).toConstantValue(options ?? {});
+        child.bind(PreferenceProxySchema).toConstantValue(schema);
+        const handler = options.validated ? child.get(ValidatedPreferenceProxy) : child.get(InjectablePreferenceProxy);
+        return new Proxy(Object.create(null), handler); // eslint-disable-line no-null/no-null
+    });
 }
 
 export function bindResourceProvider(bind: interfaces.Bind): void {

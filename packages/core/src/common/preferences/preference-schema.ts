@@ -16,8 +16,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { JSONPrimitive } from '@phosphor/coreutils';
+import { JSONValue } from '@phosphor/coreutils';
+import { IJSONSchema, JsonType } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
+
+/**
+ * @deprecated since 1.22.0. Import from @theia/core/common/json-schema.ts instead.
+ */
+export { JsonType };
 
 export interface PreferenceSchema {
     [name: string]: any,
@@ -60,25 +66,14 @@ export interface PreferenceDataSchema {
     };
 }
 
-export interface PreferenceItem {
-    type?: JsonType | JsonType[];
-    minimum?: number;
-    /**
-     * content assist (UI) default value
-     */
-    default?: any;
+export interface PreferenceItem extends IJSONSchema {
     /**
      * preference default value, if `undefined` then `default`
      */
-    defaultValue?: any;
-    enum?: JSONPrimitive[];
-    items?: PreferenceItem;
-    properties?: { [name: string]: PreferenceItem };
-    additionalProperties?: object | boolean;
-    [name: string]: any;
+    defaultValue?: JSONValue;
     overridable?: boolean;
+    [key: string]: any;
 }
-
 export interface PreferenceSchemaProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
@@ -101,5 +96,3 @@ export namespace PreferenceDataProperty {
         return <PreferenceDataProperty>schemaProps;
     }
 }
-
-export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';

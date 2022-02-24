@@ -26,10 +26,25 @@ import { PreferenceScope } from './preference-scope';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 
 export interface PreferenceProviderDataChange {
+    /**
+     * The name of the changed preference.
+     */
     readonly preferenceName: string;
+    /**
+     * The new value of the changed preference.
+     */
     readonly newValue?: any;
+    /**
+     * The old value of the changed preference.
+     */
     readonly oldValue?: any;
+    /**
+     * The {@link PreferenceScope} of the changed preference.
+     */
     readonly scope: PreferenceScope;
+    /**
+     * URIs of the scopes in which this change applies.
+     */
     readonly domain?: string[];
 }
 

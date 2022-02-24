@@ -21,18 +21,19 @@ import * as path from 'path';
 import { glob } from 'glob';
 import { promisify } from 'util';
 import deepmerge = require('deepmerge');
-import { Localization } from './common';
+import { Localization, sortLocalization } from './common';
 
 const globPromise = promisify(glob);
 
 export interface ExtractionOptions {
-    root: string
-    output: string
+    root?: string
+    output?: string
     exclude?: string
     logs?: string
     /** List of globs matching the files to extract from. */
     files?: string[]
-    merge: boolean
+    merge?: boolean
+    quiet?: boolean
 }
 
 class SingleFileServiceHost implements ts.LanguageServiceHost {
@@ -71,9 +72,9 @@ const tsOptions: ts.CompilerOptions = {
 };
 
 export async function extract(options: ExtractionOptions): Promise<void> {
-    const cwd = path.resolve(process.cwd(), options.root);
+    const cwd = path.resolve(process.env.INIT_CWD || process.cwd(), options.root ?? '');
     const files: string[] = [];
-    await Promise.all((options.files ?? ['**/src/**/*.ts']).map(
+    await Promise.all((options.files ?? ['**/src/**/*.{ts,tsx}']).map(
         async pattern => files.push(...await globPromise(pattern, { cwd }))
     ));
     let localization: Localization = {};
@@ -87,13 +88,15 @@ export async function extract(options: ExtractionOptions): Promise<void> {
     if (errors.length > 0 && options.logs) {
         await fs.writeFile(options.logs, errors.join(os.EOL));
     }
-    const output = path.resolve(process.cwd(), options.output);
-    if (options.merge && await fs.pathExists(output)) {
-        const existing = await fs.readJson(output);
+    const out = path.resolve(process.env.INIT_CWD || process.cwd(), options.output ?? '');
+    if (options.merge && await fs.pathExists(out)) {
+        const existing = await fs.readJson(out);
         localization = deepmerge(existing, localization);
     }
-    await fs.writeJson(options.output, localization, {
-        spaces: 4
+    localization = sortLocalization(localization);
+    await fs.mkdirs(path.dirname(out));
+    await fs.writeJson(out, localization, {
+        spaces: 2
     });
 }
 
@@ -105,20 +108,22 @@ export async function extractFromFile(file: string, content: string, errors?: st
     const localizationCalls = collect(sourceFile, node => isLocalizeCall(node));
     for (const call of localizationCalls) {
         try {
-            const extracted = extractFromLocalizeCall(call);
-            if (!isExcluded(options, extracted[0])) {
+            const extracted = extractFromLocalizeCall(call, options);
+            if (extracted) {
                 insert(localization, extracted);
             }
         } catch (err) {
             const tsError = err as Error;
             errors?.push(tsError.message);
-            console.log(tsError.message);
+            if (!options?.quiet) {
+                console.log(tsError.message);
+            }
         }
     }
     const localizedCommands = collect(sourceFile, node => isCommandLocalizeUtility(node));
     for (const command of localizedCommands) {
         try {
-            const extracted = extractFromLocalizedCommandCall(command);
+            const extracted = extractFromLocalizedCommandCall(command, errors, options);
             const label = extracted.label;
             const category = extracted.category;
             if (!isExcluded(options, label[0])) {
@@ -130,7 +135,9 @@ export async function extractFromFile(file: string, content: string, errors?: st
         } catch (err) {
             const tsError = err as Error;
             errors?.push(tsError.message);
-            console.log(tsError.message);
+            if (!options?.quiet) {
+                console.log(tsError.message);
+            }
         }
     }
     return localization;
@@ -191,7 +198,7 @@ function isLocalizeCall(node: ts.Node): boolean {
     return node.expression.getText() === 'nls.localize';
 }
 
-function extractFromLocalizeCall(node: ts.Node): [string, string, ts.Node] {
+function extractFromLocalizeCall(node: ts.Node, options?: ExtractionOptions): [string, string, ts.Node] | undefined {
     if (!ts.isCallExpression(node)) {
         throw new TypeScriptError('Invalid node type', node);
     }
@@ -203,10 +210,18 @@ function extractFromLocalizeCall(node: ts.Node): [string, string, ts.Node] {
 
     const key = extractString(args[0]);
     const value = extractString(args[1]);
+
+    if (isExcluded(options, key)) {
+        return undefined;
+    }
+
     return [key, value, args[1]];
 }
 
-function extractFromLocalizedCommandCall(node: ts.Node): { label: [string, string, ts.Node], category?: [string, string, ts.Node] } {
+function extractFromLocalizedCommandCall(node: ts.Node, errors?: string[], options?: ExtractionOptions): {
+    label: [string, string, ts.Node],
+    category?: [string, string, ts.Node]
+} {
     if (!ts.isCallExpression(node)) {
         throw new TypeScriptError('Invalid node type', node);
     }
@@ -245,8 +260,16 @@ function extractFromLocalizedCommandCall(node: ts.Node): { label: [string, strin
             labelNode = property.initializer;
         }
 
-        const value = extractString(property.initializer);
-        propertyMap.set(name, value);
+        try {
+            const value = extractString(property.initializer);
+            propertyMap.set(name, value);
+        } catch (err) {
+            const tsError = err as Error;
+            errors?.push(tsError.message);
+            if (!options?.quiet) {
+                console.log(tsError.message);
+            }
+        }
     }
 
     let labelKey = propertyMap.get('id');
@@ -255,17 +278,33 @@ function extractFromLocalizedCommandCall(node: ts.Node): { label: [string, strin
 
     // We have an explicit label translation key
     if (args.length > 1) {
-        const labelOverrideKey = extractStringOrUndefined(args[1]);
-        if (labelOverrideKey) {
-            labelKey = labelOverrideKey;
-            labelNode = args[1];
+        try {
+            const labelOverrideKey = extractStringOrUndefined(args[1]);
+            if (labelOverrideKey) {
+                labelKey = labelOverrideKey;
+                labelNode = args[1];
+            }
+        } catch (err) {
+            const tsError = err as Error;
+            errors?.push(tsError.message);
+            if (!options?.quiet) {
+                console.log(tsError.message);
+            }
         }
     }
 
     // We have an explicit category translation key
     if (args.length > 2) {
-        categoryKey = extractStringOrUndefined(args[2]);
-        categoryNode = args[2];
+        try {
+            categoryKey = extractStringOrUndefined(args[2]);
+            categoryNode = args[2];
+        } catch (err) {
+            const tsError = err as Error;
+            errors?.push(tsError.message);
+            if (!options?.quiet) {
+                console.log(tsError.message);
+            }
+        }
     }
 
     if (!labelKey) {

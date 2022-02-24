@@ -17,3 +17,11 @@
 export interface Localization {
     [key: string]: string | Localization
 }
+
+export function sortLocalization(localization: Localization): Localization {
+    return Object.keys(localization).sort().reduce((result: Localization, key: string) => {
+        const value = localization[key];
+        result[key] = typeof value === 'string' ? value : sortLocalization(value);
+        return result;
+    }, {});
+}

@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { JSONPrimitive, JSONValue } from '@phosphor/coreutils';
+
+export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -31,10 +35,9 @@ export interface IJSONSchema {
     id?: string;
     $id?: string;
     $schema?: string;
-    type?: string | string[];
+    type?: JsonType | JsonType[];
     title?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    default?: any;
+    default?: JSONValue;
     definitions?: IJSONSchemaMap;
     description?: string;
     properties?: IJSONSchemaMap;
@@ -62,13 +65,11 @@ export interface IJSONSchema {
     allOf?: IJSONSchema[];
     oneOf?: IJSONSchema[];
     not?: IJSONSchema;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    enum?: any[];
+    enum?: JSONPrimitive[];
     format?: string;
 
     // schema draft 06
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const?: any;
+    const?: JSONValue;
     contains?: IJSONSchema;
     propertyNames?: IJSONSchema;
 
@@ -98,7 +99,6 @@ export interface IJSONSchemaMap {
 export interface IJSONSchemaSnippet {
     label?: string;
     description?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body?: any; // a object that will be JSON stringified
+    body?: JSONValue; // a object that will be JSON stringified
     bodyText?: string; // an already stringified JSON object that can contain new lines (\n) and tabs (\t)
 }

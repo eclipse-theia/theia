@@ -28,6 +28,7 @@ import { bindPreferenceConfigurations, PreferenceConfigurations } from './prefer
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 import { Mutable } from '../../common/types';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { JSONValue } from '@phosphor/coreutils';
 
 /**
  * @deprecated since 1.13.0 import from @theia/core/lib/browser/preferences/preference-language-override-service.
@@ -218,10 +219,12 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                     schemaProps.defaultValue = PreferenceSchemaProperties.is(configuredDefault)
                         ? PreferenceProvider.merge(schemaDefault, configuredDefault)
                         : schemaDefault;
-                    for (const overriddenPreferenceName in schemaProps.defaultValue) {
-                        const overrideValue = schemaDefault[overriddenPreferenceName];
-                        const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
-                        changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                    if (schemaProps.defaultValue && PreferenceSchemaProperties.is(schemaProps.defaultValue)) {
+                        for (const overriddenPreferenceName in schemaProps.defaultValue) {
+                            const overrideValue = schemaDefault[overriddenPreferenceName];
+                            const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
+                            changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                        }
                     }
                 } else {
                     schemaProps.defaultValue = configuredDefault === undefined ? schemaDefault : configuredDefault;
@@ -241,7 +244,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, oldValue, newValue, scope, domain };
     }
 
-    protected getDefaultValue(property: PreferenceItem): any {
+    getDefaultValue(property: PreferenceItem): JSONValue {
         if (property.defaultValue !== undefined) {
             return property.defaultValue;
         }

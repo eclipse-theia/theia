@@ -23,6 +23,7 @@ const deeplLimit = 50;
 export async function deepl(
     parameters: DeeplParameters
 ): Promise<DeeplResponse> {
+    coerceLanguage(parameters);
     const sub_domain = parameters.free_api ? 'api-free' : 'api';
     const textChunks: string[][] = [];
     const textArray = [...parameters.text];
@@ -40,7 +41,36 @@ export async function deepl(
     for (const response of responses) {
         mergedResponse.translations.push(...response.translations);
     }
+    for (const translation of mergedResponse.translations) {
+        translation.text = coerceTranslation(translation.text);
+    }
     return mergedResponse;
+}
+
+/**
+ * Coerces the target language into a form expected by Deepl.
+ *
+ * Currently only replaces `ZH-CN` with `ZH`
+ */
+function coerceLanguage(parameters: DeeplParameters): void {
+    if (parameters.target_lang === 'ZH-CN') {
+        parameters.target_lang = 'ZH';
+    }
+}
+
+/**
+ * Coerces translated text into a form expected by VSCode/Theia.
+ *
+ * Replaces certain full-width characters with their ascii counter-part.
+ */
+function coerceTranslation(text: string): string {
+    return text
+        .replace(/\uff08/g, '(')
+        .replace(/\uff09/g, ')')
+        .replace(/\uff0c/g, ',')
+        .replace(/\uff1a/g, ':')
+        .replace(/\uff1b/g, ';')
+        .replace(/\uff1f/g, '?');
 }
 
 function toFormData(parameters: DeeplParameters): string {
@@ -85,11 +115,12 @@ export type DeeplLanguage =
     | 'SK'
     | 'SL'
     | 'SV'
+    | 'ZH-CN'
     | 'ZH';
 
 export const supportedLanguages = [
-    'BG', 'CD', 'DA', 'DE', 'EL', 'EN-GB', 'EN-US', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'IT',
-    'JA', 'LT', 'LV', 'NL', 'PL', 'PT-PT', 'PT-BR', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'ZH'
+    'BG', 'CS', 'DA', 'DE', 'EL', 'EN-GB', 'EN-US', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'IT',
+    'JA', 'LT', 'LV', 'NL', 'PL', 'PT-PT', 'PT-BR', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'ZH-CN'
 ];
 
 export function isSupportedLanguage(language: string): language is DeeplLanguage {

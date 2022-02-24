@@ -33,7 +33,7 @@ import { MonacoWorkspace } from './monaco-workspace';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core';
-import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType, PreferenceValidationService } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -86,6 +86,9 @@ export class MonacoEditorProvider {
 
     @inject(MonacoQuickInputImplementation)
     protected readonly quickInputService: MonacoQuickInputImplementation;
+
+    @inject(PreferenceValidationService)
+    protected readonly preferenceValidator: PreferenceValidationService;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -260,7 +263,9 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString());
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
+                this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString())
+            );
             editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
         } else {
             const options = this.createMonacoEditorOptions(editor.document);
@@ -289,7 +294,9 @@ export class MonacoEditorProvider {
         }
         const overrideIdentifier = editor.document.languageId;
         const uri = editor.uri.toString();
-        const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!;
+        const formatOnSave = this.preferenceValidator.validateByName('editor.formatOnSave',
+            this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!
+        );
         if (formatOnSave) {
             const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
             await Promise.race([
@@ -340,7 +347,9 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri);
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
+                this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri)
+            );
             editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
         } else {
             const options = this.createMonacoDiffEditorOptions(editor.originalModel, editor.modifiedModel);
@@ -352,10 +361,12 @@ export class MonacoEditorProvider {
     protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
-        return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
-            const value = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
-            return this.setOption(preferenceName, deepClone(value), prefixes, options);
-        }, {});
+        const flat: Record<string, any> = {};
+        for (const preferenceName of Object.keys(this.editorPreferences)) {
+            flat[preferenceName] = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
+        }
+        const valid = this.preferenceValidator.validateOptions(flat);
+        return Object.entries(valid).reduce((tree, [preferenceName, value]) => this.setOption(preferenceName, deepClone(value), prefixes, tree), {});
     }
 
     protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}): {

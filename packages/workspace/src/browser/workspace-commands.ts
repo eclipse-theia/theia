@@ -506,8 +506,13 @@ export class WorkspaceCommandContribution implements CommandContribution {
         const toRemove = uris.filter(uri => roots.has(uri.toString()));
         if (toRemove.length > 0) {
             const messageContainer = document.createElement('div');
-            messageContainer.textContent = nls.localize(`theia/workspace/removeFolder${toRemove.length > 1 ? 's' : ''}`,
-                `Are you sure you want to remove the following folder${toRemove.length > 1 ? 's' : ''} from the workspace?`);
+            if (toRemove.length > 1) {
+                messageContainer.textContent = nls.localize('theia/workspace/removeFolders',
+                    'Are you sure you want to remove the following folders from the workspace?');
+            } else {
+                messageContainer.textContent = nls.localize('theia/workspace/removeFolder',
+                    'Are you sure you want to remove the following folder from the workspace?');
+            }
             messageContainer.title = nls.localize('theia/workspace/noErasure', 'Note: Nothing will be erased from disk');
             const list = document.createElement('div');
             list.classList.add('theia-dialog-node');

@@ -259,9 +259,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     static getFollowLinkHover(): string {
-        const cmdCtrl = isOSX ? 'Cmd' : 'Ctrl';
-        return nls.localizeByDefault('Follow link') + ' (' +
-            nls.localize(`vscode/terminalLinkManager/terminalLinkHandler.followLink${cmdCtrl}`, `${cmdCtrl} + Click`) + ')';
+        const cmdCtrl = isOSX ? 'cmd' : 'ctrl';
+        return `${nls.localizeByDefault('Follow link')} (${nls.localizeByDefault(`${cmdCtrl} + click`)})`;
     }
 
     get kind(): 'user' | string {

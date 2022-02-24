@@ -701,15 +701,27 @@ export class TheiaPluginScanner implements PluginScanner {
 
     private readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
         const propertyKeys = definitionContribution.properties ? Object.keys(definitionContribution.properties) : [];
+        const schema = this.toSchema(definitionContribution);
         return {
             taskType: definitionContribution.type,
             source: pluginName,
             properties: {
                 required: definitionContribution.required || [],
                 all: propertyKeys,
-                schema: definitionContribution
+                schema
             }
         };
+    }
+
+    protected toSchema(definition: PluginTaskDefinitionContribution): IJSONSchema {
+        const reconciliation: IJSONSchema = { ...definition, type: 'object' };
+        const schema = deepClone(reconciliation);
+        if (schema.properties === undefined) {
+            schema.properties = Object.create(null);
+        }
+        schema.type = 'object';
+        schema.properties!.type = { type: 'string', const: definition.type };
+        return schema;
     }
 
     protected resolveSchemaAttributes(type: string, configurationAttributes: { [request: string]: IJSONSchema }): IJSONSchema[] {
