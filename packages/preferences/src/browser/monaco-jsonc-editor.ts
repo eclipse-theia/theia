@@ -24,14 +24,14 @@ import * as Monaco from '@theia/monaco-editor-core';
 export class MonacoJSONCEditor {
     @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace;
 
-    async setValue(model: MonacoEditorModel, path: string[], value: unknown, shouldSave = true): Promise<void> {
+    async setValue(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown, shouldSave = true): Promise<void> {
         const edits = this.getEditOperations(model, path, value);
         if (edits.length > 0) {
             await this.workspace.applyBackgroundEdit(model, edits, shouldSave);
         }
     }
 
-    getEditOperations(model: MonacoEditorModel, path: string[], value: unknown): Monaco.editor.IIdentifiedSingleEditOperation[] {
+    getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): Monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = model.textEditorModel;
         const content = model.getText().trim();
         // Everything is already undefined - no need for changes.

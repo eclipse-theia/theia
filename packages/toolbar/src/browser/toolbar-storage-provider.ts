@@ -26,6 +26,7 @@ import { Widget } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
+import { MonacoJSONCEditor } from '@theia/preferences/lib/browser/monaco-jsonc-editor';
 import {
     DeflatedToolbarTree,
     ToolbarTreeSchema,
@@ -47,6 +48,7 @@ export class ToolbarStorageProvider implements Disposable {
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
     @inject(LateInjector) protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
     @inject(UserToolbarURI) protected readonly USER_TOOLBAR_URI: URI;
 
@@ -264,32 +266,10 @@ export class ToolbarStorageProvider implements Disposable {
         return true;
     }
 
-    protected async writeToFile(path: jsoncParser.JSONPath, value: unknown, insertion = false): Promise<boolean> {
+    protected async writeToFile(path: jsoncParser.JSONPath, value: unknown): Promise<boolean> {
         if (this.model) {
             try {
-                const content = this.model.getText().trim();
-                const textModel = this.model.textEditorModel;
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-                for (const edit of jsoncParser.modify(content, path, value, {
-                    isArrayInsertion: insertion,
-                    formattingOptions: {
-                        insertSpaces,
-                        tabSize,
-                        eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n',
-                    },
-                })) {
-                    const start = textModel.getPositionAt(edit.offset);
-                    const end = textModel.getPositionAt(edit.offset + edit.length);
-                    editOperations.push({
-                        range: monaco.Range.fromPositions(start, end),
-                        // eslint-disable-next-line no-null/no-null
-                        text: edit.content || null,
-                        forceMoveMarkers: false,
-                    });
-                }
-                await this.monacoWorkspace.applyBackgroundEdit(this.model, editOperations);
-                await this.model.save();
+                await this.jsoncEditor.setValue(this.model, path, value);
                 return true;
             } catch (e) {
                 const message = nls.localize('theia/toolbar/failedUpdate', "Failed to update the value of '{0}' in '{1}'.", path.join('.'), this.USER_TOOLBAR_URI.path.toString());
