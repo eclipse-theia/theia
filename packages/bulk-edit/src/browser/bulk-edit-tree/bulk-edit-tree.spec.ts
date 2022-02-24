@@ -17,6 +17,7 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import * as chai from 'chai';
 import { ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { URI as Uri } from 'vscode-uri';
 
 let disableJSDOM = enableJSDOM();
 
@@ -29,7 +30,6 @@ FrontendApplicationConfigProvider.set({
 import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
 
-// This is probably not going to work...
 const expect = chai.expect;
 let bulkEditTree: BulkEditTree;
 let testContainer: Container;
@@ -50,21 +50,14 @@ before(() => {
 
     resourceTextEdits = <ResourceTextEdit[]><unknown>[
         {
-            'resource': {
-                '$mid': 1,
-                'path': '/c:/test1.ts',
-                'scheme': 'file'
-            },
+            'resource': Uri.file('c:/test1.ts'),
             'textEdit': {
                 'text': 'AAAAA', 'range': { 'startLineNumber': 1, 'startColumn': 5, 'endLineNumber': 1, 'endColumn': 10 }
             }
         },
         {
-            'resource': {
-                '$mid': 1,
-                'path': '/c:/test2.ts',
-                'scheme': 'file'
-            }, 'textEdit': {
+            'resource': Uri.file('c:/test2.ts'),
+            'textEdit': {
                 'text': 'BBBBBB', 'range': { 'startLineNumber': 1, 'startColumn': 3, 'endLineNumber': 1, 'endColumn': 8 }
             }
         }
