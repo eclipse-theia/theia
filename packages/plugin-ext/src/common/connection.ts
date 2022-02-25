@@ -13,27 +13,38 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Channel } from '@theia/debug/lib/common/debug-service';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
+import { Channel, ReadBufferConstructor } from '@theia/core/lib/common/message-rpc/channel';
+import { WriteBuffer } from '@theia/core/lib/common/message-rpc/message-buffer';
 import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
-import { Emitter } from '@theia/core/lib/common/event';
 
 /**
  * A channel communicating with a counterpart in a plugin host.
  */
 export class PluginChannel implements Channel {
-    private messageEmitter: Emitter<string> = new Emitter();
+    private messageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
     private errorEmitter: Emitter<unknown> = new Emitter();
     private closedEmitter: Emitter<void> = new Emitter();
 
     constructor(
-        protected readonly id: string,
+        readonly id: string,
         protected readonly connection: ConnectionExt | ConnectionMain) { }
+
+    getWriteBuffer(): WriteBuffer {
+        const result = new ArrayBufferWriteBuffer();
+        result.onCommit(buffer => {
+            this.connection.$sendMessage(this.id, new ArrayBufferReadBuffer(buffer).readString());
+        });
+
+        return result;
+    }
 
     send(content: string): void {
         this.connection.$sendMessage(this.id, content);
     }
 
-    fireMessageReceived(msg: string): void {
+    fireMessageReceived(msg: ReadBufferConstructor): void {
         this.messageEmitter.fire(msg);
     }
 
@@ -45,18 +56,16 @@ export class PluginChannel implements Channel {
         this.closedEmitter.fire();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(cb: (data: any) => void): void {
-        this.messageEmitter.event(cb);
+    get onMessage(): Event<ReadBufferConstructor> {
+        return this.messageEmitter.event;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError(cb: (reason: any) => void): void {
-        this.errorEmitter.event(cb);
+    get onError(): Event<unknown> {
+        return this.errorEmitter.event;
     }
 
-    onClose(cb: (code: number, reason: string) => void): void {
-        this.closedEmitter.event(() => cb(-1, 'closed'));
+    get onClose(): Event<void> {
+        return this.closedEmitter.event;
     }
 
     close(): void {
@@ -80,7 +89,10 @@ export class ConnectionImpl implements ConnectionMain, ConnectionExt {
      */
     async $sendMessage(id: string, message: string): Promise<void> {
         if (this.connections.has(id)) {
-            this.connections.get(id)!.fireMessageReceived(message);
+            const writer = new ArrayBufferWriteBuffer();
+            writer.writeString(message);
+            const reader = new ArrayBufferReadBuffer(writer.getCurrentContents());
+            this.connections.get(id)!.fireMessageReceived(() => reader);
         } else {
             console.warn(`Received message for unknown connection: ${id}`);
         }

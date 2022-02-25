@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event as ElectronEvent, ipcRenderer } from '@theia/electron/shared/electron';
 import { injectable, interfaces } from 'inversify';
+import { Channel } from '../../common/message-rpc/channel';
 import { JsonRpcProxy } from '../../common/messaging';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
-import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
 
 export interface ElectronIpcOptions {
 }
@@ -36,15 +34,22 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
 
     constructor() {
         super();
-        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: ElectronEvent, data: string) => {
-            this.handleIncomingRawMessage(data);
-        });
+        // ipcRenderer.
+        //     ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: ElectronEvent, data: string) => {
+        //         this.handleIncomingRawMessage(data);
+        //     });
     }
 
-    protected createChannel(id: number): WebSocketChannel {
-        return new WebSocketChannel(id, content => {
-            ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
-        });
+    // protected createChannel(id: number): WebSocketChannel {
+    //     return new WebSocketChannel(id, content => {
+    //         ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
+    //     });
+    // }
+
+    // FIXME: Properly handle Electron connection case
+    protected createMainChannel(): Channel {
+        throw new Error('Not yet implemented');
+
     }
 
 }

@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
-import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 
 /**
  * Customized connection provider between the frontend and the backend in electron environment.
@@ -39,13 +38,10 @@ export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProv
         for (const channel of [...this.channels.values()]) {
             // `1001` indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page.
             // But we cannot use `1001`: https://github.com/TypeFox/vscode-ws-jsonrpc/issues/15
-            channel.close(1000, 'The frontend is "going away"...');
-        }
-    }
+            // TODO: Add propery error code close handling for Channel
+            // channel.close(1000, 'The frontend is "going away"...');
+            channel.close();
 
-    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
-        if (!this.stopping) {
-            super.openChannel(path, handler, options);
         }
     }
 

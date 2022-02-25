@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessageConnection } from 'vscode-ws-jsonrpc';
+import { Channel } from '../message-rpc/channel';
 
 export const ConnectionHandler = Symbol('ConnectionHandler');
 
 export interface ConnectionHandler {
     readonly path: string;
-    onConnection(connection: MessageConnection): void;
+    onConnection(connection: Channel): void;
 }

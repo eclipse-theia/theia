@@ -30,7 +30,7 @@ import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { Channel } from '@theia/debug/lib/common/debug-service';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 
 export class PluginDebugSession extends DebugSession {
     constructor(

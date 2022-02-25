@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { Socket } from 'socket.io';
-import { MessageConnection } from 'vscode-ws-jsonrpc';
-import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
+import { Channel } from '../../common/message-rpc/channel';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 export interface MessagingService {
@@ -24,12 +23,12 @@ export interface MessagingService {
      * Accept a JSON-RPC connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    listen(path: string, callback: (params: MessagingService.PathParams, connection: MessageConnection) => void): void;
+    listen(path: string, callback: (params: MessagingService.PathParams, connection: Channel) => void): void;
     /**
      * Accept a raw JSON-RPC connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    forward(path: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void;
+    forward(path: string, callback: (params: MessagingService.PathParams, connection: Channel) => void): void;
     /**
      * Accept a web socket channel on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
@@ -54,20 +53,5 @@ export namespace MessagingService {
     export const Contribution = Symbol('MessagingService.Contribution');
     export interface Contribution {
         configure(service: MessagingService): void;
-    }
-}
-
-export interface WebSocketChannelConnection extends IConnection {
-    channel: WebSocketChannel;
-}
-export namespace WebSocketChannelConnection {
-    export function is(connection: IConnection): connection is WebSocketChannelConnection {
-        return (connection as WebSocketChannelConnection).channel instanceof WebSocketChannel;
-    }
-
-    export function create(connection: IConnection, channel: WebSocketChannel): WebSocketChannelConnection {
-        const result = connection as WebSocketChannelConnection;
-        result.channel = channel;
-        return result;
     }
 }

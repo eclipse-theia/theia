@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { injectable, interfaces } from 'inversify';
-import { ConsoleLogger, createWebSocketConnection, Logger } from 'vscode-ws-jsonrpc';
+import { ConsoleLogger, Logger } from 'vscode-ws-jsonrpc';
 import { Emitter, Event } from '../event';
+import { Channel, ChannelMultiplexer } from '../message-rpc/channel';
 import { ConnectionHandler } from './handler';
 import { JsonRpcProxy, JsonRpcProxyFactory } from './proxy-factory';
 import { WebSocketChannel } from './web-socket-channel';
@@ -75,48 +76,35 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
         return factory.createProxy();
     }
 
+    protected channelMultiPlexer: ChannelMultiplexer;
+
+    constructor() {
+        this.channelMultiPlexer = new ChannelMultiplexer(this.createMainChannel());
+    }
+
     /**
      * Install a connection handler for the given path.
      */
     listen(handler: ConnectionHandler, options?: AbstractOptions): void {
         this.openChannel(handler.path, channel => {
-            const connection = createWebSocketConnection(channel, this.createLogger());
-            connection.onDispose(() => channel.close());
-            handler.onConnection(connection);
+            handler.onConnection(channel);
         }, options);
     }
 
-    openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: AbstractOptions): void {
-        const id = this.channelIdSeq++;
-        const channel = this.createChannel(id);
-        this.channels.set(id, channel);
-        channel.onClose(() => {
-            if (this.channels.delete(channel.id)) {
-                const { reconnecting } = { reconnecting: true, ...options };
-                if (reconnecting) {
-                    this.openChannel(path, handler, options);
-                }
-            } else {
-                console.error('The ws channel does not exist', channel.id);
+    async openChannel(path: string, handler: (channel: Channel) => void, options?: AbstractOptions): Promise<void> {
+        const newChannel = await this.channelMultiPlexer.open(path);
+        newChannel.onClose(() => {
+            const { reconnecting } = { reconnecting: true, ...options };
+            if (reconnecting) {
+                this.openChannel(path, handler, options);
             }
         });
-        channel.onOpen(() => handler(channel));
-        channel.open(path);
+        handler(newChannel);
     }
 
-    protected abstract createChannel(id: number): WebSocketChannel;
+    protected abstract createMainChannel(): Channel;
 
-    protected handleIncomingRawMessage(data: string): void {
-        const message: WebSocketChannel.Message = JSON.parse(data);
-        const channel = this.channels.get(message.id);
-        if (channel) {
-            channel.handleMessage(message);
-        } else {
-            console.error('The ws channel does not exist', message.id);
-        }
-        this.onIncomingMessageActivityEmitter.fire(undefined);
-    }
-
+    // TODO Logger for RPC
     protected createLogger(): Logger {
         return new ConsoleLogger();
     }

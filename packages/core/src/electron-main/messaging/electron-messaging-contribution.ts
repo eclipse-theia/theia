@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IpcMainEvent, ipcMain, WebContents } from '@theia/electron/shared/electron';
+import { ipcMain, IpcMainEvent } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { MessageConnection } from 'vscode-ws-jsonrpc';
-import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { ContributionProvider } from '../../common/contribution-provider';
+import { Channel } from '../../common/message-rpc/channel';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
-import { MessagingContribution } from '../../node/messaging/messaging-contribution';
-import { ConsoleLogger } from '../../node/messaging/logger';
 import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
+import { MessagingContribution } from '../../node/messaging/messaging-contribution';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
 
@@ -34,6 +32,9 @@ import { ElectronMessagingService } from './electron-messaging-service';
  *
  * This component allows communication between renderer process (frontend) and electron main process.
  */
+
+
+// FIXME: Electron implementation
 @injectable()
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {
 
@@ -59,16 +60,14 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         }
         for (const connectionHandler of this.connectionHandlers.getContributions()) {
             this.channelHandlers.push(connectionHandler.path, (params, channel) => {
-                const connection = createWebSocketConnection(channel, new ConsoleLogger());
-                connectionHandler.onConnection(connection);
+                connectionHandler.onConnection(channel);
             });
         }
     }
 
-    listen(spec: string, callback: (params: ElectronMessagingService.PathParams, connection: MessageConnection) => void): void {
+    listen(spec: string, callback: (params: ElectronMessagingService.PathParams, connection: Channel) => void): void {
         this.ipcChannel(spec, (params, channel) => {
-            const connection = createWebSocketConnection(channel, new ConsoleLogger());
-            callback(params, connection);
+            callback(params, channel);
         });
     }
 
@@ -78,54 +77,54 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
     }
 
     protected handleIpcMessage(event: IpcMainEvent, data: string): void {
-        const sender = event.sender;
-        try {
-            // Get the channel map for a given window id
-            let channels = this.windowChannels.get(sender.id)!;
-            if (!channels) {
-                this.windowChannels.set(sender.id, channels = new Map<number, WebSocketChannel>());
-            }
-            // Start parsing the message to extract the channel id and route
-            const message: WebSocketChannel.Message = JSON.parse(data.toString());
-            // Someone wants to open a logical channel
-            if (message.kind === 'open') {
-                const { id, path } = message;
-                const channel = this.createChannel(id, sender);
-                if (this.channelHandlers.route(path, channel)) {
-                    channel.ready();
-                    channels.set(id, channel);
-                    channel.onClose(() => channels.delete(id));
-                } else {
-                    console.error('Cannot find a service for the path: ' + path);
-                }
-            } else {
-                const { id } = message;
-                const channel = channels.get(id);
-                if (channel) {
-                    channel.handleMessage(message);
-                } else {
-                    console.error('The ipc channel does not exist', id);
-                }
-            }
-            const close = () => {
-                for (const channel of Array.from(channels.values())) {
-                    channel.close(undefined, 'webContent destroyed');
-                }
-                channels.clear();
-            };
-            sender.once('did-navigate', close); // When refreshing the browser window.
-            sender.once('destroyed', close); // When closing the browser window.
-        } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
-        }
+        // const sender = event.sender;
+        // try {
+        //     // Get the channel map for a given window id
+        //     let channels = this.windowChannels.get(sender.id)!;
+        //     if (!channels) {
+        //         this.windowChannels.set(sender.id, channels = new Map<number, WebSocketChannel>());
+        //     }
+        //     // Start parsing the message to extract the channel id and route
+        //     const message: WebSocketChannel.Message = JSON.parse(data.toString());
+        //     // Someone wants to open a logical channel
+        //     if (message.kind === 'open') {
+        //         const { id, path } = message;
+        //         const channel = this.createChannel(id, sender);
+        //         if (this.channelHandlers.route(path, channel)) {
+        //             channel.ready();
+        //             channels.set(id, channel);
+        //             channel.onClose(() => channels.delete(id));
+        //         } else {
+        //             console.error('Cannot find a service for the path: ' + path);
+        //         }
+        //     } else {
+        //         const { id } = message;
+        //         const channel = channels.get(id);
+        //         if (channel) {
+        //             channel.handleMessage(message);
+        //         } else {
+        //             console.error('The ipc channel does not exist', id);
+        //         }
+        //     }
+        //     const close = () => {
+        //         for (const channel of Array.from(channels.values())) {
+        //             channel.close(undefined, 'webContent destroyed');
+        //         }
+        //         channels.clear();
+        //     };
+        //     sender.once('did-navigate', close); // When refreshing the browser window.
+        //     sender.once('destroyed', close); // When closing the browser window.
+        // } catch (error) {
+        //     console.error('IPC: Failed to handle message', { error, data });
+        // }
     }
 
-    protected createChannel(id: number, sender: WebContents): WebSocketChannel {
-        return new WebSocketChannel(id, content => {
-            if (!sender.isDestroyed()) {
-                sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
-            }
-        });
-    }
+    // protected createChannel(id: number, sender: WebContents): WebSocketChannel {
+    //     // return new WebSocketChannel(id, content => {
+    //     //     if (!sender.isDestroyed()) {
+    //     //         sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
+    //     //     }
+    //     // });
+    // }
 
 }

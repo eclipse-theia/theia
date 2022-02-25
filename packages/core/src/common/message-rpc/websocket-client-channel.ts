@@ -1,28 +1,28 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { v4 as uuid } from 'uuid';
-import { Channel } from './channel';
-import { ReadBuffer, WriteBuffer } from './message-buffer';
-import { ArrayBufferReadBuffer, ArrrayBufferWriteBuffer } from './array-buffer-message-buffer';
-import { Deferred } from '../promise-util';
-import { Emitter, Event } from '../event';
 import { Endpoint } from 'src/browser';
+import { v4 as uuid } from 'uuid';
+import { Emitter, Event } from '../event';
+import { Deferred } from '../promise-util';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from './array-buffer-message-buffer';
+import { Channel, ReadBufferConstructor } from './channel';
+import { WriteBuffer } from './message-buffer';
 
 /**
  * An attempt at a channel implementation over a websocket with fallback to http.
@@ -67,8 +67,8 @@ export class WebSocketClientChannel implements Channel {
         return this.onCloseEmitter.event;
     }
 
-    protected readonly onMessageEmitter: Emitter<ReadBuffer> = new Emitter();
-    get onMessage(): Event<ReadBuffer> {
+    protected readonly onMessageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
+    get onMessage(): Event<ReadBufferConstructor> {
         return this.onMessageEmitter.event;
     }
 
@@ -83,7 +83,7 @@ export class WebSocketClientChannel implements Channel {
     protected httpFallbackId = uuid();
     protected httpFallbackDisconnected = true;
 
-    constructor(protected readonly httpFallbackOptions: HttpFallbackOptions | undefined) {
+    constructor(readonly id: string, protected readonly httpFallbackOptions: HttpFallbackOptions | undefined) {
         const url = this.createWebSocketUrl('/services');
         const socket = this.createWebSocket(url);
         socket.onerror = event => this.handleSocketError(event);
@@ -94,7 +94,7 @@ export class WebSocketClientChannel implements Channel {
             this.onCloseEmitter.fire();
         };
         socket.onmessage = ({ data }) => {
-            this.onMessageEmitter.fire(new ArrayBufferReadBuffer(data));
+            this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data));
         };
         this.socket = socket;
         window.addEventListener('offline', () => this.tryReconnect());
@@ -102,7 +102,7 @@ export class WebSocketClientChannel implements Channel {
     }
 
     getWriteBuffer(): WriteBuffer {
-        const result = new ArrrayBufferWriteBuffer();
+        const result = new ArrayBufferWriteBuffer();
         const httpUrl = this.createHttpWebSocketUrl('/services');
         if (this.useHttpFallback) {
             result.writeString(this.httpFallbackId);
@@ -170,7 +170,7 @@ export class WebSocketClientChannel implements Channel {
                     this.fireSocketDidOpen();
                 }
                 const bytes = await response.arrayBuffer();
-                this.onMessageEmitter.fire(new ArrayBufferReadBuffer(bytes));
+                this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(bytes));
             } else {
                 timeoutDuration = this.httpFallbackOptions?.errorTimeout || 0;
                 this.httpFallbackDisconnected = true;
