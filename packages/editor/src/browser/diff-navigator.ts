@@ -18,6 +18,8 @@ import { TextEditor } from './editor';
 
 export interface DiffNavigator {
     canNavigate(): boolean;
+    hasNext(): boolean;
+    hasPrevious(): boolean;
     next(): void;
     previous(): void;
 }

@@ -17,8 +17,9 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
 import * as Monaco from '@theia/monaco-editor-core';
+import { DiffNavigator as MonacoDiffNavigator } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffNavigator';
+import { IStandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
-// TODO: Bring back the `hasNext` and `hasPrevious` methods: they were a neat feature in the SCM tree.
 @injectable()
 export class MonacoDiffNavigatorFactory {
 
@@ -30,7 +31,31 @@ export class MonacoDiffNavigatorFactory {
         previous: () => { },
     };
 
-    createdDiffNavigator(editor: Monaco.editor.IStandaloneDiffEditor, options?: Monaco.editor.IDiffNavigatorOptions): DiffNavigator {
-        return Monaco.editor.createDiffNavigator(editor, options);
+    createdDiffNavigator(editor: IStandaloneDiffEditor | Monaco.editor.IStandaloneDiffEditor, options?: Monaco.editor.IDiffNavigatorOptions): DiffNavigator {
+        const navigator = new MonacoDiffNavigator(editor as IStandaloneDiffEditor, options);
+        const ensureInitialized = (fwd: boolean) => {
+            if (navigator['nextIdx'] < 0) {
+                navigator['_initIdx'](fwd);
+            }
+        };
+        return {
+            canNavigate: () => navigator.canNavigate(),
+            hasNext: () => {
+                if (navigator.canNavigate()) {
+                    ensureInitialized(true);
+                    return navigator['nextIdx'] + 1 < navigator['ranges'].length;
+                }
+                return false;
+            },
+            hasPrevious: () => {
+                if (navigator.canNavigate()) {
+                    ensureInitialized(false);
+                    return navigator['nextIdx'] > 0;
+                }
+                return false;
+            },
+            next: () => navigator.next(),
+            previous: () => navigator.previous(),
+        };
     }
 }
