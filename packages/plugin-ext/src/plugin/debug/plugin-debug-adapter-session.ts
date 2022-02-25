@@ -61,6 +61,10 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
         return this.theiaSession.customRequest(command, args);
     }
 
+    async getDebugProtocolBreakpoint(breakpoint: theia.Breakpoint): Promise<theia.DebugProtocolBreakpoint | undefined> {
+        return this.theiaSession.getDebugProtocolBreakpoint(breakpoint);
+    }
+
     protected override onDebugAdapterError(error: Error): void {
         if (this.tracker.onError) {
             this.tracker.onError(error);

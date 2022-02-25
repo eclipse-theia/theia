@@ -541,6 +541,17 @@ export class DebugSession implements CompositeTreeElement {
         return result;
     }
 
+    getBreakpoint(id: string): DebugBreakpoint | undefined {
+        for (const breakpoints of this._breakpoints.values()) {
+            const breakpoint = breakpoints.find(b => b.id === id);
+            if (breakpoint) {
+                return breakpoint;
+            }
+
+        }
+        return undefined;
+    }
+
     protected clearBreakpoints(): void {
         const uris = [...this._breakpoints.keys()];
         this._breakpoints.clear();

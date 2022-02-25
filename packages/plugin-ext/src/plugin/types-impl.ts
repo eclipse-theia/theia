@@ -2250,11 +2250,12 @@ export class Breakpoint {
      */
     logMessage?: string;
 
-    protected constructor(enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
+    protected constructor(enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
         this.enabled = enabled || false;
         this.condition = condition;
         this.hitCondition = hitCondition;
         this.logMessage = logMessage;
+        this._id = id;
     }
 
     private _id: string | undefined;
@@ -2283,8 +2284,8 @@ export class SourceBreakpoint extends Breakpoint {
     /**
      * Create a new breakpoint for a source location.
      */
-    constructor(location: Location, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
-        super(enabled, condition, hitCondition, logMessage);
+    constructor(location: Location, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
+        super(enabled, condition, hitCondition, logMessage, id);
         this.location = location;
     }
 }
@@ -2302,8 +2303,8 @@ export class FunctionBreakpoint extends Breakpoint {
     /**
      * Create a new function breakpoint.
      */
-    constructor(functionName: string, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string) {
-        super(enabled, condition, hitCondition, logMessage);
+    constructor(functionName: string, enabled?: boolean, condition?: string, hitCondition?: string, logMessage?: string, id?: string) {
+        super(enabled, condition, hitCondition, logMessage, id);
         this.functionName = functionName;
     }
 }
