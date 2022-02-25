@@ -98,8 +98,18 @@ export class KeyboardLayoutService {
     getKeyboardCharacter(key: Key): string {
         const layout = this.currentLayout;
         if (layout) {
-            const value = layout.code2Character[key.code];
-            if (value && value.replace(/[\n\r\t]/g, '')) {
+            const value = layout.code2Character[key.code]?.trim();
+            // Special cases from native keymap
+            if (value === '\u001b') {
+                return 'escape';
+            }
+            if (value === '\u007f') {
+                return 'delete';
+            }
+            if (value === '\u0008') {
+                return 'backspace';
+            }
+            if (value?.replace(/[\n\r\t]/g, '')) {
                 return value;
             }
         }
