@@ -16,31 +16,31 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as React from '@theia/core/shared/react';
 import { LabelProvider } from '@theia/core/lib/browser';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event, DisposableCollection, Disposable, MessageClient, MessageType, Mutable, ContributionProvider } from '@theia/core/lib/common';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
-import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
-import { DebugThread, StoppedDetails, DebugThreadData } from './model/debug-thread';
-import { DebugScope } from './console/debug-console-items';
-import { DebugStackFrame } from './model/debug-stack-frame';
-import { DebugSource } from './model/debug-source';
-import { DebugBreakpoint, DebugBreakpointOptions } from './model/debug-breakpoint';
-import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
-import debounce = require('p-debounce');
-import URI from '@theia/core/lib/common/uri';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
-import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common';
-import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { DebugContribution } from './debug-contribution';
+import { ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MessageClient, MessageType, Mutable } from '@theia/core/lib/common';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
+import URI from '@theia/core/lib/common/uri';
+import * as React from '@theia/core/shared/react';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugConfiguration, DebugConsoleMode } from '../common/debug-common';
+import { BreakpointManager } from './breakpoint/breakpoint-manager';
+import { ExceptionBreakpoint, SourceBreakpoint } from './breakpoint/breakpoint-marker';
+import { DebugScope } from './console/debug-console-items';
+import { DebugContribution } from './debug-contribution';
+import { DebugEventTypes, DebugRequestTypes, DebugSessionConnection } from './debug-session-connection';
+import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
+import { DebugBreakpoint, DebugBreakpointOptions } from './model/debug-breakpoint';
+import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
+import { DebugSource } from './model/debug-source';
+import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
+import { DebugStackFrame } from './model/debug-stack-frame';
+import { DebugThread, DebugThreadData, StoppedDetails } from './model/debug-thread';
+import debounce = require('p-debounce');
 
 export enum DebugState {
     Inactive,

@@ -1,18 +1,19 @@
-/********************************************************************************
- * Copyright (C) 2021 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
+import { toArrayBuffer } from './array-buffer-message-buffer';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
 
 /**
@@ -30,7 +31,7 @@ export interface SerializedError {
     readonly stack: string;
 }
 
-export const enum MessageType {
+export const enum RPCMessageType {
     Request = 1,
     Notification = 2,
     Reply = 3,
@@ -39,12 +40,12 @@ export const enum MessageType {
 }
 
 export interface CancelMessage {
-    type: MessageType.Cancel;
+    type: RPCMessageType.Cancel;
     id: number;
 }
 
 export interface RequestMessage {
-    type: MessageType.Request;
+    type: RPCMessageType.Request;
     id: number;
     method: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,7 +53,7 @@ export interface RequestMessage {
 }
 
 export interface NotificationMessage {
-    type: MessageType.Notification;
+    type: RPCMessageType.Notification;
     id: number;
     method: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,14 +61,14 @@ export interface NotificationMessage {
 }
 
 export interface ReplyMessage {
-    type: MessageType.Reply;
+    type: RPCMessageType.Reply;
     id: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     res: any;
 }
 
 export interface ReplyErrMessage {
-    type: MessageType.ReplyErr;
+    type: RPCMessageType.ReplyErr;
     id: number;
     err: SerializedError;
 }
@@ -116,7 +117,7 @@ export interface ValueDecoder {
      * @param buf The read buffer to read from
      * @param recursiveDecode A function that will use the decoders registered on the {@link MessageEncoder}
      * to read values from the underlying read buffer. This is used mostly to decode structures like an array
-     * without having to know how to decode the values in the aray.
+     * without having to know how to decode the values in the array.
      */
     read(buf: ReadBuffer, recursiveDecode: (buf: ReadBuffer) => unknown): unknown;
 }
@@ -172,15 +173,15 @@ export class MessageDecoder {
             const msgType = buf.readByte();
 
             switch (msgType) {
-                case MessageType.Request:
+                case RPCMessageType.Request:
                     return this.parseRequest(buf);
-                case MessageType.Notification:
+                case RPCMessageType.Notification:
                     return this.parseNotification(buf);
-                case MessageType.Reply:
+                case RPCMessageType.Reply:
                     return this.parseReply(buf);
-                case MessageType.ReplyErr:
+                case RPCMessageType.ReplyErr:
                     return this.parseReplyErr(buf);
-                case MessageType.Cancel:
+                case RPCMessageType.Cancel:
                     return this.parseCancel(buf);
             }
             throw new Error(`Unknown message type: ${msgType}`);
@@ -194,7 +195,7 @@ export class MessageDecoder {
     protected parseCancel(msg: ReadBuffer): CancelMessage {
         const callId = msg.readInt();
         return {
-            type: MessageType.Cancel,
+            type: RPCMessageType.Cancel,
             id: callId
         };
     }
@@ -207,7 +208,7 @@ export class MessageDecoder {
         args = args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
 
         return {
-            type: MessageType.Request,
+            type: RPCMessageType.Request,
             id: callId,
             method: method,
             args: args
@@ -222,7 +223,7 @@ export class MessageDecoder {
         args = args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
 
         return {
-            type: MessageType.Notification,
+            type: RPCMessageType.Notification,
             id: callId,
             method: method,
             args: args
@@ -233,7 +234,7 @@ export class MessageDecoder {
         const callId = msg.readInt();
         const value = this.readTypedValue(msg);
         return {
-            type: MessageType.Reply,
+            type: RPCMessageType.Reply,
             id: callId,
             res: value
         };
@@ -251,7 +252,7 @@ export class MessageDecoder {
             err.stack = err.stack;
         }
         return {
-            type: MessageType.ReplyErr,
+            type: RPCMessageType.ReplyErr,
             id: callId,
             err: err
         };
@@ -277,6 +278,7 @@ export class MessageDecoder {
         return decoder.read(buf, innerBuffer => this.readTypedValue(innerBuffer));
     }
 }
+
 /**
  * A MessageEncoder writes RCPMessage objects to a WriteBuffer. Note that it is
  * up to clients to commit the message. This allows for multiple messages being
@@ -314,7 +316,8 @@ export class MessageEncoder {
             }
         });
         this.registerEncoder(ObjectType.Undefined, {
-            is: value => (typeof value === 'undefined'),
+            // eslint-disable-next-line no-null/no-null
+            is: value => (value === undefined || value === null),
             write: () => { }
         });
 
@@ -326,9 +329,10 @@ export class MessageEncoder {
         });
 
         this.registerEncoder(ObjectType.ByteArray, {
-            is: value => value instanceof ArrayBuffer,
+            is: value => value instanceof ArrayBuffer || Buffer.isBuffer(value),
             write: (buf, value) => {
-                buf.writeBytes(value);
+                const arrayBuffer = value instanceof ArrayBuffer ? value : toArrayBuffer(value);
+                buf.writeBytes(arrayBuffer);
             }
         });
     }
@@ -342,13 +346,13 @@ export class MessageEncoder {
     }
 
     cancel(buf: WriteBuffer, requestId: number): void {
-        buf.writeByte(MessageType.Cancel);
+        buf.writeByte(RPCMessageType.Cancel);
         buf.writeInt(requestId);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     notification(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
-        buf.writeByte(MessageType.Notification);
+        buf.writeByte(RPCMessageType.Notification);
         buf.writeInt(requestId);
         buf.writeString(method);
         this.writeArray(buf, args);
@@ -356,7 +360,7 @@ export class MessageEncoder {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     request(buf: WriteBuffer, requestId: number, method: string, args: any[]): void {
-        buf.writeByte(MessageType.Request);
+        buf.writeByte(RPCMessageType.Request);
         buf.writeInt(requestId);
         buf.writeString(method);
         this.writeArray(buf, args);
@@ -364,14 +368,14 @@ export class MessageEncoder {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     replyOK(buf: WriteBuffer, requestId: number, res: any): void {
-        buf.writeByte(MessageType.Reply);
+        buf.writeByte(RPCMessageType.Reply);
         buf.writeInt(requestId);
         this.writeTypedValue(buf, res);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     replyErr(buf: WriteBuffer, requestId: number, err: any): void {
-        buf.writeByte(MessageType.ReplyErr);
+        buf.writeByte(RPCMessageType.ReplyErr);
         buf.writeInt(requestId);
         this.writeTypedValue(buf, err);
     }

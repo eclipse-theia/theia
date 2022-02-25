@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { MessageClient, MessageType, Message as PlainMessage, ProgressMessage, ProgressUpdate, CancellationToken } from '@theia/core/lib/common';
+import { MessageClient, Message as PlainMessage, ProgressMessage, ProgressUpdate, CancellationToken, MessageType } from '@theia/core/lib/common';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';

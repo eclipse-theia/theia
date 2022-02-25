@@ -10,6 +10,8 @@
     "**/@types/node": "12"
   },
   "devDependencies": {
+    "@types/chai": "4.3.0",
+    "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
     "@types/node": "12",
@@ -20,6 +22,8 @@
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/eslint-plugin-tslint": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
+    "chai": "4.3.4",
+    "chai-spies": "1.0.0",
     "chai-string": "^1.4.0",
     "chalk": "4.0.0",
     "concurrently": "^3.5.0",

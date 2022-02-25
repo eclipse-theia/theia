@@ -1,22 +1,39 @@
-/********************************************************************************
- * Copyright (C) 2021 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
 
-export class ArrrayBufferWriteBuffer implements WriteBuffer {
+/**
+ * Converts the given node {@link Buffer} to an {@link ArrayBuffer}. The node buffer implementation is backed by an `Uint8Array`
+ * so the conversion can be efficiently achieved by slicing the section that is represented by the `Buffer` from the underlying
+ * array buffer.
+ * @param buffer The buffer that should be converted.
+ * @returns an `ArrayBuffer`representation of the given buffer.
+ */
+export function toArrayBuffer(buffer: Buffer | ArrayBuffer): ArrayBuffer {
+    if (buffer instanceof ArrayBuffer) {
+        return buffer;
+    }
+    if (buffer.byteOffset === 0 && buffer.byteLength === buffer.buffer.byteLength) {
+        return buffer.buffer;
+    }
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+}
+
+export class ArrayBufferWriteBuffer implements WriteBuffer {
     constructor(private buffer: ArrayBuffer = new ArrayBuffer(1024), private offset: number = 0) {
     }
 
@@ -85,7 +102,8 @@ export class ArrrayBufferWriteBuffer implements WriteBuffer {
 export class ArrayBufferReadBuffer implements ReadBuffer {
     private offset: number = 0;
 
-    constructor(private readonly buffer: ArrayBuffer) {
+    constructor(private readonly buffer: ArrayBuffer, readPosition = 0) {
+        this.offset = readPosition;
     }
 
     private get msg(): DataView {
@@ -97,9 +115,13 @@ export class ArrayBufferReadBuffer implements ReadBuffer {
     }
 
     readInt(): number {
-        const result = this.msg.getInt32(this.offset);
-        this.offset += 4;
-        return result;
+        try {
+            const result = this.msg.getInt32(this.offset);
+            this.offset += 4;
+            return result;
+        } catch (err) {
+            throw err;
+        }
     }
 
     readString(): string {
@@ -120,5 +142,9 @@ export class ArrayBufferReadBuffer implements ReadBuffer {
         const result = this.buffer.slice(this.offset, this.offset + length);
         this.offset += length;
         return result;
+    }
+
+    copy(): ReadBuffer {
+        return new ArrayBufferReadBuffer(this.buffer, this.offset);
     }
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { MessageConnection } from 'vscode-jsonrpc';
+import { Channel } from '../../common/message-rpc/channel';
 import type { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 export interface ElectronMessagingService {
@@ -22,7 +22,7 @@ export interface ElectronMessagingService {
      * Accept a JSON-RPC connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    listen(path: string, callback: (params: ElectronMessagingService.PathParams, connection: MessageConnection) => void): void;
+    listen(path: string, callback: (params: ElectronMessagingService.PathParams, connection: Channel) => void): void;
     /**
      * Accept an ipc channel on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.

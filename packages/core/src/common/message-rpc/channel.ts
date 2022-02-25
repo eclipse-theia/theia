@@ -1,21 +1,23 @@
-/********************************************************************************
- * Copyright (C) 2021 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
-import { ArrayBufferReadBuffer, ArrrayBufferWriteBuffer } from './array-buffer-message-buffer';
+// *****************************************************************************
+// Copyright (C) 2021 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from './array-buffer-message-buffer';
 import { Emitter, Event } from '../event';
 import { ReadBuffer, WriteBuffer } from './message-buffer';
+
+export type ReadBufferConstructor = () => ReadBuffer;
 
 /**
  * A channel is a bidirectinal communications channel with lifecycle and
@@ -32,9 +34,11 @@ export interface Channel {
      */
     onError: Event<unknown>;
     /**
-     * A message has arrived and can be read using the given {@link ReadBuffer}
+     * A message has arrived and can be read using a {@link ReadBuffer}. Since one `ReadBuffer` cannot be reused
+     * by multiple listener to read the same message again, each lister has to construct its
+     * own buffer using the given {@link ReadBufferConstructor}
      */
-    onMessage: Event<ReadBuffer>;
+    onMessage: Event<ReadBufferConstructor>;
     /**
      * Obtain a {@link WriteBuffer} to write a message to the channel.
      */
@@ -43,9 +47,11 @@ export interface Channel {
      * Close this channel. No {@link onClose} event should be sent
      */
     close(): void;
+
+    readonly id: string;
 }
 
-enum MessageTypes {
+export enum MessageTypes {
     Open = 1,
     Close = 2,
     AckOpen = 3,
@@ -55,8 +61,8 @@ enum MessageTypes {
 /**
  * Helper class to implement the single channels on a {@link ChannelMultiplexer}
  */
-class ForwardingChannel implements Channel {
-    constructor(private readonly closeHander: () => void, private readonly writeBufferSource: () => WriteBuffer) {
+export class ForwardingChannel implements Channel {
+    constructor(readonly id: string, private readonly closeHander: () => void, private readonly writeBufferSource: () => WriteBuffer) {
     }
 
     onCloseEmitter: Emitter<void> = new Emitter();
@@ -67,13 +73,19 @@ class ForwardingChannel implements Channel {
     get onError(): Event<unknown> {
         return this.onErrorEmitter.event;
     };
-    onMessageEmitter: Emitter<ReadBuffer> = new Emitter();
-    get onMessage(): Event<ReadBuffer> {
+    onMessageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
+    get onMessage(): Event<ReadBufferConstructor> {
         return this.onMessageEmitter.event;
     };
 
     getWriteBuffer(): WriteBuffer {
         return this.writeBufferSource();
+    }
+
+    send(message: ArrayBuffer): void {
+        const writeBuffer = this.getWriteBuffer();
+        writeBuffer.writeBytes(message);
+        writeBuffer.commit();
     }
 
     close(): void {
@@ -91,13 +103,13 @@ export class ChannelMultiplexer {
     protected pendingOpen: Map<string, (channel: ForwardingChannel) => void> = new Map();
     protected openChannels: Map<string, ForwardingChannel> = new Map();
 
-    protected readonly onOpenChannelEmitter: Emitter<Channel> = new Emitter<Channel>();
-    get onDidOpenChannel(): Event<Channel> {
+    protected readonly onOpenChannelEmitter = new Emitter<{ id: string, channel: Channel }>();
+    get onDidOpenChannel(): Event<{ id: string, channel: Channel }> {
         return this.onOpenChannelEmitter.event;
     }
 
     constructor(protected readonly underlyingChannel: Channel) {
-        this.underlyingChannel.onMessage(buffer => this.handleMessage(buffer));
+        this.underlyingChannel.onMessage(buffer => this.handleMessage(buffer()));
         this.underlyingChannel.onClose(() => this.handleClose());
         this.underlyingChannel.onError(error => this.handleError(error));
     }
@@ -128,7 +140,7 @@ export class ChannelMultiplexer {
                     this.pendingOpen.delete(id);
                     this.openChannels.set(id, channel);
                     resolve!(channel);
-                    this.onOpenChannelEmitter.fire(channel);
+                    this.onOpenChannelEmitter.fire({ id, channel });
                 }
                 break;
             }
@@ -142,7 +154,7 @@ export class ChannelMultiplexer {
                         resolve(channel);
                     }
                     this.underlyingChannel.getWriteBuffer().writeByte(MessageTypes.AckOpen).writeString(id).commit();
-                    this.onOpenChannelEmitter.fire(channel);
+                    this.onOpenChannelEmitter.fire({ id, channel });
                 }
 
                 break;
@@ -158,7 +170,7 @@ export class ChannelMultiplexer {
             case MessageTypes.Data: {
                 const channel = this.openChannels.get(id);
                 if (channel) {
-                    channel.onMessageEmitter.fire(buffer);
+                    channel.onMessageEmitter.fire(() => buffer.copy());
                 }
                 break;
             }
@@ -167,7 +179,7 @@ export class ChannelMultiplexer {
     }
 
     protected createChannel(id: string): ForwardingChannel {
-        return new ForwardingChannel(() => this.closeChannel(id), () => {
+        return new ForwardingChannel(id, () => this.closeChannel(id), () => {
             const underlying = this.underlyingChannel.getWriteBuffer();
             underlying.writeByte(MessageTypes.Data);
             underlying.writeString(id);
@@ -177,8 +189,11 @@ export class ChannelMultiplexer {
 
     protected closeChannel(id: string): void {
         this.underlyingChannel.getWriteBuffer().writeByte(MessageTypes.Close).writeString(id).commit();
-        this.openChannels.get(id)!.onCloseEmitter.fire();
-        this.openChannels.delete(id);
+        if (this.openChannels.delete(id)) {
+            this.openChannels.get(id)!.onCloseEmitter.fire();
+        } else {
+            console.error('The channel does not exist: ', id);
+        }
     }
 
     open(id: string): Promise<Channel> {
@@ -198,17 +213,17 @@ export class ChannelMultiplexer {
  * A pipe with two channels at each end for testing.
  */
 export class ChannelPipe {
-    readonly left: ForwardingChannel = new ForwardingChannel(() => this.right.onCloseEmitter.fire(), () => {
-        const leftWrite = new ArrrayBufferWriteBuffer();
+    readonly left: ForwardingChannel = new ForwardingChannel('left', () => this.right.onCloseEmitter.fire(), () => {
+        const leftWrite = new ArrayBufferWriteBuffer();
         leftWrite.onCommit(buffer => {
-            this.right.onMessageEmitter.fire(new ArrayBufferReadBuffer(buffer));
+            this.right.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(buffer));
         });
         return leftWrite;
     });
-    readonly right: ForwardingChannel = new ForwardingChannel(() => this.left.onCloseEmitter.fire(), () => {
-        const rightWrite = new ArrrayBufferWriteBuffer();
+    readonly right: ForwardingChannel = new ForwardingChannel('right', () => this.left.onCloseEmitter.fire(), () => {
+        const rightWrite = new ArrayBufferWriteBuffer();
         rightWrite.onCommit(buffer => {
-            this.left.onMessageEmitter.fire(new ArrayBufferReadBuffer(buffer));
+            this.left.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(buffer));
         });
         return rightWrite;
     });

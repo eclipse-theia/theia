@@ -16,13 +16,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
-
-import { Channel } from '../common/debug-service';
-
+import { DebugProtocol } from 'vscode-debugprotocol';
 export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 
 export interface DebugRequestTypes {
@@ -168,7 +166,7 @@ export class DebugSessionConnection implements Disposable {
             this.cancelPendingRequests();
             this.onDidCloseEmitter.fire();
         });
-        connection.onMessage(data => this.handleMessage(data));
+        connection.onMessage(data => this.handleMessage(data().readString()));
         return connection;
     }
 
@@ -247,7 +245,7 @@ export class DebugSessionConnection implements Disposable {
             const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
             this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${JSON.stringify(message, undefined, 4)}`);
         }
-        connection.send(messageStr);
+        connection.getWriteBuffer().writeString(messageStr);
     }
 
     protected handleMessage(data: string): void {
