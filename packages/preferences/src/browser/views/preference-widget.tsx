@@ -50,8 +50,8 @@ export class PreferencesWidget extends Panel implements StatefulWidget {
         return this.tabBarWidget.currentScope;
     }
 
-    setSearchTerm(query: string): void {
-        this.searchbarWidget.updateSearchTerm(query);
+    setSearchTerm(query: string): Promise<void> {
+        return this.searchbarWidget.updateSearchTerm(query);
     }
 
     setScope(scope: PreferenceScope.User | PreferenceScope.Workspace | URI): void {
