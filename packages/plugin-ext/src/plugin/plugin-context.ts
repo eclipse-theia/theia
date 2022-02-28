@@ -752,8 +752,9 @@ export function createAPIFactory(
             registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
                 return languagesExt.registerReferenceProvider(selector, provider, pluginToPluginInfo(plugin));
             },
-            registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
-                return languagesExt.registerDocumentSymbolProvider(selector, provider, pluginToPluginInfo(plugin));
+            registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider,
+                metadata?: theia.DocumentSymbolProviderMetadata): theia.Disposable {
+                return languagesExt.registerDocumentSymbolProvider(selector, provider, pluginToPluginInfo(plugin), metadata);
             },
             registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
                 return languagesExt.registerColorProvider(selector, provider, pluginToPluginInfo(plugin));

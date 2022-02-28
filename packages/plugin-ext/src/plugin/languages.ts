@@ -531,9 +531,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Code Reference Provider end
 
     // ### Document Symbol Provider begin
-    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider, pluginInfo: PluginInfo): theia.Disposable {
+    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider, pluginInfo: PluginInfo,
+        metadata?: theia.DocumentSymbolProviderMetadata): theia.Disposable {
         const callId = this.addNewAdapter(new OutlineAdapter(this.documents, provider));
-        this.proxy.$registerOutlineSupport(callId, pluginInfo, this.transformDocumentSelector(selector));
+        const displayName = (metadata && metadata.label) || getPluginLabel(pluginInfo);
+        this.proxy.$registerOutlineSupport(callId, pluginInfo, this.transformDocumentSelector(selector), displayName);
         return this.createDisposable(callId);
     }
 
@@ -699,4 +701,8 @@ function serializeIndentation(indentationRules?: theia.IndentationRule): Seriali
         indentNextLinePattern: serializeRegExp(indentationRules.indentNextLinePattern),
         unIndentedLinePattern: serializeRegExp(indentationRules.unIndentedLinePattern)
     };
+}
+
+function getPluginLabel(pluginInfo: PluginInfo): string {
+    return pluginInfo.displayName || pluginInfo.name;
 }

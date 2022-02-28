@@ -273,9 +273,9 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
         super.$registerCodeLensSupport(handle, pluginInfo, selector, eventHandle);
     }
 
-    override $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    override $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void {
         this.registerPluginWithFeatureHandle(handle, pluginInfo.id);
-        super.$registerOutlineSupport(handle, pluginInfo, selector);
+        super.$registerOutlineSupport(handle, pluginInfo, selector, displayName);
     }
 
     override $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {

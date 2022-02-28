@@ -6953,6 +6953,16 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Metadata about a {@link DocumentSymbolProvider}.
+     */
+    export interface DocumentSymbolProviderMetadata {
+        /**
+         * A human-readable string that is shown when multiple outline trees show for one document.
+         */
+        label?: string;
+    }
+
+    /**
      * Represents a color in RGBA space.
      */
     export class Color {
@@ -8974,9 +8984,11 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document symbol provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @param metadata Optional metadata about the provider.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
-        export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
+        export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider,
+            metadata?: DocumentSymbolProviderMetadata): Disposable;
 
         /**
          * Register a color provider.

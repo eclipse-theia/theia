@@ -1402,6 +1402,7 @@ export interface ProcessTaskDto extends TaskDto, CommandProperties {
 export interface PluginInfo {
     id: string;
     name: string;
+    displayName?: string;
 }
 
 export interface LanguagesExt {
@@ -1503,7 +1504,7 @@ export interface LanguagesMain {
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle?: number): void;
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
-    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void;
     $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void;
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;

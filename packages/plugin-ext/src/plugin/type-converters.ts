@@ -1217,6 +1217,7 @@ export function pathOrURIToURI(value: string | URI): URI {
 export function pluginToPluginInfo(plugin: Plugin): rpc.PluginInfo {
     return {
         id: plugin.model.id,
-        name: plugin.model.name
+        name: plugin.model.name,
+        displayName: plugin.model.displayName
     };
 }
