@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
-export type Nullable<T> = { [P in keyof T]: T[P] | null };
-export type Undefinable<T> = { [P in keyof T]: T[P] | undefined };
+export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
+export type MaybeUndefined<T> = { [P in keyof T]: T[P] | undefined };
 
 /**
- * Mutates and returns the object so that all ownkeys that are null are made `undefined`
+ * Creates a shallow copy with all ownkeys of the original object that are `null` made `undefined`
  */
-export function nullToUndefined<T>(nullable: Nullable<T>): Undefinable<T> {
-    const undefinable = nullable as Undefinable<T>;
+export function nullToUndefined<T>(nullable: MaybeNull<T>): MaybeUndefined<T> {
+    const undefinable = { ...nullable } as MaybeUndefined<T>;
     for (const key in nullable) {
         // eslint-disable-next-line no-null/no-null
         if (nullable[key] === null && Object.prototype.hasOwnProperty.call(nullable, key)) {

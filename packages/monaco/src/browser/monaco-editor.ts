@@ -18,7 +18,7 @@ import { injectable, inject, unmanaged } from '@theia/core/shared/inversify';
 import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 import URI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DisposableCollection, Disposable, Emitter, Event, nullToUndefined, Nullable } from '@theia/core/lib/common';
+import { DisposableCollection, Disposable, Emitter, Event, nullToUndefined, MaybeNull } from '@theia/core/lib/common';
 import {
     Dimension,
     EditorManager,
@@ -494,7 +494,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected toEditorDecoration(decoration: Monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {
         const range = this.m2p.asRange(decoration.range);
         const { id, options: monacoOptions } = decoration;
-        const options: Nullable<EditorDecorationOptions> = {
+        const options: MaybeNull<EditorDecorationOptions> = {
             ...monacoOptions,
             hoverMessage: this.fromMarkdownToString(monacoOptions.hoverMessage),
             glyphMarginHoverMessage: this.fromMarkdownToString(monacoOptions.hoverMessage),

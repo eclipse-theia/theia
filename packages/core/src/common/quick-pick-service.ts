@@ -100,9 +100,6 @@ export namespace QuickPickSeparator {
     export function is(item: QuickPickItemOrSeparator): item is QuickPickSeparator {
         return item.type === 'separator';
     }
-    export function isNot(item: QuickPickItemOrSeparator): item is QuickPickItem {
-        return item.type !== 'separator';
-    }
 }
 
 export type QuickPicks = (QuickPickSeparator | QuickPickItem)[];
@@ -326,7 +323,7 @@ export function filterItems(items: QuickPickItemOrSeparator[], filter: string): 
         return items;
     }
 
-    const filteredItems = [];
+    const filteredItems: QuickPickItemOrSeparator[] = [];
     for (const item of items) {
         if (item.type === 'separator') { // TODO: We should check if the separator still makes sense.
             filteredItems.push(item);
