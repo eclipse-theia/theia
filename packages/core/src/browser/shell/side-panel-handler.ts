@@ -297,9 +297,9 @@ export class SidePanelHandler {
                     if (expanded) {
                         currentTitle = widget.title;
                     }
-                    if (currentTitle && pinned) {
-                        currentTitle.className += ' theia-mod-pinned';
-                        currentTitle.closable = false;
+                    if (pinned) {
+                        widget.title.className += ' theia-mod-pinned';
+                        widget.title.closable = false;
                     }
                     // Add the widgets directly to the tab bar in the same order as they are stored
                     this.tabBar.addTab(widget.title);
