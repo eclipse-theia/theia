@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 import './preferences-monaco-contribution';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindViewContribution } from '@theia/core/lib/browser';
+import { bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { PreferenceTreeGenerator } from './util/preference-tree-generator';
 import { bindPreferenceProviders } from './preference-bindings';
@@ -28,6 +28,7 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution';
 import { MonacoJSONCEditor } from './monaco-jsonc-editor';
 import { PreferenceContext, PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
+import { PreferenceOpenHandler } from './preference-open-handler';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
@@ -36,6 +37,9 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(PreferenceTreeGenerator).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PreferencesContribution);
+
+    bind(PreferenceOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(PreferenceOpenHandler);
 
     bind(PreferenceScopeCommandManager).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(PreferencesContribution);
