@@ -274,12 +274,12 @@ body.theia-editor-highlightModifiedTabs
   content: "\ea71";
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon {
-  background-image: var(--theia-icon-pinned); /* TODO: replace with codicons after Monaco update #9154 */
+.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned > .p-TabBar-tabCloseIcon:before {
+  content: "\eba0";
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned.theia-mod-dirty > .p-TabBar-tabCloseIcon {
-  background-image: var(--theia-icon-pinned-dirty); /* TODO: replace with codicons after Monaco update #9154 */
+.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-pinned.theia-mod-dirty > .p-TabBar-tabCloseIcon:before {
+  content: "\ebb2";
 }
 
 .p-TabBar-tabIcon.no-icon {
