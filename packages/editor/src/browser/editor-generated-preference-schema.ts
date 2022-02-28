@@ -26,7 +26,7 @@ import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
  * The only manual work required is fixing preferences with type 'array' or 'object'.
  */
 
-export const generatedEditorPreferenceProperties: PreferenceSchema['properties'] = {
+export const editorGeneratedPreferenceProperties: PreferenceSchema['properties'] = {
     "editor.rename.enablePreview": {
         "scope": "language-overridable",
         "description": nls.localizeByDefault("Enable/disable the ability to preview changes before renaming"),

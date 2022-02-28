@@ -19,7 +19,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { generatedEditorPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export const TerminalConfigSchema: PreferenceSchema = {
     type: 'object',
@@ -37,13 +37,13 @@ export const TerminalConfigSchema: PreferenceSchema = {
         'terminal.integrated.fontFamily': {
             type: 'string',
             markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to `#editor.fontFamily#`'s value."),
-            default: generatedEditorPreferenceProperties['editor.fontFamily'].default,
+            default: editorGeneratedPreferenceProperties['editor.fontFamily'].default,
         },
         'terminal.integrated.fontSize': {
             type: 'number',
             description: nls.localizeByDefault('Controls the font size in pixels of the terminal.'),
             minimum: 6,
-            default: generatedEditorPreferenceProperties['editor.fontSize'].default
+            default: editorGeneratedPreferenceProperties['editor.fontSize'].default
         },
         'terminal.integrated.fontWeight': {
             type: 'string',

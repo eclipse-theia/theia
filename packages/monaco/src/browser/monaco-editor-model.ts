@@ -31,7 +31,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
-import { generatedEditorPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export {
     TextDocumentSaveReason
@@ -322,7 +322,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      * @returns the list of matches.
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
-        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? generatedEditorPreferenceProperties['editor.wordSeparators'].default as string;
+        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? editorGeneratedPreferenceProperties['editor.wordSeparators'].default as string;
         const results: Monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,

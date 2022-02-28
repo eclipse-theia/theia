@@ -26,6 +26,7 @@ import {
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import { isOSX } from '@theia/core';
 
 /**
  * Representation of a keybinding item for the view.
@@ -35,12 +36,24 @@ export interface KeybindingItem {
     keybinding?: ScopedKeybinding
     /** human-readable labels can contain highlighting */
     labels: {
-        id: string
-        command: string
-        keybinding: string
-        context: string
-        source: string
+        id: RenderableLabel;
+        command: RenderableLabel;
+        keybinding: RenderableLabel;
+        context: RenderableLabel;
+        source: RenderableLabel;
     }
+    visible?: boolean;
+}
+
+export interface RenderableLabel {
+    readonly value: string;
+    segments?: RenderableStringSegment[];
+}
+
+export interface RenderableStringSegment {
+    value: string;
+    match: boolean;
+    key?: boolean;
 }
 
 /**
@@ -126,8 +139,8 @@ export class KeybindingWidget extends ReactWidget {
         // Listen to changes made in the `keymaps.json` and update the view accordingly.
         if (this.keymapsService.onDidChangeKeymaps) {
             this.toDispose.push(this.keymapsService.onDidChangeKeymaps(() => {
+                this.items = this.getItems();
                 this.doSearchKeybindings();
-                this.update();
             }));
         }
     }
@@ -162,99 +175,82 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected doSearchKeybindings(): void {
         this.onDidUpdateEmitter.fire(undefined);
-        this.items = [];
         const searchField = this.findSearchField();
         this.query = searchField ? searchField.value.trim().toLocaleLowerCase() : '';
-        const items = this.getItems();
-        items.forEach(item => {
-            const keys: (keyof KeybindingItem['labels'])[] = ['command', 'keybinding', 'context', 'source'];
-            let matched = false;
-            for (const key of keys) {
-                const string = item.labels[key];
-                if (string) {
-                    const fuzzyMatch = fuzzy.match(this.query, string, this.fuzzyOptions);
-                    if (fuzzyMatch) {
-                        item.labels[key] = fuzzyMatch.rendered;
-                        matched = true;
-                    } else {
-                        // Match identical keybindings that have different orders.
-                        if (key === 'keybinding') {
-                            const queryItems = this.query.split('+');
-
-                            // Handle key chords.
-                            const tempItems = string.split(' ');
-                            // Store positions of `space` in the keybinding string.
-                            const spaceIndexArr = [0];
-                            let bindingItems: string[] = [];
-                            if (tempItems.length > 1) {
-                                tempItems.forEach(tItem => {
-                                    const tKeys = tItem.split('+');
-                                    spaceIndexArr.push(tKeys.length + spaceIndexArr[-1]);
-                                    bindingItems.push(...tKeys);
-                                });
-                            } else {
-                                bindingItems = string.split('+');
-                            }
-                            spaceIndexArr.shift();
-
-                            const renderedResult = [...bindingItems];
-                            let matchCounter = 0;
-
-                            queryItems.forEach(queryItem => {
-                                let keyFuzzyMatch: fuzzy.MatchResult = { rendered: '', score: 0 };
-                                let keyIndex = -1;
-                                if (string) {
-                                    bindingItems.forEach((bindingItem: string) => {
-                                        // Match every key in user query with every key in keybinding string.
-                                        const tempFuzzyMatch = fuzzy.match(queryItem, bindingItem, this.fuzzyOptions);
-                                        // Select the match with the highest matching score.
-                                        if (tempFuzzyMatch && tempFuzzyMatch.score > keyFuzzyMatch.score) {
-                                            keyFuzzyMatch = tempFuzzyMatch;
-                                            // Get index in the keybinding array.
-                                            keyIndex = renderedResult.indexOf(bindingItem);
-                                        }
-                                    });
-
-                                    const keyRendered = keyFuzzyMatch.rendered;
-                                    if (keyRendered) {
-                                        if (keyIndex > -1) {
-                                            renderedResult[keyIndex] = keyRendered;
-                                        }
-                                        // Remove key from keybinding items if it is matched.
-                                        bindingItems.splice(keyIndex, 1, '');
-                                        matchCounter += 1;
-                                    }
-                                }
-                            });
-                            if (matchCounter === queryItems.length) {
-                                // Handle rendering of key chords.
-                                if (spaceIndexArr.length > 0) {
-                                    const chordRenderedResult = '';
-                                    renderedResult.forEach((resultKey, index) => {
-                                        if (index === 0) {
-                                            chordRenderedResult.concat(resultKey);
-                                        } else if (spaceIndexArr.indexOf(index) !== -1) {
-                                            chordRenderedResult.concat(' ' + resultKey);
-                                        } else {
-                                            chordRenderedResult.concat('+' + resultKey);
-                                        }
-                                    });
-                                    item.labels[key] = chordRenderedResult;
-                                }
-
-                                item.labels[key] = renderedResult.join('+');
-                                matched = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (matched) {
-                this.items.push(item);
-            }
+        const queryItems = this.query.split(/[+\s]/);
+        this.items.forEach(item => {
+            let matched = !this.query;
+            matched = this.formatAndMatchCommand(item) || matched;
+            matched = this.formatAndMatchKeybinding(item, queryItems) || matched;
+            matched = this.formatAndMatchContext(item) || matched;
+            matched = this.formatAndMatchSource(item) || matched;
+            item.visible = matched;
         });
         this.update();
+    }
+
+    protected formatAndMatchCommand(item: KeybindingItem): boolean {
+        item.labels.command = this.toRenderableLabel(item.labels.command.value);
+        return Boolean(item.labels.command.segments);
+    }
+
+    protected formatAndMatchKeybinding(item: KeybindingItem, queryItems: string[]): boolean {
+        if (item.keybinding) {
+            let match = false;
+            const segments = this.keybindingRegistry.resolveKeybinding(item.keybinding).reduce<RenderableStringSegment[]>((collection, code, codeIndex) => {
+                if (codeIndex !== 0) {
+                    // Two non-breaking spaces.
+                    collection.push({ value: '\u00a0\u00a0', match: false, key: false });
+                }
+                const displayChunks = this.keybindingRegistry.componentsForKeyCode(code);
+                const matchChunks = isOSX ? this.keybindingRegistry.componentsForKeyCode(code, true) : displayChunks;
+
+                displayChunks.forEach((chunk, chunkIndex) => {
+                    if (chunkIndex !== 0) {
+                        collection.push({ value: '+', match: false, key: false });
+                    }
+                    const chunkMatches = queryItems.includes(matchChunks[chunkIndex].toLocaleLowerCase());
+                    match ||= chunkMatches;
+                    collection.push({ value: chunk, match: chunkMatches, key: true });
+                });
+                return collection;
+            }, []);
+            item.labels.keybinding = { value: item.labels.keybinding.value, segments };
+            return match;
+        }
+        item.labels.keybinding = { value: '' };
+        return false;
+    }
+
+    protected formatAndMatchContext(item: KeybindingItem): boolean {
+        item.labels.context = this.toRenderableLabel(item.labels.context.value);
+        return Boolean(item.labels.context.segments);
+    }
+
+    protected formatAndMatchSource(item: KeybindingItem): boolean {
+        item.labels.source = this.toRenderableLabel(item.labels.source.value);
+        return Boolean(item.labels.source.segments);
+    }
+
+    protected toRenderableLabel(label: string, query: string = this.query): RenderableLabel {
+        if (label && query) {
+            const fuzzyMatch = fuzzy.match(query, label, this.fuzzyOptions);
+            if (fuzzyMatch) {
+                return {
+                    value: label,
+                    segments: fuzzyMatch.rendered.split(this.fuzzyOptions.pre).reduce<RenderableStringSegment[]>((collection, segment) => {
+                        const [maybeMatch, notMatch] = segment.split(this.fuzzyOptions.post);
+                        if (notMatch === undefined) {
+                            collection.push({ value: maybeMatch, match: false });
+                        } else {
+                            collection.push({ value: maybeMatch, match: true }, { value: notMatch, match: false });
+                        }
+                        return collection;
+                    }, [])
+                };
+            }
+        }
+        return { value: label };
     }
 
     /**
@@ -344,7 +340,7 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected renderRows(): React.ReactNode {
         return <React.Fragment>
-            {this.items.map((item, index) => this.renderRow(item, index))}
+            {this.items.map((item, index) => item.visible !== false && this.renderRow(item, index))}
         </React.Fragment>;
     }
 
@@ -359,7 +355,7 @@ export class KeybindingWidget extends ReactWidget {
                 {this.renderMatchedData(item.labels.command)}
             </td>
             <td title={this.getKeybindingLabel(keybinding)} className='kb-keybinding monaco-keybinding'>
-                {this.renderKeybinding(item.labels.keybinding)}
+                {this.renderKeybinding(item)}
             </td>
             <td className='kb-context' title={this.getContextLabel(keybinding)}>
                 <code>{this.renderMatchedData(item.labels.context)}</code>
@@ -406,43 +402,27 @@ export class KeybindingWidget extends ReactWidget {
      * Render the keybinding.
      * @param keybinding the keybinding value.
      */
-    protected renderKeybinding(keybinding: string): React.ReactNode {
-        if (!keybinding.length) {
+    protected renderKeybinding(keybinding: KeybindingItem): React.ReactNode {
+        if (!keybinding.keybinding) {
             return undefined;
         }
-        const regex = new RegExp(this.keybindingSeparator);
-        keybinding = keybinding.replace(regex, '+');
-        const keys = keybinding.split('+');
 
-        return <React.Fragment>
-            {
-                keys.map((key, index) => {
-                    if (index === 0) {
-                        return <span key={index} className='monaco-keybinding-key'>
-                            {this.renderMatchedData(key)}
-                        </span>;
-                    } else if (key.includes(' ')) {
-                        // Handle key chords, which have space as the separator
-                        // Example: `k Ctrl` in key chords `Ctrl+k Ctrl+p`
-                        let chordKeys = key.split('<match> </match>');
-                        if (chordKeys.length === 1) {
-                            chordKeys = key.split(' ');
-                        }
-                        return <React.Fragment key={index}>
-                            <span className='monaco-keybinding-separator'>+</span>
-                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[0])}</span>
-                            <span className='monaco-keybinding-separator'>&nbsp;&nbsp;</span>
-                            <span className='monaco-keybinding-key'>{this.renderKeybinding(chordKeys[1])}</span>
-                        </React.Fragment>;
-                    } else {
-                        return <React.Fragment key={index}>
-                            <span className='monaco-keybinding-separator'>+</span>
-                            <span className='monaco-keybinding-key'>{this.renderKeybinding(key)}</span>
-                        </React.Fragment>;
-                    }
-                })
-            }
-        </React.Fragment>;
+        if (keybinding.labels.keybinding.segments) {
+            return keybinding.labels.keybinding.segments.map((segment, index) => {
+                if (segment.key) {
+                    return <span key={index} className='monaco-keybinding-key'>
+                        <span className={`${segment.match ? 'fuzzy-match' : ''}`}>{segment.value}</span>
+                    </span>;
+                } else {
+                    return <span key={index} className='monaco-keybinding-separator'>
+                        {segment.value}
+                    </span>;
+                }
+            });
+        }
+
+        console.warn('Unexpectedly encountered a keybinding without segment divisions');
+        return keybinding.labels.keybinding.value;
     }
 
     /**
@@ -462,27 +442,41 @@ export class KeybindingWidget extends ReactWidget {
                 continue;
             }
             const keybinding = this.keybindingRegistry.getKeybindingsForCommand(command.id)[0];
-            items.push({
+            const item = {
                 command,
                 keybinding,
                 labels: {
-                    id: command.id,
-                    command: this.getCommandLabel(command),
-                    keybinding: this.getKeybindingLabel(keybinding) || '',
-                    context: this.getContextLabel(keybinding) || '',
-                    source: this.getScopeLabel(keybinding) || ''
+                    id: { value: command.id },
+                    command: { value: this.getCommandLabel(command) },
+                    keybinding: { value: this.getKeybindingLabel(keybinding) || '' },
+                    context: { value: this.getContextLabel(keybinding) || '' },
+                    source: { value: this.getScopeLabel(keybinding) || '' }
                 }
-            });
+            };
+            this.formatAndMatchCommand(item);
+            this.formatAndMatchKeybinding(item, []);
+            this.formatAndMatchContext(item);
+            this.formatAndMatchSource(item);
+            items.push(item);
         }
-        // Sort the keybinding item by label.
-        const sorted: KeybindingItem[] = items.sort((a, b) => this.compareItem(a.command, b.command));
-        // Get the list of keybinding item with keybindings (visually put them at the top of the table).
-        const keyItems: KeybindingItem[] = sorted.filter(a => !!a.labels.keybinding);
-        // Get the remaining keybinding items (without keybindings).
-        const otherItems: KeybindingItem[] = sorted.filter(a => !a.labels.keybinding);
 
-        // Return the list of keybinding items prioritizing those with a defined keybinding.
-        return [...keyItems, ...otherItems];
+        return this.sortKeybindings(items);
+    }
+
+    /**
+     * @returns the input array, sorted.
+     * The sort priority is as follows: items with keybindings before those without, then alphabetical by command.
+     */
+    protected sortKeybindings(bindings: KeybindingItem[]): KeybindingItem[] {
+        return bindings.sort((a, b) => {
+            if (a.keybinding && !b.keybinding) {
+                return -1;
+            }
+            if (b.keybinding && !a.keybinding) {
+                return 1;
+            }
+            return this.compareItem(a.command, b.command);
+        });
     }
 
     /**
@@ -663,17 +657,17 @@ export class KeybindingWidget extends ReactWidget {
      * Render the fuzzy representation of a matched result.
      * @param property one of the `KeybindingItem` properties.
      */
-    protected renderMatchedData(property: string): React.ReactNode {
-        if (this.query !== '') {
-            const cellData = this.buildCellData(property);
-            return <React.Fragment>
+    protected renderMatchedData(property: RenderableLabel): React.ReactNode {
+        if (property.segments) {
+            return <>
                 {
-                    cellData.map((data, index) => (data.highlighted) ? <span key={index} className='fuzzy-match'>{data.value}</span> : <span key={index}>{data.value}</span>)
+                    property.segments.map((segment, index) => segment.match
+                        ? <span key={index} className='fuzzy-match'>{segment.value}</span>
+                        : <span key={index}>{segment.value}</span>)
                 }
-            </React.Fragment>;
-        } else {
-            return property;
+            </>;
         }
+        return property.value;
     }
 
 }

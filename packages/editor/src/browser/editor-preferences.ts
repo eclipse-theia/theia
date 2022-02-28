@@ -27,7 +27,7 @@ import {
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { nls } from '@theia/core/lib/common/nls';
 import { environment } from '@theia/core';
-import { generatedEditorPreferenceProperties as generatedEditorPreferenceSchema, GeneratedEditorPreferences } from './editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema';
 
 /* eslint-disable @theia/localization-check,max-len,no-null/no-null */
 // #region src/vs/workbench/contrib/codeActions/browser/codeActionsContribution.ts
@@ -171,7 +171,7 @@ interface TheiaEditorProperties {
 // #endregion
 
 const combinedProperties = {
-    ...generatedEditorPreferenceSchema,
+    ...editorGeneratedPreferenceProperties,
     ...codeActionsContributionSchema,
     ...fileContributionSchema,
     ...formatActionsMultipleSchema,
