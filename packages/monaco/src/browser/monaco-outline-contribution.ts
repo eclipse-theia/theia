@@ -143,7 +143,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                         return [];
                     }
                     const nodes = this.createNodes(uri, symbols);
-                    this.roots.push(...nodes);
+                    if (providers.length > 1 && provider.displayName) {
+                        const providerRoot = this.createProviderRootNode(uri, provider.displayName, nodes);
+                        this.roots.push(providerRoot);
+                    } else {
+                        this.roots.push(...nodes);
+                    }
                 } catch {
                     /* collect symbols from other providers */
                 }
@@ -151,6 +156,22 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         }
         this.applySelection(this.roots, editorSelection);
         return this.roots;
+    }
+
+    protected createProviderRootNode(uri: URI, displayName: string, children: MonacoOutlineSymbolInformationNode[]): MonacoOutlineSymbolInformationNode {
+        const node: MonacoOutlineSymbolInformationNode = {
+            uri,
+            id: displayName,
+            name: displayName,
+            iconClass: '',
+            range: this.asRange(new Monaco.Range(0, 0, 0, 0)),
+            fullRange: this.asRange(new Monaco.Range(0, 0, 0, 0)),
+            children,
+            parent: undefined,
+            selected: false,
+            expanded: true
+        };
+        return node;
     }
 
     protected createNodes(uri: URI, symbols: Monaco.languages.DocumentSymbol[] | DocumentSymbol[]): MonacoOutlineSymbolInformationNode[] {
