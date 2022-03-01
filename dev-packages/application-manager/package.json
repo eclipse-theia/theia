@@ -62,7 +62,7 @@
     "yargs": "^15.3.1"
   },
   "peerDependencies": {
-    "@theia/electron": "1.21.0"
+    "@theia/electron": "*"
   },
   "peerDependenciesMeta": {
     "@theia/electron": {
