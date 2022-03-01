@@ -55,6 +55,7 @@ import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/c
 import { IBulkEditService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
+import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -159,6 +160,7 @@ export class MonacoEditorProvider {
             [IContextKeyService, contextKeyService],
             [IOpenerService, openerService],
             [IQuickInputService, this.quickInputService],
+            [ICommandService, commandService]
         ];
         const editor = await factory(overrides, toDispose);
         editor.onDispose(() => toDispose.dispose());
