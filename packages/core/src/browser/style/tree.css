@@ -135,6 +135,10 @@
     text-align: center;
 }
 
+.theia-TreeNodeTail:not(:last-of-type)::after {
+    content: ',';
+}
+
 .theia-TreeNodeSegment mark {
     background-color: var(--theia-list-filterMatchBackground);
     color: var(--theia-list-inactiveSelectionForeground);
