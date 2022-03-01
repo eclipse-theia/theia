@@ -645,12 +645,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         this.trace(log => log('MonacoEditorModel.revert - exit'));
     }
 
-    createSnapshot(this: IResolvedTextEditorModel): ITextSnapshot;
-    createSnapshot(this: ITextEditorModel): ITextSnapshot | null;
-    createSnapshot(): ITextSnapshot | null {
-        return {
-            read: () => this.getText()
-        };
+    createSnapshot(preserveBOM?: boolean): ITextSnapshot {
+        return this.model.createSnapshot(preserveBOM);
     }
 
     applySnapshot(snapshot: { value: string }): void {
