@@ -165,6 +165,7 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
     "electron-shared",
+    "i18n",
     "lib",
     "shared",
     "src"

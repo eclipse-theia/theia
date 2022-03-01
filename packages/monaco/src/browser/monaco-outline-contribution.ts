@@ -130,8 +130,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             this.roots.forEach(resetSelection);
         } else {
             this.roots = [];
-            // eslint-disable-next-line @typescript-eslint/await-thenable
-            const providers = await StandaloneServices.get(ILanguageFeaturesService).documentSymbolProvider.all(model);
+            const providers = StandaloneServices.get(ILanguageFeaturesService).documentSymbolProvider.all(model);
             if (token.isCancellationRequested) {
                 return [];
             }
