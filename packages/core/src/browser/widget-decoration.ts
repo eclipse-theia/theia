@@ -337,7 +337,7 @@ export namespace WidgetDecoration {
     }
     export namespace Data {
         /**
-         * Compares the decoration data based on the priority. Lowest priorities come first.
+         * Compares the decoration data based on the priority. Lowest priorities come first (i.e. left.priority - right.priority).
          */
         export const comparePriority = (left: Data, right: Data): number => (left.priority || 0) - (right.priority || 0);
     }

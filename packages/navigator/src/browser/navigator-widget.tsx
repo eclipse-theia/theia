@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, notEmpty } from '@theia/core/lib/common';
+import { CommandService } from '@theia/core/lib/common';
 import {
     Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
     TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode
@@ -148,7 +148,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected override renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        const tailDecorations = this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+        const tailDecorations = this.getDecorationData(node, 'tailDecorations').reduce((acc, current) => acc.concat(current), []);
 
         if (tailDecorations.length === 0) {
             return;
