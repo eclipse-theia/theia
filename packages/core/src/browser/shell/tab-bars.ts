@@ -31,6 +31,7 @@ import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
 import { IDragEvent } from '@phosphor/dragdrop';
+import { PINNED_CLASS } from '../widgets/widget';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -164,7 +165,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.renderBadge(data, isInSidePanel)
             ),
             h.div({
-                className: 'p-TabBar-tabCloseIcon',
+                className: 'p-TabBar-tabCloseIcon action-item',
                 onclick: this.handleCloseClickEvent
             })
         );
@@ -475,7 +476,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.parentElement!.id;
             const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
-            if (title && title.className.indexOf('theia-mod-pinned') >= 0 && this.commandService) {
+            if (title?.closable === false && title?.className.includes(PINNED_CLASS) && this.commandService) {
                 this.commandService.executeCommand('workbench.action.unpinEditor', event);
             }
         }

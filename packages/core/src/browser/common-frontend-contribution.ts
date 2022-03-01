@@ -59,7 +59,7 @@ import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
-import { Title, Widget } from './widgets';
+import { PINNED_CLASS, Title, Widget } from './widgets';
 
 export namespace CommonMenus {
 
@@ -326,8 +326,6 @@ export const supportCopy = browser.isNative || document.queryCommandSupported('c
 export const supportPaste = browser.isNative || (!browser.isChrome && document.queryCommandSupported('paste'));
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
-
-export const PINNED_CLASS = 'theia-mod-pinned';
 
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
@@ -912,11 +910,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.selectIconTheme()
         });
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => !!title && title.closable && title.className.indexOf(PINNED_CLASS) === -1,
+            isEnabled: title => !!title && title.closable && !title.className.includes(PINNED_CLASS),
             execute: title => this.togglePinned(title),
         }));
         commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => !!title && title.className.indexOf(PINNED_CLASS) >= 0,
+            isEnabled: title => !!title && !title.closable && title.className.includes(PINNED_CLASS),
             execute: title => this.togglePinned(title),
         }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {

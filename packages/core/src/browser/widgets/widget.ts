@@ -52,6 +52,7 @@ export const BUSY_CLASS = 'theia-mod-busy';
 export const CODICON_LOADING_CLASSES = codiconArray('loading');
 export const SELECTED_CLASS = 'theia-mod-selected';
 export const FOCUS_CLASS = 'theia-mod-focus';
+export const PINNED_CLASS = 'theia-mod-pinned';
 export const DEFAULT_SCROLL_OPTIONS: PerfectScrollbar.Options = {
     suppressScrollX: true,
     minScrollbarLength: 35,

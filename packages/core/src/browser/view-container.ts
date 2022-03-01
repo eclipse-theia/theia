@@ -18,7 +18,7 @@ import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { IIterator, toArray, find, some, every, map, ArrayExt } from '@phosphor/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
-    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
 } from './widgets';
 import { Event as CommonEvent, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
@@ -276,7 +276,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (title.iconClass) {
             this.title.iconClass = title.iconClass;
         }
-        if (title.closeable !== undefined) {
+        if (this.title.className.includes(PINNED_CLASS)) {
+            this.title.closable &&= false;
+        } else if (title.closeable !== undefined) {
             this.title.closable = title.closeable;
         }
     }
