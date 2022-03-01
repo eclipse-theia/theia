@@ -681,8 +681,9 @@ Example of code symbol provider registration:
 ```typescript
 const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
 const provider = { provideDocumentSymbols: provideSymbols };
+const metadata = { label: 'providerLabel' }
 
-const disposable = theia.languages.registerDocumentSymbolProvider(documentsSelector, provider);
+const disposable = theia.languages.registerDocumentSymbolProvider(documentsSelector, provider, metadata);
 
 ...
 

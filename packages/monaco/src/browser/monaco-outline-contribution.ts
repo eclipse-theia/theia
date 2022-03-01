@@ -128,8 +128,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             this.roots.forEach(resetSelection);
         } else {
             this.roots = [];
-            // eslint-disable-next-line @typescript-eslint/await-thenable
-            const providers = await DocumentSymbolProviderRegistry.all(model);
+            const providers = DocumentSymbolProviderRegistry.all(model);
             if (token.isCancellationRequested) {
                 return [];
             }
@@ -140,8 +139,14 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                     if (token.isCancellationRequested) {
                         return [];
                     }
-                    const nodes = this.createNodes(uri, symbols || []);
-                    this.roots.push(...nodes);
+                    if (providers.length > 1 && provider.displayName) {
+                        const nodes = this.createNodes(uri, symbols || []);
+                        const providerRootNode = this.createProviderRootNode(uri, provider.displayName, nodes);
+                        this.roots.push(providerRootNode);
+                    } else {
+                        const nodes = this.createNodes(uri, symbols || []);
+                        this.roots.push(...nodes);
+                    }
                 } catch {
                     /* collect symbols from other providers */
                 }
@@ -149,6 +154,22 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         }
         this.applySelection(this.roots, editorSelection);
         return this.roots;
+    }
+
+    protected createProviderRootNode(uri: URI, displayName: string, children: MonacoOutlineSymbolInformationNode[]): MonacoOutlineSymbolInformationNode {
+        const node: MonacoOutlineSymbolInformationNode = {
+            uri,
+            id: displayName,
+            name: displayName,
+            iconClass: '',
+            range: this.asRange(new monaco.Range(0, 0, 0, 0)),
+            fullRange: this.asRange(new monaco.Range(0, 0, 0, 0)),
+            children,
+            parent: undefined,
+            selected: false,
+            expanded: true
+        };
+        return node;
     }
 
     protected createNodes(uri: URI, symbols: DocumentSymbol[]): MonacoOutlineSymbolInformationNode[] {

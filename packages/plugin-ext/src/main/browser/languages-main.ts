@@ -459,14 +459,15 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
     }
 
-    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const symbolProvider = this.createDocumentSymbolProvider(handle);
+        const symbolProvider = this.createDocumentSymbolProvider(handle, displayName);
         this.register(handle, monaco.modes.DocumentSymbolProviderRegistry.register(languageSelector, symbolProvider));
     }
 
-    protected createDocumentSymbolProvider(handle: number): monaco.languages.DocumentSymbolProvider {
+    protected createDocumentSymbolProvider(handle: number, displayName?: string): monaco.languages.DocumentSymbolProvider {
         return {
+            displayName,
             provideDocumentSymbols: (model, token) => this.provideDocumentSymbols(handle, model, token)
         };
     }

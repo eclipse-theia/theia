@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.24.0 - 3/31/2022
+
+[1.24.0 Milestone](https://github.com/eclipse-theia/theia/milestone/32)
+
+- [plugin] added support for `DocumentSymbolProviderMetadata` [#10811](https://github.com/eclipse-theia/theia/pull/10811) - Contributed on behalf of STMicroelectronics
+
 ## v1.23.0 - 2/24/2022
 
 [1.23.0 Milestone](https://github.com/eclipse-theia/theia/milestone/31)
