@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
+import { OSUtil } from '../src/util';
 import { TheiaApp } from '../src/theia-app';
 import { TheiaMenuBar } from '../src/theia-main-menu';
 import test, { page } from './fixtures/theia-fixture';
@@ -56,7 +57,7 @@ test.describe('Theia Main Menu', () => {
         expect(label).toBe('New File');
 
         const shortCut = await menuItem?.shortCut();
-        expect(shortCut).toBe('Alt+N');
+        expect(shortCut).toBe(OSUtil.isMacOS ? 'N' : 'Alt+N');
 
         const hasSubmenu = await menuItem?.hasSubmenu();
         expect(hasSubmenu).toBe(false);
