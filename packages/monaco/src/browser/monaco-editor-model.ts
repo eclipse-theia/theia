@@ -25,7 +25,7 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
 import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { IResolvedTextEditorModel, ITextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { IResolvedTextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import * as Monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
