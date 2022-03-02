@@ -2588,7 +2588,7 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
-"@types/requestretry@^1.12.3":
+"@types/requestretry@^1.12.8":
   version "1.12.8"
   resolved "https://registry.yarnpkg.com/@types/requestretry/-/requestretry-1.12.8.tgz#d3f02ee0b4d18e1cee15324506704052a25e1ebd"
   integrity sha512-NKdv2WmEe6/V1PmJrflfvGVN9bvuOsnHmNRC4m8TFXPMQnRFKvnnkFN4I6AxAtw4hUi2h3A+z/aH+ir2HYTNOg==
@@ -9852,14 +9852,13 @@ request@^2.82.0, request@^2.86.0, request@^2.87.0, request@^2.88.0, request@^2.8
     tunnel-agent "^0.6.0"
     uuid "^3.3.2"
 
-requestretry@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/requestretry/-/requestretry-3.1.0.tgz#c8e1976bb946f14889d3604bbad56a01d191c10d"
-  integrity sha512-DkvCPK6qvwxIuVA5TRCvi626WHC2rWjF/n7SCQvVHAr2JX9i1/cmIpSEZlmHAo+c1bj9rjaKoZ9IsKwCpTkoXA==
+requestretry@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/requestretry/-/requestretry-7.0.0.tgz#570a9fcbeb2d6a85d7f15eb2265840d787f0c44d"
+  integrity sha512-g1Odu3IBKb6fYQog+HLy5FZ1CMwejIpD0iX1u1qXLsRj8TeQmFCpX9pTe50qhIirKvx1mcmoAeuLBFXLlBw6vA==
   dependencies:
     extend "^3.0.2"
-    lodash "^4.17.10"
-    when "^3.7.7"
+    lodash "^4.17.15"
 
 require-directory@^2.1.1:
   version "2.1.1"
@@ -11711,11 +11710,6 @@ whatwg-url@^8.4.0:
     lodash "^4.7.0"
     tr46 "^2.1.0"
     webidl-conversions "^6.1.0"
-
-when@^3.7.7:
-  version "3.7.8"
-  resolved "https://registry.yarnpkg.com/when/-/when-3.7.8.tgz#c7130b6a7ea04693e842cdc9e7a1f2aa39a39f82"
-  integrity sha1-xxMLan6gRpPoQs3J56Hyqjmjn4I=
 
 which-boxed-primitive@^1.0.2:
   version "1.0.2"
