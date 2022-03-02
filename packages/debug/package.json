@@ -18,7 +18,7 @@
     "jsonc-parser": "^2.2.0",
     "mkdirp": "^0.5.0",
     "p-debounce": "^2.1.0",
-    "requestretry": "^3.1.0",
+    "requestretry": "^7.0.0",
     "tar": "^4.0.0",
     "unzip-stream": "^0.3.0",
     "vscode-debugprotocol": "^1.32.0"
