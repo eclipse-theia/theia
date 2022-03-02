@@ -17,14 +17,14 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { RecursivePartial } from '@theia/core/lib/common/types';
-import { IRange } from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoRangeReplace {
-    insert: IRange;
-    replace: IRange
+    insert: monaco.IRange;
+    replace: monaco.IRange
 };
 export namespace MonacoRangeReplace {
-    export function is(v: Partial<IRange> | MonacoRangeReplace): v is MonacoRangeReplace {
+    export function is(v: Partial<monaco.IRange> | MonacoRangeReplace): v is MonacoRangeReplace {
         return (v as MonacoRangeReplace).insert !== undefined;
     }
 }
@@ -46,12 +46,12 @@ export class MonacoToProtocolConverter {
     }
 
     asRange(range: undefined): undefined;
-    asRange(range: IRange): Range;
-    asRange(range: IRange | undefined): Range | undefined;
-    asRange(range: IRange | { insert: IRange; replace: IRange }): Range;
-    asRange(range: Partial<IRange>): RecursivePartial<Range>;
-    asRange(range: Partial<IRange> | undefined): RecursivePartial<Range> | undefined;
-    asRange(range: Partial<IRange> | undefined | MonacoRangeReplace): RecursivePartial<Range> | undefined {
+    asRange(range: monaco.IRange): Range;
+    asRange(range: monaco.IRange | undefined): Range | undefined;
+    asRange(range: monaco.IRange | { insert: monaco.IRange; replace: monaco.IRange }): Range;
+    asRange(range: Partial<monaco.IRange>): RecursivePartial<Range>;
+    asRange(range: Partial<monaco.IRange> | undefined): RecursivePartial<Range> | undefined;
+    asRange(range: Partial<monaco.IRange> | undefined | MonacoRangeReplace): RecursivePartial<Range> | undefined {
         if (range === undefined) {
             return undefined;
         }

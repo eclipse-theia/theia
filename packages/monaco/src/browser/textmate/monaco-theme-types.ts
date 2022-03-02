@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { editor } from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
-export type MonacoThemeColor = editor.IColors;
-export interface MonacoTokenRule extends editor.ITokenThemeRule { };
-export type MonacoBuiltinTheme = editor.BuiltinTheme;
-export interface MonacoTheme extends editor.IStandaloneThemeData {
+export type MonacoThemeColor = monaco.editor.IColors;
+export interface MonacoTokenRule extends monaco.editor.ITokenThemeRule { };
+export type MonacoBuiltinTheme = monaco.editor.BuiltinTheme;
+export interface MonacoTheme extends monaco.editor.IStandaloneThemeData {
     name: string;
 }

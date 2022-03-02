@@ -30,7 +30,7 @@ import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platfor
 import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess';
 import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { IListOptions, List } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/list/listWidget';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -68,8 +68,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     private quickInputList: List<unknown>;
 
     get backButton(): IQuickInputButton { return this.controller.backButton; }
-    get onShow(): Monaco.IEvent<void> { return this.controller.onShow; }
-    get onHide(): Monaco.IEvent<void> { return this.controller.onHide; }
+    get onShow(): monaco.IEvent<void> { return this.controller.onShow; }
+    get onHide(): monaco.IEvent<void> { return this.controller.onHide; }
 
     constructor() {
         this.initContainer();
@@ -98,12 +98,12 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         }, 300);
     }
 
-    input(options?: IInputOptions, token?: Monaco.CancellationToken): Promise<string | undefined> {
+    input(options?: IInputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
         return this.controller.input(options, token);
     }
 
     pick<T extends IQuickPickItem, O extends IPickOptions<T>>(
-        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: Monaco.CancellationToken
+        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: monaco.CancellationToken
     ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         return this.controller.pick(picks, options, token);
     }
@@ -124,7 +124,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.controller.applyStyles(styles);
     }
 
-    layout(dimension: Monaco.editor.IDimension, titleBarOffset: number): void {
+    layout(dimension: monaco.editor.IDimension, titleBarOffset: number): void {
         this.controller.layout(dimension, titleBarOffset);
     }
 
@@ -215,7 +215,7 @@ export class MonacoQuickInputService implements QuickInputService {
         return this.monacoService.createInputBox() as unknown as InputBox;
     }
 
-    input(options?: InputOptions, token?: Monaco.CancellationToken): Promise<string | undefined> {
+    input(options?: InputOptions, token?: monaco.CancellationToken): Promise<string | undefined> {
         let inputOptions: IInputOptions | undefined;
         if (options) {
             const { validateInput, ...props } = options;
@@ -228,7 +228,7 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     async pick<T extends QuickPickItem, O extends PickOptions<T> = PickOptions<T>>(
-        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options: O = <O>{}, token?: Monaco.CancellationToken
+        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options: O = <O>{}, token?: monaco.CancellationToken
     ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
         const monacoPicks = (await picks).map(pick => {
             if (pick.type === 'separator') {

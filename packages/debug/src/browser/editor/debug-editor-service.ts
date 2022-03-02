@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
@@ -85,39 +85,39 @@ export class DebugEditorService {
         return uri && this.models.get(uri.toString());
     }
 
-    getLogpoint(position: Monaco.Position): DebugSourceBreakpoint | undefined {
+    getLogpoint(position: monaco.Position): DebugSourceBreakpoint | undefined {
         const logpoint = this.anyBreakpoint(position);
         return logpoint && logpoint.logMessage ? logpoint : undefined;
     }
-    getLogpointEnabled(position: Monaco.Position): boolean | undefined {
+    getLogpointEnabled(position: monaco.Position): boolean | undefined {
         const logpoint = this.getLogpoint(position);
         return logpoint && logpoint.enabled;
     }
 
-    getBreakpoint(position: Monaco.Position): DebugSourceBreakpoint | undefined {
+    getBreakpoint(position: monaco.Position): DebugSourceBreakpoint | undefined {
         const breakpoint = this.anyBreakpoint(position);
         return breakpoint && breakpoint.logMessage ? undefined : breakpoint;
     }
-    getBreakpointEnabled(position: Monaco.Position): boolean | undefined {
+    getBreakpointEnabled(position: monaco.Position): boolean | undefined {
         const breakpoint = this.getBreakpoint(position);
         return breakpoint && breakpoint.enabled;
     }
 
-    anyBreakpoint(position?: Monaco.Position): DebugSourceBreakpoint | undefined {
+    anyBreakpoint(position?: monaco.Position): DebugSourceBreakpoint | undefined {
         return this.model && this.model.getBreakpoint(position);
     }
 
-    getInlineBreakpoint(position?: Monaco.Position): DebugSourceBreakpoint | undefined {
+    getInlineBreakpoint(position?: monaco.Position): DebugSourceBreakpoint | undefined {
         return this.model && this.model.getInlineBreakpoint(position);
     }
 
-    toggleBreakpoint(position?: Monaco.Position): void {
+    toggleBreakpoint(position?: monaco.Position): void {
         const { model } = this;
         if (model) {
             model.toggleBreakpoint(position);
         }
     }
-    setBreakpointEnabled(position: Monaco.Position, enabled: boolean): void {
+    setBreakpointEnabled(position: monaco.Position, enabled: boolean): void {
         const breakpoint = this.anyBreakpoint(position);
         if (breakpoint) {
             breakpoint.setEnabled(enabled);
@@ -147,7 +147,7 @@ export class DebugEditorService {
         return false;
     }
 
-    addBreakpoint(context: DebugBreakpointWidget.Context, position?: Monaco.Position): void {
+    addBreakpoint(context: DebugBreakpointWidget.Context, position?: monaco.Position): void {
         const { model } = this;
         if (model) {
             position = position || model.position;
@@ -162,8 +162,8 @@ export class DebugEditorService {
             }
         }
     }
-    async editBreakpoint(breakpointOrPosition?: DebugSourceBreakpoint | Monaco.Position): Promise<void> {
-        if (breakpointOrPosition instanceof Monaco.Position) {
+    async editBreakpoint(breakpointOrPosition?: DebugSourceBreakpoint | monaco.Position): Promise<void> {
+        if (breakpointOrPosition instanceof monaco.Position) {
             breakpointOrPosition = this.anyBreakpoint(breakpointOrPosition);
         }
 

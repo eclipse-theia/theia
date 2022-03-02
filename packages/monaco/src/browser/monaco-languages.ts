@@ -24,7 +24,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface WorkspaceSymbolProvider {
     provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;
@@ -83,14 +83,14 @@ export class MonacoLanguages implements LanguageService {
     }
 
     get languages(): Language[] {
-        return [...this.mergeLanguages(Monaco.languages.getLanguages()).values()];
+        return [...this.mergeLanguages(monaco.languages.getLanguages()).values()];
     }
 
     getLanguage(languageId: string): Language | undefined {
-        return this.mergeLanguages(Monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
+        return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
     }
 
-    protected mergeLanguages(registered: Monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {
+    protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {
         const languages = new Map<string, Mutable<Language>>();
         for (const { id, aliases, extensions, filenames } of registered) {
             const merged = languages.get(id) || {

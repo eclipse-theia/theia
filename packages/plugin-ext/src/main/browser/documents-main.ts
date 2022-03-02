@@ -31,7 +31,7 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -109,10 +109,10 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
         this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
-            onWillSaveModelEvent.waitUntil(new Promise<Monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
+            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
                 setTimeout(() => reject(new Error(`Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)), this.saveTimeout);
                 const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason, this.saveTimeout);
-                const editOperations: Monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
                 for (const edit of edits) {
                     const { range, text } = edit;
                     if (!range && !text) {
@@ -123,7 +123,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                     }
 
                     editOperations.push({
-                        range: range ? Monaco.Range.lift(range) : onWillSaveModelEvent.model.textEditorModel.getFullModelRange(),
+                        range: range ? monaco.Range.lift(range) : onWillSaveModelEvent.model.textEditorModel.getFullModelRange(),
                         /* eslint-disable-next-line no-null/no-null */
                         text: text || null,
                         forceMoveMarkers: edit.forceMoveMarkers
@@ -172,7 +172,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         this.toDispose.push(toDispose);
     }
 
-    private onModelRemoved(url: Monaco.Uri): void {
+    private onModelRemoved(url: monaco.Uri): void {
         const model = this.syncedModels.get(url.toString());
         if (model) {
             model.dispose();
@@ -183,7 +183,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         const language = options && options.language;
         const content = options && options.content;
         const resource = await this.untitledResourceResolver.createUntitledResource(this.fileResourceResolver, content, language);
-        return Monaco.Uri.parse(resource.uri.toString());
+        return monaco.Uri.parse(resource.uri.toString());
     }
 
     async $tryShowDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {

@@ -21,11 +21,11 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 
 @injectable()
-export class BlameDecorator implements Monaco.languages.HoverProvider {
+export class BlameDecorator implements monaco.languages.HoverProvider {
 
     constructor(
         protected blameDecorationsStyleSheet: CSSStyleSheet = DecorationStyle.createStyleSheet('gitBlameDecorationsStyle')
@@ -41,17 +41,17 @@ export class BlameDecorator implements Monaco.languages.HoverProvider {
 
     protected registerHoverProvider(uri: string): Disposable {
         // The public typedef of this method only accepts strings, but it immediately delegates to a method that accepts LanguageSelectors.
-        return (Monaco.languages.registerHoverProvider as (languageId: LanguageSelector, provider: Monaco.languages.HoverProvider) => Disposable)
+        return (monaco.languages.registerHoverProvider as (languageId: LanguageSelector, provider: monaco.languages.HoverProvider) => Disposable)
             ([{ pattern: new URI(uri).path.toString() }], this);
     }
 
-    protected emptyHover: Monaco.languages.Hover = {
+    protected emptyHover: monaco.languages.Hover = {
         contents: [{
             value: ''
         }]
     };
 
-    async provideHover(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Promise<Monaco.languages.Hover> {
+    async provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Promise<monaco.languages.Hover> {
         const line = position.lineNumber - 1;
         const uri = model.uri.toString();
         const applications = this.appliedDecorations.get(uri);
@@ -75,7 +75,7 @@ export class BlameDecorator implements Monaco.languages.HoverProvider {
 
         const hover = {
             contents: [{ value }],
-            range: Monaco.Range.fromPositions(new Monaco.Position(position.lineNumber, 1), new Monaco.Position(position.lineNumber, 10 ^ 10))
+            range: monaco.Range.fromPositions(new monaco.Position(position.lineNumber, 1), new monaco.Position(position.lineNumber, 10 ^ 10))
         };
         return hover;
     }

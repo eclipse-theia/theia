@@ -19,13 +19,13 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { IStandaloneTheme, IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 
-export interface ThemeMix extends IRawTheme, Monaco.editor.IStandaloneThemeData { }
+export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
 export interface MixStandaloneTheme extends IStandaloneTheme {
     themeData: ThemeMix
 }
@@ -54,13 +54,13 @@ export class MonacoThemeRegistry {
 
     setTheme(name: string, data: ThemeMix): void {
         // monaco auto refreshes a theme with new data
-        Monaco.editor.defineTheme(name, data);
+        monaco.editor.defineTheme(name, data);
     }
 
     /**
      * Register VS Code compatible themes
      */
-    register(json: any, includes?: { [includePath: string]: any }, givenName?: string, monacoBase?: Monaco.editor.BuiltinTheme): ThemeMix {
+    register(json: any, includes?: { [includePath: string]: any }, givenName?: string, monacoBase?: monaco.editor.BuiltinTheme): ThemeMix {
         const name = givenName || json.name!;
         const result: ThemeMix = {
             name,
@@ -127,7 +127,7 @@ export class MonacoThemeRegistry {
         return result;
     }
 
-    protected transform(tokenColor: any, acceptor: (rule: Monaco.editor.ITokenThemeRule) => void): void {
+    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void): void {
         if (typeof tokenColor.scope === 'undefined') {
             tokenColor.scope = [''];
         } else if (typeof tokenColor.scope === 'string') {

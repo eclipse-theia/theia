@@ -26,7 +26,7 @@ import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
 import { ConsoleSessionManager } from './console-session-manager';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const ConsoleOptions = Symbol('ConsoleWidgetOptions');
 export interface ConsoleOptions {
@@ -109,7 +109,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
 
         this.toDispose.push(input.getControl().onDidChangeConfiguration(event => {
-            if (event.hasChanged(Monaco.editor.EditorOption.fontInfo)) {
+            if (event.hasChanged(monaco.editor.EditorOption.fontInfo)) {
                 this.updateFont();
             }
         }));
@@ -133,7 +133,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected updateFont(): void {
-        const { fontFamily, fontSize, lineHeight } = this._input.getControl().getOption(Monaco.editor.EditorOption.fontInfo);
+        const { fontFamily, fontSize, lineHeight } = this._input.getControl().getOption(monaco.editor.EditorOption.fontInfo);
         this.content.node.style.fontFamily = fontFamily;
         this.content.node.style.fontSize = fontSize + 'px';
         this.content.node.style.lineHeight = lineHeight + 'px';

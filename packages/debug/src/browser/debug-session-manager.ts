@@ -37,7 +37,7 @@ import { DebugThread } from './model/debug-thread';
 import { TaskIdentifier } from '@theia/task/lib/common';
 import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -167,7 +167,7 @@ export class DebugSessionManager {
         return this.state > DebugState.Inactive;
     }
 
-    isCurrentEditorFrame(uri: URI | string | Monaco.Uri): boolean {
+    isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
         return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri)).toString();
     }
 

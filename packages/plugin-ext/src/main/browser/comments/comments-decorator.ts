@@ -17,12 +17,12 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { CommentInfoMain } from './comments-service';
 import { CommentingRanges, Range } from '../../../common/plugin-api-rpc-model';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class CommentingRangeDecorator {
 
-    private decorationOptions: Monaco.editor.IModelDecorationOptions;
+    private decorationOptions: monaco.editor.IModelDecorationOptions;
     private commentingRangeDecorations: CommentingRangeDecoration[] = [];
 
     constructor() {
@@ -32,7 +32,7 @@ export class CommentingRangeDecorator {
         };
     }
 
-    public update(editor: Monaco.editor.ICodeEditor, commentInfos: CommentInfoMain[]): void {
+    public update(editor: monaco.editor.ICodeEditor, commentInfos: CommentInfoMain[]): void {
         const model = editor.getModel();
         if (!model) {
             return;
@@ -72,8 +72,8 @@ class CommentingRangeDecoration {
         return this.decorationId;
     }
 
-    constructor(private _editor: Monaco.editor.ICodeEditor, private _ownerId: string, private _extensionId: string | undefined,
-        private _label: string | undefined, private _range: Range, commentingOptions: Monaco.editor.IModelDecorationOptions,
+    constructor(private _editor: monaco.editor.ICodeEditor, private _ownerId: string, private _extensionId: string | undefined,
+        private _label: string | undefined, private _range: Range, commentingOptions: monaco.editor.IModelDecorationOptions,
         private commentingRangesInfo: CommentingRanges) {
         const startLineNumber = _range.startLineNumber;
         const endLineNumber = _range.endLineNumber;

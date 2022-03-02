@@ -40,7 +40,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { getIconUris } from '../../plugin/quick-open';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { IQuickPickItem, IQuickInput } from '@theia/monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
@@ -277,11 +277,11 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                                 handle
                             };
                         } else {
-                            const monacoIconPath = (iconPath as unknown as { light: Monaco.Uri, dark: Monaco.Uri });
+                            const monacoIconPath = (iconPath as unknown as { light: monaco.Uri, dark: monaco.Uri });
                             return {
                                 iconPath: {
-                                    dark: Monaco.Uri.revive(monacoIconPath.dark),
-                                    light: monacoIconPath.light && Monaco.Uri.revive(monacoIconPath.light)
+                                    dark: monaco.Uri.revive(monacoIconPath.dark),
+                                    light: monacoIconPath.light && monaco.Uri.revive(monacoIconPath.light)
                                 },
                                 tooltip,
                                 handle

@@ -27,10 +27,10 @@ import { DebugEditor } from './debug-editor';
 import { DebugExpressionProvider } from './debug-expression-provider';
 import { DebugHoverSource } from './debug-hover-source';
 import { DebugVariable } from '../console/debug-console-items';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface ShowDebugHoverOptions {
-    selection: Monaco.Range
+    selection: monaco.Range
     /** default: false */
     focus?: boolean
     /** default: true */
@@ -55,7 +55,7 @@ export function createDebugHoverWidgetContainer(parent: interfaces.Container, ed
 }
 
 @injectable()
-export class DebugHoverWidget extends SourceTreeWidget implements Monaco.editor.IContentWidget {
+export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.IContentWidget {
 
     @inject(DebugEditor)
     protected readonly editor: DebugEditor;
@@ -212,17 +212,17 @@ export class DebugHoverWidget extends SourceTreeWidget implements Monaco.editor.
         return this.sessions.isCurrentEditorFrame(this.editor.getControl().getModel()!.uri);
     }
 
-    getPosition(): Monaco.editor.IContentWidgetPosition {
+    getPosition(): monaco.editor.IContentWidgetPosition {
         if (!this.isVisible) {
             return undefined!;
         }
         const position = this.options && this.options.selection.getStartPosition();
         const word = position && this.editor.getControl().getModel()!.getWordAtPosition(position);
         return position && word ? {
-            position: new Monaco.Position(position.lineNumber, word.startColumn),
+            position: new monaco.Position(position.lineNumber, word.startColumn),
             preference: [
-                Monaco.editor.ContentWidgetPositionPreference.ABOVE,
-                Monaco.editor.ContentWidgetPositionPreference.BELOW
+                monaco.editor.ContentWidgetPositionPreference.ABOVE,
+                monaco.editor.ContentWidgetPositionPreference.BELOW
             ]
         } : undefined!;
     }

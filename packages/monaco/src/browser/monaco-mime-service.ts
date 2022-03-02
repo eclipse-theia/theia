@@ -19,7 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { clearLanguageAssociations, registerLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
@@ -61,7 +61,7 @@ export class MonacoMimeService extends MimeService {
     });
 
     protected getMimeForMode(langId: string): string | undefined {
-        for (const language of Monaco.languages.getLanguages()) {
+        for (const language of monaco.languages.getLanguages()) {
             if (language.id === langId && language.mimetypes) {
                 return language.mimetypes[0];
             }

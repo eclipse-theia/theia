@@ -26,7 +26,7 @@ import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
 import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { IResolvedTextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
@@ -167,7 +167,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      */
     protected initialize(value: string | ITextBufferFactory): void {
         if (!this.toDispose.disposed) {
-            const uri = Monaco.Uri.parse(this.resource.uri.toString());
+            const uri = monaco.Uri.parse(this.resource.uri.toString());
             let firstLine;
             if (typeof value === 'string') {
                 firstLine = value;
@@ -300,7 +300,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return this.readOnly;
     }
 
-    get onDispose(): Monaco.IEvent<void> {
+    get onDispose(): monaco.IEvent<void> {
         return this.toDispose.onDispose;
     }
 
@@ -310,7 +310,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     // We have a TypeScript problem here. There is a const enum `DefaultEndOfLine` used for ITextModel and a non-const redeclaration of that enum in the public API in
     // Monaco.editor. The values will be the same, but TS won't accept that the two enums are equivalent, so it says these types are irreconcilable.
-    get textEditorModel(): Monaco.editor.ITextModel & ITextModel {
+    get textEditorModel(): monaco.editor.ITextModel & ITextModel {
         // @ts-expect-error ts(2322)
         return this.model;
     }
@@ -323,7 +323,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
         const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? editorGeneratedPreferenceProperties['editor.wordSeparators'].default as string;
-        const results: Monaco.editor.FindMatch[] = this.model.findMatches(
+        const results: monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,
             options.isRegex,
@@ -476,7 +476,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
     }
 
-    protected fireDidChangeContent(event: Monaco.editor.IModelContentChangedEvent): void {
+    protected fireDidChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
         this.trace(log => log(`MonacoEditorModel.fireDidChangeContent - enter - ${JSON.stringify(event, undefined, 2)}`));
         if (this.model.getAlternativeVersionId() === this.bufferSavedVersionId) {
             this.setDirty(false);
@@ -489,11 +489,11 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         this.pushContentChanges(changeContentEvent.contentChanges);
         this.trace(log => log('MonacoEditorModel.fireDidChangeContent - exit'));
     }
-    protected asContentChangedEvent(event: Monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
+    protected asContentChangedEvent(event: monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));
         return { model: this, contentChanges };
     }
-    protected asTextDocumentContentChangeEvent(change: Monaco.editor.IModelContentChange): TextDocumentContentChangeEvent {
+    protected asTextDocumentContentChangeEvent(change: monaco.editor.IModelContentChange): TextDocumentContentChangeEvent {
         const range = this.m2p.asRange(change.range);
         const rangeLength = change.rangeLength;
         const text = change.text;
@@ -501,7 +501,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected applyEdits(
-        operations: Monaco.editor.IIdentifiedSingleEditOperation[],
+        operations: monaco.editor.IIdentifiedSingleEditOperation[],
         options?: Partial<MonacoEditorModel.ApplyEditsOptions>
     ): void {
         return this.updateModel(() => this.model.applyEdits(operations), options);
@@ -564,7 +564,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken, options?: SaveOptions): Promise<void> {
-        type EditContributor = Thenable<Monaco.editor.IIdentifiedSingleEditOperation[]>;
+        type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
 
         const firing = this.onWillSaveModelEmitter.sequence(async listener => {
             if (token.isCancellationRequested) {
@@ -596,7 +596,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
             // Wait for all promises.
             const edits = await Promise.all(waitables).then(allOperations =>
-                ([] as Monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
+                ([] as monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
             );
             if (token.isCancellationRequested) {
                 return false;

@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { INITIAL, StackElement, IGrammar } from 'vscode-textmate';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
-export class TokenizerState implements Monaco.languages.IState {
+export class TokenizerState implements monaco.languages.IState {
 
     constructor(
         public readonly ruleStack: StackElement
     ) { }
 
-    clone(): Monaco.languages.IState {
+    clone(): monaco.languages.IState {
         return new TokenizerState(this.ruleStack);
     }
 
-    equals(other: Monaco.languages.IState): boolean {
+    equals(other: monaco.languages.IState): boolean {
         return other instanceof TokenizerState && (other === this || other.ruleStack === this.ruleStack);
     }
 
@@ -60,13 +60,13 @@ export namespace TokenizerOption {
     };
 }
 
-export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): Monaco.languages.EncodedTokensProvider & Monaco.languages.TokensProvider {
+export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.EncodedTokensProvider & monaco.languages.TokensProvider {
     if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);
     }
     return {
         getInitialState: () => new TokenizerState(INITIAL),
-        tokenizeEncoded(line: string, state: TokenizerState): Monaco.languages.IEncodedLineTokens {
+        tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
@@ -78,7 +78,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
                 tokens: result.tokens
             };
         },
-        tokenize(line: string, state: TokenizerState): Monaco.languages.ILineTokens {
+        tokenize(line: string, state: TokenizerState): monaco.languages.ILineTokens {
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized

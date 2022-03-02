@@ -19,14 +19,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462
  */
 @injectable()
 export class DebugExpressionProvider {
-    get(model: Monaco.editor.IModel, selection: Monaco.IRange): string {
+    get(model: monaco.editor.IModel, selection: monaco.IRange): string {
         const lineContent = model.getLineContent(selection.startLineNumber);
         const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
         return lineContent.substring(start - 1, end);

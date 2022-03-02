@@ -18,7 +18,7 @@ import * as jsoncparser from 'jsonc-parser';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class MonacoJSONCEditor {
@@ -31,7 +31,7 @@ export class MonacoJSONCEditor {
         }
     }
 
-    getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): Monaco.editor.IIdentifiedSingleEditOperation[] {
+    getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = model.textEditorModel;
         const content = model.getText().trim();
         // Everything is already undefined - no need for changes.
@@ -51,14 +51,14 @@ export class MonacoJSONCEditor {
             formattingOptions: {
                 insertSpaces,
                 tabSize,
-                eol: defaultEOL === Monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
+                eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
             }
         };
         return jsoncparser.modify(content, path, value, jsonCOptions).map(edit => {
             const start = textModel.getPositionAt(edit.offset);
             const end = textModel.getPositionAt(edit.offset + edit.length);
             return {
-                range: Monaco.Range.fromPositions(start, end),
+                range: monaco.Range.fromPositions(start, end),
                 text: edit.content || null, // eslint-disable-line no-null/no-null
                 forceMoveMarkers: false
             };

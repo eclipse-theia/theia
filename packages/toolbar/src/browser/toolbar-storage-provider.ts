@@ -20,7 +20,7 @@ import { injectable, postConstruct, inject, interfaces } from '@theia/core/share
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { Widget } from '@theia/core/lib/browser';
@@ -270,20 +270,20 @@ export class ToolbarStorageProvider implements Disposable {
             try {
                 const content = this.model.getText().trim();
                 const textModel = this.model.textEditorModel;
-                const editOperations: Monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
                 const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
                 for (const edit of jsoncParser.modify(content, path, value, {
                     isArrayInsertion: insertion,
                     formattingOptions: {
                         insertSpaces,
                         tabSize,
-                        eol: defaultEOL === Monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n',
+                        eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n',
                     },
                 })) {
                     const start = textModel.getPositionAt(edit.offset);
                     const end = textModel.getPositionAt(edit.offset + edit.length);
                     editOperations.push({
-                        range: Monaco.Range.fromPositions(start, end),
+                        range: monaco.Range.fromPositions(start, end),
                         // eslint-disable-next-line no-null/no-null
                         text: edit.content || null,
                         forceMoveMarkers: false,

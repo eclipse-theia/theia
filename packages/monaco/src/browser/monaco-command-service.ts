@@ -20,7 +20,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ICommandEvent, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { StandaloneCommandService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IEvent } from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {
@@ -51,11 +51,11 @@ export class MonacoCommandService implements ICommandService, Disposable {
         this.toDispose.dispose();
     }
 
-    get onWillExecuteCommand(): IEvent<ICommandEvent> {
+    get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
         return this.onWillExecuteCommandEmitter.event;
     }
 
-    get onDidExecuteCommand(): IEvent<ICommandEvent> {
+    get onDidExecuteCommand(): monaco.IEvent<ICommandEvent> {
         return this.onDidExecuteCommandEmitter.event;
     }
 

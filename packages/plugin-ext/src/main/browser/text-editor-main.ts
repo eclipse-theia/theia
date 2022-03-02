@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -48,7 +48,7 @@ export class TextEditorMain implements Disposable {
 
     constructor(
         private id: string,
-        private model: Monaco.editor.IModel,
+        private model: monaco.editor.IModel,
         editor: MonacoEditor
     ) {
         this.toDispose.push(this.model.onDidChangeOptions(() =>
@@ -115,7 +115,7 @@ export class TextEditorMain implements Disposable {
         return this.id;
     }
 
-    getModel(): Monaco.editor.IModel {
+    getModel(): monaco.editor.IModel {
         return this.model;
     }
 
@@ -187,7 +187,7 @@ export class TextEditorMain implements Disposable {
             return;
         }
 
-        const newOpts: Monaco.editor.ITextModelUpdateOptions = {};
+        const newOpts: monaco.editor.ITextModelUpdateOptions = {};
         if (typeof newConfiguration.insertSpaces !== 'undefined') {
             newOpts.insertSpaces = newConfiguration.insertSpaces;
         }
@@ -197,22 +197,22 @@ export class TextEditorMain implements Disposable {
         this.model.updateOptions(newOpts);
     }
 
-    revealRange(range: Monaco.Range, revealType: TextEditorRevealType): void {
+    revealRange(range: monaco.Range, revealType: TextEditorRevealType): void {
         if (!this.editor) {
             return;
         }
         switch (revealType) {
             case TextEditorRevealType.Default:
-                this.editor.getControl().revealRange(range, Monaco.editor.ScrollType.Smooth);
+                this.editor.getControl().revealRange(range, monaco.editor.ScrollType.Smooth);
                 break;
             case TextEditorRevealType.InCenter:
-                this.editor.getControl().revealRangeInCenter(range, Monaco.editor.ScrollType.Smooth);
+                this.editor.getControl().revealRangeInCenter(range, monaco.editor.ScrollType.Smooth);
                 break;
             case TextEditorRevealType.InCenterIfOutsideViewport:
-                this.editor.getControl().revealRangeInCenterIfOutsideViewport(range, Monaco.editor.ScrollType.Smooth);
+                this.editor.getControl().revealRangeInCenterIfOutsideViewport(range, monaco.editor.ScrollType.Smooth);
                 break;
             case TextEditorRevealType.AtTop:
-                this.editor.getControl().revealRangeAtTop(range, Monaco.editor.ScrollType.Smooth);
+                this.editor.getControl().revealRangeAtTop(range, monaco.editor.ScrollType.Smooth);
                 break;
             default:
                 console.warn(`Unknown revealType: ${revealType}`);
@@ -231,12 +231,12 @@ export class TextEditorMain implements Disposable {
         }
 
         if (opts.setEndOfLine === EndOfLine.CRLF) {
-            this.model.setEOL(Monaco.editor.EndOfLineSequence.CRLF);
+            this.model.setEOL(monaco.editor.EndOfLineSequence.CRLF);
         } else if (opts.setEndOfLine === EndOfLine.LF) {
-            this.model.setEOL(Monaco.editor.EndOfLineSequence.LF);
+            this.model.setEOL(monaco.editor.EndOfLineSequence.LF);
         }
 
-        const editOperations: Monaco.editor.IIdentifiedSingleEditOperation[] = [];
+        const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
         for (const edit of edits) {
             const { range, text } = edit;
             if (!range && !text) {
@@ -247,7 +247,7 @@ export class TextEditorMain implements Disposable {
             }
 
             editOperations.push({
-                range: range ? Monaco.Range.lift(range) : this.editor.getControl().getModel()!.getFullModelRange(),
+                range: range ? monaco.Range.lift(range) : this.editor.getControl().getModel()!.getFullModelRange(),
                 /* eslint-disable-next-line no-null/no-null */
                 text: text || null,
                 forceMoveMarkers: edit.forceMoveMarkers
@@ -269,7 +269,7 @@ export class TextEditorMain implements Disposable {
 
         if (!snippetController || !this.editor) { return false; }
 
-        const selections = ranges.map(r => new Monaco.Selection(r.startLineNumber, r.startColumn, r.endLineNumber, r.endColumn));
+        const selections = ranges.map(r => new monaco.Selection(r.startLineNumber, r.startColumn, r.endLineNumber, r.endColumn));
         this.editor.getControl().setSelections(selections);
         this.editor.focus();
 
@@ -293,19 +293,19 @@ export class TextEditorMain implements Disposable {
         const ranges: Range[] = [];
         const len = Math.floor(_ranges.length / 4);
         for (let i = 0; i < len; i++) {
-            ranges[i] = new Monaco.Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
+            ranges[i] = new monaco.Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
         }
         // TODO: We shouldn't have to do this.
         (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorationsFast(key, ranges);
     }
 
-    private static toMonacoSelections(selection: Selection): Monaco.Selection {
-        return new Monaco.Selection(selection.selectionStartLineNumber, selection.selectionStartColumn, selection.positionLineNumber, selection.positionColumn);
+    private static toMonacoSelections(selection: Selection): monaco.Selection {
+        return new monaco.Selection(selection.selectionStartLineNumber, selection.selectionStartColumn, selection.positionLineNumber, selection.positionColumn);
     }
 }
 
 // TODO move to monaco typings!
-interface SnippetController2 extends Monaco.editor.IEditorContribution {
+interface SnippetController2 extends monaco.editor.IEditorContribution {
     insert(template: string,
         overwriteBefore: number, overwriteAfter: number,
         undoStopBefore: boolean, undoStopAfter: boolean): void;
@@ -318,9 +318,9 @@ interface SnippetController2 extends Monaco.editor.IEditorContribution {
 
 export class TextEditorPropertiesMain {
     constructor(
-        readonly selections: Monaco.Selection[],
+        readonly selections: monaco.Selection[],
         readonly options: TextEditorConfiguration,
-        readonly visibleRanges: Monaco.Range[]
+        readonly visibleRanges: monaco.Range[]
     ) {
     }
 
@@ -353,15 +353,15 @@ export class TextEditorPropertiesMain {
         return undefined;
     }
 
-    static readFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: Monaco.editor.IModel, editor: MonacoEditor): TextEditorPropertiesMain {
+    static readFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: monaco.editor.IModel, editor: MonacoEditor): TextEditorPropertiesMain {
         const selections = TextEditorPropertiesMain.getSelectionsFromEditor(prevProperties, editor);
         const options = TextEditorPropertiesMain.getOptionsFromEditor(prevProperties, model, editor);
         const visibleRanges = TextEditorPropertiesMain.getVisibleRangesFromEditor(prevProperties, editor);
         return new TextEditorPropertiesMain(selections, options, visibleRanges);
     }
 
-    private static getSelectionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): Monaco.Selection[] {
-        let result: Monaco.Selection[] | undefined = undefined;
+    private static getSelectionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): monaco.Selection[] {
+        let result: monaco.Selection[] | undefined = undefined;
         if (editor) {
             result = editor.getControl().getSelections() || undefined;
         }
@@ -371,12 +371,12 @@ export class TextEditorPropertiesMain {
         }
 
         if (!result) {
-            result = [new Monaco.Selection(1, 1, 1, 1)];
+            result = [new monaco.Selection(1, 1, 1, 1)];
         }
         return result;
     }
 
-    private static getOptionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: Monaco.editor.IModel, editor: MonacoEditor): TextEditorConfiguration {
+    private static getOptionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, model: monaco.editor.IModel, editor: MonacoEditor): TextEditorConfiguration {
         if (model.isDisposed()) {
             return prevProperties!.options;
         }
@@ -385,13 +385,13 @@ export class TextEditorPropertiesMain {
         let lineNumbers: TextEditorLineNumbersStyle;
         if (editor) {
             const editorOptions = editor.getControl().getOptions();
-            const lineNumbersOpts = editorOptions.get(Monaco.editor.EditorOption.lineNumbers);
-            cursorStyle = editorOptions.get(Monaco.editor.EditorOption.cursorStyle);
+            const lineNumbersOpts = editorOptions.get(monaco.editor.EditorOption.lineNumbers);
+            cursorStyle = editorOptions.get(monaco.editor.EditorOption.cursorStyle);
             switch (lineNumbersOpts.renderType) {
-                case Monaco.editor.RenderLineNumbersType.Off:
+                case monaco.editor.RenderLineNumbersType.Off:
                     lineNumbers = TextEditorLineNumbersStyle.Off;
                     break;
-                case Monaco.editor.RenderLineNumbersType.Relative:
+                case monaco.editor.RenderLineNumbersType.Relative:
                     lineNumbers = TextEditorLineNumbersStyle.Relative;
                     break;
                 default:
@@ -415,14 +415,14 @@ export class TextEditorPropertiesMain {
         };
     }
 
-    private static getVisibleRangesFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): Monaco.Range[] {
+    private static getVisibleRangesFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): monaco.Range[] {
         if (editor) {
             return editor.getControl().getVisibleRanges();
         }
         return [];
     }
 
-    private static selectionsEqual(a: Monaco.Selection[], b: Monaco.Selection[]): boolean {
+    private static selectionsEqual(a: monaco.Selection[], b: monaco.Selection[]): boolean {
         if (a.length !== b.length) {
             return false;
         }
@@ -449,7 +449,7 @@ export class TextEditorPropertiesMain {
         );
     }
 
-    private static rangesEqual(a: Monaco.Range[], b: Monaco.Range[]): boolean {
+    private static rangesEqual(a: monaco.Range[], b: monaco.Range[]): boolean {
         if (a.length !== b.length) {
             return false;
         }

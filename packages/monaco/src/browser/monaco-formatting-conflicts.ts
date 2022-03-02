@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { PreferenceService, FrontendApplicationContribution, PreferenceLanguageOverrideService } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoQuickInputService } from './monaco-quick-input-service';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { FormattingConflicts, FormattingMode } from '@theia/monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
 import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
@@ -68,7 +68,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
     }
 
     private async selectFormatter<T extends FormattingEditProvider>(
-        formatters: T[], document: Monaco.editor.ITextModel | ITextModel, mode: FormattingMode): Promise<T | undefined> {
+        formatters: T[], document: monaco.editor.ITextModel | ITextModel, mode: FormattingMode): Promise<T | undefined> {
 
         if (formatters.length === 0) {
             return undefined;

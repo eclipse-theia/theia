@@ -29,7 +29,7 @@ import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import {
     IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
     ResourceTextEdit as MonacoResourceTextEdit
@@ -39,35 +39,35 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 export namespace WorkspaceFileEdit {
-    export function is(arg: Edit): arg is Monaco.languages.WorkspaceFileEdit {
-        return ('oldUri' in arg && Monaco.Uri.isUri(arg.oldUri)) ||
-            ('newUri' in arg && Monaco.Uri.isUri(arg.newUri));
+    export function is(arg: Edit): arg is monaco.languages.WorkspaceFileEdit {
+        return ('oldUri' in arg && monaco.Uri.isUri(arg.oldUri)) ||
+            ('newUri' in arg && monaco.Uri.isUri(arg.newUri));
     }
 }
 
 export namespace WorkspaceTextEdit {
-    export function is(arg: Edit): arg is Monaco.languages.WorkspaceTextEdit {
+    export function is(arg: Edit): arg is monaco.languages.WorkspaceTextEdit {
         return !!arg && typeof arg === 'object'
             && 'resource' in arg
-            && Monaco.Uri.isUri(arg.resource)
+            && monaco.Uri.isUri(arg.resource)
             && 'edit' in arg
             && arg.edit !== null
             && typeof arg.edit === 'object';
     }
 }
 
-export type Edit = Monaco.languages.WorkspaceFileEdit | Monaco.languages.WorkspaceTextEdit;
+export type Edit = monaco.languages.WorkspaceFileEdit | monaco.languages.WorkspaceTextEdit;
 
 export namespace ResourceFileEdit {
     export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {
-        return typeof arg === 'object' && (('oldResource' in arg) && Monaco.Uri.isUri((arg as MonacoResourceFileEdit).oldResource)) ||
-            ('newResource' in arg && Monaco.Uri.isUri((arg as MonacoResourceFileEdit).newResource));
+        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as MonacoResourceFileEdit).oldResource)) ||
+            ('newResource' in arg && monaco.Uri.isUri((arg as MonacoResourceFileEdit).newResource));
     }
 }
 
 export namespace ResourceTextEdit {
     export function is(arg: ResourceEdit): arg is MonacoResourceTextEdit {
-        return ('resource' in arg && Monaco.Uri.isUri((arg as MonacoResourceTextEdit).resource));
+        return ('resource' in arg && monaco.Uri.isUri((arg as MonacoResourceTextEdit).resource));
     }
 }
 
@@ -213,7 +213,7 @@ export class MonacoWorkspace {
      * Applies given edits to the given model.
      * The model is saved if no editors is opened for it.
      */
-    applyBackgroundEdit(model: MonacoEditorModel, editOperations: Monaco.editor.IIdentifiedSingleEditOperation[], shouldSave = true): Promise<void> {
+    applyBackgroundEdit(model: MonacoEditorModel, editOperations: monaco.editor.IIdentifiedSingleEditOperation[], shouldSave = true): Promise<void> {
         return this.suppressOpenIfDirty(model, async () => {
             const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
             const cursorState = editor && editor.getControl().getSelections() || [];
@@ -289,22 +289,22 @@ export class MonacoWorkspace {
         const pending: Promise<void>[] = [];
         for (const [key, value] of resourceEdits) {
             pending.push((async () => {
-                const uri = Monaco.Uri.parse(key);
+                const uri = monaco.Uri.parse(key);
                 let eol: EndOfLineSequence | undefined;
-                const editOperations: Monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
                 const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
                             eol = textEdit.eol;
                         }
-                        if (Monaco.Range.isEmpty(textEdit.range) && !textEdit.text) {
+                        if (monaco.Range.isEmpty(textEdit.range) && !textEdit.text) {
                             // skip no-op
                             continue;
                         }
                         editOperations.push({
                             forceMoveMarkers: false,
-                            range: Monaco.Range.lift(textEdit.range),
+                            range: monaco.Range.lift(textEdit.range),
                             text: textEdit.text
                         });
                     }

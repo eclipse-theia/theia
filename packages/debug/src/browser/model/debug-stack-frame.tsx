@@ -30,7 +30,7 @@ import { DebugSource } from './debug-source';
 import { RecursivePartial } from '@theia/core';
 import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export class DebugStackFrameData {
     readonly raw: DebugProtocol.StackFrame;
@@ -104,7 +104,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/common/debugModel.ts#L324-L335
-    async getMostSpecificScopes(range: Monaco.IRange): Promise<DebugScope[]> {
+    async getMostSpecificScopes(range: monaco.IRange): Promise<DebugScope[]> {
         const scopes = await this.getScopes();
         const nonExpensiveScopes = scopes.filter(s => !s.expensive);
         const haveRangeInfo = nonExpensiveScopes.some(s => !!s.range);
@@ -112,7 +112,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
             return nonExpensiveScopes;
         }
 
-        const scopesContainingRange = nonExpensiveScopes.filter(scope => scope.range && Monaco.Range.containsRange(scope.range, range))
+        const scopesContainingRange = nonExpensiveScopes.filter(scope => scope.range && monaco.Range.containsRange(scope.range, range))
             .sort((first, second) => (first.range!.endLineNumber - first.range!.startLineNumber) - (second.range!.endLineNumber - second.range!.startLineNumber));
         return scopesContainingRange.length ? scopesContainingRange : nonExpensiveScopes;
     }
@@ -151,10 +151,10 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         </span>;
     }
 
-    get range(): Monaco.IRange | undefined {
+    get range(): monaco.IRange | undefined {
         const { source, line: startLine, column: startColumn, endLine, endColumn } = this.raw;
         if (source) {
-            return new Monaco.Range(startLine, startColumn, endLine || startLine, endColumn || startColumn);
+            return new monaco.Range(startLine, startColumn, endLine || startLine, endColumn || startColumn);
         }
         return undefined;
     }

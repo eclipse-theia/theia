@@ -21,7 +21,7 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { IDiffEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { IDiffNavigatorOptions } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneEditor';
 import { StandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
@@ -32,7 +32,7 @@ export namespace MonacoDiffEditor {
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
-    protected _diffEditor: Monaco.editor.IStandaloneDiffEditor;
+    protected _diffEditor: monaco.editor.IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
 
     constructor(
@@ -53,7 +53,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         this._diffEditor.setModel({ original, modified });
     }
 
-    get diffEditor(): Monaco.editor.IStandaloneDiffEditor {
+    get diffEditor(): monaco.editor.IStandaloneDiffEditor {
         return this._diffEditor;
     }
 
@@ -64,7 +64,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
         const instantiator = this.getInstantiatorWithOverrides(override);
         this._diffEditor = instantiator
-            .createInstance(StandaloneDiffEditor, this.node, { ...options, fixedOverflowWidgets: true }) as unknown as Monaco.editor.IStandaloneDiffEditor;
+            .createInstance(StandaloneDiffEditor, this.node, { ...options, fixedOverflowWidgets: true }) as unknown as monaco.editor.IStandaloneDiffEditor;
         this.editor = this._diffEditor.getModifiedEditor();
         return this._diffEditor;
     }

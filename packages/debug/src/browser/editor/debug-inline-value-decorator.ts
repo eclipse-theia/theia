@@ -21,7 +21,7 @@
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { StandardTokenType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
@@ -58,7 +58,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     protected readonly preferences: DebugPreferences;
 
     protected enabled = false;
-    protected wordToLineNumbersMap: Map<string, Monaco.Position[]> | undefined = new Map(); // TODO: can we get rid of this field?
+    protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map(); // TODO: can we get rid of this field?
 
     onStart(): void {
         this.editorService.registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
@@ -78,7 +78,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L382-L408
     protected async updateInlineValueDecorations(
-        model: Monaco.editor.ITextModel | undefined,
+        model: monaco.editor.ITextModel | undefined,
         stackFrame: DebugStackFrame | undefined): Promise<IDecorationOptions[]> {
 
         if (!this.enabled || !model || !stackFrame || !stackFrame.source || model.uri.toString() !== stackFrame.source.uri.toString()) {
@@ -96,7 +96,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
         // Get all top level children in the scope chain
         const decorationsPerScope = await Promise.all(scopes.map(async scope => {
             const children = Array.from(await scope.getElements());
-            let range = new Monaco.Range(0, 0, stackFrameRange.startLineNumber, stackFrameRange.startColumn);
+            let range = new monaco.Range(0, 0, stackFrameRange.startLineNumber, stackFrameRange.startColumn);
             if (scope.range) {
                 range = range.setStartPosition(scope.range.startLineNumber, scope.range.startColumn);
             }
@@ -110,8 +110,8 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L410-L452
     private createInlineValueDecorationsInsideRange(
         expressions: ReadonlyArray<ExpressionContainer>,
-        range: Monaco.Range,
-        model: Monaco.editor.ITextModel): IDecorationOptions[] {
+        range: monaco.Range,
+        model: monaco.editor.ITextModel): IDecorationOptions[] {
 
         const nameValueMap = new Map<string, string>();
         for (const expr of expressions) {
@@ -193,11 +193,11 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L487-L531
-    private getWordToPositionsMap(model: Monaco.editor.ITextModel | ITextModel): Map<string, Monaco.Position[]> {
+    private getWordToPositionsMap(model: monaco.editor.ITextModel | ITextModel): Map<string, monaco.Position[]> {
         // TODO: We shouldn't have to do this.
         model = model as ITextModel;
         if (!this.wordToLineNumbersMap) {
-            this.wordToLineNumbersMap = new Map<string, Monaco.Position[]>();
+            this.wordToLineNumbersMap = new Map<string, monaco.Position[]>();
             if (!model) {
                 return this.wordToLineNumbersMap;
             }
@@ -230,7 +230,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
                                 this.wordToLineNumbersMap.set(word, []);
                             }
 
-                            this.wordToLineNumbersMap.get(word)!.push(new Monaco.Position(lineNumber, tokenStartOffset));
+                            this.wordToLineNumbersMap.get(word)!.push(new monaco.Position(lineNumber, tokenStartOffset));
                         }
                     }
                 }

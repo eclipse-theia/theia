@@ -20,9 +20,9 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
-export interface MonacoEditorViewZone extends Monaco.editor.IViewZone {
+export interface MonacoEditorViewZone extends monaco.editor.IViewZone {
     id: string;
 }
 
@@ -33,8 +33,8 @@ export class MonacoEditorZoneWidget implements Disposable {
     readonly zoneNode = document.createElement('div');
     readonly containerNode = document.createElement('div');
 
-    protected readonly onDidLayoutChangeEmitter = new Emitter<Monaco.editor.IDimension>();
-    readonly onDidLayoutChange: Event<Monaco.editor.IDimension> = this.onDidLayoutChangeEmitter.event;
+    protected readonly onDidLayoutChangeEmitter = new Emitter<monaco.editor.IDimension>();
+    readonly onDidLayoutChange: Event<monaco.editor.IDimension> = this.onDidLayoutChangeEmitter.event;
 
     protected viewZone: MonacoEditorViewZone | undefined;
 
@@ -45,10 +45,10 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
-    editor: Monaco.editor.IStandaloneCodeEditor;
+    editor: monaco.editor.IStandaloneCodeEditor;
 
     constructor(
-        editorInstance: Monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
+        editorInstance: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
     ) {
         this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');
@@ -74,7 +74,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
-        const lineHeight = this.editor.getOption(Monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         // adjust heightInLines to viewport
         const maxHeightInLines = Math.max(12, (this.editor.getLayoutInfo().height / lineHeight) * 0.8);
         heightInLines = Math.min(heightInLines, maxHeightInLines);
@@ -84,7 +84,7 @@ export class MonacoEditorZoneWidget implements Disposable {
             this.zoneNode.style.top = '-1000px';
             const domNode = document.createElement('div');
             domNode.style.overflow = 'hidden';
-            const zone: Monaco.editor.IViewZone = {
+            const zone: monaco.editor.IViewZone = {
                 domNode,
                 afterLineNumber,
                 afterColumn,
@@ -108,7 +108,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
                 this.toHide.push(this.arrow);
             }
-            const widget: Monaco.editor.IOverlayWidget = {
+            const widget: monaco.editor.IOverlayWidget = {
                 getId: () => 'editor-zone-widget-' + id,
                 getDomNode: () => this.zoneNode,
                 // eslint-disable-next-line no-null/no-null
@@ -124,7 +124,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         const model = this.editor.getModel();
         if (model) {
             const revealLineNumber = Math.min(model.getLineCount(), Math.max(1, afterLineNumber + 1));
-            this.editor.revealLine(revealLineNumber, Monaco.editor.ScrollType.Smooth);
+            this.editor.revealLine(revealLineNumber, monaco.editor.ScrollType.Smooth);
         }
     }
 
@@ -155,7 +155,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         height: number,
         frameWidth: number
     } {
-        const lineHeight = this.editor.getOption(Monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         const frameWidth = this._options && this._options.frameWidth;
         const frameThickness = this._options && this._options.showFrame ? Math.round(lineHeight / 9) : 0;
         return {
@@ -164,15 +164,15 @@ export class MonacoEditorZoneWidget implements Disposable {
         };
     }
 
-    protected updateWidth(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): void {
+    protected updateWidth(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): void {
         const width = this.computeWidth(info);
         this.zoneNode.style.width = width + 'px';
         this.zoneNode.style.left = this.computeLeft(info) + 'px';
     }
-    protected computeWidth(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeWidth(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         return info.width - info.minimap.minimapWidth - info.verticalScrollbarWidth;
     }
-    protected computeLeft(info: Monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
+    protected computeLeft(info: monaco.editor.EditorLayoutInfo = this.editor.getLayoutInfo()): number {
         // If minimap is to the left, we move beyond it
         if (info.minimap.minimapWidth > 0 && info.minimap.minimapLeft === 0) {
             return info.minimap.minimapWidth;
@@ -202,7 +202,7 @@ class Arrow implements Disposable {
     private _height: number = -1;
 
     constructor(
-        private readonly _editor: Monaco.editor.ICodeEditor
+        private readonly _editor: monaco.editor.ICodeEditor
     ) { }
 
     dispose(): void {
@@ -227,10 +227,10 @@ class Arrow implements Disposable {
         (<CSSStyleSheet>style.sheet).insertRule(selector + '{' + cssText + '}', 0);
     }
 
-    show(where: Monaco.IPosition): void {
+    show(where: monaco.IPosition): void {
         this.decorations = this._editor.deltaDecorations(
             this.decorations,
-            [{ range: Monaco.Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
+            [{ range: monaco.Range.fromPositions(where), options: { className: this.ruleName, stickiness: TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges } }]
         );
     }
 

@@ -41,7 +41,7 @@ import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edi
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 
@@ -108,7 +108,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
             return Promise.reject(disposed(`TextEditor(${id})`));
         }
 
-        this.editorsAndDocuments.getEditor(id)!.revealRange(new Monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn), revealType);
+        this.editorsAndDocuments.getEditor(id)!.revealRange(new monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn), revealType);
         return Promise.resolve();
     }
 

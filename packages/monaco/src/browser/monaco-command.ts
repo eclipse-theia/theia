@@ -28,7 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
 import { CommandsRegistry, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
-import { Uri } from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
@@ -203,7 +203,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             execute: (editor: MonacoEditor, uri: string, position: Position, locations: Location[]) => {
                 StandaloneServices.get(ICommandService).executeCommand(
                     'editor.action.showReferences',
-                    Uri.parse(uri),
+                    monaco.Uri.parse(uri),
                     this.p2m.asPosition(position),
                     locations.map(l => this.p2m.asLocation(l))
                 );

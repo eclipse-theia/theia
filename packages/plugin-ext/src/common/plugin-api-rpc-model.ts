@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import * as Monaco from '@theia/monaco-editor-core';
+import type * as monaco from '@theia/monaco-editor-core';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
@@ -255,7 +255,7 @@ export interface Hover {
 }
 
 export interface HoverProvider {
-    provideHover(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
+    provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Hover | undefined | Thenable<Hover | undefined>;
 }
 
 export enum DocumentHighlightKind {
@@ -270,7 +270,7 @@ export interface DocumentHighlight {
 }
 
 export interface DocumentHighlightProvider {
-    provideDocumentHighlights(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): DocumentHighlight[] | undefined;
+    provideDocumentHighlights(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): DocumentHighlight[] | undefined;
 }
 
 export interface FormattingOptions {
@@ -281,7 +281,7 @@ export interface FormattingOptions {
 export interface TextEdit {
     range: Range;
     text: string;
-    eol?: Monaco.editor.EndOfLineSequence;
+    eol?: monaco.editor.EndOfLineSequence;
 }
 
 export interface Location {
@@ -299,11 +299,11 @@ export interface LocationLink {
 }
 
 export interface DefinitionProvider {
-    provideDefinition(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Definition | undefined;
+    provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
 }
 
 export interface DeclarationProvider {
-    provideDeclaration(model: Monaco.editor.ITextModel, position: Monaco.Position, token: Monaco.CancellationToken): Definition | undefined;
+    provideDeclaration(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
 }
 
 /**
@@ -329,8 +329,8 @@ export interface DocumentLink {
 }
 
 export interface DocumentLinkProvider {
-    provideLinks(model: Monaco.editor.ITextModel, token: Monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
-    resolveLink?: (link: DocumentLink, token: Monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
+    provideLinks(model: monaco.editor.ITextModel, token: monaco.CancellationToken): DocumentLink[] | undefined | PromiseLike<DocumentLink[] | undefined>;
+    resolveLink?: (link: DocumentLink, token: monaco.CancellationToken) => DocumentLink | PromiseLike<DocumentLink[]>;
 }
 
 export interface CodeLensSymbol {
@@ -357,10 +357,10 @@ export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, 
 
 export interface CodeActionProvider {
     provideCodeActions(
-        model: Monaco.editor.ITextModel,
+        model: monaco.editor.ITextModel,
         range: Range | Selection,
-        context: Monaco.languages.CodeActionContext,
-        token: Monaco.CancellationToken
+        context: monaco.languages.CodeActionContext,
+        token: monaco.CancellationToken
     ): CodeAction[] | PromiseLike<CodeAction[]>;
 
     providedCodeActionKinds?: string[];
@@ -504,8 +504,8 @@ export interface ColorInformation {
 }
 
 export interface DocumentColorProvider {
-    provideDocumentColors(model: Monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
-    provideColorPresentations(model: Monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
+    provideDocumentColors(model: monaco.editor.ITextModel): PromiseLike<ColorInformation[]>;
+    provideColorPresentations(model: monaco.editor.ITextModel, colorInfo: ColorInformation): PromiseLike<ColorPresentation[]>;
 }
 
 export interface Rejection {

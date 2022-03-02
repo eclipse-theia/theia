@@ -24,7 +24,7 @@ import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
 import { EditorPreferences } from '@theia/editor/lib/browser/editor-preferences';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { TokenizationRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -138,7 +138,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         }
 
         // then trigger tokenization by setting monaco theme
-        Monaco.editor.setTheme(currentEditorTheme);
+        monaco.editor.setTheme(currentEditorTheme);
     }
 
     protected get currentEditorTheme(): string {
@@ -188,7 +188,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
             const options = configuration.tokenizerOption ? configuration.tokenizerOption : this.tokenizerOption;
             const tokenizer = createTextmateTokenizer(grammar, options);
-            toDispose.push(Monaco.languages.setTokensProvider(languageId, tokenizer));
+            toDispose.push(monaco.languages.setTokensProvider(languageId, tokenizer));
             const support = TokenizationRegistry.get(languageId);
             const themeService = StandaloneServices.get(IStandaloneThemeService);
             const languageService = StandaloneServices.get(ILanguageService);
@@ -206,6 +206,6 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             cb();
             return Disposable.NULL;
         }
-        return Monaco.languages.onLanguage(language, cb);
+        return monaco.languages.onLanguage(language, cb);
     }
 }

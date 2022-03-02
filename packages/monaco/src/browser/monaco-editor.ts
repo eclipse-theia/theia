@@ -42,7 +42,7 @@ import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { TextEdit } from '@theia/core/shared/vscode-languageserver-protocol';
 import { UTF8 } from '@theia/core/lib/common/encodings';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IInstantiationService, ServiceIdentifier } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
@@ -78,7 +78,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected readonly autoSizing: boolean;
     protected readonly minHeight: number;
     protected readonly maxHeight: number;
-    protected editor: Monaco.editor.IStandaloneCodeEditor;
+    protected editor: monaco.editor.IStandaloneCodeEditor;
 
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
@@ -128,7 +128,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.document.setEncoding(encoding, mode);
     }
 
-    protected create(options?: Monaco.editor.IStandaloneEditorConstructionOptions | IStandaloneEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
+    protected create(options?: monaco.editor.IStandaloneEditorConstructionOptions | IStandaloneEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
         const combinedOptions = {
             ...options,
             lightbulb: { enabled: true },
@@ -143,7 +143,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         } as IStandaloneEditorConstructionOptions;
         const instantiator = this.getInstantiatorWithOverrides(override);
         // Incomparability of internal and external interfaces.
-        return this.editor = instantiator.createInstance(StandaloneEditor, this.node, combinedOptions) as unknown as Monaco.editor.IStandaloneCodeEditor;
+        return this.editor = instantiator.createInstance(StandaloneEditor, this.node, combinedOptions) as unknown as monaco.editor.IStandaloneCodeEditor;
     }
 
     protected getInstantiatorWithOverrides(override?: EditorServiceOverrides): IInstantiationService {
@@ -155,7 +155,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return instantiator;
     }
 
-    protected addHandlers(codeEditor: Monaco.editor.IStandaloneCodeEditor): void {
+    protected addHandlers(codeEditor: monaco.editor.IStandaloneCodeEditor): void {
         this.toDispose.push(codeEditor.onDidChangeModelLanguage(e =>
             this.fireLanguageChanged(e.newLanguage)
         ));
@@ -200,7 +200,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.editor.getVisibleRanges().map(range => this.m2p.asRange(range));
     }
 
-    protected mapModelContentChange(change: Monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
+    protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
         return {
             range: this.m2p.asRange(change.range),
             rangeLength: change.rangeLength,
@@ -350,7 +350,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.editor.trigger(source, handlerId, payload);
     }
 
-    getControl(): Monaco.editor.IStandaloneCodeEditor {
+    getControl(): monaco.editor.IStandaloneCodeEditor {
         return this.editor;
     }
 
@@ -383,7 +383,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         }
     }
 
-    protected computeLayoutSize(hostNode: HTMLElement, dimension: Monaco.editor.IDimension | null): Monaco.editor.IDimension {
+    protected computeLayoutSize(hostNode: HTMLElement, dimension: monaco.editor.IDimension | null): monaco.editor.IDimension {
         if (dimension && dimension.width >= 0 && dimension.height >= 0) {
             return dimension;
         }
@@ -409,7 +409,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             return hostNode.offsetHeight - boxSizing.verticalSum;
         }
 
-        const lineHeight = this.editor.getOption(Monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         const lineCount = this.editor.getModel()!.getLineCount();
         const contentHeight = lineHeight * lineCount;
 
@@ -447,9 +447,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.editor.deltaDecorations(oldDecorations, newDecorations);
     }
 
-    protected toDeltaDecorations(params: DeltaDecorationParams): Monaco.editor.IModelDeltaDecoration[] {
+    protected toDeltaDecorations(params: DeltaDecorationParams): monaco.editor.IModelDeltaDecoration[] {
         return params.newDecorations.map(({ options: theiaOptions, range }) => {
-            const options: Monaco.editor.IModelDecorationOptions = {
+            const options: monaco.editor.IModelDecorationOptions = {
                 ...theiaOptions,
                 hoverMessage: this.fromStringToMarkdownString(theiaOptions.hoverMessage),
                 glyphMarginHoverMessage: this.fromStringToMarkdownString(theiaOptions.glyphMarginHoverMessage)
@@ -461,14 +461,14 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         });
     }
 
-    protected fromStringToMarkdownString(hoverMessage?: string | Monaco.IMarkdownString | Monaco.IMarkdownString[]): Monaco.IMarkdownString | Monaco.IMarkdownString[] | undefined {
+    protected fromStringToMarkdownString(hoverMessage?: string | monaco.IMarkdownString | monaco.IMarkdownString[]): monaco.IMarkdownString | monaco.IMarkdownString[] | undefined {
         if (typeof hoverMessage === 'string') {
             return { value: hoverMessage };
         }
         return hoverMessage;
     }
 
-    protected fromMarkdownToString(maybeMarkdown?: null | string | Monaco.IMarkdownString | Monaco.IMarkdownString[]): string | undefined {
+    protected fromMarkdownToString(maybeMarkdown?: null | string | monaco.IMarkdownString | monaco.IMarkdownString[]): string | undefined {
         if (!maybeMarkdown) {
             return undefined;
         }
@@ -482,7 +482,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     getLinesDecorations(startLineNumber: number, endLineNumber: number): (EditorDecoration & Readonly<{ id: string }>)[] {
-        const toPosition = (line: number): Monaco.Position => this.p2m.asPosition({ line, character: 0 });
+        const toPosition = (line: number): monaco.Position => this.p2m.asPosition({ line, character: 0 });
         const start = toPosition(startLineNumber).lineNumber;
         const end = toPosition(endLineNumber).lineNumber;
         return this.editor
@@ -491,7 +491,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             .map(this.toEditorDecoration.bind(this));
     }
 
-    protected toEditorDecoration(decoration: Monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {
+    protected toEditorDecoration(decoration: monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {
         const range = this.m2p.asRange(decoration.range);
         const { id, options: monacoOptions } = decoration;
         const options: MaybeNull<EditorDecorationOptions> = {
@@ -511,8 +511,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     async replaceText(params: ReplaceTextParams): Promise<boolean> {
-        const edits: Monaco.editor.IIdentifiedSingleEditOperation[] = params.replaceOperations.map(param => {
-            const range = Monaco.Range.fromPositions(this.p2m.asPosition(param.range.start), this.p2m.asPosition(param.range.end));
+        const edits: monaco.editor.IIdentifiedSingleEditOperation[] = params.replaceOperations.map(param => {
+            const range = monaco.Range.fromPositions(this.p2m.asPosition(param.range.start), this.p2m.asPosition(param.range.end));
             return {
                 forceMoveMarkers: true,
                 identifier: {
@@ -527,14 +527,14 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     executeEdits(edits: TextEdit[]): boolean {
-        return this.editor.executeEdits('MonacoEditor', this.p2m.asTextEdits(edits) as Monaco.editor.IIdentifiedSingleEditOperation[]);
+        return this.editor.executeEdits('MonacoEditor', this.p2m.asTextEdits(edits) as monaco.editor.IIdentifiedSingleEditOperation[]);
     }
 
     storeViewState(): object {
         return this.editor.saveViewState()!;
     }
 
-    restoreViewState(state: Monaco.editor.ICodeEditorViewState): void {
+    restoreViewState(state: monaco.editor.ICodeEditorViewState): void {
         this.editor.restoreViewState(state);
     }
 
@@ -556,7 +556,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     setLanguage(languageId: string): void {
         for (const document of this.documents) {
-            Monaco.editor.setModelLanguage(document.textEditorModel, languageId);
+            monaco.editor.setModelLanguage(document.textEditorModel, languageId);
         }
     }
 
@@ -599,7 +599,7 @@ export namespace MonacoEditor {
         maxHeight?: number;
     }
 
-    export interface IOptions extends ICommonOptions, Monaco.editor.IStandaloneEditorConstructionOptions { }
+    export interface IOptions extends ICommonOptions, monaco.editor.IStandaloneEditorConstructionOptions { }
 
     export function getAll(manager: EditorManager): MonacoEditor[] {
         return manager.all.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
@@ -624,7 +624,7 @@ export namespace MonacoEditor {
         return getAll(manager).filter(candidate => candidate.documents.has(document));
     }
 
-    export function getWidgetFor(manager: EditorManager, control: Monaco.editor.ICodeEditor | ICodeEditor | undefined | null): EditorWidget | undefined {
+    export function getWidgetFor(manager: EditorManager, control: monaco.editor.ICodeEditor | ICodeEditor | undefined | null): EditorWidget | undefined {
         if (!control) {
             return undefined;
         }

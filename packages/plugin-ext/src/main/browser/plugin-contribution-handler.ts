@@ -40,7 +40,7 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
@@ -154,7 +154,7 @@ export class PluginContributionHandler {
         if (languages && languages.length) {
             for (const lang of languages) {
                 // it is not possible to unregister a language
-                Monaco.languages.register({
+                monaco.languages.register({
                     id: lang.id,
                     aliases: lang.aliases,
                     extensions: lang.extensions,
@@ -165,7 +165,7 @@ export class PluginContributionHandler {
                 });
                 const langConfiguration = lang.configuration;
                 if (langConfiguration) {
-                    pushContribution(`language.${lang.id}.configuration`, () => Monaco.languages.setLanguageConfiguration(lang.id, {
+                    pushContribution(`language.${lang.id}.configuration`, () => monaco.languages.setLanguageConfiguration(lang.id, {
                         wordPattern: this.createRegex(langConfiguration.wordPattern),
                         autoClosingPairs: langConfiguration.autoClosingPairs,
                         brackets: langConfiguration.brackets,
@@ -456,7 +456,7 @@ export class PluginContributionHandler {
         return undefined;
     }
 
-    private convertIndentationRules(rules?: IndentationRules): Monaco.languages.IndentationRule | undefined {
+    private convertIndentationRules(rules?: IndentationRules): monaco.languages.IndentationRule | undefined {
         if (!rules) {
             return undefined;
         }
@@ -468,11 +468,11 @@ export class PluginContributionHandler {
         };
     }
 
-    private convertFolding(folding?: FoldingRules): Monaco.languages.FoldingRules | undefined {
+    private convertFolding(folding?: FoldingRules): monaco.languages.FoldingRules | undefined {
         if (!folding) {
             return undefined;
         }
-        const result: Monaco.languages.FoldingRules = {
+        const result: monaco.languages.FoldingRules = {
             offSide: folding.offSide
         };
 

@@ -21,7 +21,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
 import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 let index = 0;
 
@@ -49,7 +49,7 @@ export class UntitledResourceResolver implements ResourceResolver {
     async createUntitledResource(fileResourceResolver: FileResourceResolver, content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
         let extension;
         if (language) {
-            for (const lang of Monaco.languages.getLanguages()) {
+            for (const lang of monaco.languages.getLanguages()) {
                 if (lang.id === language) {
                     if (lang.extensions) {
                         extension = lang.extensions[0];
@@ -137,7 +137,7 @@ export class UntitledResource implements Resource {
 export function createUntitledURI(language?: string): URI {
     let extension;
     if (language) {
-        for (const lang of Monaco.languages.getLanguages()) {
+        for (const lang of monaco.languages.getLanguages()) {
             if (lang.id === language) {
                 if (lang.extensions) {
                     extension = lang.extensions[0];

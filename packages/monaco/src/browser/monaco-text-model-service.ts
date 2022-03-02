@@ -19,14 +19,13 @@ import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
-import { Uri } from '@theia/monaco-editor-core';
 import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { ITextModelService, ITextModelContentProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -116,7 +115,7 @@ export class MonacoTextModelService implements ITextModelService {
         return this._models.onDidCreate;
     }
 
-    createModelReference(raw: Uri | URI): Promise<IReference<MonacoEditorModel>> {
+    createModelReference(raw: monaco.Uri | URI): Promise<IReference<MonacoEditorModel>> {
         return this._models.acquire(raw.toString());
     }
 
@@ -201,7 +200,7 @@ export class MonacoTextModelService implements ITextModelService {
         };
     }
 
-    canHandleResource(resource: Monaco.Uri): boolean {
+    canHandleResource(resource: monaco.Uri): boolean {
         return this.fileService.canHandleResource(new URI(resource));
     }
 }

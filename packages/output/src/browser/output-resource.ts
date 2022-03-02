@@ -19,11 +19,11 @@ import { Event, Resource, ResourceReadOptions, DisposableCollection, Emitter } f
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export class OutputResource implements Resource {
 
-    protected _textModel: Monaco.editor.ITextModel | undefined;
+    protected _textModel: monaco.editor.ITextModel | undefined;
     protected onDidChangeContentsEmitter = new Emitter<void>();
     protected toDispose = new DisposableCollection(
         this.onDidChangeContentsEmitter
@@ -42,7 +42,7 @@ export class OutputResource implements Resource {
         });
     }
 
-    get textModel(): Monaco.editor.ITextModel | undefined {
+    get textModel(): monaco.editor.ITextModel | undefined {
         return this._textModel;
     }
 

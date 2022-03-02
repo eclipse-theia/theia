@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     MAIN_RPC_CONTEXT,
@@ -45,7 +45,7 @@ export class EditorsAndDocumentsMain implements Disposable {
     private readonly onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private readonly onTextEditorRemoveEmitter = new Emitter<string[]>();
     private readonly onDocumentAddEmitter = new Emitter<MonacoEditorModel[]>();
-    private readonly onDocumentRemoveEmitter = new Emitter<Monaco.Uri[]>();
+    private readonly onDocumentRemoveEmitter = new Emitter<monaco.Uri[]>();
 
     readonly onTextEditorAdd = this.onTextEditorAddEmitter.event;
     readonly onTextEditorRemove = this.onTextEditorRemoveEmitter.event;

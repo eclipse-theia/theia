@@ -17,7 +17,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { setSnippetSuggestSupport } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { CompletionItemProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { MonacoEditorService } from './monaco-editor-service';
@@ -68,11 +68,11 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         // Incomparability of enum types between public and private API's
         setSnippetSuggestSupport(this.snippetSuggestProvider as unknown as CompletionItemProvider);
 
-        for (const language of Monaco.languages.getLanguages()) {
+        for (const language of monaco.languages.getLanguages()) {
             this.preferenceSchema.registerOverrideIdentifier(language.id);
         }
-        const registerLanguage = Monaco.languages.register.bind(Monaco.languages);
-        Monaco.languages.register = language => {
+        const registerLanguage = monaco.languages.register.bind(monaco.languages);
+        monaco.languages.register = language => {
             // first register override identifier, because monaco will immediately update already opened documents and then initialize with bad preferences.
             this.preferenceSchema.registerOverrideIdentifier(language.id);
             registerLanguage(language);

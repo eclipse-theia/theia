@@ -26,7 +26,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
@@ -37,7 +37,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
-    position: Monaco.Position,
+    position: monaco.Position,
     context: DebugBreakpointWidget.Context
 } | {
     breakpoint: DebugSourceBreakpoint,
@@ -109,18 +109,18 @@ export class DebugBreakpointWidget implements Disposable {
             return;
         }
         this.toDispose.push(input);
-        this.toDispose.push((Monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: Monaco.languages.CompletionItemProvider) => Disposable)
+        this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
             ({ scheme: input.uri.scheme }, {
                 // TODO: Lots of unknowns here due to internal-public incomparability.
-                provideCompletionItems: async (model, position, context, token): Promise<Monaco.languages.CompletionList> => {
-                    const suggestions: Monaco.languages.CompletionItem[] = [];
+                provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
+                    const suggestions: monaco.languages.CompletionItem[] = [];
                     if ((this.context === 'condition' || this.context === 'logMessage')
                         && input.uri.toString() === model.uri.toString()) {
                         const editor = this.editor.getControl();
                         const completions = await provideSuggestionItems(
                             StandaloneServices.get(ILanguageFeaturesService).completionProvider,
                             editor.getModel()! as unknown as TextModel,
-                            new Monaco.Position(editor.getPosition()!.lineNumber, 1),
+                            new monaco.Position(editor.getPosition()!.lineNumber, 1),
                             new CompletionOptions(undefined, new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)),
                             context as unknown as CompletionContext, token);
                         let overwriteBefore = 0;
@@ -135,8 +135,8 @@ export class DebugBreakpointWidget implements Disposable {
                             }
                         }
                         for (const { completion } of completions.items) {
-                            completion.range = Monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
-                            suggestions.push(completion as unknown as Monaco.languages.CompletionItem);
+                            completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
+                            suggestions.push(completion as unknown as monaco.languages.CompletionItem);
                         }
                     }
                     return { suggestions };
@@ -155,9 +155,9 @@ export class DebugBreakpointWidget implements Disposable {
         this.toDispose.dispose();
     }
 
-    get position(): Monaco.Position | undefined {
+    get position(): monaco.Position | undefined {
         const options = this.zone.options;
-        return options && new Monaco.Position(options.afterLineNumber, options.afterColumn || -1);
+        return options && new monaco.Position(options.afterLineNumber, options.afterColumn || -1);
     }
 
     show(options: ShowDebugBreakpointOptions): void {
@@ -197,7 +197,7 @@ export class DebugBreakpointWidget implements Disposable {
         this.editor.focus();
     }
 
-    protected layout(dimension: Monaco.editor.IDimension): void {
+    protected layout(dimension: monaco.editor.IDimension): void {
         if (this._input) {
             this._input.getControl().layout(dimension);
         }

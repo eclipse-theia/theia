@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { TextmateRegistry } from './textmate-registry';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 /**
  * Callback for extensions to contribute language grammar definitions
@@ -25,5 +25,5 @@ export interface LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry): void;
 }
 export function getEncodedLanguageId(languageId: string): number {
-    return Monaco.languages.getEncodedLanguageId(languageId);
+    return monaco.languages.getEncodedLanguageId(languageId);
 }

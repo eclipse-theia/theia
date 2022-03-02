@@ -17,7 +17,7 @@
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 export class MonacoDiagnosticCollection implements Disposable {
 
@@ -55,8 +55,8 @@ export class MonacoDiagnosticCollection implements Disposable {
 }
 
 export class MonacoModelDiagnostics implements Disposable {
-    readonly uri: Monaco.Uri;
-    protected _markers: Monaco.editor.IMarkerData[] = [];
+    readonly uri: monaco.Uri;
+    protected _markers: monaco.editor.IMarkerData[] = [];
     protected _diagnostics: Diagnostic[] = [];
     constructor(
         uri: string,
@@ -64,9 +64,9 @@ export class MonacoModelDiagnostics implements Disposable {
         readonly owner: string,
         protected readonly p2m: ProtocolToMonacoConverter
     ) {
-        this.uri = Monaco.Uri.parse(uri);
+        this.uri = monaco.Uri.parse(uri);
         this.diagnostics = diagnostics;
-        Monaco.editor.onDidCreateModel(model => this.doUpdateModelMarkers(model));
+        monaco.editor.onDidCreateModel(model => this.doUpdateModelMarkers(model));
     }
 
     set diagnostics(diagnostics: Diagnostic[]) {
@@ -79,7 +79,7 @@ export class MonacoModelDiagnostics implements Disposable {
         return this._diagnostics;
     }
 
-    get markers(): ReadonlyArray<Monaco.editor.IMarkerData> {
+    get markers(): ReadonlyArray<monaco.editor.IMarkerData> {
         return this._markers;
     }
 
@@ -89,13 +89,13 @@ export class MonacoModelDiagnostics implements Disposable {
     }
 
     updateModelMarkers(): void {
-        const model = Monaco.editor.getModel(this.uri);
+        const model = monaco.editor.getModel(this.uri);
         this.doUpdateModelMarkers(model ? model : undefined);
     }
 
-    protected doUpdateModelMarkers(model: Monaco.editor.ITextModel | undefined): void {
+    protected doUpdateModelMarkers(model: monaco.editor.ITextModel | undefined): void {
         if (model && this.uri.toString() === model.uri.toString()) {
-            Monaco.editor.setModelMarkers(model, this.owner, this._markers);
+            monaco.editor.setModelMarkers(model, this.owner, this._markers);
         }
     }
 }

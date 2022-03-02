@@ -26,7 +26,7 @@ import { OutputUri } from '../common/output-uri';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class OutputChannelManager implements Disposable, ResourceResolver {
@@ -304,8 +304,8 @@ export class OutputChannel implements Disposable {
         const textModel = (await this.resource.editorModelRef.promise).object.textEditorModel;
         const lastLine = textModel.getLineCount();
         const lastLineMaxColumn = textModel.getLineMaxColumn(lastLine);
-        const position = new Monaco.Position(lastLine, lastLineMaxColumn);
-        const range = new Monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
+        const position = new monaco.Position(lastLine, lastLineMaxColumn);
+        const range = new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column);
         const edits = [{
             range,
             text: !!appendEol ? `${content}${textModel.getEOL()}` : content,
@@ -324,7 +324,7 @@ export class OutputChannel implements Disposable {
             }
             const endColumn = textModel.getLineLastNonWhitespaceColumn(endLineNumber);
             const newDecorations = [{
-                range: new Monaco.Range(range.startLineNumber, range.startColumn, endLineNumber, endColumn), options: {
+                range: new monaco.Range(range.startLineNumber, range.startColumn, endLineNumber, endColumn), options: {
                     inlineClassName
                 }
             }];
@@ -336,13 +336,13 @@ export class OutputChannel implements Disposable {
         this.contentChangeEmitter.fire();
     }
 
-    protected ensureMaxChannelHistory(textModel: Monaco.editor.ITextModel): void {
+    protected ensureMaxChannelHistory(textModel: monaco.editor.ITextModel): void {
         this.contentChangeEmitter.fire();
         const linesToRemove = textModel.getLineCount() - this.maxLineNumber - 1; // -1 as the last line is usually empty -> `appendLine`.
         if (linesToRemove > 0) {
             const endColumn = textModel.getLineMaxColumn(linesToRemove);
             // `endLineNumber` is `linesToRemove` + 1 as monaco is one based.
-            const range = new Monaco.Range(1, 1, linesToRemove, endColumn + 1);
+            const range = new monaco.Range(1, 1, linesToRemove, endColumn + 1);
             // eslint-disable-next-line no-null/no-null
             const text = null;
             const decorationsToRemove = textModel.getLinesDecorations(range.startLineNumber, range.endLineNumber)
@@ -357,7 +357,7 @@ export class OutputChannel implements Disposable {
             }
             textModel.applyEdits([
                 {
-                    range: new Monaco.Range(1, 1, linesToRemove + 1, textModel.getLineFirstNonWhitespaceColumn(linesToRemove + 1)),
+                    range: new monaco.Range(1, 1, linesToRemove + 1, textModel.getLineFirstNonWhitespaceColumn(linesToRemove + 1)),
                     text,
                     forceMoveMarkers: true
                 }

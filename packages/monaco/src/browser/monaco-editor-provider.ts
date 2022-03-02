@@ -41,7 +41,7 @@ import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
 import { ContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { OpenerService as MonacoOpenerService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService';
 import { StandaloneCommandService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
@@ -187,7 +187,7 @@ export class MonacoEditorProvider {
     /**
      * Intercept internal Monaco open calls and delegate to OpenerService.
      */
-    protected async interceptOpen(monacoUri: Monaco.Uri | string, monacoOptions?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {
+    protected async interceptOpen(monacoUri: monaco.Uri | string, monacoOptions?: OpenInternalOptions | OpenExternalOptions): Promise<boolean> {
         let options = undefined;
         if (monacoOptions) {
             if ('openToSide' in monacoOptions && monacoOptions.openToSide) {
@@ -290,7 +290,7 @@ export class MonacoEditorProvider {
         return true;
     }
 
-    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<Monaco.editor.IIdentifiedSingleEditOperation[]> {
+    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
         if (!this.shouldFormat(editor, event)) {
             return [];
         }
@@ -433,7 +433,7 @@ export class MonacoEditorProvider {
         });
     }
 
-    static inlineOptions: Monaco.editor.IEditorConstructionOptions = {
+    static inlineOptions: monaco.editor.IEditorConstructionOptions = {
         wordWrap: 'on',
         overviewRulerLanes: 0,
         glyphMargin: false,

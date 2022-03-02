@@ -14,16 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, editor, Position } from '@theia/monaco-editor-core';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 
 /**
  * @deprecated use MonacoSnippetSuggestProvider instead
  */
-export class TextmateSnippetCompletionProvider implements Monaco.languages.CompletionItemProvider {
+export class TextmateSnippetCompletionProvider implements monaco.languages.CompletionItemProvider {
 
-    private items: Monaco.languages.CompletionItem[];
+    private items: monaco.languages.CompletionItem[];
 
     constructor(protected config: TextmateSnippets, protected mdLanguage: string = '') {
         this.items = [];
@@ -33,7 +32,7 @@ export class TextmateSnippetCompletionProvider implements Monaco.languages.Compl
             this.items.push({
                 label: textmateSnippet.prefix,
                 detail: textmateSnippet.description,
-                kind: Monaco.languages.CompletionItemKind.Snippet,
+                kind: monaco.languages.CompletionItemKind.Snippet,
                 documentation: {
                     value: '```' + this.mdLanguage + '\n' + this.replaceVariables(insertText) + '```'
                 },
@@ -47,10 +46,10 @@ export class TextmateSnippetCompletionProvider implements Monaco.languages.Compl
         return new SnippetParser().parse(textmateSnippet).toString();
     }
 
-    provideCompletionItems(document: editor.ITextModel,
-        position: Position,
-        context: Monaco.languages.CompletionContext,
-        token: CancellationToken): Monaco.languages.CompletionList {
+    provideCompletionItems(document: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: monaco.languages.CompletionContext,
+        token: monaco.CancellationToken): monaco.languages.CompletionList {
         return {
             suggestions: this.items
         };

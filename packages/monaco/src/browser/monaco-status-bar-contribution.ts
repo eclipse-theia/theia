@@ -19,7 +19,7 @@ import { DisposableCollection, nls } from '@theia/core';
 import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
-import * as Monaco from '@theia/monaco-editor-core';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class MonacoStatusBarContribution implements FrontendApplicationContribution {
@@ -102,7 +102,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         this.statusBar.removeElement('editor-status-eol');
     }
 
-    protected getModel(editor: EditorWidget | undefined): Monaco.editor.ITextModel | undefined {
+    protected getModel(editor: EditorWidget | undefined): monaco.editor.ITextModel | undefined {
         const monacoEditor = MonacoEditor.get(editor);
         return monacoEditor && monacoEditor.getControl().getModel() || undefined;
     }
