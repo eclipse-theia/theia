@@ -21,6 +21,11 @@ For example:
 
 ### v1.24.0
 
+#### node-gyp 8.4.1
+
+The `electron-rebuild` dependency was upgraded which in turn upgraded `node-gyp` to `v8.4.1`.
+This version of `node-gyp` does not support **Python2** (which is EOL) so **Python3** is necessary during the build.
+
 #### From WebSocket to Socket.io
 
 This is a very important change to how Theia sends and receives messages with its backend.

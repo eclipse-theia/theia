@@ -58,6 +58,7 @@ For Windows instructions [click here](#building-on-windows).
    - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install)  `>= 1.7.0` **AND** `< 2.x.x`.
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
+ - Python3 is required for the build due to [`node-gyp@8.4.1`](https://github.com/nodejs/node-gyp/tree/v8.4.1#installation)
 
 Some additional tools and libraries are needed depending on your platform:
 
