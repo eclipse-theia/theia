@@ -245,12 +245,12 @@ export namespace CommonCommands {
     export const PIN_TAB = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.pinEditor',
         category: VIEW_CATEGORY,
-        label: 'Pin Tab'
+        label: 'Pin Editor'
     });
     export const UNPIN_TAB = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.unpinEditor',
         category: VIEW_CATEGORY,
-        label: 'Unpin Tab'
+        label: 'Unpin Editor'
     });
     export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
         id: 'core.toggleMaximized',
@@ -660,12 +660,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: CommonCommands.PIN_TAB.id,
-            label: 'Pin',
+            label: nls.localizeByDefault('Pin'),
             order: '7'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: CommonCommands.UNPIN_TAB.id,
-            label: 'Unpin',
+            label: nls.localizeByDefault('Unpin'),
             order: '8'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
