@@ -445,7 +445,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected updatePinnedKey(): void {
-        const value = this.shell.activeWidget && this.shell.activeWidget.title.className.indexOf(PINNED_CLASS) >= 0;
+        const value = Boolean(this.shell.activeWidget?.title.closable === false && this.shell.activeWidget.title.className.includes(PINNED_CLASS));
         this.pinnedKey.set(value);
     }
 
@@ -1052,12 +1052,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.PIN_TAB.id,
                 keybinding: 'ctrlcmd+k shift+enter',
-                when: '!activeWidgetIsPinned'
+                when: '!activeEditorIsPinned'
             },
             {
                 command: CommonCommands.UNPIN_TAB.id,
                 keybinding: 'ctrlcmd+k shift+enter',
-                when: 'activeWidgetIsPinned'
+                when: 'activeEditorIsPinned'
             }
         );
     }
