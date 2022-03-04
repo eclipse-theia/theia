@@ -129,7 +129,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.addEventListener(mainPanelNode, 'dragenter', handler);
     }
 
-    protected override getContainerTreeNode(): TreeNode | undefined {
+    override getContainerTreeNode(): TreeNode | undefined {
         const root = this.model.root;
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
             return root;

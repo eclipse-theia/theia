@@ -42,6 +42,10 @@
     border: none;
 }
 
+.theia-TreeContainer .ReactVirtualized__Grid__innerScrollContainer {
+    margin-bottom: calc(var(--theia-ui-padding) * 3);
+}
+
 .theia-TreeContainer {
     height: 100%;
 }
