@@ -129,13 +129,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.hideTopPanel(app);
         electron.ipcRenderer.on(TitleBarStyleAtStartup, (_event, style: string) => {
             this.titleBarStyle = style;
+            this.setMenu(app);
             this.preferenceService.ready.then(() => {
                 this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
             });
         });
         electron.ipcRenderer.send(RequestTitleBarStyle);
         this.preferenceService.ready.then(() => {
-            this.setMenu(app);
             electronRemote.getCurrentWindow().setMenuBarVisibility(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
         });
         this.preferenceService.onPreferenceChanged(change => {
