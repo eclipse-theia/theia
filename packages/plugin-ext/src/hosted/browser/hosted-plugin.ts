@@ -477,7 +477,7 @@ export class HostedPluginSupport {
                     workspace: this.workspaceService.workspace?.resource.toString(),
                     roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
                 }),
-                this.webviewEnvironment.resourceRoot(),
+                this.webviewEnvironment.resourceRoot(host),
                 this.webviewEnvironment.cspSource(),
                 this.terminalService.getDefaultShell(),
                 this.jsonSchemaStore.schemas
