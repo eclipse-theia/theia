@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Widget } from '@phosphor/widgets';
+import { Title, Widget } from '@phosphor/widgets';
 import { Message, MessageLoop } from '@phosphor/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
@@ -353,4 +353,31 @@ function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): P
         });
         waitFor();
     });
+}
+
+export function isPinned(title: Title<Widget>): boolean {
+    const pinnedState = !title.closable && title.className.includes(PINNED_CLASS);
+    return pinnedState;
+}
+
+export function unpin(title: Title<Widget>): void {
+    title.closable = true;
+    title.className = title.className.replace(PINNED_CLASS, '').trim();
+}
+
+export function pin(title: Title<Widget>): void {
+    title.closable = false;
+    if (!title.className.includes(PINNED_CLASS)) {
+        title.className += ` ${PINNED_CLASS}`;
+    }
+}
+
+export function togglePinned(title?: Title<Widget>): void {
+    if (title) {
+        if (isPinned(title)) {
+            unpin(title);
+        } else {
+            pin(title);
+        }
+    }
 }

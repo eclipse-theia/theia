@@ -59,7 +59,7 @@ import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
-import { PINNED_CLASS, Title, Widget } from './widgets';
+import { isPinned, Title, togglePinned, Widget } from './widgets';
 
 export namespace CommonMenus {
 
@@ -445,7 +445,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected updatePinnedKey(): void {
-        const value = Boolean(this.shell.activeWidget?.title.closable === false && this.shell.activeWidget.title.className.includes(PINNED_CLASS));
+        const activeTab = this.shell.findTabBar();
+        const pinningTarget = activeTab && this.shell.findTitle(activeTab);
+        const value = pinningTarget && isPinned(pinningTarget);
         this.pinnedKey.set(value);
     }
 
@@ -910,11 +912,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.selectIconTheme()
         });
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => !!title && title.closable && !title.className.includes(PINNED_CLASS),
+            isEnabled: title => Boolean(title && !isPinned(title)),
             execute: title => this.togglePinned(title),
         }));
         commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => !!title && !title.closable && title.className.includes(PINNED_CLASS),
+            isEnabled: title => Boolean(title && isPinned(title)),
             execute: title => this.togglePinned(title),
         }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
@@ -928,13 +930,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected togglePinned(title?: Title<Widget>): void {
         if (title) {
-            title.closable = title.className.indexOf(PINNED_CLASS) >= 0;
-
-            title.className = title.className.replace(` ${PINNED_CLASS}`, '');
-            if (!title.closable) {
-                title.className += ` ${PINNED_CLASS}`;
-            }
-
+            togglePinned(title);
             this.updatePinnedKey();
         }
     }
