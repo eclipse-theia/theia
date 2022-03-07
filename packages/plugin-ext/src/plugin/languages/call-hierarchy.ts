@@ -16,7 +16,6 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
 import * as model from '../../common/plugin-api-rpc-model';
 import * as rpc from '../../common/plugin-api-rpc';
@@ -29,9 +28,12 @@ export class CallHierarchyAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
+    protected readonly cache = new Map<string, theia.CallHierarchyItem>();
+
     async provideRootDefinition(
         resource: URI, position: rpc.Position, token: theia.CancellationToken
     ): Promise<model.CallHierarchyDefinition | model.CallHierarchyDefinition[] | undefined> {
+        this.cache.clear();
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -71,15 +73,18 @@ export class CallHierarchyAdapter {
     }
 
     private fromCallHierarchyItem(item: theia.CallHierarchyItem): model.CallHierarchyDefinition {
-        return {
+        const data = this.cache.size.toString(36);
+        const definition = {
             uri: item.uri,
             range: this.fromRange(item.range),
             selectionRange: this.fromRange(item.selectionRange),
             name: item.name,
             kind: item.kind,
             tags: item.tags,
-            data: item.data,
+            data,
         };
+        this.cache.set(data, item);
+        return definition;
     }
 
     private fromRange(range: theia.Range): model.Range {
@@ -91,27 +96,12 @@ export class CallHierarchyAdapter {
         };
     }
 
-    private toRange(range: model.Range): types.Range {
-        return new types.Range(
-            range.startLineNumber - 1,
-            range.startColumn - 1,
-            range.endLineNumber - 1,
-            range.endColumn - 1,
-        );
-    }
-
     private toCallHierarchyItem(definition: model.CallHierarchyDefinition): theia.CallHierarchyItem {
-        const item = new types.CallHierarchyItem(
-            Converter.SymbolKind.toSymbolKind(definition.kind),
-            definition.name,
-            definition.detail ? definition.detail : '',
-            URI.revive(definition.uri),
-            this.toRange(definition.range),
-            this.toRange(definition.selectionRange),
-        );
-        item.tags = definition.tags;
-        item.data = definition.data;
-        return item;
+        const cached = this.cache.get(definition.data as string);
+        if (!cached) {
+            throw new Error(`Found no cached item corresponding to ${definition.name} in ${definition.uri.path} with ID ${definition.data}.`);
+        }
+        return cached;
     }
 
     private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): model.CallHierarchyReference {
