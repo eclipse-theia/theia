@@ -206,21 +206,22 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
     }
 
-    onWillStop(): OnWillStopAction | undefined {
+    onWillStop(): OnWillStopAction<number> | undefined {
         const preferenceValue = this.terminalPreferences['terminal.integrated.confirmOnExit'];
         if (preferenceValue !== 'never') {
             const allTerminals = this.widgetManager.getWidgets(TERMINAL_WIDGET_FACTORY_ID) as TerminalWidget[];
             if (allTerminals.length) {
                 return {
-                    action: async () => {
+                    prepare: async () => {
                         if (preferenceValue === 'always') {
-                            return this.confirmExitWithActiveTerminals(allTerminals.length);
+                            return allTerminals.length;
                         } else {
                             const activeTerminals = await Promise.all(allTerminals.map(widget => widget.hasChildProcesses()))
                                 .then(hasChildProcesses => hasChildProcesses.filter(hasChild => hasChild));
-                            return activeTerminals.length === 0 || this.confirmExitWithActiveTerminals(activeTerminals.length);
+                            return activeTerminals.length;
                         }
                     },
+                    action: async activeTerminalCount => activeTerminalCount === 0 || this.confirmExitWithActiveTerminals(activeTerminalCount),
                     reason: 'Active integrated terminal',
                 };
             }

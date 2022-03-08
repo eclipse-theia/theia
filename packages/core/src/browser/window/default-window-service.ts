@@ -61,7 +61,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
      * during any cycle, no further checks will be made. In that case, shutdown should proceed unconditionally.
      */
     protected collectContributionUnloadVetoes(): OnWillStopAction[] {
-        const vetoes = [];
+        const vetoes: OnWillStopAction[] = [];
         if (this.allowVetoes) {
             const shouldConfirmExit = this.corePreferences['application.confirmExit'];
             for (const contribution of this.contributions.getContributions()) {
@@ -102,15 +102,21 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         if (vetoes.length === 0) {
             return true;
         }
+        const preparedValues = await Promise.all(vetoes.map(e => e.prepare?.()));
         console.debug('Shutdown prevented by', vetoes.map(({ reason }) => reason).join(', '));
-        const resolvedVetoes = await Promise.allSettled(vetoes.map(({ action }) => action()));
-        if (resolvedVetoes.every(resolution => resolution.status === 'rejected' || resolution.value === true)) {
-            console.debug('OnWillStop actions resolved; allowing shutdown');
-            this.allowVetoes = false;
-            return true;
-        } else {
-            return false;
+        for (let i = 0; i < vetoes.length; i++) {
+            try {
+                const result = await vetoes[i].action(preparedValues[i]);
+                if (!result) {
+                    return false;
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
+        console.debug('OnWillStop actions resolved; allowing shutdown');
+        this.allowVetoes = false;
+        return true;
     }
 
     setSafeToShutDown(): void {

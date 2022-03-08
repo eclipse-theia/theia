@@ -55,7 +55,7 @@ export interface FrontendApplicationContribution {
      * Return `true` or an OnWillStopAction in order to prevent exit.
      * Note: No async code allowed, this function has to run on one tick.
      */
-    onWillStop?(app: FrontendApplication): boolean | undefined | OnWillStopAction;
+    onWillStop?(app: FrontendApplication): boolean | undefined | OnWillStopAction<unknown>;
 
     /**
      * Called when an application is stopped or unloaded.
@@ -77,11 +77,15 @@ export interface FrontendApplicationContribution {
     onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
 }
 
-export interface OnWillStopAction {
+export interface OnWillStopAction<T = unknown> {
+    /**
+     * @resolves to a prepared value to be passed into the `action` function.
+     */
+    prepare?: () => MaybePromise<T>;
     /**
      * @resolves to `true` if it is safe to close the application; `false` otherwise.
      */
-    action: () => MaybePromise<boolean>;
+    action: (prepared: T) => MaybePromise<boolean>;
     /**
      * A descriptive string for the reason preventing close.
      */
