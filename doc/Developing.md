@@ -527,10 +527,9 @@ git clone https://github.com/eclipse-theia/theia.git \
 If you do not have Git Bash installed on your system, [get one](https://gitforwindows.org/), or use `scoop`: `scoop install git`.
 
 ### Installing Windows Build Tools
- - Previously, [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools) is required to build 
- Native Nodes modules on Windows. The npm package is now [`deprecated`](https://www.npmjs.com/package/windows-build-tools) because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools. 
- - In case you need to install the tool manually, after installing `yarn`, run `PowerShell` as _Administrator_ and 
- copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
+
+ - Previously, [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools) is required to build Native Nodes modules on Windows. The npm package is now [`deprecated`](https://www.npmjs.com/package/windows-build-tools) because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools.
+ - In case you need to install the tool manually, after installing `yarn`, run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
 
 ## Troubleshooting
 
