@@ -171,7 +171,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const tabBarDecoratorService = container.get(TabBarDecoratorService);
         const iconThemeService = container.get(IconThemeService);
         const selectionService = container.get(SelectionService);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService);
+        const commandService = container.get<CommandService>(CommandService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
