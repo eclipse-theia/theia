@@ -30,6 +30,7 @@ import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -94,6 +95,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private openerService: OpenerService,
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
+        private languageService: MonacoLanguages,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -177,8 +179,8 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     }
 
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
-        const language = options && options.language;
-        const content = options && options.content;
+        const language = options?.language && this.languageService.getExtension(options.language);
+        const content = options?.content;
         const resource = await this.untitledResourceResolver.createUntitledResource(content, language);
         return monaco.Uri.parse(resource.uri.toString());
     }

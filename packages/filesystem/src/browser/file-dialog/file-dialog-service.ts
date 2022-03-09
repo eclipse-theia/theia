@@ -36,6 +36,15 @@ export interface FileDialogService {
 }
 
 @injectable()
+export class FileDialogDefaultRootProvider {
+    @inject(EnvVariablesServer) protected readonly environments: EnvVariablesServer;
+
+    async getDefaultDialogRoot(): Promise<URI> {
+        return new URI(await this.environments.getHomeDirUri());
+    }
+}
+
+@injectable()
 export class DefaultFileDialogService implements FileDialogService {
 
     @inject(EnvVariablesServer)
@@ -47,6 +56,7 @@ export class DefaultFileDialogService implements FileDialogService {
     @inject(OpenFileDialogFactory) protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(SaveFileDialogFactory) protected readonly saveFileDialogFactory: SaveFileDialogFactory;
+    @inject(FileDialogDefaultRootProvider) protected readonly rootProvider: FileDialogDefaultRootProvider;
 
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
@@ -81,7 +91,7 @@ export class DefaultFileDialogService implements FileDialogService {
     protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
         const folderExists = folderToOpen && await this.fileService.exists(folderToOpen.resource);
         const folder = folderToOpen && folderExists ? folderToOpen : {
-            resource: new URI(await this.environments.getHomeDirUri()),
+            resource: await this.rootProvider.getDefaultDialogRoot(),
             isDirectory: true
         };
         const folderUri = folder.resource;

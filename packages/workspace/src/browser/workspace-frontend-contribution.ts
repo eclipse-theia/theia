@@ -15,17 +15,17 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MessageService, isWindows, MaybeArray } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
-    open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
-    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, FormatType
+    open, OpenerService, CommonMenus, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
+    FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
 import { THEIA_EXT, VSCODE_EXT } from '../common';
-import { WorkspaceCommands, WorkspaceCommandContribution } from './workspace-commands';
+import { WorkspaceCommands } from './workspace-commands';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -38,6 +38,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { UntitledWorkspaceExitDialog } from './untitled-workspace-exit-dialog';
+import { FilesystemSaveResourceService } from '@theia/filesystem/lib/browser/filesystem-save-resource-service';
 
 export enum WorkspaceStates {
     /**
@@ -59,28 +60,17 @@ export type WorkbenchState = keyof typeof WorkspaceStates;
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution {
 
-    @inject(ApplicationShell) protected readonly applicationShell: ApplicationShell;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(StorageService) protected readonly workspaceStorage: StorageService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(WorkspaceCommandContribution) protected readonly workspaceCommands: WorkspaceCommandContribution;
-
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
-
-    @inject(EncodingRegistry)
-    protected readonly encodingRegistry: EncodingRegistry;
-
-    @inject(PreferenceConfigurations)
-    protected readonly preferenceConfigurations: PreferenceConfigurations;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(EncodingRegistry) protected readonly encodingRegistry: EncodingRegistry;
+    @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
+    @inject(FilesystemSaveResourceService) protected readonly saveService: FilesystemSaveResourceService;
 
     configure(): void {
         this.encodingRegistry.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
@@ -161,19 +151,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
             execute: () => this.saveWorkspaceAs()
         });
-        commands.registerCommand(WorkspaceCommands.SAVE_AS, {
-            isEnabled: () => this.canBeSavedAs(this.applicationShell.currentWidget),
-            execute: () => {
-                const { currentWidget } = this.applicationShell;
-                // No clue what could have happened between `isEnabled` and `execute`
-                // when fetching currentWidget, so better to double-check:
-                if (this.canBeSavedAs(currentWidget)) {
-                    this.saveAs(currentWidget);
-                } else {
-                    this.messageService.error(nls.localize('theia/workspace/failSaveAs', 'Cannot run "{0}" for the current widget.', WorkspaceCommands.SAVE_AS.label!));
-                }
-            },
-        });
         commands.registerCommand(WorkspaceCommands.OPEN_WORKSPACE_FILE, {
             isEnabled: () => this.workspaceService.saved,
             execute: () => {
@@ -232,10 +209,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeybinding({
-            command: WorkspaceCommands.NEW_FILE.id,
-            keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
-        });
         keybindings.registerKeybinding({
             command: isOSX || !this.isElectron() ? WorkspaceCommands.OPEN.id : WorkspaceCommands.OPEN_FILE.id,
             keybinding: this.isElectron() ? 'ctrlcmd+o' : 'ctrlcmd+alt+o',
@@ -457,7 +430,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 }
                 exist = await this.fileService.exists(selected);
                 if (exist) {
-                    overwrite = await this.confirmOverwrite(selected);
+                    overwrite = await this.saveService.confirmOverwrite(selected);
                 }
             }
         } while (selected && exist && !overwrite);
@@ -473,85 +446,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         return false;
     }
 
-    /**
-     * This method ensures a few things about `widget`:
-     * - `widget.getResourceUri()` actually returns a URI.
-     * - `widget.saveable.createSnapshot` is defined.
-     * - `widget.saveable.revert` is defined.
-     */
     canBeSavedAs(widget: Widget | undefined): widget is Widget & SaveableSource & Navigatable {
-        return widget !== undefined
-            && Saveable.isSource(widget)
-            && typeof widget.saveable.createSnapshot === 'function'
-            && typeof widget.saveable.revert === 'function'
-            && Navigatable.is(widget)
-            && widget.getResourceUri() !== undefined;
+        return this.saveService.canSaveAs(widget);
     }
 
-    /**
-     * Save `sourceWidget` to a new file picked by the user.
-     */
-    async saveAs(sourceWidget: Widget & SaveableSource & Navigatable): Promise<void> {
-        let exist: boolean = false;
-        let overwrite: boolean = false;
-        let selected: URI | undefined;
-        const uri: URI = sourceWidget.getResourceUri()!;
-        let stat;
-        if (uri.scheme === 'file') {
-            stat = await this.fileService.resolve(uri);
-        } else {
-            stat = this.workspaceService.workspace;
-        }
-        do {
-            selected = await this.fileDialogService.showSaveDialog(
-                {
-                    title: WorkspaceCommands.SAVE_AS.label!,
-                    filters: {},
-                    inputValue: uri.path.base
-                }, stat);
-            if (selected) {
-                exist = await this.fileService.exists(selected);
-                if (exist) {
-                    overwrite = await this.confirmOverwrite(selected);
-                }
-            }
-        } while (selected && exist && !overwrite);
-        if (selected && selected.isEqual(uri)) {
-            await this.commandRegistry.executeCommand(CommonCommands.SAVE.id);
-        } else if (selected) {
-            try {
-                await this.copyAndSave(sourceWidget, selected, overwrite);
-            } catch (e) {
-                console.warn(e);
-            }
-        }
-    }
-
-    /**
-     * @param sourceWidget widget to save as `target`.
-     * @param target The new URI for the widget.
-     * @param overwrite
-     */
-    private async copyAndSave(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
-        const snapshot = sourceWidget.saveable.createSnapshot!();
-        if (!await this.fileService.exists(target)) {
-            const sourceUri = sourceWidget.getResourceUri()!;
-            if (this.fileService.canHandleResource(sourceUri)) {
-                await this.fileService.copy(sourceUri, target, { overwrite });
-            } else {
-                await this.fileService.createFile(target);
-            }
-        }
-        const targetWidget = await open(this.openerService, target);
-        const targetSaveable = Saveable.get(targetWidget);
-        if (targetWidget && targetSaveable && targetSaveable.applySnapshot) {
-            targetSaveable.applySnapshot(snapshot);
-            await sourceWidget.saveable.revert!();
-            sourceWidget.close();
-            Saveable.save(targetWidget, { formatType: FormatType.ON });
-        } else {
-            this.messageService.error(nls.localize('theia/workspace/failApply', 'Could not apply changes to new file'));
-        }
+    async saveAs(widget: Widget & SaveableSource & Navigatable): Promise<void> {
+        return this.saveService.saveAs(widget);
     }
 
     protected updateWorkspaceStateKey(): WorkspaceState {
@@ -567,19 +467,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             return this.workspaceService.isMultiRootWorkspaceOpened ? 'workspace' : 'folder';
         }
         return 'empty';
-    }
-
-    private async confirmOverwrite(uri: URI): Promise<boolean> {
-        // Electron already handles the confirmation so do not prompt again.
-        if (this.isElectron()) {
-            return true;
-        }
-        // Prompt users for confirmation before overwriting.
-        const confirmed = await new ConfirmDialog({
-            title: nls.localizeByDefault('Overwrite'),
-            msg: nls.localizeByDefault('{0} already exists. Are you sure you want to overwrite it?', uri.toString())
-        }).open();
-        return !!confirmed;
     }
 
     private isElectron(): boolean {

@@ -19,7 +19,7 @@ import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, Editor
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
-import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
+import { Resource, ResourceError, ResourceVersion, UNTITLED_SCHEME } from '@theia/core/lib/common/resource';
 import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
@@ -163,6 +163,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
             this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
+            if (this.resource.uri.scheme === UNTITLED_SCHEME && this.model.getValueLength()) {
+                this.setDirty(true);
+            }
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.fireDidChangeContent(event)));

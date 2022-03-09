@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/** @deprecated @since 1.24. Import from `core/lib/common/resource` instead. */
-export { UntitledResourceResolver, UntitledResource, createUntitledURI } from '@theia/core/lib/common/resource';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import URI from '@theia/core/lib/common/uri';
+import { FileDialogDefaultRootProvider } from '@theia/filesystem/lib/browser';
+import { WorkspaceService } from './workspace-service';
+
+@injectable()
+export class WorkspaceFileDialogDefaultRootProvider extends FileDialogDefaultRootProvider {
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+
+    override async getDefaultDialogRoot(): Promise<URI> {
+        const root = this.workspaceService.tryGetRoots()[0];
+        return root?.resource ?? super.getDefaultDialogRoot();
+    }
+}

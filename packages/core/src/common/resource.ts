@@ -317,3 +317,82 @@ export class InMemoryTextResourceResolver implements ResourceResolver {
         return new InMemoryTextResource(uri);
     }
 }
+
+export const UNTITLED_SCHEME = 'untitled';
+
+let untitledResourceSequenceIndex = 0;
+
+@injectable()
+export class UntitledResourceResolver implements ResourceResolver {
+
+    protected readonly resources = new Map<string, UntitledResource>();
+
+    async resolve(uri: URI): Promise<UntitledResource> {
+        if (uri.scheme !== UNTITLED_SCHEME) {
+            throw new Error('The given uri is not untitled file uri: ' + uri);
+        } else {
+            const untitledResource = this.resources.get(uri.toString());
+            if (!untitledResource) {
+                return this.createUntitledResource('', '', uri);
+            } else {
+                return untitledResource;
+            }
+        }
+    }
+
+    async createUntitledResource(content?: string, extension?: string, uri?: URI): Promise<UntitledResource> {
+        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(UNTITLED_SCHEME).withPath(`/Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`),
+            content);
+    }
+}
+
+export class UntitledResource implements Resource {
+
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    get onDidChangeContents(): Event<void> {
+        return this.onDidChangeContentsEmitter.event;
+    }
+
+    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private content?: string) {
+        this.resources.set(this.uri.toString(), this);
+    }
+
+    dispose(): void {
+        this.resources.delete(this.uri.toString());
+        this.onDidChangeContentsEmitter.dispose();
+    }
+
+    async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
+        if (this.content) {
+            return this.content;
+        } else {
+            return '';
+        }
+    }
+
+    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: boolean }): Promise<void> {
+        // This function must exist to ensure readOnly is false for the Monaco editor.
+        // However it should not be called because saving 'untitled' is always processed as 'Save As'.
+        throw Error('Untitled resources cannot be saved.');
+    }
+
+    protected fireDidChangeContents(): void {
+        this.onDidChangeContentsEmitter.fire(undefined);
+    }
+
+    get version(): ResourceVersion | undefined {
+        return undefined;
+    }
+
+    get encoding(): string | undefined {
+        return undefined;
+    }
+}
+
+export function createUntitledURI(extension?: string, parent?: URI): URI {
+    const name = `Untitled-${untitledResourceSequenceIndex++}${extension ?? ''}`;
+    if (parent) {
+        return parent.resolve(name).withScheme(UNTITLED_SCHEME);
+    }
+    return new URI().resolve(name).withScheme(UNTITLED_SCHEME);
+}
