@@ -395,11 +395,12 @@ export class EditorCommandContribution implements CommandContribution {
         return new URI('file:///.txt');
     }
 
-    private isAutoSaveOn(): boolean {
+    protected isAutoSaveOn(): boolean {
         const autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE);
-        return autoSave === 'on' || autoSave === undefined;
+        return autoSave !== 'off';
     }
-    private async toggleAutoSave(): Promise<void> {
-        this.preferencesService.updateValue(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'on');
+
+    protected async toggleAutoSave(): Promise<void> {
+        this.preferencesService.updateValue(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'afterDelay');
     }
 }
