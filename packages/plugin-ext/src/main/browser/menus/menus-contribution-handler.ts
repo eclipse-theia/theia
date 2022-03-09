@@ -518,13 +518,28 @@ export class MenusContributionPointHandler {
         }
         const toDispose = new DisposableCollection();
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
+        const altId = menu.alt && this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
+
+        const inline = Boolean(menu.group && /^inline/.test(menu.group));
+        const [group, order = undefined] = (menu.group || '_').split('@');
+
         const command: Command = { id: commandId };
+        const action: MenuAction = { commandId, alt: altId, order, when: menu.when };
+
+        menuPath = inline ? menuPath : [...menuPath, ...group.split('/')];
+
         toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
         toDispose.push(this.quickCommandService?.pushCommandContext(commandId, 'false'));
+        toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
+        toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
+            command.category = pluginCommand.category;
+            command.label = pluginCommand.label;
+            if (inline) {
+                command.iconClass = pluginCommand.iconClass;
+            }
+        }));
 
-        let altId: string | undefined;
-        if (menu.alt) {
-            altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
+        if (menu.alt && altId) {
             const alt: Command = { id: altId };
             toDispose.push(this.commands.registerCommand(alt, handler(menu.alt)));
             toDispose.push(this.quickCommandService?.pushCommandContext(altId, 'false'));
@@ -537,13 +552,9 @@ export class MenusContributionPointHandler {
             }));
         }
 
-        const { when } = menu;
-        const [group, order = undefined] = (menu.group || '_').split('@');
-        const action: MenuAction = { commandId, alt: altId, order, when };
-
         // Register a submenu if the group is in format `<submenu group>/<submenu name>/<submenu order>.../<menu group>`
-        if (group!.indexOf('/') !== -1) {
-            const groupSplit = group!.split('/');
+        if (group.includes('/')) {
+            const groupSplit = group.split('/');
             const orderSplit = (menu.submenusOrder || '').split('/');
             const paths: string[] = [];
             for (let i = 0, j = 0; i < groupSplit.length - 1; i += 2, j += 1) {
@@ -554,17 +565,7 @@ export class MenusContributionPointHandler {
                 toDispose.push(this.menuRegistry.registerSubmenu([...menuPath, ...paths], submenuLabel, { order: submenuOrder }));
             }
         }
-        const inline = /^inline/.test(group);
-        menuPath = inline ? menuPath : [...menuPath, ...group.split('/')];
-        toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
 
-        toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
-            command.category = pluginCommand.category;
-            command.label = pluginCommand.label;
-            if (inline) {
-                command.iconClass = pluginCommand.iconClass;
-            }
-        }));
         return toDispose;
     }
 
