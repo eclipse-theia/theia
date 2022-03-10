@@ -17,7 +17,7 @@
 import { FrontendApplicationConfig } from '@theia/application-package';
 import { FrontendApplicationState } from '../common/frontend-application-state';
 import { APPLICATION_STATE_CHANGE_SIGNAL, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUESTED_SIGNAL, StopReason } from '../electron-common/messaging/electron-messages';
-import { BrowserWindow, BrowserWindowConstructorOptions, globalShortcut, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
+import { BrowserWindow, BrowserWindowConstructorOptions, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { DisposableCollection, Emitter, Event, isWindows } from '../common';
@@ -69,7 +69,6 @@ export class TheiaElectronWindow {
         this._window = new BrowserWindow(this.options);
         this._window.setMenuBarVisibility(false);
         this.attachReadyToShow();
-        this.attachGlobalShortcuts();
         this.restoreMaximizedState();
         this.attachCloseListeners();
         this.trackApplicationState();
@@ -101,26 +100,6 @@ export class TheiaElectronWindow {
     protected doCloseWindow(): void {
         this.closeIsConfirmed = true;
         this._window.close();
-    }
-
-    /**
-     * Catch certain keybindings to prevent reloading the window using keyboard shortcuts.
-     */
-    protected attachGlobalShortcuts(): void {
-        const handler = this.config.electron?.disallowReloadKeybinding
-            ? () => { }
-            : () => this.reload();
-        const accelerators = ['CmdOrCtrl+R', 'F5'];
-        createDisposableListener(this._window, 'focus', () => {
-            for (const accelerator of accelerators) {
-                globalShortcut.register(accelerator, handler);
-            }
-        }, this.toDispose);
-        createDisposableListener(this._window, 'blur', () => {
-            for (const accelerator of accelerators) {
-                globalShortcut.unregister(accelerator);
-            }
-        }, this.toDispose);
     }
 
     close(reason: StopReason = StopReason.Close): Promise<boolean> {
