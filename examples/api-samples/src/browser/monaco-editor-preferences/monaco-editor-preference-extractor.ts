@@ -25,7 +25,7 @@
 import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
 import { CommandContribution, CommandRegistry, MessageService } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
@@ -192,4 +192,10 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
             }
         });
     }
+}
+
+// Utility to assist with Monaco uplifts to generate preference schema. Not for regular use in the application.
+export function bindMonacoPreferenceExtractor(bind: interfaces.Bind): void {
+    // bind(MonacoEditorPreferenceSchemaExtractor).toSelf().inSingletonScope();
+    // bind(CommandContribution).to(MonacoEditorPreferenceSchemaExtractor);
 }
