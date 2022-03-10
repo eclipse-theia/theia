@@ -47,7 +47,11 @@ export class TreeCompressionService {
      * In that case, the child can be shown in the same row as the parent.
      */
     isCompressionParent(node?: unknown): node is CompressionParent {
-        return ExpandableTreeNode.is(node) && node.children.length === 1 && ExpandableTreeNode.is(node.children[0]);
+        return this.isVisibleExpandableNode(node) && node.children.length === 1 && this.isVisibleExpandableNode(node.children[0]);
+    }
+
+    protected isVisibleExpandableNode(node?: unknown): node is ExpandableTreeNode {
+        return ExpandableTreeNode.is(node) && TreeNode.isVisible(node);
     }
 
     /**
