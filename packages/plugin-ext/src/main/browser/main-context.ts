@@ -47,7 +47,6 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
-import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { MainFileSystemEventService } from './main-file-system-event-service';
 import { LabelServiceMainImpl } from './label-service-main';
 import { TimelineMainImpl } from './timeline-main';
@@ -87,8 +86,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const openerService = container.get<OpenerService>(OpenerService);
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
-    const fileResourceResolver = container.get(FileResourceResolver);
-    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, fileResourceResolver);
+    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
     const bulkEditService = container.get(MonacoBulkEditService);

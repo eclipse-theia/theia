@@ -21,6 +21,11 @@ For example:
 
 ### v1.24.0
 
+#### node-gyp 8.4.1
+
+The `electron-rebuild` dependency was upgraded which in turn upgraded `node-gyp` to `v8.4.1`.
+This version of `node-gyp` does not support **Python2** (which is EOL) so **Python3** is necessary during the build.
+
 #### From WebSocket to Socket.io
 
 This is a very important change to how Theia sends and receives messages with its backend.
@@ -36,6 +41,13 @@ Make sure your network configurations support both WebSockets and/or HTTP pollin
 
 If you are using TypeScript <= 4.5.5 and you encounter issues when building your Theia application because your compiler fails to parse our type definitions,
 then you should upgrade to TypeScript >= 4.5.5.
+
+#### Socket.io
+
+If you are deploying multiple Theia nodes behind a load balancer, you will have to enable sticky-sessions,
+as it is now required by the new WebSocket implementation using Socket.io protocol.
+
+For more details, see the socket.io documentation about [using multiple nodes](https://socket.io/docs/v4/using-multiple-nodes/#enabling-sticky-session).
 
 ### v1.22.0
 

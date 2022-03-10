@@ -799,7 +799,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param props the node properties.
      */
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        const tailDecorations = this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+        const tailDecorations = this.getDecorationData(node, 'tailDecorations').reduce((acc, current) => acc.concat(current), []);
         if (tailDecorations.length === 0) {
             return;
         }
@@ -809,7 +809,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected renderTailDecorationsForNode(node: TreeNode, props: NodeProps, tailDecorations:
         (TreeDecoration.TailDecoration | TreeDecoration.TailDecorationIcon | TreeDecoration.TailDecorationIconClass)[]): React.ReactNode {
         return <React.Fragment>
-            {tailDecorations.map((decoration, index) => {
+            {tailDecorations.reverse().map((decoration, index) => {
                 const { tooltip } = decoration;
                 const { data, fontData } = decoration as TreeDecoration.TailDecoration;
                 const color = (decoration as TreeDecoration.TailDecorationIcon).color;
@@ -1037,8 +1037,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      *
      * @returns the tree decoration data at the given key.
      */
-    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): TreeDecoration.Data[K][] {
-        return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
+    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): Required<Pick<TreeDecoration.Data, K>>[K][] {
+        return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]);
     }
 
     /**

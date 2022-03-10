@@ -163,22 +163,14 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
         const undeployPlugin = this.stopwatch.start('undeployPlugin');
         this.deployedLocations.delete(pluginId);
-        let undeployError: unknown;
-        const failedLocations: string[] = [];
 
         for (const location of deployedLocations) {
             try {
                 await fs.remove(location);
+                undeployPlugin.log(`[${pluginId}]: undeployed from "${location}"`);
             } catch (e) {
-                failedLocations.push(location);
-                undeployError = undeployError ?? e;
+                undeployPlugin.error(`[${pluginId}]: failed to undeploy from location "${location}". reason:`, e);
             }
-        }
-
-        if (undeployError) {
-            undeployPlugin.error(`[${pluginId}]: failed to undeploy from locations "${failedLocations}". First reason:`, undeployError);
-        } else {
-            undeployPlugin.log(`[${pluginId}]: undeployed from "${location}"`);
         }
 
         return true;

@@ -120,6 +120,7 @@ import {
 import { RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
+import { SaveResourceService } from './save-resource-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -171,7 +172,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const tabBarDecoratorService = container.get(TabBarDecoratorService);
         const iconThemeService = container.get(IconThemeService);
         const selectionService = container.get(SelectionService);
-        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService);
+        const commandService = container.get<CommandService>(CommandService);
+        return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
@@ -394,4 +396,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bindFrontendStopwatch(bind);
     bindBackendStopwatch(bind);
+
+    bind(SaveResourceService).toSelf().inSingletonScope();
 });

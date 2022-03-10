@@ -40,7 +40,7 @@ function exposeModule(modulePackage: { dir: string, name?: string }, resourcePat
     if (path.sep !== '/') {
         moduleName = moduleName.split(path.sep).join('/');
     }
-    return source + `\nif (!global) global = {};\n(global['theia'] = global['theia'] || {})['${moduleName}'] = this;\n`;
+    return source + `\n;(globalThis['theia'] = globalThis['theia'] || {})['${moduleName}'] = this;\n`;
 }
 
 /**

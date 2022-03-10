@@ -19,7 +19,7 @@ import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegist
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
-    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction
+    CommonCommands, FrontendApplicationContribution, ApplicationShell, Saveable, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, FormatType
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -479,7 +479,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      * - `widget.saveable.createSnapshot` is defined.
      * - `widget.saveable.revert` is defined.
      */
-    protected canBeSavedAs(widget: Widget | undefined): widget is Widget & SaveableSource & Navigatable {
+    canBeSavedAs(widget: Widget | undefined): widget is Widget & SaveableSource & Navigatable {
         return widget !== undefined
             && Saveable.isSource(widget)
             && typeof widget.saveable.createSnapshot === 'function'
@@ -491,12 +491,17 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     /**
      * Save `sourceWidget` to a new file picked by the user.
      */
-    protected async saveAs(sourceWidget: Widget & SaveableSource & Navigatable): Promise<void> {
+    async saveAs(sourceWidget: Widget & SaveableSource & Navigatable): Promise<void> {
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
-        const uri = sourceWidget.getResourceUri()!;
-        const stat = await this.fileService.resolve(uri);
+        const uri: URI = sourceWidget.getResourceUri()!;
+        let stat;
+        if (uri.scheme === 'file') {
+            stat = await this.fileService.resolve(uri);
+        } else {
+            stat = this.workspaceService.workspace;
+        }
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
@@ -530,7 +535,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     private async copyAndSave(sourceWidget: Widget & SaveableSource & Navigatable, target: URI, overwrite: boolean): Promise<void> {
         const snapshot = sourceWidget.saveable.createSnapshot!();
         if (!await this.fileService.exists(target)) {
-            await this.fileService.copy(sourceWidget.getResourceUri()!, target, { overwrite });
+            const sourceUri = sourceWidget.getResourceUri()!;
+            if (this.fileService.canHandleResource(sourceUri)) {
+                await this.fileService.copy(sourceUri, target, { overwrite });
+            } else {
+                await this.fileService.createFile(target);
+            }
         }
         const targetWidget = await open(this.openerService, target);
         const targetSaveable = Saveable.get(targetWidget);
@@ -538,8 +548,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             targetSaveable.applySnapshot(snapshot);
             await sourceWidget.saveable.revert!();
             sourceWidget.close();
-            // At this point `targetWidget` should be `applicationShell.currentWidget` for the save command to pick up:
-            await this.commandRegistry.executeCommand(CommonCommands.SAVE.id);
+            Saveable.save(targetWidget, { formatType: FormatType.ON });
         } else {
             this.messageService.error(nls.localize('theia/workspace/failApply', 'Could not apply changes to new file'));
         }

@@ -176,6 +176,10 @@ export abstract class MarkerManager<D extends object> {
         return result;
     }
 
+    getMarkersByUri(): IterableIterator<[string, MarkerCollection<D>]> {
+        return this.uri2MarkerCollection.entries();
+    }
+
     getUris(): IterableIterator<string> {
         return this.uri2MarkerCollection.keys();
     }

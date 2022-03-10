@@ -65,7 +65,6 @@ import {
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
-import { UriSelection } from '@theia/core/lib/common/selection';
 import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
@@ -317,9 +316,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                     return false;
                 }
                 const navigator = this.tryGetWidget();
-                const model = navigator && navigator.model;
-                const uris = UriSelection.getUris(model && model.selectedNodes);
-                return this.workspaceService.areWorkspaceRoots(uris);
+                const selection = navigator?.model.selectedNodes[0];
+                // The node that is selected when the user clicks in empty space.
+                const root = navigator?.getContainerTreeNode();
+                return selection === root;
             }
         });
 

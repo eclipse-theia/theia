@@ -36,7 +36,7 @@ import {
 import { CancellationTokenSource, Emitter, Event, isWindows, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
-    EditorWidget, ReplaceOperation, EditorOpenerOptions, FindMatch
+    EditorWidget, EditorOpenerOptions, FindMatch
 } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
@@ -169,7 +169,12 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.toDispose.push(model.onSelectionChanged(nodes => {
             const node = nodes[0];
             if (SearchInWorkspaceResultLineNode.is(node)) {
-                this.doOpen(node, true);
+                this.doOpen(node, true, true);
+            }
+        }));
+        this.toDispose.push(model.onOpenNode(node => {
+            if (SearchInWorkspaceResultLineNode.is(node)) {
+                this.doOpen(node, true, false);
             }
         }));
 
@@ -877,7 +882,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         character: resultLineNode.character - 1 + resultLineNode.length
                     }
                 }
-            } as ReplaceOperation));
+            }));
             // Replace the text.
             await widget.editor.replaceText({
                 source,
@@ -1044,10 +1049,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return editorWidget;
     }
 
-    protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
+    protected async doOpen(node: SearchInWorkspaceResultLineNode, asDiffWidget = false, preview = false): Promise<EditorWidget> {
         let fileUri: URI;
         const resultNode = node.parent;
-        if (resultNode && this.isReplacing && preview) {
+        if (resultNode && this.isReplacing && asDiffWidget) {
             const leftUri = new URI(node.fileUri);
             const rightUri = await this.createReplacePreview(resultNode);
             fileUri = DiffUris.encode(leftUri, rightUri);
@@ -1066,7 +1071,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     character: node.character - 1 + node.length
                 }
             },
-            mode: 'reveal'
+            mode: preview ? 'reveal' : 'activate',
+            preview,
         };
 
         const editorWidget = await this.editorManager.open(fileUri, opts);

@@ -42,6 +42,10 @@
     border: none;
 }
 
+.theia-TreeContainer .ReactVirtualized__Grid__innerScrollContainer {
+    margin-bottom: calc(var(--theia-ui-padding) * 3);
+}
+
 .theia-TreeContainer {
     height: 100%;
 }
@@ -133,6 +137,10 @@
 .theia-TreeNodeTail {
     min-width: 1rem;
     text-align: center;
+}
+
+.theia-TreeNodeTail:not(:last-of-type)::after {
+    content: ',';
 }
 
 .theia-TreeNodeSegment mark {

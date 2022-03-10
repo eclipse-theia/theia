@@ -50,6 +50,8 @@ import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contri
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { WorkspaceTrustService } from './workspace-trust-service';
 import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
+import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
+import { WorkspaceSaveResourceService } from './workspace-save-resource-service';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -105,4 +107,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
+
+    rebind(SaveResourceService).to(WorkspaceSaveResourceService).inSingletonScope();
 });
