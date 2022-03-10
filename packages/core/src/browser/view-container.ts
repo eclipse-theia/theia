@@ -385,6 +385,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
+
+        this.shell.fireDidMoveContainerPart(newPart.wrapped, newPart.currentViewContainerId, this.options.id, newPart.originalContainerId, this.id);
+
         toRemoveWidget.pushAll([
             Disposable.create(() => {
                 if (newPart.currentViewContainerId === this.id) {

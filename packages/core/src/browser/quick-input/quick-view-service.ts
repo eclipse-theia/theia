@@ -24,6 +24,7 @@ import { ApplicationShell, WidgetArea } from '../shell';
 export interface QuickViewItem {
     readonly label: string;
     readonly viewId: string;
+    readonly widgetId: string;
     readonly location: string;
     readonly when?: string;
     readonly open: () => void;
@@ -34,14 +35,15 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     static PREFIX = 'view ';
 
     protected readonly items: (QuickPickItem & {
-        viewId: string,
+        widgetId: string,
         location: string,
         defaultLocation: string,
         viewContainerTitle?: string,
         when?: string
     })[] = [];
-    protected readonly containers = new Map<string, string>();
+    protected readonly containers = new Map<string, { location: string, title: string }>();
     private hiddenItemLabels = new Set<string | undefined>();
+    protected locationsToRestore = new Map<string, string>();
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -55,33 +57,75 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
     @postConstruct()
     init(): void {
         this.shell.onDidAddWidget(widget => {
-            const item = this.items.find(i => i.viewId === widget.id);
+            const viewId = widget.id.startsWith('plugin-view-container:')
+                ? `plugin-view:${widget.id.substring('plugin-view-container:'.length)}`
+                : widget.id;
+            const item = this.items.find(i => i.widgetId === viewId);
             if (item) {
                 item.location = widget[WidgetArea];
+            }
+
+            if (this.containers.has(widget.id)) {
+                const containerData = this.containers.get(widget.id)!;
+                containerData.location = widget[WidgetArea];
+            } else {
+                this.containers.set(widget.id, { location: widget[WidgetArea], title: '' });
             }
         });
 
         this.shell.onDidRemoveWidget(widget => {
-            const item = this.items.find(i => i.viewId === widget.id);
+            const item = this.items.find(i => i.widgetId === widget.id);
             if (item) {
                 item.location = item.defaultLocation;
+            } else {
+                if (this.containers.has(widget.id)) {
+                    const containerData = this.containers.get(widget.id)!;
+                    containerData.location = '';
+                }
+            }
+        });
+
+        this.shell.onDidMoveContainerPart(info => {
+            const item = this.items.find(i => i.widgetId === info.widget.id);
+            if (item) {
+                item.location = info.destinationContainerId;
+            } else {
+                // Views from plugins will be restored from state before being registered, so create
+                // an entry with the location, to be filled in when the widget is registered.
+                this.locationsToRestore.set(info.widget.id, info.destinationContainerId);
             }
         });
     }
 
     registerContainer(id: string, location: string, title: string): Disposable {
-        const label = this.getLocationLabel(location) + ' / ' + title;
-        this.containers.set(id, label);
+        const containerData = this.containers.get(id);
+        if (containerData) {
+            // Exists, so use actual location, not location from contributor
+            containerData.title = title;
+        } else {
+            this.containers.set(id, { location, title });
+        }
         return Disposable.create(() => {
             this.containers.delete(id);
         });
     }
 
     registerItem(item: QuickViewItem): Disposable {
+        const containerWidgetId = item.widgetId.startsWith('plugin-view:')
+            ? `plugin-view-container:${item.widgetId.substring('plugin-view:'.length)}`
+            : item.widgetId;
+
+        const containerData = this.containers.get(containerWidgetId);
+        const locationToRestore = this.locationsToRestore.get(item.widgetId);
+        const location = containerData
+            ? containerData.location
+            : (locationToRestore ?? item.location);
+
         const quickOpenItem = {
             label: item.label,
             viewId: item.viewId,
-            location: item.location,
+            widgetId: item.widgetId,
+            location,
             defaultLocation: item.location,
             execute: () => item.open(),
             when: item.when
@@ -148,7 +192,10 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
             case 'right': return 'Right';
             case 'main': return 'Editor';
             default:
-                return this.containers.get(location) ?? location;
+                const containerData = this.containers.get(location);
+                return containerData
+                    ? this.getLocationLabel(containerData.location) + ' / ' + containerData.title
+                    : location;
         }
     }
 }

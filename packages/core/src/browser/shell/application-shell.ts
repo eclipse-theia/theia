@@ -217,6 +217,14 @@ export class ApplicationShell extends Widget {
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
 
+    protected readonly onDidMoveContainerPartEmitter = new Emitter<{
+        widget: Widget, sourceContainerId: string, destinationContainerId: string, originalContainerId: string, destinationPanelId: string
+    }>();
+    readonly onDidMoveContainerPart = this.onDidMoveContainerPartEmitter.event;
+    fireDidMoveContainerPart(widget: Widget, sourceContainerId: string, destinationContainerId: string, originalContainerId: string, destinationPanelId: string): void {
+        this.onDidMoveContainerPartEmitter.fire({ widget, sourceContainerId, destinationContainerId, originalContainerId, destinationPanelId });
+    }
+
     /**
      * Construct a new application shell.
      */
@@ -671,6 +679,14 @@ export class ApplicationShell extends Widget {
         }
     }
 
+    protected registerViewPositions(area: ApplicationShell.Area, widgets: (Widget | undefined)[]): void {
+        for (const widget of widgets) {
+            if (widget) {
+                this.fireDidAddWidget(widget, area);
+            }
+        }
+    }
+
     /**
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
@@ -679,10 +695,16 @@ export class ApplicationShell extends Widget {
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
             this.registerWithFocusTracker(leftPanel);
+            if (leftPanel.items) {
+                this.registerViewPositions('left', leftPanel.items.map(i => i.widget));
+            }
         }
         if (rightPanel) {
             this.rightPanelHandler.setLayoutData(rightPanel);
             this.registerWithFocusTracker(rightPanel);
+            if (rightPanel.items) {
+                this.registerViewPositions('right', rightPanel.items.map(i => i.widget));
+            }
         }
         // Proceed with the bottom panel once the side panels are set up
         await Promise.all([this.leftPanelHandler.state.pendingUpdate, this.rightPanelHandler.state.pendingUpdate]);
@@ -709,6 +731,7 @@ export class ApplicationShell extends Widget {
                 });
             }
             this.refreshBottomPanelToggleButton();
+            this.registerViewPositions('bottom', widgets);
         }
         // Proceed with the main panel once all others are set up
         await this.bottomPanelState.pendingUpdate;
@@ -724,6 +747,7 @@ export class ApplicationShell extends Widget {
                     }
                 });
             }
+            this.registerViewPositions('main', widgets);
         }
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
