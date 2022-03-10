@@ -37,18 +37,15 @@ export class SaveResourceService {
     }
 
     /**
-     * Saves the document.
+     * Saves the document
      *
-     * This function is called only if `canSave` returns true, which means the document is not untitled
-     * and is thus saveable.
+     * No op if the widget is not saveable.
      */
     async save(widget: Widget | undefined, options?: SaveOptions): Promise<void> {
         if (this.canSaveNotSaveAs(widget)) {
             await Saveable.save(widget, options);
         } else if (this.canSaveAs(widget)) {
             await this.saveAs(widget, options);
-        } else {
-            this.messageService.error(`Cannot save the current widget "${widget?.title.label}" .`);
         }
     }
 
