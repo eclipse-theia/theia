@@ -29,6 +29,10 @@ export class PreferenceBooleanInputRenderer extends PreferenceLeafNodeRenderer<b
         parent.appendChild(interactable);
     }
 
+    protected override getAdditionalNodeClassnames(): Iterable<string> {
+        return ['boolean'];
+    }
+
     protected getFallbackValue(): false {
         return false;
     }
