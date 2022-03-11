@@ -197,6 +197,19 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.currentPart = expandedParts[0] || visibleParts[0];
     }
 
+    protected updateSplitterVisibility(): void {
+        const className = 'p-first-visible';
+        let firstFound = false;
+        for (const part of this.getParts()) {
+            if (!part.isHidden && !firstFound) {
+                part.addClass(className);
+                firstFound = true;
+            } else {
+                part.removeClass(className);
+            }
+        }
+    }
+
     protected titleOptions: ViewContainerTitleOptions | undefined;
 
     setTitleOptions(titleOptions: ViewContainerTitleOptions | undefined): void {
@@ -374,6 +387,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.refreshMenu(newPart);
         this.updateTitle();
         this.updateCurrentPart();
+        this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
         toRemoveWidget.pushAll([
@@ -389,6 +403,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.update();
                     this.updateTitle();
                     this.updateCurrentPart();
+                    this.updateSplitterVisibility();
                     this.fireDidChangeTrackableWidgets();
                 }
             }),
@@ -396,6 +411,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             newPart.onDidChangeVisibility(() => {
                 this.updateTitle();
                 this.updateCurrentPart();
+                this.updateSplitterVisibility();
             }),
             newPart.onCollapsed(() => {
                 this.containerLayout.updateCollapsed(newPart, this.enableAnimation);
