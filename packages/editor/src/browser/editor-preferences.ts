@@ -122,6 +122,7 @@ const codeEditorPreferenceProperties = {
         'description': nls.localizeByDefault('Controls form what documents word based completions are computed.')
     },
     'editor.semanticHighlighting.enabled': {
+        'type': ['boolean', 'string'],
         'enum': [true, false, 'configuredByTheme'],
         'markdownEnumDescriptions': [
             nls.localizeByDefault('Semantic highlighting enabled for all color themes.'),
