@@ -99,7 +99,7 @@ export class FilesystemSaveResourceService extends SaveResourceService {
                 await this.fileService.createFile(target);
             }
         }
-        const targetWidget = await open(this.openerService, target);
+        const targetWidget = await open(this.openerService, target, { widgetOptions: { ref: sourceWidget } });
         const targetSaveable = Saveable.get(targetWidget);
         if (targetWidget && targetSaveable && targetSaveable.applySnapshot) {
             targetSaveable.applySnapshot(snapshot);
