@@ -1270,8 +1270,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @returns `true` if the tree modifier aware event contains the `ctrlcmd` mask.
      */
     protected hasCtrlCmdMask(event: TreeWidget.ModifierAwareEvent): boolean {
-        const { metaKey, ctrlKey } = event;
-        return (isOSX && metaKey) || ctrlKey;
+        return isOSX ? event.metaKey : event.ctrlKey;
     }
 
     /**
