@@ -28,10 +28,14 @@ import { FuzzySearch } from './fuzzy-search';
 import { SearchBox, SearchBoxFactory } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
 
-function isTreeServices(candidate?: Partial<TreeProps> | Partial<TreeContainerProps>): candidate is TreeContainerProps {
+export function isTreeServices(candidate?: Partial<TreeProps> | Partial<TreeContainerProps>): candidate is TreeContainerProps {
     if (candidate) {
         const maybeServices = candidate as TreeContainerProps;
         for (const key of Object.keys(maybeServices)) {
+            // This key is in both TreeProps and TreeContainerProps, so we have to handle it separately
+            if (key === 'search' && typeof maybeServices[key] === 'boolean') {
+                return false;
+            }
             if (key in defaultImplementations) {
                 return true;
             }
