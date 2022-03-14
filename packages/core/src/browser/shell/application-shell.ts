@@ -1854,7 +1854,9 @@ export class ApplicationShell extends Widget {
      * Save all dirty widgets.
      */
     async saveAll(options?: SaveOptions): Promise<void> {
-        await Promise.all(this.tracker.widgets.map(widget => this.saveResourceService.save(widget)));
+        for (const widget of this.widgets) {
+            await this.saveResourceService.save(widget, options);
+        }
     }
 
     /**

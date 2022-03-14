@@ -28,12 +28,12 @@ export class SaveResourceService {
      * Indicate if the document can be saved ('Save' command should be disable if not).
      */
     canSave(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
-        return this.canSaveNotSaveAs(widget) || this.canSaveAs(widget);
+        return Saveable.isDirty(widget) && (this.canSaveNotSaveAs(widget) || this.canSaveAs(widget));
     }
 
     protected canSaveNotSaveAs(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
         // By default, we never allow a document to be saved if it is untitled.
-        return Boolean(widget && Saveable.isDirty(widget) && NavigatableWidget.getUri(widget)?.scheme !== UNTITLED_SCHEME);
+        return Boolean(widget && NavigatableWidget.getUri(widget)?.scheme !== UNTITLED_SCHEME);
     }
 
     /**
