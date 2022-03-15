@@ -53,7 +53,7 @@ export function createTreeContainer(parent: interfaces.Container, props?: Partia
 export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps> | Partial<TreeContainerProps>): Container {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = parent;
-    const overrideServices: Partial<TreeServiceProviders> = isTreeServices(props) ? props : {};
+    const overrideServices: Partial<TreeContainerProps> = isTreeServices(props) ? props : { props: props as Partial<TreeProps> | undefined };
     for (const key of Object.keys(serviceIdentifiers) as (keyof TreeIdentifiers)[]) {
         if (key === 'props') {
             const { service, identifier } = getServiceAndIdentifier(key, overrideServices);
