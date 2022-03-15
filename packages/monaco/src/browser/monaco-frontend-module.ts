@@ -170,7 +170,6 @@ export function createMonacoConfigurationService(container: interfaces.Container
     const preferences = container.get<PreferenceService>(PreferenceService);
     const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
     const service = StandaloneServices.get(IConfigurationService) as StandaloneConfigurationService;
-    // TODO: We shouldn't have to do this.
     const _configuration: Configuration = service['_configuration'];
 
     _configuration.getValue = (section, overrides) => {

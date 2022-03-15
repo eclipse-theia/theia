@@ -109,7 +109,6 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
         const mode = this.getEditorOpenMode(input);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
         const preview = !!this.preferencesService.get<boolean>(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
-        // Removed selection because it couldn't reliably be retrieved from the data passed in? TODO
         return { mode, widgetOptions, preview };
     }
 

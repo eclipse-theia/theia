@@ -325,7 +325,7 @@ export function filterItems(items: QuickPickItemOrSeparator[], filter: string): 
 
     const filteredItems: QuickPickItemOrSeparator[] = [];
     for (const item of items) {
-        if (item.type === 'separator') { // TODO: We should check if the separator still makes sense.
+        if (item.type === 'separator') {
             filteredItems.push(item);
         } else if (
             fuzzy.test(filter, item.label) ||

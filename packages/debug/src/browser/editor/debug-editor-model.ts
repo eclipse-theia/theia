@@ -146,7 +146,6 @@ export class DebugEditorModel implements Disposable {
                     resource: model.uri,
                     overrideIdentifier: model.getLanguageId(),
                 };
-                // TODO: Some chance this could break, or not work as intended, but it seems to be the API...
                 const { enabled, delay, sticky } = this.configurationService.getValue('editor.hover', overrides);
                 codeEditor.updateOptions({
                     hover: {
@@ -164,7 +163,6 @@ export class DebugEditorModel implements Disposable {
             this.createFrameDecorations(),
             this.createInlineValueDecorations()
         ]);
-        // TODO: We shouldn't have to do this. Delta decorations should handle this for us...
         const codeEditor = this.editor.getControl() as unknown as StandaloneCodeEditor;
         codeEditor.removeDecorations(INLINE_VALUE_DECORATION_KEY);
         codeEditor.setDecorations('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);

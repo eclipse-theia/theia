@@ -193,7 +193,6 @@ export class HostedPluginSupport {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
-        // TODO: Digging into private stuff.
         const languageService = (StandaloneServices.get(ILanguageService) as LanguageService);
         for (const language of languageService['_encounteredLanguages'] as Set<string>) {
             this.activateByLanguage(language);

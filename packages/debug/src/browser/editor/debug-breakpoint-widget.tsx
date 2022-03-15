@@ -111,7 +111,6 @@ export class DebugBreakpointWidget implements Disposable {
         this.toDispose.push(input);
         this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
             ({ scheme: input.uri.scheme }, {
-                // TODO: Lots of unknowns here due to internal-public incomparability.
                 provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
                     const suggestions: monaco.languages.CompletionItem[] = [];
                     if ((this.context === 'condition' || this.context === 'logMessage')
@@ -256,7 +255,6 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }
         }];
-        // TODO: We shouldn't have to do this.
         (this._input.getControl() as unknown as StandaloneCodeEditor).setDecorations('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {

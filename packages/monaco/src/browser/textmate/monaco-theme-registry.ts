@@ -105,7 +105,6 @@ export class MonacoThemeRegistry {
             }
 
             // the default rule (scope empty) is always the first rule. Ignore all other default rules.
-            // TODO: we shouldn't have to do this.
             const defaultTheme = (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService)['_knownThemes'].get(result.base)!;
             const foreground = result.colors['editor.foreground'] || defaultTheme.getColor('editor.foreground');
             const background = result.colors['editor.background'] || defaultTheme.getColor('editor.background');

@@ -53,7 +53,6 @@ export class MonacoMimeService extends MimeService {
                 const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
                 registerLanguageAssociation({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
             }
-            // TODO: PRIVATE API
             (StandaloneServices.get(ILanguageService) as LanguageService)['_onDidChange'].fire(undefined);
         } finally {
             this.updatingAssociations = false;

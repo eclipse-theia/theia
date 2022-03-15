@@ -140,7 +140,6 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        // TODO: We should be able to say what plugin it is.
         this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }

@@ -282,7 +282,6 @@ export class TextEditorMain implements Disposable {
         if (!this.editor) {
             return;
         }
-        // TODO: We should be able to say which plugin.
         (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorations('Plugin decorations', key, ranges.map(option => Object.assign(option, { color: undefined })));
     }
 
@@ -295,7 +294,6 @@ export class TextEditorMain implements Disposable {
         for (let i = 0; i < len; i++) {
             ranges[i] = new monaco.Range(_ranges[4 * i], _ranges[4 * i + 1], _ranges[4 * i + 2], _ranges[4 * i + 3]);
         }
-        // TODO: We shouldn't have to do this.
         (this.editor.getControl() as unknown as StandaloneCodeEditor).setDecorationsFast(key, ranges);
     }
 

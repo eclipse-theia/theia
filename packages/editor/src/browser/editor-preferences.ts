@@ -87,7 +87,7 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         'markdownDescription': nls.localizeByDefault('Controls if format on save formats the whole file or only modifications. Only applies when `#editor.formatOnSave#` is enabled.'),
         'scope': PreferenceScope.fromString('language-overridable'),
     },
-    // Include this, even though it is not strictly an `editor`preference. TODO: Why have we done it this way?
+    // Include this, even though it is not strictly an `editor`preference.
     'files.eol': {
         'type': 'string',
         'enum': [

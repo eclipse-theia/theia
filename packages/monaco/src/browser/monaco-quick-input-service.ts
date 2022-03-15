@@ -236,7 +236,6 @@ export class MonacoQuickInputService implements QuickInputService {
             }
             return this.convertItems(pick);
         });
-        // TODO This is very annoying.
         return this.monacoService.pick(monacoPicks, options as any, token) as any; /* eslint-disable-line @typescript-eslint/no-explicit-any */
     }
 

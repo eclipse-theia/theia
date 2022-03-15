@@ -420,7 +420,6 @@ export class QuickInputExt implements QuickInput {
         this.dispose();
     }
 
-    // TODO: Using our internal ThemeIcon for the arg is a fudge here. Previously it was taking the type from the declaration.
     protected convertURL(iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon):
         URI | { light: string | URI; dark: string | URI } | ThemeIcon {
         const toUrl = (arg: string | URI) => {

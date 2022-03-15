@@ -103,7 +103,6 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
 
     createScoped(target: HTMLElement): ScopedValueStore {
         const scoped = this.contextKeyService.createScoped(target);
-        // TODO: We shouldn't have to do this. In VSCode, when they call `createScoped`, they then take a context key and say `key.bindTo(scoped).set(value)`
         if (scoped instanceof AbstractContextKeyService) {
             return scoped as AbstractContextKeyService & { createScoped(): ScopedValueStore };
         }

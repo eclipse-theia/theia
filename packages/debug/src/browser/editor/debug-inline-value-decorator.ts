@@ -58,7 +58,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     protected readonly preferences: DebugPreferences;
 
     protected enabled = false;
-    protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map(); // TODO: can we get rid of this field?
+    protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map();
 
     onStart(): void {
         this.editorService.registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
@@ -194,7 +194,6 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L487-L531
     private getWordToPositionsMap(model: monaco.editor.ITextModel | ITextModel): Map<string, monaco.Position[]> {
-        // TODO: We shouldn't have to do this.
         model = model as ITextModel;
         if (!this.wordToLineNumbersMap) {
             this.wordToLineNumbersMap = new Map<string, monaco.Position[]>();

@@ -105,7 +105,6 @@ export class MonacoQuickAccessRegistry implements QuickAccessRegistry {
         return monacoDescriptor ? (monacoDescriptor as TheiaQuickAccessDescriptor).theiaDescriptor : undefined;
     }
     clear(): void {
-        // TODO: We shouldn't really have to do this.
         if (this.monacoRegistry instanceof VSCodeQuickAccessRegistry) {
             this.monacoRegistry.clear();
         }
