@@ -61,7 +61,8 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
-import { UntitledFileLocationProvider } from './untitled-file-location-provider';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
+import { createUntitledURI } from '../common';
 
 export namespace CommonMenus {
 
@@ -395,8 +396,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    @inject(UntitledFileLocationProvider)
-    protected readonly untitledFileLocationProvider: UntitledFileLocationProvider;
+    @inject(UserWorkingDirectoryProvider)
+    protected readonly workingDirProvider: UserWorkingDirectoryProvider;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -955,7 +956,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.configureDisplayLanguage()
         });
         commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
-            execute: async () => open(this.openerService, await this.untitledFileLocationProvider.getUntitledFileLocation())
+            execute: async () => open(this.openerService, createUntitledURI('', await this.workingDirProvider.getUserWorkingDir()))
         });
     }
 

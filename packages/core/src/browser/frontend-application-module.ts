@@ -121,7 +121,7 @@ import { RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
-import { UntitledFileLocationProvider } from './untitled-file-location-provider';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -399,5 +399,5 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindBackendStopwatch(bind);
 
     bind(SaveResourceService).toSelf().inSingletonScope();
-    bind(UntitledFileLocationProvider).toSelf().inSingletonScope();
+    bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
 });

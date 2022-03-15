@@ -16,29 +16,22 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '../common/uri';
-import { createUntitledURI, MaybePromise, SelectionService, UriSelection } from '../common';
+import { MaybePromise, SelectionService, UriSelection } from '../common';
 import { EnvVariablesServer } from '../common/env-variables';
-import { NavigatableWidget } from './navigatable-types';
-import { ApplicationShell } from './shell';
 
 @injectable()
-export class UntitledFileLocationProvider {
-    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+export class UserWorkingDirectoryProvider {
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(EnvVariablesServer) protected readonly envVariables: EnvVariablesServer;
 
-    async getUntitledFileLocation(extension?: string): Promise<URI> {
-        return createUntitledURI(extension, await this.getParent());
-    }
-
-    protected async getParent(): Promise<URI> {
-        return await this.getFromCurrentWidget()
-            ?? await this.getFromSelection()
+    /**
+     * @returns A {@link URI} that represents a good guess about the directory in which the user is currently operating.
+     *
+     * Factors considered may include the current widget, current selection, user home directory, or other application state.
+     */
+    async getUserWorkingDir(): Promise<URI> {
+        return await this.getFromSelection()
             ?? this.getFromUserHome();
-    }
-
-    protected getFromCurrentWidget(): MaybePromise<URI | undefined> {
-        return this.ensureIsDirectory(NavigatableWidget.getUri(this.shell.currentWidget));
     }
 
     protected getFromSelection(): MaybePromise<URI | undefined> {

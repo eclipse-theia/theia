@@ -40,7 +40,6 @@ import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcru
 import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
 import { FilesystemSaveResourceService } from './filesystem-save-resource-service';
 import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
-import { FileDialogDefaultRootProvider } from './file-dialog';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
@@ -230,7 +229,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(FilesystemSaveResourceService).toSelf().inSingletonScope();
     rebind(SaveResourceService).toService(FilesystemSaveResourceService);
-    bind(FileDialogDefaultRootProvider).toSelf().inSingletonScope();
 });
 
 export function bindFileResource(bind: interfaces.Bind): void {

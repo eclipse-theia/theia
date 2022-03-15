@@ -26,7 +26,6 @@ import {
     createSaveFileDialogContainer,
     OpenFileDialog,
     SaveFileDialog,
-    FileDialogDefaultRootProvider
 } from '@theia/filesystem/lib/browser';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
@@ -51,9 +50,8 @@ import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contri
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { WorkspaceTrustService } from './workspace-trust-service';
 import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
-import { WorkspaceFileDialogDefaultRootProvider } from './workspace-file-dialog-root-provider';
-import { UntitledFileLocationProvider } from '@theia/core/lib/browser/untitled-file-location-provider';
-import { WorkspaceUntitledFileLocationProvider } from './workspace-untitled-file-location-provider';
+import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
+import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bindWorkspacePreferences(bind);
@@ -109,7 +107,5 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
-    bind(WorkspaceFileDialogDefaultRootProvider).toSelf().inSingletonScope();
-    rebind(FileDialogDefaultRootProvider).toSelf().inSingletonScope();
-    rebind(UntitledFileLocationProvider).to(WorkspaceUntitledFileLocationProvider).inSingletonScope();
+    rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 });

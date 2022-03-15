@@ -15,20 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { UntitledFileLocationProvider } from '@theia/core/lib/browser/untitled-file-location-provider';
+import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from './workspace-service';
 import { MaybePromise } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
-export class WorkspaceUntitledFileLocationProvider extends UntitledFileLocationProvider {
+export class WorkspaceUserWorkingDirectoryProvider extends UserWorkingDirectoryProvider {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
 
-    protected override async getParent(): Promise<URI> {
-        return await this.getFromCurrentWidget()
-            ?? await this.getFromSelection()
+    override async getUserWorkingDir(): Promise<URI> {
+        return await this.getFromSelection()
             ?? await this.getFromWorkspace()
             ?? this.getFromUserHome();
     }

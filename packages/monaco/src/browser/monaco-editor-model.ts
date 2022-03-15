@@ -163,9 +163,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
             this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
-            if (this.resource.uri.scheme === UNTITLED_SCHEME && this.model.getValueLength()) {
-                this.setDirty(true);
-            }
+            this.setDirty(this._dirty || (this.resource.uri.scheme === UNTITLED_SCHEME && this.model.getValueLength() > 0));
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.fireDidChangeContent(event)));
