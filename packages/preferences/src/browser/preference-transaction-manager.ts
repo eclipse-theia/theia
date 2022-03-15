@@ -92,7 +92,7 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 release = await this.queue.acquire();
                 if (!this.inUse) {
                     this.inUse = true;
-                    this.queue.waitForUnlock().then(() => this.dispose());
+                    this.disposeWhenDone();
                 }
                 return this.act(...args);
             } catch (e) {
@@ -101,13 +101,23 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 }
                 return false;
             } finally {
-                if (release) {
-                    release();
-                }
+                release?.();
             }
         } else {
             throw new Error('Transaction used after disposal.');
         }
+    }
+
+    protected disposeWhenDone(): void {
+        // Due to properties of the micro task system, it's possible for something to have been equeued between
+        // the resolution of the waitForUnlock() promise and the the time this code runs, so we have to check.
+        this.queue.waitForUnlock().then(() => {
+            if (!this.queue.isLocked()) {
+                this.dispose();
+            } else {
+                this.disposeWhenDone();
+            }
+        });
     }
 
     protected async conclude(): Promise<void> {
