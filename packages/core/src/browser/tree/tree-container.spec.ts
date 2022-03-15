@@ -18,11 +18,15 @@ import { isTreeServices } from './tree-container';
 import { TreeSearch } from './tree-search';
 import { defaultTreeProps } from './tree-widget';
 
-describe('IsTreeServices should accurately distinguish TreeProps from TreeContainerProps', () => {
-    it('should not be confused by the fact that both have a `search` key', () => {
-        assert(isTreeServices({
-            ...defaultTreeProps, search: true, multiSelect: true, globalSelection: true, contextMenuPath: ['so-contextual']
-        }) === false, 'search:boolean -> false');
-        assert(isTreeServices({ search: TreeSearch }) === true, 'search:class -> true');
+describe('TreeContainer', () => {
+    describe('IsTreeServices should accurately distinguish TreeProps from TreeContainerProps', () => {
+        it('should assign search:boolean to TreeProps', () => {
+            assert(isTreeServices({
+                ...defaultTreeProps, search: true, multiSelect: true, globalSelection: true, contextMenuPath: ['so-contextual']
+            }) === false);
+        });
+        it('should assign search:not-a-boolean to TreeContainerProps', () => {
+            assert(isTreeServices({ search: TreeSearch }) === true);
+        });
     });
 });
