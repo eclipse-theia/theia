@@ -101,6 +101,10 @@ export abstract class PreferenceNodeRenderer implements Disposable, GeneralPrefe
 
     protected abstract createDomNode(): HTMLElement;
 
+    protected getAdditionalNodeClassnames(): Iterable<string> {
+        return [];
+    }
+
     insertBefore(nextSibling: HTMLElement): void {
         nextSibling.insertAdjacentElement('beforebegin', this.domNode);
         this.attached = true;
@@ -247,9 +251,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         cog.title = nls.localizeByDefault('More Actions...');
         gutter.appendChild(cog);
 
-        const activeType = Array.isArray(this.preferenceNode.preference.data.type) ? this.preferenceNode.preference.data.type[0] : this.preferenceNode.preference.data.type;
         const contentWrapper = document.createElement('div');
-        contentWrapper.classList.add('pref-content-container', activeType ?? 'open-json');
+        contentWrapper.classList.add('pref-content-container', ...this.getAdditionalNodeClassnames());
         wrapper.appendChild(contentWrapper);
 
         const { description, markdownDescription } = this.preferenceNode.preference.data;

@@ -113,7 +113,7 @@ export class Endpoint {
                 return '/' + this.options.path;
             }
         }
-        return this.options.path || '';
+        return '';
     }
 }
 

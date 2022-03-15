@@ -91,16 +91,16 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 
     /**
-     * Creates a websocket URL to the current location
+     * @param path The handler to reach in the backend.
      */
     protected createWebSocketUrl(path: string): string {
-        const endpoint = new Endpoint({ path });
-        return endpoint.getWebSocketUrl().toString();
+        // Since we are using Socket.io, the path should look like the following:
+        // proto://domain.com/{path}
+        return new Endpoint().getWebSocketUrl().withPath(path).toString();
     }
 
     protected createHttpWebSocketUrl(path: string): string {
-        const endpoint = new Endpoint({ path });
-        return endpoint.getRestUrl().toString();
+        return new Endpoint({ path }).getRestUrl().toString();
     }
 
     /**
@@ -108,6 +108,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
      */
     protected createWebSocket(url: string): Socket {
         return io(url, {
+            path: this.createSocketIoPath(url),
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
@@ -118,6 +119,20 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
                 'fix-origin': window.location.origin
             }
         });
+    }
+
+    /**
+     * Path for Socket.io to make its requests to.
+     */
+    protected createSocketIoPath(url: string): string | undefined {
+        if (location.protocol === Endpoint.PROTO_FILE) {
+            return '/socket.io';
+        }
+        let { pathname } = location;
+        if (!pathname.endsWith('/')) {
+            pathname += '/';
+        }
+        return pathname + 'socket.io';
     }
 
     protected fireSocketDidOpen(): void {
