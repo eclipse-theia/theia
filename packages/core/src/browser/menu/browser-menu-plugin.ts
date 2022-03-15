@@ -256,8 +256,6 @@ export class DynamicMenuWidget extends MenuWidget {
         this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
-    // Hint: this is not called from the context menu use-case, but is not required.
-    // For the context menu the command registry state is calculated by the factory before `open`.
     public aboutToShow({ previousFocusedElement }: { previousFocusedElement: HTMLElement | undefined }): void {
         this.preserveFocusedElement(previousFocusedElement);
         this.clearItems();
@@ -273,6 +271,7 @@ export class DynamicMenuWidget extends MenuWidget {
             this.aboutToClose.disconnect(cb);
         };
         this.aboutToClose.connect(cb);
+        this.preserveFocusedElement();
         super.open(x, y, options);
     }
 

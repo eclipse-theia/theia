@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { environment, nls, UNTITLED_SCHEME } from '@theia/core';
+import { environment, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, FormatType, CommonCommands } from '@theia/core/lib/browser';
 import { SaveResourceService } from '@theia/core/lib/browser/save-resource-service';
@@ -53,19 +53,13 @@ export class FilesystemSaveResourceService extends SaveResourceService {
         let selected: URI | undefined;
         const canSave = this.canSaveNotSaveAs(sourceWidget);
         const uri: URI = sourceWidget.getResourceUri()!;
-        let stat;
-        if (uri.scheme === 'file') {
-            stat = await this.fileService.resolve(uri).catch(() => undefined);
-        } else if (uri.scheme === UNTITLED_SCHEME) {
-            stat = await this.fileService.resolve(uri.withScheme('file').parent).catch(() => undefined);
-        }
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
                     title: CommonCommands.SAVE_AS.label!,
                     filters: {},
                     inputValue: uri.path.base
-                }, stat);
+                });
             if (selected) {
                 exist = await this.fileService.exists(selected);
                 if (exist) {
