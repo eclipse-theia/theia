@@ -82,6 +82,16 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
         }
     }
 
+    async waitFor(delay?: Promise<unknown>, disposeIfRejected?: boolean): Promise<void> {
+        try {
+            await this.queue.runExclusive(() => delay);
+        } catch {
+            if (disposeIfRejected) {
+                this.dispose();
+            }
+        }
+    }
+
     /**
      * @returns a promise reflecting the result of performing an action. Typically the promise will not resolve until the whole transaction is complete.
      */

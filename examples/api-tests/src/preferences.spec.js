@@ -161,23 +161,32 @@ describe('Preferences', function () {
     it('Handles many synchronous settings of preferences gracefully', async function () {
         let settings = 0;
         const promises = [];
+        const searchPref = 'search.searchOnTypeDebouncePeriod'
+        const channelPref = 'output.maxChannelHistory'
+        const hoverPref = 'workbench.hover.delay';
         let searchDebounce;
         let channelHistory;
         let hoverDelay;
-        while (settings++ < 100) {
+        /** @type import ('@theia/core/src/browser/preferences/preference-service').PreferenceChanges | undefined */
+        let event;
+        const toDispose = preferenceService.onPreferencesChanged(e => event = e);
+        while (settings++ < 50) {
             searchDebounce = 100 + Math.floor(Math.random() * 500);
             channelHistory = 200 + Math.floor(Math.random() * 800);
             hoverDelay = 250 + Math.floor(Math.random() * 2_500);
             promises.push(
-                preferenceService.set('search.searchOnTypeDebouncePeriod', searchDebounce),
-                preferenceService.set('output.maxChannelHistory', channelHistory),
-                preferenceService.set('workbench.hover.delay', hoverDelay)
+                preferenceService.set(searchPref, searchDebounce),
+                preferenceService.set(channelPref, channelHistory),
+                preferenceService.set(hoverPref, hoverDelay)
             );
         }
         const results = await Promise.allSettled(promises);
+        const expectedValues = { [searchPref]: searchDebounce, [channelPref]: channelHistory, [hoverPref]: hoverDelay };
+        const actualValues = { [searchPref]: preferenceService.get(searchPref), [channelPref]: preferenceService.get(channelPref), [hoverPref]: preferenceService.get(hoverPref), }
+        const eventValues = event && Object.keys(event).reduce((accu, key) => { accu[key] = event[key].newValue; return accu; }, {});
+        toDispose.dispose();
         assert(results.every(setting => setting.status === 'fulfilled'), 'All promises should have resolved rather than rejected.');
-        assert.equal(searchDebounce, preferenceService.get('search.searchOnTypeDebouncePeriod'), 'The last debounce setting should have taken effect.');
-        assert.equal(channelHistory, preferenceService.get('output.maxChannelHistory'), 'The last channel setting should have taken effect.');
-        assert.equal(hoverDelay, preferenceService.get('workbench.hover.delay'), 'The last hover delay setting should have taken effect');
+        assert.deepEqual(actualValues, eventValues, 'The event should reflect the current state of the service.');
+        assert.deepEqual(expectedValues, actualValues, 'The service state should reflect the most recent setting');
     });
 });
