@@ -161,23 +161,23 @@ describe('Preferences', function () {
     it('Handles many synchronous settings of preferences gracefully', async function () {
         let settings = 0;
         const promises = [];
-        let fontSize;
-        let tabSize;
+        let searchDebounce;
+        let channelHistory;
         let hoverDelay;
         while (settings++ < 100) {
-            fontSize = 8 + Math.floor(Math.random() * 12);
-            tabSize = 1 + Math.floor(Math.random() * 12);
+            searchDebounce = 100 + Math.floor(Math.random() * 500);
+            channelHistory = 200 + Math.floor(Math.random() * 800);
             hoverDelay = 250 + Math.floor(Math.random() * 2_500);
             promises.push(
-                preferenceService.set('editor.fontSize', fontSize),
-                preferenceService.set('editor.tabSize', tabSize),
-                preferenceService.set('editor.hover.delay', hoverDelay)
+                preferenceService.set('search.searchOnTypeDebouncePeriod', searchDebounce),
+                preferenceService.set('output.maxChannelHistory', channelHistory),
+                preferenceService.set('workbench.hover.delay', hoverDelay)
             );
         }
         const results = await Promise.allSettled(promises);
         assert(results.every(setting => setting.status === 'fulfilled'), 'All promises should have resolved rather than rejected.');
-        assert.equal(fontSize, preferenceService.get('editor.fontSize'), 'The last font size setting should have taken effect.');
-        assert.equal(tabSize, preferenceService.get('editor.tabSize'), 'The last tab size setting should have taken effect.');
-        assert.equal(hoverDelay, preferenceService.get('editor.hover.delay'), 'The last hover delay setting should have taken effect');
+        assert.equal(searchDebounce, preferenceService.get('search.searchOnTypeDebouncePeriod'), 'The last debounce setting should have taken effect.');
+        assert.equal(channelHistory, preferenceService.get('output.maxChannelHistory'), 'The last channel setting should have taken effect.');
+        assert.equal(hoverDelay, preferenceService.get('workbench.hover.delay'), 'The last hover delay setting should have taken effect');
     });
 });
