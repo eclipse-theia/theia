@@ -57,7 +57,8 @@ export class PreferenceValidationService {
 
     validateByName(preferenceName: string, value: JSONValue): JSONValue {
         const validValue = this.doValidateByName(preferenceName, value);
-        if (validValue !== value) {
+        // If value is undefined, it means the preference wasn't set, not that a bad value was set.
+        if (validValue !== value && value !== undefined) {
             console.warn(`While validating options, found impermissible value for ${preferenceName}. Using valid value`, validValue, 'instead of configured value', value);
         }
         return validValue;
