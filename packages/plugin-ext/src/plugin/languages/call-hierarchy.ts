@@ -20,6 +20,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as dto from '../../common/plugin-api-rpc-model';
 import * as rpc from '../../common/plugin-api-rpc';
 import * as types from '../types-impl';
+import { fromRange } from '../type-converters';
 
 export class CallHierarchyAdapter {
 
@@ -28,12 +29,12 @@ export class CallHierarchyAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    protected readonly cache = new Map<string, theia.CallHierarchyItem>();
+    protected sessionIds = 0;
+    protected readonly cache = new Map<string, Map<string, theia.CallHierarchyItem>>();
 
     async provideRootDefinition(
         resource: URI, position: rpc.Position, token: theia.CancellationToken
-    ): Promise<dto.CallHierarchyItem | dto.CallHierarchyItem[] | undefined> {
-        this.cache.clear();
+    ): Promise<dto.CallHierarchyItem[] | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -50,8 +51,9 @@ export class CallHierarchyAdapter {
         if (!definition) {
             return undefined;
         }
-
-        return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item)) : this.fromCallHierarchyItem(definition);
+        const sessionId = (this.sessionIds++).toString(36);
+        this.cache.set(sessionId, new Map());
+        return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item, sessionId)) : [this.fromCallHierarchyItem(definition, sessionId)];
     }
 
     async provideCallers(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyIncomingCall[] | undefined> {
@@ -60,7 +62,7 @@ export class CallHierarchyAdapter {
             return undefined;
         }
 
-        return callers.map(item => this.fromCallHierarchyIncomingCall(item));
+        return callers.map(item => this.fromCallHierarchyIncomingCall(item, definition._sessionId!));
     }
 
     async provideCallees(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyOutgoingCall[] | undefined> {
@@ -69,52 +71,55 @@ export class CallHierarchyAdapter {
             return undefined;
         }
 
-        return callees.map(item => this.fromCallHierarchyOutgoingCall(item));
+        return callees.map(item => this.fromCallHierarchyOutgoingCall(item, definition._sessionId!));
     }
 
-    private fromCallHierarchyItem(item: theia.CallHierarchyItem): dto.CallHierarchyItem {
-        const data = this.cache.size.toString(36);
-        const definition = {
+    private fromCallHierarchyItem(item: theia.CallHierarchyItem, sessionId: string): dto.CallHierarchyItem {
+        const sessionCache = this.cache.get(sessionId)!;
+        const itemId = sessionCache.size.toString(36);
+        const definition: dto.CallHierarchyItem = {
             uri: item.uri,
-            range: this.fromRange(item.range),
-            selectionRange: this.fromRange(item.selectionRange),
+            range: fromRange(item.range),
+            selectionRange: fromRange(item.selectionRange),
             name: item.name,
             kind: item.kind,
             tags: item.tags,
-            data,
+            _itemId: itemId,
+            _sessionId: sessionId,
         };
-        this.cache.set(data, item);
+        sessionCache.set(itemId, item);
         return definition;
     }
 
-    private fromRange(range: theia.Range): dto.Range {
-        return {
-            startLineNumber: range.start.line + 1,
-            startColumn: range.start.character + 1,
-            endLineNumber: range.end.line + 1,
-            endColumn: range.end.character + 1,
-        };
-    }
-
     private toCallHierarchyItem(definition: dto.CallHierarchyItem): theia.CallHierarchyItem {
-        const cached = this.cache.get(definition.data as string);
+        const cached = this.cache.get(definition._sessionId!)?.get(definition._itemId!);
         if (!cached) {
             throw new Error(`Found no cached item corresponding to ${definition.name} in ${definition.uri.path} with ID ${definition.data}.`);
         }
         return cached;
     }
 
-    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): dto.CallHierarchyIncomingCall {
+    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall, sessionId: string): dto.CallHierarchyIncomingCall {
         return {
-            callerDefinition: this.fromCallHierarchyItem(caller.from),
-            references: caller.fromRanges.map(l => this.fromRange(l))
+            from: this.fromCallHierarchyItem(caller.from, sessionId),
+            fromRanges: caller.fromRanges.map(r => fromRange(r))
         };
     }
 
-    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall): dto.CallHierarchyOutgoingCall {
+    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall, sessionId: string): dto.CallHierarchyOutgoingCall {
         return {
-            callerDefinition: this.fromCallHierarchyItem(caller.to),
-            references: caller.fromRanges.map(this.fromRange.bind(this)),
+            to: this.fromCallHierarchyItem(caller.to, sessionId),
+            fromRanges: caller.fromRanges.map(r => fromRange(r)),
         };
+    }
+
+    releaseSession(session?: string): Promise<boolean> {
+        console.log('SENTINEL FOR BEING ASKED TO RELEASE A SESSION!', session);
+        if (session !== undefined) {
+            return Promise.resolve(this.cache.delete(session));
+        } else {
+            this.cache.clear();
+            return Promise.resolve(true);
+        }
     }
 }

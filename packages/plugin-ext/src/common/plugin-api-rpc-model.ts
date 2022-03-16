@@ -543,7 +543,7 @@ export interface CallHierarchyItem {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
-    data: unknown;
+    data?: unknown;
 }
 
 export interface CallHierarchyIncomingCall {

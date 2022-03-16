@@ -613,7 +613,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideRootDefinition(
         handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken
-    ): Promise<CallHierarchyItem | CallHierarchyItem[] | undefined> {
+    ): Promise<CallHierarchyItem[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token), undefined);
     }
 
@@ -623,6 +623,10 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideCallees(handle: number, definition: CallHierarchyItem, token: theia.CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallees(definition, token), undefined);
+    }
+
+    $releaseCallHierarchy(handle: number, session?: string): Promise<boolean> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.releaseSession(session), false);
     }
     // ### Call Hierarchy Provider end
 

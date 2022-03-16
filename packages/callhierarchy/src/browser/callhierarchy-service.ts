@@ -19,18 +19,23 @@ import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-
 import { CancellationToken } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, Disposable, Emitter, Event } from '@theia/core/lib/common';
-import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from './callhierarchy';
+import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCalls } from './callhierarchy';
 import { LanguageSelector, score } from '../common/language-selector';
 
 export const CallHierarchyService = Symbol('CallHierarchyService');
+
+export interface CallHierarchySession {
+    items: CallHierarchyItem[];
+    dispose(): void;
+}
 
 export interface CallHierarchyService {
 
     readonly selector: LanguageSelector;
 
-    getRootDefinition(uri: DocumentUri, position: Position, cancellationToken: CancellationToken): Promise<CallHierarchyItem | CallHierarchyItem[] | undefined>
+    getRootDefinition(uri: DocumentUri, position: Position, cancellationToken: CancellationToken): Promise<CallHierarchySession | undefined>
     getCallers(definition: CallHierarchyItem, cancellationToken: CancellationToken): Promise<CallHierarchyIncomingCall[] | undefined>
-    getCallees?(definition: CallHierarchyItem, cancellationToken: CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined>
+    getCallees?(definition: CallHierarchyItem, cancellationToken: CancellationToken): Promise<CallHierarchyOutgoingCalls[] | undefined>
 }
 
 @injectable()
