@@ -103,10 +103,6 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
         return null; // eslint-disable-line no-null/no-null
     }
 
-    // getSingleModifierDispatchParts(): (string | null)[] {
-    //     return []; /* NOOP */
-    // }
-
     private toKeybinding(keyCode: KeyCode): SimpleKeybinding {
         return new SimpleKeybinding(
             keyCode.ctrl,
