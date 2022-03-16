@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CompositeTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
-import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
+import { CallHierarchyTree, ItemNode } from './callhierarchy-tree';
 import { CallHierarchyServiceProvider } from '../callhierarchy-service';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -56,7 +56,7 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
                         children: [],
                         visible: false,
                     };
-                    definitions.forEach(definition => CompositeTreeNode.addChild(root, DefinitionNode.create(definition, root)));
+                    definitions.forEach(definition => CompositeTreeNode.addChild(root, ItemNode.create(definition, root)));
                     this.tree.root = root;
                 }
             }

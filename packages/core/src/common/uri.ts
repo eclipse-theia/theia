@@ -17,7 +17,11 @@
 import { URI as Uri } from 'vscode-uri';
 import { Path } from './path';
 
-export default class URI {
+export class URI {
+
+    public static fromComponents(components: UriComponents): URI {
+        return new URI(Uri.revive(components));
+    }
 
     private readonly codeUri: Uri;
     private _path: Path | undefined;
@@ -245,4 +249,25 @@ export default class URI {
     private hasSameOrigin(uri: URI): boolean {
         return (this.authority === uri.authority) && (this.scheme === uri.scheme);
     }
+
+    toComponents(): UriComponents {
+        return {
+            scheme: this.scheme,
+            authority: this.authority,
+            path: this.path.toString(),
+            query: this.query,
+            fragment: this.fragment
+        };
+    }
 }
+
+export interface UriComponents {
+    scheme: string;
+    authority: string;
+    path: string;
+    query: string;
+    fragment: string;
+    external?: string;
+}
+
+export default URI;

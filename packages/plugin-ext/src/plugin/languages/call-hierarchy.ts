@@ -17,7 +17,7 @@
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import * as model from '../../common/plugin-api-rpc-model';
+import * as dto from '../../common/plugin-api-rpc-model';
 import * as rpc from '../../common/plugin-api-rpc';
 import * as types from '../types-impl';
 
@@ -32,7 +32,7 @@ export class CallHierarchyAdapter {
 
     async provideRootDefinition(
         resource: URI, position: rpc.Position, token: theia.CancellationToken
-    ): Promise<model.CallHierarchyDefinition | model.CallHierarchyDefinition[] | undefined> {
+    ): Promise<dto.CallHierarchyItem | dto.CallHierarchyItem[] | undefined> {
         this.cache.clear();
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
@@ -54,7 +54,7 @@ export class CallHierarchyAdapter {
         return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item)) : this.fromCallHierarchyItem(definition);
     }
 
-    async provideCallers(definition: model.CallHierarchyDefinition, token: theia.CancellationToken): Promise<model.CallHierarchyReference[] | undefined> {
+    async provideCallers(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyIncomingCall[] | undefined> {
         const callers = await this.provider.provideCallHierarchyIncomingCalls(this.toCallHierarchyItem(definition), token);
         if (!callers) {
             return undefined;
@@ -63,7 +63,7 @@ export class CallHierarchyAdapter {
         return callers.map(item => this.fromCallHierarchyIncomingCall(item));
     }
 
-    async provideCallees(definition: model.CallHierarchyDefinition, token: theia.CancellationToken): Promise<model.CallHierarchyReference[] | undefined> {
+    async provideCallees(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyOutgoingCall[] | undefined> {
         const callees = await this.provider.provideCallHierarchyOutgoingCalls(this.toCallHierarchyItem(definition), token);
         if (!callees) {
             return undefined;
@@ -72,7 +72,7 @@ export class CallHierarchyAdapter {
         return callees.map(item => this.fromCallHierarchyOutgoingCall(item));
     }
 
-    private fromCallHierarchyItem(item: theia.CallHierarchyItem): model.CallHierarchyDefinition {
+    private fromCallHierarchyItem(item: theia.CallHierarchyItem): dto.CallHierarchyItem {
         const data = this.cache.size.toString(36);
         const definition = {
             uri: item.uri,
@@ -87,7 +87,7 @@ export class CallHierarchyAdapter {
         return definition;
     }
 
-    private fromRange(range: theia.Range): model.Range {
+    private fromRange(range: theia.Range): dto.Range {
         return {
             startLineNumber: range.start.line + 1,
             startColumn: range.start.character + 1,
@@ -96,7 +96,7 @@ export class CallHierarchyAdapter {
         };
     }
 
-    private toCallHierarchyItem(definition: model.CallHierarchyDefinition): theia.CallHierarchyItem {
+    private toCallHierarchyItem(definition: dto.CallHierarchyItem): theia.CallHierarchyItem {
         const cached = this.cache.get(definition.data as string);
         if (!cached) {
             throw new Error(`Found no cached item corresponding to ${definition.name} in ${definition.uri.path} with ID ${definition.data}.`);
@@ -104,14 +104,14 @@ export class CallHierarchyAdapter {
         return cached;
     }
 
-    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): model.CallHierarchyReference {
+    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): dto.CallHierarchyIncomingCall {
         return {
             callerDefinition: this.fromCallHierarchyItem(caller.from),
             references: caller.fromRanges.map(l => this.fromRange(l))
         };
     }
 
-    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall): model.CallHierarchyReference {
+    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall): dto.CallHierarchyOutgoingCall {
         return {
             callerDefinition: this.fromCallHierarchyItem(caller.to),
             references: caller.fromRanges.map(this.fromRange.bind(this)),
