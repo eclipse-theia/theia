@@ -1120,8 +1120,8 @@ export class FileService {
         // if target exists get valid target
         if (exists && !overwrite) {
             const parent = await this.resolve(target.parent);
-            const name = isSameResourceWithDifferentPathCase ? target.path.name : target.path.name + '_copy';
-            target = FileSystemUtils.generateUniqueResourceURI(target.parent, parent, name, target.path.ext);
+            const targetFileStat = await this.resolve(target);
+            target = FileSystemUtils.generateUniqueResourceURI(parent, target, targetFileStat.isDirectory, isSameResourceWithDifferentPathCase ? 'copy' : undefined);
         }
 
         // delete as needed (unless target is same resource with different path case)
