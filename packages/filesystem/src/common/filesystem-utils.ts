@@ -18,24 +18,47 @@ import { FileStat } from '../common/files';
 import URI from '@theia/core/lib/common/uri';
 
 export namespace FileSystemUtils {
+    export const FILE_NAME_SEPARATOR = ' ';
 
     /**
      * Generate unique URI for a given parent which does not collide
      *
-     * @param parentUri the `URI` of the parent
      * @param parent the `FileStat` of the parent
-     * @param name the resource name
-     * @param ext the resource extension
+     * @param targetUri the initial URI
+     * @param isDirectory indicates whether the given targetUri represents a directory
+     * @param suffix an optional string to append to the file name, in case of collision (e.g. `copy`)
      */
-    export function generateUniqueResourceURI(parentUri: URI, parent: FileStat, name: string, ext: string = ''): URI {
+    export function generateUniqueResourceURI(parent: FileStat, targetUri: URI, isDirectory: boolean, suffix?: string): URI {
         const children = !parent.children ? [] : parent.children!.map(child => child.resource);
+        let name = targetUri.path.name;
+        let extension = targetUri.path.ext;
+        if (!name) {
+            // special case for dotfiles (e.g. '.foobar'): use the extension as the name
+            name = targetUri.path.ext;
+            extension = '';
+        }
+        // we want the path base for directories with the source path `foo.bar` to be generated as `foo.bar copy` and not `foo copy.bar` as we do for files
+        if (isDirectory) {
+            name = name + extension;
+            extension = '';
+        }
 
-        let index = 1;
-        let base = name + ext;
+        let base = name + extension;
+        // test if the name already contains the suffix or the suffix + index, so we don't add it again
+        const nameRegex = RegExp(`.*${FileSystemUtils.FILE_NAME_SEPARATOR}${suffix}(${FileSystemUtils.FILE_NAME_SEPARATOR}[0-9]*)?$`);
+        if (suffix && !nameRegex.test(name) && children.some(child => child.path.base === base)) {
+            name = name + FILE_NAME_SEPARATOR + suffix;
+            base = name + extension;
+        }
+        if (suffix && nameRegex.test(name)) {
+            // remove the existing index from the name, so we can generate a new one
+            name = name.replace(RegExp(`${FILE_NAME_SEPARATOR}[0-9]*$`), '');
+        }
+        let index = 0;
         while (children.some(child => child.path.base === base)) {
             index = index + 1;
-            base = name + '_' + index + ext;
+            base = name + FILE_NAME_SEPARATOR + index + extension;
         }
-        return parentUri.resolve(base);
+        return parent.resource.resolve(base);
     }
 }

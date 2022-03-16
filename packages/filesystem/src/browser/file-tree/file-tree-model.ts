@@ -151,13 +151,16 @@ export class FileTreeModel extends CompressedTreeModel implements LocationServic
     }
 
     async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI> {
-        let targetUri = target.uri.resolve(source.path.base);
+        /** If the target is a file or if the target is a directory, but is the same as the source, use the parent of the target as a destination. */
+        const parentNode = (target.fileStat.isFile || target.uri.isEqual(source)) ? target.parent : target;
+        if (!FileStatNode.is(parentNode)) {
+            throw new Error('Parent of file has to be a FileStatNode');
+        }
+        let targetUri = parentNode.uri.resolve(source.path.base);
         try {
-            if (source.path.toString() === target.uri.path.toString()) {
-                const parent = await this.fileService.resolve(source.parent);
-                const name = source.path.name + '_copy';
-                targetUri = FileSystemUtils.generateUniqueResourceURI(source.parent, parent, name, source.path.ext);
-            }
+            const parent = await this.fileService.resolve(parentNode.uri);
+            const sourceFileStat = await this.fileService.resolve(source);
+            targetUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, sourceFileStat.isDirectory, 'copy');
             await this.fileService.copy(source, targetUri);
         } catch (e) {
             this.messageService.error(e.message);

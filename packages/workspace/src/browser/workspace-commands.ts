@@ -246,7 +246,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 if (parent) {
                     const parentUri = parent.resource;
                     const { fileName, fileExtension } = this.getDefaultFileConfig();
-                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, fileName, fileExtension);
+                    const targetUri = parentUri.resolve(fileName + fileExtension);
+                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, false);
 
                     const dialog = new WorkspaceInputDialog({
                         title: nls.localizeByDefault('New File'),
@@ -270,7 +271,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
                     const parentUri = parent.resource;
-                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled');
+                    const targetUri = parentUri.resolve('Untitled');
+                    const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, true);
                     const dialog = new WorkspaceInputDialog({
                         title: nls.localizeByDefault('New Folder'),
                         parentUri: parentUri,
