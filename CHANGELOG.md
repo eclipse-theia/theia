@@ -25,6 +25,15 @@
   - `commandService`, `instantiationService` removed from `MonacoEditor`. Use `StandaloneServices.get(IInstantationService / ICommandService)` instead.
   - `DecorationMiniMapOptions.position`, `DecorationOverviewRulerOptions.position` no longer optional.
   - Overrides used by `MonacoEditorFactory` accept the type `EditorServiceOverrides` rather than `{[key: string]: any}`.
+- [debug] The interface method `DebugService#provideDynamicDebugConfigurations` changes the return type to  `Record<string, DebugConfiguration[]>`.
+This impacts the corresponding return type for `DebugConfigurationManager#provideDynamicDebugConfigurations`.
+The following functions under `plugin-api-rpc.ts#DebugExt` and in the `PluginDebugAdapterContribution` are deprecated
+  * $provideDebugConfigurations
+  * $resolveDebugConfigurations
+  * $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+
+  The `PluginDebugAdapterContributionRegistrator` interface has been removed
+
 
 ## v1.23.0 - 2/24/2022
 

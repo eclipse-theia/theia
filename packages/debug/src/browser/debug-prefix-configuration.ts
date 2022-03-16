@@ -122,12 +122,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         }
 
         // Resolve dynamic configurations from providers
-        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
-        for (const typeConfigurations of configurationsByType) {
-            const dynamicConfigurations = typeConfigurations.configurations;
+        const record = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
+        for (const [type, dynamicConfigurations] of Object.entries(record)) {
             if (dynamicConfigurations.length > 0) {
                 items.push({
-                    label: typeConfigurations.type,
+                    label: type,
                     type: 'separator'
                 });
             }

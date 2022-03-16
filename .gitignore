@@ -31,3 +31,4 @@ dev-packages/electron/compile_commands.json
 scripts/download
 license-check-summary.txt*
 *-trace.json
+.tours

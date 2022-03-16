@@ -19,6 +19,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import {
+    DebugConfigurationProviderDescriptor,
     DebugMain,
     DebugExt,
     MAIN_RPC_CONTEXT
@@ -40,10 +41,11 @@ import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
+import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
 import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
-import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
+import { PluginDebugService } from './plugin-debug-service';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -67,12 +69,13 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly outputChannelManager: OutputChannelManager;
     private readonly debugPreferences: DebugPreferences;
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
-    private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
+    private readonly pluginDebugService: PluginDebugService;
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
     private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
+    private readonly configurationProviders = new Map<number, DisposableCollection>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, readonly connectionMain: ConnectionImpl, container: interfaces.Container) {
@@ -87,7 +90,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.messages = container.get(MessageClient);
         this.outputChannelManager = container.get(OutputChannelManager);
         this.debugPreferences = container.get(DebugPreferences);
-        this.adapterContributionRegistrator = container.get(PluginDebugService);
+        this.pluginDebugService = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
         this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
@@ -160,7 +163,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         );
         this.debuggerContributions.set(debugType, toDispose);
         toDispose.pushAll([
-            this.adapterContributionRegistrator.registerDebugAdapterContribution(
+            this.pluginDebugService.registerDebugAdapterContribution(
                 new PluginDebugAdapterContribution(description, this.debugExt, this.pluginService)
             ),
             this.sessionContributionRegistrator.registerDebugSessionContribution({
@@ -173,6 +176,27 @@ export class DebugMainImpl implements DebugMain, Disposable {
 
     async $unregisterDebuggerConfiguration(debugType: string): Promise<void> {
         const disposable = this.debuggerContributions.get(debugType);
+        if (disposable) {
+            disposable.dispose();
+        }
+    }
+
+    $registerDebugConfigurationProvider(description: DebugConfigurationProviderDescriptor): void {
+        const handle = description.handle;
+        const toDispose = new DisposableCollection(
+            Disposable.create(() => this.configurationProviders.delete(handle))
+        );
+        this.configurationProviders.set(handle, toDispose);
+
+        toDispose.push(
+            this.pluginDebugService.registerDebugConfigurationProvider(new PluginDebugConfigurationProvider(description, this.debugExt))
+        );
+
+        this.toDispose.push(Disposable.create(() => this.$unregisterDebugConfigurationProvider(handle)));
+    }
+
+    async $unregisterDebugConfigurationProvider(handle: number): Promise<void> {
+        const disposable = this.configurationProviders.get(handle);
         if (disposable) {
             disposable.dispose();
         }
