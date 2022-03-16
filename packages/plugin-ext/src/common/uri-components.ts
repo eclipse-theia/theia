@@ -81,11 +81,5 @@ export namespace Schemes {
 }
 
 export function theiaUritoUriComponents(uri: URI): UriComponents {
-    return {
-        scheme: uri.scheme,
-        authority: uri.authority,
-        path: uri.path.toString(),
-        query: uri.query,
-        fragment: uri.fragment
-    };
+    return uri.toComponents();
 }

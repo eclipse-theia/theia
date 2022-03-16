@@ -114,7 +114,6 @@ export class CallHierarchyAdapter {
     }
 
     releaseSession(session?: string): Promise<boolean> {
-        console.log('SENTINEL FOR BEING ASKED TO RELEASE A SESSION!', session);
         if (session !== undefined) {
             return Promise.resolve(this.cache.delete(session));
         } else {

@@ -19,26 +19,6 @@ import { UriComponents } from '@theia/core/lib/common/uri';
 
 export const CALLHIERARCHY_ID = 'callhierarchy';
 
-// export interface Definition {
-//     location: Location,
-//     selectionRange: Range,
-//     symbolName: string,
-//     symbolKind: SymbolKind,
-//     containerName: string | undefined,
-//     tags?: readonly SymbolTag[];
-//     data?: unknown,
-// }
-
-// export interface Caller {
-//     callerDefinition: Definition,
-//     references: Range[]
-// }
-
-// export interface Callee {
-//     calleeDefinition: Definition,
-//     references: Range[]
-// }
-
 export interface CallHierarchyItem {
     _sessionId?: string;
     _itemId?: string;

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as dto from '@theia/plugin';
+import * as theia from '@theia/plugin';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
@@ -47,7 +47,7 @@ export interface TextDocumentShowOptions {
      * and each column represents one editor location in that grid by counting the editors
      * in order of their appearance.
      */
-    viewColumn?: dto.ViewColumn;
+    viewColumn?: theia.ViewColumn;
 }
 
 export interface Range {
@@ -81,7 +81,7 @@ export interface SerializedDocumentFilter {
     $serialized: true;
     language?: string;
     scheme?: string;
-    pattern?: dto.GlobPattern;
+    pattern?: theia.GlobPattern;
 }
 
 export enum CompletionTriggerKind {
@@ -242,7 +242,7 @@ export interface SignatureHelp extends IdObject {
 }
 
 export interface SignatureHelpContext {
-    triggerKind: dto.SignatureHelpTriggerKind;
+    triggerKind: theia.SignatureHelpTriggerKind;
     triggerCharacter?: string;
     isRetrigger: boolean;
     activeSignatureHelp?: SignatureHelp;
@@ -516,22 +516,6 @@ export interface RenameLocation {
     text: string;
 }
 
-// export interface CallHierarchyDefinition {
-//     name: string;
-//     kind: SymbolKind;
-//     detail?: string;
-//     uri: UriComponents;
-//     range: Range;
-//     selectionRange: Range;
-//     tags?: readonly SymbolTag[];
-//     data: unknown;
-// }
-
-// export interface CallHierarchyReference {
-//     callerDefinition: CallHierarchyDefinition,
-//     references: Range[]
-// }
-
 export interface CallHierarchyItem {
     _sessionId?: string;
     _itemId?: string;
@@ -577,19 +561,19 @@ export interface LinePreview {
 /**
  * @deprecated Use {@link theia.AuthenticationSession} instead.
  */
-export interface AuthenticationSession extends dto.AuthenticationSession {
+export interface AuthenticationSession extends theia.AuthenticationSession {
 }
 
 /**
  * @deprecated Use {@link theia.AuthenticationProviderAuthenticationSessionsChangeEvent} instead.
  */
-export interface AuthenticationSessionsChangeEvent extends dto.AuthenticationProviderAuthenticationSessionsChangeEvent {
+export interface AuthenticationSessionsChangeEvent extends theia.AuthenticationProviderAuthenticationSessionsChangeEvent {
 }
 
 /**
  * @deprecated Use {@link theia.AuthenticationProviderInformation} instead.
  */
-export interface AuthenticationProviderInformation extends dto.AuthenticationProviderInformation {
+export interface AuthenticationProviderInformation extends theia.AuthenticationProviderInformation {
 }
 
 export interface CommentOptions {
