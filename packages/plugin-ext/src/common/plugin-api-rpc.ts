@@ -1651,16 +1651,50 @@ export enum DebugConfigurationProviderTriggerKind {
     Dynamic = 2
 }
 
+export interface DebugConfigurationProvider {
+    readonly handle: number;
+    readonly type: string;
+    readonly triggerKind: DebugConfigurationProviderTriggerKind;
+    provideDebugConfigurations?(folder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    resolveDebugConfiguration?(folder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+    resolveDebugConfigurationWithSubstitutedVariables?(folder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+}
+
+export interface DebugConfigurationProviderDescriptor {
+    readonly handle: number,
+    readonly type: string,
+    readonly trigger: DebugConfigurationProviderTriggerKind,
+    readonly provideDebugConfiguration: boolean,
+    readonly resolveDebugConfigurations: boolean,
+    readonly resolveDebugConfigurationWithSubstitutedVariables: boolean
+}
+
 export interface DebugExt {
     $onSessionCustomEvent(sessionId: string, event: string, body?: any): void;
     $breakpointsDidChange(added: Breakpoint[], removed: string[], changed: Breakpoint[]): void;
     $sessionDidCreate(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
+    /**
+     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $provideDebugConfigurationsByHandle instead.
+     */
     $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined, dynamic?: boolean): Promise<theia.DebugConfiguration[]>;
+
+    /**
+     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $resolveDebugConfigurationByHandle instead.
+     */
     $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
+
+    /**
+     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $resolveDebugConfigurationWithSubstitutedVariablesByHandle instead.
+     */
     $resolveDebugConfigurationWithSubstitutedVariables(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined):
         Promise<theia.DebugConfiguration | undefined>;
+
+    $provideDebugConfigurationsByHandle(handle: number, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
+    $resolveDebugConfigurationByHandle(handle: number, workspaceFolder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+    $resolveDebugConfigurationWithSubstitutedVariablesByHandle(handle: number, workspaceFolder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+
     $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
     $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined>;
@@ -1671,6 +1705,8 @@ export interface DebugMain {
     $appendLineToDebugConsole(value: string): Promise<void>;
     $registerDebuggerContribution(description: DebuggerDescription): Promise<void>;
     $unregisterDebuggerConfiguration(debugType: string): Promise<void>;
+    $registerDebugConfigurationProvider(description: DebugConfigurationProviderDescriptor): void;
+    $unregisterDebugConfigurationProvider(handle: number): Promise<void>;
     $addBreakpoints(breakpoints: Breakpoint[]): Promise<void>;
     $removeBreakpoints(breakpoints: string[]): Promise<void>;
     $startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration, options: theia.DebugSessionOptions): Promise<boolean>;

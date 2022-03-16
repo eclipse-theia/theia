@@ -344,7 +344,7 @@ export class DebugConfigurationManager {
         await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
     }
 
-    async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
+    async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
         await this.fireWillProvideDynamicDebugConfiguration();
         return this.debug.provideDynamicDebugConfigurations!();
     }
