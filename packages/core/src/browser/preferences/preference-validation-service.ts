@@ -80,6 +80,9 @@ export class PreferenceValidationService {
             if (Array.isArray(schema.anyOf)) {
                 return this.validateAnyOf(key, value, schema as ValidatablePreference & { anyOf: ValidatablePreference[] });
             }
+            if (Array.isArray(schema.oneOf)) {
+                return this.validateOneOf(key, value, schema as ValidatablePreference & { oneOf: ValidatablePreference[] });
+            }
             if (schema.type === undefined) {
                 console.warn('Request to validate preference with no type information:', key);
                 return value;
@@ -146,6 +149,28 @@ export class PreferenceValidationService {
             return this.validateAnyOf(key, configuredDefault, { ...schema, default: undefined, defaultValue: undefined });
         }
         return candidate;
+    }
+
+    protected validateOneOf(key: string, value: JSONValue, schema: ValidatablePreference & { oneOf: ValidatablePreference[] }): JSONValue {
+        let passed = false;
+        for (const subSchema of schema.oneOf) {
+            const validValue = this.validateBySchema(key, value, subSchema);
+            if (!passed && validValue === value) {
+                passed = true;
+            } else if (passed && validValue === value) {
+                passed = false;
+                break;
+            }
+        }
+        if (passed) {
+            return value;
+        }
+        if (schema.default !== undefined || schema.defaultValue !== undefined) {
+            const configuredDefault = this.getDefaultFromSchema(schema);
+            return this.validateOneOf(key, configuredDefault, { ...schema, default: undefined, defaultValue: undefined });
+        }
+        console.log(`While validating ${key}, failed to find a valid value or default value. Using configured value ${value}.`);
+        return value;
     }
 
     protected mapValidators(key: string, value: JSONValue, validators: Iterable<(value: JSONValue) => JSONValue>): JSONValue {

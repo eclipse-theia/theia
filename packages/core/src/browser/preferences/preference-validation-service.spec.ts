@@ -23,7 +23,7 @@ import { JSONValue } from '@phosphor/coreutils';
 
 /* eslint-disable no-unused-expressions,no-null/no-null */
 
-describe('Preference Validation Service', () => {
+describe.only('Preference Validation Service', () => {
     const container = new Container();
     container.bind(PreferenceSchemaProvider).toConstantValue({ getDefaultValue: PreferenceSchemaProvider.prototype.getDefaultValue } as PreferenceSchemaProvider);
     container.bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
@@ -230,6 +230,20 @@ describe('Preference Validation Service', () => {
         it('bad input -> first validator, if default absent or default ill-formed', () => {
             assert.strictEqual(validateBySchema({}, { ...schema, default: 0 }), 1);
             assert.strictEqual(validateBySchema({}, { ...schema, default: undefined }), 1);
+        });
+    });
+    describe('should validate oneOfs', () => {
+        // Between 4 and 6 should be rejected
+        const schema: PreferenceItem = { oneOf: [{ type: 'number', minimum: 1, maximum: 6 }, { type: 'number', minimum: 4, maximum: 10 }], default: 8 };
+        it('good input -> returns same value', () => {
+            assert.strictEqual(validateBySchema(2, schema), 2);
+            assert.strictEqual(validateBySchema(7, schema), 7);
+        });
+        it('bad input -> returns default if present and valid', () => {
+            assert.strictEqual(validateBySchema(5, schema), 8);
+        });
+        it('bad input -> returns value if default absent or invalid.', () => {
+            assert.strictEqual(validateBySchema(5, { ...schema, default: undefined }), 5);
         });
     });
     describe('should maintain triple equality for valid object types', () => {
