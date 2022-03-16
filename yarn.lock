@@ -2153,9 +2153,9 @@
     defer-to-connect "^2.0.0"
 
 "@theia/monaco-editor-core@alpha":
-  version "0.31.2-alpha2"
-  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-0.31.2-alpha2.tgz#d6c7fc2689e41561e4f5b5e3f5f963fc363f6c2b"
-  integrity sha512-YK2U1x4lsfDyU/7kdi6gHFHM70dVZvOBuUwLgPUrip8++6g7lvyDMGJ96z/9Wvm3QVNf9hxsb+VOjc2GvUFnpg==
+  version "1.65.2-alpha0"
+  resolved "https://registry.yarnpkg.com/@theia/monaco-editor-core/-/monaco-editor-core-1.65.2-alpha0.tgz#0b3fa572c9f4e4930fc3a2c61aa35e94ac6fa41a"
+  integrity sha512-7BuZtv4ULhKMbyWpKcO22RbCk06nfoOH9JAii7OLcqvEnE0GLY0teBHQuDkMSB0OMtYU+1SJY0cplZu5PfV5Nw==
 
 "@tootallnate/once@1":
   version "1.1.2"

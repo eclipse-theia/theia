@@ -20,7 +20,7 @@ import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-servi
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import * as monaco from '@theia/monaco-editor-core';
-import { clearLanguageAssociations, registerLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
+import { clearConfiguredLanguageAssociations, registerConfiguredLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 @injectable()
@@ -47,11 +47,11 @@ export class MonacoMimeService extends MimeService {
     protected updateAssociations = debounce(() => {
         this.updatingAssociations = true;
         try {
-            clearLanguageAssociations(true);
+            clearConfiguredLanguageAssociations();
 
             for (const association of this.associations) {
                 const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
-                registerLanguageAssociation({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
+                registerConfiguredLanguageAssociation({ id: association.id, mime: mimetype, filepattern: association.filepattern });
             }
             (StandaloneServices.get(ILanguageService) as LanguageService)['_onDidChange'].fire(undefined);
         } finally {
