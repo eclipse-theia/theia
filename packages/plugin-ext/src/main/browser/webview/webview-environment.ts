@@ -60,8 +60,14 @@ export class WebviewEnvironment {
         return (await this.externalEndpointUrl()).toString(true);
     }
 
-    async resourceRoot(): Promise<string> {
-        return (await this.externalEndpointUrl()).resolve('theia-resource/{{resource}}').toString(true);
+    async resourceRoot(host: string): Promise<string> {
+        if (host === 'frontend') {
+            return (await this.externalEndpointUrl()).withPath('{{path}}').toString(true);
+        }
+
+        // Make sure we preserve the scheme of the resource but convert it into a normal path segment
+        // The scheme is important as we need to know if we are requesting a local or a remote resource.
+        return (await this.externalEndpointUrl()).resolve('theia-resource/{{scheme}}//{{authority}}/{{path}}').toString(true);
     }
 
     async cspSource(): Promise<string> {
