@@ -80,6 +80,7 @@
     background: var(--theia-editor-background);
     border-right: unset;
     border-bottom: var(--theia-border-width) solid var(--theia-tab-unfocusedInactiveForeground);
+    border-top: none;
 }
 
 #theia-main-content-panel .theia-settings-container .tabbar-underline {
