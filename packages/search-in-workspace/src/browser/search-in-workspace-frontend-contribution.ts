@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import {
-    AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution, CommonCommands
+    AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution, CommonCommands, WatermarkCommandRegistry,
+    WatermarkCommandContribution
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -103,7 +104,8 @@ export namespace SearchInWorkspaceCommands {
 }
 
 @injectable()
-export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
+export class SearchInWorkspaceFrontendContribution extends AbstractViewContribution<SearchInWorkspaceWidget> implements FrontendApplicationContribution, TabBarToolbarContribution,
+    WatermarkCommandContribution {
 
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -125,6 +127,13 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
                 rank: 200
             },
             toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
+        });
+    }
+
+    registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
+        registry.registerWatermarkCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id, {
+            rank: 2,
+            isVisible: () => this.workspaceService.tryGetRoots().length > 0
         });
     }
 

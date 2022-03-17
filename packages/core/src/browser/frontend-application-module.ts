@@ -122,6 +122,10 @@ import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
+import { WatermarkWidget } from './watermark/watermark-widget';
+import { WatermarkCommandRegistry } from './watermark/watermark-command-registry';
+import { KeybindingUtil } from './keybinding/keybinding-util';
+import { WatermarkCommandApplicationContribution, WatermarkCommandContribution } from './watermark';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -224,6 +228,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     });
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
+    bind(KeybindingUtil).toSelf().inSingletonScope();
 
     bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
 
@@ -253,7 +258,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
+    [CommandContribution, KeybindingContribution, MenuContribution, WatermarkCommandContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
     bind(QuickCommandService).toSelf().inSingletonScope();
@@ -400,4 +405,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(SaveResourceService).toSelf().inSingletonScope();
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
+
+    bind(WatermarkWidget).toSelf().inSingletonScope();
+    bind(WatermarkCommandRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, WatermarkCommandContribution);
+    bind(WatermarkCommandApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(WatermarkCommandApplicationContribution);
 });

@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { KeybindingRegistry } from '../keybinding';
-import { Disposable, Command, CommandRegistry, CancellationToken } from '../../common';
+import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
 import { ContextKeyService } from '../context-key-service';
 import { CorePreferences } from '../core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
@@ -25,7 +25,8 @@ import { KeySequence } from '../keys';
 import { codiconArray } from '../widgets';
 
 export const quickCommand: Command = {
-    id: 'workbench.action.showCommands'
+    id: 'workbench.action.showCommands',
+    label: nls.localizeByDefault('Show All Commands')
 };
 
 export const CLEAR_COMMAND_HISTORY = Command.toDefaultLocalizedCommand({

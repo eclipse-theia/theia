@@ -42,3 +42,5 @@ export * from './view-container';
 export * from './breadcrumbs';
 export * from './tooltip-service';
 export * from './decoration-style';
+export * from './keybinding';
+export * from './watermark';
