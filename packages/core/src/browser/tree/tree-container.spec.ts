@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as assert from 'assert';
-import { isTreeServices } from './tree-container';
+import { Container } from 'inversify';
+import { createTreeContainer, isTreeServices } from './tree-container';
 import { TreeSearch } from './tree-search';
-import { defaultTreeProps } from './tree-widget';
+import { defaultTreeProps, TreeProps } from './tree-widget';
 
 describe('TreeContainer', () => {
     describe('IsTreeServices should accurately distinguish TreeProps from TreeContainerProps', () => {
@@ -27,6 +28,17 @@ describe('TreeContainer', () => {
         });
         it('should assign search:not-a-boolean to TreeContainerProps', () => {
             assert(isTreeServices({ search: TreeSearch }) === true);
+        });
+        const nonDefault = { search: !defaultTreeProps.search, contextMenu: ['no-default-for-this'] };
+        it('should use props passed in as just props', () => {
+            const parent = new Container();
+            const child = createTreeContainer(parent, nonDefault);
+            assert.deepStrictEqual(child.get(TreeProps), { ...defaultTreeProps, ...nonDefault });
+        });
+        it('should use props passed in as part of TreeContainerProps', () => {
+            const parent = new Container();
+            const child = createTreeContainer(parent, { props: nonDefault });
+            assert.deepStrictEqual(child.get(TreeProps), { ...defaultTreeProps, ...nonDefault });
         });
     });
 });
