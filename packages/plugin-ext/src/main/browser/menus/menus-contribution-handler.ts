@@ -526,11 +526,9 @@ export class MenusContributionPointHandler {
         const command: Command = { id: commandId };
         const action: MenuAction = { commandId, alt: altId, order, when: menu.when };
 
-        menuPath = inline ? menuPath : [...menuPath, ...group.split('/')];
-
         toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
         toDispose.push(this.quickCommandService?.pushCommandContext(commandId, 'false'));
-        toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
+        toDispose.push(this.menuRegistry.registerMenuAction(inline ? menuPath : [...menuPath, ...group.split('/')], action));
         toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
             command.category = pluginCommand.category;
             command.label = pluginCommand.label;
