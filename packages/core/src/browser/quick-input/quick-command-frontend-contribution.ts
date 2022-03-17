@@ -19,9 +19,10 @@ import { KeybindingRegistry, KeybindingContribution } from '../keybinding';
 import { CommonMenus } from '../common-frontend-contribution';
 import { CLEAR_COMMAND_HISTORY, quickCommand, QuickCommandService } from './quick-command-service';
 import { QuickInputService } from './quick-input-service';
+import { WatermarkCommandContribution, WatermarkCommandRegistry } from '../watermark';
 
 @injectable()
-export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
+export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, WatermarkCommandContribution {
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
@@ -38,6 +39,10 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
         commands.registerCommand(CLEAR_COMMAND_HISTORY, {
             execute: () => commands.clearCommandHistory(),
         });
+    }
+
+    registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
+        registry.registerWatermarkCommand(quickCommand.id);
     }
 
     registerMenus(menus: MenuModelRegistry): void {

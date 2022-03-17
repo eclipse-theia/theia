@@ -39,6 +39,7 @@ import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
 import { SaveResourceService } from '../save-resource-service';
+import { WatermarkWidget } from '../watermark/watermark-widget';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -207,6 +208,9 @@ export class ApplicationShell extends Widget {
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
 
+    @inject(WatermarkWidget)
+    protected readonly watermarkWidget: WatermarkWidget;
+
     /**
      * Construct a new application shell.
      */
@@ -317,6 +321,10 @@ export class ApplicationShell extends Widget {
         document.addEventListener('p-dragover', this, true);
         document.addEventListener('p-dragleave', this, true);
         document.addEventListener('p-drop', this, true);
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        Widget.attach(this.watermarkWidget, this.mainPanel.node);
     }
 
     protected override onAfterDetach(msg: Message): void {

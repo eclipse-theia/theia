@@ -16,7 +16,7 @@
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, KeybindingContribution, WatermarkCommandContribution } from '@theia/core/lib/browser';
 import {
     OpenFileDialogFactory,
     SaveFileDialogFactory,
@@ -65,7 +65,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     }).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
-    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution]) {
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, WatermarkCommandContribution]) {
         bind(identifier).toService(WorkspaceFrontendContribution);
     }
 

@@ -18,15 +18,18 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
 import { CommandRegistry, CommandContribution, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
-import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution } from '@theia/core/lib/browser';
+import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution, WatermarkCommandRegistry, WatermarkCommandContribution } from '@theia/core/lib/browser';
 import { EditorMainMenu } from '@theia/editor/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 @injectable()
-export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution, MenuContribution {
+export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution, MenuContribution, WatermarkCommandContribution {
 
     @inject(QuickFileOpenService)
     protected readonly quickFileOpenService: QuickFileOpenService;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
@@ -62,5 +65,13 @@ export class QuickFileOpenFrontendContribution implements QuickAccessContributio
 
     registerQuickAccessProvider(): void {
         this.quickFileOpenService.registerQuickAccessProvider();
+    }
+
+    registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
+        // 'Open File...' command should be visible in the watermark widget
+        registry.registerWatermarkCommand(quickFileOpen.id, {
+            rank: 1,
+            isVisible: () => this.workspaceService.tryGetRoots().length > 0
+        });
     }
 }

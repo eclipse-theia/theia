@@ -14,7 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
+import {
+    AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon, WatermarkCommandContribution,
+    WatermarkCommandRegistry
+} from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
@@ -52,6 +55,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
 import { nls } from '@theia/core/lib/common/nls';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -389,7 +393,8 @@ export namespace DebugBreakpointWidgetCommands {
 }
 
 @injectable()
-export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {
+export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution,
+    WatermarkCommandContribution {
 
     @inject(DebugService)
     protected readonly debug: DebugService;
@@ -426,6 +431,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     constructor() {
         super({
@@ -1490,6 +1498,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
 
         return true;
+    }
+
+    registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
+        registry.registerWatermarkCommand(DebugCommands.START.id, {
+            rank: 10,
+            isVisible: () => this.workspaceService.tryGetRoots().length > 0
+        });
     }
 
 }

@@ -19,7 +19,8 @@ import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegist
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, ConfirmDialog, KeybindingRegistry, KeybindingContribution,
-    FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
+    FrontendApplicationContribution, SaveableSource, Widget, Navigatable, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction,
+    WatermarkCommandRegistry, WatermarkCommandContribution
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -58,7 +59,7 @@ export type WorkspaceState = keyof typeof WorkspaceStates;
 export type WorkbenchState = keyof typeof WorkspaceStates;
 
 @injectable()
-export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution {
+export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution, WatermarkCommandContribution {
 
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
@@ -159,6 +160,21 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 }
             }
 
+        });
+    }
+
+    registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
+        registry.registerWatermarkCommand(WorkspaceCommands.OPEN_FOLDER.id, {
+            isVisible: () => this.workspaceService.tryGetRoots().length === 0
+        });
+        registry.registerWatermarkCommand(WorkspaceCommands.OPEN_WORKSPACE.id, {
+            isVisible: () => this.workspaceService.tryGetRoots().length === 0
+        });
+        registry.registerWatermarkCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE.id, {
+            isVisible: () => this.workspaceService.tryGetRoots().length === 0
+        });
+        registry.registerWatermarkCommand(WorkspaceCommands.OPEN.id, {
+            isVisible: () => this.workspaceService.tryGetRoots().length === 0
         });
     }
 

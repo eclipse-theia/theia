@@ -22,7 +22,7 @@ import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution, KeybindingContext
+    bindViewContribution, KeybindingContext, WatermarkCommandContribution
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
@@ -108,6 +108,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(FrontendApplicationContribution).toService(DebugFrontendApplicationContribution);
     bind(TabBarToolbarContribution).toService(DebugFrontendApplicationContribution);
     bind(ColorContribution).toService(DebugFrontendApplicationContribution);
+    bind(WatermarkCommandContribution).toService(DebugFrontendApplicationContribution);
 
     bind(DebugSessionContributionRegistryImpl).toSelf().inSingletonScope();
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);
