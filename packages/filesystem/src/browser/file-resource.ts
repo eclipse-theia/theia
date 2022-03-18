@@ -25,6 +25,7 @@ import { FileService, TextFileOperationError, TextFileOperationResult } from './
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -297,6 +298,9 @@ export class FileResourceResolver implements ResourceResolver {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(FrontendApplicationStateService)
+    protected readonly applicationState: FrontendApplicationStateService;
+
     async resolve(uri: URI): Promise<FileResource> {
         let stat;
         try {
@@ -326,13 +330,21 @@ export class FileResourceResolver implements ResourceResolver {
     }
 
     protected async shouldOpenAsText(uri: URI, error: string): Promise<boolean> {
-        const dialog = new ConfirmDialog({
-            title: error,
-            msg: `Opening it might take some time and might make the IDE unresponsive. Do you want to open '${this.labelProvider.getLongName(uri)}' anyway?`,
-            ok: 'Yes',
-            cancel: 'No'
-        });
-        return !!await dialog.open();
+        switch (this.applicationState.state) {
+            case 'init':
+            case 'started_contributions':
+            case 'attached_shell':
+                return true; // We're restoring state - assume that we should open files that were previously open.
+            default: {
+                const dialog = new ConfirmDialog({
+                    title: error,
+                    msg: `Opening it might take some time and might make the IDE unresponsive. Do you want to open '${this.labelProvider.getLongName(uri)}' anyway?`,
+                    ok: 'Yes',
+                    cancel: 'No'
+                });
+                return !!await dialog.open();
+            }
+        }
     }
 
 }
