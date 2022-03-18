@@ -16,14 +16,14 @@
 
 import { ElementHandle } from '@playwright/test';
 import { TheiaPageObject } from './theia-page-object';
-import { USER_KEY_TYPING_DELAY } from './util';
+import { OSUtil, USER_KEY_TYPING_DELAY } from './util';
 
 export class TheiaQuickCommandPalette extends TheiaPageObject {
 
     selector = '.quick-input-widget';
 
     async open(): Promise<void> {
-        await this.page.keyboard.press('Control+Shift+p');
+        await this.page.keyboard.press(OSUtil.isMacOS ? 'Meta+Shift+p' : 'Control+Shift+p');
         await this.page.waitForSelector(this.selector);
     }
 
