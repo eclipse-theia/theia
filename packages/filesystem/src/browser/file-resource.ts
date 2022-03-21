@@ -22,7 +22,7 @@ import { Readable, ReadableStream } from '@theia/core/lib/common/stream';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities, FileReadStreamOptions, BinarySize } from '../common/files';
 import { FileService, TextFileOperationError, TextFileOperationResult } from './file-service';
-import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -327,8 +327,8 @@ export class FileResourceResolver implements ResourceResolver {
             title: nls.localize('theia/filesystem/fileResource/overwriteTitle', "The file '{0}' has been changed on the file system.", this.labelProvider.getName(uri)),
             msg: nls.localize('theia/fileSystem/fileResource/overWriteBody',
                 "Do you want to overwrite the changes made to '{0}' on the file system?", this.labelProvider.getLongName(uri)),
-            ok: 'Yes',
-            cancel: 'No'
+            ok: Dialog.YES,
+            cancel: Dialog.NO,
         });
         return !!await dialog.open();
     }
@@ -345,8 +345,8 @@ export class FileResourceResolver implements ResourceResolver {
                     msg: nls.localize('theia/filesystem/fileResource/binaryFileQuery',
                         "Opening it might take some time and might make the IDE unresponsive. Do you want to open '{0}' anyway?", this.labelProvider.getLongName(uri)
                     ),
-                    ok: 'Yes',
-                    cancel: 'No'
+                    ok: Dialog.YES,
+                    cancel: Dialog.NO,
                 });
                 return !!await dialog.open();
             }
