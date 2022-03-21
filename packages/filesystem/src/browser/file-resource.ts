@@ -26,6 +26,7 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { nls } from '@theia/core';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -110,14 +111,15 @@ export class FileResource implements Resource {
             return stat.value;
         } catch (e) {
             if (e instanceof TextFileOperationError && e.textFileOperationResult === TextFileOperationResult.FILE_IS_BINARY) {
-                if (await this.shouldOpenAsText('The file is either binary or uses an unsupported text encoding.')) {
+                if (await this.shouldOpenAsText(nls.localize('theia/filesystem/fileResource/binaryTitle', 'The file is either binary or uses an unsupported text encoding.'))) {
                     this.acceptTextOnly = false;
                     return this.readContents(options);
                 }
             } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE) {
                 const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
                 const maxFileSize = GENERAL_MAX_FILE_SIZE_MB * 1024 * 1024;
-                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(`The file is too large (${BinarySize.formatSize(stat.size)}).`)) {
+                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(nls.localize(
+                    'theia/filesystem/fileResource/largeFileTitle', 'The file is too large ({0}).', BinarySize.formatSize(stat.size)))) {
                     this.limits = {
                         size: maxFileSize
                     };
@@ -154,14 +156,15 @@ export class FileResource implements Resource {
             return stat.value;
         } catch (e) {
             if (e instanceof TextFileOperationError && e.textFileOperationResult === TextFileOperationResult.FILE_IS_BINARY) {
-                if (await this.shouldOpenAsText('The file is either binary or uses an unsupported text encoding.')) {
+                if (await this.shouldOpenAsText(nls.localize('theia/filesystem/fileResource/binaryTitle', 'The file is either binary or uses an unsupported text encoding.'))) {
                     this.acceptTextOnly = false;
                     return this.readStream(options);
                 }
             } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE) {
                 const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
                 const maxFileSize = GENERAL_MAX_FILE_SIZE_MB * 1024 * 1024;
-                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(`The file is too large (${BinarySize.formatSize(stat.size)}).`)) {
+                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(nls.localize(
+                    'theia/filesystem/fileResource/largeFileTitle', 'The file is too large ({0}).', BinarySize.formatSize(stat.size)))) {
                     this.limits = {
                         size: maxFileSize
                     };
@@ -321,8 +324,9 @@ export class FileResourceResolver implements ResourceResolver {
 
     protected async shouldOverwrite(uri: URI): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: `The file '${this.labelProvider.getName(uri)}' has been changed on the file system.`,
-            msg: `Do you want to overwrite the changes made to '${this.labelProvider.getLongName(uri)}' on the file system?`,
+            title: nls.localize('theia/filesystem/fileResource/overwriteTitle', "The file '{0}' has been changed on the file system.", this.labelProvider.getName(uri)),
+            msg: nls.localize('theia/fileSystem/fileResource/overWriteBody',
+                "Do you want to overwrite the changes made to '{0}' on the file system?", this.labelProvider.getLongName(uri)),
             ok: 'Yes',
             cancel: 'No'
         });
@@ -338,7 +342,9 @@ export class FileResourceResolver implements ResourceResolver {
             default: {
                 const dialog = new ConfirmDialog({
                     title: error,
-                    msg: `Opening it might take some time and might make the IDE unresponsive. Do you want to open '${this.labelProvider.getLongName(uri)}' anyway?`,
+                    msg: nls.localize('theia/filesystem/fileResource/binaryFileQuery',
+                        "Opening it might take some time and might make the IDE unresponsive. Do you want to open '{0}' anyway?", this.labelProvider.getLongName(uri)
+                    ),
                     ok: 'Yes',
                     cancel: 'No'
                 });
