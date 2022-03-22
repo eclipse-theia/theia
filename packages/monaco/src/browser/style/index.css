@@ -4,6 +4,12 @@
   font-size: inherit !important;
 }
 
+#quick-input-container {
+  position: fixed;
+  right: 50%;
+  z-index: 1000000;
+}
+
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */

@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import {
+    ApplicationShell,
     InputBox, InputOptions, KeybindingRegistry, PickOptions,
     QuickInputButton, QuickInputHideReason, QuickInputService, QuickPick, QuickPickItem,
     QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     IInputBox, IInputOptions, IKeyMods, IPickOptions, IQuickInput, IQuickInputButton,
     IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent, IQuickPickSeparator, QuickPickInput
@@ -61,6 +62,9 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     controller: QuickInputController;
     quickAccess: IQuickAccessController;
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     @inject(VSCodeContextKeyService)
     protected readonly contextKeyService: VSCodeContextKeyService;
 
@@ -71,7 +75,8 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     get onShow(): monaco.IEvent<void> { return this.controller.onShow; }
     get onHide(): monaco.IEvent<void> { return this.controller.onHide; }
 
-    constructor() {
+    @postConstruct()
+    protected init(): void {
         this.initContainer();
         this.initController();
         this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService));
@@ -149,15 +154,9 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     private initContainer(): void {
-        const overlayWidgets = document.createElement('div');
-        overlayWidgets.classList.add('quick-input-overlay');
-        document.body.appendChild(overlayWidgets);
-        const container = this.container = document.createElement('quick-input-container');
-        container.style.position = 'absolute';
-        container.style.top = '0px';
-        container.style.right = '50%';
-        container.style.zIndex = '1000000';
-        overlayWidgets.appendChild(container);
+        const container = this.container = document.createElement('div');
+        container.id = 'quick-input-container';
+        this.shell.mainPanel.node.appendChild(this.container);
     }
 
     private initController(): void {
