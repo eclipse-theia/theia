@@ -10461,6 +10461,13 @@ export module '@theia/plugin' {
         source?: string;
 
         /**
+         * A human-readable string which is rendered less prominently on a separate line in places
+         * where the task's name is displayed. Supports rendering of {@link ThemeIcon theme icons}
+         * via the `$(<name>)`-syntax.
+         */
+        detail?: string;
+
+        /**
          * The task group this tasks belongs to. See TaskGroup
          * for a predefined set of available groups.
          * Defaults to undefined meaning that the task doesn't
@@ -10478,9 +10485,10 @@ export module '@theia/plugin' {
         problemMatchers?: string[];
     }
 
-    export class Task2 extends Task {
-        detail?: string;
-    }
+    /**
+     * Task2 is kept for compatibility reasons.
+     */
+    export class Task2 extends Task { }
 
     export interface TaskProvider<T extends Task = Task> {
         /**
