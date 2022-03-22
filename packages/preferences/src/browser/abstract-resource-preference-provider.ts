@@ -25,7 +25,7 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
+import { PreferenceContext, PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
 import { Emitter, Event } from '@theia/core';
 
 @injectable()
@@ -114,7 +114,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
         if (!this.transaction?.open) {
             const current = this.transaction;
-            this.transaction = this.transactionFactory(this);
+            this.transaction = this.transactionFactory(this.toContext());
             this.transaction.onWillConclude(({ status, waitUntil }) => {
                 if (status) {
                     waitUntil((async () => {
@@ -127,6 +127,10 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             await current?.result;
         }
         return this.transaction.enqueueAction(key, path, value);
+    }
+
+    protected toContext(): PreferenceContext {
+        return this;
     }
 
     protected getPath(preferenceName: string): string[] | undefined {
