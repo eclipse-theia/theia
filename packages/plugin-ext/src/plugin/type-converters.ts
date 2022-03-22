@@ -735,7 +735,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         taskDto.problemMatcher = task.problemMatchers;
     }
     if ('detail' in task) {
-        taskDto.detail = (task as theia.Task2).detail;
+        taskDto.detail = task.detail;
     }
     if (typeof task.scope === 'object') {
         taskDto.scope = task.scope.uri.toString();
@@ -797,7 +797,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
     result.name = label;
     result.source = source;
     if (detail) {
-        (result as theia.Task2).detail = detail;
+        result.detail = detail;
     }
     if (typeof scope === 'string') {
         const uri = URI.parse(scope);

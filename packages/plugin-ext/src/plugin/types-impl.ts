@@ -2086,9 +2086,7 @@ export class Task {
 }
 
 @es5ClassCompat
-export class Task2 extends Task {
-    detail?: string;
-}
+export class Task2 extends Task { }
 
 @es5ClassCompat
 export class DebugAdapterExecutable {
