@@ -41,6 +41,12 @@ export class OutputChannelImpl implements theia.OutputChannel {
         this.append(value + '\n');
     }
 
+    replace(value: string): void {
+        this.validate();
+        this.clear();
+        this.append(value);
+    }
+
     clear(): void {
         this.validate();
         this.proxy.$clear(this.name);
