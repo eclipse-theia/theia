@@ -853,10 +853,10 @@ export function createAPIFactory(
             stopDebugging(session?: theia.DebugSession): Thenable<void> {
                 return debugExt.stopDebugging(session);
             },
-            addBreakpoints(breakpoints: theia.Breakpoint[]): void {
+            addBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
                 debugExt.addBreakpoints(breakpoints);
             },
-            removeBreakpoints(breakpoints: theia.Breakpoint[]): void {
+            removeBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
                 debugExt.removeBreakpoints(breakpoints);
             }
         };

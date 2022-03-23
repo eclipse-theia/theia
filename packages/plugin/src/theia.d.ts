@@ -10056,14 +10056,14 @@ export module '@theia/plugin' {
          * @param breakpoints The breakpoints to add.
          */
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        export function addBreakpoints(breakpoints: Breakpoint[]): void;
+        export function addBreakpoints(breakpoints: readonly Breakpoint[]): void;
 
         /**
          * Remove breakpoints.
          * @param breakpoints The breakpoints to remove.
          */
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        export function removeBreakpoints(breakpoints: Breakpoint[]): void;
+        export function removeBreakpoints(breakpoints: readonly Breakpoint[]): void;
     }
 
     /**
