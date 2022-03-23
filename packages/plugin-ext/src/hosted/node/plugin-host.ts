@@ -23,7 +23,7 @@ console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 // override exit() function, to do not allow plugin kill this node
 process.exit = function (code?: number): void {
-    const err = new Error('An plugin call process.exit() and it was prevented.');
+    const err = new Error('A plugin call process.exit(), and it was prevented.');
     console.warn(err.stack);
 } as (code?: number) => never;
 
@@ -32,7 +32,7 @@ process.exit = function (code?: number): void {
 const proc = process as any;
 if (proc.crash) {
     proc.crash = function (): void {
-        const err = new Error('An plugin call process.crash() and it was prevented.');
+        const err = new Error('A plugin call process.crash(), and it was prevented.');
         console.warn(err.stack);
     };
 }
@@ -75,17 +75,18 @@ process.on('rejectionHandled', (promise: Promise<any>) => {
 
 let terminating = false;
 const emitter = new Emitter<string>();
-const rpc = new RPCProtocolImpl({
-    onMessage: emitter.event,
-    send: (m: string) => {
-        if (process.send && !terminating) {
-            process.send(m);
+const rpc = new RPCProtocolImpl(
+    {
+        onMessage: emitter.event,
+        send: (m: string) => {
+            if (process.send && !terminating) {
+                process.send(m);
+            }
         }
-    }
-},
-{
-    reviver: reviver
-});
+    },
+    {
+        reviver
+    });
 
 process.on('message', async (message: string) => {
     if (terminating) {
