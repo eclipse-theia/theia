@@ -11,7 +11,7 @@
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
     "jsonc-parser": "^2.2.0",
-    "@theia/monaco-editor-core": "alpha",
+    "@theia/monaco-editor-core": "1.65.2",
     "onigasm": "^2.2.0",
     "vscode-textmate": "^4.4.0"
   },
