@@ -19,9 +19,14 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
+import * as monaco from '@theia/monaco-editor-core';
+import { IStandaloneTheme, IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
+import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 
 export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
-export interface MixStandaloneTheme extends monaco.services.IStandaloneTheme {
+export interface MixStandaloneTheme extends IStandaloneTheme {
     themeData: ThemeMix
 }
 
@@ -42,8 +47,8 @@ export class MonacoThemeRegistry {
     }
 
     protected doGetTheme(name: string | undefined): MixStandaloneTheme | undefined {
-        const standaloneThemeService = monaco.services.StaticServices.standaloneThemeService.get();
-        const theme = !name ? standaloneThemeService.getColorTheme() : standaloneThemeService._knownThemes.get(name);
+        const standaloneThemeService = StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService;
+        const theme = !name ? standaloneThemeService.getColorTheme() : standaloneThemeService['_knownThemes'].get(name);
         return theme as MixStandaloneTheme | undefined;
     }
 
@@ -100,7 +105,7 @@ export class MonacoThemeRegistry {
             }
 
             // the default rule (scope empty) is always the first rule. Ignore all other default rules.
-            const defaultTheme = monaco.services.StaticServices.standaloneThemeService.get()._knownThemes.get(result.base)!;
+            const defaultTheme = (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService)['_knownThemes'].get(result.base)!;
             const foreground = result.colors['editor.foreground'] || defaultTheme.getColor('editor.foreground');
             const background = result.colors['editor.background'] || defaultTheme.getColor('editor.background');
             result.settings.unshift({
@@ -135,7 +140,7 @@ export class MonacoThemeRegistry {
         }
     }
 
-    protected normalizeColor(color: string | monaco.color.Color | undefined): string | undefined {
+    protected normalizeColor(color: string | Color | undefined): string | undefined {
         if (!color) {
             return undefined;
         }

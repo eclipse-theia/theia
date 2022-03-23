@@ -26,7 +26,7 @@ import { URI } from 'vscode-uri';
 export interface Saveable {
     readonly dirty: boolean;
     readonly onDirtyChanged: Event<void>;
-    readonly autoSave: 'on' | 'off';
+    readonly autoSave: 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
     /**
      * Saves dirty changes.
      */
@@ -192,7 +192,7 @@ export namespace Saveable {
             return false;
         }
 
-        if (saveable.autoSave === 'on') {
+        if (saveable.autoSave !== 'off') {
             return true;
         }
 

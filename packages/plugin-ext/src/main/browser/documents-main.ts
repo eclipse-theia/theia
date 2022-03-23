@@ -30,6 +30,7 @@ import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
+import * as monaco from '@theia/monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

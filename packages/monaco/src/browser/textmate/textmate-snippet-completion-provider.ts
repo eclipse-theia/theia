@@ -14,6 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as monaco from '@theia/monaco-editor-core';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
+
 /**
  * @deprecated use MonacoSnippetSuggestProvider instead
  */
@@ -40,7 +43,7 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
     }
 
     protected replaceVariables(textmateSnippet: string): string {
-        return new monaco.snippetParser.SnippetParser().parse(textmateSnippet).toString();
+        return new SnippetParser().parse(textmateSnippet).toString();
     }
 
     provideCompletionItems(document: monaco.editor.ITextModel,

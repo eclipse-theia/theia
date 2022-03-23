@@ -19,10 +19,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as browser from '@theia/core/lib/browser';
+// This is exported as part of the public API, but we use it with private API's so we need to refer to the private version.
+import { KeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes';
+import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
 
-const KeyCode = monaco.KeyCode;
-
-export const KEY_CODE_MAP: monaco.KeyCode[] = [];
+export const KEY_CODE_MAP: KeyCode[] = [];
 (function (): void {
     KEY_CODE_MAP[3] = KeyCode.PauseBreak; // VK_CANCEL 0x03 Control-break processing
     KEY_CODE_MAP[8] = KeyCode.Backspace;
@@ -46,62 +47,62 @@ export const KEY_CODE_MAP: monaco.KeyCode[] = [];
     KEY_CODE_MAP[45] = KeyCode.Insert;
     KEY_CODE_MAP[46] = KeyCode.Delete;
 
-    KEY_CODE_MAP[48] = KeyCode.KEY_0;
-    KEY_CODE_MAP[49] = KeyCode.KEY_1;
-    KEY_CODE_MAP[50] = KeyCode.KEY_2;
-    KEY_CODE_MAP[51] = KeyCode.KEY_3;
-    KEY_CODE_MAP[52] = KeyCode.KEY_4;
-    KEY_CODE_MAP[53] = KeyCode.KEY_5;
-    KEY_CODE_MAP[54] = KeyCode.KEY_6;
-    KEY_CODE_MAP[55] = KeyCode.KEY_7;
-    KEY_CODE_MAP[56] = KeyCode.KEY_8;
-    KEY_CODE_MAP[57] = KeyCode.KEY_9;
+    KEY_CODE_MAP[48] = KeyCode.Digit0;
+    KEY_CODE_MAP[49] = KeyCode.Digit1;
+    KEY_CODE_MAP[50] = KeyCode.Digit2;
+    KEY_CODE_MAP[51] = KeyCode.Digit3;
+    KEY_CODE_MAP[52] = KeyCode.Digit4;
+    KEY_CODE_MAP[53] = KeyCode.Digit5;
+    KEY_CODE_MAP[54] = KeyCode.Digit6;
+    KEY_CODE_MAP[55] = KeyCode.Digit7;
+    KEY_CODE_MAP[56] = KeyCode.Digit8;
+    KEY_CODE_MAP[57] = KeyCode.Digit9;
 
-    KEY_CODE_MAP[65] = KeyCode.KEY_A;
-    KEY_CODE_MAP[66] = KeyCode.KEY_B;
-    KEY_CODE_MAP[67] = KeyCode.KEY_C;
-    KEY_CODE_MAP[68] = KeyCode.KEY_D;
-    KEY_CODE_MAP[69] = KeyCode.KEY_E;
-    KEY_CODE_MAP[70] = KeyCode.KEY_F;
-    KEY_CODE_MAP[71] = KeyCode.KEY_G;
-    KEY_CODE_MAP[72] = KeyCode.KEY_H;
-    KEY_CODE_MAP[73] = KeyCode.KEY_I;
-    KEY_CODE_MAP[74] = KeyCode.KEY_J;
-    KEY_CODE_MAP[75] = KeyCode.KEY_K;
-    KEY_CODE_MAP[76] = KeyCode.KEY_L;
-    KEY_CODE_MAP[77] = KeyCode.KEY_M;
-    KEY_CODE_MAP[78] = KeyCode.KEY_N;
-    KEY_CODE_MAP[79] = KeyCode.KEY_O;
-    KEY_CODE_MAP[80] = KeyCode.KEY_P;
-    KEY_CODE_MAP[81] = KeyCode.KEY_Q;
-    KEY_CODE_MAP[82] = KeyCode.KEY_R;
-    KEY_CODE_MAP[83] = KeyCode.KEY_S;
-    KEY_CODE_MAP[84] = KeyCode.KEY_T;
-    KEY_CODE_MAP[85] = KeyCode.KEY_U;
-    KEY_CODE_MAP[86] = KeyCode.KEY_V;
-    KEY_CODE_MAP[87] = KeyCode.KEY_W;
-    KEY_CODE_MAP[88] = KeyCode.KEY_X;
-    KEY_CODE_MAP[89] = KeyCode.KEY_Y;
-    KEY_CODE_MAP[90] = KeyCode.KEY_Z;
+    KEY_CODE_MAP[65] = KeyCode.KeyA;
+    KEY_CODE_MAP[66] = KeyCode.KeyB;
+    KEY_CODE_MAP[67] = KeyCode.KeyC;
+    KEY_CODE_MAP[68] = KeyCode.KeyD;
+    KEY_CODE_MAP[69] = KeyCode.KeyE;
+    KEY_CODE_MAP[70] = KeyCode.KeyF;
+    KEY_CODE_MAP[71] = KeyCode.KeyG;
+    KEY_CODE_MAP[72] = KeyCode.KeyH;
+    KEY_CODE_MAP[73] = KeyCode.KeyI;
+    KEY_CODE_MAP[74] = KeyCode.KeyJ;
+    KEY_CODE_MAP[75] = KeyCode.KeyK;
+    KEY_CODE_MAP[76] = KeyCode.KeyL;
+    KEY_CODE_MAP[77] = KeyCode.KeyM;
+    KEY_CODE_MAP[78] = KeyCode.KeyN;
+    KEY_CODE_MAP[79] = KeyCode.KeyO;
+    KEY_CODE_MAP[80] = KeyCode.KeyP;
+    KEY_CODE_MAP[81] = KeyCode.KeyQ;
+    KEY_CODE_MAP[82] = KeyCode.KeyR;
+    KEY_CODE_MAP[83] = KeyCode.KeyS;
+    KEY_CODE_MAP[84] = KeyCode.KeyT;
+    KEY_CODE_MAP[85] = KeyCode.KeyU;
+    KEY_CODE_MAP[86] = KeyCode.KeyV;
+    KEY_CODE_MAP[87] = KeyCode.KeyW;
+    KEY_CODE_MAP[88] = KeyCode.KeyX;
+    KEY_CODE_MAP[89] = KeyCode.KeyY;
+    KEY_CODE_MAP[90] = KeyCode.KeyZ;
 
     KEY_CODE_MAP[93] = KeyCode.ContextMenu;
 
-    KEY_CODE_MAP[96] = KeyCode.NUMPAD_0;
-    KEY_CODE_MAP[97] = KeyCode.NUMPAD_1;
-    KEY_CODE_MAP[98] = KeyCode.NUMPAD_2;
-    KEY_CODE_MAP[99] = KeyCode.NUMPAD_3;
-    KEY_CODE_MAP[100] = KeyCode.NUMPAD_4;
-    KEY_CODE_MAP[101] = KeyCode.NUMPAD_5;
-    KEY_CODE_MAP[102] = KeyCode.NUMPAD_6;
-    KEY_CODE_MAP[103] = KeyCode.NUMPAD_7;
-    KEY_CODE_MAP[104] = KeyCode.NUMPAD_8;
-    KEY_CODE_MAP[105] = KeyCode.NUMPAD_9;
-    KEY_CODE_MAP[106] = KeyCode.NUMPAD_MULTIPLY;
-    KEY_CODE_MAP[107] = KeyCode.NUMPAD_ADD;
+    KEY_CODE_MAP[96] = KeyCode.Numpad0;
+    KEY_CODE_MAP[97] = KeyCode.Numpad1;
+    KEY_CODE_MAP[98] = KeyCode.Numpad2;
+    KEY_CODE_MAP[99] = KeyCode.Numpad3;
+    KEY_CODE_MAP[100] = KeyCode.Numpad4;
+    KEY_CODE_MAP[101] = KeyCode.Numpad5;
+    KEY_CODE_MAP[102] = KeyCode.Numpad6;
+    KEY_CODE_MAP[103] = KeyCode.Numpad7;
+    KEY_CODE_MAP[104] = KeyCode.Numpad8;
+    KEY_CODE_MAP[105] = KeyCode.Numpad9;
+    KEY_CODE_MAP[106] = KeyCode.NumpadMultiply;
+    KEY_CODE_MAP[107] = KeyCode.NumpadAdd;
     KEY_CODE_MAP[108] = KeyCode.NUMPAD_SEPARATOR;
-    KEY_CODE_MAP[109] = KeyCode.NUMPAD_SUBTRACT;
-    KEY_CODE_MAP[110] = KeyCode.NUMPAD_DECIMAL;
-    KEY_CODE_MAP[111] = KeyCode.NUMPAD_DIVIDE;
+    KEY_CODE_MAP[109] = KeyCode.NumpadSubtract;
+    KEY_CODE_MAP[110] = KeyCode.NumpadDecimal;
+    KEY_CODE_MAP[111] = KeyCode.NumpadDivide;
 
     KEY_CODE_MAP[112] = KeyCode.F1;
     KEY_CODE_MAP[113] = KeyCode.F2;
@@ -126,22 +127,22 @@ export const KEY_CODE_MAP: monaco.KeyCode[] = [];
     KEY_CODE_MAP[144] = KeyCode.NumLock;
     KEY_CODE_MAP[145] = KeyCode.ScrollLock;
 
-    KEY_CODE_MAP[186] = KeyCode.US_SEMICOLON;
-    KEY_CODE_MAP[187] = KeyCode.US_EQUAL;
-    KEY_CODE_MAP[188] = KeyCode.US_COMMA;
-    KEY_CODE_MAP[189] = KeyCode.US_MINUS;
-    KEY_CODE_MAP[190] = KeyCode.US_DOT;
-    KEY_CODE_MAP[191] = KeyCode.US_SLASH;
-    KEY_CODE_MAP[192] = KeyCode.US_BACKTICK;
+    KEY_CODE_MAP[186] = KeyCode.Semicolon;
+    KEY_CODE_MAP[187] = KeyCode.Equal;
+    KEY_CODE_MAP[188] = KeyCode.Comma;
+    KEY_CODE_MAP[189] = KeyCode.Minus;
+    KEY_CODE_MAP[190] = KeyCode.Period;
+    KEY_CODE_MAP[191] = KeyCode.Slash;
+    KEY_CODE_MAP[192] = KeyCode.Backquote;
     KEY_CODE_MAP[193] = KeyCode.ABNT_C1;
     KEY_CODE_MAP[194] = KeyCode.ABNT_C2;
-    KEY_CODE_MAP[219] = KeyCode.US_OPEN_SQUARE_BRACKET;
-    KEY_CODE_MAP[220] = KeyCode.US_BACKSLASH;
-    KEY_CODE_MAP[221] = KeyCode.US_CLOSE_SQUARE_BRACKET;
-    KEY_CODE_MAP[222] = KeyCode.US_QUOTE;
+    KEY_CODE_MAP[219] = KeyCode.BracketLeft;
+    KEY_CODE_MAP[220] = KeyCode.Backslash;
+    KEY_CODE_MAP[221] = KeyCode.BracketRight;
+    KEY_CODE_MAP[222] = KeyCode.Quote;
     KEY_CODE_MAP[223] = KeyCode.OEM_8;
 
-    KEY_CODE_MAP[226] = KeyCode.OEM_102;
+    KEY_CODE_MAP[226] = KeyCode.IntlBackslash;
 
     /**
      * https://lists.w3.org/Archives/Public/www-dom/2010JulSep/att-0182/keyCode-spec.html
@@ -152,15 +153,15 @@ export const KEY_CODE_MAP: monaco.KeyCode[] = [];
     if (browser.isIE) {
         KEY_CODE_MAP[91] = KeyCode.Meta;
     } else if (browser.isFirefox) {
-        KEY_CODE_MAP[59] = KeyCode.US_SEMICOLON;
-        KEY_CODE_MAP[107] = KeyCode.US_EQUAL;
-        KEY_CODE_MAP[109] = KeyCode.US_MINUS;
-        if (monaco.platform.OS === monaco.platform.OperatingSystem.Macintosh) {
+        KEY_CODE_MAP[59] = KeyCode.Semicolon;
+        KEY_CODE_MAP[107] = KeyCode.Equal;
+        KEY_CODE_MAP[109] = KeyCode.Minus;
+        if (MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh) {
             KEY_CODE_MAP[224] = KeyCode.Meta;
         }
     } else if (browser.isWebKit) {
         KEY_CODE_MAP[91] = KeyCode.Meta;
-        if (monaco.platform.OS === monaco.platform.OperatingSystem.Macintosh) {
+        if (MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh) {
             // the two meta keys in the Mac have different key codes (91 and 93)
             KEY_CODE_MAP[93] = KeyCode.Meta;
         } else {

@@ -40,6 +40,8 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
 import { ContributionProvider } from '@theia/core/lib/common';
+import * as monaco from '@theia/monaco-editor-core';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class PluginContributionHandler {
@@ -360,13 +362,13 @@ export class PluginContributionHandler {
         const toDispose = new DisposableCollection();
         for (const { iconUrl, themeIcon, command, category, title, originalTitle } of contribution.commands) {
             const reference = iconUrl && this.style.toIconClass(iconUrl);
-            const icon = themeIcon && monaco.theme.ThemeIcon.fromString(themeIcon);
+            const icon = themeIcon && ThemeIcon.fromString(themeIcon);
             let iconClass;
             if (reference) {
                 toDispose.push(reference);
                 iconClass = reference.object.iconClass;
             } else if (icon) {
-                iconClass = monaco.theme.ThemeIcon.asClassName(icon);
+                iconClass = ThemeIcon.asClassName(icon);
             }
             toDispose.push(this.registerCommand({ id: command, category, label: title, originalLabel: originalTitle, iconClass }));
         }

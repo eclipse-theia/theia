@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     MAIN_RPC_CONTEXT,

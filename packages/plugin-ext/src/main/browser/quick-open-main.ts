@@ -25,7 +25,8 @@ import {
     TransferInputBox,
     TransferQuickPickItems,
     TransferQuickInput,
-    TransferQuickInputButton
+    TransferQuickInputButton,
+    TransferQuickPickItemValue
 } from '../../common/plugin-api-rpc';
 import {
     InputOptions,
@@ -37,12 +38,14 @@ import {
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
-import * as theia from '@theia/plugin';
 import { QuickInputButtons } from '../../plugin/types-impl';
 import { getIconUris } from '../../plugin/quick-open';
+import * as monaco from '@theia/monaco-editor-core';
+import { IQuickPickItem, IQuickInput } from '@theia/monaco-editor-core/esm/vs/base/parts/quickinput/common/quickInput';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 export interface QuickInputSession {
-    input: monaco.quickInput.IQuickInput;
+    input: IQuickInput;
     handlesToItems: Map<number, TransferQuickPickItems>;
 }
 
@@ -68,7 +71,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $show(instance: number, options: PickOptions<TransferQuickPickItems>, token: CancellationToken): Promise<number | number[] | undefined> {
+    async $show(instance: number, options: PickOptions<TransferQuickPickItemValue>, token: CancellationToken): Promise<number | number[] | undefined> {
         const contents = new Promise<TransferQuickPickItems[]>((resolve, reject) => {
             this.items[instance] = { resolve, reject };
         });
@@ -82,21 +85,14 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
             }
         };
 
-        if (options.canPickMany) {
-            return this.delegate.pick(contents, options as { canPickMany: true }, token).then(items => {
-                if (items) {
-                    return items.map(item => item.handle);
-                }
-                return undefined;
-            });
-        } else {
-            return this.delegate.pick(contents, options, token).then(item => {
-                if (item) {
-                    return item.handle;
-                }
-                return undefined;
-            });
+        const result = await this.delegate.pick<TransferQuickPickItemValue>(contents, options, token);
+
+        if (Array.isArray(result)) {
+            return result.map(({ handle }) => handle);
+        } else if (result) {
+            return result.handle;
         }
+        return undefined;
     }
 
     $setItems(instance: number, items: TransferQuickPickItems[]): Promise<any> {
@@ -194,19 +190,20 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
 
     private sessions = new Map<number, QuickInputSession>();
 
-    $createOrUpdate<T extends theia.QuickPickItem>(params: TransferQuickInput): Promise<void> {
+    $createOrUpdate(params: TransferQuickInput): Promise<void> {
         const sessionId = params.id;
-        let session = this.sessions.get(sessionId);
-        if (!session) {
+        let session: QuickInputSession;
+        const candidate = this.sessions.get(sessionId);
+        if (!candidate) {
             if (params.type === 'quickPick') {
                 const quickPick = this.quickInputService.createQuickPick();
                 quickPick.onDidAccept(() => {
                     this.proxy.$acceptOnDidAccept(sessionId);
                 });
-                quickPick.onDidChangeActive((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                quickPick.onDidChangeActive((items: Array<IQuickPickItem>) => {
                     this.proxy.$onDidChangeActive(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
                 });
-                quickPick.onDidChangeSelection((items: Array<monaco.quickInput.IQuickPickItem>) => {
+                quickPick.onDidChangeSelection((items: Array<IQuickPickItem>) => {
                     this.proxy.$onDidChangeSelection(sessionId, items.map(item => (item as TransferQuickPickItems).handle));
                 });
                 quickPick.onDidTriggerButton((button: QuickInputButtonHandle) => {
@@ -242,6 +239,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                 };
             }
             this.sessions.set(sessionId, session);
+        } else {
+            session = candidate;
         }
         if (session) {
             const { input, handlesToItems } = session;
@@ -273,7 +272,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, Disposable {
                         const { iconPath, tooltip, handle } = button;
                         if ('id' in iconPath) {
                             return {
-                                iconClass: monaco.theme.ThemeIcon.asClassName(iconPath),
+                                iconClass: ThemeIcon.asClassName(iconPath),
                                 tooltip,
                                 handle
                             };

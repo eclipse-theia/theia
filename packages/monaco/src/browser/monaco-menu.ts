@@ -19,7 +19,7 @@ import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@t
 import { EditorMainMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { nls } from '@theia/core/lib/common/nls';
-import MenuRegistry = monaco.actions.MenuRegistry;
+import { isIMenuItem, MenuId, MenuRegistry } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
 
 export interface MonacoActionGroup {
     id: string;
@@ -39,8 +39,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.EditorContext)) {
-            if (!monaco.actions.isIMenuItem(item)) {
+        for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
+            if (!isIMenuItem(item)) {
                 continue;
             }
             const commandId = this.commands.validate(item.command.id);
@@ -53,8 +53,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         this.registerPeekSubmenu(registry);
 
         registry.registerSubmenu(MonacoMenus.SELECTION, nls.localizeByDefault('Selection'));
-        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.MenubarSelectionMenu)) {
-            if (!monaco.actions.isIMenuItem(item)) {
+        for (const item of MenuRegistry.getMenuItems(MenuId.MenubarSelectionMenu)) {
+            if (!isIMenuItem(item)) {
                 continue;
             }
             const commandId = this.commands.validate(item.command.id);
@@ -115,8 +115,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     protected registerPeekSubmenu(registry: MenuModelRegistry): void {
         registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, nls.localizeByDefault('Peek'));
 
-        for (const item of MenuRegistry.getMenuItems(monaco.actions.MenuId.EditorContextPeek)) {
-            if (!monaco.actions.isIMenuItem(item)) {
+        for (const item of MenuRegistry.getMenuItems(MenuId.EditorContextPeek)) {
+            if (!isIMenuItem(item)) {
                 continue;
             }
             const commandId = this.commands.validate(item.command.id);

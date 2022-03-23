@@ -2078,8 +2078,8 @@ export module '@theia/plugin' {
     /**
      * Represents an item that can be selected from a list of items.
      */
-    export interface QuickPickItem {
-        type?: 'item' | 'separator';
+    export interface QuickPickItemValue {
+        type?: 'item';
         /**
          * The item label
          */
@@ -2105,6 +2105,13 @@ export module '@theia/plugin' {
          */
         alwaysShow?: boolean;
     }
+
+    export interface QuickPickSeparator {
+        type: 'separator';
+        label?: string;
+    }
+
+    export type QuickPickItem = QuickPickSeparator | QuickPickItemValue;
 
     /**
      * A concrete [QuickInput](#QuickInput) to let the user pick an item from a

@@ -25,6 +25,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState, stateToTheme } from './monaco-indexed-db';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoTheme {
     id?: string;

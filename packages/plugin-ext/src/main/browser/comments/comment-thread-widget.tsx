@@ -35,6 +35,7 @@ import {
 } from '@theia/core/lib/common';
 import { CommentsContextKeyService } from './comments-context-key-service';
 import { RefObject } from '@theia/core/shared/react';
+import * as monaco from '@theia/monaco-editor-core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

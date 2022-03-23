@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { INITIAL, StackElement, IGrammar } from 'vscode-textmate';
+import * as monaco from '@theia/monaco-editor-core';
 
 export class TokenizerState implements monaco.languages.IState {
 
@@ -69,7 +70,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
-                processedLine = line.substr(0, options.lineLimit);
+                processedLine = line.substring(0, options.lineLimit);
             }
             const result = grammar.tokenizeLine2(processedLine, state.ruleStack);
             return {
@@ -81,7 +82,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized
-                processedLine = line.substr(0, options.lineLimit);
+                processedLine = line.substring(0, options.lineLimit);
             }
             const result = grammar.tokenizeLine(processedLine, state.ruleStack);
             return {

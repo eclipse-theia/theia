@@ -492,7 +492,7 @@ describe('Launch Preferences', function () {
         describe(JSON.stringify(configMode, undefined, 2), () => {
             const configPaths = Array.isArray(configMode) ? configMode : [configMode];
 
-            /** @typedef {monaco.editor.IReference<import('@theia/monaco/lib/browser/monaco-editor-model').MonacoEditorModel>} ConfigModelReference */
+            /** @typedef {import('@theia/monaco-editor-core/esm/vs/base/common/lifecycle').IReference<import('@theia/monaco/lib/browser/monaco-editor-model').MonacoEditorModel>} ConfigModelReference */
             /** @type {ConfigModelReference[]} */
             beforeEach(async () => {
                 /** @type {Promise<void>[]} */

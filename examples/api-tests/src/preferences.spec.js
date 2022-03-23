@@ -24,23 +24,27 @@ describe('Preferences', function () {
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PreferenceLanguageOverrideService } = require('@theia/core/lib/browser/preferences/preference-language-override-service');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
+    const { PreferenceSchemaProvider } = require('@theia/core/lib/browser/preferences/preference-contribution')
     const { container } = window.theia;
     /** @type {import ('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferenceService = container.get(PreferenceService);
+    /** @type {import ('@theia/core/lib/browser/preferences/preference-language-override-service').PreferenceLanguageOverrideService} */
     const overrideService = container.get(PreferenceLanguageOverrideService);
     const fileService = container.get(FileService);
     /** @type {import ('@theia/core/lib/common/uri').default} */
     const uri = preferenceService.getConfigUri(PreferenceScope.Workspace);
     /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
     const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
+    /** @type PreferenceSchemaProvider */
+    const schemaProvider = container.get(PreferenceSchemaProvider);
     const modelService = container.get(MonacoTextModelService);
 
-    const swift = 'swift'; // Probably not in our preference files...
+    const overrideIdentifier = 'bargle-noddle-zaus'; // Probably not in our preference files...
     const tabSize = 'editor.tabSize';
     const fontSize = 'editor.fontSize';
-    const override = overrideService.markLanguageOverride(swift);
-    const overriddenTabSize = overrideService.overridePreferenceName({ overrideIdentifier: swift, preferenceName: tabSize });
-    const overriddenFontSize = overrideService.overridePreferenceName({ overrideIdentifier: swift, preferenceName: fontSize });
+    const override = overrideService.markLanguageOverride(overrideIdentifier);
+    const overriddenTabSize = overrideService.overridePreferenceName({ overrideIdentifier, preferenceName: tabSize });
+    const overriddenFontSize = overrideService.overridePreferenceName({ overrideIdentifier, preferenceName: fontSize });
     /**
      * @returns {Promise<Record<string, any>>}
      */
@@ -80,6 +84,7 @@ describe('Preferences', function () {
         assert.isDefined(uri, 'The workspace config URI should be defined!');
         fileExistsBeforehand = await fileService.exists(uri);
         contentBeforehand = await fileService.read(uri).then(({ value }) => value).catch(() => '');
+        schemaProvider.registerOverrideIdentifier(overrideIdentifier);
         await deleteAllValues();
     });
 

@@ -16,23 +16,28 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { StandaloneGotoLineQuickAccessProvider } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoLineQuickAccess';
+import { IQuickAccessRegistry, Extensions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
 
-export class GotoLineQuickAccess extends monaco.quickInput.StandaloneGotoLineQuickAccessProvider {
+export class GotoLineQuickAccess extends StandaloneGotoLineQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...services: any[]);
-    constructor(@monaco.services.ICodeEditorService private readonly service: monaco.editor.ICodeEditorService) {
+    constructor(@ICodeEditorService private readonly service: ICodeEditorService) {
         super(service);
     }
 
-    override get activeTextEditorControl(): monaco.editor.ICodeEditor | undefined {
-        return this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor();
+    override get activeTextEditorControl(): ICodeEditor | undefined {
+        return (this.service.getFocusedCodeEditor() || this.service.getActiveCodeEditor()) ?? undefined;
     }
 }
 
 @injectable()
 export class GotoLineQuickAccessContribution implements QuickAccessContribution {
     registerQuickAccessProvider(): void {
-        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
+        Registry.as<IQuickAccessRegistry>(Extensions.Quickaccess).registerQuickAccessProvider({
             ctor: GotoLineQuickAccess,
             prefix: ':',
             placeholder: '',

@@ -24,6 +24,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface WorkspaceSymbolProvider {
     provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;

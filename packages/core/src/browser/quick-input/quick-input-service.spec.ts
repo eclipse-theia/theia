@@ -73,7 +73,7 @@ describe('quick-input-service', () => {
                     ]
                 }
             };
-            const result = filterItems(items, 'abc');
+            const result = filterItems(items, 'abc').filter(QuickPickItem.is);
             expect(result).length(1);
             expect(result[0].label).equal(expectation.label);
             expect(result[0].highlights?.label).deep.equal(expectation.highlights?.label);
@@ -89,7 +89,7 @@ describe('quick-input-service', () => {
                     ]
                 }
             };
-            const result = filterItems(items, 'v');
+            const result = filterItems(items, 'v').filter(QuickPickItem.is);
             expect(result).length(1);
             expect(result[0].label).equal(expectation.label);
             expect(result[0].description).equal(expectation.description);
@@ -108,7 +108,7 @@ describe('quick-input-service', () => {
                     ]
                 }
             };
-            const result = filterItems(items, 'y');
+            const result = filterItems(items, 'y').filter(QuickPickItem.is);
             expect(result).length(1);
             expect(result[0].label).equal(expectation.label);
             expect(result[0].description).equal(expectation.description);
@@ -135,7 +135,7 @@ describe('quick-input-service', () => {
                     ]
                 }
             };
-            const result = filterItems(items, 'z');
+            const result = filterItems(items, 'z').filter(QuickPickItem.is);
             expect(result).length(1);
 
             expect(result[0].label).equal(expectation.label);
@@ -158,12 +158,12 @@ describe('quick-input-service', () => {
                     ]
                 }
             };
-            let result = filterItems(items, 'abc');
+            let result = filterItems(items, 'abc').filter(QuickPickItem.is);
             expect(result).length(1);
             expect(result[0].label).equal(expectation.label);
             expect(result[0].highlights?.label).deep.equal(expectation.highlights?.label);
 
-            result = filterItems(items, '');
+            result = filterItems(items, '').filter(QuickPickItem.is);
             expect(result[0].highlights?.label).equal(undefined);
         });
 

@@ -16,16 +16,21 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MonacoWorkspace } from './monaco-workspace';
+import {
+    IBulkEditOptions, IBulkEditPreviewHandler, IBulkEditResult, IBulkEditService, ResourceEdit
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 
 @injectable()
-export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
+export class MonacoBulkEditService implements IBulkEditService {
+    declare readonly _serviceBrand: undefined;
 
     @inject(MonacoWorkspace)
     protected readonly workspace: MonacoWorkspace;
 
-    private _previewHandler?: monaco.editor.IBulkEditPreviewHandler;
+    private _previewHandler?: IBulkEditPreviewHandler;
 
-    async apply(edits: monaco.editor.ResourceEdit[], options?: monaco.editor.IBulkEditOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+    async apply(edits: ResourceEdit[], options?: IBulkEditOptions): Promise<IBulkEditResult & { success: boolean }> {
         if (this._previewHandler && (options?.showPreview || edits.some(value => value.metadata?.needsConfirmation))) {
             edits = await this._previewHandler(edits, options);
             return { ariaSummary: '', success: true };
@@ -38,7 +43,7 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
         return Boolean(this._previewHandler);
     }
 
-    setPreviewHandler(handler: monaco.editor.IBulkEditPreviewHandler): monaco.IDisposable {
+    setPreviewHandler(handler: IBulkEditPreviewHandler): IDisposable {
         this._previewHandler = handler;
 
         const disposePreviewHandler = () => {

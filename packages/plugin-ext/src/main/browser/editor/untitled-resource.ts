@@ -19,6 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { Resource, ResourceResolver, ResourceVersion } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
+import * as monaco from '@theia/monaco-editor-core';
 
 let index = 0;
 

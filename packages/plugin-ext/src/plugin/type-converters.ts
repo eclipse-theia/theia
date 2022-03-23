@@ -1067,31 +1067,24 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
 }
 
 export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.TransferQuickPickItems[] {
-    const pickItems: rpc.TransferQuickPickItems[] = [];
-    for (let handle = 0; handle < items.length; handle++) {
-        const item = items[handle];
-        let label: string;
-        let description: string | undefined;
-        let detail: string | undefined;
-        let picked: boolean | undefined;
-        let alwaysShow: boolean | undefined;
-
+    return items.map<rpc.TransferQuickPickItems>((item, index) => {
         if (typeof item === 'string') {
-            label = item;
+            return { type: 'item', label: item, handle: index };
+        } else if (item.type === 'separator') {
+            return { ...item, handle: index };
         } else {
-            ({ label, description, detail, picked, alwaysShow } = item);
+            const { label, description, detail, picked, alwaysShow } = item;
+            return {
+                type: 'item',
+                label,
+                description,
+                detail,
+                picked,
+                alwaysShow,
+                handle: index,
+            };
         }
-
-        pickItems.push({
-            label,
-            description,
-            handle,
-            detail,
-            picked,
-            alwaysShow
-        });
-    }
-    return pickItems;
+    });
 }
 
 export namespace DecorationRenderOptions {
