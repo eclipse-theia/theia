@@ -45,7 +45,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideCompletionItems(handle, model, position, context, token));
     }
 
-    protected override  resolveCompletionItem(handle: number,
+    protected override resolveCompletionItem(handle: number,
         item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionItem> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.CompletionRequest.type.method,
@@ -120,14 +120,14 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideCodeLenses(handle, model, token));
     }
 
-    protected override  resolveCodeLens(handle: number, model: monaco.editor.ITextModel,
+    protected override resolveCodeLens(handle: number, model: monaco.editor.ITextModel,
         codeLens: monaco.languages.CodeLens, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CodeLens> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.CodeLensResolveRequest.type.method,
             super.resolveCodeLens(handle, model, codeLens, token));
     }
 
-    protected override  provideDocumentSymbols(handle: number, model: monaco.editor.ITextModel,
+    protected override provideDocumentSymbols(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.DocumentSymbol[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.DocumentSymbolRequest.type.method,
@@ -141,7 +141,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideDefinition(handle, model, position, token));
     }
 
-    protected override  async provideSignatureHelp(handle: number, model: monaco.editor.ITextModel,
+    protected override async provideSignatureHelp(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken,
         context: monaco.languages.SignatureHelpContext): Promise<monaco.languages.ProviderResult<monaco.languages.SignatureHelpResult>> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
@@ -149,7 +149,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideSignatureHelp(handle, model, position, token, context));
     }
 
-    protected override  provideDocumentFormattingEdits(handle: number, model: monaco.editor.ITextModel,
+    protected override provideDocumentFormattingEdits(handle: number, model: monaco.editor.ITextModel,
         options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.DocumentFormattingRequest.type.method,
@@ -163,7 +163,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideDocumentRangeFormattingEdits(handle, model, range, options, token));
     }
 
-    protected override  provideOnTypeFormattingEdits(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
+    protected override provideOnTypeFormattingEdits(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         ch: string, options: monaco.languages.FormattingOptions, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.TextEdit[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.DocumentOnTypeFormattingRequest.type.method,
@@ -177,21 +177,21 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideFoldingRanges(handle, model, context, token));
     }
 
-    protected override  provideDocumentColors(handle: number, model: monaco.editor.ITextModel,
+    protected override provideDocumentColors(handle: number, model: monaco.editor.ITextModel,
         token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.IColorInformation[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.DocumentColorRequest.type.method,
             super.provideDocumentColors(handle, model, token));
     }
 
-    protected override  provideColorPresentations(handle: number, model: monaco.editor.ITextModel,
+    protected override provideColorPresentations(handle: number, model: monaco.editor.ITextModel,
         colorInfo: monaco.languages.IColorInformation, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.IColorPresentation[]> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.ColorPresentationRequest.type.method,
             super.provideColorPresentations(handle, model, colorInfo, token));
     }
 
-    protected override  async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
+    protected override async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
@@ -199,14 +199,14 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
             super.provideCodeActions(handle, model, rangeOrSelection, context, token));
     }
 
-    protected override  provideRenameEdits(handle: number, model: monaco.editor.ITextModel,
+    protected override provideRenameEdits(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, newName: string, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.WorkspaceEdit & monaco.languages.Rejection> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.RenameRequest.type.method,
             super.provideRenameEdits(handle, model, position, newName, token));
     }
 
-    protected override  resolveRenameLocation(handle: number, model: monaco.editor.ITextModel,
+    protected override resolveRenameLocation(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.RenameLocation> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.RenameRequest.type.method,
