@@ -115,6 +115,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (!this.transaction?.open) {
             const current = this.transaction;
             this.transaction = this.transactionFactory(this);
+            this.transaction.waitFor(current?.result);
             this.transaction.onWillConclude(({ status, waitUntil }) => {
                 if (status) {
                     waitUntil((async () => {
@@ -124,7 +125,6 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                 }
             });
             this.toDispose.push(this.transaction);
-            await current?.result;
         }
         return this.transaction.enqueueAction(key, path, value);
     }
