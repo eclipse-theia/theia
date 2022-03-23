@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { TheiaDialog } from './theia-dialog';
-import { USER_KEY_TYPING_DELAY } from './util';
+import { OSUtil, USER_KEY_TYPING_DELAY } from './util';
 
 export class TheiaRenameDialog extends TheiaDialog {
 
     async enterNewName(newName: string): Promise<void> {
         const inputField = await this.page.waitForSelector(`${this.blockSelector} .theia-input`);
-        await inputField.press('Control+a');
+        await inputField.press(OSUtil.isMacOS ? 'Meta+a' : 'Control+a');
         await inputField.type(newName, { delay: USER_KEY_TYPING_DELAY });
         await this.page.waitForTimeout(USER_KEY_TYPING_DELAY);
     }

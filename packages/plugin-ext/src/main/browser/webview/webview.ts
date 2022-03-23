@@ -44,6 +44,7 @@ import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { isFirefox } from '@theia/core/lib/browser/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
@@ -250,6 +251,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         const element = document.createElement('iframe');
         element.className = 'webview';
         element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads');
+        if (!isFirefox) {
+            element.setAttribute('allow', 'clipboard-read; clipboard-write; usb; serial; hid;');
+        }
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
         element.style.border = 'none';
         element.style.width = '100%';

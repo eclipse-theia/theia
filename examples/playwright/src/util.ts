@@ -15,12 +15,18 @@
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
+import { tmpdir, platform } from 'os';
+import { sep } from 'path';
 
 export const USER_KEY_TYPING_DELAY = 80;
 
 export function normalizeId(nodeId: string): string {
     // Special characters (i.e. in our case '.',':','/','%', and '\\') in CSS IDs have to be escaped
     return nodeId.replace(/[.:,%/\\]/g, matchedChar => '\\' + matchedChar);
+}
+
+export function urlEncodePath(path: string): string {
+    return path.replace(/\\/g, '/');
 }
 
 export async function toTextContentArray(items: ElementHandle<SVGElement | HTMLElement>[]): Promise<string[]> {
@@ -69,4 +75,17 @@ export async function elementId(element: ElementHandle<SVGElement | HTMLElement>
     const id = await element.getAttribute('id');
     if (id === null) { throw new Error('Could not get ID of ' + element); }
     return id;
+}
+
+export namespace OSUtil {
+    export const isWindows = platform() === 'win32';
+    export const isMacOS = platform() === 'darwin';
+    // The platform-specific file separator '\' or '/'.
+    export const fileSeparator = sep;
+    // The platform-specific location of the temporary directory.
+    export const tmpDir = tmpdir();
+
+    export function osStartsWithFileSeparator(path: string): boolean {
+        return path.startsWith(fileSeparator);
+    }
 }

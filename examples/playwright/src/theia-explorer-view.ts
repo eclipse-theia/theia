@@ -21,7 +21,7 @@ import { TheiaMenuItem } from './theia-menu-item';
 import { TheiaRenameDialog } from './theia-rename-dialog';
 import { TheiaTreeNode } from './theia-tree-node';
 import { TheiaView } from './theia-view';
-import { elementContainsClass, normalizeId } from './util';
+import { elementContainsClass, normalizeId, OSUtil, urlEncodePath } from './util';
 
 const TheiaExplorerViewData = {
     tabSelector: '#shell-tab-explorer-view-container',
@@ -75,16 +75,17 @@ export class TheiaExplorerView extends TheiaView {
     }
 
     async refresh(): Promise<void> {
-        await this.clickButton('__explorer-view-container_title:navigator.refresh');
+        await this.clickButton('navigator.refresh');
     }
 
     async collapseAll(): Promise<void> {
-        await this.clickButton('__explorer-view-container_title:navigator.collapse.all');
+        await this.clickButton('navigator.collapse.all');
     }
 
     protected async clickButton(id: string): Promise<void> {
         await this.activate();
         const viewElement = await this.viewElement();
+        await viewElement?.hover();
         const button = await viewElement?.waitForSelector(`#${normalizeId(id)}`);
         await button?.click();
     }
@@ -161,7 +162,11 @@ export class TheiaExplorerView extends TheiaView {
 
     protected treeNodeId(filePath: string): string {
         const workspacePath = this.app.workspace.path;
-        return `${workspacePath}:${workspacePath}/${filePath}`;
+        const nodeId = `${workspacePath}:${workspacePath}${OSUtil.fileSeparator}${filePath}`;
+        if (OSUtil.isWindows) {
+            return urlEncodePath(nodeId);
+        }
+        return nodeId;
     }
 
     async clickContextMenuItem(file: string, path: string[]): Promise<void> {
@@ -199,8 +204,7 @@ export class TheiaExplorerView extends TheiaView {
 
     async getNumberOfVisibleNodes(): Promise<number> {
         await this.activate();
-        await this.app.quickCommandPalette.type('Refresh in Explorer');
-        await this.app.quickCommandPalette.trigger('File: Refresh in Explorer');
+        await this.refresh();
         const fileStatElements = await this.visibleFileStatNodes(DOT_FILES_FILTER);
         return fileStatElements.length;
     }
@@ -224,6 +228,7 @@ export class TheiaExplorerView extends TheiaView {
         await renameDialog.enterNewName(newName);
         confirm ? await renameDialog.confirm() : await renameDialog.close();
         await renameDialog.waitForClosed();
+        await this.refresh();
     }
 
 }

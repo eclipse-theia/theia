@@ -50,6 +50,7 @@ export class TheiaView extends TheiaPageObject {
         if (!this.data.viewName) {
             throw new Error('View name must be specified to open via command palette');
         }
+        await this.app.quickCommandPalette.type('View: Open View');
         await this.app.quickCommandPalette.trigger('View: Open View...', this.data.viewName);
         await this.waitForVisible();
         return this;

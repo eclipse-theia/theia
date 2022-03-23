@@ -216,9 +216,9 @@ export class WebviewImpl implements theia.Webview {
 
     asWebviewUri(resource: theia.Uri): theia.Uri {
         const uri = this.initData.webviewResourceRoot
-            // Make sure we preserve the scheme of the resource but convert it into a normal path segment
-            // The scheme is important as we need to know if we are requesting a local or a remote resource.
-            .replace('{{resource}}', resource.scheme + resource.toString().replace(/^\S+?:/, ''))
+            .replace('{{scheme}}', resource.scheme)
+            .replace('{{authority}}', resource.authority)
+            .replace('{{path}}', resource.path.replace(/^\//, ''))
             .replace('{{uuid}}', this.viewId);
         return URI.parse(uri);
     }
