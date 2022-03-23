@@ -134,7 +134,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({ configuration })
+                    execute: () => this.runDynamicConfiguration({ configuration })
                 });
             }
         }
@@ -150,6 +150,14 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     protected runConfiguration(configuration: DebugSessionOptions): void {
         this.debugConfigurationManager.current = { ...configuration };
         this.commandRegistry.executeCommand(DebugCommands.START.id);
+    }
+
+    /**
+     * Execute the debug start command without affecting the current debug configuration
+     * @param configuration the `DebugSessionOptions`.
+     */
+    protected runDynamicConfiguration(configuration: DebugSessionOptions): void {
+        this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     }
 
     /**
