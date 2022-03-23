@@ -15,17 +15,20 @@
 // *****************************************************************************
 
 import { ElementHandle } from '@playwright/test';
+import { join } from 'path';
 
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
-import { normalizeId } from './util';
+import { normalizeId, OSUtil, urlEncodePath } from './util';
 
 export class TheiaTextEditor extends TheiaEditor {
 
     constructor(filePath: string, app: TheiaApp) {
+        // shell-tab-code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
+        // code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
         super({
-            tabSelector: normalizeId(`#shell-tab-code-editor-opener:file://${app.workspace.escapedPath}/${filePath}:1`),
-            viewSelector: normalizeId(`#code-editor-opener:file://${app.workspace.escapedPath}/${filePath}:1`) + '.theia-editor'
+            tabSelector: normalizeId(`#shell-tab-code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`),
+            viewSelector: normalizeId(`#code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`) + '.theia-editor'
         }, app);
     }
 
