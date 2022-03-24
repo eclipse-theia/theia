@@ -8070,6 +8070,14 @@ export module '@theia/plugin' {
          */
         static readonly SourceOrganizeImports: CodeActionKind;
 
+        /**
+         * Base kind for auto-fix source actions: `source.fixAll`.
+         *
+         * Fix all actions automatically fix errors that have a clear fix that do not require user input.
+         * They should not suppress errors or perform unsafe fixes such as generating new types or classes.
+         */
+        static readonly SourceFixAll: CodeActionKind;
+
         private constructor(value: string);
 
         /**
