@@ -223,6 +223,7 @@ export interface PickOptions<T extends QuickPickItem> {
 }
 
 export interface InputOptions {
+    title?: string;
     value?: string;
     valueSelection?: [number, number];
     prompt?: string;
