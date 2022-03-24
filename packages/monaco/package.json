@@ -7,11 +7,11 @@
     "@theia/editor": "1.23.0",
     "@theia/filesystem": "1.23.0",
     "@theia/markers": "1.23.0",
-    "@theia/monaco-editor-core": "0.23.0",
     "@theia/outline-view": "1.23.0",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
     "jsonc-parser": "^2.2.0",
+    "@theia/monaco-editor-core": "1.65.2",
     "onigasm": "^2.2.0",
     "vscode-textmate": "^4.4.0"
   },
@@ -20,8 +20,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/monaco-browser-module",
-      "frontendElectron": "lib/electron-browser/monaco-electron-module"
+      "frontend": "lib/browser/monaco-frontend-module"
     }
   ],
   "keywords": [

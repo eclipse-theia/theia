@@ -24,6 +24,13 @@ import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
 import { EditorPreferences } from '@theia/editor/lib/browser/editor-preferences';
+import * as monaco from '@theia/monaco-editor-core';
+import { TokenizationRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { TokenizationSupportAdapter } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
 export type OnigasmPromise = Promise<IOnigLib>;
@@ -182,10 +189,10 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             const options = configuration.tokenizerOption ? configuration.tokenizerOption : this.tokenizerOption;
             const tokenizer = createTextmateTokenizer(grammar, options);
             toDispose.push(monaco.languages.setTokensProvider(languageId, tokenizer));
-            const support = monaco.modes.TokenizationRegistry.get(languageId);
-            const themeService = monaco.services.StaticServices.standaloneThemeService.get();
-            const languageIdentifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
-            const adapter = new monaco.services.TokenizationSupport2Adapter(themeService, languageIdentifier!, tokenizer);
+            const support = TokenizationRegistry.get(languageId);
+            const themeService = StandaloneServices.get(IStandaloneThemeService);
+            const languageService = StandaloneServices.get(ILanguageService);
+            const adapter = new TokenizationSupportAdapter(languageId, tokenizer, languageService, themeService);
             support!.tokenize = adapter.tokenize.bind(adapter);
         } catch (error) {
             this.logger.warn('No grammar for this language id', languageId, error);
@@ -193,15 +200,11 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     }
 
     protected waitForLanguage(language: string, cb: () => {}): Disposable {
-        const modeService = monaco.services.StaticServices.modeService.get();
-        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
-            const mode = modeService['_instantiatedModes'][modeId];
-            if (mode.getId() === language) {
-                cb();
-                return Disposable.NULL;
-            }
+        const languageService = StandaloneServices.get(ILanguageService) as LanguageService;
+        if (languageService['_encounteredLanguages'].has(language)) {
+            cb();
+            return Disposable.NULL;
         }
         return monaco.languages.onLanguage(language, cb);
     }
-
 }

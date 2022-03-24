@@ -16,9 +16,9 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
-
-import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
-import IDiffNavigatorOptions = monaco.editor.IDiffNavigatorOptions;
+import * as monaco from '@theia/monaco-editor-core';
+import { DiffNavigator as MonacoDiffNavigator } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffNavigator';
+import { IStandaloneDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 
 @injectable()
 export class MonacoDiffNavigatorFactory {
@@ -29,29 +29,33 @@ export class MonacoDiffNavigatorFactory {
         hasPrevious: () => false,
         next: () => { },
         previous: () => { },
-        revealFirst: false,
     };
 
-    createdDiffNavigator(editor: IStandaloneDiffEditor, options?: IDiffNavigatorOptions): DiffNavigator {
-        const navigator = monaco.editor.createDiffNavigator(editor, options);
+    createdDiffNavigator(editor: IStandaloneDiffEditor | monaco.editor.IStandaloneDiffEditor, options?: monaco.editor.IDiffNavigatorOptions): DiffNavigator {
+        const navigator = new MonacoDiffNavigator(editor as IStandaloneDiffEditor, options);
         const ensureInitialized = (fwd: boolean) => {
-            if (navigator.nextIdx < -1) {
-                navigator._initIdx(fwd);
+            if (navigator['nextIdx'] < 0) {
+                navigator['_initIdx'](fwd);
             }
         };
-        return <DiffNavigator>{
+        return {
             canNavigate: () => navigator.canNavigate(),
             hasNext: () => {
-                ensureInitialized(true);
-                return navigator.nextIdx + 1 < navigator.ranges.length;
+                if (navigator.canNavigate()) {
+                    ensureInitialized(true);
+                    return navigator['nextIdx'] + 1 < navigator['ranges'].length;
+                }
+                return false;
             },
             hasPrevious: () => {
-                ensureInitialized(false);
-                return navigator.nextIdx > 0;
+                if (navigator.canNavigate()) {
+                    ensureInitialized(false);
+                    return navigator['nextIdx'] > 0;
+                }
+                return false;
             },
             next: () => navigator.next(),
             previous: () => navigator.previous(),
-            revealFirst: navigator.revealFirst,
         };
     }
 }

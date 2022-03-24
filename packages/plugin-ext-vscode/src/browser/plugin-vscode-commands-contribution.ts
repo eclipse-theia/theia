@@ -77,6 +77,7 @@ import {
 import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import * as monaco from '@theia/monaco-editor-core';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -701,7 +702,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({
             id: 'copyRelativeFilePath'
         }, {
-            execute: () => commands.executeCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id)
+            execute: () => commands.executeCommand(WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id)
         });
         commands.registerCommand({
             id: 'revealInExplorer'

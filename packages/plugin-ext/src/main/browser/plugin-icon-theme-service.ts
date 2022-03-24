@@ -37,6 +37,8 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 
 export interface PluginIconDefinition {
     iconPath: string;
@@ -519,8 +521,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             } else {
                 classNames.unshift(this.fileIcon);
             }
-            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(parsedURI['codeUri']);
-            classNames.push(this.languageIcon(language.languageIdentifier.language));
+            const language = StandaloneServices.get(ILanguageService).createByFilepathOrFirstLine(parsedURI['codeUri']);
+            classNames.push(this.languageIcon(language.languageId));
         }
         return classNames;
     }

@@ -20,6 +20,7 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 import { TrackedRangeStickiness } from '@theia/editor/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface MonacoEditorViewZone extends monaco.editor.IViewZone {
     id: string;
@@ -44,9 +45,12 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
+    editor: monaco.editor.IStandaloneCodeEditor;
+
     constructor(
-        readonly editor: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
+        editorInstance: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
     ) {
+        this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');
         this.containerNode.classList.add('zone-widget-container');
         this.zoneNode.appendChild(this.containerNode);
@@ -199,7 +203,7 @@ class Arrow implements Disposable {
 
     constructor(
         private readonly _editor: monaco.editor.ICodeEditor
-    ) {}
+    ) { }
 
     dispose(): void {
         this.hide();

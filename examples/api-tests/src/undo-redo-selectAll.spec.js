@@ -31,6 +31,7 @@ describe('Undo, Redo and Select All', function () {
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
+    const { Range } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -48,7 +49,7 @@ describe('Undo, Redo and Select All', function () {
 
     /**
      * @template T
-     * @param {() => Promise<T> | T} condition
+     * @param {() => Promise<T> | T} condition
      * @returns {Promise<T>}
      */
     function waitForAnimation(condition) {
@@ -57,7 +58,7 @@ describe('Undo, Redo and Select All', function () {
             do {
                 await animationFrame();
             } while (!condition());
-            resolve();
+            resolve(undefined);
         });
     }
 
@@ -90,7 +91,7 @@ describe('Undo, Redo and Select All', function () {
         const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
         editor.getControl().pushUndoStop();
         editor.getControl().executeEdits('test', [{
-            range: new monaco.Range(1, 1, 1, 1),
+            range: new Range(1, 1, 1, 1),
             text: 'A'
         }]);
         editor.getControl().pushUndoStop();

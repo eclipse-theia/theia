@@ -18,13 +18,25 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer, toAnchor } from '@theia/core/lib/browser';
-import IContextMenuService = monaco.editor.IContextMenuService;
-import IContextMenuDelegate = monaco.editor.IContextMenuDelegate;
 import { Menu } from '@theia/core/shared/@phosphor/widgets';
 import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { IContextMenuDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/contextmenu';
+import { MenuItemAction } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
+import { Event, Emitter } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {
+    declare readonly _serviceBrand: undefined;
+
+    protected readonly onDidShowContextMenuEmitter = new Emitter<void>();
+    get onDidShowContextMenu(): Event<void> {
+        return this.onDidShowContextMenuEmitter.event;
+    };
+    protected readonly onDidHideContextMenuEmitter = new Emitter<void>();
+    get onDidHideContextMenu(): Event<void> {
+        return this.onDidShowContextMenuEmitter.event;
+    };
 
     constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
     }
@@ -32,14 +44,18 @@ export class MonacoContextMenuService implements IContextMenuService {
     showContextMenu(delegate: IContextMenuDelegate): void {
         const anchor = toAnchor(delegate.getAnchor());
         const actions = delegate.getActions();
+        const onHide = () => {
+            delegate.onHide?.(false);
+            this.onDidHideContextMenuEmitter.fire();
+        };
 
         // Actions for editor context menu come as 'MenuItemAction' items
         // In case of 'Quick Fix' actions come as 'CodeActionAction' items
-        if (actions.length > 0 && actions[0] instanceof monaco.actions.MenuItemAction) {
+        if (actions.length > 0 && actions[0] instanceof MenuItemAction) {
             this.contextMenuRenderer.render({
                 menuPath: this.menuPath(),
                 anchor,
-                onHide: () => delegate.onHide(false)
+                onHide
             });
         } else {
             const commands = new CommandRegistry();
@@ -52,7 +68,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                 commands.addCommand(commandId, {
                     label: action.label,
                     className: action.class,
-                    isToggled: () => action.checked,
+                    isToggled: () => Boolean(action.checked),
                     isEnabled: () => action.enabled,
                     execute: () => action.run()
                 });
@@ -61,9 +77,10 @@ export class MonacoContextMenuService implements IContextMenuService {
                     command: commandId
                 });
             }
-            menu.aboutToClose.connect(() => delegate.onHide(false));
+            menu.aboutToClose.connect(() => onHide);
             menu.open(anchor.x, anchor.y);
         }
+        this.onDidShowContextMenuEmitter.fire();
     }
 
     protected menuPath(): MenuPath {

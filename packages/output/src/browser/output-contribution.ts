@@ -27,7 +27,7 @@ import { OutputUri } from '../common/output-uri';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { OutputChannelManager, OutputChannel } from './output-channel';
 import { OutputCommands } from './output-commands';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -256,7 +256,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     }
 
     protected async pick({ channels, placeholder }: { channels: OutputChannel[], placeholder: string }): Promise<OutputChannel | undefined> {
-        const items: Array<QuickPickValue<OutputChannel> | QuickPickItem> = [];
+        const items: Array<QuickPickValue<OutputChannel> | QuickPickItem | QuickPickSeparator> = [];
         const outputChannels = nls.localize('theia/output/outputChannels', 'Output Channels');
         const hiddenChannels = nls.localize('theia/output/hiddenChannels', 'Hidden Channels');
         for (let i = 0; i < channels.length; i++) {

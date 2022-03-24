@@ -24,10 +24,11 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, BULK_EDIT_WIDGET_NAME } from './bulk-edit-tree';
 import { QuickViewService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 @injectable()
 export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeWidget> implements TabBarToolbarContribution {
-    private edits: monaco.editor.ResourceEdit[];
+    private edits: ResourceEdit[];
 
     @inject(QuickViewService) @optional()
     protected override readonly quickView: QuickViewService;
@@ -40,7 +41,7 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
                 area: 'bottom'
             }
         });
-        this.bulkEditService.setPreviewHandler((edits: monaco.editor.ResourceEdit[]) => this.previewEdit(edits));
+        this.bulkEditService.setPreviewHandler((edits: ResourceEdit[]) => this.previewEdit(edits));
     }
 
     override registerCommands(registry: CommandRegistry): void {
@@ -81,7 +82,7 @@ export class BulkEditContribution extends AbstractViewContribution<BulkEditTreeW
         return false;
     }
 
-    private async previewEdit(edits: monaco.editor.ResourceEdit[]): Promise<monaco.editor.ResourceEdit[]> {
+    private async previewEdit(edits: ResourceEdit[]): Promise<ResourceEdit[]> {
         const widget = await this.openView({ activate: true });
 
         if (widget) {

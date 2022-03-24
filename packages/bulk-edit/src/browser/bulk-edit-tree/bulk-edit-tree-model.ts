@@ -17,6 +17,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { BulkEditNode, BulkEditTree } from './bulk-edit-tree';
 import { TreeModelImpl, OpenerService, open, TreeNode } from '@theia/core/lib/browser';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 @injectable()
 export class BulkEditTreeModel extends TreeModelImpl {
@@ -35,7 +36,7 @@ export class BulkEditTreeModel extends TreeModelImpl {
         this.doOpenNode(node);
     }
 
-    async initModel(edits: monaco.editor.ResourceEdit[], fileContents: Map<string, string>): Promise<void> {
+    async initModel(edits: ResourceEdit[], fileContents: Map<string, string>): Promise<void> {
         this.tree.initTree(edits, fileContents);
     }
 }

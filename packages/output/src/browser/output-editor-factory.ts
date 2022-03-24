@@ -19,9 +19,10 @@ import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoContextMenuService } from '@theia/monaco/lib/browser/monaco-context-menu';
-import { MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
+import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { OutputUri } from '../common/output-uri';
 import { OutputContextMenuService } from './output-context-menu';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 
 @injectable()
 export class OutputEditorFactory implements MonacoEditorFactory {
@@ -34,7 +35,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
 
     readonly scheme: string = OutputUri.SCHEME;
 
-    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: monaco.editor.IEditorOverrideServices): MonacoEditor {
+    create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): MonacoEditor {
         const uri = new URI(model.uri);
         const options = this.createOptions(model, defaultsOptions);
         const overrides = this.createOverrides(model, defaultOverrides);
@@ -61,12 +62,13 @@ export class OutputEditorFactory implements MonacoEditorFactory {
         };
     }
 
-    protected createOverrides(model: MonacoEditorModel, defaultOverrides: monaco.editor.IEditorOverrideServices): monaco.editor.IEditorOverrideServices {
-        const contextMenuService = this.contextMenuService;
-        return {
-            ...defaultOverrides,
-            contextMenuService
-        };
+    protected *createOverrides(model: MonacoEditorModel, defaultOverrides: EditorServiceOverrides): EditorServiceOverrides {
+        yield [IContextMenuService, this.contextMenuService];
+        for (const [identifier, provider] of defaultOverrides) {
+            if (identifier !== IContextMenuService) {
+                yield [identifier, provider];
+            }
+        }
     }
 
 }

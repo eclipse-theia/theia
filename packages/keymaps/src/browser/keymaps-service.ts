@@ -27,6 +27,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { MonacoJSONCEditor } from '@theia/preferences/lib/browser/monaco-jsonc-editor';
 
 @injectable()
 export class KeymapsService {
@@ -45,6 +46,9 @@ export class KeymapsService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(MonacoJSONCEditor)
+    protected readonly jsoncEditor: MonacoJSONCEditor;
 
     protected readonly changeKeymapEmitter = new Emitter<void>();
     readonly onDidChangeKeymaps = this.changeKeymapEmitter.event;
@@ -185,27 +189,8 @@ export class KeymapsService {
         const model = await this.deferredModel.promise;
         try {
             const keybindings = op();
-            if (keybindings) {
-                const content = model.getText().trim();
-                const textModel = model.textEditorModel;
-                const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                for (const edit of jsoncparser.modify(content, [], keybindings.map(binding => Keybinding.apiObjectify(binding)), {
-                    formattingOptions: {
-                        insertSpaces,
-                        tabSize,
-                        eol: defaultEOL === monaco.editor.DefaultEndOfLine.LF ? '\n' : '\r\n'
-                    }
-                })) {
-                    const start = textModel.getPositionAt(edit.offset);
-                    const end = textModel.getPositionAt(edit.offset + edit.length);
-                    editOperations.push({
-                        range: monaco.Range.fromPositions(start, end),
-                        text: edit.content,
-                        forceMoveMarkers: false
-                    });
-                }
-                await this.workspace.applyBackgroundEdit(model, editOperations);
+            if (keybindings && this.model) {
+                await this.jsoncEditor.setValue(this.model, [], keybindings.map(binding => Keybinding.apiObjectify(binding)));
             }
         } catch (e) {
             const message = `Failed to update a keymap in '${model.uri}'.`;
