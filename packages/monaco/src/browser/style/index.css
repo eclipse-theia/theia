@@ -245,3 +245,11 @@
 .monaco-editor .peekview-widget .monaco-list-row.focused.selected .codicon {
   color: var(--theia-list-activeSelectionForeground) !important;
 }
+
+.quick-input-titlebar {
+  background-color: var(--theia-quickInputTitle-background);
+}
+
+.quick-input-widget input {
+  background-color: var(--theia-input-background) !important;
+}

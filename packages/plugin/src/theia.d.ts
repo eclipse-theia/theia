@@ -2259,6 +2259,11 @@ export module '@theia/plugin' {
     export interface InputBoxOptions {
 
         /**
+         * An optional string that represents the title of the input box.
+         */
+        title?: string;
+
+        /**
          * The value to prefill in the input box.
          */
         value?: string;
