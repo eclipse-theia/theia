@@ -92,7 +92,7 @@
     cursor: default;
 }
 
-.dialogContent span.theia-mod-disabled .action-item {
+.dialogContent span.theia-mod-disabled .action-label {
     background: none;
 }
 

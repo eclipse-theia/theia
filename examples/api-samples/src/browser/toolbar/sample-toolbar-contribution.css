@@ -29,7 +29,7 @@
     outline: none;
 }
 
-#theia-sample-toolbar-contribution  .icon-wrapper.action-item.item.enabled:hover {
+#theia-sample-toolbar-contribution  .icon-wrapper.action-label.item.enabled:hover {
     background-color: var(--theia-toolbar-hoverBackground);
 }
 

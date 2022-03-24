@@ -171,18 +171,11 @@
 
 .quick-input-list .monaco-list-row .codicon {
   color: var(--theia-foreground) !important;
-  padding-left: 0px !important;
+  padding: 2px !important;
 }
 
 .quick-input-list .monaco-list-row.focused .codicon {
   color: var(--theia-list-foreground) !important;
-}
-
-.monaco-action-bar .action-item {
-  height: var(--theia-ui-icon-font-size);
-  width: var(--theia-ui-icon-font-size);
-  margin: auto;
-  padding-right: calc(var(--theia-ui-padding) * 0.5);
 }
 
 .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
