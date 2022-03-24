@@ -241,7 +241,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 id={item.id}
                 data-position={stringifiedPosition}
                 key={`${item.id}-${stringifiedPosition}`}
-                className={`${toolbarItemClassNames} toolbar-item action-item`}
+                className={`${toolbarItemClassNames} toolbar-item action-label`}
                 onMouseDown={this.onMouseDownEvent}
                 onMouseUp={this.onMouseUpEvent}
                 onMouseOut={this.onMouseUpEvent}

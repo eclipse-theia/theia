@@ -394,7 +394,7 @@ body.theia-editor-highlightModifiedTabs
     cursor: pointer;
 }
 
-.p-TabBar-toolbar :not(.item.enabled) .action-item {
+.p-TabBar-toolbar :not(.item.enabled) .action-label {
   background: transparent;
   cursor: default;
 }
