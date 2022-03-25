@@ -102,7 +102,7 @@ export enum CompletionItemInsertTextRule {
 }
 
 export interface Completion {
-    label: string;
+    label: string | theia.CompletionItemLabel;
     label2?: string;
     kind: CompletionItemKind;
     detail?: string;

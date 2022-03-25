@@ -7334,6 +7334,31 @@ export module '@theia/plugin' {
     }
 
     /**
+     * A structured label for a {@link CompletionItem completion item}.
+     */
+    export interface CompletionItemLabel {
+
+        /**
+         * The label of this completion item.
+         *
+         * By default this is also the text that is inserted when this completion is selected.
+         */
+        label: string;
+
+        /**
+         * An optional string which is rendered less prominently directly after {@link CompletionItemLabel.label label},
+         * without any spacing. Should be used for function signatures or type annotations.
+         */
+        detail?: string;
+
+        /**
+         * An optional string which is rendered less prominently after {@link CompletionItemLabel.detail}. Should be used
+         * for fully qualified names or file path.
+         */
+        description?: string;
+    }
+
+    /**
      * A completion item represents a text snippet that is proposed to complete text that is being typed.
      *
      * It is sufficient to create a completion item from just a [label](#CompletionItem.label). In that
@@ -7355,7 +7380,7 @@ export module '@theia/plugin' {
          * this is also the text that is inserted when selecting
          * this completion.
          */
-        label: string;
+        label: string | CompletionItemLabel;
 
         /**
          * The kind of this completion item. Based on the kind
@@ -7474,7 +7499,7 @@ export module '@theia/plugin' {
          * @param label The label of the completion.
          * @param kind The [kind](#CompletionItemKind) of the completion.
          */
-        constructor(label: string, kind?: CompletionItemKind);
+        constructor(label: string | CompletionItemLabel, kind?: CompletionItemKind);
     }
 
     /**
