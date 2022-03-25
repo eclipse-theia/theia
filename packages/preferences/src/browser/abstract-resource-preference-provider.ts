@@ -56,14 +56,15 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     @postConstruct()
     protected async init(): Promise<void> {
         const uri = this.getUri();
-        this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
+        this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`Preference provider for '${uri}' was disposed.`))));
         await this.readPreferencesFromFile();
         this._ready.resolve();
         this.loading.resolve();
+        const storageUri = this.toFileManager().getConfigUri();
         this.toDispose.pushAll([
-            this.fileService.watch(uri),
+            this.fileService.watch(storageUri),
             this.fileService.onDidFilesChange(e => {
-                if (e.contains(uri)) {
+                if (e.contains(storageUri)) {
                     this.readPreferencesFromFile();
                 }
             }),
@@ -114,7 +115,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
         if (!this.transaction?.open) {
             const current = this.transaction;
-            this.transaction = this.transactionFactory(this.toContext());
+            this.transaction = this.transactionFactory(this.toFileManager());
             this.transaction.onWillConclude(({ status, waitUntil }) => {
                 if (status) {
                     waitUntil((async () => {
@@ -129,7 +130,12 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.transaction.enqueueAction(key, path, value);
     }
 
-    protected toContext(): PreferenceContext {
+    /**
+     * Use this method as intermediary for interactions with actual files.
+     * Allows individual providers to modify where they store their files without disrupting the preference system's
+     * conventions about scope and file location.
+     */
+    protected toFileManager(): PreferenceContext {
         return this;
     }
 
@@ -142,7 +148,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected async readPreferencesFromFile(): Promise<void> {
-        const content = await this.fileService.read(this.getUri())
+        const content = await this.fileService.read(this.toFileManager().getConfigUri())
             .then(value => {
                 this.fileExists = true;
                 return value;

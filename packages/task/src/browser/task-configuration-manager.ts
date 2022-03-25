@@ -128,6 +128,7 @@ export class TaskConfigurationManager {
                 this.onDidChangeTaskConfigEmitter.fire({ scope: key, type: FileChangeType.UPDATED });
             }
         }
+        hell
         for (const uri of toDelete) {
             const model = this.models.get(uri);
             if (model) {
