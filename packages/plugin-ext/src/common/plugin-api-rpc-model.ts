@@ -654,6 +654,8 @@ export interface CommentThread {
     onDidChangeLabel: TheiaEvent<string | undefined>;
     onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
     isDisposed: boolean;
+    canReply: boolean;
+    onDidChangeCanReply: TheiaEvent<boolean>;
 }
 
 export interface CommentThreadChangedEventMain extends CommentThreadChangedEvent {

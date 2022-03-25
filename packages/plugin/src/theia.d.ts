@@ -10941,6 +10941,11 @@ export module '@theia/plugin' {
          * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
          */
         dispose(): void;
+
+        /**
+         * Whether the thread supports reply. Defaults to true.
+         */
+        canReply: boolean;
     }
 
     /**
