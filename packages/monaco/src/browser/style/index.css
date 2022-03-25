@@ -121,19 +121,6 @@
   box-shadow: rgb(0 0 0 / 36%) 0px 0px 8px 2px;
 }
 
-.monaco-icon-label,
-.monaco-icon-label-container,
-.monaco-icon-name-container,
-.monaco-highlighted-label,
-.quick-input-list-row {
-  line-height: var(--theia-content-line-height) !important;
-  height: var(--theia-content-line-height) !important;
-}
-
-.monaco-icon-label-container {
-  font-family: var(--theia-ui-font-family) !important;
-}
-
 .quick-input-list
   .quick-input-list-rows
   > .quick-input-list-row
