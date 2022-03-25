@@ -24,6 +24,10 @@ const TheiaSettingsViewData = {
 };
 
 export const PreferenceIds = {
+    Editor: {
+        AutoSave: 'files.autoSave',
+        RenderWhitespace: 'editor.renderWhitespace'
+    },
     Explorer: {
         AutoReveal: 'explorer.autoReveal'
     },
@@ -33,6 +37,21 @@ export const PreferenceIds = {
 };
 
 export const DefaultPreferences = {
+    Editor: {
+        AutoSave: {
+            Off: 'off',
+            AfterDelay: 'afterDelay',
+            OnFocusChange: 'onFocusChange',
+            OnWindowChange: 'onWindowChange'
+        },
+        RenderWhitespace: {
+            None: 'none',
+            Boundary: 'boundary',
+            Selection: 'selection',
+            Trailing: 'trailing',
+            All: 'all'
+        }
+    },
     Explorer: {
         AutoReveal: {
             Enabled: true
@@ -50,6 +69,10 @@ export enum TheiaPreferenceScope {
 
 export class TheiaPreferenceView extends TheiaView {
     public customTimeout?: number;
+    protected modificationIndicator = '.theia-mod-item-modified';
+    protected optionSelectLabel = '.theia-select-component-label';
+    protected optionSelectDropdown = '.theia-select-component-dropdown';
+    protected optionSelectDropdownValue = '.theia-select-component-option-value';
 
     constructor(app: TheiaApp) {
         super(TheiaSettingsViewData, app);
@@ -72,19 +95,14 @@ export class TheiaPreferenceView extends TheiaView {
         await scopeTab.click();
     }
 
-    async getBooleanPreferenceById(preferenceId: string): Promise<boolean> {
-        const element = await this.findPreferenceEditorById(preferenceId);
-        return element.isChecked();
-    }
-
     async getBooleanPreferenceByPath(sectionTitle: string, name: string): Promise<boolean> {
         const preferenceId = await this.findPreferenceId(sectionTitle, name);
         return this.getBooleanPreferenceById(preferenceId);
     }
 
-    async setBooleanPreferenceById(preferenceId: string, value: boolean): Promise<void> {
+    async getBooleanPreferenceById(preferenceId: string): Promise<boolean> {
         const element = await this.findPreferenceEditorById(preferenceId);
-        return value ? element.check() : element.uncheck();
+        return element.isChecked();
     }
 
     async setBooleanPreferenceByPath(sectionTitle: string, name: string, value: boolean): Promise<void> {
@@ -92,9 +110,9 @@ export class TheiaPreferenceView extends TheiaView {
         return this.setBooleanPreferenceById(preferenceId, value);
     }
 
-    async getStringPreferenceById(preferenceId: string): Promise<string> {
+    async setBooleanPreferenceById(preferenceId: string, value: boolean): Promise<void> {
         const element = await this.findPreferenceEditorById(preferenceId);
-        return element.evaluate(e => (e as HTMLInputElement).value);
+        return value ? element.check() : element.uncheck();
     }
 
     async getStringPreferenceByPath(sectionTitle: string, name: string): Promise<string> {
@@ -102,9 +120,9 @@ export class TheiaPreferenceView extends TheiaView {
         return this.getStringPreferenceById(preferenceId);
     }
 
-    async setStringPreferenceById(preferenceId: string, value: string): Promise<void> {
+    async getStringPreferenceById(preferenceId: string): Promise<string> {
         const element = await this.findPreferenceEditorById(preferenceId);
-        return element.fill(value);
+        return element.evaluate(e => (e as HTMLInputElement).value);
     }
 
     async setStringPreferenceByPath(sectionTitle: string, name: string, value: string): Promise<void> {
@@ -112,58 +130,44 @@ export class TheiaPreferenceView extends TheiaView {
         return this.setStringPreferenceById(preferenceId, value);
     }
 
-    async waitForModified(preferenceId: string): Promise<void> {
-        await this.activate();
-        const viewElement = await this.viewElement();
-        await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}.theia-mod-item-modified`, { timeout: this.customTimeout });
+    async setStringPreferenceById(preferenceId: string, value: string): Promise<void> {
+        const element = await this.findPreferenceEditorById(preferenceId);
+        return element.fill(value);
     }
 
-    async resetStringPreferenceById(preferenceId: string): Promise<void> {
-        const resetPreferenceButton = await this.findPreferenceResetButton(preferenceId);
-        if (!resetPreferenceButton) {
-            // preference not modified
-            return;
-        }
-        const previousValue = await this.getStringPreferenceById(preferenceId);
-        const selector = this.getPreferenceEditorSelector(preferenceId);
-        const done = await resetPreferenceButton.click();
-        await this.page.waitForFunction(data => {
-            const element = document.querySelector(data.selector);
-            if (!element) {
-                throw new Error(`Could not find preference element with id "${data.preferenceId}"`);
-            }
-            const value = (element as HTMLInputElement).value;
-            return value !== data.previousValue;
-        }, { preferenceId, selector, previousValue, done }, { timeout: this.customTimeout });
-    }
-
-    async resetStringPreferenceByPath(sectionTitle: string, name: string): Promise<void> {
+    async getOptionsPreferenceByPath(sectionTitle: string, name: string): Promise<string> {
         const preferenceId = await this.findPreferenceId(sectionTitle, name);
-        return this.resetStringPreferenceById(preferenceId);
+        return this.getOptionsPreferenceById(preferenceId);
     }
 
-    async resetBooleanPreferenceById(preferenceId: string): Promise<void> {
-        const resetPreferenceButton = await this.findPreferenceResetButton(preferenceId);
-        if (!resetPreferenceButton) {
-            // preference not modified
-            return;
-        }
-        const previousValue = await this.getBooleanPreferenceById(preferenceId);
-        const selector = this.getPreferenceEditorSelector(preferenceId);
-        const done = await resetPreferenceButton.click();
-        await this.page.waitForFunction(data => {
-            const element = document.querySelector(data.selector);
-            if (!element) {
-                throw new Error(`Could not find preference element with id "${data.preferenceId}"`);
-            }
-            const value = (element as HTMLInputElement).checked;
-            return value !== data.previousValue;
-        }, { preferenceId, selector, previousValue, done }, { timeout: this.customTimeout });
+    async getOptionsPreferenceById(preferenceId: string): Promise<string> {
+        const element = await this.findPreferenceEditorById(preferenceId, this.optionSelectLabel);
+        return element.evaluate(e => e.textContent ?? '');
     }
 
-    async resetBooleanPreferenceByPath(sectionTitle: string, name: string): Promise<void> {
+    async setOptionsPreferenceByPath(sectionTitle: string, name: string, value: string): Promise<void> {
         const preferenceId = await this.findPreferenceId(sectionTitle, name);
-        return this.resetBooleanPreferenceById(preferenceId);
+        return this.setOptionsPreferenceById(preferenceId, value);
+    }
+
+    async setOptionsPreferenceById(preferenceId: string, value: string): Promise<void> {
+        const element = await this.findPreferenceEditorById(preferenceId, this.optionSelectLabel);
+        await element.click();
+        const option = await this.page.waitForSelector(`${this.optionSelectDropdown} ${this.optionSelectDropdownValue}:has-text("${value}")`);
+        await option.click();
+    }
+
+    async resetPreferenceByPath(sectionTitle: string, name: string): Promise<void> {
+        const preferenceId = await this.findPreferenceId(sectionTitle, name);
+        return this.resetPreferenceById(preferenceId);
+    }
+
+    async resetPreferenceById(preferenceId: string): Promise<void> {
+        // this is just to fail if the preference doesn't exist at all
+        await this.findPreferenceEditorById(preferenceId, '');
+        const resetPreferenceButton = await this.findPreferenceResetButton(preferenceId);
+        await resetPreferenceButton.click();
+        await this.waitForUnmodified(preferenceId);
     }
 
     private async findPreferenceId(sectionTitle: string, name: string): Promise<string> {
@@ -178,9 +182,9 @@ export class TheiaPreferenceView extends TheiaView {
         return preferenceId;
     }
 
-    private async findPreferenceEditorById(preferenceId: string): Promise<ElementHandle<SVGElement | HTMLElement>> {
+    private async findPreferenceEditorById(preferenceId: string, elementType: string = 'input'): Promise<ElementHandle<SVGElement | HTMLElement>> {
         const viewElement = await this.viewElement();
-        const element = await viewElement?.waitForSelector(this.getPreferenceEditorSelector(preferenceId), { timeout: this.customTimeout });
+        const element = await viewElement?.waitForSelector(this.getPreferenceEditorSelector(preferenceId, elementType), { timeout: this.customTimeout });
         if (!element) {
             throw new Error(`Could not find element with preference id "${preferenceId}"`);
         }
@@ -191,26 +195,13 @@ export class TheiaPreferenceView extends TheiaView {
         return `li[data-pref-id="${preferenceId}"]`;
     }
 
-    private getPreferenceEditorSelector(preferenceId: string): string {
-        return `${this.getPreferenceSelector(preferenceId)} input`;
+    private getPreferenceEditorSelector(preferenceId: string, elementType: string): string {
+        return `${this.getPreferenceSelector(preferenceId)} ${elementType}`;
     }
 
-    private getPreferenceGutterSelector(preferenceId: string): string {
-        return `${this.getPreferenceSelector(preferenceId)} .pref-context-gutter`;
-    }
-
-    private async findPreferenceResetButton(preferenceId: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
+    private async findPreferenceResetButton(preferenceId: string): Promise<ElementHandle<SVGElement | HTMLElement>> {
         await this.activate();
         const viewElement = await this.viewElement();
-        const gutter = await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}`, { timeout: this.customTimeout });
-        if (!gutter) {
-            throw new Error(`Could not determine modified state for element with preference id "${preferenceId}"`);
-        }
-        const isModified = await gutter.evaluate(e => e.classList.contains('theia-mod-item-modified'));
-        if (!isModified) {
-            return undefined;
-        }
-
         const settingsContextMenuBtn = await viewElement?.waitForSelector(`${this.getPreferenceSelector(preferenceId)} .settings-context-menu-btn`);
         if (!settingsContextMenuBtn) {
             throw new Error(`Could not find context menu button for element with preference id "${preferenceId}"`);
@@ -223,4 +214,19 @@ export class TheiaPreferenceView extends TheiaView {
         return resetPreferenceButton;
     }
 
+    async waitForModified(preferenceId: string): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}${this.modificationIndicator}`, { timeout: this.customTimeout });
+    }
+
+    async waitForUnmodified(preferenceId: string): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}${this.modificationIndicator}`, { state: 'detached', timeout: this.customTimeout });
+    }
+
+    private getPreferenceGutterSelector(preferenceId: string): string {
+        return `${this.getPreferenceSelector(preferenceId)} .pref-context-gutter`;
+    }
 }
