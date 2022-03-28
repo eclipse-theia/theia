@@ -2550,6 +2550,13 @@ export module '@theia/plugin' {
         appendLine(value: string): void;
 
         /**
+         * Replaces all output from the channel with the given value.
+         *
+         * @param value A string, falsy values will not be printed.
+         */
+        replace(value: string): void;
+
+        /**
          * Removes all output from the channel.
          */
         clear(): void;
@@ -8062,6 +8069,14 @@ export module '@theia/plugin' {
          * Base kind for an organize imports source action: `source.organizeImports`.
          */
         static readonly SourceOrganizeImports: CodeActionKind;
+
+        /**
+         * Base kind for auto-fix source actions: `source.fixAll`.
+         *
+         * Fix all actions automatically fix errors that have a clear fix that do not require user input.
+         * They should not suppress errors or perform unsafe fixes such as generating new types or classes.
+         */
+        static readonly SourceFixAll: CodeActionKind;
 
         private constructor(value: string);
 

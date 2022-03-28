@@ -68,8 +68,8 @@ export class NavigatorWidgetFactory implements WidgetFactory {
         viewContainer.setTitleOptions(EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS);
         const openEditorsWidget = await this.widgetManager.getOrCreateWidget(OpenEditorsWidget.ID);
         const navigatorWidget = await this.widgetManager.getOrCreateWidget(FILE_NAVIGATOR_ID);
-        viewContainer.addWidget(openEditorsWidget, this.openEditorsWidgetOptions);
         viewContainer.addWidget(navigatorWidget, this.fileNavigatorWidgetOptions);
+        viewContainer.addWidget(openEditorsWidget, this.openEditorsWidgetOptions);
         return viewContainer;
     }
 }
