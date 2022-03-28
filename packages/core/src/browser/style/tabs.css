@@ -82,11 +82,13 @@
     border-right: 1px solid var(--theia-tab-border);
     background: var(--theia-tab-inactiveBackground);
     color: var(--theia-tab-inactiveForeground);
+    border-top: 1px solid transparent;
 }
 
 #theia-main-content-panel .p-TabBar .p-TabBar-tab.p-mod-current {
     background: var(--theia-tab-activeBackground);
     color: var(--theia-tab-activeForeground);
+    border-top: 1px solid var(--theia-tab-activeBorderTop);
 }
 
 .p-TabBar.theia-app-centers {
