@@ -18,6 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { injectable, interfaces, Container, postConstruct, inject } from '@theia/core/shared/inversify';
 import {
     ApplicationShell,
+    codicon,
     ContextMenuRenderer,
     defaultTreeProps,
     NavigatableWidget,
@@ -46,6 +47,7 @@ export const OPEN_EDITORS_PROPS: TreeProps = {
     ...defaultTreeProps,
     virtualized: false,
     contextMenuPath: OPEN_EDITORS_CONTEXT_MENU,
+    leftPadding: 22
 };
 
 export interface OpenEditorsNodeRow extends TreeWidget.NodeRow {
@@ -120,7 +122,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
             {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
             {this.renderTailDecorations(node, props)}
             {(this.isGroupNode(node) || this.isAreaNode(node)) && this.renderInteractables(node, props)}
-        </div >;
+        </div>;
         return React.createElement('div', attributes, content);
     }
 
@@ -229,11 +231,11 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return (
             <div className='open-editors-prefix-icon-container'>
                 <div data-id={node.id}
-                    className='open-editors-prefix-icon dirty codicon codicon-circle-filled'
+                    className={`open-editors-prefix-icon dirty ${codicon('circle-filled', true)}`}
                 />
                 <div data-id={node.id}
                     onClick={this.closeEditor}
-                    className='open-editors-prefix-icon close codicon codicon-close'
+                    className={`open-editors-prefix-icon close ${codicon('close', true)}`}
                 />
             </div>);
     }
@@ -269,5 +271,12 @@ export class OpenEditorsWidget extends FileTreeWidget {
             // that the EditorWidget is activated, not the Navigator itself
             this.applicationShell.activateWidget(node.widget.id);
         }
+    }
+
+    protected override getPaddingLeft(node: TreeNode): number {
+        if (node.id.startsWith(OpenEditorsModel.AREA_NODE_ID_PREFIX)) {
+            return 0;
+        }
+        return this.props.leftPadding;
     }
 }

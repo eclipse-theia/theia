@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 :root {
-    --theia-open-editors-icon-width: 16px;
+    --theia-open-editors-icon-width: 20px;
 }
 
 .theia-open-editors-widget .theia-caption-suffix {
@@ -40,6 +40,7 @@
     display: none;
 }
 
+.theia-open-editors-widget .open-editors-node-row:not(.dirty) .theia-mod-selected .open-editors-prefix-icon.close,
 .theia-open-editors-widget .open-editors-node-row:hover .open-editors-prefix-icon.close {
     display: block;
 }
