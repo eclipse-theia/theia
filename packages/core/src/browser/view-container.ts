@@ -1510,11 +1510,7 @@ export class ViewContainerLayout extends SplitLayout {
             // The or clauses are added for type checking. If they're true, allHidden will also have been true.
             if (allHidden || firstUncollapsed === undefined || lastUncollapsed === undefined) {
                 handle.classList.add('sash-hidden');
-                // Handle is at the bottom of an uncollapsed widget above the last uncollapsed.
-            } else if (index < lastUncollapsed && !this.widgets[index].collapsed && !this.widgets[index].isHidden) {
-                handle.classList.remove('sash-hidden');
-                // Handle is at the top of an uncollapsed widget below the first uncollapsed.
-            } else if (index > firstUncollapsed && this.widgets[index + 1]?.collapsed === false && !this.widgets[index + 1].isHidden) {
+            } else if (index < lastUncollapsed && index >= firstUncollapsed) {
                 handle.classList.remove('sash-hidden');
             } else {
                 handle.classList.add('sash-hidden');
