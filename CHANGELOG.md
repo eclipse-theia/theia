@@ -10,6 +10,7 @@
 
 - [plugin] added support for `DocumentSymbolProviderMetadata` [#10811](https://github.com/eclipse-theia/theia/pull/10811) - Contributed on behalf of STMicroelectronics
 - [playwright] fixed playwright tests for Windows and MacOS [#10826](https://github.com/eclipse-theia/theia/pull/10826) - Contributed on behalf of STMicroelectronics
+- [monaco, et al.] uplifted Monaco dependency from 0.23 to ca. 0.33 (state as of VSCode 1.65.2). [#10736](https://github.com/eclipse-theia/theia/pull/10736)
 
 <a name="breaking_changes_1.24.0">[Breaking Changes:](#breaking_changes_1.24.0)</a>
 
@@ -17,6 +18,13 @@
 - [debug] the getter `model` was renamed to `getModel` and accepts an optional `URI` parameter [#10875](https://github.com/eclipse-theia/theia/pull/10875)
 - [filesystem] The `generateUniqueResourceURI` method from the `FileSystemUtils` class has an updated signature. Additionally, the method now returns a generated Uri that uses spaces as separators. The naming scheme was also changed to match VSCode. [10767](https://github.com/eclipse-theia/theia/pull/10767)
 - [markers] `ProblemDecorator` reimplemented to reduce redundancy and align more closely with VSCode. `collectMarkers` now returns `Map<string, TreeDecoration.Data>`, `getOverlayIconColor` renamed to `getColor`, `getOverlayIcon` removed, `appendContainerMarkers` returns `void` [#10820](https://github.com/eclipse-theia/theia/pull/10820)
+- [monaco, et al.] The following breaking changes were made in the Monaco uplift. [#10736](https://github.com/eclipse-theia/theia/pull/10736)
+  - `QuickPickItem` is now only for selectable items. Use `QuickPickItemOrSeparator` when either an item or a separator is intended.
+  - `editor.autoSave` preference renamed `files.autoSave` and accepts `on`, `off`, `afterDelay`, `onFocusChange`. Use `!== 'off'` to check for any active state.
+  - `editor.autoSaveDelay` renamed `files.autoSaveDelay`.
+  - `commandService`, `instantiationService` removed from `MonacoEditor`. Use `StandaloneServices.get(IInstantationService / ICommandService)` instead.
+  - `DecorationMiniMapOptions.position`, `DecorationOverviewRulerOptions.position` no longer optional.
+  - Overrides used by `MonacoEditorFactory` accept the type `EditorServiceOverrides` rather than `{[key: string]: any}`.
 
 ## v1.23.0 - 2/24/2022
 

@@ -51,7 +51,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType, Saveable, SaveOptions } from './saveable';
-import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
+import { QuickInputService, QuickPick, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
@@ -1178,7 +1178,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         const itemsByTheme: { light: Array<QuickPickItem>, dark: Array<QuickPickItem>, hc: Array<QuickPickItem> } = { light: [], dark: [], hc: [] };
         for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
-            const themeItems = itemsByTheme[theme.type];
+            const themeItems: QuickPickItemOrSeparator[] = itemsByTheme[theme.type];
             if (themeItems.length === 0) {
                 themeItems.push({
                     type: 'separator',

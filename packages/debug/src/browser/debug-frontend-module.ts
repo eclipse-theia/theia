@@ -77,7 +77,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         DebugEditorModel.createModel(container, editor)
     )).inSingletonScope();
     bind(DebugEditorService).toSelf().inSingletonScope().onActivation((context, service) => {
-        context.container.get(MonacoEditorService).registerDecorationType(DebugBreakpointWidget.PLACEHOLDER_DECORATION, {});
+        context.container.get(MonacoEditorService).registerDecorationType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, {});
         return service;
     });
 

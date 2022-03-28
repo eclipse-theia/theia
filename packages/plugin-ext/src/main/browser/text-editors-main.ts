@@ -41,6 +41,9 @@ import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edi
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import * as monaco from '@theia/monaco-editor-core';
+import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
@@ -120,7 +123,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
         const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
-            const edits = monaco.editor.ResourceEdit.convert(workspaceEdit);
+            const edits = ResourceEdit.convert(workspaceEdit);
             const { success } = await this.bulkEditService.apply(edits);
             return success;
         } catch {
@@ -135,9 +138,9 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.insertSnippet(template, ranges, opts));
     }
 
-    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
+    $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions | IDecorationRenderOptions): void {
         this.injectRemoteUris(options);
-        this.monacoEditorService.registerDecorationType(key, options);
+        this.monacoEditorService.registerDecorationType('Plugin decoration', key, options as IDecorationRenderOptions);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 

@@ -62,6 +62,9 @@ import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 export type PluginHost = 'frontend' | string;
@@ -190,12 +193,11 @@ export class HostedPluginSupport {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
-        const modeService = monaco.services.StaticServices.modeService.get();
-        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
-            const mode = modeService['_instantiatedModes'][modeId];
-            this.activateByLanguage(mode.getId());
+        const languageService = (StandaloneServices.get(ILanguageService) as LanguageService);
+        for (const language of languageService['_encounteredLanguages'] as Set<string>) {
+            this.activateByLanguage(language);
         }
-        modeService.onDidCreateMode(mode => this.activateByLanguage(mode.getId()));
+        languageService.onDidEncounterLanguage(language => this.activateByLanguage(language));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));

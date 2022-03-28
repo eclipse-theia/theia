@@ -66,8 +66,12 @@ import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access'
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
 import { QuickAccessContribution, QuickAccessRegistry } from '@theia/core/lib/browser/quick-input/quick-access';
 import { MonacoQuickAccessRegistry } from './monaco-quick-access-registry';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
 
-decorate(injectable(), monaco.contextKeyService.ContextKeyService);
+decorate(injectable(), VSCodeContextKeyService);
 
 MonacoThemingService.init();
 
@@ -95,8 +99,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoConfigurationService).toDynamicValue(({ container }) =>
         createMonacoConfigurationService(container)
     ).inSingletonScope();
-    bind(monaco.contextKeyService.ContextKeyService).toDynamicValue(({ container }) =>
-        new monaco.contextKeyService.ContextKeyService(container.get(MonacoConfigurationService))
+    bind(VSCodeContextKeyService).toDynamicValue(({ container }) =>
+        new VSCodeContextKeyService(container.get(MonacoConfigurationService))
     ).inSingletonScope();
 
     bind(MonacoBulkEditService).toSelf().inSingletonScope();
@@ -162,11 +166,11 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
-export function createMonacoConfigurationService(container: interfaces.Container): monaco.services.IConfigurationService {
+export function createMonacoConfigurationService(container: interfaces.Container): IConfigurationService {
     const preferences = container.get<PreferenceService>(PreferenceService);
     const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
-    const service = monaco.services.StaticServices.configurationService.get();
-    const _configuration = service._configuration;
+    const service = StandaloneServices.get(IConfigurationService) as StandaloneConfigurationService;
+    const _configuration: Configuration = service['_configuration'];
 
     _configuration.getValue = (section, overrides) => {
         const overrideIdentifier: string | undefined = (overrides && 'overrideIdentifier' in overrides && typeof overrides.overrideIdentifier === 'string')
@@ -183,12 +187,12 @@ export function createMonacoConfigurationService(container: interfaces.Container
         return proxy;
     };
 
-    const toTarget = (scope: PreferenceScope): monaco.services.ConfigurationTarget => {
+    const toTarget = (scope: PreferenceScope): ConfigurationTarget => {
         switch (scope) {
-            case PreferenceScope.Default: return monaco.services.ConfigurationTarget.DEFAULT;
-            case PreferenceScope.User: return monaco.services.ConfigurationTarget.USER;
-            case PreferenceScope.Workspace: return monaco.services.ConfigurationTarget.WORKSPACE;
-            case PreferenceScope.Folder: return monaco.services.ConfigurationTarget.WORKSPACE_FOLDER;
+            case PreferenceScope.Default: return ConfigurationTarget.DEFAULT;
+            case PreferenceScope.User: return ConfigurationTarget.USER;
+            case PreferenceScope.Workspace: return ConfigurationTarget.WORKSPACE;
+            case PreferenceScope.Folder: return ConfigurationTarget.WORKSPACE_FOLDER;
         }
     };
 
@@ -204,7 +208,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
         keys: new Set<string>(),
         overrides: new Map<string, Set<string>>()
     });
-    const fireDidChangeConfiguration = (source: monaco.services.ConfigurationTarget, context: FireDidChangeConfigurationContext): void => {
+    const fireDidChangeConfiguration = (source: ConfigurationTarget, context: FireDidChangeConfigurationContext): void => {
         if (!context.affectedKeys.size) {
             return;
         }
@@ -212,7 +216,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
         for (const [override, values] of context.overrides) {
             overrides.push([override, [...values]]);
         }
-        service._onDidChangeConfiguration.fire({
+        service['_onDidChangeConfiguration'].fire(<IConfigurationChangeEvent>{
             change: {
                 keys: [...context.keys],
                 overrides
@@ -243,7 +247,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
     };
 
     preferences.onPreferencesChanged(event => {
-        let source: monaco.services.ConfigurationTarget | undefined;
+        let source: ConfigurationTarget | undefined;
         let context = newFireDidChangeConfigurationContext();
         for (let key of Object.keys(event)) {
             const change = event[key];

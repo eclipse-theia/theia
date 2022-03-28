@@ -29,6 +29,14 @@ import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import * as monaco from '@theia/monaco-editor-core';
+import {
+    IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
+    ResourceTextEdit as MonacoResourceTextEdit
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
+import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.WorkspaceFileEdit {
@@ -51,15 +59,15 @@ export namespace WorkspaceTextEdit {
 export type Edit = monaco.languages.WorkspaceFileEdit | monaco.languages.WorkspaceTextEdit;
 
 export namespace ResourceFileEdit {
-    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceFileEdit {
-        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).oldResource)) ||
-            ('newResource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).newResource));
+    export function is(arg: ResourceEdit): arg is MonacoResourceFileEdit {
+        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as MonacoResourceFileEdit).oldResource)) ||
+            ('newResource' in arg && monaco.Uri.isUri((arg as MonacoResourceFileEdit).newResource));
     }
 }
 
 export namespace ResourceTextEdit {
-    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceTextEdit {
-        return ('resource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceTextEdit).resource));
+    export function is(arg: ResourceEdit): arg is MonacoResourceTextEdit {
+        return ('resource' in arg && monaco.Uri.isUri((arg as MonacoResourceTextEdit).resource));
     }
 }
 
@@ -180,7 +188,7 @@ export class MonacoWorkspace {
             // acquired by the editor, thus losing the changes that made it dirty.
             this.textModelService.createModelReference(model.textEditorModel.uri).then(ref => {
                 (
-                    model.autoSave === 'on' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
+                    model.autoSave !== 'off' ? new Promise(resolve => model.onDidSaveModel(resolve)) :
                         this.editorManager.open(new URI(model.uri), { mode: 'open' })
                 ).then(
                     () => ref.dispose()
@@ -218,19 +226,19 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(edits: monaco.editor.ResourceEdit[]): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(edits: ResourceEdit[]): Promise<IBulkEditResult & { success: boolean }> {
         try {
             let totalEdits = 0;
             let totalFiles = 0;
-            const fileEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceFileEdit);
-            const textEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceTextEdit);
+            const fileEdits = edits.filter(edit => edit instanceof MonacoResourceFileEdit);
+            const textEdits = edits.filter(edit => edit instanceof MonacoResourceTextEdit);
 
             if (fileEdits.length > 0) {
-                await this.performFileEdits(<monaco.editor.ResourceFileEdit[]>fileEdits);
+                await this.performFileEdits(<MonacoResourceFileEdit[]>fileEdits);
             }
 
             if (textEdits.length > 0) {
-                const result = await this.performTextEdits(<monaco.editor.ResourceTextEdit[]>textEdits);
+                const result = await this.performTextEdits(<MonacoResourceTextEdit[]>textEdits);
                 totalEdits += result.totalEdits;
                 totalFiles += result.totalFiles;
             }
@@ -256,13 +264,13 @@ export class MonacoWorkspace {
         return `Made ${totalEdits} text edits in one file`;
     }
 
-    protected async performTextEdits(edits: monaco.editor.ResourceTextEdit[]): Promise<{
+    protected async performTextEdits(edits: MonacoResourceTextEdit[]): Promise<{
         totalEdits: number,
         totalFiles: number
     }> {
         let totalEdits = 0;
         let totalFiles = 0;
-        const resourceEdits = new Map<string, monaco.editor.ResourceTextEdit[]>();
+        const resourceEdits = new Map<string, MonacoResourceTextEdit[]>();
         for (const edit of edits) {
             if (typeof edit.versionId === 'number') {
                 const model = this.textModelService.get(edit.resource.toString());
@@ -282,9 +290,9 @@ export class MonacoWorkspace {
         for (const [key, value] of resourceEdits) {
             pending.push((async () => {
                 const uri = monaco.Uri.parse(key);
-                let eol: monaco.editor.EndOfLineSequence | undefined;
+                let eol: EndOfLineSequence | undefined;
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const minimalEdits = await monaco.services.StaticServices.editorWorkerService.get().computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
+                const minimalEdits = await StandaloneServices.get(IEditorWorkerService).computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
@@ -306,9 +314,10 @@ export class MonacoWorkspace {
                 }
                 const reference = await this.textModelService.createModelReference(uri);
                 try {
-                    const model = reference.object.textEditorModel;
-                    const editor = MonacoEditor.findByDocument(this.editorManager, reference.object)[0];
-                    const cursorState = editor?.getControl().getSelections() || [];
+                    const document = reference.object as MonacoEditorModel;
+                    const model = document.textEditorModel;
+                    const editor = MonacoEditor.findByDocument(this.editorManager, document)[0];
+                    const cursorState = editor?.getControl().getSelections() ?? [];
                     // start a fresh operation
                     model.pushStackElement();
                     if (editOperations.length) {
@@ -330,7 +339,7 @@ export class MonacoWorkspace {
         return { totalEdits, totalFiles };
     }
 
-    protected async performFileEdits(edits: monaco.editor.ResourceFileEdit[]): Promise<void> {
+    protected async performFileEdits(edits: MonacoResourceFileEdit[]): Promise<void> {
         for (const edit of edits) {
             const options = edit.options || {};
             if (edit.newResource && edit.oldResource) {

@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { CommentInfoMain } from './comments-service';
 import { CommentingRanges, Range } from '../../../common/plugin-api-rpc-model';
+import * as monaco from '@theia/monaco-editor-core';
 
 @injectable()
 export class CommentingRangeDecorator {

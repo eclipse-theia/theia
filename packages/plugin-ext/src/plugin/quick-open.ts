@@ -19,7 +19,7 @@ import {
     Item, TransferQuickInputButton, TransferQuickPickItems, TransferQuickInput
 } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
-import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
+import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput, QuickPickItemValue } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -74,7 +74,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     }
 
     /* eslint-disable max-len */
-    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<QuickPickItem> | undefined>;
+    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<QuickPickItemValue> | undefined>;
     showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
     showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<QuickPickItem | undefined>;
     showQuickPick(itemsOrItemsPromise: Item[] | Promise<Item[]>, options?: theia.QuickPickOptions, token: theia.CancellationToken = CancellationToken.None): Promise<Item | Item[] | undefined> {
@@ -420,10 +420,10 @@ export class QuickInputExt implements QuickInput {
         this.dispose();
     }
 
-    protected convertURL(iconPath: monaco.Uri | { light: string | monaco.Uri; dark: string | monaco.Uri } | monaco.theme.ThemeIcon):
+    protected convertURL(iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon):
         URI | { light: string | URI; dark: string | URI } | ThemeIcon {
-        const toUrl = (arg: string | monaco.Uri) => {
-            arg = arg instanceof monaco.Uri && arg.scheme === 'file' ? arg.fsPath : arg;
+        const toUrl = (arg: string | URI) => {
+            arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
             if (typeof arg !== 'string') {
                 return arg.toString(true);
             }
@@ -435,10 +435,10 @@ export class QuickInputExt implements QuickInput {
         };
         if (ThemeIcon.is(iconPath)) {
             return iconPath;
-        } else if (typeof iconPath === 'string' || iconPath instanceof monaco.Uri) {
+        } else if (typeof iconPath === 'string' || iconPath instanceof URI) {
             return URI.parse(toUrl(iconPath));
         } else {
-            const { light, dark } = iconPath as { light: string | monaco.Uri, dark: string | monaco.Uri };
+            const { light, dark } = iconPath as { light: string | URI, dark: string | URI };
             return {
                 light: toUrl(light),
                 dark: toUrl(dark)
@@ -613,15 +613,20 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
             this._itemsToHandles.set(item, i);
         });
         this.update({
-            items: items.map((item, i) => ({
-                type: item.type,
-                label: item.label,
-                description: item.description,
-                handle: i,
-                detail: item.detail,
-                picked: item.picked,
-                alwaysShow: item.alwaysShow
-            }))
+            items: items.map((item, i) => {
+                if (item.type === 'separator') {
+                    return { type: item.type, label: item.label };
+                }
+                return {
+                    type: item.type,
+                    label: item.label,
+                    description: item.description,
+                    handle: i,
+                    detail: item.detail,
+                    picked: item.picked,
+                    alwaysShow: item.alwaysShow
+                };
+            })
         });
     }
 

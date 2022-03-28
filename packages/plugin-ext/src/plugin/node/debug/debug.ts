@@ -132,7 +132,7 @@ export class DebugExtImpl implements DebugExt {
         return this.onDidChangeBreakpointsEmitter.event;
     }
 
-    addBreakpoints(breakpoints: theia.Breakpoint[]): void {
+    addBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
         const added: theia.Breakpoint[] = [];
         for (const b of breakpoints) {
             if (this._breakpoints.has(b.id)) {
@@ -147,7 +147,7 @@ export class DebugExtImpl implements DebugExt {
         }
     }
 
-    removeBreakpoints(breakpoints: theia.Breakpoint[]): void {
+    removeBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
         const removed: theia.Breakpoint[] = [];
         const removedIds: string[] = [];
         for (const b of breakpoints) {

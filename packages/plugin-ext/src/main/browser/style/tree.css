@@ -44,3 +44,7 @@
 .theia-tree-view .theia-TreeNode:not(:hover):not(.theia-mod-selected) .theia-tree-view-inline-action {
     display: none;
 }
+
+.codicon.icon-inline {
+    font-size: var(--theia-ui-font-size1);
+}

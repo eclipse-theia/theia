@@ -17,7 +17,6 @@
 import { TextEditor } from './editor';
 
 export interface DiffNavigator {
-    revealFirst: boolean;
     canNavigate(): boolean;
     hasNext(): boolean;
     hasPrevious(): boolean;

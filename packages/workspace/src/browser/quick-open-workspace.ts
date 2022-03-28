@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
-import { QuickPickItem, LabelProvider, QuickInputService, QuickInputButton } from '@theia/core/lib/browser';
+import { QuickPickItem, LabelProvider, QuickInputService, QuickInputButton, QuickPickSeparator } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -30,7 +30,7 @@ interface RecentlyOpenedPick extends QuickPickItem {
 
 @injectable()
 export class QuickOpenWorkspace {
-    protected items: Array<RecentlyOpenedPick>;
+    protected items: Array<RecentlyOpenedPick | QuickPickSeparator>;
     protected opened: boolean;
 
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
@@ -93,7 +93,7 @@ export class QuickOpenWorkspace {
                 'theia/workspace/openRecentPlaceholder',
                 'Type the name of the workspace you want to open'),
             onDidTriggerItemButton: async context => {
-                const resource = context.item.resource;
+                const resource = (context.item as RecentlyOpenedPick).resource;
                 if (resource) {
                     await this.workspaceService.removeRecentWorkspace(resource.toString());
                     context.removeItem();

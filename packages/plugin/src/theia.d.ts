@@ -2078,8 +2078,8 @@ export module '@theia/plugin' {
     /**
      * Represents an item that can be selected from a list of items.
      */
-    export interface QuickPickItem {
-        type?: 'item' | 'separator';
+    export interface QuickPickItemValue {
+        type?: 'item';
         /**
          * The item label
          */
@@ -2105,6 +2105,13 @@ export module '@theia/plugin' {
          */
         alwaysShow?: boolean;
     }
+
+    export interface QuickPickSeparator {
+        type: 'separator';
+        label?: string;
+    }
+
+    export type QuickPickItem = QuickPickSeparator | QuickPickItemValue;
 
     /**
      * A concrete [QuickInput](#QuickInput) to let the user pick an item from a
@@ -2541,6 +2548,13 @@ export module '@theia/plugin' {
          * @param value
          */
         appendLine(value: string): void;
+
+        /**
+         * Replaces all output from the channel with the given value.
+         *
+         * @param value A string, falsy values will not be printed.
+         */
+        replace(value: string): void;
 
         /**
          * Removes all output from the channel.
@@ -6207,7 +6221,7 @@ export module '@theia/plugin' {
          * @return true if the operation was successfully started and false otherwise if arguments were used that would result
          * in invalid workspace folder state (e.g. 2 folders with the same URI).
          */
-        export function updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { uri: Uri, name?: string }[]): boolean;
+        export function updateWorkspaceFolders(start: number, deleteCount: number | undefined | null, ...workspaceFoldersToAdd: { readonly uri: Uri, readonly name?: string }[]): boolean;
 
         /**
          * ~~Register a task provider.~~
@@ -8055,6 +8069,14 @@ export module '@theia/plugin' {
          * Base kind for an organize imports source action: `source.organizeImports`.
          */
         static readonly SourceOrganizeImports: CodeActionKind;
+
+        /**
+         * Base kind for auto-fix source actions: `source.fixAll`.
+         *
+         * Fix all actions automatically fix errors that have a clear fix that do not require user input.
+         * They should not suppress errors or perform unsafe fixes such as generating new types or classes.
+         */
+        static readonly SourceFixAll: CodeActionKind;
 
         private constructor(value: string);
 
@@ -10049,14 +10071,14 @@ export module '@theia/plugin' {
          * @param breakpoints The breakpoints to add.
          */
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        export function addBreakpoints(breakpoints: Breakpoint[]): void;
+        export function addBreakpoints(breakpoints: readonly Breakpoint[]): void;
 
         /**
          * Remove breakpoints.
          * @param breakpoints The breakpoints to remove.
          */
         // eslint-disable-next-line @typescript-eslint/no-shadow
-        export function removeBreakpoints(breakpoints: Breakpoint[]): void;
+        export function removeBreakpoints(breakpoints: readonly Breakpoint[]): void;
     }
 
     /**
@@ -10454,6 +10476,13 @@ export module '@theia/plugin' {
         source?: string;
 
         /**
+         * A human-readable string which is rendered less prominently on a separate line in places
+         * where the task's name is displayed. Supports rendering of {@link ThemeIcon theme icons}
+         * via the `$(<name>)`-syntax.
+         */
+        detail?: string;
+
+        /**
          * The task group this tasks belongs to. See TaskGroup
          * for a predefined set of available groups.
          * Defaults to undefined meaning that the task doesn't
@@ -10471,9 +10500,10 @@ export module '@theia/plugin' {
         problemMatchers?: string[];
     }
 
-    export class Task2 extends Task {
-        detail?: string;
-    }
+    /**
+     * Task2 is kept for compatibility reasons.
+     */
+    export class Task2 extends Task { }
 
     export interface TaskProvider<T extends Task = Task> {
         /**

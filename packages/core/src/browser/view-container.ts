@@ -1036,7 +1036,7 @@ export class ViewContainerPart extends BaseWidget {
     set collapsed(collapsed: boolean) {
         // Cannot collapse/expand if the orientation of the container is `horizontal`.
         const orientation = ViewContainer.getOrientation(this.node);
-        if (this._collapsed === collapsed || orientation === 'horizontal' && collapsed) {
+        if (this._collapsed === collapsed || (orientation === 'horizontal' && collapsed)) {
             return;
         }
         this._collapsed = collapsed;

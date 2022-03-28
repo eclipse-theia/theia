@@ -27,6 +27,7 @@ import { DebugEditor } from './debug-editor';
 import { DebugExpressionProvider } from './debug-expression-provider';
 import { DebugHoverSource } from './debug-hover-source';
 import { DebugVariable } from '../console/debug-console-items';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface ShowDebugHoverOptions {
     selection: monaco.Range

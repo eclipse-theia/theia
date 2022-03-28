@@ -30,6 +30,7 @@ import { DebugSource } from './debug-source';
 import { RecursivePartial } from '@theia/core';
 import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
+import * as monaco from '@theia/monaco-editor-core';
 
 export class DebugStackFrameData {
     readonly raw: DebugProtocol.StackFrame;

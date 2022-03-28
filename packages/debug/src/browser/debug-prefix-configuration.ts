@@ -25,7 +25,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
-import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
 
 @injectable()
@@ -108,7 +108,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
-        const items: QuickPickItem[] = [];
+        const items: QuickPickItemOrSeparator[] = [];
         const configurations = this.debugConfigurationManager.all;
 
         for (const config of configurations) {

@@ -24,6 +24,9 @@ import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DebugSessionManager } from '../debug-session-manager';
+import * as monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
+import { Disposable } from '@theia/core';
 
 export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');
 
@@ -75,7 +78,7 @@ export class DebugConsoleSession extends ConsoleSession {
         this.completionKinds.set('file', monaco.languages.CompletionItemKind.File);
         this.completionKinds.set('reference', monaco.languages.CompletionItemKind.Reference);
         this.completionKinds.set('customcolor', monaco.languages.CompletionItemKind.Color);
-        this.toDispose.push(monaco.languages.registerCompletionItemProvider({
+        this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)({
             scheme: DebugConsoleSession.uri.scheme,
             hasAccessToAllModels: true
         }, {

@@ -21,6 +21,8 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
 import URI from '@theia/core/lib/common/uri';
 import { DecorationStyle } from '@theia/core/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 
 @injectable()
 export class BlameDecorator implements monaco.languages.HoverProvider {
@@ -38,7 +40,9 @@ export class BlameDecorator implements monaco.languages.HoverProvider {
     protected readonly editorManager: EditorManager;
 
     protected registerHoverProvider(uri: string): Disposable {
-        return monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
+        // The public typedef of this method only accepts strings, but it immediately delegates to a method that accepts LanguageSelectors.
+        return (monaco.languages.registerHoverProvider as (languageId: LanguageSelector, provider: monaco.languages.HoverProvider) => Disposable)
+            ([{ pattern: new URI(uri).path.toString() }], this);
     }
 
     protected emptyHover: monaco.languages.Hover = {

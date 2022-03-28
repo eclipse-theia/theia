@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Position, Range, TextDocumentSaveReason, TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences, DEFAULT_WORD_SEPARATORS } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -24,18 +24,24 @@ import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
+import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { IResolvedTextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import * as monaco from '@theia/monaco-editor-core';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
+import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export {
     TextDocumentSaveReason
 };
 
-type ITextEditorModel = monaco.editor.ITextEditorModel;
-
 export interface WillSaveMonacoModelEvent {
     readonly model: MonacoEditorModel;
     readonly reason: TextDocumentSaveReason;
     readonly options?: SaveOptions;
-    waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
+    waitUntil(thenable: Thenable<IIdentifiedSingleEditOperation[]>): void;
 }
 
 export interface MonacoModelContentChangedEvent {
@@ -43,10 +49,10 @@ export interface MonacoModelContentChangedEvent {
     readonly contentChanges: TextDocumentContentChangeEvent[];
 }
 
-export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
+export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDocument {
 
-    autoSave: 'on' | 'off' = 'on';
-    autoSaveDelay: number = 500;
+    autoSave: EditorPreferences['files.autoSave'] = 'afterDelay';
+    autoSaveDelay = 500;
     suppressOpenEditorWhenDirty = false;
     lineNumbersMinChars = 3;
 
@@ -54,7 +60,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     readonly onWillSaveLoopTimeOut = 1500;
     protected bufferSavedVersionId: number;
 
-    protected model: monaco.editor.IModel;
+    protected model: ITextModel;
     protected readonly resolveModel: Promise<void>;
 
     protected readonly toDispose = new DisposableCollection();
@@ -63,7 +69,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onDidChangeContentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeContent = this.onDidChangeContentEmitter.event;
 
-    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
+    protected readonly onDidSaveModelEmitter = new Emitter<ITextModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
 
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
@@ -103,6 +109,18 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    isDisposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
+    resolve(): Promise<void> {
+        return this.resolveModel;
+    }
+
+    isResolved(): boolean {
+        return Boolean(this.model);
     }
 
     setEncoding(encoding: string, mode: EncodingMode): Promise<void> {
@@ -147,7 +165,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * Only this method can create an instance of `monaco.editor.IModel`,
      * there should not be other calls to `monaco.editor.createModel`.
      */
-    protected initialize(value: string | monaco.editor.ITextBufferFactory): void {
+    protected initialize(value: string | ITextBufferFactory): void {
         if (!this.toDispose.disposed) {
             const uri = monaco.Uri.parse(this.resource.uri.toString());
             let firstLine;
@@ -160,8 +178,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             } else {
                 firstLine = value.getFirstLineText(1000);
             }
-            const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
-            this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
+            const languageSelection = StandaloneServices.get(ILanguageService).createByFilepathOrFirstLine(uri, firstLine);
+            this.model = StandaloneServices.get(IModelService).createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
@@ -221,10 +239,15 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected _languageId: string | undefined;
     get languageId(): string {
-        return this._languageId !== undefined ? this._languageId : this.model.getModeId();
+        return this._languageId !== undefined ? this._languageId : this.model.getLanguageId();
     }
+
+    getLanguageId(): string | undefined {
+        return this.languageId;
+    }
+
     /**
-     * It's a hack to dispatch close notification with an old language id, don't use it.
+     * It's a hack to dispatch close notification with an old language id; don't use it.
      */
     setLanguageId(languageId: string | undefined): void {
         this._languageId = languageId;
@@ -273,11 +296,22 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.resource.saveContents === undefined;
     }
 
+    isReadonly(): boolean {
+        return this.readOnly;
+    }
+
     get onDispose(): monaco.IEvent<void> {
         return this.toDispose.onDispose;
     }
 
-    get textEditorModel(): monaco.editor.IModel {
+    get onWillDispose(): Event<void> {
+        return this.toDispose.onDispose;
+    }
+
+    // We have a TypeScript problem here. There is a const enum `DefaultEndOfLine` used for ITextModel and a non-const redeclaration of that enum in the public API in
+    // Monaco.editor. The values will be the same, but TS won't accept that the two enums are equivalent, so it says these types are irreconcilable.
+    get textEditorModel(): monaco.editor.ITextModel & ITextModel {
+        // @ts-expect-error ts(2322)
         return this.model;
     }
 
@@ -288,7 +322,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * @returns the list of matches.
      */
     findMatches(options: FindMatchesOptions): FindMatch[] {
-        const wordSeparators = this.editorPreferences ? this.editorPreferences['editor.wordSeparators'] : DEFAULT_WORD_SEPARATORS;
+        const wordSeparators = this.editorPreferences?.['editor.wordSeparators'] ?? editorGeneratedPreferenceProperties['editor.wordSeparators'].default as string;
         const results: monaco.editor.FindMatch[] = this.model.findMatches(
             options.searchString,
             false,
@@ -368,13 +402,13 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
 
         this.resourceVersion = this.resource.version;
-        this.updateModel(() => monaco.services.StaticServices.modelService.get().updateModel(this.model, value), {
+        this.updateModel(() => StandaloneServices.get(IModelService).updateModel(this.model, value), {
             ignoreDirty: true,
             ignoreContentChanges: true
         });
         this.trace(log => log('MonacoEditorModel.doSync - exit'));
     }
-    protected async readContents(): Promise<string | monaco.editor.ITextBufferFactory | undefined> {
+    protected async readContents(): Promise<string | ITextBufferFactory | undefined> {
         try {
             const options = { encoding: this.getEncoding() };
             const content = await (this.resource.readStream ? this.resource.readStream(options) : this.resource.readContents(options));
@@ -382,7 +416,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             if (typeof content === 'string') {
                 value = content;
             } else {
-                value = monaco.textModel.createTextBufferFactoryFromStream(content);
+                value = createTextBufferFactoryFromStream(content);
             }
             this.updateContentEncoding();
             this.setValid(true);
@@ -410,7 +444,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected doAutoSave(): void {
-        if (this.autoSave === 'on') {
+        if (this.autoSave !== 'off') {
             const token = this.cancelSave();
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {
@@ -611,10 +645,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.trace(log => log('MonacoEditorModel.revert - exit'));
     }
 
-    createSnapshot(): object {
-        return {
-            value: this.getText()
-        };
+    createSnapshot(preserveBOM?: boolean): ITextSnapshot {
+        return this.model.createSnapshot(preserveBOM);
     }
 
     applySnapshot(snapshot: { value: string }): void {

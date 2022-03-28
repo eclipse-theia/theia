@@ -21,6 +21,11 @@
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts
 
 import { inject, injectable } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { StandardTokenType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { DEFAULT_WORD_REGEXP } from '@theia/monaco-editor-core/esm/vs/editor/common/core/wordHelper';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { ExpressionContainer, DebugVariable } from '../console/debug-console-items';
@@ -33,7 +38,6 @@ export const INLINE_VALUE_DECORATION_KEY = 'inlinevaluedecoration';
 const MAX_NUM_INLINE_VALUES = 100; // JS Global scope can have 700+ entries. We want to limit ourselves for perf reasons
 const MAX_INLINE_DECORATOR_LENGTH = 150; // Max string length of each inline decorator when debugging. If exceeded ... is added
 const MAX_TOKENIZATION_LINE_LEN = 500; // If line is too long, then inline values for the line are skipped
-const { DEFAULT_WORD_REGEXP } = monaco.wordHelper;
 
 /**
  * MAX SMI (SMall Integer) as defined in v8.
@@ -43,14 +47,6 @@ const { DEFAULT_WORD_REGEXP } = monaco.wordHelper;
  */
 // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/uint.ts#L7-L13
 const MAX_SAFE_SMALL_INTEGER = 1 << 30;
-
-// https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/modes.ts#L88-L97
-const enum StandardTokenType {
-    Other = 0,
-    Comment = 1,
-    String = 2,
-    RegEx = 4
-};
 
 @injectable()
 export class DebugInlineValueDecorator implements FrontendApplicationContribution {
@@ -62,10 +58,10 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     protected readonly preferences: DebugPreferences;
 
     protected enabled = false;
-    protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map(); // TODO: can we get rid of this field?
+    protected wordToLineNumbersMap: Map<string, monaco.Position[]> | undefined = new Map();
 
     onStart(): void {
-        this.editorService.registerDecorationType(INLINE_VALUE_DECORATION_KEY, {});
+        this.editorService.registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
         this.enabled = !!this.preferences['debug.inlineValues'];
         this.preferences.onPreferenceChanged(({ preferenceName, newValue }) => {
             if (preferenceName === 'debug.inlineValues' && !!newValue !== this.enabled) {
@@ -74,7 +70,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
         });
     }
 
-    async calculateDecorations(debugEditorModel: DebugEditorModel, stackFrame: DebugStackFrame | undefined): Promise<monaco.editor.IDecorationOptions[]> {
+    async calculateDecorations(debugEditorModel: DebugEditorModel, stackFrame: DebugStackFrame | undefined): Promise<IDecorationOptions[]> {
         this.wordToLineNumbersMap = undefined;
         const model = debugEditorModel.editor.getControl().getModel() || undefined;
         return this.updateInlineValueDecorations(model, stackFrame);
@@ -83,7 +79,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L382-L408
     protected async updateInlineValueDecorations(
         model: monaco.editor.ITextModel | undefined,
-        stackFrame: DebugStackFrame | undefined): Promise<monaco.editor.IDecorationOptions[]> {
+        stackFrame: DebugStackFrame | undefined): Promise<IDecorationOptions[]> {
 
         if (!this.enabled || !model || !stackFrame || !stackFrame.source || model.uri.toString() !== stackFrame.source.uri.toString()) {
             return [];
@@ -115,7 +111,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     private createInlineValueDecorationsInsideRange(
         expressions: ReadonlyArray<ExpressionContainer>,
         range: monaco.Range,
-        model: monaco.editor.ITextModel): monaco.editor.IDecorationOptions[] {
+        model: monaco.editor.ITextModel): IDecorationOptions[] {
 
         const nameValueMap = new Map<string, string>();
         for (const expr of expressions) {
@@ -149,7 +145,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
             }
         });
 
-        const decorations: monaco.editor.IDecorationOptions[] = [];
+        const decorations: IDecorationOptions[] = [];
         // Compute decorators for each line
         lineToNamesMap.forEach((names, line) => {
             const contentText = names.sort((first, second) => {
@@ -163,14 +159,13 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L454-L485
-    private createInlineValueDecoration(lineNumber: number, contentText: string): monaco.editor.IDecorationOptions {
+    private createInlineValueDecoration(lineNumber: number, contentText: string): IDecorationOptions {
         // If decoratorText is too long, trim and add ellipses. This could happen for minified files with everything on a single line
         if (contentText.length > MAX_INLINE_DECORATOR_LENGTH) {
             contentText = contentText.substr(0, MAX_INLINE_DECORATOR_LENGTH) + '...';
         }
 
         return {
-            color: undefined, // XXX: check inconsistency between APIs. `color` seems to be mandatory from `monaco-editor-core`.
             range: {
                 startLineNumber: lineNumber,
                 endLineNumber: lineNumber,
@@ -198,7 +193,8 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L487-L531
-    private getWordToPositionsMap(model: monaco.editor.ITextModel): Map<string, monaco.Position[]> {
+    private getWordToPositionsMap(model: monaco.editor.ITextModel | ITextModel): Map<string, monaco.Position[]> {
+        model = model as ITextModel;
         if (!this.wordToLineNumbersMap) {
             this.wordToLineNumbersMap = new Map<string, monaco.Position[]>();
             if (!model) {
