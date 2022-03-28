@@ -445,7 +445,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected doAutoSave(): void {
-        if (this.autoSave !== 'off') {
+        if (this.autoSave !== 'off' && this.resource.uri.scheme !== UNTITLED_SCHEME) {
             const token = this.cancelSave();
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {

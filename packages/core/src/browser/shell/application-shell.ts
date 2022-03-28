@@ -1859,7 +1859,9 @@ export class ApplicationShell extends Widget {
      */
     async saveAll(options?: SaveOptions): Promise<void> {
         for (const widget of this.widgets) {
-            await this.saveResourceService.save(widget, options);
+            if (this.saveResourceService.canSaveNotSaveAs(widget)) {
+                await this.saveResourceService.save(widget, options);
+            }
         }
     }
 

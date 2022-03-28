@@ -31,7 +31,7 @@ export class SaveResourceService {
         return Saveable.isDirty(widget) && (this.canSaveNotSaveAs(widget) || this.canSaveAs(widget));
     }
 
-    protected canSaveNotSaveAs(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
+    canSaveNotSaveAs(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
         // By default, we never allow a document to be saved if it is untitled.
         return Boolean(widget && NavigatableWidget.getUri(widget)?.scheme !== UNTITLED_SCHEME);
     }
