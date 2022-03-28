@@ -277,7 +277,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     async $provideTextDocumentContent(documentURI: string): Promise<string | undefined> {
-        const uri = URI.parse(documentURI);
+        let uri = URI.parse(documentURI);
+        if (uri.scheme !== 'http' && uri.scheme !== 'https') {
+            const httpScheme = URI.parse(documentURI).with({ scheme: 'https' });
+            uri = uri.with({ fragment: httpScheme.toString() });
+        }
         const provider = this.documentContentProviders.get(uri.scheme);
         if (provider) {
             return provider.provideTextDocumentContent(uri, CancellationToken.None);
