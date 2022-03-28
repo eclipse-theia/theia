@@ -551,12 +551,14 @@ export interface WorkspaceFolderPickOptionsMain {
 
 export type TransferQuickPickItems = TransferQuickPickItemValue | TransferQuickPickSeparator;
 
-export interface TransferQuickPickItemValue extends theia.QuickPickItemValue {
+export interface TransferQuickPickItemValue extends theia.QuickPickItem {
     handle: number;
+    type?: 'item'
 }
 
-export interface TransferQuickPickSeparator extends theia.QuickPickSeparator {
+export interface TransferQuickPickSeparator extends theia.QuickPickItem {
     handle: number;
+    type: 'separator';
 }
 
 export interface TransferQuickInputButton extends theia.QuickInputButton {
