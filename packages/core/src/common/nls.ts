@@ -42,14 +42,12 @@ export namespace nls {
     }
 
     export function getDefaultKey(defaultValue: string): string {
-        if (localization) {
-            if (!keyProvider) {
-                keyProvider = new LocalizationKeyProvider();
-            }
-            const key = keyProvider.get(defaultValue);
-            if (key) {
-                return key;
-            }
+        if (!keyProvider) {
+            keyProvider = new LocalizationKeyProvider();
+        }
+        const key = keyProvider.get(defaultValue);
+        if (key) {
+            return key;
         }
         return '';
     }

@@ -24,7 +24,7 @@
  */
 import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
-import { CommandContribution, CommandRegistry, MessageService } from '@theia/core';
+import { CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -57,7 +57,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser';
  * The only manual work required is fixing preferences with type 'array' or 'object'.
  */
 
-export const generatedEditorPreferenceProperties: PreferenceSchema['properties'] = ${properties};
+export const editorGeneratedPreferenceProperties: PreferenceSchema['properties'] = ${properties};
 
 export interface GeneratedEditorPreferences {
     ${interfaceEntries.join('\n    ')}
@@ -82,6 +82,8 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
+
+    protected lastPreferenceName: string;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract Editor preference schema from Monaco' }, {
@@ -157,18 +159,42 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     }
 
     protected withLocalization(key: string, value: unknown): unknown {
+        if (key.startsWith('editor.') || key.startsWith('diffEditor.')) {
+            this.lastPreferenceName = key;
+        }
         if ((key === 'description' || key === 'markdownDescription') && typeof value === 'string') {
-            return `nls.localizeByDefault("${value}")`;
+            if (value.length === 0) {
+                return value;
+            }
+            const defaultKey = nls.getDefaultKey(value);
+            if (defaultKey) {
+                return `${deQuoteMarker}nls.localizeByDefault(${deQuoteMarker}"${value}${deQuoteMarker}")${deQuoteMarker}`;
+            } else {
+                const localizationKey = `${deQuoteMarker}"theia/editor/${this.lastPreferenceName}${deQuoteMarker}"`;
+                return `${deQuoteMarker}nls.localize(${localizationKey}, ${deQuoteMarker}"${value}${deQuoteMarker}")${deQuoteMarker}`;
+            }
         }
         if ((key === 'enumDescriptions' || key === 'markdownEnumDescriptions') && Array.isArray(value)) {
-            return value.map(description => `${deQuoteMarker}nls.localizeByDefault("${description}")${deQuoteMarker}`);
+            return value.map((description, i) => {
+                if (description.length === 0) {
+                    return description;
+                }
+                const defaultKey = nls.getDefaultKey(description);
+                if (defaultKey) {
+                    return `${deQuoteMarker}nls.localizeByDefault(${deQuoteMarker}"${description}${deQuoteMarker}")${deQuoteMarker}`;
+                } else {
+                    const localizationKey = `${deQuoteMarker}"theia/editor/${this.lastPreferenceName}${i}${deQuoteMarker}"`;
+                    return `${deQuoteMarker}nls.localize(${localizationKey}, ${deQuoteMarker}"${description}${deQuoteMarker}")${deQuoteMarker}`;
+                }
+            });
         }
         return value;
     }
 
     protected deQuoteCodeSnippets(stringification: string): string {
         return stringification
-            .replace(new RegExp(`${deQuoteMarker}"|"${deQuoteMarker}`, 'g'), '')
+            .replace(new RegExp(`${deQuoteMarker}"|"${deQuoteMarker}|${deQuoteMarker}\\\\`, 'g'), '')
+            .replace(new RegExp(`\\\\"${deQuoteMarker}`, 'g'), '"')
             .replace(/\\\\'/g, "\\'");
     }
 

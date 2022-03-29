@@ -20,9 +20,11 @@ import { FormatType, Localization } from '@theia/core/lib/common/i18n/localizati
 
 Object.assign(MonacoNls, {
     localize(_key: string, label: string, ...args: FormatType[]): string {
-        const defaultKey = nls.getDefaultKey(label);
-        if (defaultKey) {
-            return nls.localize(defaultKey, label, ...args);
+        if (nls.locale) {
+            const defaultKey = nls.getDefaultKey(label);
+            if (defaultKey) {
+                return nls.localize(defaultKey, label, ...args);
+            }
         }
         return Localization.format(label, args);
     }
