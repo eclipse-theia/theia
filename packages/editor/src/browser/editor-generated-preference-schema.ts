@@ -18,7 +18,7 @@ import { isOSX, isWindows, nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser';
 import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
-/* eslint-disable @typescript-eslint/quotes,max-len,@theia/localization-check,no-null/no-null */
+/* eslint-disable @typescript-eslint/quotes,max-len,no-null/no-null */
 
 /**
  * Please do not modify this file by hand. It should be generated automatically
@@ -634,9 +634,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "enumDescriptions": [
             nls.localize("theia/editor/editor.find.autoFindInSelection0", "Never turn on Find in Selection automatically (default)."),
             nls.localize("theia/editor/editor.find.autoFindInSelection1", "Always turn on Find in Selection automatically."),
-            nls.localizeByDefault("Turn on Find in Selection automatically when multiple lines of content are selected.")
+            nls.localizeByDefault('Turn on Find in selection automatically when multiple lines of content are selected.')
         ],
-        "description": nls.localizeByDefault("Controls the condition for turning on Find in Selection automatically."),
+        "description": nls.localizeByDefault('Controls the condition for turning on find in selection automatically.'),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1198,7 +1198,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Maps to `Control` on Windows and Linux and to `Command` on macOS."),
             nls.localizeByDefault("Maps to `Alt` on Windows and Linux and to `Option` on macOS.")
         ],
-        "markdownDescription": nls.localizeByDefault("The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the multicursor modifier. [Read more](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)."),
+        "markdownDescription": nls.localizeByDefault('The modifier to be used to add multiple cursors with the mouse. The Go To Definition and Open Link mouse gestures will adapt such that they do not conflict with the multicursor modifier. [Read more](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).'),
         "type": "string",
         "enum": [
             "ctrlCmd",
