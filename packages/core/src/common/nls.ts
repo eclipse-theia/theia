@@ -30,9 +30,13 @@ export namespace nls {
      * Automatically localizes a text if that text also exists in the vscode repository.
      */
     export function localizeByDefault(defaultValue: string, ...args: FormatType[]): string {
-        const key = getDefaultKey(defaultValue);
-        if (key) {
-            return localize(key, defaultValue, ...args);
+        if (localization) {
+            const key = getDefaultKey(defaultValue);
+            if (key) {
+                return localize(key, defaultValue, ...args);
+            } else {
+                console.warn(`Could not find translation key for default value: "${defaultValue}"`);
+            }
         }
         return Localization.format(defaultValue, args);
     }
@@ -45,8 +49,6 @@ export namespace nls {
             const key = keyProvider.get(defaultValue);
             if (key) {
                 return key;
-            } else {
-                console.warn(`Could not find translation key for default value: "${defaultValue}"`);
             }
         }
         return '';
@@ -71,7 +73,7 @@ class LocalizationKeyProvider {
     private data = this.buildData();
 
     get(defaultValue: string): string | undefined {
-        return this.data.get(defaultValue);
+        return this.data.get(Localization.normalize(defaultValue.toLowerCase()));
     }
 
     /**
@@ -89,7 +91,7 @@ class LocalizationKeyProvider {
         for (const [fileKey, messageBundle] of Object.entries(messages)) {
             const keyBundle = keys[fileKey];
             for (let i = 0; i < messageBundle.length; i++) {
-                const message = Localization.normalize(messageBundle[i]);
+                const message = Localization.normalize(messageBundle[i]).toLowerCase();
                 const key = keyBundle[i];
                 const localizationKey = this.buildKey(typeof key === 'string' ? key : key.key, fileKey);
                 data.set(message, localizationKey);
