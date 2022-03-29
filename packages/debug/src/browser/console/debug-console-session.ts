@@ -139,7 +139,7 @@ export class DebugConsoleSession extends ConsoleSession {
             label: item.label,
             insertText: item.text || item.label,
             kind: this.completionKinds.get(item.type) || monaco.languages.CompletionItemKind.Property,
-            filterText: (item.start && item.length) ? text.substr(item.start, item.length).concat(item.label) : undefined,
+            filterText: (item.start && item.length) ? text.substring(item.start, item.start + item.length).concat(item.label) : undefined,
             range: monaco.Range.fromPositions(position.delta(0, -(item.length || overwriteBefore)), position),
             sortText: item.sortText
         };
@@ -189,7 +189,9 @@ export class DebugConsoleSession extends ConsoleSession {
         const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
         if (variablesReference) {
             const items = await new ExpressionContainer({ session: () => session, variablesReference }).getElements();
-            this.items.push(...items);
+            for (const item of items) {
+                this.items.push(Object.assign(item, { severity }));
+            }
         } else if (typeof body.output === 'string') {
             for (const line of body.output.split('\n')) {
                 this.items.push(new AnsiConsoleItem(line, severity));
