@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { URI } from './types-impl';
+import { QuickPickItemKind, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -1070,8 +1070,8 @@ export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.Transfer
     return items.map<rpc.TransferQuickPickItems>((item, index) => {
         if (typeof item === 'string') {
             return { type: 'item', label: item, handle: index };
-        } else if (item.type === 'separator') {
-            return { ...item, handle: index };
+        } else if (item.kind === QuickPickItemKind.Separator) {
+            return { type: 'separator', label: item.label, handle: index };
         } else {
             const { label, description, detail, picked, alwaysShow } = item;
             return {

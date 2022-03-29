@@ -2078,8 +2078,12 @@ export module '@theia/plugin' {
     /**
      * Represents an item that can be selected from a list of items.
      */
-    export interface QuickPickItemValue {
-        type?: 'item';
+    export interface QuickPickItem {
+        /**
+         * Defaults to {@link QuickPickItemKind.Default}. If set to {@link QUickPickItemKind.Separator}, the item will not be displayed as a row but only as a separator,
+         * and all fields other than {@link QuickPickItem.label label} will be ignored.
+         */
+        kind?: QuickPickItemKind;
         /**
          * The item label
          */
@@ -2106,12 +2110,13 @@ export module '@theia/plugin' {
         alwaysShow?: boolean;
     }
 
-    export interface QuickPickSeparator {
-        type: 'separator';
-        label?: string;
+    /**
+     * The type of a {@link QuickPickItem quitk pick item}. If `Separator` is set, all fields other than {@link QuickPickItem.label label} will be ignored.
+     */
+    export enum QuickPickItemKind {
+        Separator = -1,
+        Default = 0,
     }
-
-    export type QuickPickItem = QuickPickSeparator | QuickPickItemValue;
 
     /**
      * A concrete [QuickInput](#QuickInput) to let the user pick an item from a

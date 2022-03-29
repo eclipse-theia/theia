@@ -1742,6 +1742,11 @@ export class ProcessExecution {
     }
 }
 
+export enum QuickPickItemKind {
+    Separator = -1,
+    Default = 0,
+}
+
 export enum ShellQuoting {
     Escape = 1,
     Strong = 2,
