@@ -15,7 +15,7 @@
     "prepare": "yarn clean && yarn build",
     "clean": "rimraf lib",
     "build": "tsc --incremental && yarn lint && npx playwright install chromium",
-    "theia:start": "yarn --cwd ../browser start",
+    "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
     "lint": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests",
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests --fix",
     "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",
