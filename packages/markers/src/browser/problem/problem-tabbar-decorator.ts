@@ -142,9 +142,8 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     protected getOverlayIconColor(marker: Marker<Diagnostic>): WidgetDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
-            case 1: return 'var(--theia-editorError-foreground)';
-            case 2: return 'var(--theia-editorWarning-foreground)';
-            case 3: return 'var(--theia-editorInfo-foreground)';
+            case 1: return 'var(--theia-list-errorForeground)';
+            case 2: return 'var(--theia-list-warningForeground)';
             default: return 'var(--theia-successBackground)';
         }
     }
