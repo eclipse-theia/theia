@@ -230,6 +230,7 @@ export class DebugExtImpl implements DebugExt {
         const session = this.sessions.get(sessionId);
         if (session) {
             this.onDidTerminateDebugSessionEmitter.fire(session);
+            this.sessions.delete(sessionId);
         }
     }
 
@@ -319,7 +320,6 @@ export class DebugExtImpl implements DebugExt {
         const debugAdapterSession = this.sessions.get(sessionId);
         if (debugAdapterSession) {
             await debugAdapterSession.stop();
-            this.sessions.delete(sessionId);
         }
     }
 
