@@ -16,7 +16,7 @@
 
 import { CancellationError, Emitter, Event, MaybePromise, MessageService, nls, WaitUntilEvent } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
@@ -176,15 +176,23 @@ export interface PreferenceContext {
     getScope(): PreferenceScope;
 }
 export const PreferenceContext = Symbol('PreferenceContext');
+export const PreferenceTransactionPrelude = Symbol('PreferenceTransactionPrelude');
 
 @injectable()
 export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
     reference: IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
+    @inject(PreferenceTransactionPrelude) protected readonly prelude?: Promise<unknown>;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+
+    @postConstruct()
+    protected override init(): Promise<void> {
+        this.waitFor(this.prelude);
+        return super.init();
+    }
 
     protected async setUp(): Promise<boolean> {
         const reference = await this.textModelService.createModelReference(this.context.getConfigUri()!);
@@ -259,6 +267,14 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
 }
 
 export interface PreferenceTransactionFactory {
-    (context: PreferenceContext): PreferenceTransaction;
+    (context: PreferenceContext, waitFor?: Promise<unknown>): PreferenceTransaction;
 }
 export const PreferenceTransactionFactory = Symbol('PreferenceTransactionFactory');
+
+export const preferenceTransactionFactoryCreator: interfaces.FactoryCreator<PreferenceTransaction> = ({ container }) =>
+    (context: PreferenceContext, waitFor?: Promise<unknown>) => {
+        const child = container.createChild();
+        child.bind(PreferenceContext).toConstantValue(context);
+        child.bind(PreferenceTransactionPrelude).toConstantValue(waitFor);
+        return child.get(PreferenceTransaction);
+    };
