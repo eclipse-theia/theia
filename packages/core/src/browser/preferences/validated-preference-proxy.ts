@@ -25,7 +25,11 @@ import { PreferenceChanges } from './preference-service';
 export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> extends InjectablePreferenceProxy<T> {
     @inject(PreferenceValidationService) protected readonly validator: PreferenceValidationService;
 
-    protected validPreferences: Map<string, JSONValue> = new Map();
+    /**
+     * This map should be initialized only when the proxy starts listening to events from the PreferenceService in {@link ValidatedPreferenceProxy.subscribeToChangeEvents}.
+     * Otherwise, it can't guarantee that the cache will remain up-to-date and is better off just retrieving the value.
+     */
+    protected validPreferences?: Map<string, JSONValue>;
 
     protected override handlePreferenceChanges(changes: PreferenceChanges): void {
         if (this.schema) {
@@ -57,7 +61,9 @@ export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> exten
                 for (const override of tracker.overrides) {
                     const name = this.preferences.overridePreferenceName(override);
                     const { domain, oldValue, preferenceName, scope } = changes[name];
-                    const newValue = changes[name].newValue === configuredValue ? validatedValue : this.ensureValid(name, () => changes[name].newValue, true);
+                    const newValue = changes[name].newValue === configuredValue
+                        ? (this.validPreferences?.set(name, validatedValue), validatedValue)
+                        : this.ensureValid(name, () => changes[name].newValue, true);
                     this.fireChangeEvent(this.buildNewChangeEvent({ domain, oldValue, preferenceName, scope, newValue }, override));
                 }
             }
@@ -72,19 +78,24 @@ export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> exten
     }
 
     protected ensureValid<K extends keyof T & string>(preferenceName: K, getCandidate: () => T[K], isChange?: boolean): T[K] {
-        if (!isChange && this.validPreferences.has(preferenceName)) {
+        if (!isChange && this.validPreferences?.has(preferenceName)) {
             return this.validPreferences.get(preferenceName) as T[K];
         }
         const candidate = getCandidate();
         const valid = this.validator.validateByName(preferenceName, candidate) as T[K];
-        this.validPreferences.set(preferenceName, valid);
+        this.validPreferences?.set(preferenceName, valid);
         return valid;
+    }
+
+    protected override subscribeToChangeEvents(): void {
+        this.validPreferences ??= new Map();
+        super.subscribeToChangeEvents();
     }
 
     override dispose(): void {
         super.dispose();
         if (this.options.isDisposable) {
-            this.validPreferences.clear();
+            this.validPreferences?.clear();
         }
     }
 }
