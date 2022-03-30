@@ -87,6 +87,7 @@ export async function getExternalTerminalSchema(externalTerminalService: Externa
         properties: {
             'terminal.external.windowsExec': {
                 type: 'string',
+                typeDetails: { isFilepath: true },
                 description: nls.localizeByDefault('Customizes which terminal to run on Windows.'),
                 default: `${isWindows ? hostExec : 'C:\\WINDOWS\\System32\\cmd.exe'}`
             },

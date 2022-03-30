@@ -15,8 +15,11 @@
 // *****************************************************************************
 
 import { codiconArray } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
-import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { Preference } from '../../util/preference-types';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 
 @injectable()
 export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<string[], HTMLInputElement> {
@@ -152,5 +155,20 @@ export class PreferenceArrayInputRenderer extends PreferenceLeafNodeRenderer<str
     override dispose(): void {
         this.existingValues.clear();
         super.dispose();
+    }
+}
+
+@injectable()
+export class PreferenceArrayInputRendererContribution extends PreferenceLeafNodeRendererContribution {
+    static ID = 'preference-array-input-renderer';
+    id = PreferenceArrayInputRendererContribution.ID;
+
+    canHandleLeafNode(node: Preference.LeafNode): number {
+        const type = Preference.LeafNode.getType(node);
+        return type === 'array' && (node.preference.data.items as IJSONSchema)?.type === 'string' ? 2 : 0;
+    }
+
+    createLeafNodeRenderer(container: interfaces.Container): PreferenceNodeRenderer {
+        return container.get(PreferenceArrayInputRenderer);
     }
 }

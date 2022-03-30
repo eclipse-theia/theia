@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { injectable, inject, interfaces } from '@theia/core/shared/inversify';
 import { CommandService, nls } from '@theia/core/lib/common';
-import { PreferencesCommands } from '../../util/preference-types';
+import { Preference, PreferencesCommands } from '../../util/preference-types';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 
 @injectable()
 export class PreferenceJSONLinkRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLAnchorElement> {
@@ -59,5 +60,19 @@ export class PreferenceJSONLinkRenderer extends PreferenceLeafNodeRenderer<JSONV
 
     protected handleUserInteraction(): void {
         this.commandService.executeCommand(PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR.id, this.id);
+    }
+}
+
+@injectable()
+export class PreferenceJSONLinkRendererContribution extends PreferenceLeafNodeRendererContribution {
+    static ID = 'preference-json-link-renderer';
+    id = PreferenceJSONLinkRendererContribution.ID;
+
+    canHandleLeafNode(_node: Preference.LeafNode): number {
+        return 1;
+    }
+
+    createLeafNodeRenderer(container: interfaces.Container): PreferenceNodeRenderer {
+        return container.get(PreferenceJSONLinkRenderer);
     }
 }

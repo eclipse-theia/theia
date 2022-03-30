@@ -111,6 +111,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.shell.windows': {
             type: ['string', 'null'],
+            typeDetails: { isFilepath: true },
             markdownDescription: nls.localize('theia/terminal/shellWindows', 'The path of the shell that the terminal uses on Windows. (default: \'{0}\').', 'C:\\Windows\\System32\\cmd.exe'),
             default: undefined
         },
