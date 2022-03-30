@@ -16,10 +16,11 @@
 
 import { JSONValue } from '@phosphor/coreutils';
 import { inject, injectable } from 'inversify';
-import { PreferenceValidationService } from '.';
 import { InjectablePreferenceProxy } from './injectable-preference-proxy';
 import { OverridePreferenceName } from './preference-language-override-service';
+import { PreferenceProvider } from './preference-provider';
 import { PreferenceChanges } from './preference-service';
+import { PreferenceValidationService } from './preference-validation-service';
 
 @injectable()
 export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> extends InjectablePreferenceProxy<T> {
@@ -33,18 +34,16 @@ export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> exten
 
     protected override handlePreferenceChanges(changes: PreferenceChanges): void {
         if (this.schema) {
-            interface TrackedOverrides { value?: JSONValue, overrides: OverridePreferenceName[] };
+            interface TrackedOverrides { overrides: OverridePreferenceName[] };
             const overrideTracker: Map<string, TrackedOverrides> = new Map();
             for (const change of Object.values(changes)) {
                 const overridden = this.preferences.overriddenPreferenceName(change.preferenceName);
                 if (this.isRelevantChange(change, overridden)) {
                     let doSet = false;
                     const baseName = overridden?.preferenceName ?? change.preferenceName;
-                    const tracker: TrackedOverrides = overrideTracker.get(baseName) ?? (doSet = true, { value: undefined, overrides: [] });
+                    const tracker: TrackedOverrides = overrideTracker.get(baseName) ?? (doSet = true, { overrides: [] });
                     if (overridden) {
                         tracker.overrides.push(overridden);
-                    } else {
-                        tracker.value = change.newValue;
                     }
                     if (doSet) {
                         overrideTracker.set(baseName, tracker);
@@ -52,18 +51,29 @@ export class ValidatedPreferenceProxy<T extends Record<string, JSONValue>> exten
                 }
             }
             for (const [baseName, tracker] of overrideTracker.entries()) {
-                const configuredValue = tracker.value as T[typeof baseName];
-                const validatedValue = this.ensureValid(baseName, () => configuredValue, true);
+                const validated: Array<[JSONValue, JSONValue]> = [];
+                // This could go wrong if someone sets a lot of different, complex values for different language overrides simultaneously.
+                // In the normal case, we'll just be doing strict equal checks on primitives.
+                const getValidValue = (name: string): JSONValue => {
+                    const configuredForCurrent = changes[name].newValue;
+                    const existingValue = validated.find(([configuredForValid]) => PreferenceProvider.deepEqual(configuredForValid, configuredForCurrent));
+                    if (existingValue) {
+                        this.validPreferences?.set(name, existingValue[1]);
+                        return existingValue[1];
+                    }
+                    const validValue = this.ensureValid(name, () => configuredForCurrent, true);
+                    validated.push([configuredForCurrent, validValue]);
+                    return validValue;
+                };
                 if (baseName in changes && this.isRelevantChange(changes[baseName])) {
+                    const newValue = getValidValue(baseName);
                     const { domain, oldValue, preferenceName, scope } = changes[baseName];
-                    this.fireChangeEvent(this.buildNewChangeEvent({ domain, oldValue, preferenceName, scope, newValue: validatedValue }));
+                    this.fireChangeEvent(this.buildNewChangeEvent({ domain, oldValue, preferenceName, scope, newValue }));
                 }
                 for (const override of tracker.overrides) {
                     const name = this.preferences.overridePreferenceName(override);
                     const { domain, oldValue, preferenceName, scope } = changes[name];
-                    const newValue = changes[name].newValue === configuredValue
-                        ? (this.validPreferences?.set(name, validatedValue), validatedValue)
-                        : this.ensureValid(name, () => changes[name].newValue, true);
+                    const newValue = getValidValue(name);
                     this.fireChangeEvent(this.buildNewChangeEvent({ domain, oldValue, preferenceName, scope, newValue }, override));
                 }
             }
