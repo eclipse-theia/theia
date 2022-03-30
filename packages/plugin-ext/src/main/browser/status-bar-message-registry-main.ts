@@ -19,6 +19,7 @@ import * as types from '../../plugin/types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { AccessibilityInformation } from '@theia/plugin';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {
     private readonly delegate: StatusBar;
@@ -46,9 +47,20 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         tooltip: string | undefined,
         command: string | undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: any[] | undefined): Promise<void> {
+        args: any[] | undefined,
+        accessibilityInformation?: AccessibilityInformation): Promise<void> {
+        let ariaLabel: string | undefined = undefined;
+        let role: string | undefined = undefined;
+
+        if (accessibilityInformation) {
+            ariaLabel = accessibilityInformation.label;
+            role = accessibilityInformation.role;
+        }
+
         const entry = {
             text: text || '',
+            ariaLabel,
+            role,
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color: color && (this.colorRegistry.getCurrentColor(color) || color),

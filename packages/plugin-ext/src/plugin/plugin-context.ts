@@ -416,22 +416,35 @@ export function createAPIFactory(
             showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined> {
                 return quickOpenExt.showInput(options, token);
             },
-            createStatusBarItem(alignmentOrId?: theia.StatusBarAlignment | string, priorityOrAlignment?: number | theia.StatusBarAlignment,
+            createStatusBarItem(optionsOrAlignmentOrId?: theia.StatusBarItemOptions | theia.StatusBarAlignment | string, priorityOrAlignment?: number | theia.StatusBarAlignment,
                 priorityArg?: number): theia.StatusBarItem {
                 let id: string | undefined;
                 let alignment: number | undefined;
                 let priority: number | undefined;
+                let accessibilityInformation: theia.AccessibilityInformation | undefined = undefined;
 
-                if (typeof alignmentOrId === 'string') {
-                    id = alignmentOrId;
-                    alignment = priorityOrAlignment;
-                    priority = priorityArg;
+                if (optionsOrAlignmentOrId) {
+                    if (typeof optionsOrAlignmentOrId === 'string') {
+                        id = optionsOrAlignmentOrId;
+                        alignment = priorityOrAlignment;
+                        priority = priorityArg;
+                    } else {
+                        if (typeof optionsOrAlignmentOrId === 'number') {
+                            alignment = optionsOrAlignmentOrId;
+                            priority = priorityOrAlignment;
+                        } else {
+                            id = optionsOrAlignmentOrId.id;
+                            alignment = optionsOrAlignmentOrId.alignment;
+                            priority = optionsOrAlignmentOrId.priority;
+                            accessibilityInformation = optionsOrAlignmentOrId.accessibilityInformation;
+                        }
+                    }
                 } else {
-                    alignment = alignmentOrId;
-                    priority = priorityOrAlignment;
+                    id = plugin.pluginUri;
+                    alignment = undefined;
                 }
 
-                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
+                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id, accessibilityInformation);
             },
             createOutputChannel(name: string): theia.OutputChannel {
                 return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));

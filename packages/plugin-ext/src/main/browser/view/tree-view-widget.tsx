@@ -45,6 +45,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import { isMarkdownString } from '../../../plugin/markdown-string';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
+import { AccessibilityInformation } from '@theia/plugin';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -63,6 +64,7 @@ export interface TreeViewNode extends SelectableTreeNode {
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
+    accessibilityInformation?: AccessibilityInformation;
 }
 export namespace TreeViewNode {
     export function is(arg: TreeNode | undefined): arg is TreeViewNode {
@@ -159,6 +161,7 @@ export class PluginTree extends TreeImpl {
             tooltip: item.tooltip,
             contextValue: item.contextValue,
             command: item.command,
+            accessibilityInformation: item.accessibilityInformation,
         };
         const node = this.getNode(item.id);
         if (item.collapsibleState !== undefined && item.collapsibleState !== TreeViewItemCollapsibleState.None) {
@@ -300,6 +303,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             className,
             id: node.id
         };
+
+        if (node.accessibilityInformation) {
+            attrs = {
+                ...attrs,
+                'aria-label': node.accessibilityInformation.label,
+                'role': node.accessibilityInformation.role
+            };
+        }
 
         if (node.tooltip && isMarkdownString(node.tooltip)) {
             // Render markdown in custom tooltip

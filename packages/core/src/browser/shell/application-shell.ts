@@ -1415,6 +1415,7 @@ export class ApplicationShell extends Widget {
         } else {
             const element: StatusBarEntry = {
                 text: '$(codicon-window)',
+                role: 'button',
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',
                 command: 'core.toggle.bottom.panel',

@@ -2496,6 +2496,11 @@ export module '@theia/plugin' {
         command: string | Command | undefined;
 
         /**
+         * Accessibility information used when screen reader interacts with this StatusBar  item
+         */
+        accessibilityInformation?: AccessibilityInformation;
+
+        /**
          * Shows the entry in the status bar.
          */
         show(): void;
@@ -2603,6 +2608,24 @@ export module '@theia/plugin' {
          * Dispose and free associated resources.
          */
         dispose(): void;
+    }
+
+    /**
+     * Accessibility information which controls screen reader behavior.
+     */
+    export interface AccessibilityInformation {
+        /**
+         * Label to be read out by a screen reader once the item has focus.
+         */
+        label: string;
+
+        /**
+         * Role of the widget which defines how a screen reader interacts with it.
+         * The role should be set in special cases when for example a tree-like element behaves like a checkbox.
+         * If role is not specified VS Code will pick the appropriate role automatically.
+         * More about aria roles can be found here https://w3c.github.io/aria/#widget_roles
+         */
+        role?: string;
     }
 
     /**
@@ -5254,6 +5277,13 @@ export module '@theia/plugin' {
          * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
          */
         contextValue?: string;
+
+        /**
+         * Accessibility information used when screen reader interacts with this tree item.
+         * Generally, a TreeItem has no need to set the `role` of the accessibilityInformation;
+         * however, there are cases where a TreeItem is not displayed in a tree-like way where setting the `role` may make sense.
+         */
+        accessibilityInformation?: AccessibilityInformation;
 
         /**
          * @param label A human-readable string describing this item

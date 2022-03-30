@@ -33,16 +33,21 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     private _isVisible: boolean;
     private _timeoutHandle: NodeJS.Timer | undefined;
 
+    private _accessibilityInformation?: theia.AccessibilityInformation;
+
     _proxy: StatusBarMessageRegistryMain;
 
     constructor(_proxy: StatusBarMessageRegistryMain,
         alignment: StatusBarAlignment = StatusBarAlignment.Left,
         priority: number = 0,
-        id = StatusBarItemImpl.nextId()) {
+        id = StatusBarItemImpl.nextId(),
+        accessibilityInformation?: theia.AccessibilityInformation
+        ) {
         this._proxy = _proxy;
         this._alignment = alignment;
         this._priority = priority;
         this._id = id;
+        this._accessibilityInformation = accessibilityInformation;
     }
 
     public get id(): string {
@@ -126,7 +131,8 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 typeof this.color === 'string' ? this.color : this.color && this.color.id,
                 this.tooltip,
                 commandId,
-                args);
+                args,
+                this._accessibilityInformation);
         }, 0);
     }
 

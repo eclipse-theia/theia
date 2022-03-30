@@ -36,6 +36,8 @@ export interface StatusBarEntry {
      * http://fontawesome.io/examples/#animated
      */
     text: string;
+    ariaLabel?: string;
+    role?: string;
     alignment: StatusBarAlignment;
     color?: string;
     className?: string;
@@ -55,6 +57,7 @@ export interface StatusBarEntryAttributes {
     className?: string;
     title?: string;
     style?: object;
+    role?: string;
     onClick?: (e: MouseEvent) => void;
 }
 
@@ -198,6 +201,10 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             attrs.className += ' ' + entry.className;
         }
 
+        if (entry.role) {
+            attrs.role = entry.role;
+        }
+
         return attrs;
     }
 
@@ -221,7 +228,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         });
         const elementInnerDiv = <React.Fragment>{children}</React.Fragment>;
 
-        return React.createElement('div', { key: id, ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement('div', { key: id, ...this.createAttributes(entry), 'aria-label': entry.ariaLabel ?? entry.tooltip }, elementInnerDiv);
     }
 
 }
