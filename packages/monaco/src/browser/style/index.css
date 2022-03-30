@@ -206,8 +206,13 @@
   .monaco-icon-label-container
   .monaco-icon-name-container
   .label-name {
+    font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
+}
+
+.quick-input-list .monaco-icon-label::before {
+  transform: scale(0.8);
 }
 
 .quick-input-list .quick-input-list-label {
