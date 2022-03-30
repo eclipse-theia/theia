@@ -115,8 +115,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
         if (!this.transaction?.open) {
             const current = this.transaction;
-            this.transaction = this.transactionFactory(this.toFileManager());
-            this.transaction.waitFor(current?.result);
+            this.transaction = this.transactionFactory(this.toFileManager(), current?.result);
             this.transaction.onWillConclude(({ status, waitUntil }) => {
                 if (status) {
                     waitUntil((async () => {
