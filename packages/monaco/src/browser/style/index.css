@@ -180,6 +180,7 @@
 
 .monaco-icon-label > .monaco-icon-label-container {
   flex: 1 !important;
+  align-items: end;
 }
 
 .quick-input-list
@@ -213,6 +214,7 @@
 
 .quick-input-list .monaco-icon-label::before {
   transform: scale(0.8);
+  height: 16px;
 }
 
 .quick-input-list .quick-input-list-label {
