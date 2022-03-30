@@ -14,6 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
+import { nls } from '@theia/core/lib/common/nls';
+import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
+
+Object.assign(MonacoNls, {
+    localize(_key: string, label: string, ...args: FormatType[]): string {
+        if (nls.locale) {
+            const defaultKey = nls.getDefaultKey(label);
+            if (defaultKey) {
+                return nls.localize(defaultKey, label, ...args);
+            }
+        }
+        return Localization.format(label, args);
+    }
+});
+
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
