@@ -64,15 +64,15 @@ export interface GeneratedEditorPreferences {
 }
 `;
 }
-const deQuoteMarker = '@#@';
+const dequoteMarker = '@#@';
 
 // From src/vs/editor/common/config/editorOptions.ts
 const DEFAULT_WINDOWS_FONT_FAMILY = "Consolas, \\'Courier New\\', monospace";
 const DEFAULT_MAC_FONT_FAMILY = "Menlo, Monaco, \\'Courier New\\', monospace";
 const DEFAULT_LINUX_FONT_FAMILY = "\\'Droid Sans Mono\\', \\'monospace\\', monospace";
 
-const fontFamilyText = `${deQuoteMarker}isOSX ? '${DEFAULT_MAC_FONT_FAMILY}' : isWindows ? '${DEFAULT_WINDOWS_FONT_FAMILY}' : '${DEFAULT_LINUX_FONT_FAMILY}'${deQuoteMarker}`;
-const fontSizeText = `${deQuoteMarker}isOSX ? 12 : 14${deQuoteMarker}`;
+const fontFamilyText = `${dequoteMarker}isOSX ? '${DEFAULT_MAC_FONT_FAMILY}' : isWindows ? '${DEFAULT_WINDOWS_FONT_FAMILY}' : '${DEFAULT_LINUX_FONT_FAMILY}'${dequoteMarker}`;
+const fontSizeText = `${dequoteMarker}isOSX ? 12 : 14${dequoteMarker}`;
 
 /**
  * This class is intended for use when uplifting Monaco.
@@ -82,8 +82,6 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
-
-    protected lastPreferenceName: string;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract Editor preference schema from Monaco' }, {
@@ -113,12 +111,51 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     }
                     interfaceEntries.push(`'${name}': ${this.formatTypeForInterface(description.enum ?? description.type)};`);
                 }
-                const propertyList = this.deQuoteCodeSnippets(JSON.stringify(properties, (key, value) => this.withLocalization(key, value), 4));
+                const stringified = JSON.stringify(properties, this.codeSnippetReplacer(), 4);
+                const propertyList = this.dequoteCodeSnippets(stringified);
                 const content = generateContent(propertyList, interfaceEntries);
                 await this.fileService.write(fileToWrite, content);
             }
         });
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected codeSnippetReplacer(): (key: string, value: any) => any {
+        // JSON.stringify doesn't give back the whole context when serializing so we use state...
+        let lastPreferenceName: string;
+        return (key, value) => {
+            if (key.startsWith('editor.') || key.startsWith('diffEditor.')) {
+                lastPreferenceName = key;
+            }
+            if ((key === 'description' || key === 'markdownDescription') && typeof value === 'string') {
+                if (value.length === 0) {
+                    return value;
+                }
+                const defaultKey = nls.getDefaultKey(value);
+                if (defaultKey) {
+                    return `${dequoteMarker}nls.localizeByDefault(${dequoteMarker}"${value}${dequoteMarker}")${dequoteMarker}`;
+                } else {
+                    const localizationKey = `${dequoteMarker}"theia/editor/${lastPreferenceName}${dequoteMarker}"`;
+                    return `${dequoteMarker}nls.localize(${localizationKey}, ${dequoteMarker}"${value}${dequoteMarker}")${dequoteMarker}`;
+                }
+            }
+            if ((key === 'enumDescriptions' || key === 'markdownEnumDescriptions') && Array.isArray(value)) {
+                return value.map((description, i) => {
+                    if (description.length === 0) {
+                        return description;
+                    }
+                    const defaultKey = nls.getDefaultKey(description);
+                    if (defaultKey) {
+                        return `${dequoteMarker}nls.localizeByDefault(${dequoteMarker}"${description}${dequoteMarker}")${dequoteMarker}`;
+                    } else {
+                        const localizationKey = `${dequoteMarker}"theia/editor/${lastPreferenceName}${i}${dequoteMarker}"`;
+                        return `${dequoteMarker}nls.localize(${localizationKey}, ${dequoteMarker}"${description}${dequoteMarker}")${dequoteMarker}`;
+                    }
+                });
+            }
+            return value;
+        };
+    };
 
     protected getScope(monacoScope: unknown): string | undefined {
         switch (monacoScope) {
@@ -158,43 +195,10 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         return `'${jsonType}'`;
     }
 
-    protected withLocalization(key: string, value: unknown): unknown {
-        if (key.startsWith('editor.') || key.startsWith('diffEditor.')) {
-            this.lastPreferenceName = key;
-        }
-        if ((key === 'description' || key === 'markdownDescription') && typeof value === 'string') {
-            if (value.length === 0) {
-                return value;
-            }
-            const defaultKey = nls.getDefaultKey(value);
-            if (defaultKey) {
-                return `${deQuoteMarker}nls.localizeByDefault(${deQuoteMarker}"${value}${deQuoteMarker}")${deQuoteMarker}`;
-            } else {
-                const localizationKey = `${deQuoteMarker}"theia/editor/${this.lastPreferenceName}${deQuoteMarker}"`;
-                return `${deQuoteMarker}nls.localize(${localizationKey}, ${deQuoteMarker}"${value}${deQuoteMarker}")${deQuoteMarker}`;
-            }
-        }
-        if ((key === 'enumDescriptions' || key === 'markdownEnumDescriptions') && Array.isArray(value)) {
-            return value.map((description, i) => {
-                if (description.length === 0) {
-                    return description;
-                }
-                const defaultKey = nls.getDefaultKey(description);
-                if (defaultKey) {
-                    return `${deQuoteMarker}nls.localizeByDefault(${deQuoteMarker}"${description}${deQuoteMarker}")${deQuoteMarker}`;
-                } else {
-                    const localizationKey = `${deQuoteMarker}"theia/editor/${this.lastPreferenceName}${i}${deQuoteMarker}"`;
-                    return `${deQuoteMarker}nls.localize(${localizationKey}, ${deQuoteMarker}"${description}${deQuoteMarker}")${deQuoteMarker}`;
-                }
-            });
-        }
-        return value;
-    }
-
-    protected deQuoteCodeSnippets(stringification: string): string {
+    protected dequoteCodeSnippets(stringification: string): string {
         return stringification
-            .replace(new RegExp(`${deQuoteMarker}"|"${deQuoteMarker}|${deQuoteMarker}\\\\`, 'g'), '')
-            .replace(new RegExp(`\\\\"${deQuoteMarker}`, 'g'), '"')
+            .replace(new RegExp(`${dequoteMarker}"|"${dequoteMarker}|${dequoteMarker}\\\\`, 'g'), '')
+            .replace(new RegExp(`\\\\"${dequoteMarker}`, 'g'), '"')
             .replace(/\\\\'/g, "\\'");
     }
 
@@ -208,13 +212,13 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                 type: 'boolean',
                 default: false,
                 description: 'Controls whether the Find Widget should read or modify the shared find clipboard on macOS.',
-                included: `${deQuoteMarker}isOSX${deQuoteMarker}`,
+                included: `${dequoteMarker}isOSX${dequoteMarker}`,
             },
             'editor.selectionClipboard': {
                 type: 'boolean',
                 default: true,
                 description: 'Controls whether the Linux primary clipboard should be supported.',
-                included: `${deQuoteMarker}!isOSX && !isWindows${deQuoteMarker}`
+                included: `${dequoteMarker}!isOSX && !isWindows${dequoteMarker}`
             }
         });
     }
@@ -223,5 +227,5 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
 // Utility to assist with Monaco uplifts to generate preference schema. Not for regular use in the application.
 export function bindMonacoPreferenceExtractor(bind: interfaces.Bind): void {
     // bind(MonacoEditorPreferenceSchemaExtractor).toSelf().inSingletonScope();
-    // bind(CommandContribution).to(MonacoEditorPreferenceSchemaExtractor);
+    // bind(CommandContribution).toService(MonacoEditorPreferenceSchemaExtractor);
 }
