@@ -114,7 +114,7 @@ export class OpenEditorsModel extends FileTreeModel {
         this._lastEditorWidgetsByArea = this._editorWidgetsByArea;
         this._editorWidgetsByArea = new Map<ApplicationShell.Area, NavigatableWidget[]>();
         let doRebuild = true;
-        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right', 'top'];
+        const areas: ApplicationShell.Area[] = ['main', 'bottom', 'left', 'right', 'top', 'secondaryWindow'];
         areas.forEach(area => {
             const editorWidgetsForArea = this.applicationShell.getWidgets(area).filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
             if (editorWidgetsForArea.length) {

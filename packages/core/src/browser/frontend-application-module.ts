@@ -121,6 +121,7 @@ import { RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
+import { SecondaryWindowHandler } from './secondary-window-handler';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -398,4 +399,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindBackendStopwatch(bind);
 
     bind(SaveResourceService).toSelf().inSingletonScope();
+
+    bind(SecondaryWindowHandler).toSelf().inSingletonScope();
 });

@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as electronRemoteMain from '../../electron-shared/@electron/remote/main';
-import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent } from '../../electron-shared/electron';
+import { screen, ipcMain, app, BrowserWindow, Event as ElectronEvent, DidCreateWindowDetails, BrowserWindowConstructorOptions } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -252,6 +252,7 @@ export class ElectronMainApplication {
         electronWindow.onDidClose(() => this.windows.delete(id));
         this.attachSaveWindowState(electronWindow.window);
         electronRemoteMain.enable(electronWindow.window.webContents);
+        this.configureNativeSecondaryWindowCreation(electronWindow.window);
         return electronWindow.window;
     }
 
@@ -315,6 +316,30 @@ export class ElectronMainApplication {
         return electronWindow;
     }
 
+    /** Configures native window creation, i.e. using window.open or links with target "_blank" in the frontend. */
+    protected configureNativeSecondaryWindowCreation(electronWindow: BrowserWindow): void {
+        electronWindow.webContents.setWindowOpenHandler(() => {
+            const options: BrowserWindowConstructorOptions = {
+                ...this.getDefaultTheiaWindowBounds(),
+                frame: this.useNativeWindowFrame,
+            };
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: options,
+            };
+        });
+        electronWindow.webContents.on('did-create-window', (newWindow: BrowserWindow, details: DidCreateWindowDetails) => {
+            if (this.isSecondaryWindowUrl(details.url)) {
+                newWindow.setMenuBarVisibility(false);
+            }
+        });
+    }
+
+    /** @returns whether the given url references the html file for creating a secondary window for an extracted widget. */
+    protected isSecondaryWindowUrl(url: string): boolean {
+        return !!url && url.endsWith('secondary-window.html');
+    }
+
     /**
      * "Gently" close all windows, application will not stop if a `beforeunload` handler returns `false`.
      */
@@ -348,6 +373,16 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
+        return {
+            frame: this.useNativeWindowFrame,
+            isFullScreen: false,
+            isMaximized: false,
+            ...this.getDefaultTheiaWindowBounds(),
+            ...this.getDefaultOptions()
+        };
+    }
+
+    protected getDefaultTheiaWindowBounds(): TheiaBrowserWindowOptions {
         // The `screen` API must be required when the application is ready.
         // See: https://electronjs.org/docs/api/screen#screen
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
@@ -358,14 +393,10 @@ export class ElectronMainApplication {
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
         const x = Math.round(bounds.x + (bounds.width - width) / 2);
         return {
-            frame: this.useNativeWindowFrame,
-            isFullScreen: false,
-            isMaximized: false,
             width,
             height,
             x,
-            y,
-            ...this.getDefaultOptions()
+            y
         };
     }
 

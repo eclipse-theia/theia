@@ -34,10 +34,11 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed } from '../widgets';
+import { waitForRevealed, waitForClosed, ExtractableWidget } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
+import { SecondaryWindowHandler } from '../secondary-window-handler';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -216,7 +217,8 @@ export class ApplicationShell extends Widget {
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
-        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
+        @inject(SecondaryWindowHandler) protected readonly secondaryWindowHandler: SecondaryWindowHandler,
     ) {
         super(options as Widget.IOptions);
     }
@@ -271,6 +273,10 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.create('right', this.options.rightPanel);
         this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
+        this.secondaryWindowHandler.init(this);
+        this.secondaryWindowHandler.onDidAddWidget(widget => this.fireDidAddWidget(widget));
+        this.secondaryWindowHandler.onDidRemoveWidget(widget => this.fireDidRemoveWidget(widget));
 
         this.layout = this.createLayout();
 
@@ -829,6 +835,9 @@ export class ApplicationShell extends Widget {
             case 'right':
                 this.rightPanelHandler.addWidget(widget, sidePanelOptions);
                 break;
+            case 'secondaryWindow':
+                /** At the moment, widgets are only moved to this area (i.e. a secondary window) by moving them from one of the other areas. */
+                throw new Error('Widgets cannot be added directly to the external area');
             default:
                 throw new Error('Unexpected area: ' + options.area);
         }
@@ -852,6 +861,8 @@ export class ApplicationShell extends Widget {
                 return toArray(this.leftPanelHandler.dockPanel.widgets());
             case 'right':
                 return toArray(this.rightPanelHandler.dockPanel.widgets());
+            case 'secondaryWindow':
+                return toArray(this.secondaryWindowHandler.widgets);
             default:
                 throw new Error('Illegal argument: ' + area);
         }
@@ -968,6 +979,9 @@ export class ApplicationShell extends Widget {
             case 'right':
                 title = this.rightPanelHandler.tabBar.currentTitle;
                 break;
+            case 'secondaryWindow':
+                // The current widget in a secondary window is not tracked.
+                return undefined;
             default:
                 throw new Error('Illegal argument: ' + area);
         }
@@ -1444,11 +1458,40 @@ export class ApplicationShell extends Widget {
      */
     async closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
         filter?: (title: Title<Widget>, index: number) => boolean): Promise<void> {
-        const titles: Array<Title<Widget>> = [];
+        const titles: Array<Title<Widget>> = this.getWidgetTitles(tabBarOrArea, filter);
+        if (titles.length) {
+            await this.closeMany(titles.map(title => title.owner));
+        }
+    }
+
+    saveTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): void {
+
+        const titles = this.getWidgetTitles(tabBarOrArea, filter);
+        for (let i = 0; i < titles.length; i++) {
+            const widget = titles[i].owner;
+            const saveable = Saveable.get(widget);
+            saveable?.save();
+        }
+    }
+
+    /**
+     * Collects all widget titles for the given tab bar or area and optionally filters them.
+     *
+     * @param tabBarOrArea The tab bar or area to retrieve the widget titles for
+     * @param filter The filter to apply to the result
+     * @returns The filtered array of widget titles or an empty array
+     */
+    protected getWidgetTitles(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
+        filter?: (title: Title<Widget>, index: number) => boolean): Title<Widget>[] {
+
+        const titles: Title<Widget>[] = [];
         if (tabBarOrArea === 'main') {
             this.mainAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
         } else if (tabBarOrArea === 'bottom') {
             this.bottomAreaTabBars.forEach(tabbar => titles.push(...toArray(tabbar.titles)));
+        } else if (tabBarOrArea === 'secondaryWindow') {
+            titles.push(...this.secondaryWindowHandler.widgets.map(w => w.title));
         } else if (typeof tabBarOrArea === 'string') {
             const tabbar = this.getTabBarFor(tabBarOrArea);
             if (tabbar) {
@@ -1457,32 +1500,8 @@ export class ApplicationShell extends Widget {
         } else if (tabBarOrArea) {
             titles.push(...toArray(tabBarOrArea.titles));
         }
-        if (titles.length) {
-            await this.closeMany((filter ? titles.filter(filter) : titles).map(title => title.owner));
-        }
-    }
 
-    saveTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
-        filter?: (title: Title<Widget>, index: number) => boolean): void {
-        if (tabBarOrArea === 'main') {
-            this.mainAreaTabBars.forEach(tb => this.saveTabs(tb, filter));
-        } else if (tabBarOrArea === 'bottom') {
-            this.bottomAreaTabBars.forEach(tb => this.saveTabs(tb, filter));
-        } else if (typeof tabBarOrArea === 'string') {
-            const tabBar = this.getTabBarFor(tabBarOrArea);
-            if (tabBar) {
-                this.saveTabs(tabBar, filter);
-            }
-        } else if (tabBarOrArea) {
-            const titles = toArray(tabBarOrArea.titles);
-            for (let i = 0; i < titles.length; i++) {
-                if (filter === undefined || filter(titles[i], i)) {
-                    const widget = titles[i].owner;
-                    const saveable = Saveable.get(widget);
-                    saveable?.save();
-                }
-            }
-        }
+        return filter ? titles.filter(filter) : titles;
     }
 
     /**
@@ -1567,6 +1586,9 @@ export class ApplicationShell extends Widget {
         if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
             return 'right';
         }
+        if (this.secondaryWindowHandler.widgets.includes(widget)) {
+            return 'secondaryWindow';
+        }
         return undefined;
     }
 
@@ -1617,6 +1639,9 @@ export class ApplicationShell extends Widget {
                     return this.leftPanelHandler.tabBar;
                 case 'right':
                     return this.rightPanelHandler.tabBar;
+                case 'secondaryWindow':
+                    // Secondary windows don't have a tab bar
+                    return undefined;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
             }
@@ -1887,6 +1912,10 @@ export class ApplicationShell extends Widget {
             this.revealWidget(widget!.id);
         }
     }
+
+    async moveWidgetToSecondaryWindow(widget: ExtractableWidget): Promise<void> {
+        this.secondaryWindowHandler.moveWidgetToSecondaryWindow(widget);
+    }
 }
 
 /**
@@ -1896,7 +1925,7 @@ export namespace ApplicationShell {
     /**
      * The areas of the application shell where widgets can reside.
      */
-    export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom';
+    export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom' | 'secondaryWindow';
 
     /**
      * The _side areas_ are those shell areas that can be collapsed and expanded,
@@ -1908,7 +1937,7 @@ export namespace ApplicationShell {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isValidArea(area?: any): area is ApplicationShell.Area {
-        const areas = ['main', 'top', 'left', 'right', 'bottom'];
+        const areas = ['main', 'top', 'left', 'right', 'bottom', 'secondaryWindow'];
         return (area !== undefined && typeof area === 'string' && areas.includes(area));
     }
 

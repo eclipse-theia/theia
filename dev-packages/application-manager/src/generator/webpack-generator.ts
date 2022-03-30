@@ -56,6 +56,7 @@ export class WebpackGenerator extends AbstractGenerator {
 const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 
@@ -72,6 +73,12 @@ const { mode, staticCompression }  = yargs.option('mode', {
 const development = mode === 'development';
 
 const plugins = [
+    new CopyWebpackPlugin({
+        patterns: [{
+            // copy secondary window html file to lib folder
+            from: path.resolve(__dirname, 'src-gen/frontend/secondary-window.html')
+        }]
+    }),
     new webpack.ProvidePlugin({
         // the Buffer class doesn't exist in the browser but some dependencies rely on it
         Buffer: ['buffer', 'Buffer']

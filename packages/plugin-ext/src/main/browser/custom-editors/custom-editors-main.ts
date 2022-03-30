@@ -258,7 +258,7 @@ export class CustomEditorsMainImpl implements CustomEditorsMain, Disposable {
                         area = WebviewPanelTargetArea.Right;
                     case 'bottom':
                         area = WebviewPanelTargetArea.Bottom;
-                    default: // includes 'top'
+                    default: // includes 'top' and 'secondaryWindow'
                         area = WebviewPanelTargetArea.Main;
                 }
                 showOptions.area = area;
