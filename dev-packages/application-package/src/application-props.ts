@@ -64,7 +64,8 @@ export namespace FrontendApplicationConfig {
         applicationName: 'Eclipse Theia',
         defaultTheme: 'dark',
         defaultIconTheme: 'none',
-        electron: ElectronFrontendApplicationConfig.DEFAULT
+        electron: ElectronFrontendApplicationConfig.DEFAULT,
+        defaultLocale: ''
     };
     export interface Partial extends ApplicationConfig {
 
@@ -95,6 +96,13 @@ export namespace FrontendApplicationConfig {
          * Defaults to `ElectronFrontendApplicationConfig.DEFAULT`.
          */
         readonly electron?: ElectronFrontendApplicationConfig.Partial;
+
+        /**
+         * The default locale for the application.
+         *
+         * Defaults to "".
+         */
+        readonly defaultLocale?: string;
     }
 }
 
