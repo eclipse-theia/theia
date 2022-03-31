@@ -16,7 +16,7 @@
 
 import {
     ApplicationShell,
-    InputBox, InputOptions, KeybindingRegistry, PickOptions,
+    InputBox, InputOptions, KeybindingRegistry, NormalizedQuickInputButton, PickOptions,
     QuickInputButton, QuickInputHideReason, QuickInputService, QuickPick, QuickPickItem,
     QuickPickItemButtonEvent, QuickPickItemHighlights, QuickPickOptions, QuickPickSeparator
 } from '@theia/core/lib/browser';
@@ -227,15 +227,23 @@ export class MonacoQuickInputService implements QuickInputService {
     }
 
     async pick<T extends QuickPickItem, O extends PickOptions<T> = PickOptions<T>>(
-        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options: O = <O>{}, token?: monaco.CancellationToken
+        picks: Promise<QuickPickInput<T>[]> | QuickPickInput<T>[], options?: O, token?: monaco.CancellationToken
     ): Promise<(O extends { canPickMany: true; } ? T[] : T) | undefined> {
+        type M = T & { buttons?: NormalizedQuickInputButton[] };
+        type R = (O extends { canPickMany: true; } ? T[] : T);
         const monacoPicks = (await picks).map(pick => {
-            if (pick.type === 'separator') {
-                return pick;
+            if (pick.type !== 'separator') {
+                pick.buttons &&= pick.buttons.map(QuickInputButton.normalize);
             }
-            return this.convertItems(pick);
+            return pick as M;
         });
-        return this.monacoService.pick(monacoPicks, options as any, token) as any; /* eslint-disable-line @typescript-eslint/no-explicit-any */
+        const monacoOptions = options as IPickOptions<M>;
+        const picked = await this.monacoService.pick(monacoPicks, monacoOptions, token);
+        if (!picked) { return picked; }
+        if (options?.canPickMany) {
+            return (Array.isArray(picked) ? picked : [picked]) as R;
+        }
+        return Array.isArray(picked) ? picked[0] : picked;
     }
 
     showQuickPick<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T> {
