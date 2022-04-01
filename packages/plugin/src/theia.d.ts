@@ -5635,11 +5635,13 @@ export module '@theia/plugin' {
          * Returns `true` if the given section for the given resource (if provided) is affected.
          *
          * @param section Configuration name, supports _dotted_ names.
-         * @param resource A resource Uri.
+         * @param scope a {@link ConfigurationScope}
          * @return `true` if the given section for the given resource (if provided) is affected.
          */
-        affectsConfiguration(section: string, resource?: Uri): boolean;
+        affectsConfiguration(section: string, scope?: ConfigurationScope): boolean;
     }
+
+    export type ConfigurationScope = Uri | WorkspaceFolder | TextDocument | { uri?: Uri, languageId: string };
 
     /**
      * An event describing a change to the set of [workspace folders](#workspace.workspaceFolders).
@@ -6301,7 +6303,7 @@ export module '@theia/plugin' {
          * @param resource A resource for which the configuration is asked for
          * @return The full configuration or a subset.
          */
-        export function getConfiguration(section?: string, resource?: Uri | null): WorkspaceConfiguration;
+        export function getConfiguration(section?: string, resource?: ConfigurationScope | null): WorkspaceConfiguration;
 
         /**
          * An event that is emitted when the [configuration](#WorkspaceConfiguration) changed.

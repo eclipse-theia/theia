@@ -40,6 +40,9 @@ export class MockPreferenceService implements PreferenceService {
     inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined {
         return undefined;
     }
+    inspectInScope<T>(preferenceName: string, scope: PreferenceScope, resourceUri?: string, forceLanguageOverride?: boolean): T | undefined {
+        return undefined;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     updateValue(): Promise<void> { return Promise.resolve(); }

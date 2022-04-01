@@ -70,11 +70,10 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
 
             const roots = workspaceService.tryGetRoots();
             const data = getPreferences(preferenceProviderProvider, roots);
-            const eventData: PreferenceChangeExt[] = [];
-            for (const preferenceName of Object.keys(changes)) {
-                const { newValue } = changes[preferenceName];
-                eventData.push({ preferenceName, newValue });
-            }
+            const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, newValue, domain, preferenceName }) => {
+                const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
+                return { preferenceName, newValue, scope: extScope };
+            });
             this.proxy.$acceptConfigurationChanged(data, eventData);
         }));
     }
@@ -84,17 +83,19 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): Promise<void> {
-        const scope = this.parseConfigurationTarget(target);
-        await this.preferenceService.set(key, value, scope, resource);
+    async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string, withLanguageOverride?: boolean): Promise<void> {
+        const scope = this.parseConfigurationTarget(target, resource);
+        const effectiveKey = this.getEffectiveKey(key, scope, withLanguageOverride, resource);
+        await this.preferenceService.set(effectiveKey, value, scope, resource);
     }
 
-    async $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string): Promise<void> {
-        const scope = this.parseConfigurationTarget(target);
-        await this.preferenceService.set(key, undefined, scope, resource);
+    async $removeConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, resource?: string, withLanguageOverride?: boolean): Promise<void> {
+        const scope = this.parseConfigurationTarget(target, resource);
+        const effectiveKey = this.getEffectiveKey(key, scope, withLanguageOverride, resource);
+        await this.preferenceService.set(effectiveKey, undefined, scope, resource);
     }
 
-    private parseConfigurationTarget(target?: boolean | ConfigurationTarget): PreferenceScope | undefined {
+    private parseConfigurationTarget(target?: boolean | ConfigurationTarget, resource?: string): PreferenceScope {
         if (typeof target === 'boolean') {
             return target ? PreferenceScope.User : PreferenceScope.Workspace;
         }
@@ -106,9 +107,17 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
             case ConfigurationTarget.WorkspaceFolder:
                 return PreferenceScope.Folder;
             default:
-                // PreferenceService knows how to deal with undefined in VS Code compatible way
-                return undefined;
+                return resource ? PreferenceScope.Folder : PreferenceScope.Workspace;
         }
+    }
+
+    // If the caller does not set `withLanguageOverride = true`, we have to check whether the setting exists with that override already.
+    protected getEffectiveKey(key: string, scope: PreferenceScope, withLanguageOverride?: boolean, resource?: string): string {
+        if (withLanguageOverride) { return key; }
+        const overridden = this.preferenceService.overriddenPreferenceName(key);
+        if (!overridden) { return key; }
+        const value = this.preferenceService.inspectInScope(key, scope, resource, withLanguageOverride);
+        return value === undefined ? overridden.preferenceName : key;
     }
 
 }
