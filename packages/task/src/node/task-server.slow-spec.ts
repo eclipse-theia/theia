@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/quotes */
 // *****************************************************************************
 // Copyright (C) 2017-2019 Ericsson and others.
 //
@@ -29,6 +30,8 @@ import 'reflect-metadata';
 import { TaskConfiguration, TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher } from '../common';
 import { ProcessTaskConfiguration, ProcessType } from '../common/process/task-protocol';
 import { createTaskTestContainer } from './test/task-test-container';
+import { TestWebSocketChannel } from "@theia/core/lib/node/messaging/test/test-web-socket-channel";
+import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -85,48 +88,47 @@ describe('Task server / back-end', function (): void {
         _server.close();
     });
 
-    // FIXME
-    // it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
-    //     const someString = 'someSingleWordString';
+    it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
+        const someString = 'someSingleWordString';
 
-    //     // This test is flaky on Windows and fails intermittently. Disable it for now
-    //     if (isWindows) {
-    //         this.skip();
-    //         return;
-    //     }
+        // This test is flaky on Windows and fails intermittently. Disable it for now
+        if (isWindows) {
+            this.skip();
+            return;
+        }
 
-    //     // create task using terminal process
-    //     const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-    //     const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
-    //     const terminalId = taskInfo.terminalId;
+        // create task using terminal process
+        const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
+        const terminalId = taskInfo.terminalId;
 
-    //     const messagesToWaitFor = 10;
-    //     const messages: string[] = [];
+        const messagesToWaitFor = 10;
+        const messages: string[] = [];
 
-    //     // hook-up to terminal's ws and confirm that it outputs expected tasks' output
-    //     await new Promise<void>((resolve, reject) => {
-    //         const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
-    //         channel.onError(reject);
-    //         channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
-    //         channel.onMessage(msg => {
-    //             // check output of task on terminal is what we expect
-    //             const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
-    //             // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
-    //             // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
-    //             const currentMessage = msg.toString();
-    //             messages.unshift(currentMessage);
-    //             if (currentMessage.indexOf(expected) !== -1) {
-    //                 resolve();
-    //                 channel.close();
-    //                 return;
-    //             }
-    //             if (messages.length >= messagesToWaitFor) {
-    //                 reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
-    //                 channel.close();
-    //             }
-    //         });
-    //     });
-    // });
+        // hook-up to terminal's ws and confirm that it outputs expected tasks' output
+        await new Promise<void>((resolve, reject) => {
+            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
+            channel.onError(reject);
+            channel.onClose(() => reject(new Error('Channel has been closed')));
+            channel.onMessage(msg => {
+                // check output of task on terminal is what we expect
+                const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
+                // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
+                // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
+                const currentMessage = msg.toString();
+                messages.unshift(currentMessage);
+                if (currentMessage.indexOf(expected) !== -1) {
+                    resolve();
+                    channel.close();
+                    return;
+                }
+                if (messages.length >= messagesToWaitFor) {
+                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
+                    channel.close();
+                }
+            });
+        });
+    });
 
     it('task using raw process - task server success response shall not contain a terminal id', async function (): Promise<void> {
         const someString = 'someSingleWordString';

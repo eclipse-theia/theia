@@ -18,17 +18,16 @@ import * as http from 'http';
 import * as https from 'https';
 import { Container, inject, injectable, interfaces, named, postConstruct } from 'inversify';
 import { Server, Socket } from 'socket.io';
-import { bindContributionProvider, ConnectionHandler, ContributionProvider, Emitter, Event } from '../../common/';
-import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer, toArrayBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
-import { Channel, ChannelMultiplexer, ReadBufferConstructor } from '../../common/message-rpc/channel';
-import { WriteBuffer } from '../../common/message-rpc/message-buffer';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
+import { IWebSocket, WebSocketChannel, WebSocketMainChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
-import { WsRequestValidator } from '../ws-request-validators';
-import { ConnectionContainerModule } from './connection-container-module';
-import { MessagingListener } from './messaging-listeners';
 import { MessagingService } from './messaging-service';
+import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
+import { WsRequestValidator } from '../ws-request-validators';
+import { MessagingListener } from './messaging-listeners';
+import { toArrayBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
+import { Channel, ChannelMultiplexer } from '../../common/message-rpc';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -121,7 +120,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     }
 
     protected handleChannels(socket: Socket): void {
-        const socketChannel = new SocketIOChannel(socket);
+        const socketChannel = new WebSocketMainChannel(toIWebSocket(socket));
         const mulitplexer = new ChannelMultiplexer(socketChannel);
         const channelHandlers = this.getConnectionChannelHandlers(socket);
         mulitplexer.onDidOpenChannel(event => {
@@ -154,43 +153,15 @@ export class MessagingContribution implements BackendApplicationContribution, Me
 
 }
 
-export class SocketIOChannel implements Channel {
-    protected readonly onCloseEmitter: Emitter<void> = new Emitter();
-    get onClose(): Event<void> {
-        return this.onCloseEmitter.event;
-    }
-
-    protected readonly onMessageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
-    get onMessage(): Event<ReadBufferConstructor> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
-
-    readonly id: string;
-
-    constructor(protected readonly socket: Socket) {
-        socket.on('error', error => this.onErrorEmitter.fire(error));
-        socket.on('disconnect', reason => this.onCloseEmitter.fire());
-        socket.on('message', (buffer: Buffer) => this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(toArrayBuffer(buffer))));
-        this.id = socket.id;
-    }
-
-    getWriteBuffer(): WriteBuffer {
-        const result = new ArrayBufferWriteBuffer();
-        if (this.socket.connected) {
-            result.onCommit(buffer => {
-                this.socket.emit('message', buffer);
-            });
-        }
-        return result;
-    }
-    close(): void {
-        // TODO: Implement me
-    }
+function toIWebSocket(socket: Socket): IWebSocket {
+    return {
+        close: () => socket.disconnect(),
+        isConnected: () => socket.connected,
+        onClose: cb => socket.on('disconnect', () => cb()),
+        onError: cb => socket.on('error', cb),
+        onMessage: cb => socket.on('message', data => cb(toArrayBuffer(data))),
+        send: message => socket.emit('message', message)
+    };
 }
 
 export namespace MessagingContribution {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { assert, expect, spy, use } from 'chai';
 import * as spies from 'chai-spies';
-import { ChannelMultiplexer, ChannelPipe, ReadBufferConstructor } from './channel';
+import { ChannelMultiplexer, ChannelPipe, ReadBufferFactory } from './channel';
 
 use(spies);
 
@@ -40,14 +40,14 @@ describe('multiplexer test', () => {
         assert.isNotNull(rightFirst);
         assert.isNotNull(rightSecond);
 
-        const leftSecondSpy = spy((buf: ReadBufferConstructor) => {
+        const leftSecondSpy = spy((buf: ReadBufferFactory) => {
             const message = buf().readString();
             expect(message).equal('message for second');
         });
 
         leftSecond.onMessage(leftSecondSpy);
 
-        const rightFirstSpy = spy((buf: ReadBufferConstructor) => {
+        const rightFirstSpy = spy((buf: ReadBufferFactory) => {
             const message = buf().readString();
             expect(message).equal('message for first');
         });

@@ -17,153 +17,45 @@
 
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
-import { Channel, ReadBufferConstructor } from './channel';
+import { Channel, ReadBufferFactory } from './channel';
 import { ReadBuffer } from './message-buffer';
-import { MessageDecoder, MessageEncoder, RPCMessageType } from './message-encoder';
-
-export class RCPConnection {
-    protected readonly pendingRequests: Map<number, Deferred<any>> = new Map();
-    protected nextMessageId: number = 0;
-
-    protected readonly encoder: MessageEncoder = new MessageEncoder();
-    protected readonly decoder: MessageDecoder = new MessageDecoder();
-    protected onNotificationEmitter: Emitter<{ method: string; args: any[]; }> = new Emitter();
-    readFileRequestId: number = -1;
-
-    get onNotification(): Event<{ method: string; args: any[]; }> {
-        return this.onNotificationEmitter.event;
-    }
-
-    constructor(readonly channel: Channel, public readonly requestHandler: (method: string, args: any[]) => Promise<any>) {
-        const registration = channel.onMessage((msg: ReadBufferConstructor) => this.handleMessage(msg()));
-        channel.onClose(() => registration.dispose());
-    }
-
-    handleMessage(data: ReadBuffer): void {
-        const message = this.decoder.parse(data);
-        switch (message.type) {
-            case RPCMessageType.Cancel: {
-                this.handleCancel(message.id);
-                break;
-            }
-            case RPCMessageType.Request: {
-                this.handleRequest(message.id, message.method, message.args);
-                break;
-            }
-            case RPCMessageType.Notification: {
-                this.handleNotify(message.id, message.method, message.args);
-                break;
-            }
-            case RPCMessageType.Reply: {
-                this.handleReply(message.id, message.res);
-                break;
-            }
-            case RPCMessageType.ReplyErr: {
-                this.handleReplyErr(message.id, message.err);
-                break;
-            }
-        }
-    }
-
-    protected handleCancel(id: number): void {
-        // implement cancellation
-        /*        const token = this.cancellationTokens.get(id);
-                if (token) {
-                    this.cancellationTokens.delete(id);
-                    token.cancel();
-                } else {
-                    console.warn(`cancel: no token for message: ${id}`);
-                }*/
-    }
-
-    protected async handleRequest(id: number, method: string, args: any[]): Promise<void> {
-
-        const output = this.channel.getWriteBuffer();
-        try {
-
-            const result = await this.requestHandler(method, args);
-            this.encoder.replyOK(output, id, result);
-        } catch (err) {
-            this.encoder.replyErr(output, id, err);
-            console.log(`error on request ${method} with id ${id}`);
-        }
-        output.commit();
-    }
-
-    protected async handleNotify(id: number, method: string, args: any[]): Promise<void> {
-        this.onNotificationEmitter.fire({ method, args });
-    }
-
-    protected handleReply(id: number, value: any): void {
-        const replyHandler = this.pendingRequests.get(id);
-        if (replyHandler) {
-            this.pendingRequests.delete(id);
-            replyHandler.resolve(value);
-        } else {
-            console.warn(`reply: no handler for message: ${id}`);
-        }
-    }
-
-    protected handleReplyErr(id: number, error: any): void {
-        const replyHandler = this.pendingRequests.get(id);
-        if (replyHandler) {
-            this.pendingRequests.delete(id);
-            // console.log(`received error id ${id}`);
-            replyHandler.reject(error);
-        } else {
-            console.warn(`error: no handler for message: ${id}`);
-        }
-    }
-
-    sendRequest<T>(method: string, args: any[]): Promise<T> {
-        const id = this.nextMessageId++;
-        const reply = new Deferred<T>();
-
-        this.pendingRequests.set(id, reply);
-        const output = this.channel.getWriteBuffer();
-        this.encoder.request(output, id, method, args);
-        output.commit();
-        return reply.promise;
-    }
-
-    sendNotification(method: string, args: any[]): void {
-        const output = this.channel.getWriteBuffer();
-        this.encoder.notification(output, this.nextMessageId++, method, args);
-        output.commit();
-    }
-
-}
+import { RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
 
 /**
- * A RCPServer reads rcp request and notification messages and sends the reply values or
+ * Handles request messages received by the {@link RpcServer}.
+ */
+export type RequestHandler = (method: string, args: any[]) => Promise<any>;
+
+/**
+ * A RpcServer reads rcp request and notification messages and sends the reply values or
  * errors from the request to the channel.
  */
-export class RPCServer {
-    protected readonly encoder: MessageEncoder = new MessageEncoder();
-    protected readonly decoder: MessageDecoder = new MessageDecoder();
+export class RpcServer {
+    protected readonly encoder = new RpcMessageEncoder();
+    protected readonly decoder = new RpcMessageDecoder();
     protected onNotificationEmitter: Emitter<{ method: string; args: any[]; }> = new Emitter();
 
     get onNotification(): Event<{ method: string; args: any[]; }> {
         return this.onNotificationEmitter.event;
     }
 
-    constructor(protected channel: Channel, public readonly requestHandler: (method: string, args: any[]) => Promise<any>) {
-        const registration = channel.onMessage((msg: ReadBufferConstructor) => this.handleMessage(msg()));
+    constructor(protected channel: Channel, public readonly requestHandler: RequestHandler) {
+        const registration = channel.onMessage((msg: ReadBufferFactory) => this.handleMessage(msg()));
         channel.onClose(() => registration.dispose());
     }
 
     handleMessage(data: ReadBuffer): void {
         const message = this.decoder.parse(data);
         switch (message.type) {
-            case RPCMessageType.Cancel: {
+            case RpcMessageType.Cancel: {
                 this.handleCancel(message.id);
                 break;
             }
-            case RPCMessageType.Request: {
+            case RpcMessageType.Request: {
                 this.handleRequest(message.id, message.method, message.args);
                 break;
             }
-            case RPCMessageType.Notification: {
+            case RpcMessageType.Notification: {
                 this.handleNotify(message.id, message.method, message.args);
                 break;
             }
@@ -182,27 +74,25 @@ export class RPCServer {
     }
 
     protected async handleRequest(id: number, method: string, args: any[]): Promise<void> {
+
         const output = this.channel.getWriteBuffer();
         try {
-            // console.log(`handling request ${method} with id ${id}`);
+
             const result = await this.requestHandler(method, args);
             this.encoder.replyOK(output, id, result);
-            // console.log(`handled request ${method} with id ${id}`);
         } catch (err) {
             this.encoder.replyErr(output, id, err);
-            console.log(`error on request ${method} with id ${id}`);
         }
         output.commit();
     }
 
     protected async handleNotify(id: number, method: string, args: any[]): Promise<void> {
-        // console.log(`handling notification ${method} with id ${id}`);
         this.onNotificationEmitter.fire({ method, args });
     }
 }
 
 /**
- * An RpcClient sends requests and notifications to a remote server.
+ * An RpClient sends requests and notifications to a remote server.
  * Clients can get a promise for the request result that will be either resolved or
  * rejected depending on the success of the request.
  * The RpcClient keeps track of outstanding requests and matches replies to the appropriate request
@@ -210,10 +100,11 @@ export class RPCServer {
  */
 export class RpcClient {
     protected readonly pendingRequests: Map<number, Deferred<any>> = new Map();
+
     protected nextMessageId: number = 0;
 
-    protected readonly encoder: MessageEncoder = new MessageEncoder();
-    protected readonly decoder: MessageDecoder = new MessageDecoder();
+    protected readonly encoder = new RpcMessageEncoder();
+    protected readonly decoder = new RpcMessageDecoder();
 
     constructor(public readonly channel: Channel) {
         const registration = channel.onMessage(data => this.handleMessage(data()));
@@ -223,11 +114,11 @@ export class RpcClient {
     handleMessage(data: ReadBuffer): void {
         const message = this.decoder.parse(data);
         switch (message.type) {
-            case RPCMessageType.Reply: {
+            case RpcMessageType.Reply: {
                 this.handleReply(message.id, message.res);
                 break;
             }
-            case RPCMessageType.ReplyErr: {
+            case RpcMessageType.ReplyErr: {
                 this.handleReplyErr(message.id, message.err);
                 break;
             }
@@ -236,7 +127,6 @@ export class RpcClient {
 
     protected handleReply(id: number, value: any): void {
         const replyHandler = this.pendingRequests.get(id);
-        // console.log(`received reply with id ${id}`);
         if (replyHandler) {
             this.pendingRequests.delete(id);
             replyHandler.resolve(value);
@@ -246,20 +136,22 @@ export class RpcClient {
     }
 
     protected handleReplyErr(id: number, error: any): void {
-        const replyHandler = this.pendingRequests.get(id);
-        if (replyHandler) {
-            this.pendingRequests.delete(id);
-            // console.log(`received error id ${id}`);
-            replyHandler.reject(error);
-        } else {
-            console.warn(`error: no handler for message: ${id}`);
+        try {
+            const replyHandler = this.pendingRequests.get(id);
+            if (replyHandler) {
+                this.pendingRequests.delete(id);
+                replyHandler.reject(error);
+            } else {
+                console.warn(`error: no handler for message: ${id}`);
+            }
+        } catch (err) {
+            throw err;
         }
     }
 
     sendRequest<T>(method: string, args: any[]): Promise<T> {
         const id = this.nextMessageId++;
         const reply = new Deferred<T>();
-        // console.log(`sending request ${method} with id ${id}`);
 
         this.pendingRequests.set(id, reply);
         const output = this.channel.getWriteBuffer();
@@ -269,9 +161,34 @@ export class RpcClient {
     }
 
     sendNotification(method: string, args: any[]): void {
-        // console.log(`sending notification ${method} with id ${this.nextMessageId + 1}`);
         const output = this.channel.getWriteBuffer();
         this.encoder.notification(output, this.nextMessageId++, method, args);
         output.commit();
     }
 }
+/**
+ * A RpcConnection can be used to to establish a bi-directional RPC connection. It is capable of
+ * both sending & receiving requests and notifications to/from the channel. It acts a
+ * both a {@link RpcServer} and a {@link RpcClient}
+ */
+export class RpcConnection {
+    protected rpcClient: RpcClient;
+    protected rpcServer: RpcServer;
+
+    get onNotification(): Event<{ method: string; args: any[]; }> {
+        return this.rpcServer.onNotification;
+    }
+
+    constructor(readonly channel: Channel, public readonly requestHandler: (method: string, args: any[]) => Promise<any>) {
+        this.rpcClient = new RpcClient(channel);
+        this.rpcServer = new RpcServer(channel, requestHandler);
+    }
+    sendRequest<T>(method: string, args: any[]): Promise<T> {
+        return this.rpcClient.sendRequest(method, args);
+    }
+
+    sendNotification(method: string, args: any[]): void {
+        this.rpcClient.sendNotification(method, args);
+    }
+}
+

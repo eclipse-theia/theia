@@ -15,14 +15,14 @@
 // *****************************************************************************
 import { expect } from 'chai';
 import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from './array-buffer-message-buffer';
-import { MessageDecoder, MessageEncoder } from './message-encoder';
+import { RpcMessageDecoder, RpcMessageEncoder } from './rpc-message-encoder';
 
 describe('message buffer test', () => {
     it('encode object', () => {
         const buffer = new ArrayBuffer(1024);
         const writer = new ArrayBufferWriteBuffer(buffer);
 
-        const encoder = new MessageEncoder();
+        const encoder = new RpcMessageEncoder();
         const jsonMangled = JSON.parse(JSON.stringify(encoder));
 
         encoder.writeTypedValue(writer, encoder);
@@ -31,7 +31,7 @@ describe('message buffer test', () => {
 
         const reader = new ArrayBufferReadBuffer(written);
 
-        const decoder = new MessageDecoder();
+        const decoder = new RpcMessageDecoder();
         const decoded = decoder.readTypedValue(reader);
 
         expect(decoded).deep.equal(jsonMangled);

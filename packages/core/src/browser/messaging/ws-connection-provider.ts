@@ -17,11 +17,9 @@
 import { decorate, injectable, interfaces, unmanaged } from 'inversify';
 import { io, Socket } from 'socket.io-client';
 import { Emitter, Event, JsonRpcProxy, JsonRpcProxyFactory } from '../../common';
-import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
-import { Channel, ReadBufferConstructor } from '../../common/message-rpc/channel';
-import { WriteBuffer } from '../../common/message-rpc/message-buffer';
+import { Channel } from '../../common/message-rpc/channel';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { IWebSocket, WebSocketChannel, WebSocketMainChannel } from '../../common/messaging/web-socket-channel';
 import { Endpoint } from '../endpoint';
 
 decorate(injectable(), JsonRpcProxyFactory);
@@ -56,7 +54,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     protected createMainChannel(): Channel {
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
-        const channel = new SocketIOChannel(socket);
+        const channel = new WebSocketMainChannel(toIWebSocket(socket));
         socket.on('connect', () => {
             this.fireSocketDidOpen();
         });
@@ -133,43 +131,14 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 }
 
-export class SocketIOChannel implements Channel {
-    protected readonly onCloseEmitter: Emitter<void> = new Emitter();
-    get onClose(): Event<void> {
-        return this.onCloseEmitter.event;
-    }
-
-    protected readonly onMessageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
-    get onMessage(): Event<ReadBufferConstructor> {
-        return this.onMessageEmitter.event;
-    }
-
-    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
-    get onError(): Event<unknown> {
-        return this.onErrorEmitter.event;
-    }
-
-    readonly id: string;
-
-    constructor(protected readonly socket: Socket) {
-        socket.on('error', error => this.onErrorEmitter.fire(error));
-        socket.on('disconnect', reason => this.onCloseEmitter.fire());
-        socket.on('message', buffer => this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(buffer)));
-        this.id = socket.id;
-    }
-
-    getWriteBuffer(): WriteBuffer {
-        const result = new ArrayBufferWriteBuffer();
-        if (this.socket.connected) {
-            result.onCommit(buffer => {
-                this.socket.emit('message', buffer);
-            });
-        }
-        return result;
-    }
-
-    close(): void {
-        this.socket.close();
-    }
-
+function toIWebSocket(socket: Socket): IWebSocket {
+    return {
+        close: () => socket.close(),
+        isConnected: () => socket.connected,
+        onClose: cb => socket.on('disconnect', () => cb()),
+        onError: cb => socket.on('error', cb),
+        onMessage: cb => socket.on('message', data => cb(data)),
+        send: message => socket.emit('message', message)
+    };
 }
+

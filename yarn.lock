@@ -2194,7 +2194,7 @@
 
 "@types/chai-spies@1.0.3":
   version "1.0.3"
-  resolved "http://localhost:4873/@types%2fchai-spies/-/chai-spies-1.0.3.tgz#a52dc61af3853ec9b80965040811d15dfd401542"
+  resolved "https://registry.yarnpkg.com/@types%2fchai-spies/-/chai-spies-1.0.3.tgz#a52dc61af3853ec9b80965040811d15dfd401542"
   integrity sha512-RBZjhVuK7vrg4rWMt04UF5zHYwfHnpk5mIWu3nQvU3AKGDixXzSjZ6v0zke6pBcaJqMv3IBZ5ibLWPMRDL0sLw==
   dependencies:
     "@types/chai" "*"
@@ -2208,7 +2208,7 @@
 
 "@types/chai@*", "@types/chai@4.3.0", "@types/chai@^4.2.7":
   version "4.3.0"
-  resolved "http://localhost:4873/@types%2fchai/-/chai-4.3.0.tgz#23509ebc1fa32f1b4d50d6a66c4032d5b8eaabdc"
+  resolved "https://registry.yarnpkg.com/@types%2fchai/-/chai-4.3.0.tgz#23509ebc1fa32f1b4d50d6a66c4032d5b8eaabdc"
   integrity sha512-/ceqdqeRraGolFTcfoXNiqjyQhZzbINDngeoAq9GoHa8PPK1yNzTaxWjA6BFWp5Ua9JpXEMSS4s5i9tS0hOJtw==
 
 "@types/component-emitter@^1.2.10":

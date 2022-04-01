@@ -21,7 +21,7 @@ import { Writable } from 'stream';
 import { Message } from 'vscode-ws-jsonrpc';
 import { ConnectionErrorHandler, Disposable, DisposableCollection, Emitter, ILogger } from '../../common';
 import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
-import { Channel, ReadBufferConstructor } from '../../common/message-rpc/channel';
+import { Channel, ReadBufferFactory } from '../../common/message-rpc/channel';
 import { createIpcEnv } from './ipc-protocol';
 
 export interface ResolvedIPCConnectionOptions {
@@ -80,7 +80,7 @@ export class IPCConnectionProvider {
     protected createConnection(childProcess: cp.ChildProcess, options?: ResolvedIPCConnectionOptions): Channel {
 
         const onCloseEmitter = new Emitter<void>();
-        const onMessageEmitter = new Emitter<ReadBufferConstructor>();
+        const onMessageEmitter = new Emitter<ReadBufferFactory>();
         const onErrorEmitter = new Emitter<unknown>();
         const pipe = childProcess.stdio[4] as Writable;
 

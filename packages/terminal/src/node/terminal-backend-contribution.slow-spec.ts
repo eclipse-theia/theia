@@ -14,42 +14,43 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// import { BackendApplication } from '@theia/core/lib/node/backend-application';
-// import * as http from 'http';
-// import * as https from 'https';
-// import { IShellTerminalServer } from '../common/shell-terminal-protocol';
-// import { createTerminalTestContainer } from './test/terminal-test-container';
+import { BackendApplication } from '@theia/core/lib/node/backend-application';
+import * as http from 'http';
+import * as https from 'https';
+import { IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { createTerminalTestContainer } from './test/terminal-test-container';
+import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
+import { terminalsPath } from '../common/terminal-protocol';
 
-// describe('Terminal Backend Contribution', function (): void {
+describe('Terminal Backend Contribution', function (): void {
 
-    // this.timeout(10000);
-    // let server: http.Server | https.Server;
-    // let shellTerminalServer: IShellTerminalServer;
+    this.timeout(10000);
+    let server: http.Server | https.Server;
+    let shellTerminalServer: IShellTerminalServer;
 
-    // beforeEach(async () => {
-    //     const container = createTerminalTestContainer();
-    //     const application = container.get(BackendApplication);
-    //     shellTerminalServer = container.get(IShellTerminalServer);
-    //     server = await application.start();
-    // });
+    beforeEach(async () => {
+        const container = createTerminalTestContainer();
+        const application = container.get(BackendApplication);
+        shellTerminalServer = container.get(IShellTerminalServer);
+        server = await application.start();
+    });
 
-    // afterEach(() => {
-    //     const s = server;
-    //     server = undefined!;
-    //     shellTerminalServer = undefined!;
-    //     s.close();
-    // });
+    afterEach(() => {
+        const s = server;
+        server = undefined!;
+        shellTerminalServer = undefined!;
+        s.close();
+    });
 
-    // it('is data received from the terminal ws server', async () => {
-    //     const terminalId = await shellTerminalServer.create({});
-    //     await new Promise<void>((resolve, reject) => {
-    //         const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
-    //         channel.onError(reject);
-    //         channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
-    //         channel.onOpen(() => {
-    //             resolve();
-    //             channel.close();
-    //         });
-    //     });
-    // });
-// });
+    it('is data received from the terminal ws server', async () => {
+        const terminalId = await shellTerminalServer.create({});
+        await new Promise<void>((resolve, reject) => {
+            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
+            channel.onError(reject);
+            channel.onClose(() => reject(new Error('channel is closed')));
+            resolve();
+            channel.close();
+        });
+    });
+
+});

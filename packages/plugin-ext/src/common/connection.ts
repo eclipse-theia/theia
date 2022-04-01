@@ -13,17 +13,17 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Emitter, Event } from '@theia/core/lib/common/event';
-import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
-import { Channel, ReadBufferConstructor } from '@theia/core/lib/common/message-rpc/channel';
-import { WriteBuffer } from '@theia/core/lib/common/message-rpc/message-buffer';
 import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { ReadBufferFactory } from '@theia/core/lib/common/message-rpc/channel';
+import { WriteBuffer, Channel } from '@theia/core';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
 
 /**
  * A channel communicating with a counterpart in a plugin host.
  */
 export class PluginChannel implements Channel {
-    private messageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
+    private messageEmitter: Emitter<ReadBufferFactory> = new Emitter();
     private errorEmitter: Emitter<unknown> = new Emitter();
     private closedEmitter: Emitter<void> = new Emitter();
 
@@ -44,7 +44,7 @@ export class PluginChannel implements Channel {
         this.connection.$sendMessage(this.id, content);
     }
 
-    fireMessageReceived(msg: ReadBufferConstructor): void {
+    fireMessageReceived(msg: ReadBufferFactory): void {
         this.messageEmitter.fire(msg);
     }
 
@@ -56,7 +56,7 @@ export class PluginChannel implements Channel {
         this.closedEmitter.fire();
     }
 
-    get onMessage(): Event<ReadBufferConstructor> {
+    get onMessage(): Event<ReadBufferFactory> {
         return this.messageEmitter.event;
     }
 

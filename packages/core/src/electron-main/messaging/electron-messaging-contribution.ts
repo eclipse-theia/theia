@@ -33,7 +33,6 @@ import { ElectronMessagingService } from './electron-messaging-service';
  * This component allows communication between renderer process (frontend) and electron main process.
  */
 
-
 // FIXME: Electron implementation
 @injectable()
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {

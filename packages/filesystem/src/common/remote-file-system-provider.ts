@@ -42,11 +42,11 @@ export interface RemoteFileSystemServer extends JsonRpcServer<RemoteFileSystemCl
     fsPath(resource: string): Promise<string>;
     open(resource: string, opts: FileOpenOptions): Promise<number>;
     close(fd: number): Promise<void>;
-    read(fd: number, pos: number, length: number): Promise<{ bytes: number[]; bytesRead: number; }>;
+    read(fd: number, pos: number, length: number): Promise<{ bytes: Uint8Array; bytesRead: number; }>;
     readFileStream(resource: string, opts: FileReadStreamOptions, token: CancellationToken): Promise<number>;
-    readFile(resource: string): Promise<number[]>;
-    write(fd: number, pos: number, data: number[], offset: number, length: number): Promise<number>;
-    writeFile(resource: string, content: number[], opts: FileWriteOptions): Promise<void>;
+    readFile(resource: string): Promise<Uint8Array>;
+    write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number>;
+    writeFile(resource: string, content: Uint8Array, opts: FileWriteOptions): Promise<void>;
     delete(resource: string, opts: FileDeleteOptions): Promise<void>;
     mkdir(resource: string): Promise<void>;
     readdir(resource: string): Promise<[string, FileType][]>;
@@ -70,7 +70,7 @@ export interface RemoteFileSystemClient {
     notifyDidChangeFile(event: { changes: RemoteFileChange[] }): void;
     notifyFileWatchError(): void;
     notifyDidChangeCapabilities(capabilities: FileSystemProviderCapabilities): void;
-    onFileStreamData(handle: number, data: number[]): void;
+    onFileStreamData(handle: number, data: Uint8Array): void;
     onFileStreamEnd(handle: number, error: RemoteFileStreamError | undefined): void;
 }
 
@@ -169,7 +169,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
                 this.onFileWatchErrorEmitter.fire();
             },
             notifyDidChangeCapabilities: capabilities => this.setCapabilities(capabilities),
-            onFileStreamData: (handle, data) => this.onFileStreamDataEmitter.fire([handle, Uint8Array.from(data)]),
+            onFileStreamData: (handle, data) => this.onFileStreamDataEmitter.fire([handle, data]),
             onFileStreamEnd: (handle, error) => this.onFileStreamEndEmitter.fire([handle, error])
         });
         const onInitialized = this.server.onDidOpenConnection(() => {
@@ -224,7 +224,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
 
     async readFile(resource: URI): Promise<Uint8Array> {
         const bytes = await this.server.readFile(resource.toString());
-        return Uint8Array.from(bytes);
+        return bytes;
     }
 
     readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
@@ -264,11 +264,11 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
     }
 
     write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
-        return this.server.write(fd, pos, [...data.values()], offset, length);
+        return this.server.write(fd, pos, data, offset, length);
     }
 
     writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
-        return this.server.writeFile(resource.toString(), [...content.values()], opts);
+        return this.server.writeFile(resource.toString(), content, opts);
     }
 
     delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
@@ -412,34 +412,33 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
         throw new Error('not supported');
     }
 
-    async read(fd: number, pos: number, length: number): Promise<{ bytes: number[]; bytesRead: number; }> {
+    async read(fd: number, pos: number, length: number): Promise<{ bytes: Uint8Array; bytesRead: number; }> {
         if (hasOpenReadWriteCloseCapability(this.provider)) {
             const buffer = BinaryBuffer.alloc(this.BUFFER_SIZE);
             const bytes = buffer.buffer;
             const bytesRead = await this.provider.read(fd, pos, bytes, 0, length);
-            return { bytes: [...bytes.values()], bytesRead };
+            return { bytes, bytesRead };
         }
         throw new Error('not supported');
     }
 
-    write(fd: number, pos: number, data: number[], offset: number, length: number): Promise<number> {
+    write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         if (hasOpenReadWriteCloseCapability(this.provider)) {
-            return this.provider.write(fd, pos, Uint8Array.from(data), offset, length);
+            return this.provider.write(fd, pos, data, offset, length);
         }
         throw new Error('not supported');
     }
 
-    async readFile(resource: string): Promise<number[]> {
+    async readFile(resource: string): Promise<Uint8Array> {
         if (hasReadWriteCapability(this.provider)) {
-            const buffer = await this.provider.readFile(new URI(resource));
-            return [...buffer.values()];
+            return this.provider.readFile(new URI(resource));
         }
         throw new Error('not supported');
     }
 
-    writeFile(resource: string, content: number[], opts: FileWriteOptions): Promise<void> {
+    writeFile(resource: string, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         if (hasReadWriteCapability(this.provider)) {
-            return this.provider.writeFile(new URI(resource), Uint8Array.from(content), opts);
+            return this.provider.writeFile(new URI(resource), content, opts);
         }
         throw new Error('not supported');
     }
@@ -497,7 +496,7 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
         if (hasFileReadStreamCapability(this.provider)) {
             const handle = this.readFileStreamSeq++;
             const stream = this.provider.readFileStream(new URI(resource), opts, token);
-            stream.on('data', data => this.client?.onFileStreamData(handle, [...data.values()]));
+            stream.on('data', data => this.client?.onFileStreamData(handle, data));
             stream.on('error', error => {
                 const code = error instanceof FileSystemProviderError ? error.code : undefined;
                 const { name, message, stack } = error;

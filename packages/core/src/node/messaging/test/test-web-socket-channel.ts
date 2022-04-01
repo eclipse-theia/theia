@@ -14,34 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// import * as http from 'http';
-// import * as https from 'https';
-// import { WebSocketChannel } from '../../../common/messaging/web-socket-channel';
-// import { Disposable } from '../../../common/disposable';
-// import { AddressInfo } from 'net';
-// import { io } from 'socket.io-client';
+import * as http from 'http';
+import * as https from 'https';
+import { AddressInfo } from 'net';
+import { io } from 'socket.io-client';
+import { toArrayBuffer } from '../../../common/message-rpc/array-buffer-message-buffer';
+import { IWebSocket, WebSocketChannel, WebSocketMainChannel } from '../../../common/messaging/web-socket-channel';
 
-// export class TestWebSocketChannel extends WebSocketChannel {
+export class TestWebSocketChannel extends WebSocketMainChannel {
 
-//     constructor({ server, path }: {
-//         server: http.Server | https.Server,
-//         path: string
-//     }) {
-//         super(0, content => socket.send(content));
-//         const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
-//         socket.on('error', error =>
-//             this.fireError(error)
-//         );
-//         socket.on('disconnect', reason =>
-//             this.fireClose(0, reason)
-//         );
-//         socket.on('message', data => {
-//             this.handleMessage(JSON.parse(data.toString()));
-//         });
-//         socket.on('connect', () =>
-//             this.open(path)
-//         );
-//         this.toDispose.push(Disposable.create(() => socket.close()));
-//     }
+    constructor({ server, path }: {
+        server: http.Server | https.Server,
+        path: string
+    }) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        super(createSocket(server));
 
-// }
+    }
+}
+
+function createSocket(server: http.Server): IWebSocket {
+    const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
+    return {
+        close: () => socket.disconnect(),
+        isConnected: () => socket.connected,
+        onClose: cb => socket.on('disconnect', () => cb()),
+        onError: cb => socket.on('error', cb),
+        onMessage: cb => socket.on('message', data => cb(toArrayBuffer(data))),
+        send: message => socket.emit('message', message)
+    };
+}

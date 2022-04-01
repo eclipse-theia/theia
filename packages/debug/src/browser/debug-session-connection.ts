@@ -16,9 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
-import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Event, Emitter, DisposableCollection, Disposable, MaybePromise, Channel } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugProtocol } from 'vscode-debugprotocol';
 export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
@@ -114,6 +113,7 @@ const standardDebugEvents = new Set<string>([
     'thread'
 ]);
 
+// TODO: Proper message RPC for debug session protocol
 export class DebugSessionConnection implements Disposable {
 
     private sequence = 1;

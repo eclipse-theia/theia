@@ -16,10 +16,66 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ForwardingChannel } from '../message-rpc/channel';
+import { Emitter, Event } from '../event';
+import { WriteBuffer } from '../message-rpc';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../message-rpc/array-buffer-message-buffer';
+import { Channel, ForwardingChannel, ReadBufferFactory } from '../message-rpc/channel';
 
+/**
+ * The messaging connection between a choesive frontend and backend service.
+ */
 export type WebSocketChannel = ForwardingChannel;
 
 export namespace WebSocketChannel {
     export const wsPath = '/services';
+}
+export interface IWebSocket {
+    send(message: ArrayBuffer): void;
+    close(): void;
+    isConnected(): boolean;
+    onMessage(cb: (message: ArrayBuffer) => void): void;
+    onError(cb: (reason: any) => void): void;
+    onClose(cb: () => void): void;
+}
+
+export class WebSocketMainChannel implements Channel {
+    protected readonly onCloseEmitter: Emitter<void> = new Emitter();
+    get onClose(): Event<void> {
+        return this.onCloseEmitter.event;
+    }
+
+    protected readonly onMessageEmitter: Emitter<ReadBufferFactory> = new Emitter();
+    get onMessage(): Event<ReadBufferFactory> {
+        return this.onMessageEmitter.event;
+    }
+
+    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
+    get onError(): Event<unknown> {
+        return this.onErrorEmitter.event;
+    }
+
+    readonly id: string;
+
+    constructor(protected readonly socket: IWebSocket) {
+        socket.onClose(() => this.onCloseEmitter.fire());
+        socket.onError(error => this.onErrorEmitter.fire(error));
+        socket.onMessage(buffer => this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(buffer)));
+
+        this.id = 'main_channel';
+    }
+
+    getWriteBuffer(): WriteBuffer {
+        const result = new ArrayBufferWriteBuffer();
+        if (this.socket.isConnected()) {
+            result.onCommit(buffer => {
+                this.socket.send(buffer);
+            });
+        }
+        return result;
+    }
+
+    close(): void {
+        this.socket.close();
+    }
+
 }

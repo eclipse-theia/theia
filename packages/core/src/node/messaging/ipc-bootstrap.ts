@@ -18,7 +18,7 @@ import { Socket } from 'net';
 import 'reflect-metadata';
 import { Emitter } from '../../common';
 import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
-import { Channel, ReadBufferConstructor } from '../../common/message-rpc/channel';
+import { Channel, ReadBufferFactory } from '../../common/message-rpc/channel';
 import { dynamicRequire } from '../dynamic-require';
 import { checkParentAlive, IPCEntryPoint } from './ipc-protocol';
 
@@ -34,7 +34,7 @@ function createChannel(): Channel {
     });
 
     const onCloseEmitter = new Emitter<void>();
-    const onMessageEmitter = new Emitter<ReadBufferConstructor>();
+    const onMessageEmitter = new Emitter<ReadBufferFactory>();
     const onErrorEmitter = new Emitter<unknown>();
     pipe.on('data', (data: Uint8Array) => {
         onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));

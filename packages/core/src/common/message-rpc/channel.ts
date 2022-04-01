@@ -20,7 +20,7 @@ import { ReadBuffer, WriteBuffer } from './message-buffer';
 export type ReadBufferConstructor = () => ReadBuffer;
 
 /**
- * A channel is a bidirectinal communications channel with lifecycle and
+ * A channel is a bidirectional communications channel with lifecycle and
  * error signalling. Note that creation of channels is specific to particular
  * implementations and thus not part of the protocol.
  */
@@ -34,11 +34,9 @@ export interface Channel {
      */
     onError: Event<unknown>;
     /**
-     * A message has arrived and can be read using a {@link ReadBuffer}. Since one `ReadBuffer` cannot be reused
-     * by multiple listener to read the same message again, each lister has to construct its
-     * own buffer using the given {@link ReadBufferConstructor}
+     * A message has arrived and can be read  by listeners using a {@link ReadBufferFactory}.
      */
-    onMessage: Event<ReadBufferConstructor>;
+    onMessage: Event<ReadBufferFactory>;
     /**
      * Obtain a {@link WriteBuffer} to write a message to the channel.
      */
@@ -51,6 +49,8 @@ export interface Channel {
     readonly id: string;
 }
 
+export type ReadBufferFactory = () => ReadBuffer;
+
 export enum MessageTypes {
     Open = 1,
     Close = 2,
@@ -59,10 +59,11 @@ export enum MessageTypes {
 }
 
 /**
- * Helper class to implement the single channels on a {@link ChannelMultiplexer}
+ * Helper class to implement the single channels on a {@link ChannelMultiplexer}.
  */
 export class ForwardingChannel implements Channel {
-    constructor(readonly id: string, private readonly closeHander: () => void, private readonly writeBufferSource: () => WriteBuffer) {
+
+    constructor(readonly id: string, protected readonly closeHandler: () => void, protected readonly writeBufferSource: () => WriteBuffer) {
     }
 
     onCloseEmitter: Emitter<void> = new Emitter();
@@ -73,8 +74,8 @@ export class ForwardingChannel implements Channel {
     get onError(): Event<unknown> {
         return this.onErrorEmitter.event;
     };
-    onMessageEmitter: Emitter<ReadBufferConstructor> = new Emitter();
-    get onMessage(): Event<ReadBufferConstructor> {
+    onMessageEmitter: Emitter<ReadBufferFactory> = new Emitter();
+    get onMessage(): Event<ReadBufferFactory> {
         return this.onMessageEmitter.event;
     };
 
@@ -89,12 +90,11 @@ export class ForwardingChannel implements Channel {
     }
 
     close(): void {
-        this.closeHander();
+        this.closeHandler();
     }
 }
 
 /**
- * A class to encode/decode multiple channels over a single underlying {@link Channel}
  * The write buffers in this implementation immediately write to the underlying
  * channel, so we rely on writers to the multiplexed channels to always commit their
  * messages and always in one go.
@@ -122,14 +122,14 @@ export class ChannelMultiplexer {
 
     protected handleClose(): void {
         this.pendingOpen.clear();
-        this.openChannels.forEach(channel => {
-            channel.close();
+        this.openChannels.forEach((channel, id) => {
+            this.closeChannel(id, true);
         });
         this.openChannels.clear();
     }
 
     protected handleMessage(buffer: ReadBuffer): void {
-        const type = buffer.readByte();
+        const type = buffer.readUint8();
         const id = buffer.readString();
         switch (type) {
             case MessageTypes.AckOpen: {
@@ -153,7 +153,7 @@ export class ChannelMultiplexer {
                         // edge case: both side try to open a channel at the same time.
                         resolve(channel);
                     }
-                    this.underlyingChannel.getWriteBuffer().writeByte(MessageTypes.AckOpen).writeString(id).commit();
+                    this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
                     this.onOpenChannelEmitter.fire({ id, channel });
                 }
 
@@ -170,7 +170,7 @@ export class ChannelMultiplexer {
             case MessageTypes.Data: {
                 const channel = this.openChannels.get(id);
                 if (channel) {
-                    channel.onMessageEmitter.fire(() => buffer.copy());
+                    channel.onMessageEmitter.fire(() => buffer.sliceAtCurrentPosition());
                 }
                 break;
             }
@@ -181,26 +181,26 @@ export class ChannelMultiplexer {
     protected createChannel(id: string): ForwardingChannel {
         return new ForwardingChannel(id, () => this.closeChannel(id), () => {
             const underlying = this.underlyingChannel.getWriteBuffer();
-            underlying.writeByte(MessageTypes.Data);
+            underlying.writeUint8(MessageTypes.Data);
             underlying.writeString(id);
             return underlying;
         });
     }
 
-    protected closeChannel(id: string): void {
-        this.underlyingChannel.getWriteBuffer().writeByte(MessageTypes.Close).writeString(id).commit();
-        if (this.openChannels.delete(id)) {
-            this.openChannels.get(id)!.onCloseEmitter.fire();
-        } else {
-            console.error('The channel does not exist: ', id);
+    protected closeChannel(id: string, remoteClose = false): void {
+        this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.Close).writeString(id).commit();
+        if (remoteClose) {
+            // The main channel was closed from the remote site => also trigger `onClose` event of the forwarding channel
+            this.openChannels.get(id)?.onCloseEmitter.fire();
         }
+        this.openChannels.delete(id);
     }
 
     open(id: string): Promise<Channel> {
         const result = new Promise<Channel>((resolve, reject) => {
             this.pendingOpen.set(id, resolve);
         });
-        this.underlyingChannel.getWriteBuffer().writeByte(MessageTypes.Open).writeString(id).commit();
+        this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.Open).writeString(id).commit();
         return result;
     }
 

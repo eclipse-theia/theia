@@ -21,8 +21,8 @@ describe('array message buffer tests', () => {
         const buffer = new ArrayBuffer(1024);
         const writer = new ArrayBufferWriteBuffer(buffer);
 
-        writer.writeByte(8);
-        writer.writeInt(10000);
+        writer.writeUint8(8);
+        writer.writeUint32(10000);
         writer.writeBytes(new Uint8Array([1, 2, 3, 4]));
         writer.writeString('this is a string');
         writer.writeString('another string');
@@ -32,8 +32,8 @@ describe('array message buffer tests', () => {
 
         const reader = new ArrayBufferReadBuffer(written);
 
-        expect(reader.readByte()).equal(8);
-        expect(reader.readInt()).equal(10000);
+        expect(reader.readUint8()).equal(8);
+        expect(reader.readUint32()).equal(10000);
         expect(reader.readBytes()).deep.equal(new Uint8Array([1, 2, 3, 4]).buffer);
         expect(reader.readString()).equal('this is a string');
         expect(reader.readString()).equal('another string');

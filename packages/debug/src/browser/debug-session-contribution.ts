@@ -30,7 +30,7 @@ import { DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
-import { Channel } from '@theia/core/src/common/message-rpc/channel';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 
 /**
  * DebugSessionContribution symbol for DI.

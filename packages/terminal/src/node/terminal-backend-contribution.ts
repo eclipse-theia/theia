@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ILogger } from '@theia/core/lib/common';
-import { RCPConnection } from '@theia/core/lib/common/message-rpc/rpc-protocol';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ProcessManager, TerminalProcess } from '@theia/process/lib/node';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { ILogger, RequestHandler } from '@theia/core/lib/common';
+import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import { terminalsPath } from '../common/terminal-protocol';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
+import { RpcConnection } from '@theia/core/';
 
 @injectable()
 export class TerminalBackendContribution implements MessagingService.Contribution {
@@ -36,14 +36,19 @@ export class TerminalBackendContribution implements MessagingService.Contributio
             const termProcess = this.processManager.get(id);
             if (termProcess instanceof TerminalProcess) {
                 const output = termProcess.createOutputStream();
+                // Create a RPC connection to the terminal process
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const requestHandler = async (method: string, args: any[]) => {
+                const requestHandler: RequestHandler = async (method: string, args: any[]) => {
                     if (method === 'write' && args[0]) {
-                        termProcess.write(args[0].toString());
+                        termProcess.write(args[0]);
                     }
+                    this.logger.warn('Terminal process received a request with unsupported method or argument', { method, args });
                 };
-                const rpc = new RCPConnection(connection, requestHandler);
-                output.on('data', data => rpc.sendNotification('onData', data));
+
+                const rpc = new RpcConnection(connection, requestHandler);
+                output.on('data', data => {
+                    rpc.sendNotification('onData', [data]);
+                });
                 connection.onClose(() => output.dispose());
             }
         });

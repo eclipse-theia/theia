@@ -21,7 +21,7 @@ import { ApplicationError } from '../application-error';
 import { Disposable } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Channel } from '../message-rpc/channel';
-import { RCPConnection } from '../message-rpc/rpc-protocol';
+import { RpcConnection } from '../message-rpc/rpc-protocol';
 import { ConnectionHandler } from './handler';
 
 export type JsonRpcServer<Client> = Disposable & {
@@ -103,8 +103,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected readonly onDidOpenConnectionEmitter = new Emitter<void>();
     protected readonly onDidCloseConnectionEmitter = new Emitter<void>();
 
-    protected connectionPromiseResolve: (connection: RCPConnection) => void;
-    protected connectionPromise: Promise<RCPConnection>;
+    protected connectionPromiseResolve: (connection: RpcConnection) => void;
+    protected connectionPromise: Promise<RpcConnection>;
 
     /**
      * Build a new JsonRpcProxyFactory.
@@ -135,7 +135,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * response.
      */
     listen(channel: Channel): void {
-        const connection = new RCPConnection(channel, (method, args) => this.onRequest(method, ...args));
+        const connection = new RpcConnection(channel, (method, args) => this.onRequest(method, ...args));
         connection.onNotification(event => this.onNotification(event.method, ...event.args));
 
         this.connectionPromiseResolve(connection);
