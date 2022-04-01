@@ -99,17 +99,17 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         }
     }
 
-    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void> {
         for (const plugin of frontendPlugins) {
-            await this.deployPlugin(plugin, 'frontend');
+            await this.deployPlugin(plugin, 'frontend', isUnderDevelopment);
         }
         // resolve on first deploy
         this.frontendPluginsMetadataDeferred.resolve(undefined);
     }
 
-    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void> {
         for (const plugin of backendPlugins) {
-            await this.deployPlugin(plugin, 'backend');
+            await this.deployPlugin(plugin, 'backend', isUnderDevelopment);
         }
         // rebuild translation config after deployment
         this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
@@ -120,7 +120,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     /**
      * @throws never! in order to isolate plugin deployment
      */
-    protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<void> {
+    protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint, isUnderDevelopment: boolean = false): Promise<void> {
         const pluginPath = entry.path();
         const deployPlugin = this.stopwatch.start('deployPlugin');
         try {
@@ -131,6 +131,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             }
 
             const metadata = this.reader.readMetadata(manifest);
+            metadata.isUnderDevelopment = isUnderDevelopment;
 
             const deployedLocations = this.deployedLocations.get(metadata.model.id) || new Set<string>();
             deployedLocations.add(entry.rootPath);

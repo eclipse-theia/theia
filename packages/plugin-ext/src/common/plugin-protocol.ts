@@ -795,6 +795,7 @@ export interface PluginMetadata {
     host: string;
     model: PluginModel;
     lifecycle: PluginLifecycle;
+    isUnderDevelopment?: boolean;
 }
 
 export const MetadataProcessor = Symbol('MetadataProcessor');
@@ -826,8 +827,8 @@ export interface PluginDependencies {
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void>;
 
     getDeployedPlugin(pluginId: string): DeployedPlugin | undefined;
     undeployPlugin(pluginId: string): Promise<boolean>;

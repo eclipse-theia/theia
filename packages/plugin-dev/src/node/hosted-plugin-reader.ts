@@ -42,11 +42,11 @@ export class HostedPluginReader implements BackendApplicationContribution {
             const hostedPlugin = new PluginDeployerEntryImpl('Hosted Plugin', pluginPath!, pluginPath);
             const hostedMetadata = await this.hostedPlugin.promise;
             if (hostedMetadata!.model.entryPoint && hostedMetadata!.model.entryPoint.backend) {
-                this.deployerHandler.deployBackendPlugins([hostedPlugin]);
+                this.deployerHandler.deployBackendPlugins([hostedPlugin], true);
             }
 
             if (hostedMetadata!.model.entryPoint && hostedMetadata!.model.entryPoint.frontend) {
-                this.deployerHandler.deployFrontendPlugins([hostedPlugin]);
+                this.deployerHandler.deployFrontendPlugins([hostedPlugin], true);
             }
         }
     }

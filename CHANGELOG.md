@@ -3,6 +3,11 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+## v1.25.0 - 4/28/2022
+[1.25.0 Milestone](https://github.com/eclipse-theia/theia/milestone/33)
+
+- [plugin] added support for `ExtensionMode` [#10201](https://github.com/eclipse-theia/theia/pull/10201) - Contributed on behalf of STMicroelectronics
+
 
 
 ## v.1.26.0
