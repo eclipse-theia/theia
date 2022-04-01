@@ -18,7 +18,7 @@ import { isOSX, isWindows, nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser';
 import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
-/* eslint-disable @typescript-eslint/quotes,max-len,@theia/localization-check,no-null/no-null */
+/* eslint-disable @typescript-eslint/quotes,max-len,no-null/no-null */
 
 /**
  * Please do not modify this file by hand. It should be generated automatically
@@ -89,7 +89,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Suggest words from all open documents of the same language."),
             nls.localizeByDefault("Suggest words from all open documents.")
         ],
-        "description": nls.localizeByDefault("Controls from which documents word based completions are computed."),
+        "description": nls.localize("theia/editor/editor.wordBasedSuggestionsMode", "Controls from which documents word based completions are computed."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -146,7 +146,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.language.colorizedBracketPairs": {
         "type": "array",
         "default": false,
-        "description": nls.localizeByDefault("Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),
+        "description": nls.localize("theia/editor/editor.language.colorizedBracketPairs", "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),
         "items": {
             "type": "array",
             "items": [
@@ -173,7 +173,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "diffEditor.maxFileSize": {
         "type": "number",
         "default": 50,
-        "description": nls.localizeByDefault("Maximum file size in MB for which to compute diffs. Use 0 for no limit."),
+        "description": nls.localize("theia/editor/diffEditor.maxFileSize", "Maximum file size in MB for which to compute diffs. Use 0 for no limit."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -230,9 +230,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.acceptSuggestionOnEnter": {
         "markdownEnumDescriptions": [
-            nls.localizeByDefault(""),
+            "",
             nls.localizeByDefault("Only accept a suggestion with `Enter` when it makes a textual change."),
-            nls.localizeByDefault("")
+            ""
         ],
         "markdownDescription": nls.localizeByDefault("Controls whether suggestions should be accepted on `Enter`, in addition to `Tab`. Helps to avoid ambiguity between inserting new lines or accepting suggestions."),
         "type": "string",
@@ -263,7 +263,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.accessibilityPageSize": {
-        "description": nls.localizeByDefault("Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default."),
+        "description": nls.localize("theia/editor/editor.accessibilityPageSize", "Controls the number of lines in the editor that can be read out by a screen reader at once. When we detect a screen reader we automatically set the default to be 500. Warning: this has a performance implication for numbers larger than the default."),
         "type": "integer",
         "default": 10,
         "minimum": 1,
@@ -273,10 +273,10 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.autoClosingBrackets": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
+            "",
             nls.localizeByDefault("Use language configurations to determine when to autoclose brackets."),
             nls.localizeByDefault("Autoclose brackets only when the cursor is to the left of whitespace."),
-            nls.localizeByDefault("")
+            ""
         ],
         "description": nls.localizeByDefault("Controls whether the editor should automatically close brackets after the user adds an opening bracket."),
         "type": "string",
@@ -292,11 +292,11 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.autoClosingDelete": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
-            nls.localizeByDefault("Remove adjacent closing quotes or brackets only if they were automatically inserted."),
-            nls.localizeByDefault("")
+            "",
+            nls.localize("theia/editor/editor.autoClosingDelete1", "Remove adjacent closing quotes or brackets only if they were automatically inserted."),
+            ""
         ],
-        "description": nls.localizeByDefault("Controls whether the editor should remove adjacent closing quotes or brackets when deleting."),
+        "description": nls.localize("theia/editor/editor.autoClosingDelete", "Controls whether the editor should remove adjacent closing quotes or brackets when deleting."),
         "type": "string",
         "enum": [
             "always",
@@ -309,9 +309,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.autoClosingOvertype": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
+            "",
             nls.localizeByDefault("Type over closing quotes or brackets only if they were automatically inserted."),
-            nls.localizeByDefault("")
+            ""
         ],
         "description": nls.localizeByDefault("Controls whether the editor should type over closing quotes or brackets."),
         "type": "string",
@@ -326,10 +326,10 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.autoClosingQuotes": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
+            "",
             nls.localizeByDefault("Use language configurations to determine when to autoclose quotes."),
             nls.localizeByDefault("Autoclose quotes only when the cursor is to the left of whitespace."),
-            nls.localizeByDefault("")
+            ""
         ],
         "description": nls.localizeByDefault("Controls whether the editor should automatically close quotes after the user adds an opening quote."),
         "type": "string",
@@ -369,7 +369,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Use language configurations to determine when to automatically surround selections."),
             nls.localizeByDefault("Surround with quotes but not brackets."),
             nls.localizeByDefault("Surround with brackets but not quotes."),
-            nls.localizeByDefault("")
+            ""
         ],
         "description": nls.localizeByDefault("Controls whether the editor should automatically surround selections when typing quotes or brackets."),
         "type": "string",
@@ -386,7 +386,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.bracketPairColorization.enabled": {
         "type": "boolean",
         "default": false,
-        "description": nls.localizeByDefault("Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors."),
+        "description": nls.localize("theia/editor/editor.bracketPairColorization.enabled", "Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -401,12 +401,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             false
         ],
         "enumDescriptions": [
-            nls.localizeByDefault("Enables bracket pair guides."),
-            nls.localizeByDefault("Enables bracket pair guides only for the active bracket pair."),
-            nls.localizeByDefault("Disables bracket pair guides.")
+            nls.localize("theia/editor/editor.guides.bracketPairs0", "Enables bracket pair guides."),
+            nls.localize("theia/editor/editor.guides.bracketPairs1", "Enables bracket pair guides only for the active bracket pair."),
+            nls.localize("theia/editor/editor.guides.bracketPairs2", "Disables bracket pair guides.")
         ],
         "default": false,
-        "description": nls.localizeByDefault("Controls whether bracket pair guides are enabled or not."),
+        "description": nls.localize("theia/editor/editor.guides.bracketPairs", "Controls whether bracket pair guides are enabled or not."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -421,19 +421,19 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             false
         ],
         "enumDescriptions": [
-            nls.localizeByDefault("Enables horizontal guides as addition to vertical bracket pair guides."),
-            nls.localizeByDefault("Enables horizontal guides only for the active bracket pair."),
-            nls.localizeByDefault("Disables horizontal bracket pair guides.")
+            nls.localize("theia/editor/editor.guides.bracketPairsHorizontal0", "Enables horizontal guides as addition to vertical bracket pair guides."),
+            nls.localize("theia/editor/editor.guides.bracketPairsHorizontal1", "Enables horizontal guides only for the active bracket pair."),
+            nls.localize("theia/editor/editor.guides.bracketPairsHorizontal2", "Disables horizontal bracket pair guides.")
         ],
         "default": "active",
-        "description": nls.localizeByDefault("Controls whether horizontal bracket pair guides are enabled or not."),
+        "description": nls.localize("theia/editor/editor.guides.bracketPairsHorizontal", "Controls whether horizontal bracket pair guides are enabled or not."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.guides.highlightActiveBracketPair": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Controls whether bracket pair guides are enabled or not."),
+        "description": nls.localize("theia/editor/editor.guides.highlightActiveBracketPair", "Controls whether the editor should highlight the active bracket pair."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -470,7 +470,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "default": 0,
         "minimum": 0,
         "maximum": 100,
-        "markdownDescription": nls.localizeByDefault("Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used."),
+        "markdownDescription": nls.localize("theia/editor/editor.codeLensFontSize", "Controls the font size in pixels for CodeLens. When set to `0`, 90% of `#editor.fontSize#` is used."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -615,9 +615,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "always",
         "enumDescriptions": [
-            nls.localizeByDefault("Never seed search string from the editor selection."),
-            nls.localizeByDefault("Always seed search string from the editor selection, including word at cursor position."),
-            nls.localizeByDefault("Only seed search string from the editor selection.")
+            nls.localize("theia/editor/editor.find.seedSearchStringFromSelection0", "Never seed search string from the editor selection."),
+            nls.localize("theia/editor/editor.find.seedSearchStringFromSelection1", "Always seed search string from the editor selection, including word at cursor position."),
+            nls.localize("theia/editor/editor.find.seedSearchStringFromSelection2", "Only seed search string from the editor selection.")
         ],
         "description": nls.localizeByDefault("Controls whether the search string in the Find Widget is seeded from the editor selection."),
         "scope": "language-overridable",
@@ -632,19 +632,13 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         ],
         "default": "never",
         "enumDescriptions": [
-            nls.localizeByDefault("Never turn on Find in Selection automatically (default)."),
-            nls.localizeByDefault("Always turn on Find in Selection automatically."),
-            nls.localizeByDefault("Turn on Find in Selection automatically when multiple lines of content are selected.")
+            nls.localize("theia/editor/editor.find.autoFindInSelection0", "Never turn on Find in Selection automatically (default)."),
+            nls.localize("theia/editor/editor.find.autoFindInSelection1", "Always turn on Find in Selection automatically."),
+            nls.localizeByDefault('Turn on Find in selection automatically when multiple lines of content are selected.')
         ],
-        "description": nls.localizeByDefault("Controls the condition for turning on Find in Selection automatically."),
+        "description": nls.localizeByDefault('Controls the condition for turning on find in selection automatically.'),
         "scope": "language-overridable",
         "restricted": false
-    },
-    "editor.find.globalFindClipboard": {
-        "type": "boolean",
-        "default": false,
-        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
-        "included": isOSX
     },
     "editor.find.addExtraSpaceOnTop": {
         "type": "boolean",
@@ -690,14 +684,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.foldingImportsByDefault": {
-        "description": nls.localizeByDefault("Controls whether the editor automatically collapses import ranges."),
+        "description": nls.localize("theia/editor/editor.foldingImportsByDefault", "Controls whether the editor automatically collapses import ranges."),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.foldingMaximumRegions": {
-        "description": nls.localizeByDefault("The maximum number of foldable regions. Increasing this value may result in the editor becoming less responsive when the current source has a large number of foldable regions."),
+        "description": nls.localize("theia/editor/editor.foldingMaximumRegions", "The maximum number of foldable regions. Increasing this value may result in the editor becoming less responsive when the current source has a large number of foldable regions."),
         "type": "integer",
         "default": 5000,
         "minimum": 10,
@@ -1027,14 +1021,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.hover.above": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Prefer showing hovers above the line, if there's space."),
+        "description": nls.localize("theia/editor/editor.hover.above", "Prefer showing hovers above the line, if there's space."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.inlineSuggest.enabled": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Controls whether to automatically show inline suggestions in the editor."),
+        "description": nls.localize("theia/editor/editor.inlineSuggest.enabled", "Controls whether to automatically show inline suggestions in the editor."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1053,7 +1047,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.lineHeight": {
-        "markdownDescription": nls.localizeByDefault("Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values."),
+        "markdownDescription": nls.localize("theia/editor/editor.lineHeight", "Controls the line height. \n - Use 0 to automatically compute the line height from the font size.\n - Values between 0 and 8 will be used as a multiplier with the font size.\n - Values greater than or equal to 8 will be used as effective values."),
         "type": "number",
         "default": 0,
         "scope": "language-overridable",
@@ -1204,7 +1198,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             nls.localizeByDefault("Maps to `Control` on Windows and Linux and to `Command` on macOS."),
             nls.localizeByDefault("Maps to `Alt` on Windows and Linux and to `Option` on macOS.")
         ],
-        "markdownDescription": nls.localizeByDefault("The modifier to be used to add multiple cursors with the mouse. The Go to Definition and Open Link mouse gestures will adapt such that they do not conflict with the multicursor modifier. [Read more](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier)."),
+        "markdownDescription": nls.localizeByDefault('The modifier to be used to add multiple cursors with the mouse. The Go To Definition and Open Link mouse gestures will adapt such that they do not conflict with the multicursor modifier. [Read more](https://code.visualstudio.com/docs/editor/codebasics#_multicursor-modifier).'),
         "type": "string",
         "enum": [
             "ctrlCmd",
@@ -1366,9 +1360,9 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.renderLineHighlight": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
-            nls.localizeByDefault(""),
-            nls.localizeByDefault(""),
+            "",
+            "",
+            "",
             nls.localizeByDefault("Highlights both the gutter and the current line.")
         ],
         "description": nls.localizeByDefault("Controls how the editor should render the current line highlight."),
@@ -1384,7 +1378,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.renderLineHighlightOnlyWhenFocus": {
-        "description": nls.localizeByDefault("Controls if the editor should render the current line highlight only when the editor is focused."),
+        "description": nls.localize("theia/editor/editor.renderLineHighlightOnlyWhenFocus", "Controls if the editor should render the current line highlight only when the editor is focused."),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
@@ -1392,11 +1386,11 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.renderWhitespace": {
         "enumDescriptions": [
-            nls.localizeByDefault(""),
+            "",
             nls.localizeByDefault("Render whitespace characters except for single spaces between words."),
             nls.localizeByDefault("Render whitespace characters only on selected text."),
-            nls.localizeByDefault("Render only trailing whitespace characters."),
-            nls.localizeByDefault("")
+            nls.localize("theia/editor/editor.renderWhitespace3", "Render only trailing whitespace characters."),
+            ""
         ],
         "description": nls.localizeByDefault("Controls how the editor should render whitespace characters."),
         "type": "string",
@@ -1457,12 +1451,12 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "hidden"
         ],
         "enumDescriptions": [
-            nls.localizeByDefault("The vertical scrollbar will be visible only when necessary."),
-            nls.localizeByDefault("The vertical scrollbar will always be visible."),
-            nls.localizeByDefault("The vertical scrollbar will always be hidden.")
+            nls.localize("theia/editor/editor.scrollbar.vertical0", "The vertical scrollbar will be visible only when necessary."),
+            nls.localize("theia/editor/editor.scrollbar.vertical1", "The vertical scrollbar will always be visible."),
+            nls.localize("theia/editor/editor.scrollbar.vertical2", "The vertical scrollbar will always be hidden.")
         ],
         "default": "auto",
-        "description": nls.localizeByDefault("Controls the visibility of the vertical scrollbar."),
+        "description": nls.localize("theia/editor/editor.scrollbar.vertical", "Controls the visibility of the vertical scrollbar."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1474,33 +1468,33 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "hidden"
         ],
         "enumDescriptions": [
-            nls.localizeByDefault("The horizontal scrollbar will be visible only when necessary."),
-            nls.localizeByDefault("The horizontal scrollbar will always be visible."),
-            nls.localizeByDefault("The horizontal scrollbar will always be hidden.")
+            nls.localize("theia/editor/editor.scrollbar.horizontal0", "The horizontal scrollbar will be visible only when necessary."),
+            nls.localize("theia/editor/editor.scrollbar.horizontal1", "The horizontal scrollbar will always be visible."),
+            nls.localize("theia/editor/editor.scrollbar.horizontal2", "The horizontal scrollbar will always be hidden.")
         ],
         "default": "auto",
-        "description": nls.localizeByDefault("Controls the visibility of the horizontal scrollbar."),
+        "description": nls.localize("theia/editor/editor.scrollbar.horizontal", "Controls the visibility of the horizontal scrollbar."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.scrollbar.verticalScrollbarSize": {
         "type": "number",
         "default": 14,
-        "description": nls.localizeByDefault("The width of the vertical scrollbar."),
+        "description": nls.localize("theia/editor/editor.scrollbar.verticalScrollbarSize", "The width of the vertical scrollbar."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.scrollbar.horizontalScrollbarSize": {
         "type": "number",
         "default": 12,
-        "description": nls.localizeByDefault("The height of the horizontal scrollbar."),
+        "description": nls.localize("theia/editor/editor.scrollbar.horizontalScrollbarSize", "The height of the horizontal scrollbar."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.scrollbar.scrollByPage": {
         "type": "boolean",
         "default": false,
-        "description": nls.localizeByDefault("Controls whether clicks scroll by page or jump to click position."),
+        "description": nls.localize("theia/editor/editor.scrollbar.scrollByPage", "Controls whether clicks scroll by page or jump to click position."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1590,7 +1584,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.stickyTabStops": {
-        "description": nls.localizeByDefault("Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops."),
+        "description": nls.localize("theia/editor/editor.stickyTabStops", "Emulate selection behavior of tab characters when using spaces for indentation. Selection will stick to tab stops."),
         "type": "boolean",
         "default": false,
         "scope": "language-overridable",
@@ -1621,7 +1615,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.suggest.localityBonus": {
         "type": "boolean",
         "default": false,
-        "description": nls.localizeByDefault("Controls whether sorting favors words that appear close to the cursor."),
+        "description": nls.localize("theia/editor/editor.suggest.localityBonus", "Controls whether sorting favors words that appear close to the cursor."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1656,7 +1650,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.suggest.preview": {
         "type": "boolean",
         "default": false,
-        "description": nls.localizeByDefault("Controls whether to preview the suggestion outcome in the editor."),
+        "description": nls.localize("theia/editor/editor.suggest.preview", "Controls whether to preview the suggestion outcome in the editor."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1705,7 +1699,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.suggest.showDeprecated": {
         "type": "boolean",
         "default": true,
-        "markdownDescription": nls.localizeByDefault("When enabled IntelliSense shows `deprecated`-suggestions."),
+        "markdownDescription": nls.localize("theia/editor/editor.suggest.showDeprecated", "When enabled IntelliSense shows `deprecated`-suggestions."),
         "scope": "language-overridable",
         "restricted": false
     },
@@ -1955,21 +1949,21 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "inUntrustedWorkspace"
         ],
         "default": "inUntrustedWorkspace",
-        "description": nls.localizeByDefault("Controls whether all non-basic ASCII characters are highlighted. Only characters between U+0020 and U+007E, tab, line-feed and carriage-return are considered basic ASCII."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.nonBasicASCII", "Controls whether all non-basic ASCII characters are highlighted. Only characters between U+0020 and U+007E, tab, line-feed and carriage-return are considered basic ASCII."),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.invisibleCharacters": {
         "restricted": true,
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Controls whether characters that just reserve space or have no width at all are highlighted."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.invisibleCharacters", "Controls whether characters that just reserve space or have no width at all are highlighted."),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.ambiguousCharacters": {
         "restricted": true,
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Controls whether characters are highlighted that can be confused with basic ASCII characters, except those that are common in the current user locale."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.ambiguousCharacters", "Controls whether characters are highlighted that can be confused with basic ASCII characters, except those that are common in the current user locale."),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.includeComments": {
@@ -1984,7 +1978,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "inUntrustedWorkspace"
         ],
         "default": "inUntrustedWorkspace",
-        "description": nls.localizeByDefault("Controls whether characters in comments should also be subject to unicode highlighting."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.includeComments", "Controls whether characters in comments should also be subject to unicode highlighting."),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.includeStrings": {
@@ -1999,14 +1993,14 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "inUntrustedWorkspace"
         ],
         "default": true,
-        "description": nls.localizeByDefault("Controls whether characters in strings should also be subject to unicode highlighting."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.includeStrings", "Controls whether characters in strings should also be subject to unicode highlighting."),
         "scope": "language-overridable"
     },
     "editor.unicodeHighlight.allowedCharacters": {
         "restricted": true,
         "type": "object",
         "default": {},
-        "description": nls.localizeByDefault("Defines allowed characters that are not being highlighted."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.allowedCharacters", "Defines allowed characters that are not being highlighted."),
         "additionalProperties": {
             "type": "boolean"
         },
@@ -2022,7 +2016,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
             "_os": true,
             "_vscode": true
         },
-        "description": nls.localizeByDefault("Unicode characters that are common in allowed locales are not being highlighted."),
+        "description": nls.localize("theia/editor/editor.unicodeHighlight.allowedLocales", "Unicode characters that are common in allowed locales are not being highlighted."),
         "scope": "language-overridable"
     },
     "editor.unusualLineTerminators": {
@@ -2128,23 +2122,29 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     "editor.inlayHints.enabled": {
         "type": "boolean",
         "default": true,
-        "description": nls.localizeByDefault("Enables the inlay hints in the editor."),
+        "description": nls.localize("theia/editor/editor.inlayHints.enabled", "Enables the inlay hints in the editor."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.inlayHints.fontSize": {
         "type": "number",
         "default": 0,
-        "markdownDescription": nls.localizeByDefault("Controls font size of inlay hints in the editor. A default of 90% of `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
+        "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontSize", "Controls font size of inlay hints in the editor. A default of 90% of `#editor.fontSize#` is used when the configured value is less than `5` or greater than the editor font size."),
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.inlayHints.fontFamily": {
         "type": "string",
         "default": "",
-        "markdownDescription": nls.localizeByDefault("Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used."),
+        "markdownDescription": nls.localize("theia/editor/editor.inlayHints.fontFamily", "Controls font family of inlay hints in the editor. When set to empty, the `#editor.fontFamily#` is used."),
         "scope": "language-overridable",
         "restricted": false
+    },
+    "editor.find.globalFindClipboard": {
+        "type": "boolean",
+        "default": false,
+        "description": nls.localizeByDefault("Controls whether the Find Widget should read or modify the shared find clipboard on macOS."),
+        "included": isOSX
     },
     "editor.selectionClipboard": {
         "type": "boolean",

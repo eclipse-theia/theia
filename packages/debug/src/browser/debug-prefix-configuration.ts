@@ -122,12 +122,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         }
 
         // Resolve dynamic configurations from providers
-        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
-        for (const typeConfigurations of configurationsByType) {
-            const dynamicConfigurations = typeConfigurations.configurations;
+        const record = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
+        for (const [type, dynamicConfigurations] of Object.entries(record)) {
             if (dynamicConfigurations.length > 0) {
                 items.push({
-                    label: typeConfigurations.type,
+                    label: type,
                     type: 'separator'
                 });
             }
@@ -135,7 +134,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({ configuration })
+                    execute: () => this.runDynamicConfiguration({ configuration })
                 });
             }
         }
@@ -151,6 +150,14 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     protected runConfiguration(configuration: DebugSessionOptions): void {
         this.debugConfigurationManager.current = { ...configuration };
         this.commandRegistry.executeCommand(DebugCommands.START.id);
+    }
+
+    /**
+     * Execute the debug start command without affecting the current debug configuration
+     * @param configuration the `DebugSessionOptions`.
+     */
+    protected runDynamicConfiguration(configuration: DebugSessionOptions): void {
+        this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     }
 
     /**

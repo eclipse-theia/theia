@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
-import { injectable } from '@theia/core/shared/inversify';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
+import { Preference } from '../../util/preference-types';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 
 @injectable()
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLSelectElement> {
@@ -67,5 +69,19 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     protected handleUserInteraction(): void {
         const value = this.enumValues[Number(this.interactable.value)];
         this.setPreferenceImmediately(value);
+    }
+}
+
+@injectable()
+export class PreferenceSelectInputRendererContribution extends PreferenceLeafNodeRendererContribution {
+    static ID = 'preference-select-input-renderer';
+    id = PreferenceSelectInputRendererContribution.ID;
+
+    canHandleLeafNode(node: Preference.LeafNode): number {
+        return node.preference.data.enum ? 3 : 0;
+    }
+
+    createLeafNodeRenderer(container: interfaces.Container): PreferenceNodeRenderer {
+        return container.get(PreferenceSelectInputRenderer);
     }
 }

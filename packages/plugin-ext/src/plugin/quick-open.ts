@@ -19,12 +19,12 @@ import {
     Item, TransferQuickInputButton, TransferQuickPickItems, TransferQuickInput
 } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
-import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput, QuickPickItemValue } from '@theia/plugin';
+import { QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { QuickInputButtons, ThemeIcon } from './types-impl';
+import { QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
@@ -74,7 +74,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     }
 
     /* eslint-disable max-len */
-    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<QuickPickItemValue> | undefined>;
+    showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options: theia.QuickPickOptions & { canPickMany: true; }, token?: theia.CancellationToken): Promise<Array<QuickPickItem> | undefined>;
     showQuickPick(itemsOrItemsPromise: string[] | Promise<string[]>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<string | undefined>;
     showQuickPick(itemsOrItemsPromise: Array<QuickPickItem> | Promise<Array<QuickPickItem>>, options?: theia.QuickPickOptions, token?: theia.CancellationToken): Promise<QuickPickItem | undefined>;
     showQuickPick(itemsOrItemsPromise: Item[] | Promise<Item[]>, options?: theia.QuickPickOptions, token: theia.CancellationToken = CancellationToken.None): Promise<Item | Item[] | undefined> {
@@ -614,11 +614,11 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
         });
         this.update({
             items: items.map((item, i) => {
-                if (item.type === 'separator') {
-                    return { type: item.type, label: item.label };
+                if (item.kind === QuickPickItemKind.Separator) {
+                    return { kind: item.kind, label: item.label };
                 }
                 return {
-                    type: item.type,
+                    kind: item.kind,
                     label: item.label,
                     description: item.description,
                     handle: i,

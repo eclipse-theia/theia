@@ -33,7 +33,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService
+    CancellationTokenSource, JsonRpcProxy, ProgressService, nls
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -494,7 +494,7 @@ export class HostedPluginSupport {
                 workspaceState,
                 env: {
                     queryParams: getQueryParameters(),
-                    language: navigator.language,
+                    language: nls.locale || 'en',
                     shell: defaultShell,
                     uiKind: environment.electron.is() ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName

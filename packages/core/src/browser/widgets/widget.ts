@@ -30,7 +30,7 @@ decorate(unmanaged(), Widget, 0);
 export * from '@phosphor/widgets';
 export * from '@phosphor/messaging';
 
-export const ACTION_ITEM = 'action-item';
+export const ACTION_ITEM = 'action-label';
 
 export function codiconArray(name: string, actionItem = false): string[] {
     const array = ['codicon', `codicon-${name}`];

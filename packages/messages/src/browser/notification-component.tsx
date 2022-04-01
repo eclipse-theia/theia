@@ -71,11 +71,12 @@ export class NotificationComponent extends React.Component<NotificationComponent
 
     override render(): React.ReactNode {
         const { messageId, message, type, progress, collapsed, expandable, source, actions } = this.props.notification;
-        const isProgress = typeof progress === 'number';
+        const isProgress = type === 'progress' || typeof progress === 'number';
+        const icon = type === 'progress' ? 'info' : type;
         return (<div key={messageId} className='theia-notification-list-item' tabIndex={0}>
             <div className={`theia-notification-list-item-content ${collapsed ? 'collapsed' : ''}`}>
                 <div className='theia-notification-list-item-content-main'>
-                    <div className={`theia-notification-icon ${codicon(type)} ${type}`} />
+                    <div className={`theia-notification-icon ${codicon(icon)} ${icon}`} />
                     <div className='theia-notification-message'>
                         <span
                             // eslint-disable-next-line react/no-danger
@@ -115,7 +116,8 @@ export class NotificationComponent extends React.Component<NotificationComponent
             </div>
             {isProgress && (
                 <div className='theia-notification-item-progress'>
-                    <div className='theia-notification-item-progressbar' style={{ width: `${progress}%` }} />
+                    <div className={`theia-notification-item-progressbar ${progress ? 'determinate' : 'indeterminate'}`}
+                        style={{ width: `${progress ?? '100'}%` }} />
                 </div>
             )}
         </div>);

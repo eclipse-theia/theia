@@ -1,6 +1,6 @@
 {
   "name": "@theia/playwright",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "description": "System tests for Theia",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
@@ -15,7 +15,7 @@
     "prepare": "yarn clean && yarn build",
     "clean": "rimraf lib",
     "build": "tsc --incremental && yarn lint && npx playwright install chromium",
-    "theia:start": "yarn --cwd ../browser start",
+    "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
     "lint": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests",
     "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests --fix",
     "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",

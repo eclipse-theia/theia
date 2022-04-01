@@ -14,43 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DebugService, DebuggerDescription, DebugPath } from '@theia/debug/lib/common/debug-service';
+import { DebuggerDescription, DebugPath, DebugService } from '@theia/debug/lib/common/debug-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
+import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
 import * as theia from '@theia/plugin';
 
 /**
- * Debug adapter contribution registrator.
- */
-export interface PluginDebugAdapterContributionRegistrator {
-    /**
-     * Registers [PluginDebugAdapterContribution](#PluginDebugAdapterContribution).
-     * @param contrib contribution
-     */
-    registerDebugAdapterContribution(contrib: PluginDebugAdapterContribution): Disposable;
-
-    /**
-     * Unregisters [PluginDebugAdapterContribution](#PluginDebugAdapterContribution).
-     * @param debugType the debug type
-     */
-    unregisterDebugAdapterContribution(debugType: string): void;
-}
-
-/**
  * Debug service to work with plugin and extension contributions.
  */
 @injectable()
-export class PluginDebugService implements DebugService, PluginDebugAdapterContributionRegistrator {
+export class PluginDebugService implements DebugService {
 
     protected readonly debuggers: DebuggerContribution[] = [];
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
+    protected readonly configurationProviders = new Map<number, PluginDebugConfigurationProvider>();
     protected readonly toDispose = new DisposableCollection();
 
     // maps session and contribution
@@ -92,6 +78,16 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         this.contributors.delete(debugType);
     }
 
+    registerDebugConfigurationProvider(provider: PluginDebugConfigurationProvider): Disposable {
+        const handle = provider.handle;
+        this.configurationProviders.set(handle, provider);
+        return Disposable.create(() => this.unregisterDebugConfigurationProvider(handle));
+    }
+
+    unregisterDebugConfigurationProvider(handle: number): void {
+        this.configurationProviders.delete(handle);
+    }
+
     async debugTypes(): Promise<string[]> {
         const debugTypes = new Set(await this.delegated.debugTypes());
         for (const contribution of this.debuggers) {
@@ -104,52 +100,71 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     }
 
     async provideDebugConfigurations(debugType: keyof DebugRequestTypes, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration[]> {
-        const contributor = this.contributors.get(debugType);
-        if (contributor) {
-            return contributor.provideDebugConfigurations && contributor.provideDebugConfigurations(workspaceFolderUri) || [];
-        } else {
+        const pluginProviders =
+            Array.from(this.configurationProviders.values()).filter(p => (
+                p.triggerKind === DebugConfigurationProviderTriggerKind.Initial &&
+                (p.type === debugType || p.type === '*') &&
+                p.provideDebugConfigurations
+            ));
+
+        if (pluginProviders.length === 0) {
             return this.delegated.provideDebugConfigurations(debugType, workspaceFolderUri);
         }
+
+        const results: DebugConfiguration[] = [];
+        await Promise.all(pluginProviders.map(async p => {
+            const result = await p.provideDebugConfigurations(workspaceFolderUri);
+            if (result) {
+                results.push(...result);
+            }
+        }));
+
+        return results;
     }
 
-    async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
-        const result: Promise<{ type: string, configurations: theia.DebugConfiguration[] }>[] = [];
+    async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
+        const pluginProviders =
+            Array.from(this.configurationProviders.values()).filter(p => (
+                p.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
+                p.provideDebugConfigurations
+            ));
 
-        for (const [type, contributor] of this.contributors.entries()) {
-            const typeConfigurations = this.resolveDynamicConfigurationsForType(type, contributor);
-            result.push(typeConfigurations);
-        }
+        const configurationsRecord: Record<string, DebugConfiguration[]> = {};
 
-        return Promise.all(result);
-    }
+        await Promise.all(pluginProviders.map(async provider => {
+            const configurations = await provider.provideDebugConfigurations(undefined);
+            for (const configuration of configurations) {
+                configuration.dynamic = true;
+            }
+            let configurationsPerType = configurationsRecord[provider.type];
+            configurationsPerType = configurationsPerType ? configurationsPerType.concat(configurations) : configurations;
 
-    protected async resolveDynamicConfigurationsForType(
-        type: string,
-        contributor: PluginDebugAdapterContribution): Promise<{ type: string, configurations: DebugConfiguration[] }> {
+            if (configurationsPerType.length > 0) {
+                configurationsRecord[provider.type] = configurationsPerType;
+            }
+        }));
 
-        const configurations = await contributor.provideDebugConfigurations(undefined, true);
-        for (const configuration of configurations) {
-            configuration.dynamic = true;
-        }
-        return { type, configurations };
+        return configurationsRecord;
     }
 
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
         let resolved = config;
 
-        // we should iterate over all to handle configuration providers for `*`
-        for (const contributor of this.contributors.values()) {
-            if (contributor) {
-                try {
-                    const next = await contributor.resolveDebugConfiguration(resolved, workspaceFolderUri);
-                    if (next) {
-                        resolved = next;
-                    } else {
-                        return resolved;
-                    }
-                } catch (e) {
-                    console.error(e);
+        const allProviders = Array.from(this.configurationProviders.values());
+        // Append debug type '*' at the end
+        const pluginProviders = allProviders.filter(p => p.type === config.type && !!p.resolveDebugConfiguration);
+        pluginProviders.push(...allProviders.filter(p => p.type === '*' && !!p.resolveDebugConfiguration));
+
+        for (const provider of pluginProviders) {
+            try {
+                const next = await provider.resolveDebugConfiguration(workspaceFolderUri, resolved);
+                if (next) {
+                    resolved = next;
+                } else {
+                    return resolved;
                 }
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -159,19 +174,21 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
         let resolved = config;
 
-        // we should iterate over all to handle configuration providers for `*`
-        for (const contributor of this.contributors.values()) {
-            if (contributor) {
-                try {
-                    const next = await contributor.resolveDebugConfigurationWithSubstitutedVariables(resolved, workspaceFolderUri);
-                    if (next) {
-                        resolved = next;
-                    } else {
-                        return resolved;
-                    }
-                } catch (e) {
-                    console.error(e);
+        const allProviders = Array.from(this.configurationProviders.values());
+        // Append debug type '*' at the end
+        const pluginProviders = allProviders.filter(p => p.type === config.type && !!p.resolveDebugConfigurationWithSubstitutedVariables);
+        pluginProviders.push(...allProviders.filter(p => p.type === '*' && !!p.resolveDebugConfigurationWithSubstitutedVariables));
+
+        for (const provider of pluginProviders) {
+            try {
+                const next = await provider.resolveDebugConfigurationWithSubstitutedVariables(workspaceFolderUri, resolved);
+                if (next) {
+                    resolved = next;
+                } else {
+                    return resolved;
                 }
+            } catch (e) {
+                console.error(e);
             }
         }
 
