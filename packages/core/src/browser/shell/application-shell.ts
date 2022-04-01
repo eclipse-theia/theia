@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, optional, postConstruct } from 'inversify';
+import { injectable, inject, optional, postConstruct, named } from 'inversify';
 import { ArrayExt, find, toArray, each } from '@phosphor/algorithm';
 import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
@@ -22,7 +22,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, ContributionProvider } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -38,6 +38,7 @@ import { waitForRevealed, waitForClosed } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
+import { ShellLayoutContribution } from './shell-layout-contribution';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -187,6 +188,9 @@ export class ApplicationShell extends Widget {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ContributionProvider) @named(ShellLayoutContribution)
+    protected readonly shellLayoutContributionProvider: ContributionProvider<ShellLayoutContribution>;
 
     protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
@@ -581,11 +585,22 @@ export class ApplicationShell extends Widget {
         const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
 
+        const contributedTopPanels = this.getContributedPanels('top');
+        const contributedTopStretch = contributedTopPanels.map(() => 0);
+
         return this.createBoxLayout(
-            [this.topPanel, panelForSideAreas, this.statusBar],
-            [0, 1, 0],
+            [this.topPanel, ...contributedTopPanels, panelForSideAreas, this.statusBar],
+            [0, ...contributedTopStretch, 1, 0],
             { direction: 'top-to-bottom', spacing: 0 }
         );
+    }
+
+    protected getContributedPanels(area: ApplicationShell.Area): Widget[] {
+        const factories = this.shellLayoutContributionProvider.getContributions()
+            .filter(e => (e.area || 'top') === area)
+            .sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+        const widgets = factories.map(e => e.createPanel(this));
+        return widgets;
     }
 
     /**

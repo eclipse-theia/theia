@@ -15,16 +15,11 @@
 // *****************************************************************************
 
 import '../../src/browser/style/toolbar.css';
-import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { bindToolbarApplicationShell } from './application-shell-with-toolbar-override';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindToolbar } from './toolbar-command-contribution';
+import { bindToolbarPanelFactory } from './toolbar-panel-factory-contribution';
 
-export default new ContainerModule((
-    bind: interfaces.Bind,
-    unbind: interfaces.Unbind,
-    _isBound: interfaces.IsBound,
-    rebind: interfaces.Rebind,
-) => {
-    bindToolbarApplicationShell(bind, rebind, unbind);
+export default new ContainerModule(bind => {
+    bindToolbarPanelFactory(bind);
     bindToolbar(bind);
 });
