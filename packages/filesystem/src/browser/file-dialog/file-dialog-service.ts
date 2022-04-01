@@ -23,6 +23,7 @@ import { DirNode } from '../file-tree';
 import { OpenFileDialogFactory, OpenFileDialogProps, SaveFileDialogFactory, SaveFileDialogProps } from './file-dialog';
 import { FileService } from '../file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 
 export const FileDialogService = Symbol('FileDialogService');
 export interface FileDialogService {
@@ -47,6 +48,7 @@ export class DefaultFileDialogService implements FileDialogService {
     @inject(OpenFileDialogFactory) protected readonly openFileDialogFactory: OpenFileDialogFactory;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(SaveFileDialogFactory) protected readonly saveFileDialogFactory: SaveFileDialogFactory;
+    @inject(UserWorkingDirectoryProvider) protected readonly rootProvider: UserWorkingDirectoryProvider;
 
     async showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<URI | undefined>;
@@ -81,7 +83,7 @@ export class DefaultFileDialogService implements FileDialogService {
     protected async getRootNode(folderToOpen?: FileStat): Promise<DirNode | undefined> {
         const folderExists = folderToOpen && await this.fileService.exists(folderToOpen.resource);
         const folder = folderToOpen && folderExists ? folderToOpen : {
-            resource: new URI(await this.environments.getHomeDirUri()),
+            resource: await this.rootProvider.getUserWorkingDir(),
             isDirectory: true
         };
         const folderUri = folder.resource;

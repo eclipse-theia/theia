@@ -38,6 +38,7 @@ import { waitForRevealed, waitForClosed } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
+import { SaveResourceService } from '../save-resource-service';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -216,7 +217,8 @@ export class ApplicationShell extends Widget {
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {},
-        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
+        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
     ) {
         super(options as Widget.IOptions);
     }
@@ -1070,7 +1072,11 @@ export class ApplicationShell extends Widget {
         }
         this.tracker.add(widget);
         this.checkActivation(widget);
-        Saveable.apply(widget, () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)));
+        Saveable.apply(
+            widget,
+            () => this.widgets.filter((maybeSaveable): maybeSaveable is Widget & SaveableSource => !!Saveable.get(maybeSaveable)),
+            (toSave, options) => this.saveResourceService.save(toSave, options),
+        );
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of widget.getTrackableWidgets()) {
                 this.track(toTrack);
@@ -1831,32 +1837,32 @@ export class ApplicationShell extends Widget {
      * Test whether the current widget is dirty.
      */
     canSave(): boolean {
-        return Saveable.isDirty(this.currentWidget);
+        return this.saveResourceService.canSave(this.currentWidget);
     }
 
     /**
      * Save the current widget if it is dirty.
      */
     async save(options?: SaveOptions): Promise<void> {
-        await Saveable.save(this.currentWidget, options);
+        await this.saveResourceService.save(this.currentWidget, options);
     }
 
     /**
      * Test whether there is a dirty widget.
      */
     canSaveAll(): boolean {
-        return this.tracker.widgets.some(Saveable.isDirty);
+        return this.tracker.widgets.some(widget => this.saveResourceService.canSave(widget));
     }
 
     /**
      * Save all dirty widgets.
      */
     async saveAll(options?: SaveOptions): Promise<void> {
-        await Promise.all(this.tracker.widgets.map(widget => {
-            if (Saveable.isDirty(widget)) {
-                Saveable.save(widget, options);
+        for (const widget of this.widgets) {
+            if (this.saveResourceService.canSaveNotSaveAs(widget)) {
+                await this.saveResourceService.save(widget, options);
             }
-        }));
+        }
     }
 
     /**

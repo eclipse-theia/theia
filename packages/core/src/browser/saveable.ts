@@ -21,7 +21,6 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
-import { URI } from 'vscode-uri';
 
 export interface Saveable {
     readonly dirty: boolean;
@@ -66,10 +65,6 @@ export namespace Saveable {
         return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function isUntitled(arg: any): boolean {
-        return !!arg && ('uri' in arg) && URI.parse((arg as { uri: string; }).uri).scheme === 'untitled';
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function get(arg: any): Saveable | undefined {
         if (is(arg)) {
             return arg;
@@ -108,7 +103,10 @@ export namespace Saveable {
         return waitForClosed(this);
     }
 
-    function createCloseWithSaving(getOtherSaveables?: () => Array<Widget | SaveableWidget>): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
+    function createCloseWithSaving(
+        getOtherSaveables?: () => Array<Widget | SaveableWidget>,
+        doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>
+    ): (this: SaveableWidget, options?: SaveableWidget.CloseOptions) => Promise<void> {
         let closing = false;
         return async function (this: SaveableWidget, options: SaveableWidget.CloseOptions): Promise<void> {
             if (closing) { return; }
@@ -128,7 +126,7 @@ export namespace Saveable {
                 });
                 if (typeof result === 'boolean') {
                     if (result) {
-                        await Saveable.save(this);
+                        await (doSave?.(this) ?? Saveable.save(this));
                     }
                     await this.closeWithoutSaving();
                 }
@@ -168,7 +166,11 @@ export namespace Saveable {
         return !!saveable && !others.some(otherWidget => otherWidget !== widget && get(otherWidget) === saveable);
     }
 
-    export function apply(widget: Widget, getOtherSaveables?: () => Array<Widget | SaveableWidget>): SaveableWidget | undefined {
+    export function apply(
+        widget: Widget,
+        getOtherSaveables?: () => Array<Widget | SaveableWidget>,
+        doSave?: (widget: Widget, options?: SaveOptions) => Promise<void>,
+    ): SaveableWidget | undefined {
         if (SaveableWidget.is(widget)) {
             return widget;
         }
@@ -179,7 +181,7 @@ export namespace Saveable {
         const saveableWidget = widget as SaveableWidget;
         setDirty(saveableWidget, saveable.dirty);
         saveable.onDirtyChanged(() => setDirty(saveableWidget, saveable.dirty));
-        const closeWithSaving = createCloseWithSaving(getOtherSaveables);
+        const closeWithSaving = createCloseWithSaving(getOtherSaveables, doSave);
         return Object.assign(saveableWidget, {
             closeWithoutSaving,
             closeWithSaving,

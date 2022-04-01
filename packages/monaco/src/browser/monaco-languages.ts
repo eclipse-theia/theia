@@ -90,6 +90,10 @@ export class MonacoLanguages implements LanguageService {
         return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
     }
 
+    getExtension(languageId: string): string | undefined {
+        return this.getLanguage(languageId)?.extensions.values().next().value;
+    }
+
     protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {
         const languages = new Map<string, Mutable<Language>>();
         for (const { id, aliases, extensions, filenames } of registered) {

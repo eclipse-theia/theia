@@ -19,7 +19,6 @@ import {
     ApplicationShell,
     CommonCommands,
     NavigatableWidget,
-    open,
     OpenerService, OpenHandler,
     QuickInputService,
     Saveable,
@@ -47,7 +46,6 @@ import {
     DocumentHighlight
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
-import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { isUriComponents, toDocumentSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -274,10 +272,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
          * because of it we filter out editors from views based on `NavigatableWidget.is`
          * and apply actions only to them
          */
-        commands.registerCommand({ id: 'workbench.action.files.newUntitledFile' }, {
-            execute: () => open(this.openerService, createUntitledURI())
-        });
-
         if (!environment.electron.is() || isOSX) {
             commands.registerCommand({ id: 'workbench.action.files.openFileFolder' }, {
                 execute: () => commands.executeCommand(WorkspaceCommands.OPEN.id)

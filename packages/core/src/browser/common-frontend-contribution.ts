@@ -61,6 +61,8 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
+import { createUntitledURI } from '../common';
 
 export namespace CommonMenus {
 
@@ -268,11 +270,20 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Show Menu Bar'
     });
-
+    export const NEW_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.newUntitledFile',
+        category: FILE_CATEGORY,
+        label: 'New File'
+    });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
         category: FILE_CATEGORY,
         label: 'Save',
+    });
+    export const SAVE_AS = Command.toDefaultLocalizedCommand({
+        id: 'file.saveAs',
+        category: FILE_CATEGORY,
+        label: 'Save As...',
     });
     export const SAVE_WITHOUT_FORMATTING = Command.toDefaultLocalizedCommand({
         id: 'core.saveWithoutFormatting',
@@ -384,6 +395,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(UserWorkingDirectoryProvider)
+    protected readonly workingDirProvider: UserWorkingDirectoryProvider;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -697,6 +711,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));
+
+        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+            commandId: CommonCommands.NEW_FILE.id,
+            order: 'a'
+        });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
@@ -889,9 +908,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
-
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.save({ formatType: FormatType.ON })
+        });
+        commandRegistry.registerCommand(CommonCommands.SAVE_AS, {
+            isEnabled: () => this.saveResourceService.canSaveAs(this.shell.currentWidget),
+            execute: () => {
+                const { currentWidget } = this.shell;
+                // No clue what could have happened between `isEnabled` and `execute`
+                // when fetching currentWidget, so better to double-check:
+                if (this.saveResourceService.canSaveAs(currentWidget)) {
+                    this.saveResourceService.saveAs(currentWidget);
+                } else {
+                    this.messageService.error(nls.localize('theia/workspace/failSaveAs', 'Cannot run "{0}" for the current widget.', CommonCommands.SAVE_AS.label!));
+                }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_WITHOUT_FORMATTING, {
             execute: () => this.save({ formatType: FormatType.OFF })
@@ -923,6 +954,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
+        });
+        commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
+            execute: async () => open(this.openerService, createUntitledURI('', await this.workingDirProvider.getUserWorkingDir()))
         });
     }
 
@@ -1056,6 +1090,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 command: CommonCommands.UNPIN_TAB.id,
                 keybinding: 'ctrlcmd+k shift+enter',
                 when: 'activeEditorIsPinned'
+            },
+            {
+                command: CommonCommands.NEW_FILE.id,
+                keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             }
         );
     }

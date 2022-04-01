@@ -573,9 +573,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             priority: 1,
         });
         this.registerMoreToolbarItem({
-            id: WorkspaceCommands.NEW_FILE.id,
-            command: WorkspaceCommands.NEW_FILE.id,
-            tooltip: WorkspaceCommands.NEW_FILE.label,
+            id: CommonCommands.NEW_FILE.id,
+            command: CommonCommands.NEW_FILE.id,
+            tooltip: CommonCommands.NEW_FILE.label,
             group: NavigatorMoreToolbarGroups.NEW_OPEN,
         });
         this.registerMoreToolbarItem({

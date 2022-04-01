@@ -4,6 +4,15 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.25.0 - 4/28/2022
+
+[1.25.0 Milestone](https://github.com/eclipse-theia/theia/milestone/33)
+
+- [core] Move code for untitled resources into `core` from `plugin-ext` and allow users to open untitled editors with `New File` command. [#10868](https://github.com/eclipse-theia/theia/pull/10868)
+
+<a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
+
+
 ## v1.24.0 - 3/31/2022
 
 [1.24.0 Milestone](https://github.com/eclipse-theia/theia/milestone/32)
@@ -90,6 +99,7 @@
   - `commandService`, `instantiationService` removed from `MonacoEditor`. Use `StandaloneServices.get(IInstantationService / ICommandService)` instead.
   - `DecorationMiniMapOptions.position`, `DecorationOverviewRulerOptions.position` no longer optional.
   - Overrides used by `MonacoEditorFactory` accept the type `EditorServiceOverrides` rather than `{[key: string]: any}`.
+- [workspace] removed unused injections in `WorkspaceService`: `ApplicationShell`, `StorageService`, `LabelProvider`, `SelectionService`, `CommandRegistry`, `WorkspaceCommandContribution`. [#10868](https://github.com/eclipse-theia/theia/pull/10868)
 
 ## v1.23.0 - 2/24/2022
 
