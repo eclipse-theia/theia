@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { interfaces } from 'inversify';
+
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
 export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
 export type MaybeUndefined<T> = { [P in keyof T]: T[P] | undefined };
@@ -129,4 +131,26 @@ export namespace ArrayUtils {
  */
 export function unreachable(_never: never, message: string = 'unhandled case'): never {
     throw new Error(message);
+}
+
+/**
+ * @internal
+ *
+ * Potentially empty Theia contribution types can cause TypeScript to complain
+ * if extra methods are defined. This type prevents the issue.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptyMeansAny<T> = {} extends T ? T & { [key in string | symbol]: any } : T;
+
+/**
+ * @internal
+ */
+export type SymbolIdentifier<T> = symbol & interfaces.Abstract<EmptyMeansAny<T>>;
+
+/**
+ * Use this to create "typed symbols" for Inversify typings to understand our bindings.
+ */
+export function serviceIdentifier<T>(name: string): SymbolIdentifier<T> {
+    // @ts-expect-error We won't implement `Abstract<T>` as it is solely for static typing.
+    return Symbol(name);
 }

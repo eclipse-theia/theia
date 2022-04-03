@@ -1,4 +1,5 @@
 // *****************************************************************************
+// Copyright (C) 2022 Ericsson// *****************************************************************************
 // Copyright (C) 2020 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
@@ -14,17 +15,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContribution, CommandContribution, MenuContribution, ProxyProvider } from '@theia/core/lib/common';
-import { ElectronMainAndFrontend } from '@theia/core/lib/electron-common';
+import { ServiceContribution } from '@theia/core/lib/common';
+import { ElectronMainAndBackend } from '@theia/core/lib/electron-common';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { SampleUpdater, SampleUpdaterPath } from '../../common/updater/sample-updater';
-import { ElectronMenuUpdater, SampleUpdaterFrontendContribution } from './sample-updater-frontend-contribution';
+import { ElectronMainAndBackendIpcSample, ELECTRON_MAIN_AND_BACKEND_IPC_SAMPLE_PATH } from '../../electron-common/ipc/electron-ipc';
+import { ElectronMainAndBackendIpcSampleImpl } from './electron-main-ipc-impl';
 
 export default new ContainerModule(bind => {
-    bind(SampleUpdater)
-        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainAndFrontend).getProxy(SampleUpdaterPath))
-        .inSingletonScope();
-    bind(ElectronMenuUpdater).toSelf().inSingletonScope();
-    bind(SampleUpdaterFrontendContribution).toSelf().inSingletonScope();
-    bindContribution(bind, SampleUpdaterFrontendContribution, [MenuContribution, CommandContribution]);
+    bind(ElectronMainAndBackendIpcSample).to(ElectronMainAndBackendIpcSampleImpl).inSingletonScope();
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ({
+            [ELECTRON_MAIN_AND_BACKEND_IPC_SAMPLE_PATH]: () => ctx.container.get(ElectronMainAndBackendIpcSample)
+        }))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndBackend);
 });

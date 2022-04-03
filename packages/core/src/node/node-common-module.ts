@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler } from '../../common/messaging/handler';
+import { ContainerModule } from 'inversify';
+import { InProcessProxyProvider } from './in-process-proxy-provider';
+import { NodeIpcConnection, NodeIpcConnectionFactory } from './messaging/ipc-connection';
 
-/**
- * Name of the channel used with `ipcMain.on/emit`.
- */
-export const THEIA_ELECTRON_IPC_CHANNEL_NAME = 'theia-electron-ipc';
-
-/**
- * Electron-IPC-specific connection handler.
- * Use this if you want to establish communication between the frontend and the electron-main process.
- */
-export const ElectronConnectionHandler = Symbol('ElectronConnectionHandler');
-export interface ElectronConnectionHandler extends ConnectionHandler {
-}
+export default new ContainerModule(bind => {
+    // #region singletons
+    bind(InProcessProxyProvider).toSelf().inSingletonScope();
+    // #endregion
+    // #region factories
+    bind(NodeIpcConnectionFactory)
+        .toFunction(proc => new NodeIpcConnection().initialize(proc));
+    // #endregion
+});

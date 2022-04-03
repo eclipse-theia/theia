@@ -51,3 +51,18 @@ export interface CloseRequestArguments {
     cancelChannel: string;
     reason: StopReason;
 }
+
+/**
+ * Name of the channel used with `ipcMain.on/emit`.
+ */
+export const THEIA_ELECTRON_IPC_CHANNEL_NAME: string = 'theia-electron-ipc';
+
+/**
+ * Represent bindings between the `electron-main` runtime and the `electron-node` (backend) runtime.
+ */
+export const ElectronMainAndBackend: string = 'ElectronMainAndBackend';
+
+/**
+ * Represent bindings between the `electron-main` runtime and the `electron-browser` (frontend) runtime.
+ */
+export const ElectronMainAndFrontend: string = 'ElectronMainAndFrontend';

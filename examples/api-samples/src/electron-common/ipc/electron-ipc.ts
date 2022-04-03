@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Ericsson and others.
+// Copyright (C) 2022 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise, serviceIdentifier, servicePath } from '../common';
-import { NewWindowOptions } from '../common/window';
+import { serviceIdentifier, servicePath } from '@theia/core/lib/common';
 
-export const electronMainWindowServicePath = servicePath<ElectronMainWindowService>('/services/electron-window');
-export const ElectronMainWindowService = serviceIdentifier<ElectronMainWindowService>('ElectronMainWindowService');
-export interface ElectronMainWindowService {
-    openNewWindow(url: string, options?: NewWindowOptions): MaybePromise<void>;
-    openNewDefaultWindow(): MaybePromise<void>;
+export const ELECTRON_MAIN_AND_BACKEND_IPC_SAMPLE_PATH = servicePath<ElectronMainAndBackendIpcSample>('/services/test-connection');
+export const ElectronMainAndBackendIpcSample = serviceIdentifier<ElectronMainAndBackendIpcSample>('TestConnection');
+export interface ElectronMainAndBackendIpcSample {
+    getBrowserWindowTitles(): Promise<string[]>
 }

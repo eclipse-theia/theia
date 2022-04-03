@@ -16,21 +16,23 @@
 
 import { Disposable, DisposableCollection } from '../common';
 
-/**
- * @param collection If a collection is passed in, the new disposable is added to that collection. Otherwise, the new disposable is returned.
- */
-export function createDisposableListener<K>(
-    emitter: NodeJS.EventEmitter, signal: string, handler: (event: K, ...args: unknown[]) => unknown, collection: DisposableCollection
-): void;
-export function createDisposableListener<K>(emitter: NodeJS.EventEmitter, signal: string, handler: (event: K, ...args: unknown[]) => unknown): Disposable;
-export function createDisposableListener<K>(
-    emitter: NodeJS.EventEmitter, signal: string, handler: (event: K, ...args: unknown[]) => unknown, collection?: DisposableCollection
-): Disposable | void {
+export type EventNames<T extends NodeJS.EventEmitter> = Parameters<T['on']>[0];
+export type Listener<T extends NodeJS.EventEmitter, K extends EventNames<T> = EventNames<T>> = Parameters<T['on']>[0] extends K ? Parameters<T['on']>[1] : never;
+
+export function createDisposableListener<T extends unknown[]>(
+    emitter: NodeJS.EventEmitter,
+    signal: string,
+    handler: (...args: T) => void
+): Disposable {
     emitter.on(signal, handler);
-    const disposable = Disposable.create(() => { try { emitter.off(signal, handler); } catch { } });
-    if (collection) {
-        collection.push(disposable);
-    } else {
-        return disposable;
-    }
+    return Disposable.create(() => { try { emitter.off(signal, handler); } catch { } });
+}
+
+export function pushDisposableListener<T extends unknown[]>(
+    collection: DisposableCollection,
+    emitter: NodeJS.EventEmitter,
+    signal: string,
+    handler: (...args: T) => void
+): void {
+    collection.push(createDisposableListener(emitter, signal, handler));
 }

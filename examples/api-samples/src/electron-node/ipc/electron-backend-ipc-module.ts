@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 TypeFox and others.
+// Copyright (C) 2022 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContribution, CommandContribution, MenuContribution, ProxyProvider } from '@theia/core/lib/common';
-import { ElectronMainAndFrontend } from '@theia/core/lib/electron-common';
+import { ProxyProvider } from '@theia/core';
+import { ElectronMainAndBackend } from '@theia/core/lib/electron-common';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { SampleUpdater, SampleUpdaterPath } from '../../common/updater/sample-updater';
-import { ElectronMenuUpdater, SampleUpdaterFrontendContribution } from './sample-updater-frontend-contribution';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { ElectronMainAndBackendIpcSample, ELECTRON_MAIN_AND_BACKEND_IPC_SAMPLE_PATH } from '../../electron-common/ipc/electron-ipc';
+import { ElectronMainAndBackendIpcSampleContribution } from './electron-backend-ipc-contribution';
 
 export default new ContainerModule(bind => {
-    bind(SampleUpdater)
-        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainAndFrontend).getProxy(SampleUpdaterPath))
+    bind(ElectronMainAndBackendIpcSample)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainAndBackend).getProxy(ELECTRON_MAIN_AND_BACKEND_IPC_SAMPLE_PATH))
         .inSingletonScope();
-    bind(ElectronMenuUpdater).toSelf().inSingletonScope();
-    bind(SampleUpdaterFrontendContribution).toSelf().inSingletonScope();
-    bindContribution(bind, SampleUpdaterFrontendContribution, [MenuContribution, CommandContribution]);
+    bind(BackendApplicationContribution)
+        .to(ElectronMainAndBackendIpcSampleContribution)
+        .inSingletonScope();
 });

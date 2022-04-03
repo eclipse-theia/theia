@@ -16,6 +16,7 @@
 
 import { interfaces } from 'inversify';
 import { ContributionFilterRegistry } from './contribution-filter';
+import { getOptional } from './inversify-utils';
 
 export const ContributionProvider = Symbol('ContributionProvider');
 
@@ -38,27 +39,23 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
 
     getContributions(recursive?: boolean): T[] {
         if (this.services === undefined) {
-            const currentServices: T[] = [];
-            let filterRegistry: ContributionFilterRegistry | undefined;
-            let currentContainer: interfaces.Container | null = this.container;
+            const filterRegistry = getOptional(this.container, ContributionFilterRegistry);
+            let services: T[] = [];
             // eslint-disable-next-line no-null/no-null
-            while (currentContainer !== null) {
-                if (currentContainer.isBound(this.serviceIdentifier)) {
+            let current: interfaces.Container | null = this.container;
+            do {
+                if (current.isBound(this.serviceIdentifier)) {
                     try {
-                        currentServices.push(...currentContainer.getAll(this.serviceIdentifier));
+                        services = services.concat(current.getAll(this.serviceIdentifier));
                     } catch (error) {
                         console.error(error);
                     }
                 }
-                if (filterRegistry === undefined && currentContainer.isBound(ContributionFilterRegistry)) {
-                    filterRegistry = currentContainer.get(ContributionFilterRegistry);
-                }
+            } while (
                 // eslint-disable-next-line no-null/no-null
-                currentContainer = recursive === true ? currentContainer.parent : null;
-            }
-
-            this.services = filterRegistry ? filterRegistry.applyFilters(currentServices, this.serviceIdentifier) : currentServices;
-
+                current = recursive ? current.parent : null
+            );
+            this.services = filterRegistry?.applyFilters(services, this.serviceIdentifier) ?? services;
         }
         return this.services;
     }

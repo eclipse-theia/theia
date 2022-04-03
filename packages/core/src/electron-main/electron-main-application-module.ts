@@ -15,48 +15,232 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
+import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../electron-common/messaging/electron-messages';
 import { v4 } from 'uuid';
+import {
+    AnyConnection,
+    bindServiceProvider,
+    ConnectionMultiplexer,
+    ConnectionTransformer,
+    ContainerScopeReady,
+    DeferredConnectionFactory,
+    DisposableCollection,
+    JsonRpcConnectionFactory,
+    ProxyProvider,
+    RpcProxying,
+    ServiceContribution,
+    ServiceProvider
+} from '../common';
+import { DefaultConnectionMultiplexer } from '../common/connection-multiplexer';
+import { ContainerScope, ContainerScopeFactory } from '../common/container-scope';
 import { bindContributionProvider } from '../common/contribution-provider';
-import { JsonRpcConnectionHandler } from '../common/messaging/proxy-factory';
-import { ElectronSecurityToken } from '../electron-common/electron-token';
+import { getAllNamedOptional } from '../common/inversify-utils';
+import { DefaultRpcProxyProvider } from '../common/rpc';
+import { ElectronMainAndBackend, ElectronMainAndFrontend } from '../electron-common';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
+import { ElectronSecurityToken } from '../electron-common/electron-token';
+import { cluster } from '../node';
+import { InProcessProxyProvider } from '../node/in-process-proxy-provider';
+import { NodeIpcConnectionFactory } from '../node/messaging/ipc-connection';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
 import { ElectronMainWindowServiceImpl } from './electron-main-window-service-impl';
-import { ElectronMessagingContribution } from './messaging/electron-messaging-contribution';
-import { ElectronMessagingService } from './messaging/electron-messaging-service';
-import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
+import { WebContentsConnection } from './electron-web-contents-connection';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
+import { waitForRemote } from '../common/connection';
+import { pushDisposableListener } from '../common/node-event-utils';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any)[ElectronSecurityToken] = electronSecurityToken;
 
+/**
+ * Main container module loaded when a `BrowserWindow` running the Theia
+ * frontend is opened.
+ */
+export const ElectronMainAndFrontendContainerModule = new ContainerModule(bind => {
+    bindServiceProvider(bind, ElectronMainAndFrontend);
+    bind(ContainerScopeReady)
+        .toFunction(container => {
+            const multiplexer = container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
+            const serviceProvider = container.getNamed(ServiceProvider, ElectronMainAndFrontend);
+            const jsonRpcConnectionFactory = container.get(JsonRpcConnectionFactory);
+            const rpcProxying = container.get(RpcProxying);
+            multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
+                const service = serviceProvider.getService(serviceId, serviceParams);
+                if (service) {
+                    rpcProxying.serve(service, jsonRpcConnectionFactory(accept()));
+                } else {
+                    next();
+                }
+            });
+        })
+        .whenTargetNamed(ElectronMainAndFrontend);
+    bind(ConnectionMultiplexer)
+        .toDynamicValue(ctx => {
+            const theiaWindow = ctx.container.get(TheiaElectronWindow);
+            const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
+            const { webContents } = theiaWindow.window;
+            const ipcConnection = ctx.container.get(WebContentsConnection).initialize(ElectronMainAndFrontend, webContents, {
+                closeOnNavigation: true,
+                targetFrameId: webContents.mainFrame.routingId
+            });
+            const deferredConnection = deferredConnectionFactory(waitForRemote(ipcConnection));
+            return ctx.container.get(DefaultConnectionMultiplexer).initialize(deferredConnection);
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+    bind(ProxyProvider)
+        .toDynamicValue(ctx => {
+            const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
+            const jsonRpcConnectionProvider = ctx.container.get(JsonRpcConnectionFactory);
+            return ctx.container.get(DefaultRpcProxyProvider).initialize(
+                serviceId => jsonRpcConnectionProvider(multiplexer.open({ serviceId }))
+            );
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ({
+            [electronMainWindowServicePath]: () => ctx.container.get(ElectronMainWindowService)
+        }))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+});
+
 export default new ContainerModule(bind => {
-    bind(ElectronMainApplication).toSelf().inSingletonScope();
-    bind(ElectronMessagingContribution).toSelf().inSingletonScope();
+    // #region constants
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
-    bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
-
-    bindContributionProvider(bind, ElectronConnectionHandler);
-    bindContributionProvider(bind, ElectronMessagingService.Contribution);
-    bindContributionProvider(bind, ElectronMainApplicationContribution);
-
-    bind(ElectronMainApplicationContribution).toService(ElectronMessagingContribution);
-
-    bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
-    bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler(electronMainWindowServicePath,
-            () => context.container.get(ElectronMainWindowService))
-    ).inSingletonScope();
-
-    bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
-
-    bind(TheiaElectronWindow).toSelf();
+    // #endregion
+    // #region transients
+    bind(WebContentsConnection).toSelf().inTransientScope();
+    bind(TheiaElectronWindow).toSelf().inTransientScope();
+    // #endregion
+    // #region factories
     bind(TheiaElectronWindowFactory).toFactory(({ container }) => (options, config) => {
         const child = container.createChild();
         child.bind(TheiaBrowserWindowOptions).toConstantValue(options);
         child.bind(WindowApplicationConfig).toConstantValue(config);
         return child.get(TheiaElectronWindow);
     });
+    // #endregion
+    // #region contribution providers
+    bindContributionProvider(bind, ElectronMainApplicationContribution);
+    // #endregion
+    // #region singletons
+    bind(ElectronMainProcessArgv).toSelf().inSingletonScope();
+    bind(ElectronMainApplication).toSelf().inSingletonScope();
+    bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
+    bind(ElectronMainWindowService).to(ElectronMainWindowServiceImpl).inSingletonScope();
+    // #endregion
+    // #region ElectronMainAndFrontend
+    bind(ElectronMainApplicationContribution)
+        .toDynamicValue(ctx => ({
+            onStart(app): void {
+                const containerScopeFactory = ctx.container.get(ContainerScopeFactory);
+                app.onDidCreateTheiaWindow(theiaWindow => {
+                    recursiveCreateFrontendContainerScope(theiaWindow);
+                });
+                function recursiveCreateFrontendContainerScope(theiaWindow: TheiaElectronWindow): void {
+                    const disposables = new DisposableCollection();
+                    disposables.push(createFrontendContainerScope(theiaWindow));
+                    pushDisposableListener(disposables, theiaWindow.window.webContents, 'did-navigate', function (): void {
+                        disposables.dispose();
+                        recursiveCreateFrontendContainerScope(theiaWindow);
+                    });
+                    theiaWindow.onDidClose(() => disposables.dispose(), undefined, disposables);
+                }
+                function createFrontendContainerScope(theiaWindow: TheiaElectronWindow): ContainerScope {
+                    const child = ctx.container.createChild();
+                    child.bind(TheiaElectronWindow).toConstantValue(theiaWindow);
+                    const modules = ctx.container.getAllNamed(ContainerModule, ElectronMainAndFrontend);
+                    child.load(...modules);
+                    const callbacks = getAllNamedOptional(child, ContainerScopeReady, ElectronMainAndFrontend);
+                    return containerScopeFactory(child, callbacks);
+                }
+            }
+        }))
+        .inSingletonScope();
+    bind(ContainerModule)
+        .toConstantValue(ElectronMainAndFrontendContainerModule)
+        .whenTargetNamed(ElectronMainAndFrontend);
+    // #endregion
+    // #region ElectronMainAndBackend
+    bindServiceProvider(bind, ElectronMainAndBackend);
+    if (cluster) {
+        // We need to setup the JSON-RPC connection between electron-main and backend:
+        // We'll multiplex messages over a Node IPC connection and talk JSON-RPC over the channels.
+        bind(ConnectionMultiplexer)
+            .toDynamicValue(ctx => {
+                const app = ctx.container.get(ElectronMainApplication);
+                const transformer = ctx.container.get(ConnectionTransformer);
+                const nodeIpcConnectionFactory = ctx.container.get(NodeIpcConnectionFactory);
+                const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
+                const deferredConnection = deferredConnectionFactory(app.backendProcess.then(backend => {
+                    const backendIpc = nodeIpcConnectionFactory(backend);
+                    const sharedIpc: AnyConnection = transformer(backendIpc, {
+                        decode: (message, emit) => {
+                            if (typeof message === 'object' && THEIA_ELECTRON_IPC_CHANNEL_NAME in message) {
+                                emit(message[THEIA_ELECTRON_IPC_CHANNEL_NAME]);
+                            }
+                        },
+                        encode: (message, write) => {
+                            write({ [THEIA_ELECTRON_IPC_CHANNEL_NAME]: message });
+                        }
+                    });
+                    return waitForRemote(sharedIpc);
+                }));
+                return ctx.container.get(DefaultConnectionMultiplexer).initialize(deferredConnection);
+            })
+            .inSingletonScope()
+            .whenTargetNamed(ElectronMainAndBackend);
+        bind(ElectronMainApplicationContribution)
+            .toDynamicValue(ctx => ({
+                onStart(): void {
+                    const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndBackend);
+                    const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndBackend);
+                    const jsonRpcConnectionFactory = ctx.container.get(JsonRpcConnectionFactory);
+                    const rpcProxying = ctx.container.get(RpcProxying);
+                    multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
+                        const service = serviceProvider.getService(serviceId, serviceParams);
+                        if (service) {
+                            rpcProxying.serve(service, jsonRpcConnectionFactory(accept()));
+                        } else {
+                            next();
+                        }
+                    });
+                }
+            }))
+            .inSingletonScope();
+        bind(ProxyProvider)
+            .toDynamicValue(ctx => {
+                const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndBackend);
+                const jsonRpcConnectionFactory = ctx.container.get(JsonRpcConnectionFactory);
+                return ctx.container.get(DefaultRpcProxyProvider).initialize(
+                    (serviceId, serviceParams) => jsonRpcConnectionFactory(multiplexer.open({ serviceId, serviceParams }))
+                );
+            })
+            .inSingletonScope()
+            .whenTargetNamed(ElectronMainAndBackend);
+    } else {
+        const inProcessProxyProvider = Symbol();
+        bind(inProcessProxyProvider)
+            .toDynamicValue(ctx => {
+                const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndBackend);
+                return ctx.container.get(InProcessProxyProvider).initialize(ElectronMainAndBackend, serviceProvider);
+            })
+            .inSingletonScope();
+        bind(ProxyProvider)
+            .toDynamicValue(ctx => ctx.container.get(inProcessProxyProvider))
+            .inSingletonScope()
+            .whenTargetNamed(ElectronMainAndBackend);
+        bind(ElectronMainApplicationContribution)
+            .toDynamicValue(ctx => ({
+                onStart(): void {
+                    ctx.container.get(inProcessProxyProvider); // start listening
+                }
+            }))
+            .inSingletonScope();
+    }
+    // #endregion
 });

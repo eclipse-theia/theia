@@ -42,5 +42,15 @@ export * from './nls';
 export * from './numbers';
 export * from './performance';
 
-import { environment } from '@theia/application-package/lib/environment';
-export { environment };
+export { environment } from '@theia/application-package/lib/environment';
+
+export { Deferred, delay, retry, timeout, timeoutReject, wait, waitForEvent } from './promise-util';
+export { ProxyProvider, LazyProxyFactory } from './proxy';
+export { AnyConnection, AbstractConnection, Connection, ConnectionEmitter, ConnectionProvider, ConnectionState, DeferredConnectionFactory } from './connection';
+export { JsonRpcConnectionFactory } from './json-rpc';
+export { bindServiceProvider, servicePath, ServicePath, ServiceProvider, ServiceContribution } from './service-provider';
+export { Reflection } from './reflection';
+export { RpcConnection, RpcProxying } from './rpc';
+export { ConnectionTransformer, MessageTransformer } from './connection-transformer';
+export { ConnectionMultiplexer } from './connection-multiplexer';
+export { ContainerScope, ContainerScopeReady } from './container-scope';

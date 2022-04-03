@@ -91,7 +91,7 @@ const serverModule = require('./server');
 const serverAddress = main.start(serverModule());
 
 serverAddress.then(({ port, address }) => {
-    if (process && process.send) {
+    if (process.send) {
         process.send({ port, address });
     }
 });
