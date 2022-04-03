@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
@@ -31,10 +31,10 @@ export namespace EditorCommands {
     const EDITOR_CATEGORY = 'Editor';
     const EDITOR_CATEGORY_KEY = nls.getDefaultKey(EDITOR_CATEGORY);
 
-    export const GOTO_LINE_COLUMN = Command.toLocalizedCommand({
+    export const GOTO_LINE_COLUMN = Command.toDefaultLocalizedCommand({
         id: 'editor.action.gotoLine',
         label: 'Go to Line/Column'
-    }, 'vscode/gotoLineQuickAccess/gotoLineQuickAccess');
+    });
 
     /**
      * Show editor references
@@ -364,7 +364,7 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         if (editor.document.dirty && isReopenWithEncoding) {
-            this.messageService.info(nls.localize('theia/editor/reopenDirty', 'The file is dirty. Please save it first before reopening it with another encoding.'));
+            this.messageService.info(nls.localizeByDefault('The file is dirty. Please save it first before reopening it with another encoding.'));
             return;
         } else if (selectedFileEncoding.value) {
             editor.setEncoding(selectedFileEncoding.value.id, isReopenWithEncoding ? EncodingMode.Decode : EncodingMode.Encode);

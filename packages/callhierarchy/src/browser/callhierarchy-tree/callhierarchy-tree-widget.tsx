@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
@@ -23,6 +23,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
+import { CALL_HIERARCHY_LABEL } from '../callhierarchy-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -36,17 +37,17 @@ export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
 export class CallHierarchyTreeWidget extends TreeWidget {
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(CallHierarchyTreeModel) readonly model: CallHierarchyTreeModel,
+        @inject(TreeProps) override readonly props: TreeProps,
+        @inject(CallHierarchyTreeModel) override readonly model: CallHierarchyTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(LabelProvider) protected override readonly labelProvider: LabelProvider,
         @inject(EditorManager) readonly editorManager: EditorManager
     ) {
         super(props, model, contextMenuRenderer);
 
         this.id = CALLHIERARCHY_ID;
-        this.title.label = 'Call Hierarchy';
-        this.title.caption = 'Call Hierarchy';
+        this.title.label = CALL_HIERARCHY_LABEL;
+        this.title.caption = CALL_HIERARCHY_LABEL;
         this.title.iconClass = codicon('references');
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);
@@ -68,7 +69,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.model.initializeCallHierarchy(languageId, selection ? selection.uri : undefined, selection ? selection.range.start : undefined);
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (DefinitionNode.is(node)) {
             classNames.push(DEFINITION_NODE_CLASS);
@@ -76,19 +77,19 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
         };
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model)
             || <div className='theia-widget-noInfo'>No callers have been detected.</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (DefinitionNode.is(node)) {
             return this.decorateDefinitionCaption(node.definition);
         }
@@ -200,7 +201,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         });
     }
 
-    storeState(): object {
+    override storeState(): object {
         const callHierarchyService = this.model.getTree().callHierarchyService;
         if (this.model.root && callHierarchyService) {
             return {
@@ -212,7 +213,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
     }
 
-    restoreState(oldState: object): void {
+    override restoreState(oldState: object): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((oldState as any).root && (oldState as any).languageId) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018-2022 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018-2022 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* tslint:disable:typedef */
@@ -173,6 +173,9 @@ import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
 import { CustomEditorsExtImpl } from './custom-editors';
+import { WebviewViewsExtImpl } from './webview-views';
+import { PluginPackage } from '../common';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -211,18 +214,36 @@ export function createAPIFactory(
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
+    const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
         const authentication: typeof theia.authentication = {
-            registerAuthenticationProvider(provider: theia.AuthenticationProvider): theia.Disposable {
-                return authenticationExt.registerAuthenticationProvider(provider);
+            // support older (< 1.53.0) and newer version of authentication provider registration
+            registerAuthenticationProvider(
+                id: string | theia.AuthenticationProvider, label?: string, provider?: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions):
+                theia.Disposable {
+                // collect registration data based on registration type: new (all parameters given) vs old (data stored in provider)
+                const isNewRegistration = typeof id === 'string';
+                const regProvider = isNewRegistration ? provider! : id;
+                const regId = isNewRegistration ? id : regProvider.id;
+                const regLabel = isNewRegistration ? label! : regProvider.label;
+                const regOptions = isNewRegistration ? options : { supportsMultipleAccounts: regProvider.supportsMultipleAccounts };
+
+                // ensure that all methods of the new AuthenticationProvider are available or delegate otherwise
+                if (!regProvider['createSession']) {
+                    regProvider['createSession'] = (scopes: string[]) => regProvider.login(scopes);
+                }
+                if (!regProvider['removeSession']) {
+                    regProvider['removeSession'] = (sessionId: string) => regProvider.logout(sessionId);
+                }
+                return authenticationExt.registerAuthenticationProvider(regId, regLabel, regProvider, regOptions);
             },
             get onDidChangeAuthenticationProviders(): theia.Event<theia.AuthenticationProvidersChangeEvent> {
                 return authenticationExt.onDidChangeAuthenticationProviders;
             },
             getProviderIds(): Thenable<ReadonlyArray<string>> {
-                return authenticationExt.getProviderIds();
+                return Promise.resolve(authenticationExt.providerIds);
             },
             get providerIds(): string[] {
                 return authenticationExt.providerIds;
@@ -238,6 +259,10 @@ export function createAPIFactory(
             },
             get onDidChangeSessions(): theia.Event<theia.AuthenticationSessionsChangeEvent> {
                 return authenticationExt.onDidChangeSessions;
+            },
+            async hasSession(providerId: string, scopes: readonly string[]): Promise<boolean> {
+                const session = await authenticationExt.getSession(plugin, providerId, scopes, { silent: true });
+                return !!session;
             }
         };
         const commands: typeof theia.commands = {
@@ -390,8 +415,22 @@ export function createAPIFactory(
             showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined> {
                 return quickOpenExt.showInput(options, token);
             },
-            createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
-                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
+            createStatusBarItem(alignmentOrId?: theia.StatusBarAlignment | string, priorityOrAlignment?: number | theia.StatusBarAlignment,
+                priorityArg?: number): theia.StatusBarItem {
+                let id: string | undefined;
+                let alignment: number | undefined;
+                let priority: number | undefined;
+
+                if (typeof alignmentOrId === 'string') {
+                    id = alignmentOrId;
+                    alignment = priorityOrAlignment;
+                    priority = priorityArg;
+                } else {
+                    alignment = alignmentOrId;
+                    priority = priorityOrAlignment;
+                }
+
+                return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority, id);
             },
             createOutputChannel(name: string): theia.OutputChannel {
                 return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));
@@ -409,6 +448,15 @@ export function createAPIFactory(
                 provider: theia.CustomTextEditorProvider | theia.CustomReadonlyEditorProvider,
                 options: { webviewOptions?: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument?: boolean } = {}): theia.Disposable {
                 return customEditorExt.registerCustomEditorProvider(viewType, provider, options, plugin);
+            },
+            registerWebviewViewProvider(viewType: string,
+                provider: theia.WebviewViewProvider,
+                options?: {
+                    webviewOptions?: {
+                        retainContextWhenHidden?: boolean
+                    }
+                }): theia.Disposable {
+                return webviewViewsExt.registerWebviewViewProvider(viewType, provider, plugin, options?.webviewOptions);
             },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();
@@ -571,6 +619,15 @@ export function createAPIFactory(
             },
             registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
                 return timelineExt.registerTimelineProvider(plugin, scheme, provider);
+            },
+            get isTrusted(): boolean {
+                return workspaceExt.trusted;
+            },
+            async requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {
+                return workspaceExt.requestWorkspaceTrust(options);
+            },
+            get onDidGrantWorkspaceTrust(): theia.Event<void> {
+                return workspaceExt.onDidGrantWorkspaceTrust;
             }
         };
 
@@ -695,8 +752,9 @@ export function createAPIFactory(
             registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
                 return languagesExt.registerReferenceProvider(selector, provider, pluginToPluginInfo(plugin));
             },
-            registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
-                return languagesExt.registerDocumentSymbolProvider(selector, provider, pluginToPluginInfo(plugin));
+            registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider,
+                metadata?: theia.DocumentSymbolProviderMetadata): theia.Disposable {
+                return languagesExt.registerDocumentSymbolProvider(selector, provider, pluginToPluginInfo(plugin), metadata);
             },
             registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
                 return languagesExt.registerColorProvider(selector, provider, pluginToPluginInfo(plugin));
@@ -1020,9 +1078,15 @@ export class Plugin<T> implements theia.Plugin<T> {
     constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
-        this.pluginUri = URI.parse(plugin.pluginUri);
         this.packageJSON = plugin.rawModel;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
+
+        if (this.pluginType === 'frontend') {
+            const { origin } = new Endpoint();
+            this.pluginUri = URI.parse(origin + '/' + PluginPackage.toPluginUrl(plugin.model, ''));
+        } else {
+            this.pluginUri = URI.parse(plugin.pluginUri);
+        }
     }
 
     get isActive(): boolean {
@@ -1043,7 +1107,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     extensionUri: theia.Uri;
     extensionKind: ExtensionKind;
 
-    constructor(protected readonly pluginManager: PluginManager, plugin: InternalPlugin) {
+    constructor(protected override readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         super(pluginManager, plugin);
 
         this.extensionPath = this.pluginPath;
@@ -1051,15 +1115,15 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
         this.extensionKind = ExtensionKind.UI; // stub as a local extension (not running on a remote workspace)
     }
 
-    get isActive(): boolean {
+    override get isActive(): boolean {
         return this.pluginManager.isActive(this.id);
     }
 
-    get exports(): T {
+    override get exports(): T {
         return <T>this.pluginManager.getPluginExport(this.id);
     }
 
-    activate(): PromiseLike<T> {
+    override activate(): PromiseLike<T> {
         return this.pluginManager.activatePlugin(this.id).then(() => this.exports);
     }
 }

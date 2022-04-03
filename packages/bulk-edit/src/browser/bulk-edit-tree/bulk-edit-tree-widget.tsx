@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 SAP SE or an SAP affiliate company and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import {
@@ -47,8 +47,8 @@ export class BulkEditTreeWidget extends TreeWidget {
 
     constructor(
         @inject(TreeProps) readonly treeProps: TreeProps,
-        @inject(BulkEditTreeModel) readonly model: BulkEditTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(BulkEditTreeModel) override readonly model: BulkEditTreeModel,
+        @inject(ContextMenuRenderer) override readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -68,14 +68,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         this.quickView?.showItem(BULK_EDIT_WIDGET_NAME);
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         super.handleClickEvent(node, event);
         if (BulkEditNode.is(node)) {
             this.doOpen(node);
         }
     }
 
-    protected handleDown(event: KeyboardEvent): void {
+    protected override handleDown(event: KeyboardEvent): void {
         const node = this.model.getNextSelectableNode();
         super.handleDown(event);
         if (BulkEditNode.is(node)) {
@@ -83,7 +83,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         }
     }
 
-    protected handleUp(event: KeyboardEvent): void {
+    protected override handleUp(event: KeyboardEvent): void {
         const node = this.model.getPrevSelectableNode();
         super.handleUp(event);
         if (BulkEditNode.is(node)) {
@@ -91,14 +91,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         }
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
-        return <div className='theia-widget-noInfo noEdits'>{nls.localizeByDefault('No edits have been detected in the workspace so far.')}</div>;
+        return <div className='theia-widget-noInfo noEdits'>{nls.localizeByDefault('Made no edits')}</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (BulkEditInfoNode.is(node)) {
             return this.decorateBulkEditInfoNode(node);
         } else if (BulkEditNode.is(node)) {

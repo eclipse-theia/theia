@@ -40,6 +40,9 @@
       "path": "examples/electron"
     },
     {
+      "path": "examples/playwright"
+    },
+    {
       "path": "packages/bulk-edit"
     },
     {
@@ -146,6 +149,9 @@
     },
     {
       "path": "packages/timeline"
+    },
+    {
+      "path": "packages/toolbar"
     },
     {
       "path": "packages/typehierarchy"

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2021 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
 import { injectable, interfaces, Container, postConstruct, inject } from '@theia/core/shared/inversify';
@@ -79,15 +79,15 @@ export class OpenEditorsWidget extends FileTreeWidget {
     }
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(OpenEditorsModel) readonly model: OpenEditorsModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) props: TreeProps,
+        @inject(OpenEditorsModel) override readonly model: OpenEditorsModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
     }
 
     @postConstruct()
-    init(): void {
+    override init(): void {
         super.init();
         this.id = OpenEditorsWidget.ID;
         this.title.label = OpenEditorsWidget.LABEL;
@@ -102,7 +102,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
     // eslint-disable-next-line no-null/no-null
     protected activeTreeNodePrefixElement: string | undefined | null;
 
-    protected renderNode(node: OpenEditorNode, props: NodeProps): React.ReactNode {
+    protected override renderNode(node: OpenEditorNode, props: NodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
@@ -129,7 +129,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         return node.id.startsWith(OpenEditorsModel.AREA_NODE_ID_PREFIX);
     }
 
-    protected doRenderNodeRow({ node, depth }: OpenEditorsNodeRow): React.ReactNode {
+    protected override doRenderNodeRow({ node, depth }: OpenEditorsNodeRow): React.ReactNode {
         let groupClass = '';
         if (this.isGroupNode(node)) {
             groupClass = 'group-node';
@@ -221,7 +221,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         }
     }
 
-    protected handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (OpenEditorNode.is(node)) {
             const { widget } = node;
             this.applicationShell.activateWidget(widget.id);
@@ -229,7 +229,7 @@ export class OpenEditorsWidget extends FileTreeWidget {
         super.handleClickEvent(node, event);
     }
 
-    protected handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         super.handleContextMenuEvent(node, event);
         if (node) {
             // Since the CommonCommands used in the context menu act on the shell's activeWidget, this is necessary to ensure

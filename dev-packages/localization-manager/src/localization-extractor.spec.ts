@@ -1,23 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2021 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as assert from 'assert';
-import { extractFromFile } from './localization-extractor';
+import { extractFromFile, ExtractionOptions } from './localization-extractor';
 
 const TEST_FILE = 'test.ts';
+const quiet: ExtractionOptions = { quiet: true };
 
 describe('correctly extracts from file content', () => {
 
@@ -93,7 +94,7 @@ describe('correctly extracts from file content', () => {
     it('should return an error when resolving is not successful', async () => {
         const content = "nls.localize(a, 'value')";
         const errors: string[] = [];
-        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors), {});
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
         assert.deepStrictEqual(errors, [
             "test.ts(1,14): Could not resolve reference to 'a'"
         ]);
@@ -102,7 +103,7 @@ describe('correctly extracts from file content', () => {
     it('should return an error when resolving from an expression', async () => {
         const content = "nls.localize(test.value, 'value');";
         const errors: string[] = [];
-        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors), {});
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
         assert.deepStrictEqual(errors, [
             "test.ts(1,14): 'test.value' is not a string constant"
         ]);
@@ -114,7 +115,7 @@ describe('correctly extracts from file content', () => {
         nls.localize('key/nested', 'value');
         `.trim();
         const errors: string[] = [];
-        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors), {
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {
             'key': 'value'
         });
         assert.deepStrictEqual(errors, [
@@ -128,7 +129,7 @@ describe('correctly extracts from file content', () => {
         nls.localize('key', 'value');
         `.trim();
         const errors: string[] = [];
-        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors), {
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {
             'key': {
                 'nested': 'value'
             }
@@ -141,7 +142,7 @@ describe('correctly extracts from file content', () => {
     it('should show error for template literals', async () => {
         const content = 'nls.localize("key", `template literal value`)';
         const errors: string[] = [];
-        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors), {});
+        assert.deepStrictEqual(await extractFromFile(TEST_FILE, content, errors, quiet), {});
         assert.deepStrictEqual(errors, [
             "test.ts(1,20): Template literals are not supported for localization. Please use the additional arguments of the 'nls.localize' function to format strings"
         ]);

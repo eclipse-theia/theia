@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
@@ -303,21 +303,25 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 pruneSiblings: true
             })) {
                 if (this.shouldDisplayNode(node)) {
-                    const parentDepth = depths.get(node.parent);
-                    const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+                    const depth = this.getDepthForNode(node, depths);
                     if (CompositeTreeNode.is(node)) {
                         depths.set(node, depth);
                     }
-                    rowsToUpdate.push([node.id, {
-                        index: index++,
-                        node,
-                        depth
-                    }]);
+                    rowsToUpdate.push([node.id, this.toNodeRow(node, index++, depth)]);
                 }
             }
         }
         this.rows = new Map(rowsToUpdate);
         this.updateScrollToRow();
+    }
+
+    protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
+        const parentDepth = depths.get(node.parent);
+        return parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+    }
+
+    protected toNodeRow(node: TreeNode, index: number, depth: number): TreeWidget.NodeRow {
+        return { node, index, depth };
     }
 
     protected shouldDisplayNode(node: TreeNode): boolean {
@@ -379,7 +383,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus({ preventScroll: true });
     }
@@ -414,14 +418,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.model.getNextSelectableNode(root);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         if (!this.isAttached || !this.isVisible) {
             return;
         }
         super.onUpdateRequest(msg);
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.forceUpdate({ resize: true });
     }
@@ -585,6 +589,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param props the node properties.
      */
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
+        const attrs = this.getCaptionAttributes(node, props);
+        const children = this.getCaptionChildren(node, props);
+        return React.createElement('div', attrs, children);
+    }
+
+    protected getCaptionAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const tooltip = this.getDecorationData(node, 'tooltip').filter(notEmpty).join(' • ');
         const classes = [TREE_NODE_SEGMENT_CLASS];
         if (!this.hasTrailingSuffixes(node)) {
@@ -600,7 +610,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 title: tooltip
             };
         }
-        const children: React.ReactNode[] = [];
+        return attrs;
+    }
+
+    protected getCaptionChildren(node: TreeNode, props: NodeProps): React.ReactNode {
+        const children = [];
         const caption = this.toNodeName(node);
         const highlight = this.getDecorationData(node, 'highlight')[0];
         if (highlight) {
@@ -612,7 +626,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         } else if (!highlight) {
             children.push(caption);
         }
-        return React.createElement('div', attrs, ...children);
+        return children;
     }
 
     /**
@@ -785,7 +799,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param props the node properties.
      */
     protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        const tailDecorations = this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+        const tailDecorations = this.getDecorationData(node, 'tailDecorations').reduce((acc, current) => acc.concat(current), []);
         if (tailDecorations.length === 0) {
             return;
         }
@@ -795,7 +809,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected renderTailDecorationsForNode(node: TreeNode, props: NodeProps, tailDecorations:
         (TreeDecoration.TailDecoration | TreeDecoration.TailDecorationIcon | TreeDecoration.TailDecorationIconClass)[]): React.ReactNode {
         return <React.Fragment>
-            {tailDecorations.map((decoration, index) => {
+            {tailDecorations.reverse().map((decoration, index) => {
                 const { tooltip } = decoration;
                 const { data, fontData } = decoration as TreeDecoration.TailDecoration;
                 const color = (decoration as TreeDecoration.TailDecorationIcon).color;
@@ -804,7 +818,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
                 const content = data ? data : icon ? <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> : '';
                 return <div key={node.id + className + index} className={className} style={style} title={tooltip}>
-                    {content}
+                    {content}{index !== tailDecorations.length - 1 ? ',' : ''}
                 </div>;
             })}
         </React.Fragment>;
@@ -925,13 +939,17 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (this.isExpandable(node)) {
             classNames.push(EXPANDABLE_TREE_NODE_CLASS);
         }
-        if (SelectableTreeNode.isSelected(node)) {
+        if (this.rowIsSelected(node, props)) {
             classNames.push(SELECTED_CLASS);
         }
         if (SelectableTreeNode.hasFocus(node)) {
             classNames.push(FOCUS_CLASS);
         }
         return classNames;
+    }
+
+    protected rowIsSelected(node: TreeNode, props: NodeProps): boolean {
+        return SelectableTreeNode.isSelected(node);
     }
 
     /**
@@ -1019,8 +1037,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      *
      * @returns the tree decoration data at the given key.
      */
-    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): TreeDecoration.Data[K][] {
-        return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
+    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): Required<Pick<TreeDecoration.Data, K>>[K][] {
+        return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]);
     }
 
     /**
@@ -1040,7 +1058,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     /**
      * Get the scroll container.
      */
-    protected getScrollContainer(): MaybePromise<HTMLElement> {
+    protected override getScrollContainer(): MaybePromise<HTMLElement> {
         this.toDisposeOnDetach.push(Disposable.create(() => {
             const { scrollTop, scrollLeft } = this.node;
             this.lastScrollState = { scrollTop, scrollLeft };
@@ -1053,7 +1071,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.node;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         const up = [
             Key.ARROW_UP,
             KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] })
@@ -1096,7 +1114,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (! await this.model.collapseNode()) {
+        if (!await this.model.collapseNode()) {
             this.model.selectParent();
         }
     }
@@ -1109,7 +1127,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (! await this.model.expandNode()) {
+        if (!await this.model.expandNode()) {
             this.model.selectNextNode();
         }
     }
@@ -1252,8 +1270,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @returns `true` if the tree modifier aware event contains the `ctrlcmd` mask.
      */
     protected hasCtrlCmdMask(event: TreeWidget.ModifierAwareEvent): boolean {
-        const { metaKey, ctrlKey } = event;
-        return (isOSX && metaKey) || ctrlKey;
+        return isOSX ? event.metaKey : event.ctrlKey;
     }
 
     /**
@@ -1424,7 +1441,7 @@ export namespace TreeWidget {
         readonly cache = new CellMeasurerCache({
             fixedWidth: true
         });
-        render(): React.ReactNode {
+        override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, handleScroll } = this.props;
             return <List
                 ref={list => this.list = (list || undefined)}

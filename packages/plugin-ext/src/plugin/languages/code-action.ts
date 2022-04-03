@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { Selection } from '../../common/plugin-api-rpc';
+import { Selection, WorkspaceEditDto } from '../../common/plugin-api-rpc';
 import { Range, CodeActionContext, CodeAction } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
@@ -34,6 +34,11 @@ export class CodeActionAdapter {
         private readonly pluginId: string,
         private readonly commands: CommandRegistryImpl
     ) { }
+
+    private readonly cache = new Map<number, theia.CodeAction | theia.Command>();
+    private readonly disposables = new Map<number, DisposableCollection>();
+
+    private cacheId = 0;
 
     async provideCodeAction(resource: URI, rangeOrSelection: Range | Selection,
         context: CodeActionContext, token: theia.CancellationToken): Promise<CodeAction[] | undefined> {
@@ -64,15 +69,21 @@ export class CodeActionAdapter {
         if (!Array.isArray(commandsOrActions) || commandsOrActions.length === 0) {
             return undefined;
         }
-        // TODO cache toDispose and dispose it
-        const toDispose = new DisposableCollection();
         const result: CodeAction[] = [];
         for (const candidate of commandsOrActions) {
             if (!candidate) {
                 continue;
             }
+
+            // Cache candidates and created commands.
+            const nextCacheId = this.nextCacheId();
+            const toDispose = new DisposableCollection();
+            this.cache.set(nextCacheId, candidate);
+            this.disposables.set(nextCacheId, toDispose);
+
             if (CodeActionAdapter._isCommand(candidate)) {
                 result.push({
+                    cacheId: nextCacheId,
                     title: candidate.title || '',
                     command: this.commands.converter.toSafeCommand(candidate, toDispose)
                 });
@@ -88,16 +99,50 @@ export class CodeActionAdapter {
                 }
 
                 result.push({
+                    cacheId: nextCacheId,
                     title: candidate.title,
                     command: this.commands.converter.toSafeCommand(candidate.command, toDispose),
                     diagnostics: candidate.diagnostics && candidate.diagnostics.map(Converter.convertDiagnosticToMarkerData),
                     edit: candidate.edit && Converter.fromWorkspaceEdit(candidate.edit),
-                    kind: candidate.kind && candidate.kind.value
+                    kind: candidate.kind && candidate.kind.value,
+                    disabled: candidate.disabled,
+                    isPreferred: candidate.isPreferred
                 });
             }
         }
 
         return result;
+    }
+
+    async releaseCodeActions(cacheIds: number[]): Promise<void> {
+        cacheIds.forEach(id => {
+            this.cache.delete(id);
+            const toDispose = this.disposables.get(id);
+            if (toDispose) {
+                toDispose.dispose();
+                this.disposables.delete(id);
+            }
+        });
+    }
+
+    async resolveCodeAction(cacheId: number, token: theia.CancellationToken): Promise<WorkspaceEditDto | undefined> {
+        if (!this.provider.resolveCodeAction) {
+            return undefined;
+        }
+
+        // Code actions are only resolved if they are not legacy commands and don't have an edit property
+        // https://code.visualstudio.com/api/references/vscode-api#CodeActionProvider
+        const candidate = this.cache.get(cacheId);
+        if (!candidate || CodeActionAdapter._isCommand(candidate) || candidate.edit) {
+            return undefined;
+        }
+
+        const resolved = await this.provider.resolveCodeAction(candidate, token);
+        return resolved?.edit && Converter.fromWorkspaceEdit(resolved.edit);
+    }
+
+    private nextCacheId(): number {
+        return this.cacheId++;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

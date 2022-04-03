@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core';
@@ -32,7 +32,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     static CONTROL_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'a_control'];
     static TERMINATE_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'b_terminate'];
     static OPEN_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'c_open'];
-    static createContainer(parent: interfaces.Container): Container {
+    static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugThreadsWidget.CONTEXT_MENU,
             virtualized: false,
@@ -57,7 +57,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = 'debug:threads:' + this.viewModel.id;
         this.title.label = nls.localize('theia/debug/threads', 'Threads');
@@ -107,14 +107,14 @@ export class DebugThreadsWidget extends SourceTreeWidget {
         }
     }
 
-    protected toContextMenuArgs(node: SelectableTreeNode): [number] | undefined {
+    protected override toContextMenuArgs(node: SelectableTreeNode): [number] | undefined {
         if (TreeElementNode.is(node) && node.element instanceof DebugThread) {
             return [node.element.raw.id];
         }
         return undefined;
     }
 
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
+    protected override getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         if (this.threads.multiSession) {
             return super.getDefaultNodeStyle(node, props);
         }

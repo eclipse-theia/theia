@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -112,22 +112,21 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
             return nls.localizeByDefault('No Problems');
         }
-        const localize = (text: string, value: number): string => nls.localize(`vscode/markers.contribution/total${text}`, `{0} ${text}`, value.toString());
         const tooltip: string[] = [];
         if (stat.errors > 0) {
-            tooltip.push(localize('Errors', stat.errors));
+            tooltip.push(nls.localizeByDefault('{0} Errors', stat.errors));
         }
         if (stat.warnings > 0) {
-            tooltip.push(localize('Warnings', stat.warnings));
+            tooltip.push(nls.localizeByDefault('{0} Warnings', stat.warnings));
         }
         if (stat.infos > 0) {
-            tooltip.push(localize('Infos', stat.infos));
+            tooltip.push(nls.localizeByDefault('{0} Infos', stat.infos));
         }
         return tooltip.join(', ');
 
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(ProblemsCommands.COLLAPSE_ALL, {
             execute: () => this.collapseAllProblems()
@@ -160,7 +159,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(ProblemsMenu.CLIPBOARD, {
             commandId: ProblemsCommands.COPY.id,

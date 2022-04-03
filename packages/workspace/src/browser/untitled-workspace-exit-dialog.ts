@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2021 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { nls } from '@theia/core';
 import { inject } from '@theia/core/shared/inversify';
@@ -27,7 +27,7 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
     }
 
     constructor(
-        @inject(DialogProps) protected readonly props: DialogProps
+        @inject(DialogProps) props: DialogProps
     ) {
         super(props);
         const messageNode = document.createElement('div');
@@ -40,12 +40,12 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
         this.appendAcceptButton(nls.localizeByDefault(UntitledWorkspaceExitDialog.Values.Save));
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addAction(this.dontSaveButton, () => this.dontSave(), 'click');
     }
 
-    protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
+    protected override addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
         this.addAction(element, () => this.doSave(), 'click');
     }
 

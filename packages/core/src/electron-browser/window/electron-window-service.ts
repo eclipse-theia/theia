@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { injectable, inject, postConstruct } from 'inversify';
@@ -42,12 +42,12 @@ export class ElectronWindowService extends DefaultWindowService {
     @inject(ElectronWindowPreferences)
     protected readonly electronWindowPreferences: ElectronWindowPreferences;
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
+    override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
         return undefined;
     }
 
-    openNewDefaultWindow(): void {
+    override openNewDefaultWindow(): void {
         this.delegate.openNewDefaultWindow();
     }
 
@@ -61,7 +61,7 @@ export class ElectronWindowService extends DefaultWindowService {
         });
     }
 
-    protected registerUnloadListeners(): void {
+    protected override registerUnloadListeners(): void {
         electron.ipcRenderer.on(CLOSE_REQUESTED_SIGNAL, (_event, closeRequestEvent: CloseRequestArguments) => this.handleCloseRequestedEvent(closeRequestEvent));
         window.addEventListener('unload', () => this.onUnloadEmitter.fire());
     }
@@ -92,7 +92,7 @@ export class ElectronWindowService extends DefaultWindowService {
         }
     }
 
-    reload(): void {
+    override reload(): void {
         electron.ipcRenderer.send(RELOAD_REQUESTED_SIGNAL);
     }
 }

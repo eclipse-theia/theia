@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -62,6 +62,7 @@ import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
+import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -153,6 +154,9 @@ export class HostedPluginSupport {
 
     @inject(PluginCustomEditorRegistry)
     protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -302,15 +306,15 @@ export class HostedPluginSupport {
      */
     protected async syncPlugins(): Promise<void> {
         let initialized = 0;
-        const waitPluginsMeasurement = this.createMeasurement('waitForDeployment');
-        let syncPluginsMeasurement: () => number;
+        const waitPluginsMeasurement = this.measure('waitForDeployment');
+        let syncPluginsMeasurement: Measurement | undefined;
 
         const toUnload = new Set(this.contributions.keys());
         try {
             const pluginIds: string[] = [];
             const deployedPluginIds = await this.server.getDeployedPluginIds();
-            this.logMeasurement('Waiting for backend deployment', waitPluginsMeasurement);
-            syncPluginsMeasurement = this.createMeasurement('syncPlugins');
+            waitPluginsMeasurement.log('Waiting for backend deployment');
+            syncPluginsMeasurement = this.measure('syncPlugins');
             for (const pluginId of deployedPluginIds) {
                 toUnload.delete(pluginId);
                 if (!this.contributions.has(pluginId)) {
@@ -337,9 +341,14 @@ export class HostedPluginSupport {
             if (initialized || toUnload.size) {
                 this.onDidChangePluginsEmitter.fire(undefined);
             }
+
+            if (!syncPluginsMeasurement) {
+                // await didn't complete normally
+                waitPluginsMeasurement.error('Backend deployment failed.');
+            }
         }
 
-        this.logMeasurement(`Sync of ${this.getPluginCount(initialized)}`, syncPluginsMeasurement);
+        syncPluginsMeasurement?.log(`Sync of ${this.getPluginCount(initialized)}`);
     }
 
     /**
@@ -348,7 +357,7 @@ export class HostedPluginSupport {
      */
     protected loadContributions(toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
         let loaded = 0;
-        const loadPluginsMeasurement = this.createMeasurement('loadPlugins');
+        const loadPluginsMeasurement = this.measure('loadPlugins');
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
         for (const contributions of this.contributions.values()) {
@@ -377,14 +386,14 @@ export class HostedPluginSupport {
             }
         }
 
-        this.logMeasurement(`Load contributions of ${this.getPluginCount(loaded)}`, loadPluginsMeasurement);
+        loadPluginsMeasurement.log(`Load contributions of ${this.getPluginCount(loaded)}`);
 
         return hostContributions;
     }
 
     protected async startPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
         let started = 0;
-        const startPluginsMeasurement = this.createMeasurement('startPlugins');
+        const startPluginsMeasurement = this.measure('startPlugins');
 
         const [hostLogPath, hostStoragePath, hostGlobalStoragePath] = await Promise.all([
             this.pluginPathsService.getHostLogPath(),
@@ -447,7 +456,7 @@ export class HostedPluginSupport {
             return;
         }
 
-        this.logMeasurement(`Start of ${this.getPluginCount(started)}`, startPluginsMeasurement);
+        startPluginsMeasurement.log(`Start of ${this.getPluginCount(started)}`);
     }
 
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
@@ -468,7 +477,7 @@ export class HostedPluginSupport {
                     workspace: this.workspaceService.workspace?.resource.toString(),
                     roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
                 }),
-                this.webviewEnvironment.resourceRoot(),
+                this.webviewEnvironment.resourceRoot(host),
                 this.webviewEnvironment.cspSource(),
                 this.terminalService.getDefaultShell(),
                 this.jsonSchemaStore.schemas
@@ -693,37 +702,8 @@ export class HostedPluginSupport {
         await Promise.all(activation);
     }
 
-    protected createMeasurement(name: string): () => number {
-        const startMarker = `${name}-start`;
-        const endMarker = `${name}-end`;
-        performance.clearMeasures(name);
-        performance.clearMarks(startMarker);
-        performance.clearMarks(endMarker);
-
-        performance.mark(startMarker);
-        return () => {
-            performance.mark(endMarker);
-            performance.measure(name, startMarker, endMarker);
-
-            const entries = performance.getEntriesByName(name);
-            const duration = entries.length > 0 ? entries[0].duration : Number.NaN;
-
-            performance.clearMeasures(name);
-            performance.clearMarks(startMarker);
-            performance.clearMarks(endMarker);
-            return duration;
-        };
-    }
-
-    protected logMeasurement(measurementName: string, measurement: () => number): void {
-        const duration = measurement();
-        if (duration === Number.NaN) {
-            // Measurement was prevented by native API, do not log NaN duration
-            return;
-        }
-
-        const timeFromFrontendStart = `Finished ${(performance.now() / 1000).toFixed(3)} s after frontend start`;
-        console.log(`[${this.clientId}] ${measurementName} took: ${duration.toFixed(1)} ms [${timeFromFrontendStart}]`);
+    protected measure(name: string): Measurement {
+        return this.stopwatch.start(name, { context: this.clientId });
     }
 
     protected getPluginCount(plugins: number): string {

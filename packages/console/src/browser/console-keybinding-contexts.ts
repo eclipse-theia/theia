@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { KeybindingContext } from '@theia/core/lib/browser';
@@ -65,9 +65,9 @@ export class ConsoleInputFocusContext implements KeybindingContext {
 @injectable()
 export class ConsoleContentFocusContext extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleContentFocus;
+    override readonly id: string = ConsoleKeybindingContexts.consoleContentFocus;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         return !console.input.isFocused();
     }
 
@@ -76,9 +76,9 @@ export class ConsoleContentFocusContext extends ConsoleInputFocusContext {
 @injectable()
 export class ConsoleNavigationBackEnabled extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleNavigationBackEnabled;
+    override readonly id: string = ConsoleKeybindingContexts.consoleNavigationBackEnabled;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         if (!super.isConsoleEnabled(console)) {
             return false;
         }
@@ -91,9 +91,9 @@ export class ConsoleNavigationBackEnabled extends ConsoleInputFocusContext {
 @injectable()
 export class ConsoleNavigationForwardEnabled extends ConsoleInputFocusContext {
 
-    readonly id: string = ConsoleKeybindingContexts.consoleNavigationForwardEnabled;
+    override readonly id: string = ConsoleKeybindingContexts.consoleNavigationForwardEnabled;
 
-    protected isConsoleEnabled(console: ConsoleWidget): boolean {
+    protected override isConsoleEnabled(console: ConsoleWidget): boolean {
         if (!super.isConsoleEnabled(console)) {
             return false;
         }

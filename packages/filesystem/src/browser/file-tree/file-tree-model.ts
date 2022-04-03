@@ -1,22 +1,22 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
+import { CompositeTreeNode, TreeNode, ConfirmDialog, CompressedTreeModel } from '@theia/core/lib/browser';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -27,7 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileSystemUtils } from '../../common';
 
 @injectable()
-export class FileTreeModel extends TreeModelImpl implements LocationService {
+export class FileTreeModel extends CompressedTreeModel implements LocationService {
 
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
@@ -41,7 +41,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     protected readonly environments: EnvVariablesServer;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.toDispose.push(this.fileService.onDidFilesChange(changes => this.onFilesChanged(changes)));
         this.toDispose.push(this.fileService.onDidRunOperation(event => this.onDidMove(event)));
@@ -142,7 +142,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         const nodes = new Map<string, CompositeTreeNode>();
         for (const uri of uris) {
             for (const node of this.getNodesByUri(uri.parent)) {
-                if (DirNode.is(node) && node.expanded) {
+                if (DirNode.is(node) && (node.expanded || (this.compressionToggle.compress && this.compressionService.isCompressionParticipant(node)))) {
                     nodes.set(node.id, node);
                 }
             }
@@ -151,13 +151,16 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     }
 
     async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI> {
-        let targetUri = target.uri.resolve(source.path.base);
+        /** If the target is a file or if the target is a directory, but is the same as the source, use the parent of the target as a destination. */
+        const parentNode = (target.fileStat.isFile || target.uri.isEqual(source)) ? target.parent : target;
+        if (!FileStatNode.is(parentNode)) {
+            throw new Error('Parent of file has to be a FileStatNode');
+        }
+        let targetUri = parentNode.uri.resolve(source.path.base);
         try {
-            if (source.path.toString() === target.uri.path.toString()) {
-                const parent = await this.fileService.resolve(source.parent);
-                const name = source.path.name + '_copy';
-                targetUri = FileSystemUtils.generateUniqueResourceURI(source.parent, parent, name, source.path.ext);
-            }
+            const parent = await this.fileService.resolve(parentNode.uri);
+            const sourceFileStat = await this.fileService.resolve(source);
+            targetUri = FileSystemUtils.generateUniqueResourceURI(parent, targetUri, sourceFileStat.isDirectory, 'copy');
             await this.fileService.copy(source, targetUri);
         } catch (e) {
             this.messageService.error(e.message);
@@ -172,6 +175,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const name = source.fileStat.name;
             const targetUri = target.uri.resolve(name);
+            if (source.uri.isEqual(targetUri)) { return; }
             try {
                 await this.fileService.move(source.uri, targetUri);
                 return targetUri;

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
@@ -337,23 +337,28 @@ export class KeybindingRegistry {
      * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
      */
     acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false): string {
+        return this.componentsForKeyCode(keyCode, asciiOnly).join(separator);
+    }
+
+    componentsForKeyCode(keyCode: KeyCode, asciiOnly = false): string[] {
         const keyCodeResult = [];
+        const useSymbols = isOSX && !asciiOnly;
         if (keyCode.meta && isOSX) {
-            keyCodeResult.push('Cmd');
+            keyCodeResult.push(useSymbols ? '⌘' : 'Cmd');
         }
         if (keyCode.ctrl) {
-            keyCodeResult.push('Ctrl');
+            keyCodeResult.push(useSymbols ? '⌃' : 'Ctrl');
         }
         if (keyCode.alt) {
-            keyCodeResult.push('Alt');
+            keyCodeResult.push(useSymbols ? '⌥' : 'Alt');
         }
         if (keyCode.shift) {
-            keyCodeResult.push('Shift');
+            keyCodeResult.push(useSymbols ? '⇧' : 'Shift');
         }
         if (keyCode.key) {
             keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }
-        return keyCodeResult.join(separator);
+        return keyCodeResult;
     }
 
     /**

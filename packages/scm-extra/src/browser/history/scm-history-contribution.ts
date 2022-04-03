@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
@@ -26,8 +26,7 @@ import { EDITOR_CONTEXT_MENU_SCM } from '../scm-extra-contribution';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const SCM_HISTORY_ID = 'scm-history';
-export const SCM_HISTORY_KEY = 'theia/scm/history';
-export const SCM_HISTORY_LABEL = 'History';
+export const SCM_HISTORY_LABEL = nls.localize('theia/scm/history', 'History');
 export const SCM_HISTORY_TOGGLE_KEYBINDING = 'alt+h';
 export const SCM_HISTORY_MAX_COUNT = 100;
 
@@ -35,10 +34,10 @@ export namespace ScmHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
         id: 'scm-history:open-file-history',
     };
-    export const OPEN_BRANCH_HISTORY = Command.toLocalizedCommand({
+    export const OPEN_BRANCH_HISTORY: Command = {
         id: 'scm-history:open-branch-history',
         label: SCM_HISTORY_LABEL
-    }, SCM_HISTORY_KEY);
+    };
 }
 
 export interface ScmHistoryOpenViewArguments extends OpenViewArguments {
@@ -56,7 +55,7 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
     constructor() {
         super({
             widgetId: SCM_HISTORY_ID,
-            widgetName: nls.localize(SCM_HISTORY_KEY, SCM_HISTORY_LABEL),
+            widgetName: SCM_HISTORY_LABEL,
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 500
@@ -66,13 +65,13 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
         });
     }
 
-    async openView(args?: Partial<ScmHistoryOpenViewArguments>): Promise<ScmHistoryWidget> {
+    override async openView(args?: Partial<ScmHistoryOpenViewArguments>): Promise<ScmHistoryWidget> {
         const widget = await super.openView(args);
         this.refreshWidget(args!.uri);
         return widget;
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: ScmHistoryCommands.OPEN_FILE_HISTORY.id,
             label: SCM_HISTORY_LABEL
@@ -84,7 +83,7 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
         super.registerMenus(menus);
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ScmHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
             isEnabled: (uri: URI) => !!this.scmService.findRepository(uri),
             isVisible: (uri: URI) => !!this.scmService.findRepository(uri),

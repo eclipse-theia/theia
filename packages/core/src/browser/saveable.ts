@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
@@ -21,6 +21,7 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
+import { URI } from 'vscode-uri';
 
 export interface Saveable {
     readonly dirty: boolean;
@@ -63,6 +64,10 @@ export namespace Saveable {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is Saveable {
         return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function isUntitled(arg: any): boolean {
+        return !!arg && ('uri' in arg) && URI.parse((arg as { uri: string; }).uri).scheme === 'untitled';
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function get(arg: any): Saveable | undefined {
@@ -300,7 +305,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         return button;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addKeyListener(this.dontSaveButton, Key.ENTER, () => {
             this.shouldSave = false;

@@ -1,0 +1,277 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "公开征集等级制度"
+    },
+    "core": {
+      "common": {
+        "closeAll": "关闭所有标签",
+        "closeAllTabMain": "关闭主区域的所有标签",
+        "closeOtherTabMain": "关闭主区域的其他标签",
+        "closeOthers": "关闭其他标签",
+        "closeRight": "向右关闭标签",
+        "closeTab": "关闭标签",
+        "closeTabMain": "在主区域关闭标签",
+        "collapseAllTabs": "折叠 所有侧板",
+        "collapseBottomPanel": "拨动底部面板",
+        "collapseTab": "塌陷侧板",
+        "showNextTabGroup": "切换到下一个标签组",
+        "showNextTabInGroup": "切换到组中的下一个标签",
+        "showPreviousTabGroup": "切换到上一个标签组",
+        "showPreviousTabInGroup": "切换到组中的上一个标签",
+        "toggleMaximized": "切换到最大限度"
+      },
+      "highlightModifiedTabs": "控制是否在修改过的(dirty)编辑器标签上绘制顶部边框。",
+      "keyboard": {
+        "choose": "选择键盘布局",
+        "chooseLayout": "选择一个键盘布局",
+        "current": "(当前:{0})",
+        "currentLayout": "- 当前布局",
+        "mac": "苹果键盘",
+        "pc": "电脑键盘",
+        "tryDetect": "尝试从浏览器信息和按下的按键中检测键盘布局。"
+      },
+      "quitMessage": "任何未保存的修改都不会被保存。",
+      "quitTitle": "你确定你要退出吗?",
+      "resetWorkbenchLayout": "重置工作台面布局",
+      "sashDelay": "控制视图/编辑器之间拖动区域的悬停反馈延迟,单位为毫秒。",
+      "sashSize": "控制在视图/编辑器之间的拖动区域的反馈区域大小,以像素为单位。如果需要的话,把它设置成一个较大的值。",
+      "silentNotifications": "控制是否抑制弹出通知。"
+    },
+    "debug": {
+      "continueAll": "继续 所有",
+      "copyExpressionValue": "复制表达式的值",
+      "debugViewLocation": "控制调试视图的位置。",
+      "openBottom": "开放式底部",
+      "openLeft": "向左开放",
+      "openRight": "右边开放",
+      "pauseAll": "暂停所有",
+      "reveal": "揭秘",
+      "threads": "缝纫机",
+      "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
+    },
+    "editor": {
+      "ariaLabel": "编辑器的文本区域在聚焦时的咏叹调标签。",
+      "autoSaveDelay": "配置自动保存延迟,单位为毫秒。",
+      "autoSaveSetting": "控制脏文件的自动保存。",
+      "automaticLayout": "启用后,编辑器将安装一个间隔来检查它的容器主节点大小是否发生了变化。启用这个可能会对性能产生严重影响。",
+      "contextmenu": "控制是否启用自定义上下文菜单。",
+      "disableLayerHinting": "禁用`transform: translate3d(0px, 0px, 0px)`对编辑器边缘和线条层的使用。使用`transform: translate3d(0px, 0px, 0px)`可以作为浏览器创建额外层的提示。",
+      "disableMonospaceOptimizations": "控制是否启用对单色字体的优化。",
+      "extraEditorClassName": "要添加到编辑器中的附加类名称。",
+      "fixedOverflowWidgets": "控制是否将溢出的小部件显示为 \"固定\"。",
+      "formatOnSaveTimeout": "超时,以毫秒为单位,超时后文件保存时运行的格式化被取消。",
+      "mouseStyle": "控制鼠标指针的样式。",
+      "overviewRulerLanes": "概览标尺应呈现的垂直通道的数量。",
+      "persistClosedEditors": "控制是否为工作区持续保存关闭的编辑器历史,跨越窗口重新加载。",
+      "readOnly": "控制编辑器是否是只读的。",
+      "renderValidationDecorations": "控制编辑器是否渲染验证装饰。",
+      "revealHorizontalRightPadding": "当显示光标时,一个虚拟的padding(px)被添加到光标上,使其变成一个矩形。这个虚拟padding确保光标在碰到视口边缘之前被显示出来。",
+      "selectOnLineNumbers": "控制在点击行号时是否选择相应的行。",
+      "showAllEditors": "显示所有打开的编辑器",
+      "splitHorizontal": "横向分割编辑",
+      "splitVertical": "分离式编辑垂直",
+      "stopRenderingLineAfter": "性能保护。在X个字符后停止渲染一行。",
+      "suggest.insertHighlight": "控制在接受补全时是否应突出显示意外的文本修改,例如`insertMode`是`replace`,但补全只支持`insert`。",
+      "wordWrapBreakAfterCharacters": "配置文字包装的字符。在这些字符之后,将引入一个断句。",
+      "wordWrapBreakBeforeCharacters": "配置文字包装的字符。在这些字符之前将引入一个断句。",
+      "wordWrapOverride1": "覆盖 \"wordWrap \"设置。",
+      "wordWrapOverride2": "覆盖`wordWrapOverride1`设置。"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"
+    },
+    "filesystem": {
+      "copyDownloadLink": "复制下载链接",
+      "filesExclude": "配置用于排除文件和文件夹的glob模式。例如,文件资源管理器会根据这一设置来决定显示或隐藏哪些文件和文件夹。",
+      "maxConcurrentUploads": "上传多个文件时的最大并发文件数。0意味着所有文件都将被并发上传。",
+      "maxFileSizeMB": "控制可能打开的最大文件大小(MB)。",
+      "processedOutOf": "在{1}中处理了{0}。",
+      "uploadFiles": "上传文件...",
+      "uploadedOutOf": "上传了{0}出{1}。"
+    },
+    "getting-started": {
+      "newExtension": "建立一个新的分机",
+      "newPlugin": "建立一个新的插件"
+    },
+    "git": {
+      "addSignedOff": "添加 \"已签署\"。",
+      "amendReuseMessag": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
+      "amendRewrite": "重写之前的提交信息。按'Enter'键确认或按'Escape'键取消。",
+      "checkoutCreateLocalBranchWithName": "创建一个新的本地分支,名称为:{0}。按'Enter'键确认或按'Escape'键取消。",
+      "checkoutProvideBranchName": "请提供分支机构名称。",
+      "checkoutSelectRef": "选择一个参考文献来结账或创建一个新的本地分支。",
+      "cloneQuickInputLabel": "请提供一个 Git 仓库的位置。按'Enter'键确认或按'Escape'键取消。",
+      "cloneRepository": "克隆 Git 仓库。{0}.按'Enter'键确认或按'Escape'键取消。",
+      "compareWith": "对比...",
+      "compareWithBranchOrTag": "挑选一个分支或标签,与当前活动的{0}分支进行比较。",
+      "dirtyDiffLinesLimit": "如果编辑器的行数超过这个限制,则不显示肮脏的差异装饰。",
+      "dropStashMessage": "藏品成功删除。",
+      "editorDecorationsEnabled": "在编辑器中显示git的装饰。",
+      "fetchPickRemote": "挑选一个遥控器来取物。",
+      "gitDecorationsColors": "在导航器中使用颜色装饰。",
+      "mergeQuickPickPlaceholder": "挑选一个分支来合并到当前活动的{0}分支。",
+      "missingUserInfo": "确保你在git中配置了'user.name'和'user.email'。",
+      "noPreviousCommit": "没有以前的承诺可以修改",
+      "noRepositoriesSelected": "没有选择存储库。",
+      "repositoryNotInitialized": "存储库{0}还没有被初始化。",
+      "stashChanges": "储藏室的变化。按'Enter'键确认,或按'Escape'键取消。",
+      "stashChangesWithMessage": "储藏室的变化与信息。{0}.按'Enter'键确认或按'Escape'键取消。",
+      "toggleBlameAnnotations": "切换指责注释"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "使用`when`子句来代替。"
+    },
+    "markers": {
+      "clearAll": "清除所有",
+      "tabbarDecorationsEnabled": "在标签栏中显示问题装饰器(诊断标记)。"
+    },
+    "messages": {
+      "notificationTimeout": "在此超时后,信息性通知将被隐藏。",
+      "toggleNotifications": "切换通知"
+    },
+    "mini-browser": {
+      "typeUrl": "输入一个URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "没有匹配的符号",
+      "typeToSearchForSymbols": "键入以搜索符号"
+    },
+    "navigator": {
+      "autoReveal": "自动揭幕",
+      "refresh": "在资源管理器中刷新",
+      "reveal": "在资源管理器中显示出来",
+      "toggleHiddenFiles": "切换隐藏文件"
+    },
+    "output": {
+      "clearOutputChannel": "清除输出通道...",
+      "closeOutputChannel": "关闭输出通道...",
+      "hiddenChannels": "隐蔽通道",
+      "hideOutputChannel": "隐藏输出通道...",
+      "maxChannelHistory": "一个输出通道中的最大条目数。",
+      "outputChannels": "输出通道",
+      "showOutputChannel": "显示输出通道..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "托管的实例已经在运行。",
+      "debugInstance": "调试实例",
+      "debugMode": "使用 inspect 或 inspect-brk 进行 Node.js 调试",
+      "failed": "运行托管插件实例失败。{0}",
+      "hostedPlugin": "托管的插件",
+      "hostedPluginRunning": "托管的插件: 运行",
+      "hostedPluginStarting": "托管的插件: 开始",
+      "hostedPluginStopped": "托管的插件: 停止了",
+      "hostedPluginWatching": "托管的插件。观察",
+      "instanceTerminated": "{0}已被终止",
+      "launchOutFiles": "用于定位生成的JavaScript文件的glob模式数组(`${pluginPath}`将被插件的实际路径所取代)。",
+      "noValidPlugin": "指定的文件夹不包含有效的插件。",
+      "notRunning": "托管的实例没有运行。",
+      "pluginFolder": "插件文件夹被设置为。{0}",
+      "preventedNewTab": "您的浏览器阻止了新标签的打开",
+      "restartInstance": "重启实例",
+      "running": "托管的实例运行在。",
+      "select": "选择",
+      "selectPath": "选择路径",
+      "startInstance": "启动实例",
+      "starting": "启动托管实例服务器 ...",
+      "stopInstance": "停止实例",
+      "unknownTerminated": "该实例已被终止",
+      "watchMode": "在开发中的插件上运行观察器"
+    },
+    "plugin-ext": {
+      "plugins": "插件",
+      "signInAgain": "分机'{0}'希望你用{1}再次登录。",
+      "webviewTrace": "控制与webviews的通信跟踪。",
+      "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
+    },
+    "preview": {
+      "openByDefault": "默认情况下,打开预览而不是编辑器。"
+    },
+    "property-view": {
+      "created": "创建",
+      "directory": "指南",
+      "lastModified": "最后修改",
+      "location": "地点",
+      "path": "路径",
+      "properties": "财产",
+      "size": "尺寸",
+      "symbolicLink": "象征性的联系"
+    },
+    "scm": {
+      "amend": "修正",
+      "amendHeadCommit": "HEAD承诺",
+      "amendLastCommit": "修正最后的承诺",
+      "changeRepository": "改变存储库...",
+      "history": "历史",
+      "noRepositoryFound": "没有找到存储库",
+      "unamend": "撤销",
+      "unamendCommit": "未修改的提交"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "包括被忽略的文件",
+      "noFolderSpecified": "你没有打开或指定一个文件夹。目前只搜索了打开的文件。",
+      "resultSubset": "这只是所有结果的一个子集。使用一个更具体的搜索词来缩小结果列表。",
+      "searchOnEditorModification": "修改时搜索活动的编辑器。"
+    },
+    "task": {
+      "attachTask": "附加任务...",
+      "clearHistory": "清除历史",
+      "openUserTasks": "打开用户的任务"
+    },
+    "terminal": {
+      "confirmClose": "控制如果有活动的终端会话,是否在窗口关闭时进行确认。",
+      "confirmCloseAlways": "始终确认是否有终端。",
+      "confirmCloseChildren": "确认是否有任何终端有子进程。",
+      "confirmCloseNever": "永远不要确认。",
+      "enableCopy": "启用ctrl-c(macOS上为cmd-c)来复制选定的文本",
+      "enablePaste": "启用ctrl-v(macOS上为cmd-v)从剪贴板粘贴。",
+      "shellArgsLinux": "在Linux终端时使用的命令行参数。",
+      "shellArgsOsx": "在macOS终端时使用的命令行参数。",
+      "shellArgsWindows": "在Windows终端时使用的命令行参数。",
+      "shellLinux": "终端在Linux上使用的shell的路径(默认:'{0}'})。",
+      "shellOsx": "终端在macOS上使用的shell的路径(默认:'{0}'})。",
+      "shellWindows": "终端在Windows上使用的shell的路径。(默认:'{0}')。",
+      "terminate": "结束",
+      "terminateActive": "你想终止正在进行的终端会话吗?",
+      "terminateActiveMultiple": "你想终止{0}活动的终端会话吗?"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "子类型层次结构",
+      "supertypeHierarchy": "超类型层次结构",
+      "typeHierarchy": "类型层次结构"
+    },
+    "vsx-registry": {
+      "openVSX": "打开VSX注册表",
+      "recommendedExtensions": "建议在该工作区使用的扩展名称的列表。",
+      "showRecommendedExtensions": "控制是否显示扩展建议的通知。"
+    },
+    "webview": {
+      "goToReadme": "转到README",
+      "messageWarning": "            {0}端点的主机模式已改为`{1}`;改变模式可能导致安全漏洞。             参见`{2}`以了解更多信息。"
+    },
+    "workspace": {
+      "closeWorkspace": "你真的想关闭工作区吗?",
+      "compareWithEachOther": "互相比较",
+      "confirmDeletePermanently.description": "使用垃圾箱删除\"{0}\"失败。你想永久删除吗?",
+      "confirmDeletePermanently.solution": "你可以在偏好设置中禁用垃圾桶的使用。",
+      "confirmDeletePermanently.title": "删除文件时出错",
+      "duplicate": "重复的",
+      "failApply": "无法将更改应用于新文件",
+      "failSaveAs": "无法为当前的小组件运行\"{0}\"。",
+      "noErasure": "注意:没有任何东西会从磁盘上被删除",
+      "openRecentPlaceholder": "输入你要打开的工作区的名称",
+      "openRecentWorkspace": "打开最近的工作区...",
+      "preserveWindow": "启用在当前窗口中打开工作空间。",
+      "removeFolder": "你确定要从工作区删除以下文件夹吗?",
+      "removeFolders": "你确定要从工作区删除以下文件夹吗?",
+      "supportMultiRootWorkspace": "控制是否启用多根工作区支持。",
+      "trustEmptyWindow": "控制空工作区是否被默认信任。",
+      "trustEnabled": "控制是否启用工作区信任。如果禁用,所有工作空间都被信任。",
+      "trustPrompt": "控制何时显示信任工作区的启动提示。",
+      "trustRequest": "一个扩展请求信任工作区,但相应的API还没有完全支持。你想信任这个工作区吗?",
+      "untitled-cleanup": "似乎有许多无标题的工作区文件。请检查{0}并删除任何未使用的文件。",
+      "workspaceFolderAdded": "创建了一个有多个根的工作区。你想把你的工作区配置保存为一个文件吗?",
+      "workspaceFolderAddedTitle": "文件夹添加到工作区"
+    }
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "オープンコールヒエラルキー"
+    },
+    "core": {
+      "common": {
+        "closeAll": "すべてのタブを閉じる",
+        "closeAllTabMain": "メインエリアのすべてのタブを閉じる",
+        "closeOtherTabMain": "メインエリアの他のタブを閉じる",
+        "closeOthers": "他のタブを閉じる",
+        "closeRight": "閉じるタブを右に",
+        "closeTab": "タブを閉じる",
+        "closeTabMain": "メインエリアのタブを閉じる",
+        "collapseAllTabs": "すべてのサイドパネルを閉じる",
+        "collapseBottomPanel": "トグルボトムパネル",
+        "collapseTab": "折りたたみ式サイドパネル",
+        "showNextTabGroup": "次のタブグループに切り替える",
+        "showNextTabInGroup": "グループ内の次のタブに切り替える",
+        "showPreviousTabGroup": "前のタブグループに切り替える",
+        "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
+        "toggleMaximized": "トグル・マキシマイズ"
+      },
+      "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
+      "keyboard": {
+        "choose": "キーボードレイアウトの選択",
+        "chooseLayout": "キーボードレイアウトの選択",
+        "current": "(現在: {0})",
+        "currentLayout": "- 現在のレイアウト",
+        "mac": "Mac用キーボード",
+        "pc": "PCキーボード",
+        "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
+      },
+      "quitMessage": "保存されていない変更は、保存されません。",
+      "quitTitle": "本当に辞めたいのか?",
+      "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
+      "sashDelay": "ビュー/エディター間でのドラッグ領域のホバーフィードバックの遅延をミリ秒単位で制御します。",
+      "sashSize": "ビュー/エディタ間でのドラッグ領域のフィードバック領域のサイズをピクセル単位で制御します。必要に応じて、より大きな値に設定してください。",
+      "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。"
+    },
+    "debug": {
+      "continueAll": "すべてを続ける",
+      "copyExpressionValue": "コピー式の値",
+      "debugViewLocation": "デバッグビューの位置を制御します。",
+      "openBottom": "オープンボトム",
+      "openLeft": "左開き",
+      "openRight": "オープンライト",
+      "pauseAll": "ポーズ・オール",
+      "reveal": "暴露",
+      "threads": "スレッド",
+      "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
+    },
+    "editor": {
+      "ariaLabel": "フォーカスされたときのエディタのテキストエリアのアリア・ラベルです。",
+      "autoSaveDelay": "オートセーブの遅延時間をミリ秒単位で設定します。",
+      "autoSaveSetting": "ダーティファイルの自動保存を制御します。",
+      "automaticLayout": "エディタが、そのコンテナ・ドーム・ノードのサイズが変更されたかどうかをチェックする間隔をインストールすることを有効にします。これを有効にすると、パフォーマンスに深刻な影響を与える可能性があります。",
+      "contextmenu": "カスタムコンテクストメニューを有効にするかどうかを制御します。",
+      "disableLayerHinting": "エディタのマージンとラインのレイヤーで、`transform: translate3d(0px, 0px, 0px)`の使用を無効にします。transform: translate3d(0px, 0px, 0px)`の使用は、ブラウザが追加のレイヤーを作成するためのヒントとして機能します。",
+      "disableMonospaceOptimizations": "等幅フォントに対する最適化を有効にするかどうかを制御します。",
+      "extraEditorClassName": "エディタに追加されるクラス名。",
+      "fixedOverflowWidgets": "オーバーフローウィジェットを `fixed` として表示するかどうかを制御します。",
+      "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
+      "mouseStyle": "マウスポインタのスタイルを制御します。",
+      "overviewRulerLanes": "オーバービュールーラーが表示する垂直方向のレーンの数です。",
+      "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
+      "readOnly": "エディタがリードオンリーであるかどうかを制御します。",
+      "renderValidationDecorations": "エディタが検証用の装飾を表示するかどうかを制御します。",
+      "revealHorizontalRightPadding": "カーソルを表示すると、仮想パディング(px)がカーソルに追加され、カーソルが矩形になります。この仮想パディングにより、ビューポートの端にぶつかる前にカーソルが表示されるようになります。",
+      "selectOnLineNumbers": "行番号をクリックしたときに、該当する行を選択するかどうかを制御する",
+      "showAllEditors": "開いているエディタをすべて表示",
+      "splitHorizontal": "スプリットエディタ横",
+      "splitVertical": "スプリットエディタ縦",
+      "stopRenderingLineAfter": "パフォーマンスガード。x文字以降の行の描画を停止します。",
+      "suggest.insertHighlight": "例えば、`insertMode` が `replace` であるにもかかわらず、補完機能は `insert` しかサポートしていない場合などです。",
+      "wordWrapBreakAfterCharacters": "単語の折り返し文字を設定します。これらの文字の後に改行が入ります。",
+      "wordWrapBreakBeforeCharacters": "単語の折り返し文字を設定します。これらの文字の前に改行が入ります。",
+      "wordWrapOverride1": "wordWrap`の設定を上書きします。",
+      "wordWrapOverride2": "wordWrapOverride1`の設定を上書きします。"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
+    },
+    "filesystem": {
+      "copyDownloadLink": "コピー・ダウンロード・リンク",
+      "filesExclude": "ファイルやフォルダーを除外するためのグロブパターンを設定します。例えば、ファイルエクスプローラーでは、この設定をもとにファイルやフォルダーの表示・非表示を決定します。",
+      "maxConcurrentUploads": "複数のファイルをアップロードする際に、同時にアップロードするファイルの最大数です。0の場合は、すべてのファイルが同時にアップロードされます。",
+      "maxFileSizeMB": "開くことのできる最大ファイルサイズ(MB)を制御します。",
+      "processedOutOf": "{1}のうち{0}を処理",
+      "uploadFiles": "ファイルのアップロード...",
+      "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
+    },
+    "getting-started": {
+      "newExtension": "新しいエクステンションの構築",
+      "newPlugin": "新しいプラグインの構築"
+    },
+    "git": {
+      "addSignedOff": "サイン・オフ・バイの追加",
+      "amendReuseMessag": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
+      "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutCreateLocalBranchWithName": "名前:{0}で新しいローカルブランチを作成します。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutProvideBranchName": "支店名をご記入ください。",
+      "checkoutSelectRef": "チェックアウトするRefを選択するか、新しいローカルブランチを作成します。",
+      "cloneQuickInputLabel": "Gitリポジトリの場所を指定してください。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "cloneRepository": "Gitリポジトリをクローンします。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "compareWith": "比べてみると...",
+      "compareWithBranchOrTag": "現在アクティブな{0}のブランチと比較するブランチやタグを選びます。",
+      "dirtyDiffLinesLimit": "エディタの行数がこの制限を超えている場合、ダーティな diff デコレーションを表示しません。",
+      "dropStashMessage": "スタッシュの削除に成功しました。",
+      "editorDecorationsEnabled": "エディタにgitデコレーションを表示します。",
+      "fetchPickRemote": "フェッチするリモートを選びます。",
+      "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
+      "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
+      "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
+      "noPreviousCommit": "修正する前のコミットがない",
+      "noRepositoriesSelected": "リポジトリが選択されていません。",
+      "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
+      "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "代わりに `when` 句を使用してください。"
+    },
+    "markers": {
+      "clearAll": "クリアオール",
+      "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
+    },
+    "messages": {
+      "notificationTimeout": "このタイムアウト後は、情報提供のための通知が非表示になります。",
+      "toggleNotifications": "通知の切り替え"
+    },
+    "mini-browser": {
+      "typeUrl": "URLを入力する"
+    },
+    "monaco": {
+      "noSymbolsMatching": "シンボルが一致しない",
+      "typeToSearchForSymbols": "記号を検索するタイプ"
+    },
+    "navigator": {
+      "autoReveal": "オートリヴェール",
+      "refresh": "エクスプローラーでの更新",
+      "reveal": "エクスプローラーでの表示",
+      "toggleHiddenFiles": "隠しファイルのトグル"
+    },
+    "output": {
+      "clearOutputChannel": "クリア出力チャンネル...",
+      "closeOutputChannel": "出力チャンネルを閉じる...",
+      "hiddenChannels": "隠しチャンネル",
+      "hideOutputChannel": "出力チャンネルを隠す...",
+      "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
+      "outputChannels": "出力チャンネル",
+      "showOutputChannel": "出力チャンネルを表示..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
+      "debugInstance": "デバッグインスタンス",
+      "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
+      "hostedPlugin": "ホスト型プラグイン",
+      "hostedPluginRunning": "ホスト型プラグイン: 実行中",
+      "hostedPluginStarting": "ホスト型プラグイン: 開始",
+      "hostedPluginStopped": "ホスト型プラグイン: 停止中",
+      "hostedPluginWatching": "ホストされたプラグイン: ウォッチング",
+      "instanceTerminated": "{0}は終了しました。",
+      "launchOutFiles": "生成されたJavaScriptファイルを探すためのグロブパターンの配列です(`${pluginPath}`はプラグインの実際のパスに置き換えられます)。",
+      "noValidPlugin": "指定されたフォルダに有効なプラグインが含まれていません。",
+      "notRunning": "ホスト側のインスタンスが起動していない。",
+      "pluginFolder": "プラグインフォルダが設定されています。{0}",
+      "preventedNewTab": "お使いのブラウザで新しいタブが開かない",
+      "restartInstance": "インスタンスの再起動",
+      "running": "ホストされているインスタンスは、次のように実行されています。",
+      "select": "セレクト",
+      "selectPath": "セレクトパス",
+      "startInstance": "インスタンスの開始",
+      "starting": "ホストされたインスタンス・サーバーの起動 ...",
+      "stopInstance": "インスタンスの停止",
+      "unknownTerminated": "インスタンスが終了しました。",
+      "watchMode": "開発中のプラグインにウォッチャーを実行"
+    },
+    "plugin-ext": {
+      "plugins": "プラグイン",
+      "signInAgain": "拡張子「{0}」は、「{1}」を使って再度サインインしてほしいと言っています。",
+      "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
+      "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
+    },
+    "preview": {
+      "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
+    },
+    "property-view": {
+      "created": "作成",
+      "directory": "ディレクトリ",
+      "lastModified": "最終更新日",
+      "location": "所在地",
+      "path": "パス",
+      "properties": "プロパティ",
+      "size": "サイズ",
+      "symbolicLink": "シンボリックリンク"
+    },
+    "scm": {
+      "amend": "修正",
+      "amendHeadCommit": "HEADコミット",
+      "amendLastCommit": "前回のコミットを修正",
+      "changeRepository": "リポジトリの変更...",
+      "history": "歴史",
+      "noRepositoryFound": "リポジトリが見つからない",
+      "unamend": "くり返す",
+      "unamendCommit": "未修正のコミット"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "無視されたファイルを含める",
+      "noFolderSpecified": "フォルダを開いていない、または指定していない。現在、開いているファイルのみが検索されます。",
+      "resultSubset": "これは、すべての結果の一部に過ぎません。より具体的な検索用語を使って、結果リストを絞り込んでください。",
+      "searchOnEditorModification": "修正されたときにアクティブなエディタを検索します。"
+    },
+    "task": {
+      "attachTask": "タスクの添付...",
+      "clearHistory": "明確な歴史",
+      "openUserTasks": "ユーザータスクを開く"
+    },
+    "terminal": {
+      "confirmClose": "アクティブなターミナルセッションがある場合、ウィンドウが閉じるときに確認するかどうかを制御します。",
+      "confirmCloseAlways": "端子があるかどうかは必ず確認してください。",
+      "confirmCloseChildren": "子プロセスが存在する端末があるかどうかを確認します。",
+      "confirmCloseNever": "絶対に確認しないでください。",
+      "enableCopy": "ctrl-c(macOSではcmd-c)で選択されたテキストをコピーできるようになりました。",
+      "enablePaste": "ctrl-v(macOSではcmd-v)でクリップボードからの貼り付けを可能にする。",
+      "shellArgsLinux": "Linux端末で使用するコマンドライン引数です。",
+      "shellArgsOsx": "macOSのターミナルで使用するコマンドライン引数です。",
+      "shellArgsWindows": "Windows端末で使用するコマンドライン引数です。",
+      "shellLinux": "Linuxでターミナルが使用するシェルのパス(デフォルト:'{0}'})。",
+      "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
+      "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。",
+      "terminate": "終了",
+      "terminateActive": "アクティブなターミナルセッションを終了しますか?",
+      "terminateActiveMultiple": "{0}のアクティブな端末セッションを終了しますか?"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "サブタイプヒエラルキー",
+      "supertypeHierarchy": "スーパータイプヒエラルキー",
+      "typeHierarchy": "タイプ階層"
+    },
+    "vsx-registry": {
+      "openVSX": "VSXレジストリを開く",
+      "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
+      "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。"
+    },
+    "webview": {
+      "goToReadme": "READMEに戻る",
+      "messageWarning": "           {0}エンドポイントのホストパターンが`{1}`に変更されました。パターンを変更すると、セキュリティ上の脆弱性が発生する可能性があります。             詳しくは `{2}` をご覧ください。"
+    },
+    "workspace": {
+      "closeWorkspace": "本当にワークスペースを閉じたいのですか?",
+      "compareWithEachOther": "互いの比較",
+      "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
+      "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
+      "confirmDeletePermanently.title": "ファイル削除時のエラー",
+      "duplicate": "デュプリケート",
+      "failApply": "新しいファイルに変更を適用できなかった",
+      "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
+      "noErasure": "注:ディスクからは何も消去されません",
+      "openRecentPlaceholder": "開きたいワークスペースの名前を入力する",
+      "openRecentWorkspace": "最近のワークスペースを開く...",
+      "preserveWindow": "ワークスペースを現在のウィンドウで開けるようにします。",
+      "removeFolder": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "removeFolders": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "supportMultiRootWorkspace": "マルチルート・ワークスペースのサポートを有効にするかどうかを制御します。",
+      "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
+      "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
+      "trustPrompt": "ワークスペースを信頼するための起動時のプロンプトを表示するタイミングを制御します。",
+      "trustRequest": "拡張機能がワークスペースの信頼を要求していますが、対応する API はまだ完全にはサポートされていません。このワークスペースを信頼しますか?",
+      "untitled-cleanup": "名称未設定のワークスペースファイルが多数あるようです。{0}を確認して、未使用のファイルを削除してください。",
+      "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
+      "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
+    }
+  }
+}

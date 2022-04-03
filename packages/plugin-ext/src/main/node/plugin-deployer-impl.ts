@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -33,7 +33,7 @@ import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-han
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
 import { ILogger, Emitter, ContributionProvider } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
-import { performance } from 'perf_hooks';
+import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
 @injectable()
 export class PluginDeployerImpl implements PluginDeployer {
@@ -49,6 +49,9 @@ export class PluginDeployerImpl implements PluginDeployer {
 
     @inject(PluginCliContribution)
     protected readonly cliContribution: PluginCliContribution;
+
+    @inject(Stopwatch)
+    protected readonly stopwatch: Stopwatch;
 
     /**
      * Inject all plugin resolvers found at runtime.
@@ -117,7 +120,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             }
         }
 
-        const startDeployTime = performance.now();
+        const deployPlugins = this.measure('deployPlugins');
         const unresolvedUserEntries = context.userEntries.map(id => ({
             id,
             type: PluginType.User
@@ -127,8 +130,9 @@ export class PluginDeployerImpl implements PluginDeployer {
             type: PluginType.System
         }));
         const plugins = await this.resolvePlugins([...unresolvedUserEntries, ...unresolvedSystemEntries]);
+        deployPlugins.log('Resolve plugins list');
         await this.deployPlugins(plugins);
-        this.logMeasurement('Deploy plugins list', startDeployTime);
+        deployPlugins.log('Deploy plugins list');
     }
 
     async undeploy(pluginId: string): Promise<void> {
@@ -138,9 +142,9 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     async deploy(plugin: UnresolvedPluginEntry): Promise<void> {
-        const startDeployTime = performance.now();
+        const deploy = this.measure('deploy');
         await this.deployMultipleEntries([plugin]);
-        this.logMeasurement('Deploy plugin entry', startDeployTime);
+        deploy.log(`Deploy plugin ${plugin}`);
     }
 
     protected async deployMultipleEntries(plugins: UnresolvedPluginEntry[]): Promise<void> {
@@ -310,7 +314,7 @@ export class PluginDeployerImpl implements PluginDeployer {
         return pluginDeployerEntries;
     }
 
-    protected logMeasurement(prefix: string, startTime: number): void {
-        console.log(`${prefix} took: ${(performance.now() - startTime).toFixed(1)} ms`);
+    protected measure(name: string): Measurement {
+        return this.stopwatch.start(name);
     }
 }

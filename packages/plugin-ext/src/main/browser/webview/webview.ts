@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
 *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -44,6 +44,7 @@ import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { isFirefox } from '@theia/core/lib/browser/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
@@ -198,14 +199,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.doShow();
         // iframe has to be reloaded when moved to another DOM element
         this.toDisposeOnDetach.push(Disposable.create(() => this.forceHide()));
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addEventListener(this.node, 'focus', () => {
             if (this.element) {
@@ -214,12 +215,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         });
     }
 
-    protected onBeforeShow(msg: Message): void {
+    protected override onBeforeShow(msg: Message): void {
         super.onBeforeShow(msg);
         this.doShow();
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.doHide();
     }
@@ -250,6 +251,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         const element = document.createElement('iframe');
         element.className = 'webview';
         element.sandbox.add('allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads');
+        if (!isFirefox) {
+            element.setAttribute('allow', 'clipboard-read; clipboard-write; usb; serial; hid;');
+        }
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
         element.style.border = 'none';
         element.style.width = '100%';
@@ -410,7 +414,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             });
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
     }

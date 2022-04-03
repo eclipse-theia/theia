@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import {
     LanguagesExt,
@@ -35,6 +35,7 @@ import { PluginModel } from '../common/plugin-protocol';
 import { Disposable, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import {
+    CodeActionProviderDocumentation,
     CompletionContext,
     CompletionResultDto,
     Completion,
@@ -91,6 +92,7 @@ import { CallHierarchyAdapter } from './languages/call-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 import { isReadonlyArray } from '../common/arrays';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -179,10 +181,11 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.callId++;
     }
 
-    private createDisposable(callId: number): theia.Disposable {
+    private createDisposable(callId: number, onDispose?: () => void): theia.Disposable {
         return new Disposable(() => {
             this.adaptersMap.delete(callId);
             this.proxy.$unregister(callId);
+            onDispose?.();
         });
     }
 
@@ -446,13 +449,26 @@ export class LanguagesExtImpl implements LanguagesExt {
         metadata?: theia.CodeActionProviderMetadata
     ): theia.Disposable {
         const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : '', this.commands));
+
+        let documentation: CodeActionProviderDocumentation | undefined;
+        let disposables: DisposableCollection | undefined;
+        if (metadata && metadata.documentation) {
+            disposables = new DisposableCollection();
+            documentation = metadata.documentation.map(doc => ({
+                kind: doc.kind.value,
+                command: this.commands.converter.toSafeCommand(doc.command, disposables!)
+            }));
+        }
+
         this.proxy.$registerQuickFixProvider(
             callId,
             pluginInfo,
             this.transformDocumentSelector(selector),
-            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value!) : undefined
+            metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value) : undefined,
+            documentation
         );
-        return this.createDisposable(callId);
+
+        return this.createDisposable(callId, disposables?.dispose);
     }
 
     $provideCodeActions(handle: number,
@@ -463,6 +479,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     ): Promise<CodeAction[] | undefined> {
         return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context, token), undefined);
     }
+
+    $releaseCodeActions(handle: number, cacheIds: number[]): void {
+        this.withAdapter(handle, CodeActionAdapter, adapter => adapter.releaseCodeActions(cacheIds), undefined);
+    }
+
+    $resolveCodeAction(handle: number, cacheId: number, token: theia.CancellationToken): Promise<WorkspaceEditDto | undefined> {
+        return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.resolveCodeAction(cacheId, token), undefined);
+    };
+
     // ### Code Actions Provider end
 
     // ### Code Lens Provider begin
@@ -506,9 +531,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Code Reference Provider end
 
     // ### Document Symbol Provider begin
-    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider, pluginInfo: PluginInfo): theia.Disposable {
+    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider, pluginInfo: PluginInfo,
+        metadata?: theia.DocumentSymbolProviderMetadata): theia.Disposable {
         const callId = this.addNewAdapter(new OutlineAdapter(this.documents, provider));
-        this.proxy.$registerOutlineSupport(callId, pluginInfo, this.transformDocumentSelector(selector));
+        const displayName = (metadata && metadata.label) || getPluginLabel(pluginInfo);
+        this.proxy.$registerOutlineSupport(callId, pluginInfo, this.transformDocumentSelector(selector), displayName);
         return this.createDisposable(callId);
     }
 
@@ -674,4 +701,8 @@ function serializeIndentation(indentationRules?: theia.IndentationRule): Seriali
         indentNextLinePattern: serializeRegExp(indentationRules.indentNextLinePattern),
         unIndentedLinePattern: serializeRegExp(indentationRules.unIndentedLinePattern)
     };
+}
+
+function getPluginLabel(pluginInfo: PluginInfo): string {
+    return pluginInfo.displayName || pluginInfo.name;
 }

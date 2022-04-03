@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -33,23 +33,7 @@ export { PreferenceScope };
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
  * This means that the value from a more general scope will be used.
  */
-export interface PreferenceChange {
-    /**
-     * The name of the changed preference.
-     */
-    readonly preferenceName: string;
-    /**
-     * The new value of the changed preference.
-     */
-    readonly newValue?: any;
-    /**
-     * The old value of the changed preference.
-     */
-    readonly oldValue?: any;
-    /**
-     * The {@link PreferenceScope} of the changed preference.
-     */
-    readonly scope: PreferenceScope;
+export interface PreferenceChange extends PreferenceProviderDataChange {
     /**
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
@@ -58,9 +42,10 @@ export interface PreferenceChange {
 }
 
 export class PreferenceChangeImpl implements PreferenceChange {
-    constructor(
-        private change: PreferenceProviderDataChange
-    ) { }
+    protected readonly change: PreferenceProviderDataChange;
+    constructor(change: PreferenceProviderDataChange) {
+        this.change = deepFreeze(change);
+    }
 
     get preferenceName(): string {
         return this.change.preferenceName;
@@ -73,6 +58,9 @@ export class PreferenceChangeImpl implements PreferenceChange {
     }
     get scope(): PreferenceScope {
         return this.change.scope;
+    }
+    get domain(): string[] | undefined {
+        return this.change.domain;
     }
 
     // TODO add tests

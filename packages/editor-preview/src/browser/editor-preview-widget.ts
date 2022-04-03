@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2021 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { DockPanel, TabBar, Widget } from '@theia/core/lib/browser';
+import { DockPanel, TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { Disposable, DisposableCollection, Emitter, SelectionService } from '@theia/core/lib/common';
 import { find } from '@theia/core/shared/@phosphor/algorithm';
@@ -35,8 +35,8 @@ export class EditorPreviewWidget extends EditorWidget {
     }
 
     constructor(
-        readonly editor: TextEditor,
-        protected readonly selectionService: SelectionService
+        editor: TextEditor,
+        selectionService: SelectionService
     ) {
         super(editor, selectionService);
         this.toDispose.push(this.onDidChangePreviewStateEmitter);
@@ -44,13 +44,23 @@ export class EditorPreviewWidget extends EditorWidget {
     }
 
     initializePreview(): void {
+        const oneTimeListeners = new DisposableCollection();
         this._isPreview = true;
         this.title.className += ` ${PREVIEW_TITLE_CLASS}`;
         const oneTimeDirtyChangeListener = this.saveable.onDirtyChanged(() => {
             this.convertToNonPreview();
-            oneTimeDirtyChangeListener.dispose();
+            oneTimeListeners.dispose();
         });
-        this.toDispose.push(oneTimeDirtyChangeListener);
+        oneTimeListeners.push(oneTimeDirtyChangeListener);
+        const oneTimeTitleChangeHandler = () => {
+            if (this.title.className.indexOf(PINNED_CLASS) >= 0) {
+                this.convertToNonPreview();
+                oneTimeListeners.dispose();
+            }
+        };
+        this.title.changed.connect(oneTimeTitleChangeHandler);
+        oneTimeListeners.push(Disposable.create(() => this.title.changed.disconnect(oneTimeTitleChangeHandler)));
+        this.toDispose.push(oneTimeListeners);
     }
 
     convertToNonPreview(): void {
@@ -64,7 +74,7 @@ export class EditorPreviewWidget extends EditorWidget {
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this._isPreview) {
             this.checkForTabbarChange();
@@ -87,12 +97,12 @@ export class EditorPreviewWidget extends EditorWidget {
         }
     }
 
-    storeState(): { isPreview: boolean, editorState: object } {
+    override storeState(): { isPreview: boolean, editorState: object } {
         const { _isPreview: isPreview } = this;
         return { isPreview, editorState: this.editor.storeViewState() };
     }
 
-    restoreState(oldState: { isPreview: boolean, editorState: object }): void {
+    override restoreState(oldState: { isPreview: boolean, editorState: object }): void {
         if (!oldState.isPreview) {
             this.convertToNonPreview();
         }

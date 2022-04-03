@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from 'inversify';
 import { find, map, toArray, some } from '@phosphor/algorithm';
@@ -272,7 +272,8 @@ export class SidePanelHandler {
         const items = toArray(map(this.tabBar.titles, title => <SidePanel.WidgetItem>{
             widget: title.owner,
             rank: SidePanelHandler.rankProperty.get(title.owner),
-            expanded: title === currentTitle
+            expanded: title === currentTitle,
+            pinned: title.className.indexOf('theia-mod-pinned') >= 0
         }));
         // eslint-disable-next-line no-null/no-null
         const size = currentTitle !== null ? this.getPanelSize() : this.state.lastPanelSize;
@@ -288,13 +289,17 @@ export class SidePanelHandler {
 
         let currentTitle: Title<Widget> | undefined;
         if (layoutData.items) {
-            for (const { widget, rank, expanded } of layoutData.items) {
+            for (const { widget, rank, expanded, pinned } of layoutData.items) {
                 if (widget) {
                     if (rank) {
                         SidePanelHandler.rankProperty.set(widget, rank);
                     }
                     if (expanded) {
                         currentTitle = widget.title;
+                    }
+                    if (pinned) {
+                        widget.title.className += ' theia-mod-pinned';
+                        widget.title.closable = false;
                     }
                     // Add the widgets directly to the tab bar in the same order as they are stored
                     this.tabBar.addTab(widget.title);
@@ -725,6 +730,7 @@ export namespace SidePanel {
         /** Can be undefined in case the widget could not be restored. */
         widget?: Widget;
         expanded?: boolean;
+        pinned?: boolean;
     }
 
     export interface State {

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
@@ -38,7 +38,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         this.origins = [origin];
     }
 
-    update(data: Partial<DebugSourceBreakpointData>): void {
+    override update(data: Partial<DebugSourceBreakpointData>): void {
         super.update(data);
     }
 
@@ -140,7 +140,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         }
     }
 
-    protected readonly setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
+    protected override setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.setEnabled(event.target.checked);
     };
 
@@ -158,7 +158,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return this.line + (typeof this.column === 'number' ? ':' + this.column : '');
     }
 
-    doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
+    override doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
         if (this.logMessage || this.condition || this.hitCondition) {
             const { session } = this;
             if (this.logMessage) {

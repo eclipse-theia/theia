@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto, CodeActionProviderDocumentation
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
@@ -459,14 +459,15 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
     }
 
-    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const symbolProvider = this.createDocumentSymbolProvider(handle);
+        const symbolProvider = this.createDocumentSymbolProvider(handle, displayName);
         this.register(handle, monaco.modes.DocumentSymbolProviderRegistry.register(languageSelector, symbolProvider));
     }
 
-    protected createDocumentSymbolProvider(handle: number): monaco.languages.DocumentSymbolProvider {
+    protected createDocumentSymbolProvider(handle: number, displayName?: string): monaco.languages.DocumentSymbolProvider {
         return {
+            displayName,
             provideDocumentSymbols: (model, token) => this.provideDocumentSymbols(handle, model, token)
         };
     }
@@ -710,7 +711,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[]): void {
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[],
+        documentation?: CodeActionProviderDocumentation): void {
+
         const languageSelector = this.toLanguageSelector(selector);
         const quickFixProvider = {
             provideCodeActions: (model: monaco.editor.ITextModel, range: monaco.Range,
@@ -718,7 +721,10 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 const markers = monaco.services.StaticServices.markerService.get().read({ resource: model.uri }).filter(m => monaco.Range.areIntersectingOrTouching(m, range));
                 return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
             },
-            providedCodeActionKinds
+            resolveCodeAction: (codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> =>
+                this.resolveCodeAction(handle, codeAction, token),
+            providedCodeActionKinds,
+            documentation
         };
         this.register(handle, monaco.modes.CodeActionProviderRegistry.register(languageSelector, quickFixProvider));
     }
@@ -734,10 +740,18 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
         return {
             actions: actions.map(a => toMonacoAction(a)),
-            dispose: () => {
-                // TODO this.proxy.$releaseCodeActions(handle, cacheId);
-            }
+            dispose: () => this.proxy.$releaseCodeActions(handle, actions.map(a => a.cacheId))
         };
+    }
+
+    protected async resolveCodeAction(handle: number, codeAction: monaco.languages.CodeAction, token: monaco.CancellationToken): Promise<monaco.languages.CodeAction> {
+        // The cacheId is kept in toMonacoAction when converting a received CodeAction DTO to a monaco code action
+        const cacheId = (codeAction as CodeAction).cacheId;
+        if (cacheId !== undefined) {
+            const resolvedEdit = await this.proxy.$resolveCodeAction(handle, cacheId, token);
+            codeAction.edit = resolvedEdit && toMonacoWorkspaceEdit(resolvedEdit);
+        }
+        return codeAction;
     }
 
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveLocation: boolean): void {
@@ -1012,6 +1026,7 @@ function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {
     return {
         ...action,
         diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        disabled: action.disabled?.reason,
         edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
     };
 }

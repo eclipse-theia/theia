@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import '../../src/browser/style/output.css';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -126,13 +126,13 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onAfterAttach(message: Message): void {
+    protected override onAfterAttach(message: Message): void {
         super.onAfterAttach(message);
         Widget.attach(this.editorContainer, this.node);
         this.toDisposeOnDetach.push(Disposable.create(() => Widget.detach(this.editorContainer)));
     }
 
-    protected onActivateRequest(message: Message): void {
+    protected override onActivateRequest(message: Message): void {
         super.onActivateRequest(message);
         if (this.editor) {
             this.editor.focus();
@@ -141,7 +141,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onResize(message: Widget.ResizeMessage): void {
+    protected override onResize(message: Widget.ResizeMessage): void {
         super.onResize(message);
         MessageLoop.sendMessage(this.editorContainer, Widget.ResizeMessage.UnknownSize);
         for (const widget of toArray(this.editorContainer.widgets())) {
@@ -149,7 +149,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.onResize(Widget.ResizeMessage.UnknownSize); // Triggers an editor widget resize. (#8361)
     }

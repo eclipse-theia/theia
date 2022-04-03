@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import {
@@ -47,11 +47,13 @@ export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
 };
 
 export namespace SCM_COMMANDS {
-    export const CHANGE_REPOSITORY = Command.toLocalizedCommand({
+    export const CHANGE_REPOSITORY = {
         id: 'scm.change.repository',
-        category: 'SCM',
-        label: nls.localize('theia/scm/changeRepository', 'Change Repository...')
-    });
+        category: nls.localizeByDefault('SCM'),
+        originalCategory: 'SCM',
+        label: nls.localize('theia/scm/changeRepository', 'Change Repository...'),
+        originalLabel: 'Change Repository...'
+    };
     export const ACCEPT_INPUT = {
         id: 'scm.acceptInput'
     };
@@ -71,7 +73,8 @@ export namespace SCM_COMMANDS {
     };
     export const COLLAPSE_ALL = {
         id: 'scm.collapseAll',
-        category: 'SCM',
+        category: nls.localizeByDefault('SCM'),
+        originalCategory: 'SCM',
         tooltip: nls.localizeByDefault('Collapse All'),
         iconClass: codicon('collapse-all'),
         label: nls.localizeByDefault('Collapse All'),
@@ -138,7 +141,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         this.scmFocus.set(this.shell.currentWidget instanceof ScmWidget);
     }
 
-    registerCommands(commandRegistry: CommandRegistry): void {
+    override registerCommands(commandRegistry: CommandRegistry): void {
         super.registerCommands(commandRegistry);
         commandRegistry.registerCommand(SCM_COMMANDS.CHANGE_REPOSITORY, {
             execute: () => this.scmQuickOpenService.changeRepository(),
@@ -200,7 +203,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SCM_COMMANDS.ACCEPT_INPUT.id,

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../common/rpc-protocol';
@@ -57,8 +57,16 @@ const rpc = new RPCProtocolImpl({
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
 });
+
+const scripts = new Set<string>();
+
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-    ctx.importScripts('/context/' + contextPath);
+    const path = '/context/' + contextPath;
+
+    if (!scripts.has(path)) {
+        ctx.importScripts(path);
+        scripts.add(path);
+    }
 }
 const envExt = new WorkerEnvExtImpl(rpc);
 const storageProxy = new KeyValueStorageProxy(rpc);
@@ -79,6 +87,11 @@ const pluginManager = new PluginManagerExtImpl({
             if (isElectron()) {
                 ctx.importScripts(plugin.pluginPath);
             } else {
+                if (plugin.lifecycle.frontendModuleName) {
+                    // Set current module name being imported
+                    ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
+                }
+
                 ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
             }
         }

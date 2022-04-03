@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 Arm and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 Arm and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import '../../src/browser/style/scm-amend-component.css';
 
@@ -91,7 +91,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
-    async componentDidMount(): Promise<void> {
+    override async componentDidMount(): Promise<void> {
         this.toDisposeOnUnmount.push(Disposable.create(() => { /* mark as mounted */ }));
 
         const lastCommit = await this.getLastCommit();
@@ -105,7 +105,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         );
     }
 
-    componentWillUnmount(): void {
+    override componentWillUnmount(): void {
         this.toDisposeOnUnmount.dispose();
     }
 
@@ -273,7 +273,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         this.props.setCommitMessage(message);
     }
 
-    render(): JSX.Element {
+    override render(): JSX.Element {
         const neverShrink = this.state.amendingCommits.length <= 3;
 
         const style: React.CSSProperties = neverShrink

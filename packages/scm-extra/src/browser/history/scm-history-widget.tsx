@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
@@ -21,7 +21,6 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
 import URI from '@theia/core/lib/common/uri';
-import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
 import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
 import { ScmHistoryCommit, ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
@@ -88,7 +87,6 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected historySupport: ScmHistorySupport | undefined;
 
     constructor(
-        @inject(ScmService) protected readonly scmService: ScmService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(FileService) protected readonly fileService: FileService,
@@ -164,7 +162,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addListNavigationKeyListeners(this.node);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +174,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         });
     }
 
-    update(): void {
+    override update(): void {
         if (this.listView && this.listView.list) {
             this.listView.list.forceUpdateGrid();
         }
@@ -264,7 +262,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         } else {
             this.status = {
                 state: 'error',
-                errorMessage: <React.Fragment>{nls.localizeByDefault('There is no repository selected in this workspace.')}</React.Fragment>
+                errorMessage: <React.Fragment>{nls.localizeByDefault('No source control providers registered.')}</React.Fragment>
             };
         }
     }
@@ -401,7 +399,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected doLoadMoreRows(params: IndexRange): Promise<any> {
         let resolver: () => void;
-        const promise = new Promise(resolve => resolver = resolve);
+        const promise = new Promise<void>(resolve => resolver = resolve);
         const lastRow = this.scmNodes[params.stopIndex - 1];
         if (ScmCommitNode.is(lastRow)) {
             const toRevision = lastRow.commitDetails.id;
@@ -495,7 +493,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         }} />;
     }
 
-    protected navigateLeft(): void {
+    protected override navigateLeft(): void {
         const selected = this.getSelected();
         if (selected && this.status.state === 'ready') {
             if (ScmCommitNode.is(selected)) {
@@ -515,7 +513,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected navigateRight(): void {
+    protected override navigateRight(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
@@ -527,7 +525,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         this.update();
     }
 
-    protected handleListEnter(): void {
+    protected override handleListEnter(): void {
         const selected = this.getSelected();
         if (selected) {
             if (ScmCommitNode.is(selected)) {
@@ -570,7 +568,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
         return !!row;
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         return <InfiniteLoader
             isRowLoaded={this.checkIfRowIsLoaded}
             loadMoreRows={this.props.loadMoreRows}
@@ -608,7 +606,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
         </InfiniteLoader>;
     }
 
-    componentWillUpdate(): void {
+    override componentWillUpdate(): void {
         this.measureCache.clearAll();
     }
 

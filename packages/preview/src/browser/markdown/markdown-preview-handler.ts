@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -52,10 +52,9 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     renderContent(params: RenderContentParams): HTMLElement {
         const content = params.content;
         const renderedContent = this.getEngine().render(content, params);
-        const sanitizedContent = DOMPurify.sanitize(renderedContent);
         const contentElement = document.createElement('div');
         contentElement.classList.add(this.contentClass);
-        contentElement.innerHTML = sanitizedContent;
+        contentElement.innerHTML = DOMPurify.sanitize(renderedContent);
         this.addLinkClickedListener(contentElement, params);
         return contentElement;
     }
@@ -130,7 +129,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_SKIP;
             }
         };
-        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
+        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter);
         if (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;
             return element;
@@ -198,7 +197,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_REJECT;
             }
         };
-        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
+        const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter);
         const lineElements: HTMLElement[] = [];
         while (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;

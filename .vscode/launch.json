@@ -176,6 +176,21 @@
       "outFiles": [
         "${workspaceFolder}/../.js"
       ]
+    },
+    {
+      "name": "Run Playwright Test",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/playwright/node_modules/.bin/playwright",
+      "args": [
+        "test",
+        "--debug",
+        "--config=./configs/playwright.debug.config.ts",
+        "${fileBasenameNoExtension}"
+      ],
+      "cwd": "${workspaceFolder}/examples/playwright",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ],
   "compounds": [
@@ -183,8 +198,19 @@
       "name": "Launch Electron Backend & Frontend",
       "configurations": [
         "Launch Electron Backend",
+        "Attach to Plugin Host",
         "Attach to Electron Frontend"
-      ]
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Launch Browser Backend & Frontend",
+      "configurations": [
+        "Launch Browser Backend",
+        "Attach to Plugin Host",
+        "Launch Browser Frontend"
+      ],
+      "stopAll": true
     }
   ]
 }

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Bitsler and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Bitsler and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable max-len */
 
@@ -143,12 +143,13 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
-            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions'),
+            // nls-todo: Will be included by default in VSCode version 1.58.0
+            description: nls.localize('theia/terminal/confirmClose', 'Controls whether to confirm when the window closes if there are active terminal sessions.'),
             enum: ['never', 'always', 'hasChildProcesses'],
             enumDescriptions: [
-                nls.localizeByDefault('Never confirm.'),
-                nls.localizeByDefault('Always confirm if there are terminals.'),
-                nls.localizeByDefault('Confirm if there are any terminals that have child processes.'),
+                nls.localize('theia/terminal/confirmCloseNever', 'Never confirm.'),
+                nls.localize('theia/terminal/confirmCloseAlways', 'Always confirm if there are terminals.'),
+                nls.localize('theia/terminal/confirmCloseChildren', 'Confirm if there are any terminals that have child processes.'),
             ],
             default: 'never'
         }

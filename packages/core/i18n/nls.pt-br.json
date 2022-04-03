@@ -1,0 +1,277 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "Hierarquia de Chamadas Abertas"
+    },
+    "core": {
+      "common": {
+        "closeAll": "Fechar todas as abas",
+        "closeAllTabMain": "Fechar todas as abas na área principal",
+        "closeOtherTabMain": "Fechar outras guias na área principal",
+        "closeOthers": "Fechar outras abas",
+        "closeRight": "Fechar abas para a direita",
+        "closeTab": "Fechar a aba",
+        "closeTabMain": "Aba fechar na área principal",
+        "collapseAllTabs": "Colapso de todos os painéis laterais",
+        "collapseBottomPanel": "Alternar o painel inferior",
+        "collapseTab": "Painel lateral de colapso",
+        "showNextTabGroup": "Mudar para o grupo Next Tab",
+        "showNextTabInGroup": "Mudar para a próxima guia no grupo",
+        "showPreviousTabGroup": "Mudar para o grupo Previous Tab",
+        "showPreviousTabInGroup": "Mudar para a guia Anterior em Grupo",
+        "toggleMaximized": "Alternar ao máximo"
+      },
+      "highlightModifiedTabs": "Controla se uma borda superior é desenhada ou não nas abas do editor modificadas (sujas).",
+      "keyboard": {
+        "choose": "Escolha o Layout do Teclado",
+        "chooseLayout": "Escolha um layout de teclado",
+        "current": "(atual: {0})",
+        "currentLayout": " - layout atual",
+        "mac": "Teclados Mac",
+        "pc": "Teclados de PC",
+        "tryDetect": "Tente detectar o layout do teclado a partir das informações do navegador e pressione as teclas."
+      },
+      "quitMessage": "Quaisquer mudanças não salvas não serão salvas.",
+      "quitTitle": "Você tem certeza de que quer desistir?",
+      "resetWorkbenchLayout": "Restabelecer o layout do Workbench",
+      "sashDelay": "Controla o atraso de retroalimentação em milissegundos da área de arrasto entre as vistas/editores.",
+      "sashSize": "Controla o tamanho da área de feedback em pixels da área de arrasto entre as vistas/editores. Ajuste-o para um valor maior, se necessário.",
+      "silentNotifications": "Controla se devem ser suprimidas as popups de notificação."
+    },
+    "debug": {
+      "continueAll": "Continuar Todos",
+      "copyExpressionValue": "Valor de Expressão de Cópia",
+      "debugViewLocation": "Controla a localização da visão de debug.",
+      "openBottom": "Fundo Aberto",
+      "openLeft": "Esquerda aberta",
+      "openRight": "Aberto à direita",
+      "pauseAll": "Pausa Todos",
+      "reveal": "Revelar",
+      "threads": "Tópicos",
+      "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração"
+    },
+    "editor": {
+      "ariaLabel": "O selo da ária para a área de texto do editor, quando focado.",
+      "autoSaveDelay": "Configurar o atraso de economia automática em milissegundos.",
+      "autoSaveSetting": "Controla o salvamento automático de arquivos sujos.",
+      "automaticLayout": "Permita que o editor instale um intervalo para verificar se o tamanho do nó de domo do contêiner mudou. A ativação disto pode ter um impacto severo no desempenho.",
+      "contextmenu": "Controla se o menu de contexto personalizado deve ser ativado.",
+      "disableLayerHinting": "Desativar o uso do `transform: translate3d(0px, 0px, 0px)` para as camadas de margem e linhas do editor. A utilização do `transform: translate3d(0px, 0px, 0px)` funciona como uma dica para que os navegadores criem uma camada extra.",
+      "disableMonospaceOptimizations": "Controla se permite otimizações para fontes monoespaciais.",
+      "extraEditorClassName": "Nome de classe adicional a ser adicionado ao editor.",
+      "fixedOverflowWidgets": "Controla se os widgets de transbordo devem ser exibidos como `fixados`.",
+      "formatOnSaveTimeout": "Timeout em milissegundos, após o qual a formatação que é executada em arquivo salvo é cancelada.",
+      "mouseStyle": "Controla o estilo de ponteiro do mouse.",
+      "overviewRulerLanes": "O número de vias verticais que a régua de visão geral deve apresentar.",
+      "persistClosedEditors": "Controla se deve persistir o histórico do editor fechado para o espaço de trabalho através de recargas de janela.",
+      "readOnly": "Controla se o editor é somente de leitura.",
+      "renderValidationDecorations": "Controla se o editor faz decorações de validação.",
+      "revealHorizontalRightPadding": "Ao revelar o cursor, um estofamento virtual (px) é adicionado ao cursor, transformando-o em um retângulo. Este acolchoamento virtual garante que o cursor seja revelado antes de atingir a borda do viewport.",
+      "selectOnLineNumbers": "Controla se a linha correspondente deve ser selecionada ao clicar no número da linha",
+      "showAllEditors": "Mostrar todos os editores abertos",
+      "splitHorizontal": "Editor dividido Horizontal",
+      "splitVertical": "Split Editor Vertical",
+      "stopRenderingLineAfter": "Guarda de desempenho: Parar de renderizar uma linha após x caracteres.",
+      "suggest.insertHighlight": "Controla se modificações de texto inesperadas ao aceitar completações devem ser destacadas, por exemplo, \"modo de inserção\" é \"substituição\", mas a conclusão só suporta \"inserção\".",
+      "wordWrapBreakAfterCharacters": "Configurar os caracteres de embrulho de palavras. Uma pausa será introduzida após estes caracteres.",
+      "wordWrapBreakBeforeCharacters": "Configurar os caracteres de embrulho de palavras. Uma pausa será introduzida antes destes caracteres.",
+      "wordWrapOverride1": "Substituir a definição de \"palavraWrap\".",
+      "wordWrapOverride2": "Substituir o ajuste `wordWrapOverride1'."
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Pressione {0} para mostrar/ocultar arquivos ignorados)"
+    },
+    "filesystem": {
+      "copyDownloadLink": "Link para download de cópias",
+      "filesExclude": "Configurar padrões globais para excluir arquivos e pastas. Por exemplo, o explorador de arquivos decide quais arquivos e pastas mostrar ou ocultar com base nesta configuração.",
+      "maxConcurrentUploads": "Número máximo de arquivos simultâneos a serem carregados ao fazer upload de vários arquivos. 0 significa que todos os arquivos serão carregados ao mesmo tempo.",
+      "maxFileSizeMB": "Controla o tamanho máximo de arquivo em MB que é possível abrir.",
+      "processedOutOf": "Processado {0} de {1}",
+      "uploadFiles": "Carregar arquivos...",
+      "uploadedOutOf": "Carregado {0} de {1}"
+    },
+    "getting-started": {
+      "newExtension": "Construindo uma nova extensão",
+      "newPlugin": "Construindo um Novo Plugin"
+    },
+    "git": {
+      "addSignedOff": "Adicionar Signed-off-by",
+      "amendReuseMessag": "Para reutilizar a última mensagem de compromisso, pressione 'Enter' ou 'Escape' para cancelar.",
+      "amendRewrite": "Reescrever mensagem de compromisso anterior. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "checkoutCreateLocalBranchWithName": "Criar uma nova filial local com o nome: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "checkoutProvideBranchName": "Por favor, forneça um nome de filial.",
+      "checkoutSelectRef": "Selecione um árbitro para fazer o checkout ou crie uma nova filial local:",
+      "cloneQuickInputLabel": "Favor fornecer um local de repositório Git. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "cloneRepository": "Clonar o repositório Git: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "compareWith": "Comparar com...",
+      "compareWithBranchOrTag": "Escolha uma filial ou etiqueta para comparar com a filial atualmente ativa {0}:",
+      "dirtyDiffLinesLimit": "Não mostrar decorações difusas sujas, se a contagem de linhas do editor exceder este limite.",
+      "dropStashMessage": "Armazenamento removido com sucesso.",
+      "editorDecorationsEnabled": "Mostrar decorações de git no editor.",
+      "fetchPickRemote": "Escolha um controle remoto para ir buscar:",
+      "gitDecorationsColors": "Use a decoração colorida no navegador.",
+      "mergeQuickPickPlaceholder": "Escolha uma filial para fundir-se na filial atualmente ativa {0}:",
+      "missingUserInfo": "Certifique-se de configurar seu 'user.name' e 'user.email' em 'git'.",
+      "noPreviousCommit": "Nenhum compromisso anterior de emendar",
+      "noRepositoriesSelected": "Não foram selecionados repositórios.",
+      "repositoryNotInitialized": "O Repositório {0} ainda não foi inicializado.",
+      "stashChanges": "Mudanças de estoque. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "stashChangesWithMessage": "Mudanças de estoque com mensagem: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
+      "toggleBlameAnnotations": "Troca de anotações de culpa"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Utilize a cláusula `when` em seu lugar."
+    },
+    "markers": {
+      "clearAll": "Limpar tudo",
+      "tabbarDecorationsEnabled": "Mostrar os decoradores de problemas (marcadores de diagnóstico) nas barras de tabulação."
+    },
+    "messages": {
+      "notificationTimeout": "Notificações informativas serão ocultadas após este tempo limite.",
+      "toggleNotifications": "Notificações de alternância"
+    },
+    "mini-browser": {
+      "typeUrl": "Digite uma URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Sem símbolos correspondentes",
+      "typeToSearchForSymbols": "Digite para procurar por símbolos"
+    },
+    "navigator": {
+      "autoReveal": "Auto Revelação",
+      "refresh": "Refrescar no Explorer",
+      "reveal": "Revelar no Explorer",
+      "toggleHiddenFiles": "Alternar arquivos ocultos"
+    },
+    "output": {
+      "clearOutputChannel": "Canal de saída livre...",
+      "closeOutputChannel": "Fechar canal de saída...",
+      "hiddenChannels": "Canais ocultos",
+      "hideOutputChannel": "Esconder canal de saída...",
+      "maxChannelHistory": "O número máximo de entradas em um canal de saída.",
+      "outputChannels": "Canais de saída",
+      "showOutputChannel": "Mostrar canal de saída..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "A instância anfitriã já está funcionando.",
+      "debugInstance": "Instância de depuração",
+      "debugMode": "Usando a inspeção ou a inspeção-brk para o Node.js debug",
+      "failed": "Falha na execução da instância de plugin hospedado: {0}",
+      "hostedPlugin": "Plugin hospedado",
+      "hostedPluginRunning": "Plugin hospedado: Funcionamento",
+      "hostedPluginStarting": "Plugin hospedado: Início",
+      "hostedPluginStopped": "Plugin hospedado: Parado",
+      "hostedPluginWatching": "Plugin hospedado: Observando",
+      "instanceTerminated": "{0} foi encerrado",
+      "launchOutFiles": "O conjunto de padrões globais para localização de arquivos JavaScript gerados (`${pluginPath}` será substituído pelo caminho real do plugin).",
+      "noValidPlugin": "A pasta especificada não contém um plugin válido.",
+      "notRunning": "A instância hospedada não está funcionando.",
+      "pluginFolder": "A pasta de plugins está definida para: {0}",
+      "preventedNewTab": "Seu navegador impediu a abertura de uma nova aba",
+      "restartInstance": "Reinício da instância",
+      "running": "A instância anfitriã está funcionando em:",
+      "select": "Selecione",
+      "selectPath": "Selecione o caminho",
+      "startInstance": "Instância inicial",
+      "starting": "Iniciando o servidor de instância hospedado ...",
+      "stopInstance": "Parada de instância",
+      "unknownTerminated": "A instância foi encerrada",
+      "watchMode": "Executar o watcher no plugin em desenvolvimento"
+    },
+    "plugin-ext": {
+      "plugins": "Plugins",
+      "signInAgain": "A extensão '{0}' quer que você se inscreva novamente usando {1}.",
+      "webviewTrace": "Controla o rastreamento da comunicação com visualizações na web.",
+      "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."
+    },
+    "preview": {
+      "openByDefault": "Abrir a visualização em vez do editor por padrão."
+    },
+    "property-view": {
+      "created": "Criado em",
+      "directory": "Diretório",
+      "lastModified": "Última modificação",
+      "location": "Localização",
+      "path": "Caminho",
+      "properties": "Imóveis",
+      "size": "Tamanho",
+      "symbolicLink": "Elo simbólico"
+    },
+    "scm": {
+      "amend": "Emenda",
+      "amendHeadCommit": "Compromisso HEAD",
+      "amendLastCommit": "Emendar o último compromisso",
+      "changeRepository": "Repositório de Mudanças...",
+      "history": "História",
+      "noRepositoryFound": "Não foi encontrado nenhum repositório",
+      "unamend": "Unamend",
+      "unamendCommit": "Compromisso sem alterações"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Incluir Arquivos Ignorados",
+      "noFolderSpecified": "Você não abriu ou especificou uma pasta. Somente os arquivos abertos são pesquisados no momento.",
+      "resultSubset": "Este é apenas um subconjunto de todos os resultados. Use um termo de busca mais específico para restringir a lista de resultados.",
+      "searchOnEditorModification": "Pesquise o editor ativo quando modificado."
+    },
+    "task": {
+      "attachTask": "Anexar Tarefa...",
+      "clearHistory": "Histórico claro",
+      "openUserTasks": "Tarefas abertas para o usuário"
+    },
+    "terminal": {
+      "confirmClose": "Controla se deve confirmar quando a janela fecha se há sessões terminais ativas.",
+      "confirmCloseAlways": "Sempre confirme se existem terminais.",
+      "confirmCloseChildren": "Confirmar se há algum terminal que tenha processos infantis.",
+      "confirmCloseNever": "Nunca confirme.",
+      "enableCopy": "Habilitar ctrl-c (cmd-c em macOS) para copiar o texto selecionado",
+      "enablePaste": "Habilitar ctrl-v (cmd-v em macOS) para colar a partir da prancheta",
+      "shellArgsLinux": "Os argumentos de linha de comando a serem usados quando no terminal Linux.",
+      "shellArgsOsx": "Os argumentos de linha de comando a serem usados quando no terminal macOS.",
+      "shellArgsWindows": "Os argumentos de linha de comando a serem usados quando no terminal Windows.",
+      "shellLinux": "O caminho do shell que o terminal usa no Linux (padrão: '{0}'}).",
+      "shellOsx": "O caminho da concha que o terminal usa em macOS (padrão: '{0}'}).",
+      "shellWindows": "O caminho da concha que o terminal utiliza no Windows. (padrão: '{0}').",
+      "terminate": "Fim",
+      "terminateActive": "Você quer encerrar a sessão terminal ativa?",
+      "terminateActiveMultiple": "Você quer encerrar as {0} sessões ativas do terminal?"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Subtipo Hierarquia",
+      "supertypeHierarchy": "Supertipo Hierarquia",
+      "typeHierarchy": "Tipo Hierarquia"
+    },
+    "vsx-registry": {
+      "openVSX": "Registro VSX aberto",
+      "recommendedExtensions": "Uma lista dos nomes das extensões recomendadas para uso neste espaço de trabalho.",
+      "showRecommendedExtensions": "Controla se as notificações são mostradas para recomendações de extensão."
+    },
+    "webview": {
+      "goToReadme": "Ir para o LEIAME",
+      "messageWarning": "            O padrão de host do terminal {0} foi alterado para `{1}'; mudar o padrão pode levar a vulnerabilidades de segurança.             Veja `{2}` para mais informações."
+    },
+    "workspace": {
+      "closeWorkspace": "Você realmente quer fechar o espaço de trabalho?",
+      "compareWithEachOther": "Compare uns com os outros",
+      "confirmDeletePermanently.description": "Falha em excluir \"{0}\" usando o Lixo. Você quer excluir permanentemente em seu lugar?",
+      "confirmDeletePermanently.solution": "Você pode desativar o uso de Lixo nas preferências.",
+      "confirmDeletePermanently.title": "Erro ao apagar o arquivo",
+      "duplicate": "Duplicata",
+      "failApply": "Não foi possível aplicar alterações ao novo arquivo",
+      "failSaveAs": "Não é possível executar \"{0}\" para o widget atual.",
+      "noErasure": "Nota: Nada será apagado do disco",
+      "openRecentPlaceholder": "Digite o nome do espaço de trabalho que você deseja abrir",
+      "openRecentWorkspace": "Espaço de Trabalho Recente Aberto...",
+      "preserveWindow": "Permitir a abertura de espaços de trabalho na janela atual.",
+      "removeFolder": "Você tem certeza de que deseja remover a seguinte pasta do espaço de trabalho?",
+      "removeFolders": "Você tem certeza de que quer remover as seguintes pastas do espaço de trabalho?",
+      "supportMultiRootWorkspace": "Controla se o suporte de espaço de trabalho multi-raiz está habilitado.",
+      "trustEmptyWindow": "Controla se o espaço de trabalho vazio é ou não confiável por padrão.",
+      "trustEnabled": "Controla se a confiança no espaço de trabalho está ou não habilitada. Se desativado, todos os espaços de trabalho são confiáveis.",
+      "trustPrompt": "Controla quando a inicialização solicita confiança em um espaço de trabalho.",
+      "trustRequest": "Uma extensão solicita confiança no espaço de trabalho, mas a API correspondente ainda não é totalmente suportada. Você quer confiar neste espaço de trabalho?",
+      "untitled-cleanup": "Parece haver muitos arquivos de espaço de trabalho sem título. Por favor, verifique {0} e remova quaisquer arquivos não utilizados.",
+      "workspaceFolderAdded": "Foi criado um espaço de trabalho com múltiplas raízes. Você quer salvar sua configuração de espaço de trabalho como um arquivo?",
+      "workspaceFolderAddedTitle": "Pasta adicionada ao espaço de trabalho"
+    }
+  }
+}

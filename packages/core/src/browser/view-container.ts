@@ -1,24 +1,24 @@
-/********************************************************************************
- * Copyright (C) 2018-2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018-2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { interfaces, injectable, inject, postConstruct } from 'inversify';
 import { IIterator, toArray, find, some, every, map, ArrayExt } from '@phosphor/algorithm';
 import {
     Widget, EXPANSION_TOGGLE_CLASS, COLLAPSED_CLASS, CODICON_TREE_ITEM_CLASSES, MessageLoop, Message, SplitPanel,
-    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel
+    BaseWidget, addEventListener, SplitLayout, LayoutItem, PanelLayout, addKeyListener, waitForRevealed, UnsafeWidgetUtilities, DockPanel, PINNED_CLASS
 } from './widgets';
 import { Event as CommonEvent, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
@@ -197,6 +197,19 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.currentPart = expandedParts[0] || visibleParts[0];
     }
 
+    protected updateSplitterVisibility(): void {
+        const className = 'p-first-visible';
+        let firstFound = false;
+        for (const part of this.getParts()) {
+            if (!part.isHidden && !firstFound) {
+                part.addClass(className);
+                firstFound = true;
+            } else {
+                part.removeClass(className);
+            }
+        }
+    }
+
     protected titleOptions: ViewContainerTitleOptions | undefined;
 
     setTitleOptions(titleOptions: ViewContainerTitleOptions | undefined): void {
@@ -276,7 +289,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (title.iconClass) {
             this.title.iconClass = title.iconClass;
         }
-        if (title.closeable !== undefined) {
+        if (this.title.className.includes(PINNED_CLASS)) {
+            this.title.closable &&= false;
+        } else if (title.closeable !== undefined) {
             this.title.closable = title.closeable;
         }
     }
@@ -372,6 +387,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.refreshMenu(newPart);
         this.updateTitle();
         this.updateCurrentPart();
+        this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
         toRemoveWidget.pushAll([
@@ -387,6 +403,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.update();
                     this.updateTitle();
                     this.updateCurrentPart();
+                    this.updateSplitterVisibility();
                     this.fireDidChangeTrackableWidgets();
                 }
             }),
@@ -394,6 +411,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             newPart.onDidChangeVisibility(() => {
                 this.updateTitle();
                 this.updateCurrentPart();
+                this.updateSplitterVisibility();
             }),
             newPart.onCollapsed(() => {
                 this.containerLayout.updateCollapsed(newPart, this.enableAnimation);
@@ -648,7 +666,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return part;
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.currentPart) {
             this.currentPart.activate();
@@ -657,7 +675,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         const orientation = this.orientation;
         this.containerLayout.orientation = orientation;
         if (orientation === 'horizontal') {
@@ -668,18 +686,18 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeHide(msg: Message): void {
+    protected override onBeforeHide(msg: Message): void {
         super.onBeforeHide(msg);
         this.lastVisibleState = this.storeState();
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.updateTitle();
         this.lastVisibleState = undefined;
     }
 
-    protected onBeforeAttach(msg: Message): void {
+    protected override onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.node.addEventListener('p-dragenter', this, true);
         this.node.addEventListener('p-dragover', this, true);
@@ -687,7 +705,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.node.addEventListener('p-drop', this, true);
     }
 
-    protected onAfterDetach(msg: Message): void {
+    protected override onAfterDetach(msg: Message): void {
         super.onAfterDetach(msg);
         this.node.removeEventListener('p-dragenter', this, true);
         this.node.removeEventListener('p-dragover', this, true);
@@ -1049,7 +1067,7 @@ export class ViewContainerPart extends BaseWidget {
         this.onPartMovedEmitter.fire(newContainer);
     }
 
-    setHidden(hidden: boolean): void {
+    override setHidden(hidden: boolean): void {
         if (!this.canHide) {
             return;
         }
@@ -1100,7 +1118,7 @@ export class ViewContainerPart extends BaseWidget {
         return !this.toShowHeader.disposed || this.collapsed;
     }
 
-    protected getScrollContainer(): HTMLElement {
+    protected override getScrollContainer(): HTMLElement {
         return this.body;
     }
 
@@ -1188,21 +1206,21 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
-    protected onResize(msg: Widget.ResizeMessage): void {
+    protected override onResize(msg: Widget.ResizeMessage): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, Widget.ResizeMessage.UnknownSize);
         }
         super.onResize(msg);
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected override onUpdateRequest(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onUpdateRequest(msg);
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         if (!this.wrapped.isAttached) {
             UnsafeWidgetUtilities.attach(this.wrapped, this.body);
         }
@@ -1210,7 +1228,7 @@ export class ViewContainerPart extends BaseWidget {
         super.onAfterAttach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
+    protected override onBeforeDetach(msg: Message): void {
         super.onBeforeDetach(msg);
         if (this.toolbar.isAttached) {
             Widget.detach(this.toolbar);
@@ -1220,42 +1238,42 @@ export class ViewContainerPart extends BaseWidget {
         }
     }
 
-    protected onBeforeShow(msg: Message): void {
+    protected override onBeforeShow(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }
 
-    protected onBeforeHide(msg: Message): void {
+    protected override onBeforeHide(msg: Message): void {
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }
 
-    protected onChildRemoved(msg: Widget.ChildMessage): void {
+    protected override onChildRemoved(msg: Widget.ChildMessage): void {
         super.onChildRemoved(msg);
         // if wrapped is not disposed, but detached then we should not dispose it, but only get rid of this part
         this.toNoDisposeWrapped.dispose();
         this.dispose();
     }
 
-    protected onActivateRequest(msg: Message): void {
+    protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.collapsed) {
             this.header.focus();
@@ -1306,15 +1324,16 @@ export class ViewContainerLayout extends SplitLayout {
         return (this as any)._items as Array<LayoutItem & ViewContainerLayout.Item>;
     }
 
-    iter(): IIterator<ViewContainerPart> {
+    override iter(): IIterator<ViewContainerPart> {
         return map(this.items, item => item.widget);
     }
 
+    // @ts-expect-error TS2611 `SplitLayout.widgets` is declared as `readonly widgets` but is implemented as a getter.
     get widgets(): ViewContainerPart[] {
         return toArray(this.iter());
     }
 
-    attachWidget(index: number, widget: ViewContainerPart): void {
+    override attachWidget(index: number, widget: ViewContainerPart): void {
         super.attachWidget(index, widget);
         if (index > -1 && this.parent && this.parent.node.contains(this.widgets[index + 1]?.node)) {
             // Set the correct attach index to the DOM elements.
@@ -1325,7 +1344,7 @@ export class ViewContainerLayout extends SplitLayout {
         }
     }
 
-    moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
+    override moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
         const ref = this.widgets[toIndex < fromIndex ? toIndex : toIndex + 1];
         super.moveWidget(fromIndex, toIndex, widget);
         // Keep the order of `_widgets` array just as done before (by `super`) for the `_items` array -
@@ -1510,7 +1529,7 @@ export class ViewContainerLayout extends SplitLayout {
         requestAnimationFrame(updateFunc);
     }
 
-    protected onFitRequest(msg: Message): void {
+    protected override onFitRequest(msg: Message): void {
         for (const part of this.widgets) {
             const style = part.node.style;
             if (part.animatedSize !== undefined) {

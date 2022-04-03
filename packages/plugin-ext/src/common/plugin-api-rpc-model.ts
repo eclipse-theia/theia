@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as theia from '@theia/plugin';
 import { UriComponents } from './uri-components';
@@ -338,16 +338,21 @@ export interface CodeLensSymbol {
 }
 
 export interface CodeAction {
+    cacheId: number;
     title: string;
     command?: Command;
     edit?: WorkspaceEdit;
     diagnostics?: MarkerData[];
     kind?: string;
+    disabled?: { reason: string };
+    isPreferred?: boolean;
 }
 
 export interface CodeActionContext {
     only?: string;
 }
+
+export type CodeActionProviderDocumentation = ReadonlyArray<{ command: Command, kind: string }>;
 
 export interface CodeActionProvider {
     provideCodeActions(
@@ -511,11 +516,6 @@ export interface RenameLocation {
     text: string;
 }
 
-export interface RenameProvider {
-    provideRenameEdits(model: monaco.editor.ITextModel, position: Position, newName: string): PromiseLike<WorkspaceEdit & Rejection>;
-    resolveRenameLocation?(model: monaco.editor.ITextModel, position: Position): PromiseLike<RenameLocation & Rejection>;
-}
-
 export interface CallHierarchyDefinition {
     name: string;
     kind: SymbolKind;
@@ -574,22 +574,22 @@ export interface LinePreview {
     character: number;
 }
 
-export interface AuthenticationSession {
-    id: string;
-    accessToken: string;
-    account: { id: string, label: string };
-    scopes: ReadonlyArray<string>;
+/**
+ * @deprecated Use {@link theia.AuthenticationSession} instead.
+ */
+export interface AuthenticationSession extends theia.AuthenticationSession {
 }
 
-export interface AuthenticationSessionsChangeEvent {
-    added: ReadonlyArray<string>;
-    removed: ReadonlyArray<string>;
-    changed: ReadonlyArray<string>;
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderAuthenticationSessionsChangeEvent} instead.
+ */
+export interface AuthenticationSessionsChangeEvent extends theia.AuthenticationProviderAuthenticationSessionsChangeEvent {
 }
 
-export interface AuthenticationProviderInformation {
-    id: string;
-    label: string;
+/**
+ * @deprecated Use {@link theia.AuthenticationProviderInformation} instead.
+ */
+export interface AuthenticationProviderInformation extends theia.AuthenticationProviderInformation {
 }
 
 export interface CommentOptions {

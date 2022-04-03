@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -44,7 +44,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected parse(content: string): any {
+    protected override parse(content: string): any {
         const data = super.parse(content);
         if (WorkspaceData.is(data)) {
             const settings = { ...data.settings };
@@ -64,7 +64,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return {};
     }
 
-    protected getPath(preferenceName: string): string[] {
+    protected override getPath(preferenceName: string): string[] {
         const firstSegment = preferenceName.split('.', 1)[0];
         const remainder = preferenceName.slice(firstSegment.length + 1);
         if (this.belongsInSection(firstSegment, remainder)) {
@@ -82,6 +82,9 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return ['settings', preferenceName];
     }
 
+    /**
+     * @returns `true` if `firstSegment` is a section name (e.g. `tasks`, `launch`)
+     */
     protected belongsInSection(firstSegment: string, remainder: string): boolean {
         return this.configurations.isSectionName(firstSegment);
     }
@@ -90,7 +93,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return PreferenceScope.Workspace;
     }
 
-    getDomain(): string[] {
+    override getDomain(): string[] {
         // workspace file is treated as part of the workspace
         return this.workspaceService.tryGetRoots().map(r => r.resource.toString()).concat([this.options.workspaceUri.toString()]);
     }

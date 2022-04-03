@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import {
     AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution, CommonCommands
@@ -50,10 +50,10 @@ export namespace SearchInWorkspaceCommands {
         category: SEARCH_CATEGORY,
         label: 'Replace in Files'
     });
-    export const FIND_IN_FOLDER = Command.toLocalizedCommand({
+    export const FIND_IN_FOLDER = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.in-folder',
         category: SEARCH_CATEGORY,
-        label: 'Find in Folder'
+        label: 'Find in Folder...'
     });
     export const REFRESH_RESULTS = Command.toDefaultLocalizedCommand({
         id: 'search-in-workspace.refresh',
@@ -140,7 +140,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         await this.openView({ activate: false });
     }
 
-    async registerCommands(commands: CommandRegistry): Promise<void> {
+    override async registerCommands(commands: CommandRegistry): Promise<void> {
         super.registerCommands(commands);
         commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
             isEnabled: () => this.workspaceService.tryGetRoots().length > 0,
@@ -287,7 +287,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             : '';
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
@@ -295,7 +295,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         menus.registerMenuAction(NavigatorContextMenu.SEARCH, {
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id

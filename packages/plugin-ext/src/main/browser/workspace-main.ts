@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
@@ -22,7 +22,7 @@ import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event, ResourceResolver, CancellationToken } from '@theia/core';
@@ -52,6 +52,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private workspaceService: WorkspaceService;
 
+    private workspaceTrustService: WorkspaceTrustService;
+
     private fsPreferences: FileSystemPreferences;
 
     protected readonly toDispose = new DisposableCollection();
@@ -67,6 +69,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.resourceResolver = container.get(TextContentResourceResolver);
         this.pluginServer = container.get(PluginServer);
         this.workspaceService = container.get(WorkspaceService);
+        this.workspaceTrustService = container.get(WorkspaceTrustService);
         this.fsPreferences = container.get(FileSystemPreferences);
 
         this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots().map(root => root.resource.toString()));
@@ -76,6 +79,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(stat => {
             this.proxy.$onWorkspaceLocationChanged(stat);
         }));
+
+        this.workspaceTrustService.getWorkspaceTrust().then(trust => this.proxy.$onWorkspaceTrustChanged(trust));
     }
 
     dispose(): void {
@@ -269,6 +274,9 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(root => new URI(root)));
     }
 
+    async $requestWorkspaceTrust(_options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {
+        return this.workspaceTrustService.requestWorkspaceTrust();
+    }
 }
 
 /**

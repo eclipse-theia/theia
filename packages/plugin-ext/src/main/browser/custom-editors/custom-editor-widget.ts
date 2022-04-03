@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 SAP SE or an SAP affiliate company and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -25,9 +25,9 @@ import { CustomEditorModel } from './custom-editors-main';
 
 @injectable()
 export class CustomEditorWidget extends WebviewWidget implements SaveableSource, NavigatableWidget {
-    static FACTORY_ID = 'plugin-custom-editor';
+    static override FACTORY_ID = 'plugin-custom-editor';
 
-    id: string;
+    override id: string;
     resource: URI;
 
     protected _modelRef: Reference<CustomEditorModel>;
@@ -47,7 +47,7 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
     protected readonly undoRedoService: UndoRedoService;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.id = CustomEditorWidget.FACTORY_ID + ':' + this.identifier.id;
         this.toDispose.push(this.fileService.onDidRunOperation(e => {
@@ -83,14 +83,14 @@ export class CustomEditorWidget extends WebviewWidget implements SaveableSource,
         return this.resource.withPath(resourceUri.path);
     }
 
-    storeState(): CustomEditorWidget.State {
+    override storeState(): CustomEditorWidget.State {
         return {
             ...super.storeState(),
             strResource: this.resource.toString(),
         };
     }
 
-    restoreState(oldState: CustomEditorWidget.State): void {
+    override restoreState(oldState: CustomEditorWidget.State): void {
         const { strResource } = oldState;
         this.resource = new URI(strResource);
         super.restoreState(oldState);

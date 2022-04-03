@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
@@ -24,9 +24,8 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { DebugConsoleMode } from '../../common/debug-configuration';
 import { DebugSession } from '../debug-session';
-import { DebugSessionManager } from '../debug-session-manager';
+import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
@@ -71,9 +70,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     @postConstruct()
     protected init(): void {
         this.debugSessionManager.onDidCreateDebugSession(session => {
-            const topParent = this.findParentSession(session);
-            if (topParent) {
-                const parentConsoleSession = this.consoleSessionManager.get(topParent.id);
+            const consoleParent = session.findConsoleParent();
+            if (consoleParent) {
+                const parentConsoleSession = this.consoleSessionManager.get(consoleParent.id);
                 if (parentConsoleSession instanceof DebugConsoleSession) {
                     session.on('output', event => parentConsoleSession.logOutput(parentConsoleSession.debugSession, event));
                 }
@@ -83,23 +82,27 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 session.on('output', event => consoleSession.logOutput(session, event));
             }
         });
+        this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event));
         this.debugSessionManager.onDidDestroyDebugSession(session => {
             this.consoleSessionManager.delete(session.id);
         });
     }
 
-    protected findParentSession(session: DebugSession): DebugSession | undefined {
-        if (session.configuration.consoleMode !== DebugConsoleMode.MergeWithParent) {
-            return undefined;
+    protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
+        if (!event.current) {
+            this.consoleSessionManager.selectedSession = undefined;
+        } else {
+            const topSession = event.current.findConsoleParent() || event.current;
+            const consoleSession = topSession ? this.consoleSessionManager.get(topSession.id) : undefined;
+            this.consoleSessionManager.selectedSession = consoleSession;
+            const consoleSelector = document.getElementById('debugConsoleSelector');
+            if (consoleSession && consoleSelector instanceof HTMLSelectElement) {
+                consoleSelector.value = consoleSession.id;
+            }
         }
-        let debugSession: DebugSession | undefined = session;
-        do {
-            debugSession = debugSession.parentSession;
-        } while (debugSession?.parentSession && debugSession.configuration.consoleMode === DebugConsoleMode.MergeWithParent);
-        return debugSession;
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(DebugConsoleCommands.CLEAR, {
             isEnabled: widget => this.withWidget(widget, () => true),

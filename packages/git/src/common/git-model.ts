@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core';
@@ -108,6 +108,7 @@ export namespace GitFileStatus {
             case GitFileStatus.New: return !!staged ? nls.localize('theia/git/added', 'Added') : nls.localize('theia/git/unstaged', 'Unstaged');
             case GitFileStatus.Renamed: return nls.localize('theia/git/renamed', 'Renamed');
             case GitFileStatus.Copied: return nls.localize('theia/git/copied', 'Copied');
+            // eslint-disable-next-line @theia/localization-check
             case GitFileStatus.Modified: return nls.localize('vscode.git/repository/modified', 'Modified');
             case GitFileStatus.Deleted: return nls.localize('vscode.git/repository/deleted', 'Deleted');
             case GitFileStatus.Conflicted: return nls.localize('theia/git/conflicted', 'Conflicted');

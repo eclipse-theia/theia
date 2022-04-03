@@ -1,20 +1,20 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { WidgetFactory, createTreeContainer, TreeWidget, TreeProps, defaultTreeProps, TreeModel, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WidgetFactory, createTreeContainer, LabelProviderContribution } from '@theia/core/lib/browser';
 import { PreferenceNodeRendererFactory, PreferenceHeaderRenderer } from './components/preference-node-renderer';
 import { PreferencesWidget } from './preference-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
@@ -30,6 +30,7 @@ import { PreferenceJSONLinkRenderer } from './components/preference-json-input';
 import { PreferenceSelectInputRenderer } from './components/preference-select-input';
 import { PreferenceNumberInputRenderer } from './components/preference-number-input';
 import { PreferenceArrayInputRenderer } from './components/preference-array-input';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 
 export function bindPreferencesWidgets(bind: interfaces.Bind): void {
     bind(PreferenceTreeLabelProvider).toSelf().inSingletonScope();
@@ -51,12 +52,11 @@ export function bindPreferencesWidgets(bind: interfaces.Bind): void {
 }
 
 function createPreferencesWidgetContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
-    child.bind(PreferenceTreeModel).toSelf();
-    child.rebind(TreeModel).toService(PreferenceTreeModel);
-    child.unbind(TreeWidget);
-    child.bind(PreferencesTreeWidget).toSelf();
-    child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: false });
+    const child = createTreeContainer(parent, {
+        model: PreferenceTreeModel,
+        widget: PreferencesTreeWidget,
+        props: { search: false }
+    });
     child.bind(PreferencesEditorWidget).toSelf();
 
     child.bind(PreferencesSearchbarWidget).toSelf();
@@ -71,7 +71,7 @@ function createPreferencesWidgetContainer(parent: interfaces.Container): Contain
                 return grandchild.get(PreferenceSelectInputRenderer);
             }
             const type = Array.isArray(node.preference.data.type) ? node.preference.data.type[0] : node.preference.data.type;
-            if (type === 'array' && node.preference.data.items?.type === 'string') {
+            if (type === 'array' && (node.preference.data.items as IJSONSchema)?.type === 'string') {
                 return grandchild.get(PreferenceArrayInputRenderer);
             }
             switch (type) {

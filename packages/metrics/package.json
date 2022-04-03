@@ -1,9 +1,9 @@
 {
   "name": "@theia/metrics",
-  "version": "1.22.1",
+  "version": "1.23.0",
   "description": "Theia - Metrics Extension",
   "dependencies": {
-    "@theia/core": "1.22.1",
+    "@theia/core": "1.23.0",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {
@@ -39,7 +39,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.22.1"
+    "@theia/ext-scripts": "1.23.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -17,7 +17,7 @@ RUN sudo apt-get update \
 
 ENV SHELL=/bin/bash
 
-ENV NODE_VERSION="12.14.1"
+ENV NODE_VERSION="14.19.0"
 RUN bash -c ". .nvm/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm use $NODE_VERSION \

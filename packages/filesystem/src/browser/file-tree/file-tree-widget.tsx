@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -20,7 +20,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, TreeViewWelcomeWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, CompressedTreeWidget, CompressedNodeProps } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
@@ -33,7 +33,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeViewWelcomeWidget {
+export class FileTreeWidget extends CompressedTreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -44,8 +44,8 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
     protected readonly iconThemeService: IconThemeService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileTreeModel) readonly model: FileTreeModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileTreeModel) override readonly model: FileTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
@@ -53,7 +53,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         this.toDispose.push(this.toCancelNodeExpansion);
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+    protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (FileStatNode.is(node)) {
             classNames.push(FILE_STAT_NODE_CLASS);
@@ -64,7 +64,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return classNames;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
             return <div className={icon + ' file-icon'}></div>;
@@ -73,7 +73,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return null;
     }
 
-    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+    protected override createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         const attrs = super.createContainerAttributes();
         return {
             ...attrs,
@@ -84,23 +84,36 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         };
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        const elementAttrs = super.createNodeAttributes(node, props);
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         return {
-            ...elementAttrs,
-            draggable: FileStatNode.is(node),
-            onDragStart: event => this.handleDragStartEvent(node, event),
-            onDragEnter: event => this.handleDragEnterEvent(node, event),
-            onDragOver: event => this.handleDragOverEvent(node, event),
-            onDragLeave: event => this.handleDragLeaveEvent(node, event),
-            onDrop: event => this.handleDropEvent(node, event),
+            ...super.createNodeAttributes(node, props),
+            ...this.getNodeDragHandlers(node, props),
             title: this.getNodeTooltip(node)
         };
     }
 
     protected getNodeTooltip(node: TreeNode): string | undefined {
-        const uri = UriSelection.getUri(node);
+        const operativeNode = this.compressionService.getCompressionChain(node)?.tail() ?? node;
+        const uri = UriSelection.getUri(operativeNode);
         return uri ? uri.path.toString() : undefined;
+    }
+
+    protected override getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            ...super.getCaptionChildEventHandlers(node, props),
+            ...this.getNodeDragHandlers(node, props),
+        };
+    }
+
+    protected getNodeDragHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
+        return {
+            onDragStart: event => this.handleDragStartEvent(node, event),
+            onDragEnter: event => this.handleDragEnterEvent(node, event),
+            onDragOver: event => this.handleDragOverEvent(node, event),
+            onDragLeave: event => this.handleDragLeaveEvent(node, event),
+            onDrop: event => this.handleDropEvent(node, event),
+            draggable: FileStatNode.is(node),
+        };
     }
 
     protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
@@ -221,7 +234,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return !!theme && !!theme.hidesExplorerArrows;
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected override renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (this.hidesExplorerArrows) {
             // eslint-disable-next-line no-null/no-null
             return null;
@@ -229,7 +242,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return super.renderExpansionToggle(node, props);
     }
 
-    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+    protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
             // additional left padding instead of top-level expansion toggle
             return super.getPaddingLeft(node, props) + this.props.leftPadding;
@@ -237,7 +250,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return super.getPaddingLeft(node, props);
     }
 
-    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+    protected override needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
             return false;
@@ -245,7 +258,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
         return super.needsExpansionTogglePadding(node);
     }
 
-    protected deflateForStorage(node: TreeNode): object {
+    protected override deflateForStorage(node: TreeNode): object {
         const deflated = super.deflateForStorage(node);
         if (FileStatNode.is(node) && FileStatNodeData.is(deflated)) {
             deflated.uri = node.uri.toString();
@@ -256,7 +269,7 @@ export class FileTreeWidget extends TreeViewWelcomeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
+    protected override inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
         if (FileStatNodeData.is(node)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const fileStatNode: FileStatNode = node as any;

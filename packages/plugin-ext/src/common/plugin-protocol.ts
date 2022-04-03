@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -48,6 +48,7 @@ export interface PluginPackage {
         backend?: string;
     };
     main?: string;
+    browser?: string;
     displayName: string;
     description: string;
     contributes?: PluginPackageContribution;
@@ -56,6 +57,7 @@ export interface PluginPackage {
     extensionDependencies?: string[];
     extensionPack?: string[];
     icon?: string;
+    extensionKind?: Array<'ui' | 'workspace'>
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
@@ -128,10 +130,16 @@ export interface PluginPackageViewContainer {
     icon: string;
 }
 
+export enum PluginViewType {
+    Tree = 'tree',
+    Webview = 'webview'
+}
+
 export interface PluginPackageView {
     id: string;
     name: string;
     when?: string;
+    type?: string;
 }
 
 export interface PluginPackageViewWelcome {
@@ -268,14 +276,7 @@ export interface PluginPackageLanguageContributionConfiguration {
 export interface PluginTaskDefinitionContribution {
     type: string;
     required: string[];
-    properties?: {
-        [name: string]: {
-            type: string;
-            description?: string;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [additionalProperty: string]: any;
-        }
-    }
+    properties?: IJSONSchema['properties'];
 }
 
 export interface PluginProblemMatcherContribution extends ProblemMatcherContribution {
@@ -696,6 +697,7 @@ export interface View {
     id: string;
     name: string;
     when?: string;
+    type?: string;
 }
 
 /**

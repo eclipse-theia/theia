@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import '../../../src/main/style/status-bar.css';
 import '../../../src/main/browser/style/index.css';
@@ -21,7 +21,7 @@ import '../../../src/main/browser/style/comments.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -76,6 +76,8 @@ import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
+import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
+import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -145,21 +147,21 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_DATA_FACTORY_ID,
         createWidget: (identifier: TreeViewWidgetIdentifier) => {
-            const child = createTreeContainer(container, {
+            const props = {
                 contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
                 expandOnlyOnExpansionToggleClick: true,
                 expansionTogglePadding: 22,
                 globalSelection: true,
                 leftPadding: 8,
                 search: true
+            };
+            const child = createTreeContainer(container, {
+                props,
+                tree: PluginTree,
+                model: PluginTreeModel,
+                widget: TreeViewWidget,
             });
             child.bind(TreeViewWidgetIdentifier).toConstantValue(identifier);
-            child.bind(PluginTree).toSelf();
-            child.rebind(TreeImpl).toService(PluginTree);
-            child.bind(PluginTreeModel).toSelf();
-            child.rebind(TreeModelImpl).toService(PluginTreeModel);
-            child.bind(TreeViewWidget).toSelf();
-            child.rebind(TreeWidget).toService(TreeViewWidget);
             return child.get(TreeWidget);
         }
     })).inSingletonScope();
@@ -234,4 +236,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(WebviewFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewFrontendSecurityWarnings);
+
+    bind(PluginAuthenticationServiceImpl).toSelf().inSingletonScope();
+    rebind(AuthenticationService).toService(PluginAuthenticationServiceImpl);
 });

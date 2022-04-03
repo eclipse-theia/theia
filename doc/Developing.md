@@ -54,10 +54,11 @@ For Windows instructions [click here](#building-on-windows).
 
  - Node.js `>= 12.14.1`.
    - For now, **use** Node 12.
-   - Node 14 is supported, Node 16 _should_ work, but you might need to run `yarn --ignore-engines` to get around some arbitrary constraints.
+   - Node 14 is supported, Node 16 _should_ work.
    - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install)  `>= 1.7.0` **AND** `< 2.x.x`.
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
+ - Python3 is required for the build due to [`node-gyp@8.4.1`](https://github.com/nodejs/node-gyp/tree/v8.4.1#installation)
 
 Some additional tools and libraries are needed depending on your platform:
 
@@ -484,7 +485,7 @@ You can fix it by modifying your `tsconfig.json`:
 ### Profile IPC servers
 
   - Pass `--${server-name}-inspect` arg to the backend server.
-    - For example `--nfsw-watcher-inspect=0` to inspect nfsw watcher processes with dynamic port allocation.
+    - For example `--nsfw-watcher-inspect=0` to inspect nsfw watcher processes with dynamic port allocation.
     - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
 
 ### Profile the plugin host
@@ -511,7 +512,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
  - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
  - Install Node.js with `nvm`: `nvm install 12.14.1`, then use it: `nvm use 12.14.1`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
- - Install [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools). Run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`
+ - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
 
 Clone, build and run Theia.
 Using Git Bash as administrator:
@@ -523,8 +524,12 @@ git clone https://github.com/eclipse-theia/theia.git \
     && yarn browser build \
     && yarn browser start
 ```
-
 If you do not have Git Bash installed on your system, [get one](https://gitforwindows.org/), or use `scoop`: `scoop install git`.
+
+### Installing Windows Build Tools
+
+ - Previously, [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools) is required to build Native Nodes modules on Windows. The npm package is now [`deprecated`](https://www.npmjs.com/package/windows-build-tools) because NodeJS installer can now install all the required tools that it needs, including Windows Build Tools.
+ - In case you need to install the tool manually, after installing `yarn`, run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`.
 
 ## Troubleshooting
 

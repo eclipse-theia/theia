@@ -1,23 +1,23 @@
-/********************************************************************************
- * Copyright (C) 2020 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     PreferenceService, ContextMenuRenderer, PreferenceInspection,
-    PreferenceScope, PreferenceProvider, codicon, animationFrame
+    PreferenceScope, PreferenceProvider, codicon, OpenerService, open
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
@@ -27,7 +27,6 @@ import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferencesSearchbarWidget } from '../preference-searchbar-widget';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
@@ -102,6 +101,10 @@ export abstract class PreferenceNodeRenderer implements Disposable, GeneralPrefe
 
     protected abstract createDomNode(): HTMLElement;
 
+    protected getAdditionalNodeClassnames(): Iterable<string> {
+        return [];
+    }
+
     insertBefore(nextSibling: HTMLElement): void {
         nextSibling.insertAdjacentElement('beforebegin', this.domNode);
         this.attached = true;
@@ -152,13 +155,13 @@ export class PreferenceHeaderRenderer extends PreferenceNodeRenderer {
 export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, InteractableType extends HTMLElement>
     extends PreferenceNodeRenderer
     implements Required<GeneralPreferenceNodeRenderer> {
-    @inject(Preference.Node) protected readonly preferenceNode: Preference.LeafNode;
+    @inject(Preference.Node) protected override readonly preferenceNode: Preference.LeafNode;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ContextMenuRenderer) protected readonly menuRenderer: ContextMenuRenderer;
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferencesSearchbarWidget) protected readonly searchbar: PreferencesSearchbarWidget;
-    @inject(WindowService) protected readonly windowService: WindowService;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
 
     protected headlineWrapper: HTMLDivElement;
     protected gutter: HTMLDivElement;
@@ -168,7 +171,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected markdownRenderer: markdownit;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         this.setId();
         this.updateInspection();
         this.markdownRenderer = this.buildMarkdownRenderer();
@@ -213,27 +216,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             // Exclude right click
             if (event.button < 2) {
                 const uri = new URI(event.target.href);
-                if (uri.scheme === 'preference') {
-                    this.selectPreference(uri.path.toString());
-                } else {
-                    // Opens link in external browser
-                    this.windowService.openNewWindow(event.target.href, { external: true });
-                }
+                open(this.openerService, uri);
             }
-        }
-    }
-
-    protected async selectPreference(preferenceId: string): Promise<void> {
-        // Selects the rendered html preference node that does not belong to the commonly used group
-        const selector = `li[data-pref-id="${preferenceId}"]:not([data-node-id^="commonly-used@"])`;
-        const element = document.querySelector(selector);
-        if (element) {
-            if (element.classList.contains('hidden')) {
-                // We clear the search term as we have clicked on a hidden preference
-                await this.searchbar.updateSearchTerm('');
-                await animationFrame();
-            }
-            element.scrollIntoView();
         }
     }
 
@@ -241,6 +225,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         const wrapper = document.createElement('li');
         wrapper.classList.add('single-pref');
         wrapper.id = `${this.id}-editor`;
+        wrapper.tabIndex = 0;
         wrapper.setAttribute('data-pref-id', this.id);
         wrapper.setAttribute('data-node-id', this.preferenceNode.id);
 
@@ -266,9 +251,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         cog.title = nls.localizeByDefault('More Actions...');
         gutter.appendChild(cog);
 
-        const activeType = Array.isArray(this.preferenceNode.preference.data.type) ? this.preferenceNode.preference.data.type[0] : this.preferenceNode.preference.data.type;
         const contentWrapper = document.createElement('div');
-        contentWrapper.classList.add('pref-content-container', activeType ?? 'open-json');
+        contentWrapper.classList.add('pref-content-container', ...this.getAdditionalNodeClassnames());
         wrapper.appendChild(contentWrapper);
 
         const { description, markdownDescription } = this.preferenceNode.preference.data;

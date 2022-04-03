@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import URI from '@theia/core/lib/common/uri';
@@ -35,13 +35,14 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core';
-import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType, PreferenceValidationService } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { MonacoQuickInputImplementation } from './monaco-quick-input-service';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -73,6 +74,9 @@ export class MonacoEditorProvider {
 
     @inject(MonacoQuickInputImplementation)
     protected readonly quickInputService: MonacoQuickInputImplementation;
+
+    @inject(PreferenceValidationService)
+    protected readonly preferenceValidator: PreferenceValidationService;
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -209,7 +213,7 @@ export class MonacoEditorProvider {
         let keydownListener: monaco.IDisposable | undefined;
         const keybindingService = editor.getControl()._standaloneKeybindingService;
         for (const listener of keybindingService._store._toDispose) {
-            if ('_type' in listener && listener['_type'] === 'keydown') {
+            if ((listener as any)['_type'] === 'keydown') {
                 keydownListener = listener;
                 break;
             }
@@ -271,7 +275,9 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString());
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
+                this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, editor.uri.toString())
+            );
             editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
         } else {
             const options = this.createMonacoEditorOptions(editor.document);
@@ -300,11 +306,13 @@ export class MonacoEditorProvider {
         }
         const overrideIdentifier = editor.document.languageId;
         const uri = editor.uri.toString();
-        const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!;
+        const formatOnSave = this.preferenceValidator.validateByName('editor.formatOnSave',
+            this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!
+        );
         if (formatOnSave) {
             const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
             await Promise.race([
-                new Promise((_, reject) => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
+                timeoutReject(formatOnSaveTimeout, `Aborted format on save after ${formatOnSaveTimeout}ms`),
                 editor.runAction('editor.action.formatDocument')
             ]);
         }
@@ -351,7 +359,9 @@ export class MonacoEditorProvider {
         if (event) {
             const preferenceName = event.preferenceName;
             const overrideIdentifier = editor.document.languageId;
-            const newValue = this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri);
+            const newValue = this.preferenceValidator.validateByName(preferenceName,
+                this.editorPreferences.get({ preferenceName, overrideIdentifier }, undefined, resourceUri)
+            );
             editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
         } else {
             const options = this.createMonacoDiffEditorOptions(editor.originalModel, editor.modifiedModel);
@@ -363,10 +373,12 @@ export class MonacoEditorProvider {
     protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
-        return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
-            const value = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
-            return this.setOption(preferenceName, deepClone(value), prefixes, options);
-        }, {});
+        const flat: Record<string, any> = {};
+        for (const preferenceName of Object.keys(this.editorPreferences)) {
+            flat[preferenceName] = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
+        }
+        const valid = this.preferenceValidator.validateOptions(flat);
+        return Object.entries(valid).reduce((tree, [preferenceName, value]) => this.setOption(preferenceName, deepClone(value), prefixes, tree), {});
     }
 
     protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}): {

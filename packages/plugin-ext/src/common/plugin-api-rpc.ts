@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -65,18 +65,21 @@ import {
     CallHierarchyDefinition,
     CallHierarchyReference,
     SearchInWorkspaceResult,
-    AuthenticationSession,
-    AuthenticationSessionsChangeEvent,
-    AuthenticationProviderInformation,
     Comment,
     CommentOptions,
     CommentThreadCollapsibleState,
     CommentThread,
     CommentThreadChangedEvent,
+    CodeActionProviderDocumentation
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
-import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
+import {
+    AuthenticationProviderAuthenticationSessionsChangeEvent,
+    CancellationToken,
+    Progress,
+    ProgressOptions,
+} from '@theia/plugin';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -93,6 +96,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
+// eslint-disable-next-line @theia/runtime-import-check
 import { PickOptions, QuickInputButtonHandle, QuickPickItem, WidgetOpenerOptions } from '@theia/core/lib/browser';
 
 export interface PreferenceData {
@@ -621,6 +625,7 @@ export interface WorkspaceMain {
     $onTextDocumentContentChange(uri: string, content: string): void;
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
     $getWorkspace(): Promise<files.FileStat | undefined>;
+    $requestWorkspaceTrust(options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
 }
 
 export interface WorkspaceExt {
@@ -628,6 +633,7 @@ export interface WorkspaceExt {
     $onWorkspaceLocationChanged(event: files.FileStat | undefined): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
+    $onWorkspaceTrustChanged(trust: boolean | undefined): void;
 }
 
 export interface TimelineExt {
@@ -1396,6 +1402,7 @@ export interface ProcessTaskDto extends TaskDto, CommandProperties {
 export interface PluginInfo {
     id: string;
     name: string;
+    displayName?: string;
 }
 
 export interface LanguagesExt {
@@ -1439,6 +1446,8 @@ export interface LanguagesExt {
         context: CodeActionContext,
         token: CancellationToken
     ): Promise<CodeAction[] | undefined>;
+    $releaseCodeActions(handle: number, cacheIds: number[]): void;
+    $resolveCodeAction(handle: number, cacheId: number, token: CancellationToken): Promise<WorkspaceEditDto | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation | undefined>;
@@ -1486,7 +1495,7 @@ export interface LanguagesMain {
     $registerSignatureHelpProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void;
     $registerHoverProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentHighlightProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[], documentation?: CodeActionProviderDocumentation): void;
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
@@ -1495,7 +1504,7 @@ export interface LanguagesMain {
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle?: number): void;
     $emitCodeLensEvent(eventHandle: number, event?: any): void;
-    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], displayName?: string): void;
     $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void;
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
@@ -1549,6 +1558,27 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface WebviewViewsExt {
+    $resolveWebviewView(handle: string,
+        viewType: string,
+        title: string | undefined,
+        state: any,
+        cancellation: CancellationToken): Promise<void>;
+    $onDidChangeWebviewViewVisibility(handle: string, visible: boolean): void;
+    $disposeWebviewView(handle: string): void;
+}
+
+export interface WebviewViewsMain extends Disposable {
+    $registerWebviewViewProvider(viewType: string,
+        options: { retainContextWhenHidden?: boolean, serializeBuffersForPostMessage: boolean }): void;
+    $unregisterWebviewViewProvider(viewType: string): void;
+
+    $setWebviewViewTitle(handle: string, value: string | undefined): void;
+    $setWebviewViewDescription(handle: string, value: string | undefined): void;
+
+    $show(handle: string, preserveFocus: boolean): void;
+}
+
 export interface CustomEditorsExt {
     $resolveWebviewEditor(
         resource: UriComponents,
@@ -1558,7 +1588,7 @@ export interface CustomEditorsExt {
         widgetOpenerOptions: WidgetOpenerOptions | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
-    $createCustomDocument(resource: UriComponents, viewType: string, backupId: string | undefined, cancellation: CancellationToken): Promise<{ editable: boolean }>;
+    $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
     $disposeCustomDocument(resource: UriComponents, viewType: string): Promise<void>;
     $undo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
     $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
@@ -1743,6 +1773,7 @@ export const PLUGIN_RPC_CONTEXT = {
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
     CUSTOM_EDITORS_MAIN: createProxyIdentifier<CustomEditorsMain>('CustomEditorsMain'),
+    WEBVIEW_VIEWS_MAIN: createProxyIdentifier<WebviewViewsMain>('WebviewViewsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
@@ -1777,6 +1808,7 @@ export const MAIN_RPC_CONTEXT = {
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
     CUSTOM_EDITORS_EXT: createProxyIdentifier<CustomEditorsExt>('CustomEditorsExt'),
+    WEBVIEW_VIEWS_EXT: createProxyIdentifier<WebviewViewsExt>('WebviewViewsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
@@ -1812,21 +1844,23 @@ export interface TasksMain {
 }
 
 export interface AuthenticationExt {
-    $getSessions(id: string): Promise<ReadonlyArray<AuthenticationSession>>;
-    $login(id: string, scopes: string[]): Promise<AuthenticationSession>;
-    $logout(id: string, sessionId: string): Promise<void>;
-    $onDidChangeAuthenticationSessions(id: string, label: string, event: AuthenticationSessionsChangeEvent): Promise<void>;
-    $onDidChangeAuthenticationProviders(added: AuthenticationProviderInformation[], removed: AuthenticationProviderInformation[]): Promise<void>;
+    $getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<theia.AuthenticationSession>>;
+    $createSession(id: string, scopes: string[]): Promise<theia.AuthenticationSession>;
+    $removeSession(id: string, sessionId: string): Promise<void>;
+    $onDidChangeAuthenticationSessions(id: string, label: string): Promise<void>;
+    $onDidChangeAuthenticationProviders(added: theia.AuthenticationProviderInformation[], removed: theia.AuthenticationProviderInformation[]): Promise<void>;
+    $setProviders(providers: theia.AuthenticationProviderInformation[]): Promise<void>;
 }
 
 export interface AuthenticationMain {
     $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
     $unregisterAuthenticationProvider(id: string): void;
     $getProviderIds(): Promise<string[]>;
-    $updateSessions(providerId: string, event: AuthenticationSessionsChangeEvent): void;
-    $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
-        options: { createIfNone?: boolean, clearSessionPreference?: boolean }): Promise<theia.AuthenticationSession | undefined>;
-    $logout(providerId: string, sessionId: string): Promise<void>;
+    $ensureProvider(id: string): Promise<void>;
+    $sendDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
+    $getSession(providerId: string, scopes: readonly string[], extensionId: string, extensionName: string,
+        options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
+    $removeSession(providerId: string, sessionId: string): Promise<void>;
 }
 
 export interface RawColorInfo {

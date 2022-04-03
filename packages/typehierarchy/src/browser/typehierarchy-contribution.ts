@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
@@ -34,7 +34,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
     protected readonly editorAccess: EditorAccess;
 
     @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
+    protected override readonly shell: ApplicationShell;
 
     constructor() {
         super({
@@ -48,7 +48,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    async openView(args?: Partial<TypeHierarchyOpenViewArguments>): Promise<TypeHierarchyTreeWidget> {
+    override async openView(args?: Partial<TypeHierarchyOpenViewArguments>): Promise<TypeHierarchyTreeWidget> {
         const widget = await super.openView(args);
         const { selection, languageId } = this.editorAccess;
         const direction = this.getDirection(args);
@@ -56,7 +56,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         return widget;
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
         commands.registerCommand(TypeHierarchyCommands.OPEN_SUBTYPE, {
             execute: () => this.openViewOrFlipHierarchyDirection(TypeHierarchyDirection.Children),
@@ -68,7 +68,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const menuPath = [...EDITOR_CONTEXT_MENU, 'type-hierarchy'];
         menus.registerMenuAction(menuPath, {
@@ -79,7 +79,7 @@ export class TypeHierarchyContribution extends AbstractViewContribution<TypeHier
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: TypeHierarchyCommands.OPEN_SUBTYPE.id,

@@ -285,6 +285,7 @@
 
 #theia-bottom-content-panel .p-TabBar-tab:not(.p-mod-current) {
     color: var(--theia-panelTitle-inactiveForeground);
+    border-top: var(--theia-border-width) solid  var(--theia-panel-background);
 }
 
 #theia-bottom-content-panel .p-TabBar-tab.p-mod-current {

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon } from '@theia/core/lib/browser';
 import { injectable, inject } from '@theia/core/shared/inversify';
@@ -64,23 +64,20 @@ export namespace DebugMenus {
     export const DEBUG_BREAKPOINTS = [...DEBUG, 'f_breakpoints'];
 }
 
-function nlsEditBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Edit {0}...', nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsEditBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Edit {0}...', nls.localizeByDefault(breakpoint));
 }
 
-function nlsRemoveBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Remove {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsRemoveBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Remove {0}', nls.localizeByDefault(breakpoint));
 }
 
-function nlsEnableBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Enable {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsEnableBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Enable {0}', nls.localizeByDefault(breakpoint));
 }
 
-function nlsDisableBreakpoint(breakpointKey: string, breakpoint: string): string {
-    return nls.localizeByDefault('Disable {0}',
-        nls.localize(`vscode/breakpointEditorContribution/${breakpointKey}`, breakpoint));
+function nlsDisableBreakpoint(breakpoint: string): string {
+    return nls.localizeByDefault('Disable {0}', nls.localizeByDefault(breakpoint));
 }
 
 export namespace DebugCommands {
@@ -204,25 +201,25 @@ export namespace DebugCommands {
         id: 'debug.breakpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Breakpoint...',
-        label: nlsEditBreakpoint('breakpoint', 'Breakpoint')
+        label: nlsEditBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const EDIT_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.edit',
         category: DEBUG_CATEGORY,
         originalLabel: 'Edit Logpoint...',
-        label: nlsEditBreakpoint('logPoint', 'Logpoint')
+        label: nlsEditBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_BREAKPOINT = Command.toLocalizedCommand({
         id: 'debug.breakpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Breakpoint',
-        label: nlsRemoveBreakpoint('breakpoint', 'Breakpoint')
+        label: nlsRemoveBreakpoint('Breakpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_LOGPOINT = Command.toLocalizedCommand({
         id: 'debug.logpoint.remove',
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Logpoint',
-        label: nlsRemoveBreakpoint('logPoint', 'Logpoint')
+        label: nlsRemoveBreakpoint('Logpoint')
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.removeAll',
@@ -422,9 +419,6 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(BreakpointManager)
     protected readonly breakpointManager: BreakpointManager;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
     @inject(DebugSessionWidgetFactory)
     protected readonly sessionWidgetFactory: DebugSessionWidgetFactory;
 
@@ -511,7 +505,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return this.preference['debug.confirmOnExit'] === 'always' && !!this.manager.currentSession;
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
             for (const [index, command] of commands.entries()) {
@@ -628,16 +622,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugEditorContextCommands.ADD_LOGPOINT, label: DebugCommands.ADD_LOGPOINT.label },
             { ...DebugEditorContextCommands.REMOVE_BREAKPOINT, label: DebugCommands.REMOVE_BREAKPOINT.label },
             { ...DebugEditorContextCommands.EDIT_BREAKPOINT, label: DebugCommands.EDIT_BREAKPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: nlsEnableBreakpoint('breakpoint', 'Breakpoint') },
-            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: nlsDisableBreakpoint('breakpoint', 'Breakpoint') },
+            { ...DebugEditorContextCommands.ENABLE_BREAKPOINT, label: nlsEnableBreakpoint('Breakpoint') },
+            { ...DebugEditorContextCommands.DISABLE_BREAKPOINT, label: nlsDisableBreakpoint('Breakpoint') },
             { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
             { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
-            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('logPoint', 'Logpoint') },
-            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('logPoint', 'Logpoint') }
+            { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('Logpoint') },
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') }
         );
     }
 
-    registerCommands(registry: CommandRegistry): void {
+    override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(DebugCommands.START, {
             execute: (config?: DebugSessionOptions) => this.start(false, config)
@@ -1027,7 +1021,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,

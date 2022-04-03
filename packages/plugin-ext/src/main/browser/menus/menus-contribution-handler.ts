@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -21,7 +21,7 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MENU } from '../view/tree-view-widget';
@@ -359,19 +359,19 @@ export class MenusContributionPointHandler {
 
         const { when } = action;
         const whenKeys = when && this.contextKeyService.parseKeys(when);
-        let onDidChange;
+        let onDidChange: Event<void> | undefined;
         if (whenKeys && whenKeys.size) {
             const onDidChangeEmitter = new Emitter<void>();
             toDispose.push(onDidChangeEmitter);
             onDidChange = onDidChangeEmitter.event;
-            this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners + 1;
+            Event.addMaxListeners(this.contextKeyService.onDidChange, 1);
+            toDispose.push(Disposable.create(() => {
+                Event.addMaxListeners(this.contextKeyService.onDidChange, -1);
+            }));
             toDispose.push(this.contextKeyService.onDidChange(event => {
                 if (event.affects(whenKeys)) {
                     onDidChangeEmitter.fire(undefined);
                 }
-            }));
-            toDispose.push(Disposable.create(() => {
-                this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners - 1;
             }));
         }
 
@@ -518,13 +518,26 @@ export class MenusContributionPointHandler {
         }
         const toDispose = new DisposableCollection();
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
+        const altId = menu.alt && this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
+
+        const inline = Boolean(menu.group && /^inline/.test(menu.group));
+        const [group, order = undefined] = (menu.group || '_').split('@');
+
         const command: Command = { id: commandId };
+        const action: MenuAction = { commandId, alt: altId, order, when: menu.when };
+
         toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
         toDispose.push(this.quickCommandService?.pushCommandContext(commandId, 'false'));
+        toDispose.push(this.menuRegistry.registerMenuAction(inline ? menuPath : [...menuPath, ...group.split('/')], action));
+        toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
+            command.category = pluginCommand.category;
+            command.label = pluginCommand.label;
+            if (inline) {
+                command.iconClass = pluginCommand.iconClass;
+            }
+        }));
 
-        let altId: string | undefined;
-        if (menu.alt) {
-            altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
+        if (menu.alt && altId) {
             const alt: Command = { id: altId };
             toDispose.push(this.commands.registerCommand(alt, handler(menu.alt)));
             toDispose.push(this.quickCommandService?.pushCommandContext(altId, 'false'));
@@ -537,13 +550,9 @@ export class MenusContributionPointHandler {
             }));
         }
 
-        const { when } = menu;
-        const [group, order = undefined] = (menu.group || '_').split('@');
-        const action: MenuAction = { commandId, alt: altId, order, when };
-
         // Register a submenu if the group is in format `<submenu group>/<submenu name>/<submenu order>.../<menu group>`
-        if (group!.indexOf('/') !== -1) {
-            const groupSplit = group!.split('/');
+        if (group.includes('/')) {
+            const groupSplit = group.split('/');
             const orderSplit = (menu.submenusOrder || '').split('/');
             const paths: string[] = [];
             for (let i = 0, j = 0; i < groupSplit.length - 1; i += 2, j += 1) {
@@ -554,17 +563,7 @@ export class MenusContributionPointHandler {
                 toDispose.push(this.menuRegistry.registerSubmenu([...menuPath, ...paths], submenuLabel, { order: submenuOrder }));
             }
         }
-        const inline = /^inline/.test(group);
-        menuPath = inline ? menuPath : [...menuPath, ...group.split('/')];
-        toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
 
-        toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
-            command.category = pluginCommand.category;
-            command.label = pluginCommand.label;
-            if (inline) {
-                command.iconClass = pluginCommand.iconClass;
-            }
-        }));
         return toDispose;
     }
 

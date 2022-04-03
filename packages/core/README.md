@@ -69,8 +69,8 @@ export class SomeClass {
 ## Re-Exports
 
 - `@theia/core/electron-shared/...`
-    - `@electron/remote` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
-    - `@electron/remote/main` (from [`@electron/remote@^2.0.1`](https://www.npmjs.com/package/@electron/remote))
+    - `@electron/remote` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
+    - `@electron/remote/main` (from [`@electron/remote@^2.0.1 <2.0.4 || >2.0.4`](https://www.npmjs.com/package/@electron/remote))
     - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
     - `electron` (from [`electron@^15.3.5`](https://www.npmjs.com/package/electron))
     - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
@@ -86,9 +86,9 @@ export class SomeClass {
     - `@phosphor/signaling` (from [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling))
     - `@phosphor/virtualdom` (from [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom))
     - `@phosphor/widgets` (from [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets))
-    - `@theia/application-package` (from [`@theia/application-package@1.22.1`](https://www.npmjs.com/package/@theia/application-package/v/1.22.1))
-    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.22.1`](https://www.npmjs.com/package/@theia/application-package/v/1.22.1))
-    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.22.1`](https://www.npmjs.com/package/@theia/application-package/v/1.22.1))
+    - `@theia/application-package` (from [`@theia/application-package@1.23.0`](https://www.npmjs.com/package/@theia/application-package/v/1.23.0))
+    - `@theia/application-package/lib/api` (from [`@theia/application-package@1.23.0`](https://www.npmjs.com/package/@theia/application-package/v/1.23.0))
+    - `@theia/application-package/lib/environment` (from [`@theia/application-package@1.23.0`](https://www.npmjs.com/package/@theia/application-package/v/1.23.0))
     - `fs-extra` (from [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra))
     - `fuzzy` (from [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy))
     - `inversify` (from [`inversify@^5.1.1`](https://www.npmjs.com/package/inversify))

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { TaskService } from './task-service';
@@ -383,15 +383,15 @@ export class QuickOpenTask implements QuickAccessProvider {
 
 export class TaskRunQuickOpenItem implements QuickPickItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
+        readonly token: number,
+        readonly task: TaskConfiguration,
         protected taskService: TaskService,
         protected isMulti: boolean,
         protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
         protected readonly taskNameResolver: TaskNameResolver,
         protected readonly taskSourceResolver: TaskSourceResolver,
         protected taskConfigurationManager: TaskConfigurationManager,
-        public readonly buttons?: Array<QuickInputButton>
+        readonly buttons?: Array<QuickInputButton>
     ) { }
 
     get label(): string {
@@ -423,20 +423,20 @@ export class TaskRunQuickOpenItem implements QuickPickItem {
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
     constructor(
-        public readonly token: number,
-        public readonly task: TaskConfiguration,
-        protected taskService: TaskService,
-        protected isMulti: boolean,
-        protected readonly taskNameResolver: TaskNameResolver,
+        token: number,
+        task: TaskConfiguration,
+        taskService: TaskService,
+        isMulti: boolean,
+        taskNameResolver: TaskNameResolver,
         protected readonly isBuildTask: boolean,
-        protected taskConfigurationManager: TaskConfigurationManager,
-        protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
-        protected readonly taskSourceResolver: TaskSourceResolver
+        taskConfigurationManager: TaskConfigurationManager,
+        taskDefinitionRegistry: TaskDefinitionRegistry,
+        taskSourceResolver: TaskSourceResolver
     ) {
         super(token, task, taskService, isMulti, taskDefinitionRegistry, taskNameResolver, taskSourceResolver, taskConfigurationManager);
     }
 
-    execute(): void {
+    override execute(): void {
         this.taskService.updateTaskConfiguration(this.token, this.task, { group: { kind: this.isBuildTask ? 'build' : 'test', isDefault: true } })
             .then(() => {
                 if (this.task._scope) {
@@ -698,4 +698,3 @@ export class TaskRestartRunningQuickOpen {
         this.quickInputService?.showQuickPick(items, { placeholder: 'Select task to restart' });
     }
 }
-

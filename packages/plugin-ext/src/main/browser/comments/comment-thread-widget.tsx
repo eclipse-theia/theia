@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import {
     Comment,
@@ -114,7 +114,7 @@ export class CommentThreadWidget extends BaseWidget {
         this.commentService.disposeCommentThread(this.owner, this._commentThread.threadId);
     }
 
-    dispose(): void {
+    override dispose(): void {
         super.dispose();
         if (this.commentGlyphWidget) {
             this.commentGlyphWidget.dispose();
@@ -134,7 +134,7 @@ export class CommentThreadWidget extends BaseWidget {
         }
     }
 
-    hide(): void {
+    override hide(): void {
         this.zoneWidget.hide();
         this.isExpanded = false;
         super.hide();
@@ -231,7 +231,7 @@ export class CommentThreadWidget extends BaseWidget {
         return label;
     }
 
-    update(): void {
+    override update(): void {
         if (!this.isExpanded) {
             return;
         }
@@ -342,7 +342,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
         }, 100);
     };
 
-    componentDidMount(): void {
+    override componentDidMount(): void {
         // Wait for the widget to be rendered.
         setTimeout(() => {
             this.inputRef.current?.focus();
@@ -377,7 +377,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
         });
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { commands, commentThread, contextKeyService } = this.props;
         const hasExistingComments = commentThread.comments && commentThread.comments.length > 0;
         return <div className={'comment-form' + (this.state.expanded || commentThread.comments && commentThread.comments.length === 0 ? ' expand' : '')}>
@@ -453,7 +453,7 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
     protected showHover = () => this.setState({ hover: true });
     protected hideHover = () => this.setState({ hover: false });
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { comment, commentForm, contextKeyService, menus, commands, commentThread } = this.props;
         const commentUniqueId = comment.uniqueIdInThread;
         const { hover } = this.state;
@@ -499,7 +499,7 @@ namespace CommentBody {
 }
 
 export class CommentBody extends React.Component<CommentBody.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { value, isVisible } = this.props;
         if (!isVisible) {
             return false;
@@ -528,7 +528,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
     private dirtyCommentMode: CommentMode | undefined;
     private dirtyCommentFormState: boolean | undefined;
 
-    componentDidUpdate(prevProps: Readonly<CommentEditContainer.Props>, prevState: Readonly<{}>): void {
+    override componentDidUpdate(prevProps: Readonly<CommentEditContainer.Props>, prevState: Readonly<{}>): void {
         const commentFormState = this.props.commentForm.current?.state;
         const mode = this.props.comment.mode;
         if (this.dirtyCommentMode !== mode || (this.dirtyCommentFormState !== commentFormState?.expanded && !commentFormState?.expanded)) {
@@ -545,7 +545,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
         this.dirtyCommentFormState = commentFormState?.expanded;
     }
 
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { menus, comment, commands, commentThread, contextKeyService } = this.props;
         if (!(comment.mode === CommentMode.Editing)) {
             return false;
@@ -588,7 +588,7 @@ namespace CommentsInlineAction {
 }
 
 export class CommentsInlineAction extends React.Component<CommentsInlineAction.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { node, commands, contextKeyService, commentThread, commentUniqueId } = this.props;
         if (node.action.when && !contextKeyService.match(node.action.when)) {
             return false;
@@ -618,7 +618,7 @@ namespace CommentActions {
 }
 
 export class CommentActions extends React.Component<CommentActions.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const { contextKeyService, commands, menu, commentThread, getInput, clearInput } = this.props;
         return <div className={'form-actions'}>
             {menu.children.map((node, index) => node instanceof ActionMenuNode &&
@@ -647,7 +647,7 @@ namespace CommentAction {
 }
 
 export class CommentAction extends React.Component<CommentAction.Props> {
-    render(): React.ReactNode {
+    override render(): React.ReactNode {
         const classNames = ['comments-button', 'comments-text-button', 'theia-button'];
         const { node, commands, contextKeyService, onClick } = this.props;
         if (node.action.when && !contextKeyService.match(node.action.when)) {

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2021 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2021 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable } from 'inversify';
 import { escapeRegExpCharacters } from '../../common';
@@ -42,21 +42,35 @@ export class PreferenceLanguageOverrideService {
         return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 
-    overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
-        return `[${overrideIdentifier}].${preferenceName}`;
+    /**
+     * @param overrideIdentifier the language id associated for a language override, e.g. `typescript`
+     * @returns the form used to mark language overrides in preference files, e.g. `[typescript]`
+     */
+    markLanguageOverride(overrideIdentifier: string): string {
+        return `[${overrideIdentifier}]`;
     }
 
+    /**
+     * @returns the flat JSON path to an overridden preference, e.g. [typescript].editor.tabSize.
+     */
+    overridePreferenceName({ preferenceName, overrideIdentifier }: OverridePreferenceName): string {
+        return `${this.markLanguageOverride(overrideIdentifier)}.${preferenceName}`;
+    }
+
+    /**
+     * @returns an OverridePreferenceName if the `name` contains a language override, e.g. [typescript].editor.tabSize.
+     */
     overriddenPreferenceName(name: string): OverridePreferenceName | undefined {
         const index = name.indexOf('.');
         if (index === -1) {
             return undefined;
         }
-        const matches = name.substr(0, index).match(OVERRIDE_PROPERTY_PATTERN);
+        const matches = name.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
         const overrideIdentifier = matches && matches[1];
         if (!overrideIdentifier || !this.overrideIdentifiers.has(overrideIdentifier)) {
             return undefined;
         }
-        const preferenceName = name.substr(index + 1);
+        const preferenceName = name.substring(index + 1);
         return { preferenceName, overrideIdentifier };
     }
 

@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import {
     PLUGIN_RPC_CONTEXT,
@@ -91,7 +91,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onWebviewPanel',
         'onFileSystem',
         'onCustomEditor',
-        'onStartupFinished'
+        'onStartupFinished',
+        'onAuthenticationRequest'
     ]);
 
     private configStorage: ConfigStorage | undefined;
@@ -370,9 +371,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const storagePath = configStorage.hostStoragePath ? join(configStorage.hostStoragePath, plugin.model.id) : undefined;
         const secrets = new SecretStorageExt(plugin, this.secrets);
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
+        const extension = new PluginExt(this, plugin);
         const pluginContext: theia.PluginContext = {
-            extensionPath: plugin.pluginFolder,
-            extensionUri: Uri.file(plugin.pluginFolder),
+            extensionPath: extension.extensionPath,
+            extensionUri: extension.extensionUri,
             globalState: new GlobalState(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,
@@ -385,7 +387,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
             extensionMode: 1, // @todo: implement proper `extensionMode`.
-            extension: new PluginExt(this, plugin),
+            extension,
             logUri: Uri.file(logPath)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);

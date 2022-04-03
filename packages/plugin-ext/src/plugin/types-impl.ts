@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 // copied from https://github.com/microsoft/vscode/blob/1.37.0/src/vs/workbench/api/common/extHostTypes.ts
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -68,7 +68,7 @@ export class URI extends CodeURI implements theia.Uri {
     /**
      * Override to create the correct class.
      */
-    with(change: {
+    override with(change: {
         scheme?: string;
         authority?: string | null;
         path?: string | null;
@@ -90,19 +90,19 @@ export class URI extends CodeURI implements theia.Uri {
      * Override to create the correct class.
      * @param data
      */
-    static revive(data: UriComponents | CodeURI): URI;
-    static revive(data: UriComponents | CodeURI | null): URI | null;
-    static revive(data: UriComponents | CodeURI | undefined): URI | undefined
-    static revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
+    static override revive(data: UriComponents | CodeURI): URI;
+    static override revive(data: UriComponents | CodeURI | null): URI | null;
+    static override revive(data: UriComponents | CodeURI | undefined): URI | undefined
+    static override revive(data: UriComponents | CodeURI | undefined | null): URI | undefined | null {
         const uri = CodeURI.revive(data);
         return uri ? new URI(uri) : undefined;
     }
 
-    static parse(value: string, _strict?: boolean): URI {
+    static override parse(value: string, _strict?: boolean): URI {
         return new URI(CodeURI.parse(value, _strict));
     }
 
-    static file(path: string): URI {
+    static override file(path: string): URI {
         return new URI(CodeURI.file(path));
     }
 
@@ -111,7 +111,7 @@ export class URI extends CodeURI implements theia.Uri {
      * transferring via JSON.stringify(). Making the CodeURI instance
      * makes sure we transfer this object as a vscode-uri URI.
      */
-    toJSON(): UriComponents {
+    override toJSON(): UriComponents {
         return CodeURI.from(this).toJSON();
     }
 }
@@ -1237,6 +1237,10 @@ export class CodeAction {
     diagnostics?: Diagnostic[];
 
     kind?: CodeActionKind;
+
+    disabled?: { reason: string };
+
+    isPreferred?: boolean;
 
     constructor(title: string, kind?: CodeActionKind) {
         this.title = title;

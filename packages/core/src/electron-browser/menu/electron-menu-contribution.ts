@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as electron from '../../../electron-shared/electron';
 import * as electronRemote from '../../../electron-shared/@electron/remote';
@@ -22,7 +22,7 @@ import {
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls
 } from '../../common';
 import {
-    ApplicationShell, codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
+    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry,
     PreferenceScope, Widget, FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -93,13 +93,12 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected titleBarStyle?: string;
 
     constructor(
-        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory,
-        @inject(ApplicationShell) protected shell: ApplicationShell
+        @inject(ElectronMainMenuFactory) protected override readonly factory: ElectronMainMenuFactory
     ) {
         super(factory);
     }
 
-    onStart(app: FrontendApplication): void {
+    override onStart(app: FrontendApplication): void {
         this.handleTitleBarStyling(app);
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
@@ -130,13 +129,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.hideTopPanel(app);
         electron.ipcRenderer.on(TitleBarStyleAtStartup, (_event, style: string) => {
             this.titleBarStyle = style;
+            this.setMenu(app);
             this.preferenceService.ready.then(() => {
                 this.preferenceService.set('window.titleBarStyle', this.titleBarStyle, PreferenceScope.User);
             });
         });
         electron.ipcRenderer.send(RequestTitleBarStyle);
         this.preferenceService.ready.then(() => {
-            this.setMenu(app);
             electronRemote.getCurrentWindow().setMenuBarVisibility(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
         });
         this.preferenceService.onPreferenceChanged(change => {
@@ -233,7 +232,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected async handleRequiredRestart(): Promise<void> {
         const msgNode = document.createElement('div');
         const message = document.createElement('p');
-        message.textContent = nls.localizeByDefault('A setting has changed that requires a restart to take effect');
+        message.textContent = nls.localizeByDefault('A setting has changed that requires a restart to take effect.');
         const detail = document.createElement('p');
         detail.textContent = nls.localizeByDefault(
             'Press the restart button to restart {0} and enable the setting.', FrontendApplicationConfigProvider.get().applicationName);
@@ -267,7 +266,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
 
         registry.registerCommand(ElectronCommands.RELOAD, {
-            execute: () => currentWindow.reload()
+            execute: () => this.windowService.reload()
         });
         registry.registerCommand(ElectronCommands.CLOSE_WINDOW, {
             execute: () => currentWindow.close()

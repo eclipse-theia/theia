@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Google and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Google and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
@@ -140,14 +140,19 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 300,
             minimum: 0,
             maximum: 2000,
-            description: nls.localizeByDefault('Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.')
+            // nls-todo: Will be available with VSCode API 1.55
+            description: nls.localize('theia/core/sashDelay', 'Controls the hover feedback delay in milliseconds of the dragging area in between views/editors.')
         },
         'workbench.sash.size': {
             type: 'number',
             default: 4,
             minimum: 1,
             maximum: 20,
-            description: nls.localizeByDefault('Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.')
+            // nls-todo: Will be available with VSCode API 1.55
+            description: nls.localize(
+                'theia/core/sashSize',
+                'Controls the feedback area size in pixels of the dragging area in between views/editors. Set it to a larger value if needed.'
+            )
         },
     }
 };

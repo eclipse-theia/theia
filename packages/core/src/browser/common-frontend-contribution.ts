@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable max-len, @typescript-eslint/indent */
 
@@ -27,11 +27,11 @@ import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
+import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
-import { ContextKeyService } from './context-key-service';
+import { ContextKey, ContextKeyService } from './context-key-service';
 import { OS, isOSX, isWindows } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
@@ -50,7 +50,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
-import { FormatType, Saveable } from './saveable';
+import { FormatType, Saveable, SaveOptions } from './saveable';
 import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
@@ -59,6 +59,8 @@ import { ConfirmDialog, confirmExit, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
+import { isPinned, Title, togglePinned, Widget } from './widgets';
+import { SaveResourceService } from './save-resource-service';
 
 export namespace CommonMenus {
 
@@ -241,6 +243,16 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Status Bar Visibility'
     });
+    export const PIN_TAB = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.pinEditor',
+        category: VIEW_CATEGORY,
+        label: 'Pin Editor'
+    });
+    export const UNPIN_TAB = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.unpinEditor',
+        category: VIEW_CATEGORY,
+        label: 'Unpin Editor'
+    });
     export const TOGGLE_MAXIMIZED = Command.toLocalizedCommand({
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
@@ -327,7 +339,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
-        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider
+        @inject(AsyncLocalizationProvider) protected readonly localizationProvider: AsyncLocalizationProvider,
+        @inject(SaveResourceService) protected readonly saveResourceService: SaveResourceService,
     ) { }
 
     @inject(ContextKeyService)
@@ -372,6 +385,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    protected pinnedKey: ContextKey<boolean>;
+
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
@@ -384,6 +399,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
         this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
+
+        this.pinnedKey = this.contextKeyService.createKey<boolean>('activeEditorIsPinned', false);
+        this.updatePinnedKey();
+        this.shell.onDidChangeActiveWidget(() => this.updatePinnedKey());
 
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
@@ -425,6 +444,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
         }
+    }
+
+    protected updatePinnedKey(): void {
+        const activeTab = this.shell.findTabBar();
+        const pinningTarget = activeTab && this.shell.findTitle(activeTab);
+        const value = pinningTarget && isPinned(pinningTarget);
+        this.pinnedKey.set(value);
     }
 
     protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
@@ -635,6 +661,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SHOW_MENU_BAR.id,
             label: nls.localizeByDefault('Toggle Menu Bar'),
             order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
+            commandId: CommonCommands.PIN_TAB.id,
+            label: nls.localizeByDefault('Pin'),
+            order: '7'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
+            commandId: CommonCommands.UNPIN_TAB.id,
+            label: nls.localizeByDefault('Unpin'),
+            order: '8'
         });
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
@@ -855,10 +891,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
-            execute: () => this.shell.save({ formatType: FormatType.ON })
+            execute: () => this.save({ formatType: FormatType.ON })
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_WITHOUT_FORMATTING, {
-            execute: () => this.shell.save({ formatType: FormatType.OFF })
+            execute: () => this.save({ formatType: FormatType.OFF })
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
             execute: () => this.shell.saveAll({ formatType: FormatType.DIRTY })
@@ -877,14 +913,28 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
-
+        commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => Boolean(title && !isPinned(title)),
+            execute: title => this.togglePinned(title),
+        }));
+        commandRegistry.registerCommand(CommonCommands.UNPIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
+            isEnabled: title => Boolean(title && isPinned(title)),
+            execute: title => this.togglePinned(title),
+        }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
         });
     }
 
-    private isElectron(): boolean {
+    protected isElectron(): boolean {
         return environment.electron.is();
+    }
+
+    protected togglePinned(title?: Title<Widget>): void {
+        if (title) {
+            togglePinned(title);
+            this.updatePinnedKey();
+        }
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -996,8 +1046,23 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.SELECT_COLOR_THEME.id,
                 keybinding: 'ctrlcmd+k ctrlcmd+t'
+            },
+            {
+                command: CommonCommands.PIN_TAB.id,
+                keybinding: 'ctrlcmd+k shift+enter',
+                when: '!activeEditorIsPinned'
+            },
+            {
+                command: CommonCommands.UNPIN_TAB.id,
+                keybinding: 'ctrlcmd+k shift+enter',
+                when: 'activeEditorIsPinned'
             }
         );
+    }
+
+    protected async save(options?: SaveOptions): Promise<void> {
+        const widget = this.shell.currentWidget;
+        this.saveResourceService.save(widget, options);
     }
 
     protected async openAbout(): Promise<void> {
@@ -1740,6 +1805,33 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'input.border', light: 'input.border', hc: 'input.border'
                 }, description: 'Settings editor number input box border.'
             },
+            {
+                id: 'settings.focusedRowBackground', defaults: {
+                    dark: Color.transparent('#808080', 0.14),
+                    light: Color.transparent('#808080', 0.03),
+                    hc: undefined
+                }, description: 'The background color of a settings row when focused.'
+            },
+            {
+                id: 'settings.rowHoverBackground', defaults: {
+                    dark: Color.transparent('#808080', 0.07),
+                    light: Color.transparent('#808080', 0.05),
+                    hc: undefined
+                }, description: 'The background color of a settings row when hovered.'
+            },
+            {
+                id: 'settings.focusedRowBorder', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.12),
+                    light: Color.rgba(0, 0, 0, 0.12),
+                    hc: 'focusBorder'
+                }, description: "The color of the row's top and bottom border when the row is focused."
+            },
+            // Toolbar Action colors should be aligned with https://code.visualstudio.com/api/references/theme-color#action-colors
+            {
+                id: 'toolbar.hoverBackground', defaults: {
+                    dark: '#5a5d5e50', light: '#b8b8b850', hc: undefined
+                }, description: 'Toolbar background when hovering over actions using the mouse.'
+            },
 
             // Theia Variable colors
             {
@@ -2021,7 +2113,23 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'editorWidget.background',
                 },
                 description: 'Background color of breadcrumb item picker'
-            }
+            },
+            {
+                id: 'mainToolbar.background',
+                defaults: {
+                    dark: Color.lighten('activityBar.background', 0.1),
+                    light: Color.darken('activityBar.background', 0.1),
+                    hc: Color.lighten('activityBar.background', 0.1),
+                },
+                description: 'Background color of shell\'s global toolbar'
+            },
+            {
+                id: 'mainToolbar.foreground', defaults: {
+                    dark: Color.darken('activityBar.foreground', 0.1),
+                    light: Color.lighten('activityBar.foreground', 0.1),
+                    hc: Color.lighten('activityBar.foreground', 0.1),
+                }, description: 'Foreground color of active toolbar item',
+            },
         );
     }
 }

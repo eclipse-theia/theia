@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -55,7 +55,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     readonly onCurrentEditorChanged: Event<EditorWidget | undefined> = this.onCurrentEditorChangedEmitter.event;
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
@@ -81,15 +81,15 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         this.updateCurrentEditor();
     }
 
-    getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    override getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         return this.getWidget(uri, options);
     }
 
-    getOrCreateByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+    override getOrCreateByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         return this.getOrCreateWidget(uri, options);
     }
 
-    protected tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
+    protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
         const editorPromise = super.tryGetPendingWidget(uri, options);
         if (editorPromise) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
@@ -102,7 +102,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return editorPromise;
     }
 
-    protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const editor = await super.getWidget(uri, options);
         if (editor) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
@@ -111,7 +111,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return editor;
     }
 
-    protected async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+    protected override async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         const editor = await super.getOrCreateWidget(uri, options);
         // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
         this.revealSelection(editor, options, uri);
@@ -186,7 +186,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     // This override only serves to inform external callers that they can use EditorOpenerOptions.
-    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+    override open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         return super.open(uri, options);
     }
 
@@ -299,7 +299,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getCounterForUri(uri) ?? this.createCounterForUri(uri);
     }
 
-    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
+    protected override createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
         const navigatableOptions = super.createWidgetOptions(uri, options);
         navigatableOptions.counter = options?.counter ?? this.getOrCreateCounterForUri(uri);
         return navigatableOptions;

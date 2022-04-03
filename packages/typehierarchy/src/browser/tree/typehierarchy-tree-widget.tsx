@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2019 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2019 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -34,11 +34,12 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly icons = new Map(Array.from(Object.keys(SymbolKind)).map(key => [(SymbolKind as any)[key], key.toLocaleLowerCase()] as [number, string]));
 
+    @inject(EditorManager) readonly editorManager: EditorManager;
+
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(TypeHierarchyTreeModel) readonly model: TypeHierarchyTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(EditorManager) readonly editorManager: EditorManager
+        @inject(TreeProps) props: TreeProps,
+        @inject(TypeHierarchyTreeModel) override readonly model: TypeHierarchyTreeModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
         this.id = TypeHierarchyTreeWidget.WIDGET_ID;
@@ -66,7 +67,7 @@ export class TypeHierarchyTreeWidget extends TreeWidget {
     /**
      * See: `TreeWidget#renderIcon`.
      */
-    protected renderIcon(node: TreeNode): React.ReactNode {
+    protected override renderIcon(node: TreeNode): React.ReactNode {
         if (TypeHierarchyTree.Node.is(node)) {
             return <div className={'symbol-icon ' + this.icons.get(node.item.kind) || 'unknown'}></div>;
         }

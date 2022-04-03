@@ -1,21 +1,21 @@
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { MenuModelRegistry, Command, CommandRegistry } from '@theia/core/lib/common';
+import { MenuModelRegistry, Command, CommandRegistry, nls } from '@theia/core/lib/common';
 import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU, CurrentEditorAccess, EditorManager } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
@@ -25,7 +25,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierarchy:toggle';
-export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
+export const CALL_HIERARCHY_LABEL = nls.localizeByDefault('Call Hierarchy');
 
 export namespace CallHierarchyCommands {
     export const OPEN = Command.toLocalizedCommand({
@@ -68,14 +68,14 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         return !!selection && !!languageId && !!this.callHierarchyServiceProvider.get(languageId, new URI(selection.uri));
     }
 
-    async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
+    override async openView(args?: Partial<OpenViewArguments>): Promise<CallHierarchyTreeWidget> {
         const widget = await super.openView(args);
         const { selection, languageId } = this.editorAccess;
         widget.initializeModel(selection, languageId);
         return widget;
     }
 
-    registerCommands(commands: CommandRegistry): void {
+    override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CallHierarchyCommands.OPEN, {
             execute: () => this.openView({
                 toggle: false,
@@ -86,7 +86,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         super.registerCommands(commands);
     }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    override registerMenus(menus: MenuModelRegistry): void {
         const menuPath = [...EDITOR_CONTEXT_MENU, 'navigation'];
         menus.registerMenuAction(menuPath, {
             commandId: CallHierarchyCommands.OPEN.id,
@@ -95,7 +95,7 @@ export class CallHierarchyContribution extends AbstractViewContribution<CallHier
         super.registerMenus(menus);
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: CallHierarchyCommands.OPEN.id,

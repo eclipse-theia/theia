@@ -41,10 +41,6 @@
     min-width: 2px;
 }
 
-.theia-view-container > .p-SplitPanel > .p-SplitPanel-handle {
-    background-color: var(--theia-sideBarSectionHeader-border);
-}
-
 .p-SplitPanel > .p-SplitPanel-handle:hover::after {
     background-color: var(--theia-sash-hoverBorder);
     transition-delay: var(--theia-sash-hoverDelay);
@@ -76,6 +72,14 @@
     z-index: 10;
     color: var(--theia-sideBarSectionHeader-foreground);
     font-weight: 700;
+}
+
+.p-Widget > .theia-view-container-part-header {
+    border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+}
+
+.p-Widget.p-first-visible > .theia-view-container-part-header {
+    border-top: none;
 }
 
 .theia-view-container-part-header .theia-ExpansionToggle {

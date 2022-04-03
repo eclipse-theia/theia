@@ -1,19 +1,19 @@
 
-/********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -153,17 +153,14 @@ export namespace MonacoThemeRegistry {
     export const SINGLETON = new MonacoThemeRegistry();
 
     export const DARK_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/dark_theia.json'), {
-        './dark_defaults.json': require('../../../data/monaco-themes/vscode/dark_defaults.json'),
         './dark_vs.json': require('../../../data/monaco-themes/vscode/dark_vs.json'),
         './dark_plus.json': require('../../../data/monaco-themes/vscode/dark_plus.json')
     }, 'dark-theia', 'vs-dark').name!;
     export const LIGHT_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/light_theia.json'), {
-        './light_defaults.json': require('../../../data/monaco-themes/vscode/light_defaults.json'),
         './light_vs.json': require('../../../data/monaco-themes/vscode/light_vs.json'),
         './light_plus.json': require('../../../data/monaco-themes/vscode/light_plus.json'),
     }, 'light-theia', 'vs').name!;
     export const HC_DEFAULT_THEME: string = SINGLETON.register(require('../../../data/monaco-themes/vscode/hc_theia.json'), {
-        './hc_black_defaults.json': require('../../../data/monaco-themes/vscode/hc_black_defaults.json'),
         './hc_black.json': require('../../../data/monaco-themes/vscode/hc_black.json')
     }, 'hc-theia', 'hc-black').name!;
 }

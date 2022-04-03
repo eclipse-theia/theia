@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Ericsson and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
@@ -28,6 +28,7 @@ import { bindPreferenceConfigurations, PreferenceConfigurations } from './prefer
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 import { Mutable } from '../../common/types';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { JSONValue } from '@phosphor/coreutils';
 
 /**
  * @deprecated since 1.13.0 import from @theia/core/lib/browser/preferences/preference-language-override-service.
@@ -218,10 +219,12 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                     schemaProps.defaultValue = PreferenceSchemaProperties.is(configuredDefault)
                         ? PreferenceProvider.merge(schemaDefault, configuredDefault)
                         : schemaDefault;
-                    for (const overriddenPreferenceName in schemaProps.defaultValue) {
-                        const overrideValue = schemaDefault[overriddenPreferenceName];
-                        const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
-                        changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                    if (schemaProps.defaultValue && PreferenceSchemaProperties.is(schemaProps.defaultValue)) {
+                        for (const overriddenPreferenceName in schemaProps.defaultValue) {
+                            const overrideValue = schemaDefault[overriddenPreferenceName];
+                            const overridePreferenceName = `${preferenceName}.${overriddenPreferenceName}`;
+                            changes.push(this.doSetPreferenceValue(overridePreferenceName, overrideValue, { scope, domain }));
+                        }
                     }
                 } else {
                     schemaProps.defaultValue = configuredDefault === undefined ? schemaDefault : configuredDefault;
@@ -241,7 +244,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, oldValue, newValue, scope, domain };
     }
 
-    protected getDefaultValue(property: PreferenceItem): any {
+    getDefaultValue(property: PreferenceItem): JSONValue {
         if (property.defaultValue !== undefined) {
             return property.defaultValue;
         }

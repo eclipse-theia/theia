@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2018 Red Hat, Inc. and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 // This file is heavily inspired by VSCode 'vscode.d.ts' - https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
 // 'vscode.d.ts' copyright:
@@ -3791,6 +3791,12 @@ export module '@theia/plugin' {
          * from the user's workspace.
          */
         readonly backupId?: string;
+        /**
+         * If the URI is an untitled file, this will be populated with the byte data of that file.
+         *
+         * If this is provided, your extension should utilize this byte data rather than executing fs APIs on the URI passed in.
+         */
+        readonly untitledDocumentData?: Uint8Array;
     }
 
     /**
@@ -3986,6 +3992,87 @@ export module '@theia/plugin' {
          */
         backupCustomDocument(document: T, context: CustomDocumentBackupContext, cancellation: CancellationToken): Thenable<CustomDocumentBackup>;
 
+    }
+
+    export interface WebviewView {
+        /**
+         * Identifies the type of the webview view, such as `'hexEditor.dataView'`.
+         */
+        readonly viewType: string;
+
+        /**
+         * The underlying webview for the view.
+         */
+        readonly webview: Webview;
+
+        /**
+         * View title displayed in the UI.
+         *
+         * The view title is initially taken from the extension `package.json` contribution.
+         */
+        title?: string;
+
+        /**
+         * Human-readable string which is rendered less prominently in the title.
+         */
+        description?: string;
+
+        /**
+         * Event fired when the view is disposed.
+         *
+         * Views are disposed when they are explicitly hidden by a user (this happens when a user
+         * right clicks in a view and unchecks the webview view).
+         *
+         * Trying to use the view after it has been disposed throws an exception.
+         */
+        readonly onDidDispose: Event<void>;
+
+        /**
+         * Tracks if the webview is currently visible.
+         *
+         * Views are visible when they are on the screen and expanded.
+         */
+        readonly visible: boolean;
+
+        /**
+         * Event fired when the visibility of the view changes.
+         *
+         * Actions that trigger a visibility change:
+         *
+         * - The view is collapsed or expanded.
+         * - The user switches to a different view group in the sidebar or panel.
+         *
+         * Note that hiding a view using the context menu instead disposes of the view and fires `onDidDispose`.
+         */
+        readonly onDidChangeVisibility: Event<boolean>;
+
+        /**
+         * Reveal the view in the UI.
+         *
+         * If the view is collapsed, this will expand it.
+         *
+         * @param preserveFocus When `true` the view will not take focus.
+         */
+        show(preserveFocus?: boolean): void;
+    }
+    /**
+     * Provider for creating `WebviewView` elements.
+     */
+    export interface WebviewViewProvider {
+        /**
+         * Revolves a webview view.
+         *
+         * `resolveWebviewView` is called when a view first becomes visible. This may happen when the view is
+         * first loaded or when the user hides and then shows a view again.
+         *
+         * @param webviewView Webview view to restore. The provider should take ownership of this view. The
+         *    provider must set the webview's `.html` and hook up all webview events it is interested in.
+         * @param context Additional metadata about the view being resolved.
+         * @param token Cancellation token indicating that the view being provided is no longer needed.
+         *
+         * @return Optional thenable indicating that the view has been fully resolved.
+         */
+        resolveWebviewView(webviewView: WebviewView, context: WebviewViewResolveContext, token: CancellationToken): Thenable<void> | void;
     }
 
     /**
@@ -4321,6 +4408,70 @@ export module '@theia/plugin' {
          * @param viewType Type of the webview panel that can be serialized.
          * @param serializer Webview serializer.
          */
+
+        /**
+         * Additional information the webview view being resolved.
+         *
+         * @param T Type of the webview's state.
+         */
+        interface WebviewViewResolveContext<T = unknown> {
+            /**
+             * Persisted state from the webview content.
+             *
+             * To save resources, VS Code normally deallocates webview documents (the iframe content) that are not visible.
+             * For example, when the user collapse a view or switches to another top level activity in the sidebar, the
+             * `WebviewView` itself is kept alive but the webview's underlying document is deallocated. It is recreated when
+             * the view becomes visible again.
+             *
+             * You can prevent this behavior by setting `retainContextWhenHidden` in the `WebviewOptions`. However this
+             * increases resource usage and should be avoided wherever possible. Instead, you can use persisted state to
+             * save off a webview's state so that it can be quickly recreated as needed.
+             *
+             * To save off a persisted state, inside the webview call `acquireVsCodeApi().setState()` with
+             * any json serializable object. To restore the state again, call `getState()`. For example:
+             *
+             * ```js
+             * // Within the webview
+             * const vscode = acquireVsCodeApi();
+             *
+             * // Get existing state
+             * const oldState = vscode.getState() || { value: 0 };
+             *
+             * // Update state
+             * setState({ value: oldState.value + 1 })
+             * ```
+             *
+             * VS Code ensures that the persisted state is saved correctly when a webview is hidden and across
+             * editor restarts.
+             */
+            readonly state: T | undefined;
+        }
+
+        export function registerWebviewViewProvider(viewId: string, provider: WebviewViewProvider, options?: {
+            /**
+             * Content settings for the webview created for this view.
+             */
+            readonly webviewOptions?: {
+                /**
+                 * Controls if the webview element itself (iframe) is kept around even when the view
+                 * is no longer visible.
+                 *
+                 * Normally the webview's html context is created when the view becomes visible
+                 * and destroyed when it is hidden. Extensions that have complex state
+                 * or UI can set the `retainContextWhenHidden` to make the editor keep the webview
+                 * context around, even when the webview moves to a background tab. When a webview using
+                 * `retainContextWhenHidden` becomes hidden, its scripts and other dynamic content are suspended.
+                 * When the view becomes visible again, the context is automatically restored
+                 * in the exact same state it was in originally. You cannot send messages to a
+                 * hidden webview, even with `retainContextWhenHidden` enabled.
+                 *
+                 * `retainContextWhenHidden` has a high memory overhead and should only be used if
+                 * your view's context cannot be quickly saved and restored.
+                 */
+                readonly retainContextWhenHidden?: boolean;
+            };
+        }): Disposable;
+
         export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
 
         /**
@@ -4408,13 +4559,23 @@ export module '@theia/plugin' {
         export function setStatusBarMessage(text: string, hideWhenDone: PromiseLike<any>): Disposable;
 
         /**
-         * Creates a status bar [item](#StatusBarItem).
+         * Creates a status bar {@link StatusBarItem item}.
          *
          * @param alignment The alignment of the item.
          * @param priority The priority of the item. Higher values mean the item should be shown more to the left.
          * @return A new status bar item.
          */
         export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
+
+        /**
+         * Creates a status bar {@link StatusBarItem item}.
+         *
+         * @param id The unique identifier of the item.
+         * @param alignment The alignment of the item.
+         * @param priority The priority of the item. Higher values mean the item should be shown more to the left.
+         * @return A new status bar item.
+         */
+        export function createStatusBarItem(id: string, alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
 
         /**
          * Create a new [output channel](#OutputChannel) with the given name.
@@ -4462,7 +4623,7 @@ export module '@theia/plugin' {
          * @param options ExtensionTerminalOptions.
          * @return A new Terminal.
          */
-         export function createTerminal(options: ExtensionTerminalOptions): Terminal;
+        export function createTerminal(options: ExtensionTerminalOptions): Terminal;
 
         /**
          * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
@@ -6049,6 +6210,28 @@ export module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /**
+         * When true, the user has explicitly trusted the contents of the workspace.
+         */
+        export const isTrusted: boolean;
+
+        export function requestWorkspaceTrust(options?: WorkspaceTrustRequestOptions): Promise<boolean | undefined>;
+
+        /**
+         * Event that fires when the current workspace has been trusted.
+         */
+        export const onDidGrantWorkspaceTrust: Event<void>;
+    }
+
+    export interface WorkspaceTrustRequestButton {
+        readonly label: string;
+        readonly type: 'ContinueWithTrust' | 'ContinueWithoutTrust' | 'Manage' | 'Cancel'
+    }
+
+    export interface WorkspaceTrustRequestOptions {
+        readonly buttons?: WorkspaceTrustRequestButton[];
+        readonly message?: string;
     }
 
     export namespace env {
@@ -6767,6 +6950,16 @@ export module '@theia/plugin' {
          * signaled by returning `undefined`, `null`, or an empty array.
          */
         provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<SymbolInformation[] | DocumentSymbol[]>;
+    }
+
+    /**
+     * Metadata about a {@link DocumentSymbolProvider}.
+     */
+    export interface DocumentSymbolProviderMetadata {
+        /**
+         * A human-readable string that is shown when multiple outline trees show for one document.
+         */
+        label?: string;
     }
 
     /**
@@ -7624,6 +7817,16 @@ export module '@theia/plugin' {
         kind?: CodeActionKind;
 
         /**
+         * Marks that the code action cannot currently be applied.
+         */
+        disabled?: { reason: string };
+
+        /**
+         * Marks this as a preferred action.
+         */
+        isPreferred?: boolean;
+
+        /**
          * Creates a new code action.
          *
          * A code action must have at least a [title](#CodeAction.title) and [edits](#CodeAction.edit)
@@ -7659,6 +7862,22 @@ export module '@theia/plugin' {
             context: CodeActionContext,
             token: CancellationToken | undefined
         ): ProviderResult<(Command | CodeAction)[]>;
+
+        /**
+         * Given a code action fill in its `edit`-property. Changes to
+         * all other properties, like title, are ignored. A code action that has an edit
+         * will not be resolved.
+         *
+         * *Note* that a code action provider that returns commands, not code actions, cannot successfully
+         * implement this function. Returning commands is deprecated and instead code actions should be
+         * returned.
+         *
+         * @param codeAction A code action.
+         * @param token A cancellation token.
+         * @return The resolved code action or a thenable that resolves to such. It is OK to return the given
+         * `item`. When no result is returned, the given `item` will be used.
+         */
+        resolveCodeAction?(codeAction: CodeAction, token: CancellationToken | undefined): ProviderResult<CodeAction>;
     }
 
     /**
@@ -7672,6 +7891,13 @@ export module '@theia/plugin' {
          * may list our every specific kind they provide, such as `CodeActionKind.Refactor.Extract.append('function`)`
          */
         readonly providedCodeActionKinds?: ReadonlyArray<CodeActionKind>;
+
+        /**
+         * Documentation from the provider is shown in the code actions menu
+         *
+         * At most one documentation entry will be shown per provider.
+         */
+        documentation?: ReadonlyArray<{ command: Command, kind: CodeActionKind }>
     }
 
     /**
@@ -7826,7 +8052,7 @@ export module '@theia/plugin' {
         /**
          * String value of the kind, e.g. `"refactor.extract.function"`.
          */
-        readonly value?: string;
+        readonly value: string;
 
         /**
          * Create a new kind by appending a more specific selector to the current kind.
@@ -8758,9 +8984,11 @@ export module '@theia/plugin' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A document symbol provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @param metadata Optional metadata about the provider.
+         * @return A {@link Disposable disposable} that unregisters this provider when being disposed.
          */
-        export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider): Disposable;
+        export function registerDocumentSymbolProvider(selector: DocumentSelector, provider: DocumentSymbolProvider,
+            metadata?: DocumentSymbolProviderMetadata): Disposable;
 
         /**
          * Register a color provider.
@@ -11017,6 +11245,28 @@ export module '@theia/plugin' {
          * Defaults to false.
          */
         clearSessionPreference?: boolean;
+
+        /**
+         * Whether we should attempt to reauthenticate even if there is already a session available.
+         *
+         * If true, a modal dialog will be shown asking the user to sign in again. This is mostly used for scenarios
+         * where the token needs to be re minted because it has lost some authorization.
+         *
+         * Defaults to false.
+         */
+        forceNewSession?: boolean | { detail: string };
+
+        /**
+         * Whether we should show the indication to sign in in the Accounts menu.
+         *
+         * If false, the user will be shown a badge on the Accounts menu with an option to sign in for the extension.
+         * If true, no indication will be shown.
+         *
+         * Defaults to false.
+         *
+         * Note: you cannot use this option with any other options that prompt the user like {@link createIfNone}.
+         */
+        silent?: boolean;
     }
 
     /**
@@ -11045,6 +11295,83 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Options for creating an {@link AuthenticationProvider}.
+     */
+    export interface AuthenticationProviderOptions {
+        /**
+         * Whether it is possible to be signed into multiple accounts at once with this provider.
+         * If not specified, will default to false.
+         */
+        readonly supportsMultipleAccounts?: boolean;
+    }
+
+    /**
+     * An {@link Event} which fires when an {@link AuthenticationSession} is added, removed, or changed.
+     */
+    export interface AuthenticationProviderAuthenticationSessionsChangeEvent {
+        /**
+         * The {@link AuthenticationSession AuthenticationSessions} of the {@link AuthenticationProvider} that have been added.
+         */
+        readonly added: readonly AuthenticationSession[] | undefined;
+
+        /**
+         * The {@link AuthenticationSession AuthenticationSessions} of the {@link AuthenticationProvider} that have been removed.
+         */
+        readonly removed: readonly AuthenticationSession[] | undefined;
+
+        /**
+         * The {@link AuthenticationSession AuthenticationSessions} of the {@link AuthenticationProvider} that have been changed.
+         * A session changes when its data excluding the id are updated. An example of this is a session refresh that results in a new
+         * access token being set for the session.
+         */
+        readonly changed: readonly AuthenticationSession[] | undefined;
+    }
+
+    /**
+     * A provider for performing authentication to a service.
+     */
+    export interface AuthenticationProvider {
+        /**
+         * An {@link Event} which fires when the array of sessions has changed, or data
+         * within a session has changed.
+         */
+        readonly onDidChangeSessions: Event<AuthenticationProviderAuthenticationSessionsChangeEvent>;
+
+        /**
+         * Get a list of sessions.
+         * @param scopes An optional list of scopes. If provided, the sessions returned should match
+         * these permissions, otherwise all sessions should be returned.
+         * @returns A promise that resolves to an array of authentication sessions.
+         */
+        getSessions(scopes?: readonly string[]): Thenable<readonly AuthenticationSession[]>;
+
+        /**
+         * Prompts a user to login.
+         *
+         * If login is successful, the onDidChangeSessions event should be fired.
+         *
+         * If login fails, a rejected promise should be returned.
+         *
+         * If the provider has specified that it does not support multiple accounts,
+         * then this should never be called if there is already an existing session matching these
+         * scopes.
+         * @param scopes A list of scopes, permissions, that the new session should be created with.
+         * @returns A promise that resolves to an authentication session.
+         */
+        createSession(scopes: readonly string[]): Thenable<AuthenticationSession>;
+
+        /**
+         * Removes the session corresponding to session id.
+         *
+         * If the removal is successful, the onDidChangeSessions event should be fired.
+         *
+         * If a session cannot be removed, the provider should reject with an error message.
+         * @param sessionId The id of the session to remove.
+         */
+        removeSession(sessionId: string): Thenable<void>;
+    }
+
+    /**
      * Namespace for authentication.
      */
     export namespace authentication {
@@ -11061,7 +11388,22 @@ export module '@theia/plugin' {
          * @param options The [getSessionOptions](#GetSessionOptions) to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+
+        /**
+         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with
+         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
+         * quickpick to select which account they would like to use.
+         *
+         * Currently, there are only two authentication providers that are contributed from built in extensions
+         * to the editor that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
+         * @param providerId The id of the provider to use
+         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
+         * @param options The {@link AuthenticationGetSessionOptions} to use
+         * @returns A thenable that resolves to an authentication session
+         */
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | { detail: string } }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -11074,12 +11416,32 @@ export module '@theia/plugin' {
          * @param options The [getSessionOptions](#GetSessionOptions) to use
          * @returns A thenable that resolves to an authentication session if available, or undefined if there are no sessions
          */
-        export function getSession(providerId: string, scopes: string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
+        export function getSession(providerId: string, scopes: readonly string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
 
         /**
          * An [event](#Event) which fires when the authentication sessions of an authentication provider have
          * been added, removed, or changed.
          */
         export const onDidChangeSessions: Event<AuthenticationSessionsChangeEvent>;
+
+        /**
+         * Register an authentication provider.
+         *
+         * There can only be one provider per id and an error is being thrown when an id
+         * has already been used by another provider. Ids are case-sensitive.
+         *
+         * @param id The unique identifier of the provider.
+         * @param label The human-readable name of the provider.
+         * @param provider The authentication provider provider.
+         * @params options Additional options for the provider.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
+         */
+        export function registerAuthenticationProvider(id: string, label: string, provider: AuthenticationProvider, options?: AuthenticationProviderOptions): Disposable;
+
+        /**
+         * @deprecated Use {@link getSession()} {@link AuthenticationGetSessionOptions.silent} instead.
+         */
+        export function hasSession(providerId: string, scopes: readonly string[]): Thenable<boolean>;
+
     }
 }

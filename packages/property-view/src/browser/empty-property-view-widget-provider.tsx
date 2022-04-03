@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2020 EclipseSource and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2020 EclipseSource and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { ReactWidget } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
@@ -54,8 +54,8 @@ class EmptyPropertyViewWidget extends ReactWidget implements PropertyViewContent
 export class EmptyPropertyViewWidgetProvider extends DefaultPropertyViewWidgetProvider {
 
     static readonly ID = 'no-properties';
-    readonly id = EmptyPropertyViewWidgetProvider.ID;
-    readonly label = 'DefaultPropertyViewWidgetProvider';
+    override readonly id = EmptyPropertyViewWidgetProvider.ID;
+    override readonly label = 'DefaultPropertyViewWidgetProvider';
 
     private emptyWidget: EmptyPropertyViewWidget;
 
@@ -64,15 +64,15 @@ export class EmptyPropertyViewWidgetProvider extends DefaultPropertyViewWidgetPr
         this.emptyWidget = new EmptyPropertyViewWidget();
     }
 
-    canHandle(selection: Object | undefined): number {
+    override canHandle(selection: Object | undefined): number {
         return selection === undefined ? 1 : 0;
     }
 
-    provideWidget(selection: Object | undefined): Promise<EmptyPropertyViewWidget> {
+    override provideWidget(selection: Object | undefined): Promise<EmptyPropertyViewWidget> {
         return Promise.resolve(this.emptyWidget);
     }
 
-    updateContentWidget(selection: Object | undefined): void {
+    override updateContentWidget(selection: Object | undefined): void {
         this.emptyWidget.updatePropertyViewContent();
     }
 }

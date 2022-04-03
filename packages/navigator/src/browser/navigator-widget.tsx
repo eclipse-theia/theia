@@ -1,25 +1,25 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { CommandService, notEmpty, SelectionService } from '@theia/core/lib/common';
+import { CommandService } from '@theia/core/lib/common';
 import {
-    CorePreferences, Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
+    Key, TreeModel, SelectableTreeNode, TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS,
     TreeDecoration, NodeProps, OpenerService, ContextMenuRenderer, ExpandableTreeNode, TreeProps, TreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode, DirNode, FileStatNode } from '@theia/filesystem/lib/browser';
@@ -40,21 +40,16 @@ export const CLASS = 'theia-Files';
 @injectable()
 export class FileNavigatorWidget extends FileTreeWidget {
 
-    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
-
-    @inject(NavigatorContextKeyService)
-    protected readonly contextKeyService: NavigatorContextKeyService;
-
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(CommandService) protected readonly commandService: CommandService;
+    @inject(NavigatorContextKeyService) protected readonly contextKeyService: NavigatorContextKeyService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
     constructor(
-        @inject(TreeProps) readonly props: TreeProps,
-        @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
+        @inject(TreeProps) props: TreeProps,
+        @inject(FileNavigatorModel) override readonly model: FileNavigatorModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(CommandService) protected readonly commandService: CommandService,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
@@ -62,7 +57,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected override init(): void {
         super.init();
         // This ensures that the context menu command to hide this widget receives the label 'Folders'
         // regardless of the name of workspace. See ViewContainer.updateToolbarItems.
@@ -85,7 +80,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         ]);
     }
 
-    protected doUpdateRows(): void {
+    protected override doUpdateRows(): void {
         super.doUpdateRows();
         this.title.label = LABEL;
         if (WorkspaceNode.is(this.model.root)) {
@@ -134,7 +129,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.addEventListener(mainPanelNode, 'dragenter', handler);
     }
 
-    protected getContainerTreeNode(): TreeNode | undefined {
+    override getContainerTreeNode(): TreeNode | undefined {
         const root = this.model.root;
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
             return root;
@@ -145,15 +140,15 @@ export class FileNavigatorWidget extends FileTreeWidget {
         return undefined;
     }
 
-    protected renderTree(model: TreeModel): React.ReactNode {
+    protected override renderTree(model: TreeModel): React.ReactNode {
         if (this.model.root && this.isEmptyMultiRootWorkspace(model)) {
             return this.renderEmptyMultiRootWorkspace();
         }
         return super.renderTree(model);
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
-        const tailDecorations = this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+    protected override renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
+        const tailDecorations = this.getDecorationData(node, 'tailDecorations').reduce((acc, current) => acc.concat(current), []);
 
         if (tailDecorations.length === 0) {
             return;
@@ -182,11 +177,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
         </div>;
     }
 
-    protected shouldShowWelcomeView(): boolean {
+    protected override shouldShowWelcomeView(): boolean {
         return this.model.root === undefined;
     }
 
-    protected onAfterAttach(msg: Message): void {
+    protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
         this.addClipboardListener(this.node, 'paste', e => this.handlePaste(e));
@@ -264,7 +259,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         return WorkspaceNode.is(model.root) && model.root.children.length === 0;
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         const modifierKeyCombined: boolean = isOSX ? (event.shiftKey || event.metaKey) : (event.shiftKey || event.ctrlKey);
         if (!modifierKeyCombined && node && this.corePreferences['workbench.list.openMode'] === 'singleClick') {
             this.model.previewNode(node);
@@ -272,12 +267,12 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super.handleClickEvent(node, event);
     }
 
-    protected onAfterShow(msg: Message): void {
+    protected override onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.contextKeyService.explorerViewletVisible.set(true);
     }
 
-    protected onAfterHide(msg: Message): void {
+    protected override onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
         this.contextKeyService.explorerViewletVisible.set(false);
     }

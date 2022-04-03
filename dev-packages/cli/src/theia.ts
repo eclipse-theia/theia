@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -25,7 +25,7 @@ import * as ffmpeg from '@theia/ffmpeg';
 import checkHoisted from './check-hoisting';
 import downloadPlugins from './download-plugins';
 import runTest from './run-test';
-import { extract } from '@theia/localization-manager';
+import { LocalizationManager, extract } from '@theia/localization-manager';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
@@ -110,6 +110,7 @@ async function theiaCli(): Promise<void> {
     // affecting the global `yargs` instance used by the CLI.
     const { appTarget } = defineCommonOptions(yargsFactory()).help(false).parse();
     const manager = new ApplicationPackageManager({ projectPath, appTarget });
+    const localizationManager = new LocalizationManager();
     const { target } = manager.pck;
     defineCommonOptions(yargs)
         .command<{
@@ -229,12 +230,53 @@ async function theiaCli(): Promise<void> {
             },
         })
         .command<{
+            freeApi?: boolean,
+            deeplKey: string,
+            file: string,
+            languages: string[],
+            sourceLanguage?: string
+        }>({
+            command: 'nls-localize [languages...]',
+            describe: 'Localize json files using the DeepL API',
+            builder: {
+                'file': {
+                    alias: 'f',
+                    describe: 'The source file which should be translated',
+                    demandOption: true
+                },
+                'deepl-key': {
+                    alias: 'k',
+                    describe: 'DeepL key used for API access. See https://www.deepl.com/docs-api for more information',
+                    demandOption: true
+                },
+                'free-api': {
+                    describe: 'Indicates whether the specified DeepL API key belongs to the free API',
+                    boolean: true,
+                    default: false,
+                },
+                'source-language': {
+                    alias: 's',
+                    describe: 'The source language of the translation file'
+                }
+            },
+            handler: async ({ freeApi, deeplKey, file, sourceLanguage, languages = [] }) => {
+                await localizationManager.localize({
+                    sourceFile: file,
+                    freeApi: freeApi ?? true,
+                    authKey: deeplKey,
+                    targetLanguages: languages,
+                    sourceLanguage
+                });
+            }
+        })
+        .command<{
             root: string,
             output: string,
             merge: boolean,
             exclude?: string,
             logs?: string,
-            files?: string[]
+            files?: string[],
+            quiet: boolean
         }>({
             command: 'nls-extract',
             describe: 'Extract translation key/value pairs from source code',
@@ -267,6 +309,12 @@ async function theiaCli(): Promise<void> {
                 'logs': {
                     alias: 'l',
                     describe: 'File path to a log file'
+                },
+                'quiet': {
+                    alias: 'q',
+                    describe: 'Prevents errors from being logged to console',
+                    boolean: true,
+                    default: false
                 }
             },
             handler: async options => {

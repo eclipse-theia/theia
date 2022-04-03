@@ -1,18 +1,18 @@
-/********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
- *
- * This Source Code may also be made available under the following Secondary
- * Licenses when the conditions for such availability set forth in the Eclipse
- * Public License v. 2.0 are satisfied: GNU General Public License, version 2
- * with the GNU Classpath Exception which is available at
- * https://www.gnu.org/software/classpath/license.html.
- *
- * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
- ********************************************************************************/
+// *****************************************************************************
+// Copyright (C) 2017 TypeFox and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { Disposable } from './disposable';
 import { Event } from './event';
@@ -54,6 +54,22 @@ export function timeout(ms: number, token = CancellationToken.None): Promise<voi
         clearTimeout(handle);
         deferred.reject(cancelled());
     });
+    return deferred.promise;
+}
+
+/**
+ * Creates a promise that is rejected after the given amount of time. A typical use case is to wait for another promise until a specified timeout using:
+ * ```
+ * Promise.race([ promiseToPerform, timeoutReject(timeout, 'Timeout error message') ]);
+ * ```
+ *
+ * @param ms timeout in milliseconds
+ * @param message error message on promise rejection
+ * @returns rejection promise
+ */
+export function timeoutReject<T>(ms: number, message?: string): Promise<T> {
+    const deferred = new Deferred<T>();
+    setTimeout(() => deferred.reject(new Error(message)), ms);
     return deferred.promise;
 }
 
