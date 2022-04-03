@@ -14,42 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { JsonRpcProxy, JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { MaybePromise, serviceIdentifier } from '@theia/core';
 
-export const GitPromptServer = Symbol('GitPromptServer');
-export interface GitPromptServer extends JsonRpcServer<GitPromptClient> {
+export interface GitPrompt {
+
+    ask(question: GitPrompt.Question): MaybePromise<GitPrompt.Answer>;
+
+    // TODO: implement `confirm` with boolean return type.
+    // TODO: implement `select` with possible answers.
 }
-
-export const GitPromptServerProxy = Symbol('GitPromptServerProxy');
-export interface GitPromptServerProxy extends JsonRpcProxy<GitPromptServer> {
-}
-
-@injectable()
-export class GitPrompt implements GitPromptClient, Disposable {
-
-    @inject(GitPromptServer)
-    protected readonly server: GitPromptServer;
-
-    protected readonly toDispose = new DisposableCollection();
-
-    @postConstruct()
-    protected init(): void {
-        this.server.setClient(this);
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
-    }
-
-    async ask(question: GitPrompt.Question): Promise<GitPrompt.Answer> {
-        return GitPrompt.Failure.create('Interactive Git prompt is not supported in the browser.');
-    }
-
-}
-
 export namespace GitPrompt {
+
+    export const Identifier = serviceIdentifier<GitPrompt>('GitPrompt');
 
     /**
      * Unique WS endpoint path for the Git prompt service.
@@ -85,7 +61,6 @@ export namespace GitPrompt {
                 result
             };
         }
-
     }
 
     export interface Cancel extends Answer {
@@ -103,7 +78,6 @@ export namespace GitPrompt {
                 type: Answer.Type.CANCEL
             };
         }
-
     }
 
     export interface Failure extends Answer {
@@ -125,49 +99,14 @@ export namespace GitPrompt {
                 error
             };
         }
-
     }
 
     export namespace Answer {
 
         export enum Type {
-
             SUCCESS,
             CANCEL,
             FAILURE
-
         }
-
     }
-
-}
-
-export const GitPromptClient = Symbol('GitPromptClient');
-export interface GitPromptClient {
-
-    ask(question: GitPrompt.Question): Promise<GitPrompt.Answer>;
-
-    // TODO: implement `confirm` with boolean return type.
-    // TODO: implement `select` with possible answers.
-
-}
-
-/**
- * Note: This implementation is not reconnecting.
- * Git prompting is not supported in the browser. In electron, there's no need to reconnect.
- */
-@injectable()
-export class GitPromptServerImpl implements GitPromptServer {
-
-    @inject(GitPromptServerProxy)
-    protected readonly proxy: GitPromptServerProxy;
-
-    setClient(client: GitPromptClient): void {
-        this.proxy.setClient(client);
-    }
-
-    dispose(): void {
-        this.proxy.dispose();
-    }
-
 }

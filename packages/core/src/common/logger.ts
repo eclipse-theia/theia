@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -240,10 +239,9 @@ export class Logger implements ILogger {
      */
     constructor(
         @inject(ILoggerServer) protected readonly server: ILoggerServer,
-        @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher,
         @inject(LoggerFactory) protected readonly factory: LoggerFactory,
-        @inject(LoggerName) protected name: string) {
-
+        @inject(LoggerName) protected name: string
+    ) {
         if (name !== rootLoggerName) {
             /* Creating a child logger.  */
             this.created = server.child(name);
@@ -256,7 +254,7 @@ export class Logger implements ILogger {
         this._logLevel = this.created.then(_ => this.server.getLogLevel(name));
 
         /* Update the log level if it changes in the backend. */
-        loggerWatcher.onLogLevelChanged(event => {
+        server.onDidChangeLogLevel(event => {
             this.created.then(() => {
                 if (event.loggerName === name) {
                     this._logLevel = Promise.resolve(event.newLogLevel);
@@ -315,9 +313,21 @@ export class Logger implements ILogger {
     }
     protected format(value: any): any {
         if (value instanceof Error) {
-            return value.stack || value.toString();
+            // Browsers and Node.js don't format Errors the same way...
+            if (typeof navigator !== 'undefined' && typeof Navigator !== 'undefined' && navigator instanceof Navigator) {
+                // Browser:
+                if (value.stack) {
+                    return value.message + '\n' + value.stack;
+                }
+                return value.message;
+            } else {
+                // Node:
+                return value.stack ?? value.message;
+            }
+        } else {
+            // Not an Error instance:
+            return value?.toString() ?? 'undefined';
         }
-        return value;
     }
 
     isTrace(): Promise<boolean> {

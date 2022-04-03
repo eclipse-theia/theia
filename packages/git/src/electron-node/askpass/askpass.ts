@@ -13,7 +13,6 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { GitPrompt } from '../../common/git-prompt';
-import { DugiteGitPromptServer } from '../../node/dugite-git-prompt';
 import { AddressInfo } from 'net';
 
 /**
@@ -60,8 +59,8 @@ export class Askpass implements Disposable {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(DugiteGitPromptServer)
-    protected readonly promptServer: DugiteGitPromptServer;
+    @inject(GitPrompt.Identifier)
+    protected readonly gitPrompt: GitPrompt;
 
     protected server: http.Server;
     protected serverAddress: Address | undefined;
@@ -118,7 +117,7 @@ export class Askpass implements Disposable {
 
     protected async prompt(requestingHost: string, request: string): Promise<string> {
         try {
-            const answer = await this.promptServer.ask({
+            const answer = await this.gitPrompt.ask({
                 password: /password/i.test(request),
                 text: request,
                 details: `Git: ${requestingHost} (Press 'Enter' to confirm or 'Escape' to cancel.)`

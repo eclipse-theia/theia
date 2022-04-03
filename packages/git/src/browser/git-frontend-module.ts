@@ -17,13 +17,10 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/core/lib/common';
-import {
-    WebSocketConnectionProvider,
-    FrontendApplicationContribution,
-} from '@theia/core/lib/browser';
+import { BackendAndFrontend, CommandContribution, MenuContribution, ProxyProvider, ResourceResolver } from '@theia/core/lib/common';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
+import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer } from '../common';
 import { GitContribution } from './git-contribution';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
 import { bindGitHistoryModule } from './history/git-history-frontend-module';
@@ -51,10 +48,13 @@ export default new ContainerModule(bind => {
     bindDirtyDiff(bind);
     bindBlame(bind);
     bind(GitRepositoryTracker).toSelf().inSingletonScope();
-    bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
-    bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
     bind(GitWatcher).toSelf().inSingletonScope();
-    bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
+    bind(GitWatcherServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(GitWatcherPath))
+        .inSingletonScope();
+    bind(Git)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(GitPath))
+        .inSingletonScope();
 
     bind(GitContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(GitContribution);

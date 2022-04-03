@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
-import { MaybePromise } from '../common/types';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch, MaybePromise, serviceIdentifier } from '../common';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
 import { ApplicationShell } from './shell/application-shell';
@@ -30,7 +29,7 @@ import { TooltipService } from './tooltip-service';
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
  */
-export const FrontendApplicationContribution = Symbol('FrontendApplicationContribution');
+export const FrontendApplicationContribution = serviceIdentifier<FrontendApplicationContribution>('FrontendApplicationContribution');
 export interface FrontendApplicationContribution {
 
     /**

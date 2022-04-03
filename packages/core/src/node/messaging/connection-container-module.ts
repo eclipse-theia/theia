@@ -16,12 +16,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { interfaces, ContainerModule } from 'inversify';
-import { JsonRpcProxyFactory, ConnectionHandler, JsonRpcConnectionHandler, JsonRpcProxy } from '../../common';
+import { ContainerModule, interfaces } from 'inversify';
+import { BackendAndFrontend, Disposable, ProxyProvider, ServiceContribution, serviceIdentifier } from '../../common';
+import Route = require('route-parser');
 
-export type BindFrontendService = <T extends object>(path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>) => interfaces.BindingWhenOnSyntax<T>;
-export type BindBackendService = <T extends object, C extends object = object>(
-    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T, proxy: JsonRpcProxy<C>) => T
+export type BindFrontendService = <T extends object>(path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>) => interfaces.BindingOnSyntax<T>;
+export type BindBackendService = <T extends object>(
+    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T) => T
 ) => void;
 export type ConnectionContainerModuleCallBack = (registry: {
     bind: interfaces.Bind
@@ -31,6 +32,35 @@ export type ConnectionContainerModuleCallBack = (registry: {
     bindFrontendService: BindFrontendService
     bindBackendService: BindBackendService
 }) => void;
+
+export namespace ConnectionContainerModuleApi {
+
+    export function create(callback: ConnectionContainerModuleCallBack): ContainerModule {
+        return new ContainerModule((bind, unbind, isBound, rebind) => {
+            const bindFrontendService: BindFrontendService = (path, identifier) => bind<any>(identifier)
+                .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(path))
+                .inSingletonScope()
+                .whenTargetNamed(BackendAndFrontend);
+            const bindBackendService: BindBackendService = (path, identifier, onActivation) => {
+                const route = new Route(path);
+                bind(ServiceContribution)
+                    .toDynamicValue(ctx => (serviceId, params, lifecycle) => {
+                        const match = route.match(serviceId);
+                        if (match) {
+                            let service: any = ctx.container.get(identifier);
+                            if (Disposable.is(service)) {
+                                service = lifecycle.track(service).ref();
+                            }
+                            return onActivation?.(service) ?? service;
+                        }
+                    })
+                    .inSingletonScope()
+                    .whenTargetNamed(BackendAndFrontend);
+            };
+            callback({ bind, unbind, isBound, rebind, bindFrontendService, bindBackendService });
+        });
+    }
+}
 
 /**
  * ### Connection Container Module
@@ -70,27 +100,7 @@ export type ConnectionContainerModuleCallBack = (registry: {
  * }
  * ```
  */
-export const ConnectionContainerModule: symbol & { create(callback: ConnectionContainerModuleCallBack): ContainerModule } = Object.assign(Symbol('ConnectionContainerModule'), {
-    create(callback: ConnectionContainerModuleCallBack): ContainerModule {
-        return new ContainerModule((bind, unbind, isBound, rebind) => {
-            const bindFrontendService: BindFrontendService = (path, serviceIdentifier) => {
-                const serviceFactory = new JsonRpcProxyFactory();
-                const service = serviceFactory.createProxy();
-                bind<ConnectionHandler>(ConnectionHandler).toConstantValue({
-                    path,
-                    onConnection: connection => serviceFactory.listen(connection)
-                });
-                return bind(serviceIdentifier).toConstantValue(service as any);
-            };
-            const bindBackendService: BindBackendService = (path, serviceIdentifier, onActivation) => {
-                bind(ConnectionHandler).toDynamicValue(context =>
-                    new JsonRpcConnectionHandler<any>(path, proxy => {
-                        const service = context.container.get(serviceIdentifier);
-                        return onActivation ? onActivation(service, proxy) : service;
-                    })
-                ).inSingletonScope();
-            };
-            callback({ bind, unbind, isBound, rebind, bindFrontendService, bindBackendService });
-        });
-    }
-});
+export const ConnectionContainerModule = Object.assign(
+    serviceIdentifier<ContainerModule>('ConnectionContainerModule'),
+    ConnectionContainerModuleApi
+);

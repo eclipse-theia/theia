@@ -18,7 +18,6 @@ import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import { injectable, postConstruct } from 'inversify';
-import { MaybePromise } from '../../common';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 
@@ -35,7 +34,7 @@ export class ElectronTokenValidator implements WsRequestValidatorContribution {
         this.electronSecurityToken = this.getToken();
     }
 
-    allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {
+    async allowWsUpgrade(request: http.IncomingMessage): Promise<boolean> {
         return this.allowRequest(request);
     }
 

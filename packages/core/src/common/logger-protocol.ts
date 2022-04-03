@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { JsonRpcServer } from './messaging/proxy-factory';
+import { Event } from '../common';
+import { servicePath } from './service-provider';
+import { serviceIdentifier } from './types';
 
-export const ILoggerServer = Symbol('ILoggerServer');
+export const ILoggerServer = serviceIdentifier<ILoggerServer>('ILoggerServer');
+export const loggerPath = servicePath<ILoggerServer>('/services/logger');
 
-export const loggerPath = '/services/logger';
-
-export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
+export interface ILoggerServer {
+    onDidChangeLogLevel: Event<ILogLevelChangedEvent>
     setLogLevel(name: string, logLevel: number): Promise<void>;
     getLogLevel(name: string): Promise<number>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,21 +35,6 @@ export const ILoggerClient = Symbol('ILoggerClient');
 export interface ILogLevelChangedEvent {
     loggerName: string;
     newLogLevel: number;
-}
-
-export interface ILoggerClient {
-    onLogLevelChanged(event: ILogLevelChangedEvent): void;
-}
-
-@injectable()
-export class DispatchingLoggerClient implements ILoggerClient {
-
-    readonly clients = new Set<ILoggerClient>();
-
-    onLogLevelChanged(event: ILogLevelChangedEvent): void {
-        this.clients.forEach(client => client.onLogLevelChanged(event));
-    }
-
 }
 
 export const rootLoggerName = 'root';

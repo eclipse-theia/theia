@@ -51,13 +51,6 @@ export namespace CancellationToken {
     });
 }
 
-export class CancellationError extends Error {
-    constructor() {
-        super('Canceled');
-        this.name = this.message;
-    }
-}
-
 class MutableToken implements CancellationToken {
 
     private _isCancelled: boolean = false;
@@ -130,5 +123,12 @@ export function isCancelled(err: Error | undefined): boolean {
 export function checkCancelled(token?: CancellationToken): void {
     if (!!token && token.isCancellationRequested) {
         throw cancelled();
+    }
+}
+
+export class CancellationError extends Error {
+    constructor() {
+        super(cancelledMessage);
+        this.name = this.message;
     }
 }

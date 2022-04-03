@@ -18,13 +18,12 @@ import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
+import { Widget, Message, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
-import { terminalsPath } from '../common/terminal-protocol';
-import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
+import { RemoteTerminalFactory } from '../common/terminal-protocol';
+import { IBaseTerminalServer, TerminalProcessInfo, TerminalWatcher } from '../common/base-terminal-protocol';
 import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
 import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -68,7 +67,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     override lastCwd = new URI();
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
@@ -81,6 +79,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
     @inject(ShellCommandBuilder) protected readonly shellCommandBuilder: ShellCommandBuilder;
+    @inject(RemoteTerminalFactory) protected remoteTerminalFactory: RemoteTerminalFactory;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -197,20 +196,20 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExitChanged(({ terminalId, code }) => {
             if (terminalId === this.terminalId) {
                 this.exitStatus = { code };
                 this.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
-        this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
-            const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
-                disposable.dispose();
-                this.reconnectTerminalProcess();
-            });
-            this.toDispose.push(disposable);
-        }));
+        // this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
+        //     const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
+        //         disposable.dispose();
+        //         this.reconnectTerminalProcess();
+        //     });
+        //     this.toDispose.push(disposable);
+        // }));
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this.onDidOpenFailureEmitter);
@@ -396,7 +395,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             this.onDidOpenEmitter.fire(undefined);
-            await this.shellTerminalServer.onAttachAttempted(this._terminalId);
+            await this.shellTerminalServer.attachAttempted(this._terminalId);
             return this.terminalId;
         }
         this.onDidOpenFailureEmitter.fire(undefined);
@@ -507,32 +506,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
-        this.webSocketConnectionProvider.listen({
-            path: `${terminalsPath}/${this.terminalId}`,
-            onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.write(data));
-
-                // Excludes the device status code emitted by Xterm.js
-                const sendData = (data?: string) => {
-                    if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return connection.sendRequest('write', data);
-                    }
-                };
-
-                const disposable = new DisposableCollection();
-                disposable.push(this.term.onData(sendData));
-                disposable.push(this.term.onBinary(sendData));
-
-                connection.onDispose(() => disposable.dispose());
-
-                this.toDisposeOnConnect.push(connection);
-                connection.listen();
-                if (waitForConnection) {
-                    waitForConnection.resolve(connection);
-                }
+        const remoteTerminal = this.toDispose.pushThru(this.remoteTerminalFactory(this.terminalId));
+        remoteTerminal.onData(data => this.term.write(data));
+        // Excludes the device status code emitted by Xterm.js
+        const sendData = (data?: string) => {
+            if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
+                return remoteTerminal.write(data);
             }
-        }, { reconnecting: false });
+        };
+        this.term.onData(sendData);
+        this.term.onBinary(sendData);
     }
     protected async reconnectTerminalProcess(): Promise<void> {
         if (this.options.isPseudoTerminal) {

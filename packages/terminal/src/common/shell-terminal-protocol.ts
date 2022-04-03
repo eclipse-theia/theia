@@ -14,17 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcProxy } from '@theia/core';
-import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+import { serviceIdentifier, servicePath } from '@theia/core';
 import { OS } from '@theia/core/lib/common/os';
+import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 
-export const IShellTerminalServer = Symbol('IShellTerminalServer');
-
+export const IShellTerminalServer = serviceIdentifier<IShellTerminalServer>('IShellTerminalServer');
 export interface IShellTerminalServer extends IBaseTerminalServer {
-    hasChildProcesses(processId: number | undefined): Promise<boolean>;
+    hasChildProcesses(processId?: number): Promise<boolean>;
 }
-
-export const shellTerminalPath = '/services/shell-terminal';
 
 export type ShellTerminalOSPreferences<T> = {
     [key in OS.Type]: T
@@ -46,5 +43,7 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
     isPseudo?: boolean,
 }
 
-export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
-export type ShellTerminalServerProxy = JsonRpcProxy<IShellTerminalServer>;
+export const shellTerminalPath = servicePath<ShellTerminalServerProxy>('/services/shell-terminal');
+export const ShellTerminalServerProxy = serviceIdentifier<ShellTerminalServerProxy>('ShellTerminalServerProxy');
+// Paul Maréchal: This looks like a code smell:
+export type ShellTerminalServerProxy = IShellTerminalServer;

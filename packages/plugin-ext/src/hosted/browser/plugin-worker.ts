@@ -13,19 +13,23 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import '@theia/core/shared/reflect-metadata';
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
+import { PluginRpc, DefaultPluginRpc } from '../../common/rpc-protocol';
+import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
 
 @injectable()
 export class PluginWorker {
 
     private worker: Worker;
 
-    public readonly rpc: RPCProtocol;
+    public readonly rpc: PluginRpc;
 
     constructor() {
-        const emitter = new Emitter<string>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const emitter = new Emitter<any>();
 
         this.worker = new Worker(new URL('./worker/worker-main',
             // @ts-expect-error (TS1343)
@@ -35,12 +39,20 @@ export class PluginWorker {
         this.worker.onmessage = m => emitter.fire(m.data);
         this.worker.onerror = e => console.error(e);
 
-        this.rpc = new RPCProtocolImpl({
+        const connectionToWorker = new DeferredConnection(waitForRemote(new BufferedConnection({
+            state: ConnectionState.OPENED,
+            onClose: () => ({ dispose(): void { } }),
+            onError: () => ({ dispose(): void { } }),
+            onOpen: () => ({ dispose(): void { } }),
             onMessage: emitter.event,
-            send: (m: string) => {
-                this.worker.postMessage(m);
+            sendMessage: message => {
+                this.worker.postMessage(message);
+            },
+            close: () => {
+                throw new Error('cannot close this connection');
             }
-        });
+        })));
+        this.rpc = new DefaultPluginRpc(connectionToWorker);
     }
 
 }

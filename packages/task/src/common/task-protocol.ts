@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { Event } from '@theia/core';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcher, ProblemMatch, WatchingPattern } from './problem-matcher-protocol';
 
@@ -195,7 +195,14 @@ export interface TaskInfo {
     readonly [key: string]: any;
 }
 
-export interface TaskServer extends JsonRpcServer<TaskClient> {
+export interface TaskServer {
+    onTaskExit: Event<TaskExitedEvent>
+    onTaskCreated: Event<TaskInfo>
+    onDidStartTaskProcess: Event<TaskInfo>
+    onDidEndTaskProcess: Event<TaskExitedEvent>
+    onDidProcessTaskOutput: Event<TaskOutputProcessedEvent>
+    onBackgroundTaskEnded: Event<BackgroundTaskEndedEvent>
+
     /** Run a task. Optionally pass a context.  */
     run(task: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo>;
     /** Kill a task, by id. */
@@ -206,9 +213,6 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
      * undefined context matches all tasks, no matter the creation context.
      */
     getTasks(ctx?: string): Promise<TaskInfo[]>
-
-    /** removes the client that has disconnected */
-    disconnectClient(client: TaskClient): void;
 
     /** Returns the list of default and registered task runners */
     getRegisteredTaskTypes(): Promise<string[]>
@@ -259,15 +263,6 @@ export interface TaskOutputProcessedEvent {
 export interface BackgroundTaskEndedEvent {
     readonly taskId: number;
     readonly ctx?: string;
-}
-
-export interface TaskClient {
-    onTaskExit(event: TaskExitedEvent): void;
-    onTaskCreated(event: TaskInfo): void;
-    onDidStartTaskProcess(event: TaskInfo): void;
-    onDidEndTaskProcess(event: TaskExitedEvent): void;
-    onDidProcessTaskOutput(event: TaskOutputProcessedEvent): void;
-    onBackgroundTaskEnded(event: BackgroundTaskEndedEvent): void;
 }
 
 export interface TaskDefinition {

@@ -16,21 +16,16 @@
 
 import { interfaces } from 'inversify';
 import {
-    bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
-    MessageService, ResourceProvider, ResourceResolver
+    bindContributionProvider, DefaultResourceProvider, MaybePromise,
+    ResourceProvider, ResourceResolver
 } from '../common';
 import {
     bindPreferenceSchemaProvider, PreferenceProvider,
     PreferenceProviderProvider, PreferenceProxyOptions, PreferenceSchema, PreferenceSchemaProvider, PreferenceScope,
     PreferenceService, PreferenceServiceImpl, PreferenceValidationService
 } from './preferences';
-import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './preferences/injectable-preference-proxy';
+import { InjectablePreferenceProxy, PreferenceProxyFactory } from './preferences/injectable-preference-proxy';
 import { ValidatedPreferenceProxy } from './preferences/validated-preference-proxy';
-
-export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
-    bind(MessageClient).toSelf().inSingletonScope();
-    return bind(MessageService).toSelf().inSingletonScope();
-}
 
 export function bindPreferenceService(bind: interfaces.Bind): void {
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
@@ -51,8 +46,8 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
     bind(PreferenceProxyFactory).toFactory(({ container }) => (schema: MaybePromise<PreferenceSchema>, options: PreferenceProxyOptions = {}) => {
         const child = container.createChild();
         child.bind(PreferenceProxyOptions).toConstantValue(options ?? {});
-        child.bind(PreferenceProxySchema).toConstantValue(schema);
         const handler = options.validated ? child.get(ValidatedPreferenceProxy) : child.get(InjectablePreferenceProxy);
+        handler.setSchema(schema);
         return new Proxy(Object.create(null), handler); // eslint-disable-line no-null/no-null
     });
 }

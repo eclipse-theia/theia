@@ -14,6 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '../test/jsdom';
+let disableJSDOM = enableJSDOM();
+
 import { Container } from 'inversify';
 import { ContributionProvider } from '../../common';
 import { CorePreferences } from '../core-preferences';
@@ -21,7 +24,13 @@ import { FrontendApplicationContribution } from '../frontend-application';
 import { DefaultWindowService } from './default-window-service';
 import assert = require('assert');
 
+disableJSDOM();
+
 describe('DefaultWindowService', () => {
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
     class TestFrontendApplicationContribution implements FrontendApplicationContribution {
         constructor(private preventUnload: boolean) { }
         onWillStopCalled = false;

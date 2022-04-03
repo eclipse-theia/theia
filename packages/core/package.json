@@ -68,6 +68,7 @@
     "socket.io": "4.4.1",
     "socket.io-client": "4.4.1",
     "uuid": "^8.3.2",
+    "vscode-jsonrpc": "^8.0.1",
     "vscode-languageserver-protocol": "~3.15.3",
     "vscode-uri": "^2.1.1",
     "vscode-ws-jsonrpc": "^0.2.0",
@@ -112,8 +113,12 @@
         "inversify",
         "react-dom",
         "react-virtualized",
+        "reflect-metadata",
         "vscode-languageserver-protocol",
         "vscode-uri",
+        "vscode-jsonrpc",
+        "vscode-jsonrpc/browser",
+        "vscode-jsonrpc/node",
         "vscode-ws-jsonrpc"
       ],
       "export =": [
@@ -124,12 +129,22 @@
         "nsfw",
         "markdown-it as markdownit",
         "react as React",
+        "route-parser as Route",
         "ws as WebSocket",
         "yargs"
       ]
     }
   },
   "theiaExtensions": [
+    {
+      "frontend": "lib/common/common-module",
+      "backend": "lib/common/common-module",
+      "electronMain": "lib/common/common-module"
+    },
+    {
+      "backend": "lib/node/node-common-module",
+      "electronMain": "lib/node/node-common-module"
+    },
     {
       "frontend": "lib/browser/i18n/i18n-frontend-module",
       "backend": "lib/node/i18n/i18n-backend-module"
@@ -162,6 +177,9 @@
     {
       "backend": "lib/node/request/backend-request-module",
       "backendElectron": "lib/electron-node/request/electron-backend-request-module"
+    },
+    {
+      "backendElectron": "lib/electron-node/electron-node-backend-module"
     }
   ],
   "keywords": [

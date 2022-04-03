@@ -17,10 +17,10 @@
 import '../../src/browser/styles/index.css';
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
+import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
-    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
+    WidgetFactory, createTreeContainer, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
     ApplicationShellLayoutMigration
 } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
@@ -32,6 +32,7 @@ import { bindSearchInWorkspacePreferences } from './search-in-workspace-preferen
 import { SearchInWorkspaceLabelProvider } from './search-in-workspace-label-provider';
 import { SearchInWorkspaceFactory } from './search-in-workspace-factory';
 import { SearchLayoutVersion3Migration } from './search-layout-migrations';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
@@ -50,16 +51,14 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(SearchInWorkspaceFrontendContribution);
     bind(TabBarToolbarContribution).toService(SearchInWorkspaceFrontendContribution);
 
-    // The object that gets notified of search results.
-    bind(SearchInWorkspaceClientImpl).toSelf().inSingletonScope();
-
     bind(SearchInWorkspaceService).toSelf().inSingletonScope();
-
-    // The object to call methods on the backend.
-    bind(SearchInWorkspaceServer).toDynamicValue(ctx => {
-        const client = ctx.container.get(SearchInWorkspaceClientImpl);
-        return WebSocketConnectionProvider.createProxy(ctx.container, SIW_WS_PATH, client);
-    }).inSingletonScope();
+    bind(SearchInWorkspaceServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(SIW_WS_PATH))
+        .inSingletonScope();
+    // bind(SearchInWorkspaceServer).toDynamicValue(ctx => {
+    //     const client = ctx.container.get(SearchInWorkspaceClientImpl);
+    //     return WebSocketConnectionProvider.createProxy(ctx.container, SIW_WS_PATH, client);
+    // }).inSingletonScope();
 
     bindSearchInWorkspacePreferences(bind);
 

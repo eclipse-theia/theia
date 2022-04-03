@@ -15,23 +15,26 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { DisposableCollection, Disposable } from '@theia/core';
+import { DisposableCollection, Disposable, Event, Emitter } from '@theia/core';
 import { Repository } from '../common';
-import { GitWatcherServer, GitWatcherClient } from '../common/git-watcher';
+import { GitStatusChangeEvent, GitWatcherServer } from '../common/git-watcher';
 import { GitRepositoryManager } from './git-repository-manager';
 
 @injectable()
 export class DugiteGitWatcherServer implements GitWatcherServer {
 
-    protected client: GitWatcherClient | undefined;
-
     protected watcherSequence = 1;
     protected readonly watchers = new Map<number, Disposable>();
     protected readonly subscriptions = new Map<string, DisposableCollection>();
+    protected onDidChangeGitStatusEmitter = new Emitter<GitStatusChangeEvent>();
 
     constructor(
         @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager
     ) { }
+
+    get onDidChangeGitStatus(): Event<GitStatusChangeEvent> {
+        return this.onDidChangeGitStatusEmitter.event;
+    }
 
     dispose(): void {
         for (const watcher of this.watchers.values()) {
@@ -49,9 +52,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
         let subscriptions = this.subscriptions.get(repositoryUri);
         if (subscriptions === undefined) {
             const unsubscribe = watcher.onGitStatusChanged(e => {
-                if (this.client) {
-                    this.client.onGitChanged(e);
-                }
+                this.onDidChangeGitStatusEmitter.fire(e);
             });
             subscriptions = new DisposableCollection();
             subscriptions.onDispose(() => {
@@ -77,9 +78,4 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
             throw new Error(`No Git watchers were registered with ID: ${watcher}.`);
         }
     }
-
-    setClient(client?: GitWatcherClient): void {
-        this.client = client;
-    }
-
 }

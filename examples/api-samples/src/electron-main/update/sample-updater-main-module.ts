@@ -15,22 +15,27 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { ElectronConnectionHandler } from '@theia/core/lib/electron-common/messaging/electron-connection-handler';
-import { SampleUpdaterPath, SampleUpdater, SampleUpdaterClient } from '../../common/updater/sample-updater';
+import { SampleUpdaterPath, SampleUpdater } from '../../common/updater/sample-updater';
 import { SampleUpdaterImpl } from './sample-updater-impl';
+import { ServiceContribution } from '@theia/core/lib/common';
+import { ElectronMainAndFrontend } from '@theia/core/lib/electron-common';
+
+export const SampleUpdaterElectronMainAndFrontendContainerModule = new ContainerModule(bind => {
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            // This will return the same singleton instance from the main container module
+            // for `SampleUpdater`, but this is by design here.
+            [SampleUpdaterPath, () => ctx.container.get(SampleUpdater)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+});
 
 export default new ContainerModule(bind => {
-    bind(SampleUpdaterImpl).toSelf().inSingletonScope();
-    bind(SampleUpdater).toService(SampleUpdaterImpl);
+    bind(SampleUpdater).to(SampleUpdaterImpl).inSingletonScope();
     bind(ElectronMainApplicationContribution).toService(SampleUpdater);
-    bind(ElectronConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
-            const server = context.container.get<SampleUpdater>(SampleUpdater);
-            server.setClient(client);
-            client.onDidCloseConnection(() => server.disconnectClient(client));
-            return server;
-        })
-    ).inSingletonScope();
+    bind(ContainerModule)
+        .toConstantValue(SampleUpdaterElectronMainAndFrontendContainerModule)
+        .whenTargetNamed(ElectronMainAndFrontend);
 });

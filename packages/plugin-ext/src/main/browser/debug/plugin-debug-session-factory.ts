@@ -19,7 +19,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
+import { MessageServer } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
@@ -43,7 +43,7 @@ export class PluginDebugSession extends DebugSession {
         protected override readonly editorManager: EditorManager,
         protected override readonly breakpoints: BreakpointManager,
         protected override readonly labelProvider: LabelProvider,
-        protected override readonly messages: MessageClient,
+        protected override readonly messages: MessageServer,
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
@@ -68,7 +68,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly editorManager: EditorManager,
         protected override readonly breakpoints: BreakpointManager,
         protected override readonly labelProvider: LabelProvider,
-        protected override readonly messages: MessageClient,
+        protected override readonly messages: MessageServer,
         protected override readonly outputChannelManager: OutputChannelManager,
         protected override readonly debugPreferences: DebugPreferences,
         protected readonly connectionFactory: (sessionId: string) => Promise<Channel>,

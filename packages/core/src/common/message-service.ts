@@ -14,16 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { v4 } from 'uuid';
 import { injectable, inject } from 'inversify';
-import {
-    MessageClient,
-    MessageType,
-    MessageOptions,
-    Progress,
-    ProgressUpdate,
-    ProgressMessage
-} from './message-service-protocol';
+import { MessageType, MessageOptions, Progress, ProgressUpdate, ProgressMessage, MessageServer } from './message-service-protocol';
 import { CancellationTokenSource } from './cancellation';
+import { serviceIdentifier } from './types';
 
 /**
  * Service to log and categorize messages, show progress information and offer actions.
@@ -44,12 +39,8 @@ import { CancellationTokenSource } from './cancellation';
  *   .then(action => action === "Rollback" && rollback());
  * ```
  */
-@injectable()
-export class MessageService {
-
-    constructor(
-        @inject(MessageClient) protected readonly client: MessageClient
-    ) { }
+export const MessageService = serviceIdentifier<MessageService>('MessageService');
+export interface MessageService {
 
     /**
      * Logs the message and, if given, offers actions to act on it.
@@ -68,10 +59,6 @@ export class MessageService {
      * @returns the selected action if there is any, `undefined` when there was no action or none was selected.
      */
     log<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    log(message: string, ...args: any[]): Promise<string | undefined> {
-        return this.processMessage(MessageType.Log, message, args);
-    }
 
     /**
      * Logs the message as "info" and, if given, offers actions to act on it.
@@ -90,10 +77,6 @@ export class MessageService {
      * @returns the selected action if there is any, `undefined` when there was no action or none was selected.
      */
     info<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    info(message: string, ...args: any[]): Promise<string | undefined> {
-        return this.processMessage(MessageType.Info, message, args);
-    }
 
     /**
      * Logs the message as "warning" and, if given, offers actions to act on it.
@@ -112,10 +95,6 @@ export class MessageService {
      * @returns the selected action if there is any, `undefined` when there was no action or none was selected.
      */
     warn<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    warn(message: string, ...args: any[]): Promise<string | undefined> {
-        return this.processMessage(MessageType.Warning, message, args);
-    }
 
     /**
      * Logs the message as "error" and, if given, offers actions to act on it.
@@ -134,23 +113,6 @@ export class MessageService {
      * @returns the selected action if there is any, `undefined` when there was no action or none was selected.
      */
     error<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    error(message: string, ...args: any[]): Promise<string | undefined> {
-        return this.processMessage(MessageType.Error, message, args);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected processMessage(type: MessageType, text: string, args?: any[]): Promise<string | undefined> {
-        if (!!args && args.length > 0) {
-            const first = args[0];
-            const actions = Array.from(new Set<string>(args.filter(a => typeof a === 'string')));
-            const options = (typeof first === 'object' && !Array.isArray(first))
-                ? <MessageOptions>first
-                : undefined;
-            return this.client.showMessage({ type, options, text, actions });
-        }
-        return this.client.showMessage({ type, text });
-    }
 
     /**
      * Shows the given message as a progress.
@@ -189,21 +151,46 @@ export class MessageService {
      *   });
      * ```
      */
+    showProgress(message: ProgressMessage, onDidCancel?: () => void): Promise<Progress>
+}
+
+@injectable()
+export class DefaultMessageService implements MessageService {
+
+    @inject(MessageServer)
+    protected server: MessageServer;
+
+    log(message: string, ...args: unknown[]): Promise<string | undefined> {
+        return this.showMessage(MessageType.Log, message, args);
+    }
+
+    info(message: string, ...args: unknown[]): Promise<string | undefined> {
+        return this.showMessage(MessageType.Info, message, args);
+    }
+
+    warn(message: string, ...args: unknown[]): Promise<string | undefined> {
+        return this.showMessage(MessageType.Warning, message, args);
+    }
+
+    error(message: string, ...args: unknown[]): Promise<string | undefined> {
+        return this.showMessage(MessageType.Error, message, args);
+    }
+
     async showProgress(message: ProgressMessage, onDidCancel?: () => void): Promise<Progress> {
         const id = this.newProgressId();
+        const isCancelable = ProgressMessage.isCancelable(message);
         const cancellationSource = new CancellationTokenSource();
         const report = (update: ProgressUpdate) => {
-            this.client.reportProgress(id, update, message, cancellationSource.token);
+            this.server.updateProgress(id, update, message);
         };
         const type = message.type ?? MessageType.Progress;
-        const actions = new Set<string>(message.actions);
-        if (ProgressMessage.isCancelable(message)) {
-            actions.delete(ProgressMessage.Cancel);
-            actions.add(ProgressMessage.Cancel);
+        const actionSet = new Set<string>(message.actions);
+        if (isCancelable) {
+            actionSet.add(ProgressMessage.Cancel);
         }
-        const clientMessage = { ...message, type, actions: Array.from(actions) };
-        const result = this.client.showProgress(id, clientMessage, cancellationSource.token);
-        if (ProgressMessage.isCancelable(message) && typeof onDidCancel === 'function') {
+        const serverMessage = { ...message, type, actions: Array.from(actionSet) };
+        const result = this.server.showProgress(id, serverMessage, cancellationSource.token);
+        if (isCancelable && typeof onDidCancel === 'function') {
             result.then(value => {
                 if (value === ProgressMessage.Cancel) {
                     onDidCancel();
@@ -218,9 +205,21 @@ export class MessageService {
         };
     }
 
-    private progressIdPrefix = Math.random().toString(36).substring(5);
-    private counter = 0;
     protected newProgressId(): string {
-        return `${this.progressIdPrefix}-${++this.counter}`;
+        return v4();
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected showMessage(type: MessageType, text: string, args?: any[]): Promise<string | undefined> {
+        if (args?.length) {
+            const [options, ...actions] = args;
+            if (typeof options === 'string') {
+                actions.unshift(options);
+                return this.server.showMessage({ type, text, actions });
+            } else {
+                return this.server.showMessage({ text, actions, options, type });
+            }
+        }
+        return this.server.showMessage({ type, text });
     }
 }

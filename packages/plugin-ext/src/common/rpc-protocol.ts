@@ -22,22 +22,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import URI from '@theia/core/lib/common/uri';
-import { CancellationToken, CancellationTokenSource } from '@theia/core/shared/vscode-languageserver-protocol';
-import { Range, Position } from '../plugin/types-impl';
+import { Range } from '../plugin/types-impl';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { AnyConnection } from '@theia/core/lib/common/connection';
+import { ConnectionMultiplexer, DefaultConnectionMultiplexer } from '@theia/core/lib/common/connection-multiplexer';
+import { DefaultRouter } from '@theia/core/lib/common/routing';
+import { DefaultJsonRpc, JsonRpc } from '@theia/core/lib/common/json-rpc';
+import { RpcConnection } from '@theia/core/lib/common/rpc';
+import { TransformedConnection } from '@theia/core/lib/common/connection-transformer';
 
-export interface MessageConnection {
-    send(msg: string): void;
-    onMessage: Event<string>;
-}
+export const PluginRpc = Symbol('PluginRpc');
+export interface PluginRpc extends Disposable {
 
-export const RPCProtocol = Symbol('RPCProtocol');
-export interface RPCProtocol extends Disposable {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
      */
@@ -47,15 +46,23 @@ export interface RPCProtocol extends Disposable {
      * Register manually created instance.
      */
     set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R;
-
 }
 
+/**
+ * @deprecated since 1.27.0 use {@link PluginRpc} instead.
+ */
+export const RPCProtocol = PluginRpc;
+export type RPCProtocol = PluginRpc;
+
 export class ProxyIdentifier<T> {
-    public readonly id: string;
-    constructor(public readonly isMain: boolean, id: string | T) {
-        // TODO this is nasty, rewrite this
-        this.id = (id as any).toString();
-    }
+
+    /** static only */
+    protected T?: T;
+
+    constructor(
+        readonly isMain: boolean,
+        readonly id: string
+    ) { }
 }
 
 export function createProxyIdentifier<T>(identifier: string): ProxyIdentifier<T> {
@@ -66,58 +73,59 @@ export interface ConnectionClosedError extends Error {
     code: 'RPC_PROTOCOL_CLOSED'
 }
 export namespace ConnectionClosedError {
+
     const code: ConnectionClosedError['code'] = 'RPC_PROTOCOL_CLOSED';
+
     export function create(message: string = 'connection is closed'): ConnectionClosedError {
         return Object.assign(new Error(message), { code });
     }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(error: any): error is ConnectionClosedError {
         return !!error && typeof error === 'object' && 'code' in error && error['code'] === code;
     }
 }
 
-export class RPCProtocolImpl implements RPCProtocol {
+export class DefaultPluginRpc implements PluginRpc {
 
-    private readonly locals = new Map<string, any>();
-    private readonly proxies = new Map<string, any>();
-    private lastMessageId = 0;
-    private readonly cancellationTokenSources = new Map<string, CancellationTokenSource>();
-    private readonly pendingRPCReplies = new Map<string, Deferred<any>>();
-    private readonly multiplexer: RPCMultiplexer;
+    private locals = new Map<string, any>();
+    private proxies = new Map<string, any>();
+    private disposables = new DisposableCollection({ dispose: () => { /* mark as not disposed */ } });
+    private jsonRpc: JsonRpc = new DefaultJsonRpc();
 
+    private multiplexer: ConnectionMultiplexer<AnyConnection>;
     private replacer: (key: string | undefined, value: any) => any;
     private reviver: (key: string | undefined, value: any) => any;
 
-    private readonly toDispose = new DisposableCollection(
-        Disposable.create(() => { /* mark as no disposed */ })
-    );
-
-    constructor(connection: MessageConnection, transformations?: {
+    constructor(connection: AnyConnection, transformations?: {
         replacer?: (key: string | undefined, value: any) => any,
         reviver?: (key: string | undefined, value: any) => any
     }) {
-        this.toDispose.push(
-            this.multiplexer = new RPCMultiplexer(connection)
-        );
-        this.multiplexer.onMessage(msg => this.receiveOneMessage(msg));
-        this.toDispose.push(Disposable.create(() => {
-            this.proxies.clear();
-            for (const reply of this.pendingRPCReplies.values()) {
-                reply.reject(ConnectionClosedError.create());
-            }
-            this.pendingRPCReplies.clear();
-        }));
-
         this.reviver = transformations?.reviver || ObjectsTransferrer.reviver;
         this.replacer = transformations?.replacer || ObjectsTransferrer.replacer;
+        this.multiplexer = new DefaultConnectionMultiplexer(new DefaultRouter())
+            .initialize(new TransformedConnection(connection, {
+                decode: (message, emit) => emit(revive(message, this.reviver)),
+                encode: (message, write) => write(replace(message, this.replacer))
+            }));
+        this.multiplexer.listen((params, accept, next) => {
+            const local = this.locals.get(params.proxyId);
+            if (!local) {
+                return next(new Error(`unknown proxyId: ${JSON.stringify(params.proxyId)}`));
+            }
+            const channel = accept();
+            const messageConnection = this.jsonRpc.createMessageConnection(channel);
+            const rpcConnection = this.jsonRpc.createRpcConnection(messageConnection);
+            this.serveRpcConnection(local, rpcConnection);
+        });
     }
 
     private get isDisposed(): boolean {
-        return this.toDispose.disposed;
+        return this.disposables.disposed;
     }
 
     dispose(): void {
-        this.toDispose.dispose();
+        this.disposables.dispose();
     }
 
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
@@ -126,8 +134,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         }
         let proxy = this.proxies.get(proxyId.id);
         if (!proxy) {
-            proxy = this.createProxy(proxyId.id);
-            this.proxies.set(proxyId.id, proxy);
+            this.proxies.set(proxyId.id, proxy = this.createProxy(proxyId.id));
         }
         return proxy;
     }
@@ -138,244 +145,71 @@ export class RPCProtocolImpl implements RPCProtocol {
         }
         this.locals.set(identifier.id, instance);
         if (Disposable.is(instance)) {
-            this.toDispose.push(instance);
+            this.disposables.push(instance);
         }
-        this.toDispose.push(Disposable.create(() => this.locals.delete(identifier.id)));
+        this.disposables.push(Disposable.create(() => this.locals.delete(identifier.id)));
         return instance;
     }
 
+    private serveRpcConnection(server: any, rpcConnection: RpcConnection): void {
+        rpcConnection.handleRequest((method, params, token) => server[method](...params, token));
+    }
+
     private createProxy<T>(proxyId: string): T {
+        const channel = this.multiplexer.open({ proxyId });
+        const messageConnection = this.jsonRpc.createMessageConnection(channel);
+        const rpcConnection = this.jsonRpc.createRpcConnection(messageConnection);
         const handler = {
             get: (target: any, name: string) => {
                 if (!target[name] && name.charCodeAt(0) === 36 /* CharCode.DollarSign */) {
-                    target[name] = (...myArgs: any[]) =>
-                        this.remoteCall(proxyId, name, myArgs);
+                    target[name] = (...args: any[]) => rpcConnection.sendRequest(name, args);
                 }
                 return target[name];
             }
         };
         return new Proxy(Object.create(null), handler);
     }
-
-    private remoteCall(proxyId: string, methodName: string, args: any[]): Promise<any> {
-        if (this.isDisposed) {
-            return Promise.reject(ConnectionClosedError.create());
-        }
-        const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
-        if (cancellationToken && cancellationToken.isCancellationRequested) {
-            return Promise.reject(canceled());
-        }
-
-        const callId = String(++this.lastMessageId);
-        const result = new Deferred();
-
-        if (cancellationToken) {
-            args.push('add.cancellation.token');
-            cancellationToken.onCancellationRequested(() =>
-                this.multiplexer.send(this.cancel(callId))
-            );
-        }
-
-        this.pendingRPCReplies.set(callId, result);
-        this.multiplexer.send(this.request(callId, proxyId, methodName, args));
-        return result.promise;
-    }
-
-    private receiveOneMessage(rawmsg: string): void {
-        if (this.isDisposed) {
-            return;
-        }
-        try {
-            const msg = <RPCMessage>JSON.parse(rawmsg, this.reviver);
-
-            switch (msg.type) {
-                case MessageType.Request:
-                    this.receiveRequest(msg);
-                    break;
-                case MessageType.Reply:
-                    this.receiveReply(msg);
-                    break;
-                case MessageType.ReplyErr:
-                    this.receiveReplyErr(msg);
-                    break;
-                case MessageType.Cancel:
-                    this.receiveCancel(msg);
-                    break;
-            }
-        } catch (e) {
-            // exception does not show problematic content: log it!
-            console.log('failed to parse message: ' + rawmsg);
-            throw e;
-        }
-
-    }
-
-    private receiveCancel(msg: CancelMessage): void {
-        const cancellationTokenSource = this.cancellationTokenSources.get(msg.id);
-        if (cancellationTokenSource) {
-            cancellationTokenSource.cancel();
-        }
-    }
-
-    private receiveRequest(msg: RequestMessage): void {
-        const callId = msg.id;
-        const proxyId = msg.proxyId;
-        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
-        const args = msg.args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
-
-        const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
-        if (addToken) {
-            const tokenSource = new CancellationTokenSource();
-            this.cancellationTokenSources.set(callId, tokenSource);
-            args.push(tokenSource.token);
-        }
-        const invocation = this.invokeHandler(proxyId, msg.method, args);
-
-        invocation.then(result => {
-            this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(this.replyOK(callId, result));
-        }, error => {
-            this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(this.replyErr(callId, error));
-        });
-    }
-
-    private receiveReply(msg: ReplyMessage): void {
-        const callId = msg.id;
-        const pendingReply = this.pendingRPCReplies.get(callId);
-        if (!pendingReply) {
-            return;
-        }
-        this.pendingRPCReplies.delete(callId);
-        pendingReply.resolve(msg.res);
-    }
-
-    private receiveReplyErr(msg: ReplyErrMessage): void {
-        const callId = msg.id;
-        const pendingReply = this.pendingRPCReplies.get(callId);
-        if (!pendingReply) {
-            return;
-        }
-        this.pendingRPCReplies.delete(callId);
-
-        let err: Error | undefined = undefined;
-        if (msg.err && msg.err.$isError) {
-            err = new Error();
-            err.name = msg.err.name;
-            err.message = msg.err.message;
-            err.stack = msg.err.stack;
-        }
-        pendingReply.reject(err);
-    }
-
-    private invokeHandler(proxyId: string, methodName: string, args: any[]): Promise<any> {
-        try {
-            return Promise.resolve(this.doInvokeHandler(proxyId, methodName, args));
-        } catch (err) {
-            return Promise.reject(err);
-        }
-    }
-
-    private doInvokeHandler(proxyId: string, methodName: string, args: any[]): any {
-        const actor = this.locals.get(proxyId);
-        if (!actor) {
-            throw new Error('Unknown actor ' + proxyId);
-        }
-        const method = actor[methodName];
-        if (typeof method !== 'function') {
-            throw new Error('Unknown method ' + methodName + ' on actor ' + proxyId);
-        }
-        return method.apply(actor, args);
-    }
-
-    private cancel(req: string): string {
-        return `{"type":${MessageType.Cancel},"id":"${req}"}`;
-    }
-
-    private request(req: string, rpcId: string, method: string, args: any[]): string {
-        return `{"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, this.replacer)}}`;
-    }
-
-    private replyOK(req: string, res: any): string {
-        if (typeof res === 'undefined') {
-            return `{"type":${MessageType.Reply},"id":"${req}"}`;
-        }
-        return `{"type":${MessageType.Reply},"id":"${req}","res":${safeStringify(res, this.replacer)}}`;
-    }
-
-    private replyErr(req: string, err: any): string {
-        err = typeof err === 'string' ? new Error(err) : err;
-        if (err instanceof Error) {
-            return `{"type":${MessageType.ReplyErr},"id":"${req}","err":${safeStringify(transformErrorForSerialization(err))}}`;
-        }
-        return `{"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
-    }
-}
-
-function canceled(): Error {
-    const error = new Error('Canceled');
-    error.name = error.message;
-    return error;
 }
 
 /**
- * Sends/Receives multiple messages in one go:
- *  - multiple messages to be sent from one stack get sent in bulk at `process.nextTick`.
- *  - each incoming message is handled in a separate `process.nextTick`.
+ * @deprecated since 1.27.0 use {@link DefaultPluginRpc} instead.
  */
-class RPCMultiplexer implements Disposable, MessageConnection {
+export const RPCProtocolImpl = DefaultPluginRpc;
 
-    private readonly connection: MessageConnection;
-    private readonly sendAccumulatedBound: () => void;
+/**
+ * "Out of band" protocol to interact with the plugin host process itself.
+ */
+export namespace PluginHostProtocol {
 
-    private messagesToSend: string[];
-
-    private readonly messageEmitter = new Emitter<string>();
-    private readonly toDispose = new DisposableCollection();
-
-    constructor(connection: MessageConnection) {
-        this.connection = connection;
-        this.sendAccumulatedBound = this.sendAccumulated.bind(this);
-
-        this.toDispose.push(Disposable.create(() => this.messagesToSend = []));
-        this.toDispose.push(this.connection.onMessage((msg: string) => {
-            const messages = JSON.parse(msg);
-            for (const message of messages) {
-                this.messageEmitter.fire(message);
-            }
-        }));
-        this.toDispose.push(this.messageEmitter);
-
-        this.messagesToSend = [];
+    export function isMessage(what: any): what is Message {
+        return typeof what === 'object' && what !== null && '$pluginHostMessageType' in what;
     }
 
-    dispose(): void {
-        this.toDispose.dispose();
+    export function createMessage<T extends keyof MessageTypeMap>(type: T, properties: Omit<MessageTypeMap[T], '$pluginHostMessageType'>): T {
+        return {
+            ...properties,
+            $pluginHostMessageType: type
+        } as any;
     }
 
-    get onMessage(): Event<string> {
-        return this.messageEmitter.event;
+    export interface MessageType<T extends string> {
+        $pluginHostMessageType: T
     }
 
-    private sendAccumulated(): void {
-        const tmp = this.messagesToSend;
-        this.messagesToSend = [];
-        this.connection.send(JSON.stringify(tmp));
+    export const TerminateRequest = 'terminateRequest';
+    export type TerminateRequest = MessageType<typeof TerminateRequest> & {
+        timeout?: number
+    };
+
+    export const TerminatedEvent = 'terminatedEvent';
+    export type TerminatedEvent = MessageType<typeof TerminatedEvent>;
+
+    export interface MessageTypeMap {
+        [TerminateRequest]: TerminateRequest
+        [TerminatedEvent]: TerminatedEvent
     }
 
-    public send(msg: string): void {
-        if (this.toDispose.disposed) {
-            throw ConnectionClosedError.create();
-        }
-        if (this.messagesToSend.length === 0) {
-            if (typeof setImmediate !== 'undefined') {
-                setImmediate(this.sendAccumulatedBound);
-            } else {
-                setTimeout(this.sendAccumulatedBound, 0);
-            }
-        }
-        this.messagesToSend.push(msg);
-    }
+    export type Message = MessageTypeMap[keyof MessageTypeMap];
 }
 
 /**
@@ -390,28 +224,16 @@ class RPCMultiplexer implements Disposable, MessageConnection {
  */
 export namespace ObjectsTransferrer {
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function replacer(key: string | undefined, value: any): any {
         if (value instanceof URI) {
             return {
                 $type: SerializedObjectType.THEIA_URI,
-                data: value.toString()
+                data: value.toString(true)
             } as SerializedObject;
         } else if (value instanceof Range) {
-            const range = value as Range;
-            const serializedValue = {
-                start: {
-                    line: range.start.line,
-                    character: range.start.character
-                },
-                end: {
-                    line: range.end.line,
-                    character: range.end.character
-                }
-            };
             return {
                 $type: SerializedObjectType.THEIA_RANGE,
-                data: JSON.stringify(serializedValue)
+                data: [value.start.line, value.start.character, value.end.line, value.end.character]
             } as SerializedObject;
         } else if (value && value['$mid'] === 1) {
             // Given value is VSCode URI
@@ -419,20 +241,17 @@ export namespace ObjectsTransferrer {
             const uri = VSCodeURI.revive(value);
             return {
                 $type: SerializedObjectType.VSCODE_URI,
-                data: uri.toString()
+                data: uri.toString(true)
             } as SerializedObject;
         } else if (value instanceof BinaryBuffer) {
-            const bytes = [...value.buffer.values()];
             return {
                 $type: SerializedObjectType.TEXT_BUFFER,
-                data: JSON.stringify({ bytes })
+                data: value.buffer
             };
         }
-
         return value;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function reviver(key: string | undefined, value: any): any {
         if (isSerializedObject(value)) {
             switch (value.$type) {
@@ -441,17 +260,12 @@ export namespace ObjectsTransferrer {
                 case SerializedObjectType.VSCODE_URI:
                     return VSCodeURI.parse(value.data);
                 case SerializedObjectType.THEIA_RANGE:
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const obj: any = JSON.parse(value.data);
-                    const start = new Position(obj.start.line, obj.start.character);
-                    const end = new Position(obj.end.line, obj.end.character);
-                    return new Range(start, end);
+                    const [startLine, startColumn, endLine, endColumn] = value.data;
+                    return new Range(startLine, startColumn, endLine, endColumn);
                 case SerializedObjectType.TEXT_BUFFER:
-                    const data: { bytes: number[] } = JSON.parse(value.data);
-                    return BinaryBuffer.wrap(Uint8Array.from(data.bytes));
+                    return BinaryBuffer.wrap(value.data);
             }
         }
-
         return value;
     }
 
@@ -459,7 +273,7 @@ export namespace ObjectsTransferrer {
 
 interface SerializedObject {
     $type: SerializedObjectType;
-    data: string;
+    data: any;
 }
 
 enum SerializedObjectType {
@@ -473,50 +287,14 @@ function isSerializedObject(obj: any): obj is SerializedObject {
     return obj && obj.$type !== undefined && obj.data !== undefined;
 }
 
-export const enum MessageType {
-    Request = 1,
-    Reply = 2,
-    ReplyErr = 3,
-    Cancel = 4,
-    Terminate = 5,
-    Terminated = 6
-}
-
-class CancelMessage {
-    type: MessageType.Cancel;
-    id: string;
-}
-
-class RequestMessage {
-    type: MessageType.Request;
-    id: string;
-    proxyId: string;
-    method: string;
-    args: any[];
-}
-
-class ReplyMessage {
-    type: MessageType.Reply;
-    id: string;
-    res: any;
-}
-
-class ReplyErrMessage {
-    type: MessageType.ReplyErr;
-    id: string;
-    err: SerializedError;
-}
-
-type RPCMessage = RequestMessage | ReplyMessage | ReplyErrMessage | CancelMessage;
-
 export interface SerializedError {
-    readonly $isError: true;
-    readonly name: string;
-    readonly message: string;
-    readonly stack: string;
+    $isError: true;
+    name: string;
+    message: string;
+    stack: string;
 }
 
-export function transformErrorForSerialization(error: Error): SerializedError {
+export function transformErrorForSerialization(error: any): SerializedError {
     if (error instanceof Error) {
         const { name, message } = error;
         const stack: string = (<any>error).stacktrace || error.stack;
@@ -527,20 +305,45 @@ export function transformErrorForSerialization(error: Error): SerializedError {
             stack
         };
     }
-
-    // return as is
     return error;
 }
 
-interface JSONStringifyReplacer {
-    (key: string, value: any): any;
+export function replace(value: any, replacer: (key: string | undefined, nested: any) => any): any {
+    if (typeof value === 'object') {
+        if (value === null) {
+            return null;
+        }
+        if (Array.isArray(value)) {
+            return value.map(element => replacer(undefined, element));
+        }
+        let replaced = replacer(undefined, value);
+        if (value === replaced) {
+            replaced = {};
+            Object.keys(value).forEach(propertyKey => {
+                replaced[propertyKey] = replace(value[propertyKey], replacer);
+            });
+        }
+        return replaced;
+    }
+    return value;
 }
 
-function safeStringify(obj: any, replacer?: JSONStringifyReplacer): string {
-    try {
-        return JSON.stringify(obj, replacer);
-    } catch (err) {
-        console.error('error stringifying response: ', err);
-        return 'null';
+export function revive(value: any, reviver: (key: string | undefined, nested: any) => any): any {
+    if (typeof value === 'object') {
+        if (value === null) {
+            return null;
+        }
+        if (Array.isArray(value)) {
+            return value.map(element => reviver(undefined, element));
+        }
+        let replaced = reviver(undefined, value);
+        if (value === replaced) {
+            replaced = {};
+            Object.keys(value).forEach(propertyKey => {
+                replaced[propertyKey] = replace(value[propertyKey], reviver);
+            });
+        }
+        return replaced;
     }
+    return value;
 }

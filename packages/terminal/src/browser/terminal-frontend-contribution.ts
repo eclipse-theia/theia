@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
-    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions, StorageService,
+    KeybindingRegistry, Widget, LabelProvider, WidgetOpenerOptions,
     QuickInputService, codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -48,11 +48,6 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import {
-    ENVIRONMENT_VARIABLE_COLLECTIONS_KEY,
-    SerializableExtensionEnvironmentVariableCollection
-} from '../common/base-terminal-protocol';
 import { nls } from '@theia/core/lib/common/nls';
 import { TerminalPreferences } from './terminal-preferences';
 
@@ -159,12 +154,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(TerminalWatcher)
-    protected readonly terminalWatcher: TerminalWatcher;
-
-    @inject(StorageService)
-    protected readonly storageService: StorageService;
-
     @inject(TerminalPreferences)
     protected terminalPreferences: TerminalPreferences;
 
@@ -192,18 +181,6 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
         updateFocusKey();
         this.shell.onDidChangeActiveWidget(updateFocusKey);
-
-        this.terminalWatcher.onStoreTerminalEnvVariablesRequested(data => {
-            this.storageService.setData(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY, data);
-        });
-        this.terminalWatcher.onUpdateTerminalEnvVariablesRequested(() => {
-            this.storageService.getData<string>(ENVIRONMENT_VARIABLE_COLLECTIONS_KEY).then(data => {
-                if (data) {
-                    const collectionsJson: SerializableExtensionEnvironmentVariableCollection[] = JSON.parse(data);
-                    collectionsJson.forEach(c => this.shellTerminalServer.setCollection(c.extensionIdentifier, true, c.collection));
-                }
-            });
-        });
     }
 
     onWillStop(): OnWillStopAction<number> | undefined {

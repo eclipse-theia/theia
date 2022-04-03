@@ -19,11 +19,8 @@ import '../../src/browser/style/index.css';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugWidget } from './view/debug-widget';
-import { DebugPath, DebugService } from '../common/debug-service';
-import {
-    WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution, KeybindingContext
-} from '@theia/core/lib/browser';
+import { ConnectionAsChannel, DebugAdapterPath, DebugPath, DebugService } from '../common/debug-service';
+import { WidgetFactory, FrontendApplicationContribution, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
 import {
@@ -31,9 +28,10 @@ import {
     DebugSessionFactory,
     DefaultDebugSessionFactory,
     DebugSessionContributionRegistry,
-    DebugSessionContributionRegistryImpl
+    DebugSessionContributionRegistryImpl,
+    DebugChannelFactory
 } from './debug-session-contribution';
-import { bindContributionProvider, ResourceResolver } from '@theia/core';
+import { BackendAndFrontend, bindContributionProvider, ConnectionProvider, ConnectionState, ProxyProvider, ResourceResolver } from '@theia/core';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugFrontendApplicationContribution } from './debug-frontend-application-contribution';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
@@ -69,7 +67,20 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     ).inSingletonScope();
 
     bindContributionProvider(bind, DebugSessionContribution);
-    bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
+    bind(DebugSessionFactory)
+        .toDynamicValue(ctx => {
+            const child = ctx.container.createChild();
+            const connectionProvider = ctx.container.getNamed(ConnectionProvider, BackendAndFrontend);
+            child.bind(DefaultDebugSessionFactory).toSelf().inTransientScope();
+            child.bind<DebugChannelFactory>(DebugChannelFactory)
+                .toFunction(async sessionId => {
+                    const connection = connectionProvider.open({ path: `${DebugAdapterPath}/${sessionId}` });
+                    await ConnectionState.waitForOpen(connection);
+                    return new ConnectionAsChannel(connection);
+                });
+            return child.get(DefaultDebugSessionFactory);
+        })
+        .inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();
 
     bind(BreakpointManager).toSelf().inSingletonScope();
@@ -97,7 +108,9 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugInlineValueDecorator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DebugInlineValueDecorator);
 
-    bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
+    bind(DebugService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(DebugPath))
+        .inSingletonScope();
     bind(DebugResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(DebugResourceResolver);
 

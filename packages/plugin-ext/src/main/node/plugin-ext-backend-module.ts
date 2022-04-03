@@ -31,7 +31,7 @@ import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
 import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
 import { GithubPluginDeployerResolver } from './plugin-github-resolver';
 import { HttpPluginDeployerResolver } from './plugin-http-resolver';
-import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from '@theia/core';
+import { bindContributionProvider, ServiceContribution, BackendAndFrontend } from '@theia/core';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
 import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
 import { PluginServerHandler } from './plugin-server-handler';
@@ -67,17 +67,14 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginsKeyValueStorage).toSelf().inSingletonScope();
 
     bind(PluginPathsService).to(PluginPathsServiceImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(pluginPathsServicePath, () =>
-            ctx.container.get(PluginPathsService)
-        )
-    ).inSingletonScope();
 
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(pluginServerJsonRpcPath, () =>
-            ctx.container.get(PluginServer)
-        )
-    ).inSingletonScope();
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [pluginPathsServicePath, () => ctx.container.get(PluginPathsService)],
+            [pluginServerJsonRpcPath, () => ctx.container.get(PluginServer)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 
     bind(PluginCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(PluginCliContribution);

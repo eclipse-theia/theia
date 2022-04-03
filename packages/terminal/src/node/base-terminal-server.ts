@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ILogger, DisposableCollection, isWindows } from '@theia/core/lib/common';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { ILogger, DisposableCollection, isWindows, Event, Emitter } from '@theia/core/lib/common';
 import {
     IBaseTerminalServer,
     IBaseTerminalServerOptions,
-    IBaseTerminalClient,
     TerminalProcessInfo,
     EnvironmentVariableCollection,
     MergedEnvironmentVariableCollection,
@@ -28,18 +27,27 @@ import {
     ExtensionOwnedEnvironmentVariableMutator,
     EnvironmentVariableMutatorType,
     EnvironmentVariableCollectionWithPersistence,
-    SerializableExtensionEnvironmentVariableCollection
+    SerializableExtensionEnvironmentVariableCollection,
+    IBaseTerminalErrorEvent,
+    IBaseTerminalExitEvent,
+    TerminalEnvironmentStore
 } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
-    protected client: IBaseTerminalClient | undefined = undefined;
+
+    protected onTerminalErrorEmitter = new Emitter<IBaseTerminalErrorEvent>();
+    protected onTerminalExitChangedEmitter = new Emitter<IBaseTerminalExitEvent>();
+
     protected terminalToDispose = new Map<number, DisposableCollection>();
 
     readonly collections: Map<string, EnvironmentVariableCollectionWithPersistence> = new Map();
     mergedCollection: MergedEnvironmentVariableCollection;
+
+    @inject(TerminalEnvironmentStore)
+    protected environmentStore: TerminalEnvironmentStore;
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
@@ -55,6 +63,24 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         this.mergedCollection = this.resolveMergedCollection();
     }
 
+    @postConstruct()
+    postConstruct(): void {
+        this.environmentStore.getEnvironmentVariables().then(data => {
+            if (data) {
+                const collections: SerializableExtensionEnvironmentVariableCollection[] = JSON.parse(data);
+                collections.forEach(({ extensionIdentifier, collection }) => this.setCollection(extensionIdentifier, true, collection));
+            }
+        });
+    }
+
+    get onTerminalError(): Event<IBaseTerminalErrorEvent> {
+        return this.onTerminalErrorEmitter.event;
+    }
+
+    get onTerminalExitChanged(): Event<IBaseTerminalExitEvent> {
+        return this.onTerminalExitChangedEmitter.event;
+    }
+
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
 
     async attach(id: number): Promise<number> {
@@ -68,7 +94,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         }
     }
 
-    async onAttachAttempted(id: number): Promise<void> {
+    async attachAttempted(id: number): Promise<void> {
         const terminal = this.processManager.get(id);
         if (terminal instanceof TaskTerminalProcess) {
             terminal.attachmentAttempted = true;
@@ -119,10 +145,6 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         return ShellProcess.getShellExecutablePath();
     }
 
-    dispose(): void {
-        // noop
-    }
-
     async resize(id: number, cols: number, rows: number): Promise<void> {
         const term = this.processManager.get(id);
         if (term && term instanceof TerminalProcess) {
@@ -132,38 +154,24 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         }
     }
 
-    /* Set the client to receive notifications on.  */
-    setClient(client: IBaseTerminalClient | undefined): void {
-        this.client = client;
-        if (!this.client) {
-            return;
-        }
-        this.client.updateTerminalEnvVariables();
-    }
-
     protected postCreate(term: TerminalProcess): void {
         const toDispose = new DisposableCollection();
 
-        toDispose.push(term.onError(error => {
+        term.onError(error => {
             this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
+            this.onTerminalErrorEmitter.fire({
+                terminalId: term.id,
+                error: new Error(`Failed to execute terminal process (${error.code})`),
+            });
+        }, toDispose);
 
-            if (this.client !== undefined) {
-                this.client.onTerminalError({
-                    'terminalId': term.id,
-                    'error': new Error(`Failed to execute terminal process (${error.code})`),
-                });
-            }
-        }));
-
-        toDispose.push(term.onExit(event => {
-            if (this.client !== undefined) {
-                this.client.onTerminalExitChanged({
-                    'terminalId': term.id,
-                    'code': event.code,
-                    'signal': event.signal
-                });
-            }
-        }));
+        term.onExit(event => {
+            this.onTerminalExitChangedEmitter.fire({
+                terminalId: term.id,
+                code: event.code,
+                signal: event.signal
+            });
+        }, toDispose);
 
         this.terminalToDispose.set(term.id, toDispose);
     }
@@ -200,10 +208,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                 });
             }
         });
-        if (this.client) {
-            const stringifiedJson = JSON.stringify(collectionsJson);
-            this.client.storeTerminalEnvVariables(stringifiedJson);
-        }
+        this.environmentStore.saveEnvironmentVariables(JSON.stringify(collectionsJson));
     }
 
     private resolveMergedCollection(): MergedEnvironmentVariableCollection {

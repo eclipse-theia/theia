@@ -39,7 +39,6 @@ import { DebugKeybindingContexts } from './debug-keybinding-contexts';
 import { DebugEditorModel } from './editor/debug-editor-model';
 import { DebugEditorService } from './editor/debug-editor-service';
 import { DebugConsoleContribution } from './console/debug-console-contribution';
-import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -390,9 +389,6 @@ export namespace DebugBreakpointWidgetCommands {
 
 @injectable()
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {
-
-    @inject(DebugService)
-    protected readonly debug: DebugService;
 
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;

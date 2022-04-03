@@ -13,20 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+
+import { Event, RecursivePartial, serviceIdentifier, servicePath } from '@theia/core';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 
-export const hostedServicePath = '/services/hostedPlugin';
+export const hostedServicePath = servicePath<HostedPluginServer>('/services/hostedPlugin');
 
 /**
  * Plugin engine (API) type, i.e. 'theiaPlugin', 'vscode', etc.
@@ -811,15 +811,6 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
-export const HostedPluginClient = Symbol('HostedPluginClient');
-export interface HostedPluginClient {
-    postMessage(pluginHost: string, message: string): Promise<void>;
-
-    log(logPart: LogPart): void;
-
-    onDidDeploy(): void;
-}
-
 export interface PluginDependencies {
     metadata: PluginMetadata
     mapping?: Map<string, string>
@@ -849,8 +840,25 @@ export interface DeployedPlugin {
     contributes?: PluginContribution;
 }
 
-export const HostedPluginServer = Symbol('HostedPluginServer');
-export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
+/**
+ * @internal
+ */
+export interface HostedPluginClient {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    postMessage(pluginHostId: string, message: any): void;
+    log(logPart: LogPart): void
+    notifyDidDeploy(): void;
+}
+
+export const HostedPluginServer = serviceIdentifier<HostedPluginServer>('HostedPluginServer');
+export interface HostedPluginServer extends Disposable {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onMessage: Event<{ pluginHostId: string, message: any }>;
+
+    onLog: Event<LogPart>;
+
+    onDidDeploy: Event<void>;
 
     getDeployedPluginIds(): Promise<string[]>;
 
@@ -858,8 +866,8 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
-    onMessage(targetHost: string, message: string): Promise<void>;
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handleMessage(targetHost: string, message: any): Promise<void>;
 }
 
 export const PLUGIN_HOST_BACKEND = 'main';
@@ -892,15 +900,18 @@ export interface PluginServer {
     getAllStorageValues(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue>;
 }
 
-export const ServerPluginRunner = Symbol('ServerPluginRunner');
+export const ServerPluginRunner = serviceIdentifier<ServerPluginRunner>('ServerPluginRunner');
 export interface ServerPluginRunner {
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    acceptMessage(pluginHostId: string, jsonMessage: string): boolean;
+    acceptMessage(pluginHostId: string, jsonMessage: any): boolean;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(pluginHostId: string, jsonMessage: string): void;
-    setClient(client: HostedPluginClient): void;
+    handleMessage(pluginHostId: string, jsonMessage: any): void;
+
     setDefault(defaultRunner: ServerPluginRunner): void;
-    clientClosed(): void;
+
+    setClient(client: HostedPluginClient): void;
 
     /**
      * Provides additional deployed plugins.
@@ -912,9 +923,10 @@ export interface ServerPluginRunner {
      */
     getExtraDeployedPluginIds(): Promise<string[]>;
 
+    clientClosed(): void
 }
 
-export const PluginHostEnvironmentVariable = Symbol('PluginHostEnvironmentVariable');
+export const PluginHostEnvironmentVariable = serviceIdentifier<PluginHostEnvironmentVariable>('PluginHostEnvironmentVariable');
 export interface PluginHostEnvironmentVariable {
     process(env: NodeJS.ProcessEnv): void;
 }

@@ -16,14 +16,17 @@
 
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { ILogger } from '@theia/core';
+import { Emitter, Event, ILogger, serviceIdentifier } from '@theia/core';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, LinePreview } from '../common/search-in-workspace-interface';
 
-export const RgPath = Symbol('RgPath');
+/**
+ * Binding for ripgrep's executable path.
+ */
+export const RgPath = serviceIdentifier<string>('RgPath');
 
 /**
  * Typing for ripgrep's arbitrary data object:
@@ -76,12 +79,13 @@ interface IRgEnd {
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     // List of ongoing searches, maps search id to a the started rg process.
-    private ongoingSearches: Map<number, RawProcess> = new Map();
+    private ongoingSearches = new Map<number, RawProcess>();
 
     // Each incoming search is given a unique id, returned to the client.  This is the next id we will assigned.
     private nextSearchId: number = 1;
 
-    private client: SearchInWorkspaceClient | undefined;
+    protected onDoneEmitter = new Emitter<{ searchId: number; error?: string | undefined; }>();
+    protected onResultEmitter = new Emitter<{ searchId: number; result: SearchInWorkspaceResult; }>();
 
     @inject(RgPath)
     protected readonly rgPath: string;
@@ -91,8 +95,12 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
     ) { }
 
-    setClient(client: SearchInWorkspaceClient | undefined): void {
-        this.client = client;
+    get onDone(): Event<{ searchId: number; error?: string | undefined; }> {
+        return this.onDoneEmitter.event;
+    }
+
+    get onResult(): Event<{ searchId: number; result: SearchInWorkspaceResult; }> {
+        return this.onResultEmitter.event;
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
@@ -302,8 +310,8 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         this.logger.error('Begin message without path. ' + JSON.stringify(obj));
                     }
                 } else if (obj.type === 'end') {
-                    if (currentSearchResult && this.client) {
-                        this.client.onResult(searchId, currentSearchResult);
+                    if (currentSearchResult) {
+                        this.onResultEmitter.fire({ searchId, result: currentSearchResult });
                     }
                     currentSearchResult = undefined;
                 } else if (obj.type === 'match') {
@@ -350,8 +358,8 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         // Did we reach the maximum number of results?
                         if (options?.maxResults && numResults >= options.maxResults) {
                             rgProcess.kill();
-                            if (currentSearchResult && this.client) {
-                                this.client.onResult(searchId, currentSearchResult);
+                            if (currentSearchResult) {
+                                this.onResultEmitter.fire({ searchId, result: currentSearchResult });
                             }
                             currentSearchResult = undefined;
                             this.wrapUpSearch(searchId);
@@ -466,17 +474,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     // Send onDone to the client and clean up what we know about search searchId.
     private wrapUpSearch(searchId: number, error?: string): void {
         if (this.ongoingSearches.delete(searchId)) {
-            if (this.client) {
-                this.logger.debug('Sending onDone for ' + searchId, error);
-                this.client.onDone(searchId, error);
-            } else {
-                this.logger.debug('Wrapping up search ' + searchId + ' but no client');
-            }
+            this.logger.debug('Emitting onDone for ' + searchId, error);
+            this.onDoneEmitter.fire({ searchId, error });
         } else {
             this.logger.debug("Trying to wrap up a search we don't know about " + searchId);
         }
-    }
-
-    dispose(): void {
     }
 }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, multiInject, postConstruct, optional } from '@theia/core/shared/inversify';
-import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core/lib/common';
 import { HostedPluginClient, PluginModel, ServerPluginRunner, DeployedPlugin } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
 import { HostedPluginProcess } from './hosted-plugin-process';
@@ -24,13 +24,13 @@ export interface IPCConnectionOptions {
     readonly serverName: string;
     readonly logger: ILogger;
     readonly args: string[];
-    readonly errorHandler?: ConnectionErrorHandler;
 }
 
 @injectable()
 export class HostedPluginSupport {
+
     private isPluginProcessRunning = false;
-    private client: HostedPluginClient;
+    private client?: HostedPluginClient;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -71,17 +71,17 @@ export class HostedPluginSupport {
         }
     }
 
-    onMessage(pluginHostId: string, message: string): void {
+    handleMessage(pluginHostId: string, message: string): void {
         // need to perform routing
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (this.pluginRunners.length > 0) {
             this.pluginRunners.forEach(runner => {
                 if (runner.acceptMessage(pluginHostId, message)) {
-                    runner.onMessage(pluginHostId, message);
+                    runner.handleMessage(pluginHostId, message);
                 }
             });
         } else {
-            this.hostedPluginProcess.onMessage(pluginHostId, message);
+            this.hostedPluginProcess.handleMessage(pluginHostId, message);
         }
     }
 
@@ -107,7 +107,7 @@ export class HostedPluginSupport {
     }
 
     sendLog(logPart: LogPart): void {
-        this.client.log(logPart);
+        this.client?.log(logPart);
     }
 
     private terminatePluginServer(): void {

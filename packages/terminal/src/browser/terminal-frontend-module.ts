@@ -18,15 +18,14 @@ import '../../src/browser/style/terminal.css';
 import 'xterm/css/xterm.css';
 
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { bindContributionProvider } from '@theia/core';
-import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { BackendAndFrontend, CommandContribution, MenuContribution, ProxyProvider, ServiceContribution } from '@theia/core/lib/common';
+import { bindContributionProvider, Event } from '@theia/core';
+import { KeybindingContribution, WidgetFactory, KeybindingContext, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
+import { ITerminalServer, RemoteTerminal, RemoteTerminalFactory, REMOTE_TERMINAL_ROUTE, terminalPath } from '../common/terminal-protocol';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { TerminalActiveContext, TerminalSearchVisibleContext } from './terminal-keybinding-contexts';
 import { createCommonBindings } from '../common/terminal-common-module';
@@ -43,6 +42,8 @@ import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-han
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TerminalThemeService } from './terminal-theme-service';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
+import { TerminalEnvironmentStore, TerminalWatcher, TERMINAL_ENVIRONMENT_STORE_PATH } from '../common/base-terminal-protocol';
+import { TerminalEnvironmentStoreImpl } from './terminal-environment-store-impl';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -50,7 +51,12 @@ export default new ContainerModule(bind => {
     bind(KeybindingContext).to(TerminalSearchVisibleContext).inSingletonScope();
 
     bind(TerminalWidget).to(TerminalWidgetImpl).inTransientScope();
-    bind(TerminalWatcher).toSelf().inSingletonScope();
+
+    bind(RemoteTerminalFactory)
+        .toDynamicValue(ctx => terminalId => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy<RemoteTerminal>(
+            REMOTE_TERMINAL_ROUTE.reverse({ terminalId: terminalId.toString(10) }) as string
+        ))
+        .inSingletonScope();
 
     let terminalNum = 0;
     bind(WidgetFactory).toDynamicValue(ctx => ({
@@ -90,18 +96,35 @@ export default new ContainerModule(bind => {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 
-    bind(ITerminalServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
+    bind(TerminalEnvironmentStore).to(TerminalEnvironmentStoreImpl).inSingletonScope();
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [TERMINAL_ENVIRONMENT_STORE_PATH, () => ctx.container.get(TerminalEnvironmentStore)]
+        ))
+        .inSingletonScope();
 
-    bind(ShellTerminalServerProxy).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const terminalWatcher = ctx.container.get(TerminalWatcher);
-        return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
-    }).inSingletonScope();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bind<any>(ITerminalServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(terminalPath))
+        .inSingletonScope();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bind<any>(ShellTerminalServerProxy)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(shellTerminalPath))
+        .inSingletonScope();
+
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
+
+    bind(TerminalWatcher)
+        .toDynamicValue(ctx => {
+            const terminalServer = ctx.container.get(ITerminalServer);
+            const shellServer = ctx.container.get(IShellTerminalServer);
+            return {
+                onTerminalError: Event.or(terminalServer.onTerminalError, shellServer.onTerminalError),
+                onTerminalExitChanged: Event.or(terminalServer.onTerminalExitChanged, shellServer.onTerminalExitChanged)
+            };
+        })
+        .inSingletonScope();
 
     createCommonBindings(bind);
 

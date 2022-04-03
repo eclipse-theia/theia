@@ -26,6 +26,7 @@ import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { ApplicationError } from '@theia/core/lib/common/application-error';
 
 export const enum FileOperation {
     CREATE,
@@ -534,13 +535,16 @@ export enum FileSystemProviderErrorCode {
     Unknown = 'Unknown'
 }
 
-export class FileSystemProviderError extends Error {
+export const FileSystemProviderError = ApplicationError.declare(-33005, (message: string, code: FileSystemProviderErrorCode) => ({ message, data: { code } }));
+export type FileSystemProviderError = ApplicationError.Type<typeof FileSystemProviderError>;
 
-    constructor(message: string, public readonly code: FileSystemProviderErrorCode) {
-        super(message);
-        Object.setPrototypeOf(this, FileSystemProviderError.prototype);
-    }
-}
+// export class FileSystemProviderError extends Error {
+
+//     constructor(message: string, public readonly code: FileSystemProviderErrorCode) {
+//         super(message);
+//         Object.setPrototypeOf(this, FileSystemProviderError.prototype);
+//     }
+// }
 
 export function createFileSystemProviderError(error: Error | string, code: FileSystemProviderErrorCode): FileSystemProviderError {
     const providerError = new FileSystemProviderError(error.toString(), code);
@@ -873,7 +877,7 @@ export function toFileSystemProviderErrorCode(error: Error | undefined | null): 
 
     // FileSystemProviderError comes with the code
     if (error instanceof FileSystemProviderError) {
-        return error.code;
+        return error.data.code;
     }
 
     // Any other error, check for name match by assuming that the error

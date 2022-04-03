@@ -32,8 +32,8 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import URI from '@theia/core/lib/common/uri';
 import { OpenerService } from '@theia/core/lib/browser';
 import { MockOpenerService } from '@theia/core/lib/browser/test/mock-opener-service';
-import { MessageService } from '@theia/core/lib/common/message-service';
-import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
+import { DefaultMessageService, MessageService } from '@theia/core/lib/common/message-service';
+import { MessageServer, NullMessageServer } from '@theia/core/lib/common/message-service-protocol';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
@@ -53,8 +53,8 @@ beforeEach(() => {
         fileService['resourceForError'] = (resource: URI) => resource.toString();
         fileService.registerProvider('file', new DiskFileSystemProvider());
         bind(FileService).toConstantValue(fileService);
-        bind(MessageService).toSelf().inSingletonScope();
-        bind(MessageClient).toSelf().inSingletonScope();
+        bind(MessageService).to(DefaultMessageService).inSingletonScope();
+        bind(MessageServer).toConstantValue(NullMessageServer);
     });
 
     testContainer.load(module);

@@ -17,12 +17,12 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { LanguagesMainPluginMetrics } from './plugin-metrics-languages-main';
 import { PluginMetrics, metricsJsonRpcPath } from '../common/metrics-protocol';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { PluginMetricsCreator } from './plugin-metrics-creator';
 import { PluginMetricsResolver } from './plugin-metrics-resolver';
 import { PluginMetricsOutputChannelRegistry } from './plugin-metrics-output-registry';
 import { LanguagesMainImpl } from '@theia/plugin-ext/lib/main/browser/languages-main';
 import { OutputChannelRegistryMainImpl } from '@theia/plugin-ext/lib/main/browser/output-channel-registry-main';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginMetricsResolver).toSelf().inSingletonScope();
@@ -31,8 +31,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(LanguagesMainImpl).to(LanguagesMainPluginMetrics).inTransientScope();
     rebind(OutputChannelRegistryMainImpl).to(PluginMetricsOutputChannelRegistry).inTransientScope();
 
-    bind(PluginMetrics).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<PluginMetrics>(metricsJsonRpcPath);
-    }).inSingletonScope();
+    bind(PluginMetrics)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(metricsJsonRpcPath))
+        .inSingletonScope();
 });

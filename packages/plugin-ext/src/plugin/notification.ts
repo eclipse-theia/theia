@@ -35,7 +35,7 @@ export class NotificationExtImpl implements NotificationExt {
     ): Promise<R> {
         const source = new CancellationTokenSource();
         const id = new Deferred<string>();
-        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, source.token);
+        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item) }, source.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
         const cancellable = options.cancellable;

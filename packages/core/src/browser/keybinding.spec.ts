@@ -17,6 +17,9 @@
 import { enableJSDOM } from '../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
+
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
@@ -36,7 +39,6 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
 import { bindPreferenceService } from './frontend-application-bindings';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/';
 import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
@@ -53,7 +55,7 @@ let testContainer: Container;
 
 before(async () => {
     testContainer = new Container();
-    const module = new ContainerModule((bind, unbind, isBound, rebind) => {
+    testContainer.load(new ContainerModule((bind, unbind, isBound, rebind) => {
 
         /* Mock logger binding*/
         bind(ILogger).to(MockLogger);
@@ -94,10 +96,7 @@ before(async () => {
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
         bind(CorePreferences).toConstantValue(<CorePreferences>{});
         bindPreferenceService(bind);
-    });
-
-    testContainer.load(module);
-
+    }));
     commandRegistry = testContainer.get(CommandRegistry);
     commandRegistry.onStart();
 

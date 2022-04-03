@@ -15,8 +15,7 @@
 *******************************************************************************/
 
 import { interfaces } from 'inversify';
-import { BackendStopwatch, Stopwatch, stopwatchPath } from '../../common';
-import { WebSocketConnectionProvider } from '../messaging';
+import { BackendAndFrontend, BackendStopwatch, ProxyProvider, Stopwatch, stopwatchPath } from '../../common';
 import { FrontendStopwatch } from './frontend-stopwatch';
 
 export function bindFrontendStopwatch(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<Stopwatch> {
@@ -24,8 +23,7 @@ export function bindFrontendStopwatch(bind: interfaces.Bind): interfaces.Binding
 }
 
 export function bindBackendStopwatch(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<unknown> {
-    return bind(BackendStopwatch).toDynamicValue(({ container }) => {
-        const connection = container.get(WebSocketConnectionProvider);
-        return connection.createProxy<BackendStopwatch>(stopwatchPath);
-    }).inSingletonScope();
+    return bind(BackendStopwatch)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(stopwatchPath))
+        .inSingletonScope();
 }

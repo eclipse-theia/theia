@@ -17,60 +17,101 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ApplicationError<C extends number, D> extends Error {
+    readonly message: string
     readonly code: C
     readonly data: D
-    toJson(): ApplicationError.Literal<D>
 }
 export namespace ApplicationError {
+
+    const DEFINED_CODES = new Set<number>();
+
     export interface Literal<D> {
         message: string
         data: D
         stack?: string
     }
+
     export interface Constructor<C extends number, D> {
+        new(...args: any[]): ApplicationError<C, D>
         (...args: any[]): ApplicationError<C, D>;
-        code: C;
-        is(arg: object | undefined): arg is ApplicationError<C, D>
+        readonly code: C;
+        is(value?: object): value is ApplicationError<C, D>
     }
-    const codes = new Set<number>();
-    export function declare<C extends number, D>(code: C, factory: (...args: any[]) => Literal<D>): Constructor<C, D> {
-        if (codes.has(code)) {
+
+    export type Type<T extends Constructor<number, any>> = T extends Constructor<infer C, infer D> ? ApplicationError<C, D> : never;
+
+    function validateCode(code: number): void {
+        if (DEFINED_CODES.has(code)) {
             throw new Error(`An application error for '${code}' code is already declared`);
         }
-        codes.add(code);
-        const constructorOpt = Object.assign((...args: any[]) => new Impl(code, factory(...args), constructorOpt), {
-            code,
-            is(arg: object | undefined): arg is ApplicationError<C, D> {
-                return arg instanceof Impl && arg.code === code;
+        DEFINED_CODES.add(code);
+    }
+
+    export function declare<C extends number, D>(code: C, factory: (...args: any[]) => Literal<D>): Constructor<C, D> {
+        validateCode(code);
+        // use es5-style class definition to construct with or without using `new`
+        function ImplExt(this: never, ...args: any[]): any {
+            if (new.target === undefined) {
+                // ImplExt was called without new, so we'll call with new:
+                return new (ImplExt as any)(...args);
+            }
+            // constructor "super" call
+            const self = Reflect.construct(Impl, [code, factory(...args)], ImplExt);
+            Object.setPrototypeOf(self, ImplExt.prototype);
+            return self;
+        }
+        // setup proper prototype chain
+        Object.setPrototypeOf(ImplExt, Impl);
+        Object.setPrototypeOf(ImplExt.prototype, Impl.prototype);
+        // static methods
+        function isExtImpl(value: any): value is ApplicationError<C, D> {
+            // eslint-disable-next-line no-null/no-null
+            return typeof value === 'object' && value !== null && typeof value.message === 'string' && value.code === code;
+        }
+        Object.defineProperties(ImplExt, {
+            [Symbol.hasInstance]: {
+                value: isExtImpl
+            },
+            code: {
+                value: code
+            },
+            is: {
+                value: isExtImpl
             }
         });
-        return constructorOpt;
+        return ImplExt as Constructor<C, D>;
     }
+
     export function is<C extends number, D>(arg: object | undefined): arg is ApplicationError<C, D> {
         return arg instanceof Impl;
     }
-    export function fromJson<C extends number, D>(code: C, raw: Literal<D>): ApplicationError<C, D> {
-        return new Impl(code, raw);
+
+    export function toJson<C extends number, D>(error: ApplicationError<C, D>): Literal<D> {
+        const { message, data, stack } = error;
+        return { message, data, stack };
     }
+
+    export function fromJson<C extends number, D>(code: C, literal: Literal<D>): ApplicationError<C, D> {
+        return new Impl(code, literal);
+    }
+
     class Impl<C extends number, D> extends Error implements ApplicationError<C, D>  {
-        readonly data: D;
+
+        data: D;
+
         constructor(
             readonly code: C,
-            raw: ApplicationError.Literal<D>,
+            literal: ApplicationError.Literal<D>,
             constructorOpt?: Function
         ) {
-            super(raw.message);
-            this.data = raw.data;
+            super(literal.message);
+            this.data = literal.data;
             Object.setPrototypeOf(this, Impl.prototype);
-            if (raw.stack) {
-                this.stack = raw.stack;
+            if (literal.stack) {
+                this.stack = literal.stack;
             } else if (Error.captureStackTrace && constructorOpt) {
                 Error.captureStackTrace(this, constructorOpt);
             }
-        }
-        toJson(): ApplicationError.Literal<D> {
-            const { message, data, stack } = this;
-            return { message, data, stack };
         }
     }
 }

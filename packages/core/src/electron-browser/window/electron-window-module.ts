@@ -21,15 +21,16 @@ import { FrontendApplicationContribution } from '../../browser/frontend-applicat
 import { ElectronClipboardService } from '../electron-clipboard-service';
 import { ClipboardService } from '../../browser/clipboard-service';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';
-import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-provider';
 import { bindWindowPreferences } from './electron-window-preferences';
 import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
 import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
+import { ProxyProvider } from '../../common';
+import { ElectronMainAndFrontend } from '../../electron-common';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronMainWindowService).toDynamicValue(context =>
-        ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
-    ).inSingletonScope();
+    bind(ElectronMainWindowService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainAndFrontend).getProxy(electronMainWindowServicePath))
+        .inSingletonScope();
     bindWindowPreferences(bind);
     bind(WindowService).to(ElectronWindowService).inSingletonScope();
     bind(FrontendApplicationContribution).toService(WindowService);

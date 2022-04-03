@@ -14,45 +14,43 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule, Container } from 'inversify';
-import { ILoggerServer, loggerPath, ConsoleLogger } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { WebSocketConnectionProvider } from './messaging';
+import { ContainerModule } from 'inversify';
+import { BackendAndFrontend, ProxyProvider } from '../common';
+import { ILogger, Logger, LoggerFactory, LoggerName, rootLoggerName, setRootLogger } from '../common/logger';
+import { ConsoleLogger, ILoggerServer, loggerPath } from '../common/logger-protocol';
 import { FrontendApplicationContribution } from './frontend-application';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
-        initialize(): void {
-            setRootLogger(ctx.container.get<ILogger>(ILogger));
-        }
-    }));
-
+    bind(FrontendApplicationContribution)
+        .toDynamicValue(ctx => ({
+            initialize(): void {
+                setRootLogger(ctx.container.get<ILogger>(ILogger));
+            }
+        }))
+        .inSingletonScope();
     bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
-    bind(LoggerWatcher).toSelf().inSingletonScope();
-    bind(ILoggerServer).toDynamicValue(ctx => {
-        const loggerWatcher = ctx.container.get(LoggerWatcher);
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const target = connection.createProxy<ILoggerServer>(loggerPath, loggerWatcher.getLoggerClient());
-        function get<K extends keyof ILoggerServer>(_: ILoggerServer, property: K): ILoggerServer[K] | ILoggerServer['log'] {
-            if (property === 'log') {
-                return (name, logLevel, message, params) => {
-                    ConsoleLogger.log(name, logLevel, message, params);
-                    return target.log(name, logLevel, message, params);
-                };
-            }
-            return target[property];
-        }
-        return new Proxy(target, { get });
-    }).inSingletonScope();
-    bind(LoggerFactory).toFactory(ctx =>
-        (name: string) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            child.bind(ILogger).to(Logger).inTransientScope();
-            child.bind(LoggerName).toConstantValue(name);
-            return child.get(ILogger);
-        }
-    );
+    bind(ILoggerServer)
+        .toDynamicValue(ctx => {
+            const loggerServer = ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(loggerPath);
+            // Do some switcharoo to only override the `log` method from the `ILoggerServer` remote proxy:
+            return new Proxy(loggerServer, {
+                get: (target, property: keyof ILoggerServer, receiver): ILoggerServer[keyof ILoggerServer] => {
+                    if (property === 'log') {
+                        return (name, logLevel, message, params) => {
+                            ConsoleLogger.log(name, logLevel, message, params);
+                            return target.log(name, logLevel, message, params);
+                        };
+                    }
+                    return target[property];
+                }
+            });
+        })
+        .inSingletonScope();
+    bind(LoggerFactory).toFactory(ctx => (name: string) => {
+        const child = ctx.container.createChild();
+        child.bind(ILogger).to(Logger).inTransientScope();
+        child.bind(LoggerName).toConstantValue(name);
+        return child.get(ILogger);
+    });
 });

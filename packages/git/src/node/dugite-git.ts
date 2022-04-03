@@ -43,7 +43,7 @@ import {
     CommitIdentity, GitResult, CommitWithChanges, GitFileBlame, CommitLine, GitError, Remote, StashEntry
 } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
-import { GitLocator } from './git-locator/git-locator-protocol';
+import { GitLocator } from './git-locator-protocol';
 import { GitExecProvider } from './git-exec-provider';
 import { GitEnvProvider } from './env/git-env-provider';
 import { GitInit } from './init/git-init';

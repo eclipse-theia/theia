@@ -15,14 +15,66 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
+import { JsonRpc } from '../../common/json-rpc';
+import { ipcRenderer } from '../../../electron-shared/electron';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
-import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
-import { ElectronWebSocketConnectionProvider } from './electron-ws-connection-provider';
-import { ElectronIpcConnectionProvider } from './electron-ipc-connection-provider';
+import { bindServiceProvider, ConnectionMultiplexer, DeferredConnectionFactory, ProxyProvider, Rpc, ServiceProvider } from '../../common';
+import { waitForRemote } from '../../common/connection';
+import { DefaultConnectionMultiplexer } from '../../common/connection-multiplexer';
+import { DefaultRpcProxyProvider } from '../../common/rpc';
+import { ElectronMainAndFrontend } from '../../electron-common';
+import { IpcRendererConnection } from './electron-ipc-renderer-connection';
 
 export const messagingFrontendModule = new ContainerModule(bind => {
-    bind(ElectronWebSocketConnectionProvider).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(ElectronWebSocketConnectionProvider);
-    bind(WebSocketConnectionProvider).toService(ElectronWebSocketConnectionProvider);
-    bind(ElectronIpcConnectionProvider).toSelf().inSingletonScope();
+    // #region transients
+    bind(IpcRendererConnection)
+        .toDynamicValue(ctx => new IpcRendererConnection())
+        .inTransientScope();
+    // #endregion
+    // #region ElectronMainAndFrontend
+    bindServiceProvider(bind, ElectronMainAndFrontend);
+    bind(ConnectionMultiplexer)
+        .toDynamicValue(ctx => {
+            const deferredConnectionFactory = ctx.container.get(DeferredConnectionFactory);
+            const ipcConnection = ctx.container.get(IpcRendererConnection).initialize(ElectronMainAndFrontend, ipcRenderer);
+            const deferredConnection = deferredConnectionFactory(waitForRemote(ipcConnection));
+            return ctx.container.get(DefaultConnectionMultiplexer).initialize(deferredConnection);
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+    bind(ProxyProvider)
+        .toDynamicValue(ctx => {
+            const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
+            const jsonRpc = ctx.container.get(JsonRpc);
+            return ctx.container.get(DefaultRpcProxyProvider).initialize((serviceId, serviceParams) => {
+                const connection = multiplexer.open({ serviceId, serviceParams });
+                const messageConnection = jsonRpc.createMessageConnection(connection);
+                return jsonRpc.createRpcConnection(messageConnection);
+            });
+        })
+        .inSingletonScope()
+        .whenTargetNamed(ElectronMainAndFrontend);
+    bind(FrontendApplicationContribution)
+        .toDynamicValue(ctx => ({
+            initialize(): void {
+                const multiplexer = ctx.container.getNamed(ConnectionMultiplexer, ElectronMainAndFrontend);
+                const serviceProvider = ctx.container.getNamed(ServiceProvider, ElectronMainAndFrontend);
+                const jsonRpc = ctx.container.get(JsonRpc);
+                const rpcProxying = ctx.container.get(Rpc);
+                multiplexer.listen(({ serviceId, serviceParams }, accept, next) => {
+                    const [service, dispose] = serviceProvider.getService(serviceId, serviceParams);
+                    if (service) {
+                        const connection = accept();
+                        const messageConnection = jsonRpc.createMessageConnection(connection);
+                        const rpcConnection = jsonRpc.createRpcConnection(messageConnection);
+                        rpcProxying.serve(service, rpcConnection);
+                        rpcConnection.onClose(dispose);
+                    } else {
+                        next();
+                    }
+                });
+            }
+        }))
+        .inSingletonScope();
+    // #endregion
 });

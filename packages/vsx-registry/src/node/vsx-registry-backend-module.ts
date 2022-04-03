@@ -20,8 +20,8 @@ import { PluginDeployerResolver } from '@theia/plugin-ext/lib/common/plugin-prot
 import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { RequestService } from '@theia/core/shared/@theia/request';
+import { BackendAndFrontend, ServiceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
@@ -29,9 +29,12 @@ export default new ContainerModule(bind => {
         return () => clientPromise;
     }).inSingletonScope();
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(
-        ctx => new JsonRpcConnectionHandler(VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment))
-    ).inSingletonScope();
     bind(VSXExtensionResolver).toSelf().inSingletonScope();
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [VSX_ENVIRONMENT_PATH, () => ctx.container.get(VSXEnvironment)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 });

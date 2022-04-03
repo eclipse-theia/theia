@@ -26,6 +26,10 @@
     {
       "electronMain": "lib/electron-main/update/sample-updater-main-module",
       "frontendElectron": "lib/electron-browser/updater/sample-updater-frontend-module"
+    },
+    {
+      "electronMain": "lib/electron-main/ipc/electron-main-ipc-module",
+      "backendElectron": "lib/electron-node/ipc/electron-backend-ipc-module"
     }
   ],
   "keywords": [

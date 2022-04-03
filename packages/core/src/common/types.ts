@@ -14,9 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { interfaces } from 'inversify';
+
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
 export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
 export type MaybeUndefined<T> = { [P in keyof T]: T[P] | undefined };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NonArray<T> = T extends any[] ? never : T;
 
 /**
  * Creates a shallow copy with all ownkeys of the original object that are `null` made `undefined`
@@ -32,9 +36,6 @@ export function nullToUndefined<T>(nullable: MaybeNull<T>): MaybeUndefined<T> {
     return undefinable;
 }
 
-export type Deferred<T> = {
-    [P in keyof T]: Promise<T[P]>
-};
 export type RecursivePartial<T> = {
     [P in keyof T]?: T[P] extends Array<infer I>
     ? Array<RecursivePartial<I>>
@@ -135,4 +136,34 @@ export namespace ArrayUtils {
  */
 export function unreachable(_never: never, message: string = 'unhandled case'): never {
     throw new Error(message);
+}
+
+/**
+ * Typeguard for {@link PromiseLike} instances.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isPromiseLike<T = unknown>(value: any): value is PromiseLike<T> {
+    return typeof value?.then === 'function';
+}
+
+/**
+ * @internal
+ *
+ * Potentially empty Theia contribution types can cause TypeScript to complain
+ * if extra methods are defined. This type prevents the issue.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptyMeansAny<T> = {} extends T ? T & { [key in string | symbol]: any } : T;
+
+/**
+ * @internal
+ */
+export type SymbolIdentifier<T> = symbol & interfaces.Abstract<EmptyMeansAny<T>>;
+
+/**
+ * Use this to create "typed symbols" for Inversify typings to understand our bindings.
+ */
+export function serviceIdentifier<T>(name: string): SymbolIdentifier<T> {
+    // @ts-expect-error We won't implement `Abstract<T>` as it is solely for static typing.
+    return Symbol(name);
 }

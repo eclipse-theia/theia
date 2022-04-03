@@ -17,15 +17,13 @@
 import { inject, injectable, optional, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Event, Emitter } from '../common/event';
-import { DefaultFrontendApplicationContribution } from './frontend-application';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
-import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection, serviceIdentifier } from '../common';
 
 /**
  * Service for listening on backend connection changes.
  */
-export const ConnectionStatusService = Symbol('ConnectionStatusService');
+export const ConnectionStatusService = serviceIdentifier<ConnectionStatusService>('ConnectionStatusService');
 export interface ConnectionStatusService {
 
     /**
@@ -36,8 +34,7 @@ export interface ConnectionStatusService {
     /**
      * Clients can listen on connection status change events.
      */
-    readonly onStatusChange: Event<ConnectionStatus>;
-
+    onStatusChange: Event<ConnectionStatus>;
 }
 
 /**
@@ -60,13 +57,13 @@ export enum ConnectionStatus {
 export class ConnectionStatusOptions {
 
     static DEFAULT: ConnectionStatusOptions = {
-        offlineTimeout: 5000,
+        pingTimeout: 5000,
     };
 
     /**
      * Timeout in milliseconds before the application is considered offline. Must be a positive integer.
      */
-    readonly offlineTimeout: number;
+    readonly pingTimeout: number;
 
 }
 
@@ -80,31 +77,28 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
 
     protected readonly statusChangeEmitter = new Emitter<ConnectionStatus>();
 
-    protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
+    currentStatus = ConnectionStatus.ONLINE;
 
     @inject(ILogger)
     protected logger: ILogger;
 
-    constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
+    constructor(
+        @inject(ConnectionStatusOptions) @optional() protected readonly options = ConnectionStatusOptions.DEFAULT
+    ) { }
 
     get onStatusChange(): Event<ConnectionStatus> {
         return this.statusChangeEmitter.event;
-    }
-
-    get currentStatus(): ConnectionStatus {
-        return this.connectionStatus;
     }
 
     dispose(): void {
         this.statusChangeEmitter.dispose();
     }
 
-    protected updateStatus(success: boolean): void {
-        const previousStatus = this.connectionStatus;
-        const newStatus = success ? ConnectionStatus.ONLINE : ConnectionStatus.OFFLINE;
-        if (previousStatus !== newStatus) {
-            this.connectionStatus = newStatus;
-            this.fireStatusChange(newStatus);
+    protected updateStatus(online: boolean): void {
+        const newStatus = online ? ConnectionStatus.ONLINE : ConnectionStatus.OFFLINE;
+        if (this.currentStatus !== newStatus) {
+            this.currentStatus = newStatus;
+            this.fireStatusChange(this.currentStatus);
         }
     }
 
@@ -117,48 +111,53 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
 @injectable()
 export class FrontendConnectionStatusService extends AbstractConnectionStatusService {
 
-    private scheduledPing: number | undefined;
+    private scheduledPing?: number;
 
-    @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider;
     @inject(PingService) protected readonly pingService: PingService;
 
     @postConstruct()
     protected init(): void {
-        this.wsConnectionProvider.onSocketDidOpen(() => {
-            this.updateStatus(true);
-            this.schedulePing();
-        });
-        this.wsConnectionProvider.onSocketDidClose(() => {
+        window.addEventListener('offline', () => {
             this.clearTimeout(this.scheduledPing);
             this.updateStatus(false);
         });
-        this.wsConnectionProvider.onIncomingMessageActivity(() => {
-            // natural activity
-            this.updateStatus(true);
+        window.addEventListener('online', () => {
             this.schedulePing();
         });
+        // this.wsConnectionProvider.onSocketDidOpen(() => {
+        //     this.updateStatus(true);
+        //     this.schedulePing();
+        // });
+        // this.wsConnectionProvider.onSocketDidClose(() => {
+        //     this.clearTimeout(this.scheduledPing);
+        //     this.updateStatus(false);
+        // });
+        // this.wsConnectionProvider.onIncomingMessageActivity(() => {
+        //     // natural activity
+        //     this.updateStatus(true);
+        //     this.schedulePing();
+        // });
     }
 
     protected schedulePing(): void {
         this.clearTimeout(this.scheduledPing);
         this.scheduledPing = this.setTimeout(async () => {
-            await this.performPingRequest();
+            await this.ping();
             this.schedulePing();
-        }, this.options.offlineTimeout);
+        }, this.options.pingTimeout);
     }
 
-    protected async performPingRequest(): Promise<void> {
+    protected async ping(): Promise<void> {
         try {
             await this.pingService.ping();
             this.updateStatus(true);
         } catch (e) {
             this.updateStatus(false);
-            await this.logger.error(e);
+            this.logger.error(e);
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected setTimeout(handler: (...args: any[]) => void, timeout: number): number {
+    protected setTimeout(handler: () => void, timeout: number): number {
         return window.setTimeout(handler, timeout);
     }
 
@@ -170,7 +169,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 }
 
 @injectable()
-export class ApplicationConnectionStatusContribution extends DefaultFrontendApplicationContribution {
+export class ApplicationConnectionStatusContribution {
 
     protected readonly toDisposeOnOnline = new DisposableCollection();
 
@@ -179,7 +178,6 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
         @inject(StatusBar) protected readonly statusBar: StatusBar,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
-        super();
         this.connectionStatusService.onStatusChange(state => this.onStateChange(state));
     }
 
@@ -200,6 +198,8 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
 
     protected handleOnline(): void {
         this.toDisposeOnOnline.dispose();
+        this.statusBar.removeElement(this.statusbarId);
+        document.body.classList.remove('theia-mod-offline');
     }
 
     protected handleOffline(): void {
@@ -209,8 +209,6 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
             tooltip: 'Cannot connect to backend.',
             priority: 5000
         });
-        this.toDisposeOnOnline.push(Disposable.create(() => this.statusBar.removeElement(this.statusbarId)));
         document.body.classList.add('theia-mod-offline');
-        this.toDisposeOnOnline.push(Disposable.create(() => document.body.classList.remove('theia-mod-offline')));
     }
 }

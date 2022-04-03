@@ -21,7 +21,7 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PluginDevServerImpl } from './plugin-dev-service';
-import { PluginDevServer, PluginDevClient, pluginDevServicePath } from '../common/plugin-dev-protocol';
+import { PluginDevServer, pluginDevServicePath } from '../common/plugin-dev-protocol';
 import { HostedPluginReader } from './hosted-plugin-reader';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 
@@ -30,11 +30,13 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
     bind(HostedPluginsManager).toService(HostedPluginsManagerImpl);
     bind(PluginDevServerImpl).toSelf().inSingletonScope();
     bind(PluginDevServer).toService(PluginDevServerImpl);
-    bindBackendService<PluginDevServer, PluginDevClient>(pluginDevServicePath, PluginDevServer, (server, client) => {
-        server.setClient(client);
-        client.onDidCloseConnection(() => server.dispose());
-        return server;
-    });
+    bindBackendService(pluginDevServicePath, PluginDevServer);
+    // TODO: ?
+    // bindBackendService<PluginDevServer, PluginDevClient>(pluginDevServicePath, PluginDevServer, (server, client) => {
+    //     server.setClient(client);
+    //     client.onDidCloseConnection(() => server.dispose());
+    //     return server;
+    // });
 });
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {

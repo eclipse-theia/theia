@@ -28,7 +28,6 @@ export * from './resource';
 export * from './contribution-provider';
 export * from './path';
 export * from './logger';
-export * from './messaging';
 export * from './message-service';
 export * from './message-service-protocol';
 export * from './progress-service';
@@ -42,5 +41,30 @@ export * from './nls';
 export * from './numbers';
 export * from './performance';
 
-import { environment } from '@theia/application-package/lib/environment';
-export { environment };
+export { environment } from '@theia/application-package/lib/environment';
+
+export { Deferred, delay, retry, timeout, timeoutReject, wait, waitForEvent } from './promise-util';
+export { ProxyProvider, LazyProxyFactory } from './proxy';
+export {
+    AnyConnection,
+    AbstractConnection,
+    Connection,
+    ConnectionRouter,
+    ConnectionHandler,
+    ConnectionEmitter,
+    ConnectionProvider,
+    ConnectionState,
+    DeferredConnectionFactory
+} from './connection';
+export { bindServiceProvider, servicePath, ServicePath, ServiceProvider, ServiceContribution, ServiceLifecycle } from './service-provider';
+export { Reflection } from './reflection';
+export { RpcConnection, Rpc } from './rpc';
+export { ConnectionTransformer, MessageTransformer } from './connection-transformer';
+export { ConnectionMultiplexer } from './connection-multiplexer';
+export { ContainerScope } from './container-scope';
+export { FrontendConnectionParams } from './frontend-connection-params';
+export { Broker, Handler, Middleware, Router } from './routing';
+export { RouteHandlerProvider, RouteHandlerParams, RouteMatch, RouteMatcher } from './route-handler';
+export { Rc } from './reference-counter';
+
+export { BackendAndFrontend } from './messaging/messages';

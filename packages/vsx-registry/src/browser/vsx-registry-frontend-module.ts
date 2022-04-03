@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
-    WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager, WebSocketConnectionProvider
+    WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager
 } from '@theia/core/lib/browser';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';
@@ -36,15 +36,17 @@ import { bindPreferenceProviderOverrides } from './recommended-extensions/prefer
 import { OVSXClientProvider, createOVSXClient } from '../common/ovsx-client-provider';
 import { VSXEnvironment, VSX_ENVIRONMENT_PATH } from '../common/vsx-environment';
 import { RequestService } from '@theia/core/shared/@theia/request';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 export default new ContainerModule((bind, unbind) => {
     bind<OVSXClientProvider>(OVSXClientProvider).toDynamicValue(ctx => {
         const clientPromise = createOVSXClient(ctx.container.get(VSXEnvironment), ctx.container.get(RequestService));
         return () => clientPromise;
     }).inSingletonScope();
-    bind(VSXEnvironment).toDynamicValue(
-        ctx => WebSocketConnectionProvider.createProxy(ctx.container, VSX_ENVIRONMENT_PATH)
-    ).inSingletonScope();
+
+    bind(VSXEnvironment)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(VSX_ENVIRONMENT_PATH))
+        .inSingletonScope();
 
     bind(VSXExtension).toSelf();
     bind(VSXExtensionFactory).toFactory(ctx => (option: VSXExtensionOptions) => {

@@ -21,7 +21,7 @@ export class MockConnectionStatusService extends AbstractConnectionStatusService
 
     constructor() {
         super({
-            offlineTimeout: 10
+            pingTimeout: 10
         });
         this.logger = new MockLogger();
     }

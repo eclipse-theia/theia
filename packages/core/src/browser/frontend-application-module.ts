@@ -27,11 +27,17 @@ import {
     ResourceResolver,
     CommandContribution, CommandRegistry, CommandService, commandServicePath,
     MenuModelRegistry, MenuContribution,
-    MessageClient,
     InMemoryResources,
     messageServicePath,
     InMemoryTextResourceResolver,
-    UntitledResourceResolver
+    UntitledResourceResolver,
+    ProxyProvider,
+    BackendAndFrontend,
+    ServiceContribution,
+    MessageService,
+    DefaultMessageService,
+    MessageServer,
+    NullMessageServer
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -55,9 +61,8 @@ import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
-import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
-import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
+import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
@@ -77,7 +82,7 @@ import { DispatchingProgressClient } from './progress-client';
 import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
 import { ContextMenuContext } from './menu/context-menu-context';
-import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
+import { bindResourceProvider, bindPreferenceService } from './frontend-application-bindings';
 import { ColorRegistry } from './color-registry';
 import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
 import { ExternalUriService } from './external-uri-service';
@@ -117,9 +122,9 @@ import {
     BreadcrumbsService,
     DefaultBreadcrumbRenderer,
 } from './breadcrumbs';
-import { RendererHost } from './widgets';
+import { DockPanel, RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
-import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
+import { BackendRequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
@@ -127,7 +132,7 @@ import { TheiaDockPanel } from './shell/theia-dock-panel';
 import { bindStatusBar } from './status-bar';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 
-export { bindResourceProvider, bindMessageService, bindPreferenceService };
+export { bindResourceProvider, bindPreferenceService };
 
 ColorApplicationContribution.initBackground();
 
@@ -180,7 +185,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         const commandService = container.get<CommandService>(CommandService);
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
     });
-    bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options: DockPanel.IOptions) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
         return new TheiaDockPanel(options, corePreferences);
     });
@@ -229,10 +234,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(ResourceResolver).toService(UntitledResourceResolver);
 
     bind(SelectionService).toSelf().inSingletonScope();
-    bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
-        WebSocketConnectionProvider.createProxy(container, commandServicePath, registry);
-        return registry;
-    });
+    bind(CommandRegistry).toSelf().inSingletonScope();
     bind(CommandService).toService(CommandRegistry);
     bindContributionProvider(bind, CommandContribution);
 
@@ -246,11 +248,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindContributionProvider(bind, KeybindingContext);
     bindContributionProvider(bind, KeybindingContribution);
 
-    bindMessageService(bind).onActivation(({ container }, messages) => {
-        const client = container.get(MessageClient);
-        WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
-        return messages;
-    });
+    bind(MessageServer).toConstantValue(NullMessageServer);
+    bind(MessageService).to(DefaultMessageService).inSingletonScope();
 
     bind(LanguageService).toSelf().inSingletonScope();
 
@@ -273,10 +272,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(QuickHelpService).toSelf().inSingletonScope();
     bind(QuickAccessContribution).toService(QuickHelpService);
 
-    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
-        WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
-        return quickPickService;
-    });
+    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope();
 
     bind(MarkdownRenderer).to(MarkdownRendererImpl).inSingletonScope();
     bind(MarkdownRendererFactory).toFactory(({ container }) => () => container.get(MarkdownRenderer));
@@ -310,33 +306,26 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(DefaultJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(DefaultJsonSchemaContribution);
 
-    bind(PingService).toDynamicValue(ctx => {
-        // let's reuse a simple and cheap service from this package
-        const envServer: EnvVariablesServer = ctx.container.get(EnvVariablesServer);
-        return {
-            ping(): Promise<EnvVariable | undefined> {
-                return envServer.getValue('does_not_matter');
-            }
-        };
-    });
+    bind(PingService)
+        .toDynamicValue(ctx => {
+            // let's reuse a simple and cheap service from this package
+            const envServer: EnvVariablesServer = ctx.container.get(EnvVariablesServer);
+            return {
+                async ping(): Promise<void> {
+                    await envServer.getValue('');
+                }
+            };
+        })
+        .inSingletonScope();
+
     bind(FrontendConnectionStatusService).toSelf().inSingletonScope();
     bind(ConnectionStatusService).toService(FrontendConnectionStatusService);
     bind(FrontendApplicationContribution).toService(FrontendConnectionStatusService);
     bind(ApplicationConnectionStatusContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationConnectionStatusContribution);
 
-    bind(ApplicationServer).toDynamicValue(ctx => {
-        const provider = ctx.container.get(WebSocketConnectionProvider);
-        return provider.createProxy<ApplicationServer>(applicationPath);
-    }).inSingletonScope();
-
     bind(AboutDialog).toSelf().inSingletonScope();
     bind(AboutDialogProps).toConstantValue({ title: 'Theia' });
-
-    bind(EnvVariablesServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<EnvVariablesServer>(envVariablesPath);
-    }).inSingletonScope();
 
     bind(ThemeService).toDynamicValue(() => ThemeService.get());
 
@@ -377,11 +366,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(AuthenticationService).to(AuthenticationServiceImpl).inSingletonScope();
     bind(DecorationsService).to(DecorationsServiceImpl).inSingletonScope();
 
-    bind(KeytarService).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<KeytarService>(keytarServicePath);
-    }).inSingletonScope();
-
     bind(CredentialsService).to(CredentialsServiceImpl);
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
@@ -392,13 +376,11 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindContributionProvider(bind, BreadcrumbsContribution);
     bind(BreadcrumbsService).toSelf().inSingletonScope();
     bind(BreadcrumbsRenderer).toSelf();
-    bind(BreadcrumbsRendererFactory).toFactory(ctx =>
-        () => {
-            const childContainer = ctx.container.createChild();
-            childContainer.bind(BreadcrumbRenderer).to(DefaultBreadcrumbRenderer).inSingletonScope();
-            return childContainer.get(BreadcrumbsRenderer);
-        }
-    );
+    bind(BreadcrumbsRendererFactory).toFactory(ctx => () => {
+        const childContainer = ctx.container.createChild();
+        childContainer.bind(BreadcrumbRenderer).to(DefaultBreadcrumbRenderer).inSingletonScope();
+        return childContainer.get(BreadcrumbsRenderer);
+    });
     bind(BreadcrumbPopupContainer).toSelf();
     bind(BreadcrumbPopupContainerFactory).toFactory(({ container }) => (parent: HTMLElement, breadcrumbId: string, position: Coordinate): BreadcrumbPopupContainer => {
         const child = container.createChild();
@@ -408,13 +390,34 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return child.get(BreadcrumbPopupContainer);
     });
 
-    bind(BackendRequestService).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy<RequestService>(ctx.container, REQUEST_SERVICE_PATH)
-    ).inSingletonScope();
+    bind(BackendRequestService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(REQUEST_SERVICE_PATH))
+        .inSingletonScope();
 
     bindFrontendStopwatch(bind);
     bindBackendStopwatch(bind);
 
     bind(SaveResourceService).toSelf().inSingletonScope();
     bind(UserWorkingDirectoryProvider).toSelf().inSingletonScope();
+
+    bind(ApplicationServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(applicationPath))
+        .inSingletonScope();
+
+    bind(EnvVariablesServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(envVariablesPath))
+        .inSingletonScope();
+
+    bind(KeytarService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(keytarServicePath))
+        .inSingletonScope();
+
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [quickPickServicePath, () => ctx.container.get(QuickPickService)],
+            [commandServicePath, () => ctx.container.get(CommandRegistry)],
+            [messageServicePath, () => ctx.container.get(MessageServer)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 });

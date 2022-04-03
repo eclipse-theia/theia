@@ -25,17 +25,23 @@ import {
     hasOpenReadWriteCloseCapability, hasFileFolderCopyCapability, hasReadWriteCapability, hasAccessCapability,
     FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult, FileReadStreamOptions, hasFileReadStreamCapability
 } from './files';
-import { JsonRpcServer, JsonRpcProxy, JsonRpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
-import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { newWriteableStream, ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken, cancelled } from '@theia/core/lib/common/cancellation';
+import { serviceIdentifier, servicePath, Event } from '@theia/core';
 
-export const remoteFileSystemPath = '/services/remote-filesystem';
+export const remoteFileSystemPath = servicePath<RemoteFileSystemServer>('/services/remote-filesystem');
 
-export const RemoteFileSystemServer = Symbol('RemoteFileSystemServer');
-export interface RemoteFileSystemServer extends JsonRpcServer<RemoteFileSystemClient> {
+export const RemoteFileSystemServer = serviceIdentifier<RemoteFileSystemServer>('RemoteFileSystemServer');
+
+export interface RemoteFileSystemServer extends Disposable {
+    onDidChangeFile: Event<{ changes: RemoteFileChange[] }>;
+    onFileWatchError: Event<void>;
+    onDidChangeCapabilities: Event<{ capabilities: FileSystemProviderCapabilities }>;
+    onFileStreamData: Event<{ handle: number, data: number[] }>;
+    onFileStreamEnd: Event<{ handle: number, error?: RemoteFileStreamError }>;
+
     getCapabilities(): Promise<FileSystemProviderCapabilities>
     stat(resource: string): Promise<Stat>;
     access(resource: string, mode?: number): Promise<void>;
@@ -64,43 +70,6 @@ export interface RemoteFileChange {
 
 export interface RemoteFileStreamError extends Error {
     code?: FileSystemProviderErrorCode
-}
-
-export interface RemoteFileSystemClient {
-    notifyDidChangeFile(event: { changes: RemoteFileChange[] }): void;
-    notifyFileWatchError(): void;
-    notifyDidChangeCapabilities(capabilities: FileSystemProviderCapabilities): void;
-    onFileStreamData(handle: number, data: number[]): void;
-    onFileStreamEnd(handle: number, error: RemoteFileStreamError | undefined): void;
-}
-
-export const RemoteFileSystemProviderError = ApplicationError.declare(-33005,
-    (message: string, data: { code: FileSystemProviderErrorCode, name: string }, stack: string) =>
-        ({ message, data, stack })
-);
-
-export class RemoteFileSystemProxyFactory<T extends object> extends JsonRpcProxyFactory<T> {
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected override serializeError(e: any): any {
-        if (e instanceof FileSystemProviderError) {
-            const { code, name } = e;
-            return super.serializeError(RemoteFileSystemProviderError(e.message, { code, name }, e.stack));
-        }
-        return super.serializeError(e);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected override deserializeError(capturedError: Error, e: any): any {
-        const error = super.deserializeError(capturedError, e);
-        if (RemoteFileSystemProviderError.is(error)) {
-            const fileOperationError = new FileSystemProviderError(error.message, error.data.code);
-            fileOperationError.name = error.data.name;
-            fileOperationError.stack = error.stack;
-            return fileOperationError;
-        }
-        return e;
-    }
 }
 
 /**
@@ -153,7 +122,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
      * Wrapped remote filesystem.
      */
     @inject(RemoteFileSystemServer)
-    protected readonly server: JsonRpcProxy<RemoteFileSystemServer>;
+    protected readonly server: RemoteFileSystemServer;
 
     @postConstruct()
     protected init(): void {
@@ -161,22 +130,20 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
             this._capabilities = capabilities;
             this.readyDeferred.resolve();
         }, this.readyDeferred.reject);
-        this.server.setClient({
-            notifyDidChangeFile: ({ changes }) => {
-                this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: new URI(event.resource), type: event.type })));
-            },
-            notifyFileWatchError: () => {
-                this.onFileWatchErrorEmitter.fire();
-            },
-            notifyDidChangeCapabilities: capabilities => this.setCapabilities(capabilities),
-            onFileStreamData: (handle, data) => this.onFileStreamDataEmitter.fire([handle, Uint8Array.from(data)]),
-            onFileStreamEnd: (handle, error) => this.onFileStreamEndEmitter.fire([handle, error])
+        this.server.onDidChangeFile(({ changes }) => {
+            this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: new URI(event.resource), type: event.type })));
         });
-        const onInitialized = this.server.onDidOpenConnection(() => {
-            // skip reconnection on the first connection
-            onInitialized.dispose();
-            this.toDispose.push(this.server.onDidOpenConnection(() => this.reconnect()));
+        this.server.onFileWatchError(() => {
+            this.onFileWatchErrorEmitter.fire();
         });
+        this.server.onDidChangeCapabilities(({ capabilities }) => this.setCapabilities(capabilities));
+        this.server.onFileStreamData(({ handle, data }) => this.onFileStreamDataEmitter.fire([handle, Uint8Array.from(data)]));
+        this.server.onFileStreamEnd(({ handle, error }) => this.onFileStreamEndEmitter.fire([handle, error]));
+        // const onInitialized = this.server.onDidOpenConnection(() => {
+        //     // skip reconnection on the first connection
+        //     onInitialized.dispose();
+        //     this.toDispose.push(this.server.onDidOpenConnection(() => this.reconnect()));
+        // });
     }
 
     dispose(): void {
@@ -324,7 +291,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
 /**
  * Backend component.
  *
- * JSON-RPC server exposing a wrapped file system provider remotely.
+ * RPC server exposing a wrapped file system provider remotely.
  */
 @injectable()
 export class FileSystemProviderServer implements RemoteFileSystemServer {
@@ -337,13 +304,14 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
     protected watchers = new Map<number, Disposable>();
 
     protected readonly toDispose = new DisposableCollection();
+    protected onDidChangeCapabilitiesEmitter = this.toDispose.pushThru(new Emitter<{ capabilities: FileSystemProviderCapabilities; }>());
+    protected onDidChangeFileEmitter = this.toDispose.pushThru(new Emitter<{ changes: RemoteFileChange[]; }>());
+    protected onFileStreamDataEmitter = this.toDispose.pushThru(new Emitter<{ handle: number; data: number[]; }>());
+    protected onFileStreamEndEmitter = this.toDispose.pushThru(new Emitter<{ handle: number; error?: RemoteFileStreamError; }>());
+    protected onFileWatchErrorEmitter = this.toDispose.pushThru(new Emitter<void>());
+
     dispose(): void {
         this.toDispose.dispose();
-    }
-
-    protected client: RemoteFileSystemClient | undefined;
-    setClient(client: RemoteFileSystemClient | undefined): void {
-        this.client = client;
     }
 
     /**
@@ -354,27 +322,41 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
 
     @postConstruct()
     protected init(): void {
-        if (this.provider.dispose) {
-            this.toDispose.push(Disposable.create(() => this.provider.dispose!()));
+        if (Disposable.is(this.provider)) {
+            this.toDispose.push(this.provider);
         }
-        this.toDispose.push(this.provider.onDidChangeCapabilities(() => {
-            if (this.client) {
-                this.client.notifyDidChangeCapabilities(this.provider.capabilities);
-            }
-        }));
-        this.toDispose.push(this.provider.onDidChangeFile(changes => {
-            if (this.client) {
-                this.client.notifyDidChangeFile({
-                    changes: changes.map(({ resource, type }) => ({ resource: resource.toString(), type }))
-                });
-            }
-        }));
-        this.toDispose.push(this.provider.onFileWatchError(() => {
-            if (this.client) {
-                this.client.notifyFileWatchError();
-            }
-        }));
+        this.provider.onDidChangeCapabilities(() => {
+            this.onDidChangeCapabilitiesEmitter.fire({ capabilities: this.provider.capabilities });
+        }, this.toDispose);
+        this.provider.onDidChangeFile(changes => {
+            this.onDidChangeFileEmitter.fire({
+                changes: changes.map(({ resource, type }) => ({ resource: resource.toString(), type }))
+            });
+        }, this.toDispose);
+        this.provider.onFileWatchError(() => {
+            this.onFileWatchErrorEmitter.fire();
+        }, this.toDispose);
     }
+
+    get onDidChangeCapabilities(): Event<{ capabilities: FileSystemProviderCapabilities; }> {
+        return this.onDidChangeCapabilitiesEmitter.event;
+    };
+
+    get onDidChangeFile(): Event<{ changes: RemoteFileChange[]; }> {
+        return this.onDidChangeFileEmitter.event;
+    };
+
+    get onFileStreamData(): Event<{ handle: number; data: number[]; }> {
+        return this.onFileStreamDataEmitter.event;
+    };
+
+    get onFileStreamEnd(): Event<{ handle: number; error?: RemoteFileStreamError; }> {
+        return this.onFileStreamEndEmitter.event;
+    };
+
+    get onFileWatchError(): Event<void> {
+        return this.onFileWatchErrorEmitter.event;
+    };
 
     async getCapabilities(): Promise<FileSystemProviderCapabilities> {
         return this.provider.capabilities;
@@ -497,14 +479,13 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
         if (hasFileReadStreamCapability(this.provider)) {
             const handle = this.readFileStreamSeq++;
             const stream = this.provider.readFileStream(new URI(resource), opts, token);
-            stream.on('data', data => this.client?.onFileStreamData(handle, [...data.values()]));
+            stream.on('data', data => this.onFileStreamDataEmitter.fire({ handle, data: [...data.values()] }));
             stream.on('error', error => {
-                const code = error instanceof FileSystemProviderError ? error.code : undefined;
+                const code = error instanceof FileSystemProviderError ? error.data.code : undefined;
                 const { name, message, stack } = error;
-                // eslint-disable-next-line no-unused-expressions
-                this.client?.onFileStreamEnd(handle, { code, name, message, stack });
+                this.onFileStreamEndEmitter.fire({ handle, error: { code, name, message, stack } });
             });
-            stream.on('end', () => this.client?.onFileStreamEnd(handle, undefined));
+            stream.on('end', () => this.onFileStreamEndEmitter.fire({ handle }));
             return handle;
         }
         throw new Error('not supported');

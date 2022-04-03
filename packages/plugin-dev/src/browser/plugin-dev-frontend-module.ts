@@ -20,11 +20,12 @@ import { HostedPluginInformer } from './hosted-plugin-informer';
 import { bindHostedPluginPreferences } from './hosted-plugin-preferences';
 import { HostedPluginController } from './hosted-plugin-controller';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { PluginDevServer, pluginDevServicePath } from '../common/plugin-dev-protocol';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
@@ -38,8 +39,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(HostedPluginFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(HostedPluginFrontendContribution);
 
-    bind(PluginDevServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<PluginDevServer>(pluginDevServicePath);
-    }).inSingletonScope();
+    bind(PluginDevServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(pluginDevServicePath))
+        .inSingletonScope();
 });

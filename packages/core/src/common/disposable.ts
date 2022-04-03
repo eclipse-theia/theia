@@ -15,9 +15,21 @@
 // *****************************************************************************
 import { Event, Emitter } from './event';
 
+/**
+ * The disposable pattern is helpful when dealing with resource allocations.
+ * There are no destructors in TypeScript/JavaScript, and even though objects
+ * are garbage collected you cannot listen for that event.
+ *
+ * Instead whenever an object handles resources that should be cleaned, it
+ * may implement `Disposable` so that its "owner" can call this method
+ * when the instance and its dependencies are no longer required.
+ *
+ * Note that `Disposable` instances should only be disposed once, it is
+ * undefined behavior to dispose the same instance multiple times.
+ */
 export interface Disposable {
     /**
-     * Dispose this object.
+     * Dispose resources allocated by this object.
      */
     dispose(): void;
 }
@@ -46,13 +58,29 @@ Object.defineProperty(Disposable, 'NULL', {
     }
 });
 
+/**
+ * Getting this type usually means you should not call
+ * {@link Disposable.dispose} on {@link T} as the instance is managed by
+ * someone else.
+ */
+export type Owned<T> = Omit<T, 'dispose'>;
+
 export class DisposableCollection implements Disposable {
 
-    protected readonly disposables: Disposable[] = [];
-    protected readonly onDisposeEmitter = new Emitter<void>();
+    protected disposables: Disposable[] = [];
+    protected onDisposeEmitter = new Emitter<void>();
 
-    constructor(...toDispose: Disposable[]) {
-        toDispose.forEach(d => this.push(d));
+    /**
+     * Internal flag set when processing disposables.
+     */
+    private disposingElements = false;
+
+    constructor(...disposables: Disposable[]) {
+        this.pushAll(disposables);
+    }
+
+    get disposed(): boolean {
+        return this.disposables.length === 0;
     }
 
     /**
@@ -63,18 +91,6 @@ export class DisposableCollection implements Disposable {
         return this.onDisposeEmitter.event;
     }
 
-    protected checkDisposed(): void {
-        if (this.disposed && !this.disposingElements) {
-            this.onDisposeEmitter.fire(undefined);
-            this.onDisposeEmitter.dispose();
-        }
-    }
-
-    get disposed(): boolean {
-        return this.disposables.length === 0;
-    }
-
-    private disposingElements = false;
     dispose(): void {
         if (this.disposed || this.disposingElements) {
             return;
@@ -116,6 +132,24 @@ export class DisposableCollection implements Disposable {
         );
     }
 
+    /**
+     * Pass-through method to register a disposable while passing it back to
+     * the caller.
+     *
+     * @param disposable
+     * @returns The passed `disposable`.
+     */
+    pushThru<T extends Disposable>(disposable: T): T {
+        this.push(disposable);
+        return disposable;
+    }
+
+    protected checkDisposed(): void {
+        if (this.disposed && !this.disposingElements) {
+            this.onDisposeEmitter.fire(undefined);
+            this.onDisposeEmitter.dispose();
+        }
+    }
 }
 
 export type DisposableGroup = { push(disposable: Disposable): void } | { add(disposable: Disposable): void };
@@ -125,6 +159,15 @@ export namespace DisposableGroup {
     }
     export function canAdd(candidate?: DisposableGroup): candidate is { add(disposable: Disposable): void } {
         return Boolean(candidate && (candidate as { add(): void }).add);
+    }
+    export function pushOrAdd(group: DisposableGroup, ...disposables: Disposable[]): void {
+        if (DisposableGroup.canAdd(group)) {
+            disposables.forEach(disposable => group.add(disposable));
+        } else if (DisposableGroup.canPush(group)) {
+            disposables.forEach(disposable => group.push(disposable));
+        } else {
+            throw new Error('not a DisposableGroup');
+        }
     }
 }
 

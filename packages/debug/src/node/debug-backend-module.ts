@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
+import { AnyConnection, BackendAndFrontend, bindContributionProvider, ConnectionHandler, ContainerScope, ILogger, RouteHandlerProvider } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
+    ConnectionAsChannel,
+    DebugAdapterPath,
     DebugPath,
     DebugService
 } from '../common/debug-service';
@@ -24,7 +26,6 @@ import {
     LaunchBasedDebugAdapterFactory,
     DebugAdapterSessionFactoryImpl
 } from './debug-adapter-factory';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
     DebugAdapterContribution,
@@ -39,7 +40,9 @@ const debugConnectionModule = ConnectionContainerModule.create(({ bind, bindBack
     bindContributionProvider(bind, DebugAdapterContribution);
     bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
 
-    bind(DebugService).to(DebugServiceImpl).inSingletonScope();
+    bind(DebugServiceImpl).toSelf().inSingletonScope();
+    bind(DebugService).toService(DebugServiceImpl);
+    bind(ContainerScope.Destroy).toService(DebugServiceImpl);
     bindBackendService(DebugPath, DebugService);
 });
 
@@ -49,7 +52,23 @@ export default new ContainerModule(bind => {
     bind(DebugAdapterSessionFactory).to(DebugAdapterSessionFactoryImpl).inSingletonScope();
     bind(DebugAdapterFactory).to(LaunchBasedDebugAdapterFactory).inSingletonScope();
     bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
-    bind(MessagingService.Contribution).toService(DebugAdapterSessionManager);
+
+    bind(ConnectionHandler)
+        .toDynamicValue(ctx => {
+            const debugAdapterManager = ctx.container.get(DebugAdapterSessionManager);
+            return ctx.container.get(RouteHandlerProvider)
+                .createRouteHandler<AnyConnection, { id: string }>(DebugAdapterPath + '/:id', (params, accept, next) => {
+                    const id = params.route.params.id;
+                    const session = debugAdapterManager.find(id);
+                    if (!session) {
+                        return next(new Error(`unknown session id=${id}`));
+                    }
+                    const channel = new ConnectionAsChannel(accept());
+                    session.start(channel);
+                });
+        })
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 
     bind(ILogger).toDynamicValue(({ container }) =>
         container.get<ILogger>(ILogger).child('debug')

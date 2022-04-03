@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, unmanaged } from 'inversify';
 import { ILogger, LogLevel } from '../logger';
 import { MaybePromise } from '../types';
 import { Measurement, MeasurementOptions } from './measurement';
@@ -50,7 +50,7 @@ export abstract class Stopwatch {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    protected constructor(protected readonly defaultLogOptions: LogOptions) {
+    constructor(@unmanaged() protected readonly defaultLogOptions: LogOptions) {
         if (!defaultLogOptions.defaultLogLevel) {
             defaultLogOptions.defaultLogLevel = DEFAULT_LOG_LEVEL;
         }

@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, DisposableGroup } from './disposable';
+import { Disposable, DisposableCollection, DisposableGroup } from './disposable';
 import { MaybePromise } from './types';
 
 /**
@@ -35,7 +35,6 @@ export interface Event<T> {
 }
 
 export namespace Event {
-    const _disposable = { dispose(): void { } };
     export function getMaxListeners(event: Event<unknown>): number {
         const { maxListeners } = event as any;
         return typeof maxListeners === 'number' ? maxListeners : 0;
@@ -52,7 +51,7 @@ export namespace Event {
         }
         return add;
     }
-    export const None: Event<any> = Object.assign(function (): { dispose(): void } { return _disposable; }, {
+    export const None: Event<any> = Object.assign(() => Disposable.NULL, {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
     });
@@ -61,10 +60,63 @@ export namespace Event {
      * Given an event and a `map` function, returns another event which maps each element
      * through the mapping function.
      */
-    export function map<I, O>(event: Event<I>, mapFunc: (i: I) => O): Event<O> {
-        return Object.assign((listener: (e: O) => any, thisArgs?: any, disposables?: Disposable[]) => event(i => listener.call(thisArgs, mapFunc(i)), undefined, disposables), {
+    export function map<From, To>(event: Event<From>, mapFunc: (i: From) => To): Event<To> {
+        return Object.assign((listener: (e: To) => any, thisArgs?: any, disposables?: DisposableGroup) => event(i => listener.call(thisArgs, mapFunc(i)), undefined, disposables), {
             get maxListeners(): number { return 0; },
             set maxListeners(maxListeners: number) { }
+        });
+    }
+
+    export function mapFilter<From, To>(event: Event<From>, mapFunc: (event: From, emit: (event: To) => void) => void): Event<To> {
+        return Object.assign(
+            (listener: (event: To) => any, thisArgs?: any, disposables?: DisposableGroup) => event(
+                from => mapFunc(from, to => listener.call(thisArgs, to)), undefined, disposables
+            ),
+            {
+                get maxListeners(): number { return 0; },
+                set maxListeners(maxListeners: number) { }
+            }
+        );
+    }
+
+    export function or<T>(...events: Event<T>[]): Event<T> {
+        return Object.assign(
+            (listener: (event: T) => any, thisArgs?: any, disposables?: DisposableGroup): any => {
+                const handles = new DisposableCollection();
+                events.forEach(event => event(listener, thisArgs, handles));
+                if (!disposables) {
+                    return handles; // only return a Disposable if we don't push it to a collection
+                }
+                DisposableGroup.pushOrAdd(disposables, handles);
+            },
+            {
+                get maxListeners(): number { return 0; },
+                set maxListeners(maxListeners: number) { }
+            }
+        );
+    }
+
+    export function fromNodeEmitter<T>(nodeEmitter: NodeJS.EventEmitter, eventName: string): Event<T> {
+        return Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup): any => {
+            const bound = (value: T) => listener.call(thisArgs, value);
+            nodeEmitter.on(eventName, bound);
+            const disposable = Disposable.create(() => nodeEmitter.off(eventName, bound));
+            if (!disposables) {
+                return disposable; // only return a Disposable if we don't push it to a collection
+            }
+            DisposableGroup.pushOrAdd(disposables, disposable);
+        }, {
+            get maxListeners(): number { return 0; },
+            set maxListeners(maxListeners: number) { }
+        });
+    }
+
+    export function wait<T>(event: Event<T>): Promise<T> {
+        return new Promise(resolve => {
+            const disposable = event(value => {
+                disposable.dispose();
+                resolve(value);
+            });
         });
     }
 }
@@ -180,6 +232,9 @@ export class Emitter<T = any> {
     get event(): Event<T> {
         if (!this._event) {
             this._event = Object.assign((listener: (e: T) => any, thisArgs?: any, disposables?: DisposableGroup) => {
+                if (typeof listener !== 'function') {
+                    throw new Error('listener must be a function');
+                }
                 if (!this._callbacks) {
                     this._callbacks = new CallbackList();
                 }

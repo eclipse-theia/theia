@@ -26,14 +26,13 @@ import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
-import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
-import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
+import { PluginRpc, DefaultPluginRpc } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService, nls
+    CancellationTokenSource, ProgressService, nls, Event, ConnectionState
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -66,6 +65,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { BufferedConnection, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -83,10 +83,7 @@ export class HostedPluginSupport {
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
-    private readonly server: JsonRpcProxy<HostedPluginServer>;
-
-    @inject(HostedPluginWatcher)
-    private readonly watcher: HostedPluginWatcher;
+    private readonly server: HostedPluginServer;
 
     @inject(PluginContributionHandler)
     private readonly contributionHandler: PluginContributionHandler;
@@ -249,8 +246,7 @@ export class HostedPluginSupport {
     onStart(container: interfaces.Container): void {
         this.container = container;
         this.load();
-        this.watcher.onDidDeploy(() => this.load());
-        this.server.onDidOpenConnection(() => this.load());
+        this.server.onDidDeploy(() => this.load());
     }
 
     protected loadQueue: Promise<void> = Promise.resolve(undefined);
@@ -265,7 +261,8 @@ export class HostedPluginSupport {
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
         toDisconnect.push(Disposable.create(() => this.preserveWebviews()));
-        this.server.onDidCloseConnection(() => toDisconnect.dispose());
+        // TODO: do we need to replace the following line?
+        // this.server.onDidCloseConnection(() => toDisconnect.dispose());
 
         // process empty plugins as well in order to properly remove stale plugin widgets
         await this.syncPlugins();
@@ -513,26 +510,32 @@ export class HostedPluginSupport {
         return manager;
     }
 
-    protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
+    protected initRpc(host: PluginHost, pluginId: string): PluginRpc {
         const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 
-    private createServerRpc(pluginHostId: string): RPCProtocol {
-        const emitter = new Emitter<string>();
-        this.watcher.onPostMessageEvent(received => {
-            if (pluginHostId === received.pluginHostId) {
-                emitter.fire(received.message);
+    private createServerRpc(pluginHostId: string): PluginRpc {
+        const connectionToPluginHostServer = new DeferredConnection(waitForRemote(new BufferedConnection({
+            state: ConnectionState.OPENED,
+            onClose: Event.None,
+            onError: Event.None,
+            onOpen: Event.None,
+            onMessage: Event.mapFilter(this.server.onMessage, (received, emit) => {
+                if (pluginHostId === received.pluginHostId) {
+                    emit(received.message);
+                }
+            }),
+            sendMessage: message => {
+                this.server.handleMessage(pluginHostId, message);
+            },
+            close: () => {
+                throw new Error('cannot close this connection');
             }
-        });
-        return new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: message => {
-                this.server.onMessage(pluginHostId, message);
-            }
-        });
+        })));
+        return new DefaultPluginRpc(connectionToPluginHostServer);
     }
 
     private async updateStoragePath(): Promise<void> {

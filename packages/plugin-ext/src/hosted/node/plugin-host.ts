@@ -14,107 +14,129 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '@theia/core/shared/reflect-metadata';
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl, MessageType, ConnectionClosedError } from '../../common/rpc-protocol';
+import { DefaultPluginRpc, PluginHostProtocol } from '../../common/rpc-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
 import { reviver } from '../../plugin/types-impl';
+import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
 
-console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
+let terminating = false;
+
+console.log(`PLUGIN_HOST(${process.pid}) starting instance`);
+
+// #region process exit protection
 
 // override exit() function, to do not allow plugin kill this node
-process.exit = function (code?: number): void {
-    const err = new Error('An plugin call process.exit() and it was prevented.');
-    console.warn(err.stack);
-} as (code?: number) => never;
+process.exit = function exit(code?: number): never {
+    const error = new Error('An plugin call process.exit() and it was prevented.');
+    console.warn(error.stack);
+    throw error;
+};
 
 // same for 'crash'(works only in electron)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const proc = process as any;
-if (proc.crash) {
-    proc.crash = function (): void {
-        const err = new Error('An plugin call process.crash() and it was prevented.');
-        console.warn(err.stack);
+if (process.crash) {
+    process.crash = function crash(): never {
+        const error = new Error('An plugin call process.crash() and it was prevented.');
+        console.warn(error.stack);
+        throw error;
     };
 }
+
+// #endregion
+
+// #region unhandled errors
+
+const unhandledPromises = new WeakSet<Promise<void>>();
 
 process.on('uncaughtException', (err: Error) => {
     console.error(err);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const unhandledPromises: Promise<any>[] = [];
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-    unhandledPromises.push(promise);
+process.on('unhandledRejection', (reason: unknown, promise: Promise<void>) => {
+    unhandledPromises.add(promise);
     setTimeout(() => {
-        const index = unhandledPromises.indexOf(promise);
-        if (index >= 0) {
-            promise.catch(err => {
-                unhandledPromises.splice(index, 1);
-                if (terminating && (ConnectionClosedError.is(err) || ConnectionClosedError.is(reason))) {
-                    // during termination it is expected that pending rpc request are rejected
+        if (unhandledPromises.has(promise)) {
+            unhandledPromises.delete(promise);
+            // note that `error` is the same as `reason` here:
+            promise.catch(error => {
+                if (terminating) {
+                    // during termination it is expected that pending RPC requests are rejected
                     return;
                 }
-                console.error(`Promise rejection not handled in one second: ${err} , reason: ${reason}`);
-                if (err && err.stack) {
-                    console.error(`With stack trace: ${err.stack}`);
-                }
+                // note that `error.stack` is already formatted with `error.message` on node:
+                console.error(`Promise rejection not handled in one second:\n${error?.stack ?? error}`);
             });
         }
     }, 1000);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-process.on('rejectionHandled', (promise: Promise<any>) => {
-    const index = unhandledPromises.indexOf(promise);
-    if (index >= 0) {
-        unhandledPromises.splice(index, 1);
-    }
+process.on('rejectionHandled', (promise: Promise<void>) => {
+    unhandledPromises.delete(promise);
 });
 
-let terminating = false;
-const emitter = new Emitter<string>();
-const rpc = new RPCProtocolImpl({
-    onMessage: emitter.event,
-    send: (m: string) => {
-        if (process.send && !terminating) {
-            process.send(m);
+// #endregion
+
+// #region RPC initialization
+
+const messageEmitter = new Emitter<unknown[]>();
+const connectionToParentProcess = new DeferredConnection(waitForRemote(new BufferedConnection<unknown>({
+    state: ConnectionState.OPENED,
+    onClose: () => ({ dispose(): void { } }),
+    onError: () => ({ dispose(): void { } }),
+    onOpen: () => ({ dispose(): void { } }),
+    onMessage: messageEmitter.event,
+    sendMessage: message => {
+        if (!terminating) {
+            process.send!(message);
         }
+    },
+    close: () => {
+        throw new Error('cannot close this connection');
     }
-},
-{
-    reviver: reviver
-});
+})));
+const rpc = new DefaultPluginRpc(connectionToParentProcess, { reviver });
+const pluginHostRpc = new PluginHostRPC(rpc);
 
-process.on('message', async (message: string) => {
+process.on('message', message => {
     if (terminating) {
         return;
     }
-    try {
-        const msg = JSON.parse(message);
-        if ('type' in msg && msg.type === MessageType.Terminate) {
-            terminating = true;
-            emitter.dispose();
-            if ('stopTimeout' in msg && typeof msg.stopTimeout === 'number' && msg.stopTimeout) {
-                await Promise.race([
-                    pluginHostRPC.terminate(),
-                    new Promise(resolve => setTimeout(resolve, msg.stopTimeout))
-                ]);
-            } else {
-                await pluginHostRPC.terminate();
-            }
-            rpc.dispose();
-            if (process.send) {
-                process.send(JSON.stringify({ type: MessageType.Terminated }));
-            }
-        } else {
-            emitter.fire(message);
+    // messaging oddity: two protocols are being passed around the plugin host and its parent
+    // 1. is some custom messaging from `PluginHostProtocol`
+    // 2. is whatever `connectionToParentProcess` handles
+    // fortunately it is easy enough to segregate between both, see the following branching:
+    if (PluginHostProtocol.isMessage(message)) {
+        switch (message.$pluginHostMessageType) {
+            case PluginHostProtocol.TerminateRequest: return terminatePluginHost(message.timeout);
         }
-    } catch (e) {
-        console.error(e);
+    } else if (Array.isArray(message)) {
+        // message for `connectionToParentProcess` buffered connection:
+        return messageEmitter.fire(message);
     }
+    console.error('unhandled message');
 });
 
-const pluginHostRPC = new PluginHostRPC(rpc);
-pluginHostRPC.initialize();
+async function terminatePluginHost(timeout?: number): Promise<void> {
+    terminating = true;
+    try {
+        messageEmitter.dispose();
+        if (typeof timeout === 'number' && timeout > 0) {
+            await Promise.race([
+                pluginHostRpc.terminate(),
+                new Promise(resolve => setTimeout(resolve, timeout))
+            ]);
+        } else {
+            await pluginHostRpc.terminate();
+        }
+        rpc.dispose();
+    } catch (error) {
+        console.error(error);
+    } finally {
+        process.send!(PluginHostProtocol.createMessage(PluginHostProtocol.TerminatedEvent, {}));
+    }
+}
+
+pluginHostRpc.initialize();
+
+// #endregion

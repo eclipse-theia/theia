@@ -23,10 +23,8 @@ import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, ProxyProvider, BackendAndFrontend } from '@theia/core/lib/common';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
-import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
 import { OpenUriCommandHandler } from './commands';
 import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
 import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
@@ -97,7 +95,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ModalNotification).toSelf().inSingletonScope();
 
     bind(HostedPluginSupport).toSelf().inSingletonScope();
-    bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(SelectionProviderCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(SelectionProviderCommandContribution);
 
@@ -107,35 +104,35 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(EditorModelService).toSelf().inSingletonScope();
 
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
-        onStart(): MaybePromise<void> {
-            ctx.container.get(HostedPluginSupport).onStart(ctx.container);
-        }
-    }));
-    bind(HostedPluginServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const hostedWatcher = ctx.container.get(HostedPluginWatcher);
-        return connection.createProxy<HostedPluginServer>(hostedServicePath, hostedWatcher.getHostedPluginClient());
-    }).inSingletonScope();
+    bind(FrontendApplicationContribution)
+        .toDynamicValue(ctx => ({
+            onStart(): MaybePromise<void> {
+                ctx.container.get(HostedPluginSupport).onStart(ctx.container);
+            }
+        }))
+        .inSingletonScope();
+    bind(HostedPluginServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(hostedServicePath))
+        .inSingletonScope();
 
-    bind(PluginPathsService).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<PluginPathsService>(pluginPathsServicePath);
-    }).inSingletonScope();
+    bind(PluginPathsService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(pluginPathsServicePath))
+        .inSingletonScope();
 
     bindViewContribution(bind, PluginFrontendViewContribution);
 
-    bind(PluginWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
-        createWidget: () => ctx.container.get(PluginWidget)
-    }));
+    bind(PluginWidget).toSelf().inTransientScope();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
+            createWidget: () => ctx.container.get(PluginWidget)
+        }))
+        .inSingletonScope();
 
     bind(PluginExtDeployCommandService).toSelf().inSingletonScope();
-    bind(PluginServer).toDynamicValue(ctx => {
-        const provider = ctx.container.get(WebSocketConnectionProvider);
-        return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
-    }).inSingletonScope();
+    bind(PluginServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(pluginServerJsonRpcPath))
+        .inSingletonScope();
 
     bind(ViewContextKeyService).toSelf().inSingletonScope();
 
@@ -145,16 +142,15 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_DATA_FACTORY_ID,
         createWidget: (identifier: TreeViewWidgetIdentifier) => {
-            const props = {
-                contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
-                expandOnlyOnExpansionToggleClick: true,
-                expansionTogglePadding: 22,
-                globalSelection: true,
-                leftPadding: 8,
-                search: true
-            };
             const child = createTreeContainer(container, {
-                props,
+                props: {
+                    contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
+                    expandOnlyOnExpansionToggleClick: true,
+                    expansionTogglePadding: 22,
+                    globalSelection: true,
+                    leftPadding: 8,
+                    search: true
+                },
                 tree: PluginTree,
                 model: PluginTreeModel,
                 widget: TreeViewWidget,

@@ -210,4 +210,3 @@ export class WebviewViewExtImpl implements theia.WebviewView {
         }
     }
 }
-

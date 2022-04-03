@@ -17,7 +17,7 @@
 import * as http from 'http';
 import * as https from 'https';
 import { AddressInfo } from 'net';
-import { checkParentAlive } from './messaging/ipc-protocol';
+import { checkParentAlive } from './ipc';
 import { MaybePromise } from '../common/types';
 
 checkParentAlive();

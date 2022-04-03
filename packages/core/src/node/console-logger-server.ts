@@ -15,17 +15,14 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { LoggerWatcher } from '../common/logger-watcher';
 import { LogLevelCliContribution } from './logger-cli-contribution';
-import { ILoggerServer, ILoggerClient, ConsoleLogger } from '../common/logger-protocol';
+import { ILoggerServer, ConsoleLogger, ILogLevelChangedEvent } from '../common/logger-protocol';
+import { Emitter, Event } from '../common';
 
 @injectable()
 export class ConsoleLoggerServer implements ILoggerServer {
 
-    protected client: ILoggerClient | undefined = undefined;
-
-    @inject(LoggerWatcher)
-    protected watcher: LoggerWatcher;
+    protected onDidChangeLogLevelEmitter = new Emitter<ILogLevelChangedEvent>();
 
     @inject(LogLevelCliContribution)
     protected cli: LogLevelCliContribution;
@@ -37,15 +34,12 @@ export class ConsoleLoggerServer implements ILoggerServer {
         }
     }
 
-    async setLogLevel(name: string, newLogLevel: number): Promise<void> {
-        const event = {
-            loggerName: name,
-            newLogLevel
-        };
-        if (this.client !== undefined) {
-            this.client.onLogLevelChanged(event);
-        }
-        this.watcher.fireLogLevelChanged(event);
+    get onDidChangeLogLevel(): Event<ILogLevelChangedEvent> {
+        return this.onDidChangeLogLevelEmitter.event;
+    }
+
+    async setLogLevel(loggerName: string, newLogLevel: number): Promise<void> {
+        this.onDidChangeLogLevelEmitter.fire({ loggerName, newLogLevel });
     }
 
     async getLogLevel(name: string): Promise<number> {
@@ -63,11 +57,4 @@ export class ConsoleLoggerServer implements ILoggerServer {
     async child(name: string): Promise<void> {
         this.setLogLevel(name, this.cli.logLevelFor(name));
     }
-
-    dispose(): void { }
-
-    setClient(client: ILoggerClient | undefined): void {
-        this.client = client;
-    }
-
 }

@@ -21,17 +21,16 @@ import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
-import { fork, ForkOptions } from 'child_process';
+import { ChildProcess, fork, ForkOptions } from 'child_process';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
 import { FileUri } from '../node/file-uri';
 import { Deferred } from '../common/promise-util';
-import { MaybePromise } from '../common/types';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
+import { Disposable, DisposableCollection, Emitter, Event, isOSX, isWindows, MaybePromise, serviceIdentifier } from '../common';
 import {
     RequestTitleBarStyle,
     Restart, StopReason,
@@ -41,9 +40,10 @@ import {
 import { DEFAULT_WINDOW_HASH } from '../common/window';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
-import { createDisposableListener } from './event-utils';
+import { pushDisposableListener } from '../common/node-event-utils';
 
 export { ElectronMainApplicationGlobals };
+import { cluster } from '../node';
 
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
@@ -91,7 +91,7 @@ export interface ElectronMainExecutionParams {
  *          ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
  *     ).inSingletonScope();
  */
-export const ElectronMainApplicationContribution = Symbol('ElectronMainApplicationContribution');
+export const ElectronMainApplicationContribution = serviceIdentifier<ElectronMainApplicationContribution>('ElectronMainApplicationContribution');
 export interface ElectronMainApplicationContribution {
     /**
      * The application is ready and is starting. This is the time to initialize
@@ -180,20 +180,36 @@ export class ElectronMainApplication {
         windowstate?: TheiaBrowserWindowOptions
     }>();
 
-    protected readonly _backendPort = new Deferred<number>();
-    readonly backendPort = this._backendPort.promise;
+    protected _backendPort = new Deferred<number>();
+    protected _backendProcess = new Deferred<ChildProcess>();
 
+    protected onDidCreateTheiaWindowEmitter = new Emitter<TheiaElectronWindow>();
     protected _config: FrontendApplicationConfig | undefined;
     protected useNativeWindowFrame: boolean = true;
     protected didUseNativeWindowFrameOnStart = new Map<number, boolean>();
     protected windows = new Map<number, TheiaElectronWindow>();
     protected restarting = false;
 
+    get backendProcess(): Promise<ChildProcess> {
+        return this._backendProcess.promise;
+    }
+
+    get backendPort(): Promise<number> {
+        return this._backendPort.promise;
+    }
+
     get config(): FrontendApplicationConfig {
         if (!this._config) {
             throw new Error('You have to start the application first.');
         }
         return this._config;
+    }
+
+    /**
+     * Emitted once the Theia window has finished loading.
+     */
+    get onDidCreateTheiaWindow(): Event<TheiaElectronWindow> {
+        return this.onDidCreateTheiaWindowEmitter.event;
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
@@ -252,6 +268,9 @@ export class ElectronMainApplication {
         electronWindow.onDidClose(() => this.windows.delete(id));
         this.attachSaveWindowState(electronWindow.window);
         electronRemoteMain.enable(electronWindow.window.webContents);
+        electronWindow.window.webContents.once('did-finish-load', () => {
+            this.onDidCreateTheiaWindowEmitter.fire(electronWindow);
+        });
         return electronWindow.window;
     }
 
@@ -277,7 +296,6 @@ export class ElectronMainApplication {
                 }
                 options.x = options.x! + 30;
                 options.y = options.y! + 30;
-
             }
         }
         return options;
@@ -381,11 +399,11 @@ export class ElectronMainApplication {
             }
             delayedSaveTimeout = setTimeout(() => this.saveWindowState(electronWindow), 1000);
         };
-        createDisposableListener(electronWindow, 'close', () => {
+        pushDisposableListener(windowStateListeners, electronWindow, 'close', () => {
             this.saveWindowState(electronWindow);
-        }, windowStateListeners);
-        createDisposableListener(electronWindow, 'resize', saveWindowStateDelayed, windowStateListeners);
-        createDisposableListener(electronWindow, 'move', saveWindowStateDelayed, windowStateListeners);
+        });
+        pushDisposableListener(windowStateListeners, electronWindow, 'resize', saveWindowStateDelayed);
+        pushDisposableListener(windowStateListeners, electronWindow, 'move', saveWindowStateDelayed);
         windowStateListeners.push(Disposable.create(() => { try { this.didUseNativeWindowFrameOnStart.delete(electronWindow.id); } catch { } }));
         this.didUseNativeWindowFrameOnStart.set(electronWindow.id, this.useNativeWindowFrame);
         electronWindow.once('closed', () => windowStateListeners.dispose());
@@ -418,9 +436,10 @@ export class ElectronMainApplication {
      * Return a string unique to the current display layout.
      */
     protected getCurrentScreenLayout(): string {
-        return screen.getAllDisplays().map(
-            display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`
-        ).sort().join('-');
+        return screen.getAllDisplays()
+            .map(display => `${display.bounds.x}:${display.bounds.y}:${display.bounds.width}:${display.bounds.height}`)
+            .sort()
+            .join('-');
     }
 
     /**
@@ -429,8 +448,6 @@ export class ElectronMainApplication {
      * @return Running server's port promise.
      */
     protected async startBackend(): Promise<number> {
-        // Check if we should run everything as one process.
-        const noBackendFork = process.argv.indexOf('--no-cluster') !== -1;
         // We cannot use the `process.cwd()` as the application project path (the location of the `package.json` in other words)
         // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
         // https://github.com/eclipse-theia/theia/issues/3297#issuecomment-439172274
@@ -438,26 +455,40 @@ export class ElectronMainApplication {
         // Set the electron version for both the dev and the production mode. (https://github.com/eclipse-theia/theia/issues/3254)
         // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
-        if (noBackendFork) {
+        if (!cluster) {
+            this._backendProcess.promise.catch(() => { /* prevent `uncaughtRejection` error */ });
+            this._backendProcess.reject(new Error('running the backend in the current process'));
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
             // The backend server main file is supposed to export a promise resolving with the port used by the http(s) server.
-            const address: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
-            return address.port;
+            const { port }: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
+            return port;
         } else {
             const backendProcess = fork(
                 this.globals.THEIA_BACKEND_MAIN_PATH,
                 this.processArgv.getProcessArgvWithoutBin(),
                 await this.getForkOptions(),
             );
+            this._backendProcess.resolve(backendProcess);
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
-                });
-                backendProcess.on('error', error => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                function messageListener(message: any): void {
+                    if ('port' in message && 'address' in message) {
+                        resolve(message.port);
+                        cleanup();
+                    }
+                };
+                function errorListener(error: unknown): void {
                     reject(error);
-                });
-                app.on('quit', () => {
+                    cleanup();
+                };
+                function cleanup(): void {
+                    backendProcess.off('message', messageListener);
+                    backendProcess.off('error', errorListener);
+                };
+                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                backendProcess.on('message', messageListener);
+                backendProcess.once('error', errorListener);
+                app.once('quit', () => {
                     // Only issue a kill signal if the backend process is running.
                     // eslint-disable-next-line no-null/no-null
                     if (backendProcess.exitCode === null && backendProcess.signalCode === null) {

@@ -16,9 +16,7 @@
 
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
-import { DebugAdapterPath } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
@@ -27,7 +25,8 @@ import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-r
  * Debug adapter session manager.
  */
 @injectable()
-export class DebugAdapterSessionManager implements MessagingService.Contribution {
+export class DebugAdapterSessionManager {
+
     protected readonly sessions = new Map<string, DebugAdapterSession>();
 
     @inject(DebugAdapterSessionFactory)
@@ -35,17 +34,6 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
 
     @inject(DebugAdapterFactory)
     protected readonly debugAdapterFactory: DebugAdapterFactory;
-
-    configure(service: MessagingService): void {
-        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, channel) => {
-            const session = this.find(id);
-            if (!session) {
-                channel.close();
-                return;
-            }
-            session.start(channel);
-        });
-    }
 
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).

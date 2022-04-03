@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
+import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -45,9 +45,6 @@ export class PluginDevServerImpl implements PluginDevServer {
         if (this.hostedInstanceManager.isRunning()) {
             this.hostedInstanceManager.terminate();
         }
-    }
-    setClient(client: PluginDevClient): void {
-
     }
 
     async getHostedPlugin(): Promise<PluginMetadata | undefined> {

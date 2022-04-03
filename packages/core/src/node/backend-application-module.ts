@@ -18,17 +18,15 @@ import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
-    bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath
+    bindContributionProvider, MessageService,
+    CommandService, commandServicePath, messageServicePath, BackendAndFrontend, ServiceContribution, ProxyProvider, MessageServer, DefaultMessageService, NullMessageServer
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
 import { CliManager, CliContribution } from './cli';
-import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { EnvVariablesServerImpl } from './env-variables';
-import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
 import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
@@ -43,23 +41,28 @@ import { BackendRequestFacade } from './request/backend-request-facade';
 
 decorate(injectable(), ApplicationPackage);
 
-const commandConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
-    bindFrontendService(commandServicePath, CommandService);
-});
-
-const messageConnectionModule = ConnectionContainerModule.create(({ bind, bindFrontendService }) => {
-    bindFrontendService(messageServicePath, MessageClient);
-    bind(MessageService).toSelf().inSingletonScope();
-});
-
-const quickPickConnectionModule = ConnectionContainerModule.create(({ bindFrontendService }) => {
-    bindFrontendService(quickPickServicePath, QuickPickService);
+const backendAndFrontendModule = new ContainerModule(bind => {
+    bind(MessageService).to(DefaultMessageService).inSingletonScope();
+    // #region proxies to frontend services
+    bind(CommandService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(commandServicePath))
+        .inSingletonScope();
+    bind(MessageServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(messageServicePath))
+        .inSingletonScope();
+    bind(QuickPickService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(quickPickServicePath))
+        .inSingletonScope();
+    // #endregion
 });
 
 export const backendApplicationModule = new ContainerModule(bind => {
-    bind(ConnectionContainerModule).toConstantValue(commandConnectionModule);
-    bind(ConnectionContainerModule).toConstantValue(messageConnectionModule);
-    bind(ConnectionContainerModule).toConstantValue(quickPickConnectionModule);
+    bind(ContainerModule)
+        .toConstantValue(backendAndFrontendModule)
+        .whenTargetNamed(BackendAndFrontend);
+
+    bind(MessageServer).toConstantValue(NullMessageServer);
+    bind(MessageService).to(DefaultMessageService).inSingletonScope();
 
     bind(CliManager).toSelf().inSingletonScope();
     bindContributionProvider(bind, CliContribution);
@@ -71,44 +74,31 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindContributionProvider(bind, BackendApplicationContribution);
     // Bind the BackendApplicationServer as a BackendApplicationContribution
     // and fallback to an empty contribution if never bound.
-    bind(BackendApplicationContribution).toDynamicValue(ctx => {
-        if (ctx.container.isBound(BackendApplicationServer)) {
-            return ctx.container.get(BackendApplicationServer);
-        } else {
-            console.warn('no BackendApplicationServer is set, frontend might not be available');
-            return {};
-        }
-    }).inSingletonScope();
+    bind(BackendApplicationContribution)
+        .toDynamicValue(ctx => {
+            if (ctx.container.isBound(BackendApplicationServer)) {
+                return ctx.container.get(BackendApplicationServer);
+            } else {
+                console.warn('no BackendApplicationServer is set, frontend might not be available');
+                return {};
+            }
+        })
+        .inSingletonScope();
 
-    bind(IPCConnectionProvider).toSelf().inSingletonScope();
-
-    bind(ApplicationServerImpl).toSelf().inSingletonScope();
-    bind(ApplicationServer).toService(ApplicationServerImpl);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(applicationPath, () =>
-            ctx.container.get(ApplicationServer)
-        )
-    ).inSingletonScope();
+    bind(ApplicationServer).to(ApplicationServerImpl).inSingletonScope();
 
     bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(envVariablesPath, () => {
-            const envVariablesServer = ctx.container.get<EnvVariablesServer>(EnvVariablesServer);
-            return envVariablesServer;
-        })
-    ).inSingletonScope();
 
-    bind(ApplicationPackage).toDynamicValue(({ container }) => {
-        const { projectPath } = container.get(BackendApplicationCliContribution);
-        return new ApplicationPackage({ projectPath });
-    }).inSingletonScope();
+    bind(ApplicationPackage)
+        .toDynamicValue(ctx => {
+            const { projectPath } = ctx.container.get(BackendApplicationCliContribution);
+            return new ApplicationPackage({ projectPath });
+        })
+        .inSingletonScope();
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
     bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
-    ).inSingletonScope();
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
 
@@ -122,10 +112,17 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(CliContribution).toService(ProxyCliContribution);
 
     bind(BackendRequestFacade).toSelf().inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(
-        ctx => new JsonRpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))
-    ).inSingletonScope();
 
     bindNodeStopwatch(bind);
     bindBackendStopwatchServer(bind);
+
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [applicationPath, () => ctx.container.get(ApplicationServer)],
+            [envVariablesPath, () => ctx.container.get(EnvVariablesServer)],
+            [keytarServicePath, () => ctx.container.get(KeytarService)],
+            [REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 });

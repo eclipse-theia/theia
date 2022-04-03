@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CancellationToken } from 'vscode-ws-jsonrpc';
-import { ProgressClient, ProgressMessage, ProgressUpdate } from '../common';
+import { CancellationToken, ProgressClient, ProgressMessage, ProgressUpdate } from '../common';
 import { StatusBar, StatusBarAlignment } from './status-bar';
 import { Deferred } from '../common/promise-util';
 import throttle = require('lodash.throttle');
@@ -31,7 +30,7 @@ export class ProgressStatusBarItem implements ProgressClient {
 
     protected messagesByProgress = new Map<string, string | undefined>();
 
-    protected incomingQueue = new Array<string>();
+    protected incomingQueue: string[] = [];
 
     get currentProgress(): string | undefined {
         return this.incomingQueue.slice(-1)[0];

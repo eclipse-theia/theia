@@ -21,7 +21,6 @@ import URI from '@theia/core/lib/common/uri';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandContribution } from '@theia/core/lib/common/command';
@@ -40,6 +39,7 @@ import {
     LocationWithoutSchemeMapper,
 } from './location-mapper-service';
 import { MiniBrowserFrontendSecurityWarnings } from './mini-browser-frontend-security-warnings';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserContent).toSelf();
@@ -77,9 +77,9 @@ export default new ContainerModule(bind => {
     bind(LocationMapper).toService(LocationWithoutSchemeMapper);
     bind(LocationMapperService).toSelf().inSingletonScope();
 
-    bind(MiniBrowserService).toDynamicValue(
-        ctx => WebSocketConnectionProvider.createProxy(ctx.container, MiniBrowserServicePath)
-    ).inSingletonScope();
+    bind(MiniBrowserService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(MiniBrowserServicePath))
+        .inSingletonScope();
 
     bind(MiniBrowserFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MiniBrowserFrontendSecurityWarnings);

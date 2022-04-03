@@ -145,4 +145,3 @@ export namespace UriAwareCommandHandler {
         return new UriAwareCommandHandler<URI[]>(selectionService, handler, { multi: true });
     }
 }
-

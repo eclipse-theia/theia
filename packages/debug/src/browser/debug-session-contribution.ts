@@ -15,18 +15,17 @@
 // *****************************************************************************
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { MessageClient } from '@theia/core/lib/common';
+import { MessageServer } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from './debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
-import { Channel, DebugAdapterPath } from '../common/debug-service';
+import { Channel } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
@@ -81,6 +80,9 @@ export class DebugSessionContributionRegistryImpl implements DebugSessionContrib
     }
 }
 
+export const DebugChannelFactory = Symbol('DebugChannelFactory');
+export type DebugChannelFactory = (sessionId: string) => Promise<Channel>;
+
 /**
  * DebugSessionFactory symbol for DI.
  */
@@ -95,8 +97,7 @@ export interface DebugSessionFactory {
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
-    @inject(WebSocketConnectionProvider)
-    protected readonly connectionProvider: WebSocketConnectionProvider;
+
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
     @inject(EditorManager)
@@ -105,8 +106,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly breakpoints: BreakpointManager;
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
-    @inject(MessageClient)
-    protected readonly messages: MessageClient;
+    @inject(MessageServer)
+    protected readonly messages: MessageServer;
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
     @inject(DebugPreferences)
@@ -117,16 +118,15 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+    @inject(DebugChannelFactory)
+    protected channelFactory: DebugChannelFactory;
 
     get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
             sessionId,
-            () => new Promise<Channel>(resolve =>
-                this.connectionProvider.openChannel(`${DebugAdapterPath}/${sessionId}`, channel => {
-                    resolve(channel);
-                }, { reconnecting: false })
-            ),
-            this.getTraceOutputChannel());
+            () => this.channelFactory(sessionId),
+            this.getTraceOutputChannel()
+        );
         return new DebugSession(
             sessionId,
             options,

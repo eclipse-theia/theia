@@ -17,5 +17,7 @@
 export * from './backend-application';
 export * from './debug';
 export * from './file-uri';
-export * from './messaging';
 export * from './cli';
+
+export { JsonRpcIpcProxyProvider } from './messaging/json-rpc-ipc-proxy-provider';
+export { cluster } from './cluster';

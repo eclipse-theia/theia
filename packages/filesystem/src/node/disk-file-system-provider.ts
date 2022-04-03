@@ -29,7 +29,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import {
     mkdir, open, close, read, write, fdatasync, Stats,
-    lstat, stat, readdir, readFile, exists, chmod,
+    lstat, stat, readdir, readFile, chmod,
     rmdir, unlink, rename, futimes, truncate
 } from 'fs';
 import { promisify } from 'util';
@@ -110,14 +110,13 @@ export class DiskFileSystemProvider implements Disposable,
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.watcher);
-        this.watcher.setClient({
-            onDidFilesChanged: params => this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
+        this.watcher.onDidFilesChanged(event => {
+            this.onDidChangeFileEmitter.fire(event.changes.map(({ uri, type }) => ({
                 resource: new URI(uri),
                 type
-            }))),
-            onError: () => this.onFileWatchErrorEmitter.fire()
+            })));
         });
+        this.watcher.onError(() => this.onFileWatchErrorEmitter.fire());
     }
 
     // #region File Capabilities
@@ -165,7 +164,7 @@ export class DiskFileSystemProvider implements Disposable,
 
     async access(resource: URI, mode?: number): Promise<void> {
         try {
-            await promisify(fs.access)(this.toFilePath(resource), mode);
+            await fs.promises.access(this.toFilePath(resource), mode);
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
@@ -210,7 +209,7 @@ export class DiskFileSystemProvider implements Disposable,
 
     async readdir(resource: URI): Promise<[string, FileType][]> {
         try {
-            const children = await promisify(fs.readdir)(this.toFilePath(resource));
+            const children = await fs.promises.readdir(this.toFilePath(resource));
 
             const result: [string, FileType][] = [];
             await Promise.all(children.map(async child => {
@@ -283,7 +282,7 @@ export class DiskFileSystemProvider implements Disposable,
 
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
-                const fileExists = await promisify(exists)(filePath);
+                const fileExists = await this.fileExists(filePath);
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
@@ -320,7 +319,7 @@ export class DiskFileSystemProvider implements Disposable,
 
             let flags: string | undefined = undefined;
             if (opts.create) {
-                if (isWindows && await promisify(exists)(filePath)) {
+                if (isWindows && await this.fileExists(filePath)) {
                     try {
                         // On Windows and if the file exists, we use a different strategy of saving the file
                         // by first truncating the file and then writing with r+ flag. This helps to save hidden files on Windows
@@ -683,7 +682,7 @@ export class DiskFileSystemProvider implements Disposable,
         }
 
         // handle existing target (unless this is a case change)
-        if (!isSameResourceWithDifferentPathCase && await promisify(exists)(toFilePath)) {
+        if (!isSameResourceWithDifferentPathCase && await this.fileExists(toFilePath)) {
             if (!overwrite) {
                 throw createFileSystemProviderError('File at target already exists', FileSystemProviderErrorCode.FileExists);
             }
@@ -721,7 +720,7 @@ export class DiskFileSystemProvider implements Disposable,
     protected async mkdirp(path: string, mode?: number): Promise<void> {
         const mkdir = async () => {
             try {
-                await promisify(fs.mkdir)(path, mode);
+                await fs.promises.mkdir(path, mode);
             } catch (error) {
 
                 // ENOENT: a parent folder does not exist yet
@@ -733,7 +732,7 @@ export class DiskFileSystemProvider implements Disposable,
                 // return normally in that case if its a folder
                 let targetIsFile = false;
                 try {
-                    const fileStat = await promisify(fs.stat)(path);
+                    const fileStat = await fs.promises.stat(path);
                     targetIsFile = !fileStat.isDirectory();
                 } catch (statError) {
                     throw error; // rethrow original error if stat fails
@@ -898,6 +897,10 @@ export class DiskFileSystemProvider implements Disposable,
         }
 
         return createFileSystemProviderError(error, code);
+    }
+
+    protected fileExists(filePath: string): Promise<boolean> {
+        return fs.promises.stat(filePath).then(() => true, () => false);
     }
 
     // #endregion

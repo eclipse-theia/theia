@@ -16,8 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
+import { CommandContribution, MenuContribution, bindContributionProvider, ProxyProvider, BackendAndFrontend } from '@theia/core/lib/common';
 import { QuickOpenTask, TaskTerminateQuickOpen, TaskRestartRunningQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskService } from './task-service';
@@ -26,7 +25,6 @@ import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskFrontendContribution } from './task-frontend-contribution';
 import { createCommonBindings } from '../common/task-common-module';
 import { TaskServer, taskPath } from '../common/task-protocol';
-import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskDefinitionRegistry } from './task-definition-registry';
@@ -59,11 +57,9 @@ export default new ContainerModule(bind => {
     bind(ProvidedTaskConfigurations).toSelf().inSingletonScope();
     bind(TaskConfigurationManager).toSelf().inSingletonScope();
 
-    bind(TaskServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const taskWatcher = ctx.container.get(TaskWatcher);
-        return connection.createProxy<TaskServer>(taskPath, taskWatcher.getTaskClient());
-    }).inSingletonScope();
+    bind(TaskServer)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(taskPath))
+        .inSingletonScope();
 
     bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
     bind(ProblemMatcherRegistry).toSelf().inSingletonScope();

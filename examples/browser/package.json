@@ -71,7 +71,7 @@
     "test": "yarn -s rebuild && theia test . --plugins=local-dir:../../plugins --test-spec=../api-tests/**/*.spec.js",
     "test:debug": "yarn -s test --test-inspect",
     "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"yarn -s watch:bundle\"",
-    "watch:bundle": "theia build --watch --mode development",
+    "watch:bundle": "theia build --watch --mode development --stats minimal",
     "watch:compile": "tsc -b -w"
   },
   "devDependencies": {

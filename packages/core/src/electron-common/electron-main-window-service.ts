@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { MaybePromise, serviceIdentifier, servicePath } from '../common';
 import { NewWindowOptions } from '../common/window';
 
-export const electronMainWindowServicePath = '/services/electron-window';
-export const ElectronMainWindowService = Symbol('ElectronMainWindowService');
+export const electronMainWindowServicePath = servicePath<ElectronMainWindowService>('/services/electron-window');
+export const ElectronMainWindowService = serviceIdentifier<ElectronMainWindowService>('ElectronMainWindowService');
 export interface ElectronMainWindowService {
-    openNewWindow(url: string, options?: NewWindowOptions): undefined;
-    openNewDefaultWindow(): void;
+    openNewWindow(url: string, options?: NewWindowOptions): MaybePromise<void>;
+    openNewDefaultWindow(): MaybePromise<void>;
 }

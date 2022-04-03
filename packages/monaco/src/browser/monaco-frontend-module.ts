@@ -40,7 +40,7 @@ import {
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
     PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService
 } from '@theia/core/lib/browser';
-import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
+import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
@@ -137,9 +137,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     );
 
     bind(MonacoDiffNavigatorFactory).toSelf().inSingletonScope();
-    bind(DiffNavigatorProvider).toFactory(context =>
-        editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
-    );
+    bind(DiffNavigatorProvider)
+        .toFactory(ctx => (editor: TextEditor) => ctx.container.get(MonacoEditorProvider).getDiffNavigator(editor));
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoOutlineContribution);

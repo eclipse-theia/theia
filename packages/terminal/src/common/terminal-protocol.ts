@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Disposable, Event, serviceIdentifier, servicePath } from '@theia/core';
+import Route = require('@theia/core/shared/route-parser');
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 
-export const ITerminalServer = Symbol('ITerminalServer');
+export const ITerminalServer = serviceIdentifier<ITerminalServer>('ITerminalServer');
+export const terminalPath = servicePath<ITerminalServer>('/services/terminal');
 
-export const terminalPath = '/services/terminal';
-export const terminalsPath = '/services/terminals';
+export const REMOTE_TERMINAL_ROUTE = new Route<{ terminalId: string }>('/services/terminals/:terminalId');
 
 export interface ITerminalServer extends IBaseTerminalServer {
     create(ITerminalServerOptions: object): Promise<number>;
@@ -29,4 +31,12 @@ export interface ITerminalServerOptions extends IBaseTerminalServerOptions {
     command: string,
     args?: string[],
     options?: object
+}
+
+export const RemoteTerminalFactory = serviceIdentifier<RemoteTerminalFactory>('RemoteTerminalFactory');
+export type RemoteTerminalFactory = (terminalId: number) => RemoteTerminal;
+
+export interface RemoteTerminal extends Disposable {
+    onData: Event<string>
+    write(data: string): void
 }

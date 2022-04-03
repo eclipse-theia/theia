@@ -19,7 +19,7 @@ import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation, TaskInfo } from '../common';
+import { PanelKind, TaskConfiguration, TaskServer, TaskOutputPresentation, TaskInfo } from '../common';
 import { ProcessTaskInfo } from '../common/process/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -76,9 +76,6 @@ export class TaskTerminalWidgetManager {
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
 
-    @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
-
     @inject(TaskServer)
     protected readonly taskServer: TaskServer;
 
@@ -87,7 +84,7 @@ export class TaskTerminalWidgetManager {
 
     @postConstruct()
     protected init(): void {
-        this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
+        this.taskServer.onTaskExit(event => {
             const finishedTaskId = event.taskId;
             // find the terminal where the task ran, and mark it as "idle"
             for (const terminal of this.getTaskTerminalWidgets()) {

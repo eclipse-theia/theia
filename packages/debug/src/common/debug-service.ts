@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable } from '@theia/core';
+import { Connection } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
@@ -46,7 +46,7 @@ export const DebugService = Symbol('DebugService');
  * by filling in missing values or by adding/changing/removing attributes. For this purpose the
  * #resolveDebugConfiguration method is invoked. After that the debug adapter session will be started.
  */
-export interface DebugService extends Disposable {
+export interface DebugService {
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
@@ -141,4 +141,30 @@ export interface Channel {
     onError(cb: (reason: any) => void): void;
     onClose(cb: (code: number, reason: string) => void): void;
     close(): void;
+}
+
+/**
+ * @internal
+ */
+export class ConnectionAsChannel implements Channel {
+    constructor(
+        protected connection: Connection<string>
+    ) { }
+    send(content: string): void {
+        this.connection.sendMessage(content);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onMessage(cb: (data: any) => void): void {
+        this.connection.onMessage(cb);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError(cb: (reason: any) => void): void {
+        this.connection.onError(cb);
+    }
+    onClose(cb: (code: number, reason: string) => void): void {
+        this.connection.onClose(() => cb(-1, ''));
+    }
+    close(): void {
+        this.connection.close();
+    }
 }

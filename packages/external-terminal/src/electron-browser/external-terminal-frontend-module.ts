@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { CommandContribution } from '@theia/core/lib/common';
-import { KeybindingContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { BackendAndFrontend, CommandContribution, ProxyProvider } from '@theia/core/lib/common';
+import { KeybindingContribution } from '@theia/core/lib/browser';
 import { bindExternalTerminalPreferences } from './external-terminal-preference';
 import { ExternalTerminalFrontendContribution } from './external-terminal-contribution';
 import { ExternalTerminalService, externalTerminalServicePath } from '../common/external-terminal';
@@ -27,7 +27,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(ExternalTerminalFrontendContribution)
     );
-    bind(ExternalTerminalService).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy<ExternalTerminalService>(ctx.container, externalTerminalServicePath)
-    ).inSingletonScope();
+    bind(ExternalTerminalService)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(externalTerminalServicePath))
+        .inSingletonScope();
 });

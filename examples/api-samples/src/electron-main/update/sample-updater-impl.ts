@@ -16,14 +16,19 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { SampleUpdater, SampleUpdaterClient, UpdateStatus } from '../../common/updater/sample-updater';
+import { SampleUpdater, UpdateStatus } from '../../common/updater/sample-updater';
+import { Emitter, Event } from '@theia/core/lib/common';
 
 @injectable()
 export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplicationContribution {
 
-    protected clients: Array<SampleUpdaterClient> = [];
+    protected onReadyToInstallEmitter = new Emitter<void>();
     protected inProgressTimer: NodeJS.Timer | undefined;
     protected available = false;
+
+    get onReadyToInstall(): Event<void> {
+        return this.onReadyToInstallEmitter.event;
+    }
 
     async checkForUpdates(): Promise<{ status: UpdateStatus }> {
         if (this.inProgressTimer) {
@@ -48,9 +53,7 @@ export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplication
             this.inProgressTimer = setTimeout(() => {
                 this.inProgressTimer = undefined;
                 this.available = true;
-                for (const client of this.clients) {
-                    client.notifyReadyToInstall();
-                }
+                this.onReadyToInstallEmitter.fire();
             }, 5000);
         }
     }
@@ -62,30 +65,4 @@ export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplication
     onStop(application: ElectronMainApplication): void {
         // Invoked when the contribution is stopping. You can clean up things here. You are not allowed call async code from here.
     }
-
-    setClient(client: SampleUpdaterClient | undefined): void {
-        if (client) {
-            this.clients.push(client);
-            console.info('Registered a new sample updater client.');
-        } else {
-            console.warn("Couldn't register undefined client.");
-        }
-    }
-
-    disconnectClient(client: SampleUpdaterClient): void {
-        const index = this.clients.indexOf(client);
-        if (index !== -1) {
-            this.clients.splice(index, 1);
-            console.info('Disposed a sample updater client.');
-        } else {
-            console.warn("Couldn't dispose client; it was not registered.");
-        }
-    }
-
-    dispose(): void {
-        console.info('>>> Disposing sample updater service...');
-        this.clients.forEach(this.disconnectClient.bind(this));
-        console.info('>>> Disposed sample updater service.');
-    }
-
 }

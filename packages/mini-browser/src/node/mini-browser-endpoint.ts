@@ -22,11 +22,11 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Application, Request, Response } from '@theia/core/shared/express';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { MaybePromise } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowserEndpoint as MiniBrowserEndpointNS } from '../common/mini-browser-endpoint';
+import { MaybePromise, Rpc } from '@theia/core';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -73,13 +73,6 @@ export interface MiniBrowserEndpointHandler {
 @injectable()
 export class MiniBrowserEndpoint implements BackendApplicationContribution, MiniBrowserService {
 
-    /**
-     * Endpoint path to handle the request for the given resource.
-     *
-     * @deprecated since 1.8.0
-     */
-    static HANDLE_PATH = '/mini-browser/';
-
     private attachRequestHandlerPromise: Promise<void>;
 
     @inject(ILogger)
@@ -95,6 +88,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
         this.attachRequestHandlerPromise = this.attachRequestHandler(app);
     }
 
+    @Rpc.Ignore()
     async onStart(): Promise<void> {
         await Promise.all(Array.from(this.getContributions(), async handler => {
             const extensions = await handler.supportedExtensions();

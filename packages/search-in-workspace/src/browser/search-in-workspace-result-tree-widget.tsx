@@ -33,7 +33,7 @@ import {
     codicon,
     TopDownTreeIterator
 } from '@theia/core/lib/browser';
-import { CancellationTokenSource, Emitter, Event, isWindows, ProgressService } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event, isCancelled, isWindows, ProgressService } from '@theia/core';
 import {
     EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane,
     EditorWidget, EditorOpenerOptions, FindMatch
@@ -543,28 +543,20 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.cancelIndicator = new CancellationTokenSource();
         const cancelIndicator = this.cancelIndicator;
         const token = this.cancelIndicator.token;
-        const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
-        token.onCancellationRequested(() => {
-            progress.cancel();
-            if (searchId) {
-                this.searchService.cancel(searchId);
-            }
-            this.cancelIndicator = undefined;
-            this.changeEmitter.fire(this.resultTree);
-        });
 
         // Collect search results for opened editors which otherwise may not be found by ripgrep (ex: dirty editors).
         const { numberOfResults, matches } = this.searchInOpenEditors(searchTerm, searchOptions);
 
         // The root node is visible if outside workspace results are found and workspace root(s) are present.
-        this.forceVisibleRootNode = matches.some(m => m.root === this.defaultRootName) && this.workspaceService.opened;
+        this.forceVisibleRootNode = this.workspaceService.opened && matches.some(m => m.root === this.defaultRootName);
 
         matches.forEach(m => this.appendToResultTree(m));
 
         // Exclude files already covered by searching open editors.
         this.editorManager.all.forEach(e => {
             const excludePath: string = e.editor.uri.path.toString();
-            searchOptions.exclude = searchOptions.exclude ? searchOptions.exclude.concat(excludePath) : [excludePath];
+            searchOptions.exclude ??= [];
+            searchOptions.exclude.push(excludePath);
         });
 
         // Reduce `maxResults` due to editor results.
@@ -572,11 +564,22 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             searchOptions.maxResults -= numberOfResults;
         }
 
+        const progressPromise = this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
+        const asyncSearchPromise = this.searchService.search(searchTerm, searchOptions);
+        token.onCancellationRequested(() => {
+            progressPromise.then(progress => progress.cancel());
+            asyncSearchPromise.then(({ searchId }) => this.searchService.cancel(searchId));
+            this.cancelIndicator = undefined;
+            this.changeEmitter.fire(this.resultTree);
+        });
+
+        const { results } = await asyncSearchPromise;
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let pendingRefreshTimeout: any;
-        const searchId = await this.searchService.search(searchTerm, {
-            onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
-                if (token.isCancellationRequested || aSearchId !== searchId) {
+        try {
+            for await (const result of results) {
+                if (token.isCancellationRequested) {
                     return;
                 }
                 this.appendToResultTree(result);
@@ -584,13 +587,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     clearTimeout(pendingRefreshTimeout);
                 }
                 pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
-            },
-            onDone: () => {
-                this.handleSearchCompleted(cancelIndicator);
             }
-        }, searchOptions).catch(() => {
+        } catch (error) {
+            if (!isCancelled(error)) {
+                console.error(error);
+            }
+        } finally {
             this.handleSearchCompleted(cancelIndicator);
-        });
+        }
     }
 
     focusFirstResult(): void {

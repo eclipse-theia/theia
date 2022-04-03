@@ -26,8 +26,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind } from '@theia/task/lib/common/task-protocol';
-import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOutputPresentation, RevealKind, PanelKind, TaskServer } from '@theia/task/lib/common/task-protocol';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
 
@@ -57,7 +56,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
     private readonly proxy: TasksExt;
     private readonly taskProviderRegistry: TaskProviderRegistry;
     private readonly taskResolverRegistry: TaskResolverRegistry;
-    private readonly taskWatcher: TaskWatcher;
+    private readonly taskServer: TaskServer;
     private readonly taskService: TaskService;
     private readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
@@ -68,22 +67,22 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TASKS_EXT);
         this.taskProviderRegistry = container.get(TaskProviderRegistry);
         this.taskResolverRegistry = container.get(TaskResolverRegistry);
-        this.taskWatcher = container.get(TaskWatcher);
+        this.taskServer = container.get(TaskServer);
         this.taskService = container.get(TaskService);
         this.taskDefinitionRegistry = container.get(TaskDefinitionRegistry);
 
-        this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
+        this.toDispose.push(this.taskServer.onTaskCreated((event: TaskInfo) => {
             this.proxy.$onDidStartTask({
                 id: event.taskId,
                 task: this.fromTaskConfiguration(event.config)
             }, event.terminalId!);
         }));
 
-        this.toDispose.push(this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
+        this.toDispose.push(this.taskServer.onTaskExit((event: TaskExitedEvent) => {
             this.proxy.$onDidEndTask(event.taskId);
         }));
 
-        this.toDispose.push(this.taskWatcher.onDidStartTaskProcess((event: TaskInfo) => {
+        this.toDispose.push(this.taskServer.onDidStartTaskProcess((event: TaskInfo) => {
             if (event.processId !== undefined) {
                 this.proxy.$onDidStartTaskProcess(event.processId, {
                     id: event.taskId,
@@ -92,7 +91,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
             }
         }));
 
-        this.toDispose.push(this.taskWatcher.onDidEndTaskProcess((event: TaskExitedEvent) => {
+        this.toDispose.push(this.taskServer.onDidEndTaskProcess((event: TaskExitedEvent) => {
             if (event.code !== undefined) {
                 this.proxy.$onDidEndTaskProcess(event.code, event.taskId);
             }

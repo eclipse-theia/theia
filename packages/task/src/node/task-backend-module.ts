@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindContributionProvider } from '@theia/core';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
+import { BackendAndFrontend, bindContributionProvider, ServiceContribution } from '@theia/core';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
 import { bindCustomTaskRunnerModule } from './custom/custom-task-runner-backend-module';
@@ -25,25 +24,28 @@ import { TaskManager } from './task-manager';
 import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
-import { TaskClient, TaskServer, taskPath } from '../common';
+import { TaskServer, taskPath } from '../common';
+import { ContainerScope } from '@theia/core/lib/common/container-scope';
+
+export const TaskContainerModule = new ContainerModule(bind => {
+    bind(TaskServerImpl).toSelf().inSingletonScope();
+    bind(ContainerScope.Destroy).toService(TaskServerImpl);
+    bind(TaskServer).toService(TaskServerImpl);
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [taskPath, () => ctx.container.get(TaskServer)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
+});
 
 export default new ContainerModule(bind => {
+    bind(ContainerModule)
+        .toConstantValue(TaskContainerModule)
+        .whenTargetNamed(BackendAndFrontend);
 
     bind(TaskManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(TaskManager);
-
-    bind(TaskServer).to(TaskServerImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {
-            const taskServer = ctx.container.get<TaskServer>(TaskServer);
-            taskServer.setClient(client);
-            // when connection closes, cleanup that client of task-server
-            client.onDidCloseConnection(() => {
-                taskServer.disconnectClient(client);
-            });
-            return taskServer;
-        })
-    ).inSingletonScope();
 
     createCommonBindings(bind);
 

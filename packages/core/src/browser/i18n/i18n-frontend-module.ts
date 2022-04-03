@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
+import { BackendAndFrontend, ProxyProvider } from '../../common';
 import { AsyncLocalizationProvider, localizationPath } from '../../common/i18n/localization';
-import { WebSocketConnectionProvider } from '../messaging/ws-connection-provider';
 
 export default new ContainerModule(bind => {
-    bind(AsyncLocalizationProvider).toDynamicValue(
-        ctx => ctx.container.get(WebSocketConnectionProvider).createProxy(localizationPath)
-    ).inSingletonScope();
+    bind(AsyncLocalizationProvider)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, BackendAndFrontend).getProxy(localizationPath))
+        .inSingletonScope();
 });

@@ -20,14 +20,14 @@ import * as PQueue from 'p-queue';
 import { GitPrompt } from '../../common/git-prompt';
 
 @injectable()
-export class GitQuickOpenPrompt extends GitPrompt {
+export class GitQuickOpenPrompt implements GitPrompt {
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
 
     protected readonly queue = new PQueue({ autoStart: true, concurrency: 1 });
 
-    override async ask(question: GitPrompt.Question): Promise<GitPrompt.Answer> {
+    async ask(question: GitPrompt.Question): Promise<GitPrompt.Answer> {
         return this.queue.add(() => {
             const { details, text, password } = question;
             return new Promise<GitPrompt.Answer>(async resolve => {
@@ -40,7 +40,8 @@ export class GitQuickOpenPrompt extends GitPrompt {
             });
         });
     }
-    override dispose(): void {
+
+    dispose(): void {
         if (!this.queue.isPaused) {
             this.queue.pause();
         }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { MessageClient, MessageType, Message as PlainMessage, ProgressMessage, ProgressUpdate, CancellationToken } from '@theia/core/lib/common';
+import { MessageType, Message as PlainMessage, ProgressMessage, ProgressUpdate, CancellationToken, MessageServer } from '@theia/core/lib/common';
 import { deepClone } from '@theia/core/lib/common/objects';
 import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -49,7 +49,7 @@ export namespace Notification {
 }
 
 @injectable()
-export class NotificationManager extends MessageClient {
+export class NotificationManager implements MessageServer {
 
     @inject(NotificationPreferences)
     protected readonly preferences: NotificationPreferences;
@@ -169,7 +169,7 @@ export class NotificationManager extends MessageClient {
         this.fireUpdatedEvent();
     }
 
-    override showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
+    showMessage(plainMessage: PlainMessage): Promise<string | undefined> {
         const messageId = this.getMessageId(plainMessage);
 
         let notification = this.notifications.get(messageId);
@@ -240,7 +240,7 @@ export class NotificationManager extends MessageClient {
         return String(Md5.hashStr(`[${m.type}] ${m.text} : ${(m.actions || []).join(' | ')};`));
     }
 
-    override async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
+    async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         let notification = this.notifications.get(messageId);
         if (!notification) {
             const message = this.contentRenderer.renderMessage(plainMessage.text);
@@ -268,20 +268,16 @@ export class NotificationManager extends MessageClient {
         return result.promise;
     }
 
-    override async reportProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<void> {
+    async updateProgress(messageId: string, update: ProgressUpdate, originalMessage: ProgressMessage): Promise<void> {
         const notification = this.find(messageId);
         if (!notification) {
             return;
         }
-        if (cancellationToken.isCancellationRequested) {
-            this.clear(messageId);
-        } else {
-            const textMessage = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text || update?.message;
-            if (textMessage) {
-                notification.message = this.contentRenderer.renderMessage(textMessage);
-            }
-            notification.progress = this.toPlainProgress(update) || notification.progress;
+        const textMessage = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text || update?.message;
+        if (textMessage) {
+            notification.message = this.contentRenderer.renderMessage(textMessage);
         }
+        notification.progress = this.toPlainProgress(update) || notification.progress;
         this.fireUpdatedEvent();
     }
     protected toPlainProgress(update: ProgressUpdate): number | undefined {

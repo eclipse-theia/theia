@@ -58,7 +58,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected workspaceSearch: Set<number> = new Set<number>();
+    protected workspaceSearch = new Set<number>();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
@@ -195,66 +195,47 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         return uriStrs.map(uriStr => Uri.parse(uriStr));
     }
 
-    async $findTextInFiles(query: theia.TextSearchQuery, options: theia.FindTextInFilesOptions, searchRequestId: number,
-        token: theia.CancellationToken = CancellationToken.None): Promise<theia.TextSearchComplete> {
+    async $findTextInFiles(
+        query: theia.TextSearchQuery,
+        options: theia.FindTextInFilesOptions,
+        searchRequestId: number,
+        token: theia.CancellationToken = CancellationToken.None
+    ): Promise<theia.TextSearchComplete> {
         const maxHits = options.maxResults ? options.maxResults : 150;
         const excludes = options.exclude ? (typeof options.exclude === 'string' ? options.exclude : (<theia.RelativePattern>options.exclude).pattern) : undefined;
         const includes = options.include ? (typeof options.include === 'string' ? options.include : (<theia.RelativePattern>options.include).pattern) : undefined;
-        let canceledRequest = false;
-        return new Promise(resolve => {
-            let matches = 0;
-            const what: string = query.pattern;
-            this.searchInWorkspaceService.searchWithCallback(what, this.roots, {
-                onResult: (searchId, result) => {
-                    if (canceledRequest) {
-                        return;
-                    }
-                    const hasSearch = this.workspaceSearch.has(searchId);
-                    if (!hasSearch) {
-                        this.workspaceSearch.add(searchId);
-                        token.onCancellationRequested(() => {
-                            this.searchInWorkspaceService.cancel(searchId);
-                            canceledRequest = true;
-                        });
-                    }
-                    if (token.isCancellationRequested) {
-                        this.searchInWorkspaceService.cancel(searchId);
-                        canceledRequest = true;
-                        return;
-                    }
-                    if (result && result.matches && result.matches.length) {
-                        while ((matches + result.matches.length) > maxHits) {
-                            result.matches.splice(result.matches.length - 1, 1);
-                        }
-                        this.proxy.$onTextSearchResult(searchRequestId, false, result);
-                        matches += result.matches.length;
-                        if (maxHits <= matches) {
-                            this.searchInWorkspaceService.cancel(searchId);
-                        }
-                    }
-                },
-                onDone: (searchId, _error) => {
-                    const hasSearch = this.workspaceSearch.has(searchId);
-                    if (hasSearch) {
-                        this.searchInWorkspaceService.cancel(searchId);
-                        this.workspaceSearch.delete(searchId);
-                    }
-                    this.proxy.$onTextSearchResult(searchRequestId, true);
-                    if (maxHits <= matches) {
-                        resolve({ limitHit: true });
-                    } else {
-                        resolve({ limitHit: false });
-                    }
-                }
-            }, {
-                useRegExp: query.isRegExp,
-                matchCase: query.isCaseSensitive,
-                matchWholeWord: query.isWordMatch,
-                exclude: excludes ? [excludes] : undefined,
-                include: includes ? [includes] : undefined,
-                maxResults: maxHits
-            });
+        const { results } = await this.searchInWorkspaceService.searchInRoots(query.pattern, this.roots, {
+            useRegExp: query.isRegExp,
+            matchCase: query.isCaseSensitive,
+            matchWholeWord: query.isWordMatch,
+            exclude: excludes ? [excludes] : undefined,
+            include: includes ? [includes] : undefined,
+            maxResults: maxHits
         });
+        let matches = 0;
+        let cancelled = false;
+        token.onCancellationRequested(() => cancelled = true);
+        for await (const result of results) {
+            if (cancelled) {
+                continue;
+            }
+            if (result.matches.length) {
+                while ((matches + result.matches.length) > maxHits) {
+                    result.matches.splice(result.matches.length - 1, 1);
+                }
+                this.proxy.$onTextSearchResult(searchRequestId, false, result);
+                matches += result.matches.length;
+                if (maxHits <= matches) {
+                    cancelled = true;
+                }
+            }
+        }
+        this.proxy.$onTextSearchResult(searchRequestId, true);
+        if (maxHits <= matches) {
+            return { limitHit: true };
+        } else {
+            return { limitHit: false };
+        }
     }
 
     async $registerTextDocumentContentProvider(scheme: string): Promise<void> {

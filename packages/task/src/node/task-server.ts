@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common/';
+import { Disposable, DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
 import {
-    TaskClient,
     TaskExitedEvent,
     TaskInfo,
     TaskServer,
@@ -36,8 +35,38 @@ import { CustomTask } from './custom/custom-task';
 @injectable()
 export class TaskServerImpl implements TaskServer, Disposable {
 
-    /** Task clients, to send notifications-to. */
-    protected clients: TaskClient[] = [];
+    protected disposables = new DisposableCollection();
+    protected onBackgroundTaskEndedEmitter = this.disposables.pushThru(new Emitter<BackgroundTaskEndedEvent>());
+    protected onDidEndTaskProcessEmitter = this.disposables.pushThru(new Emitter<TaskExitedEvent>());
+    protected onDidProcessTaskOutputEmitter = this.disposables.pushThru(new Emitter<TaskOutputProcessedEvent>());
+    protected onDidStartTaskProcessEmitter = this.disposables.pushThru(new Emitter<TaskInfo>());
+    protected onTaskCreatedEmitter = this.disposables.pushThru(new Emitter<TaskInfo>());
+    protected onTaskExitEmitter = this.disposables.pushThru(new Emitter<TaskExitedEvent>());
+
+    get onBackgroundTaskEnded(): Event<BackgroundTaskEndedEvent> {
+        return this.onBackgroundTaskEndedEmitter.event;
+    }
+
+    get onDidEndTaskProcess(): Event<TaskExitedEvent> {
+        return this.onDidEndTaskProcessEmitter.event;
+    }
+
+    get onDidProcessTaskOutput(): Event<TaskOutputProcessedEvent> {
+        return this.onDidProcessTaskOutputEmitter.event;
+    }
+
+    get onDidStartTaskProcess(): Event<TaskInfo> {
+        return this.onDidStartTaskProcessEmitter.event;
+    }
+
+    get onTaskCreated(): Event<TaskInfo> {
+        return this.onTaskCreatedEmitter.event;
+    }
+
+    get onTaskExit(): Event<TaskExitedEvent> {
+        return this.onTaskExitEmitter.event;
+    }
+
     /** Map of task id and task disposable */
     protected readonly toDispose = new Map<number, DisposableCollection>();
 
@@ -58,6 +87,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
     private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();
 
     dispose(): void {
+        this.disposables.dispose();
         for (const toDispose of this.toDispose.values()) {
             toDispose.dispose();
         }
@@ -178,36 +208,28 @@ export class TaskServerImpl implements TaskServer, Disposable {
         this.logger.debug(log => log('task has exited:', event));
 
         if (task instanceof ProcessTask) {
-            this.clients.forEach(client => {
-                client.onDidEndTaskProcess(event);
-            });
+            this.onDidEndTaskProcessEmitter.fire(event);
         }
 
-        this.clients.forEach(client => {
-            client.onTaskExit(event);
-        });
+        this.onTaskExitEmitter.fire(event);
     }
 
     protected fireTaskCreatedEvent(event: TaskInfo, task?: Task): void {
         this.logger.debug(log => log('task created:', event));
 
-        this.clients.forEach(client => {
-            client.onTaskCreated(event);
-        });
+        this.onTaskCreatedEmitter.fire(event);
 
         if (task && task instanceof ProcessTask) {
-            this.clients.forEach(client => {
-                client.onDidStartTaskProcess(event);
-            });
+            this.onDidStartTaskProcessEmitter.fire(event);
         }
     }
 
     protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent): void {
-        this.clients.forEach(client => client.onDidProcessTaskOutput(event));
+        this.onDidProcessTaskOutputEmitter.fire(event);
     }
 
     protected fireBackgroundTaskEndedEvent(event: BackgroundTaskEndedEvent): void {
-        this.clients.forEach(client => client.onBackgroundTaskEnded(event));
+        this.onBackgroundTaskEndedEmitter.fire(event);
     }
 
     /** Kill task for a given id. Rejects if task is not found */
@@ -219,21 +241,6 @@ export class TaskServerImpl implements TaskServer, Disposable {
         } else {
             this.logger.info(`Could not find task to kill, task id ${id}. Already terminated?`);
             return Promise.reject(new Error(`Could not find task to kill, task id ${id}. Already terminated?`));
-        }
-    }
-
-    /** Adds a client to this server */
-    setClient(client: TaskClient): void {
-        this.logger.debug('a client has connected - adding it to the list:');
-        this.clients.push(client);
-    }
-
-    /** Removes a client, from this server */
-    disconnectClient(client: TaskClient): void {
-        this.logger.debug('a client has disconnected - removed from list:');
-        const idx = this.clients.indexOf(client);
-        if (idx > -1) {
-            this.clients.splice(idx, 1);
         }
     }
 

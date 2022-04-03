@@ -37,7 +37,7 @@ import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
+import { MessageServer } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
@@ -66,7 +66,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly consoleSessionManager: ConsoleSessionManager;
     private readonly configurationManager: DebugConfigurationManager;
     private readonly terminalService: TerminalService;
-    private readonly messages: MessageClient;
+    private readonly messages: MessageServer;
     private readonly outputChannelManager: OutputChannelManager;
     private readonly debugPreferences: DebugPreferences;
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
@@ -89,7 +89,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.consoleSessionManager = container.get(ConsoleSessionManager);
         this.configurationManager = container.get(DebugConfigurationManager);
         this.terminalService = container.get(TerminalService);
-        this.messages = container.get(MessageClient);
+        this.messages = container.get(MessageServer);
         this.outputChannelManager = container.get(OutputChannelManager);
         this.debugPreferences = container.get(DebugPreferences);
         this.pluginDebugService = container.get(PluginDebugService);

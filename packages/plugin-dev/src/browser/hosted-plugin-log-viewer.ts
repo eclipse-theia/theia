@@ -17,15 +17,15 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { OutputChannel, OutputChannelManager } from '@theia/output/lib/browser/output-channel';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
+import { HostedPluginServer } from '@theia/plugin-ext';
 import { LogPart } from '@theia/plugin-ext/lib/common/types';
-import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 
 @injectable()
 export class HostedPluginLogViewer {
     public static OUTPUT_CHANNEL_NAME = 'hosted-instance-log';
 
-    @inject(HostedPluginWatcher)
-    protected readonly watcher: HostedPluginWatcher;
+    @inject(HostedPluginServer)
+    protected readonly server: HostedPluginServer;
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
     @inject(OutputContribution)
@@ -42,7 +42,7 @@ export class HostedPluginLogViewer {
     @postConstruct()
     protected init(): void {
         this.channel = this.outputChannelManager.getChannel(HostedPluginLogViewer.OUTPUT_CHANNEL_NAME);
-        this.watcher.onLogMessageEvent(event => this.logMessageEventHandler(event));
+        this.server.onLog(event => this.logMessageEventHandler(event));
     }
 
     protected logMessageEventHandler(event: LogPart): void {

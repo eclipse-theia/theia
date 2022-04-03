@@ -21,6 +21,7 @@ import { MaybePromise } from '../common/types';
 import { Key } from './keyboard/keys';
 import { AbstractDialog } from './dialogs';
 import { waitForClosed } from './widgets';
+import { URI } from 'vscode-uri';
 
 export interface Saveable {
     readonly dirty: boolean;
@@ -65,6 +66,10 @@ export namespace Saveable {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is Saveable {
         return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function isUntitled(arg: any): boolean {
+        return !!arg && ('uri' in arg) && URI.parse((arg as { uri: string; }).uri).scheme === 'untitled';
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function get(arg: any): Saveable | undefined {

@@ -20,7 +20,7 @@ import { JsonType, PreferenceItem, PreferenceSchemaProvider } from './preference
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import * as assert from 'assert';
 import { JSONValue } from '@phosphor/coreutils';
-import { IJSONSchema } from 'src/common/json-schema';
+import { IJSONSchema } from '../../common/json-schema';
 
 /* eslint-disable no-unused-expressions,no-null/no-null */
 

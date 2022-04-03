@@ -14,21 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { bindContribution, CommandContribution, MenuContribution, ProxyProvider } from '@theia/core/lib/common';
+import { ElectronMainAndFrontend } from '@theia/core/lib/electron-common';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ElectronIpcConnectionProvider } from '@theia/core/lib/electron-browser/messaging/electron-ipc-connection-provider';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { SampleUpdater, SampleUpdaterPath, SampleUpdaterClient } from '../../common/updater/sample-updater';
-import { SampleUpdaterFrontendContribution, ElectronMenuUpdater, SampleUpdaterClientImpl } from './sample-updater-frontend-contribution';
+import { SampleUpdater, SampleUpdaterPath } from '../../common/updater/sample-updater';
+import { ElectronMenuUpdater, SampleUpdaterFrontendContribution } from './sample-updater-frontend-contribution';
 
 export default new ContainerModule(bind => {
+    bind(SampleUpdater)
+        .toDynamicValue(ctx => ctx.container.getNamed(ProxyProvider, ElectronMainAndFrontend).getProxy(SampleUpdaterPath))
+        .inSingletonScope();
     bind(ElectronMenuUpdater).toSelf().inSingletonScope();
-    bind(SampleUpdaterClientImpl).toSelf().inSingletonScope();
-    bind(SampleUpdaterClient).toService(SampleUpdaterClientImpl);
-    bind(SampleUpdater).toDynamicValue(context => {
-        const client = context.container.get(SampleUpdaterClientImpl);
-        return ElectronIpcConnectionProvider.createProxy(context.container, SampleUpdaterPath, client);
-    }).inSingletonScope();
     bind(SampleUpdaterFrontendContribution).toSelf().inSingletonScope();
-    bind(MenuContribution).toService(SampleUpdaterFrontendContribution);
-    bind(CommandContribution).toService(SampleUpdaterFrontendContribution);
+    bindContribution(bind, SampleUpdaterFrontendContribution, [MenuContribution, CommandContribution]);
 });

@@ -14,16 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ServiceContribution } from '@theia/core';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
-import { GitPrompt, GitPromptServer, GitPromptServerProxy, GitPromptServerImpl } from '../../common/git-prompt';
+import { GitPrompt } from '../../common/git-prompt';
 
 export default new ContainerModule(bind => {
-    bind(GitPrompt).toSelf();
+    bind(GitPrompt.Identifier).toConstantValue({
+        ask: question => GitPrompt.Failure.create('Interactive Git prompt is not supported in the browser.')
+    });
     bindPromptServer(bind);
 });
 
 export function bindPromptServer(bind: interfaces.Bind): void {
-    bind(GitPromptServer).to(GitPromptServerImpl).inSingletonScope();
-    bind(GitPromptServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPrompt.WS_PATH)).inSingletonScope();
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [GitPrompt.WS_PATH, () => ctx.container.get(GitPrompt.Identifier)]
+        ))
+        .inSingletonScope();
 }

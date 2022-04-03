@@ -17,7 +17,6 @@
 import { Container, injectable, postConstruct } from 'inversify';
 import { ConsoleLoggerServer } from './console-logger-server';
 import { LogLevel } from '../common/logger-protocol';
-import { LoggerWatcher } from '../common/logger-watcher';
 import { LogLevelCliContribution } from './logger-cli-contribution';
 import { expect } from 'chai';
 
@@ -40,7 +39,6 @@ class MockLogLevelCliContribution extends LogLevelCliContribution {
 beforeEach(() => {
     const container = new Container;
     container.bind(ConsoleLoggerServer).toSelf().inSingletonScope();
-    container.bind(LoggerWatcher).toSelf().inSingletonScope();
     container.bind(MockLogLevelCliContribution).toSelf().inSingletonScope();
     container.bind(LogLevelCliContribution).toService(MockLogLevelCliContribution);
 

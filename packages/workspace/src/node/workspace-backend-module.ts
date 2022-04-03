@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
+import { BackendAndFrontend, ServiceContribution } from '@theia/core/lib/common';
 import { WorkspaceServer, workspacePath, CommonWorkspaceUtils } from '../common';
 import { DefaultWorkspaceServer, WorkspaceCliContribution } from './default-workspace-server';
 import { CliContribution } from '@theia/core/lib/node/cli';
@@ -28,10 +28,10 @@ export default new ContainerModule(bind => {
     bind(WorkspaceServer).toService(DefaultWorkspaceServer);
     bind(BackendApplicationContribution).toService(WorkspaceServer);
     bind(CommonWorkspaceUtils).toSelf().inSingletonScope();
-
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(workspacePath, () =>
-            ctx.container.get(WorkspaceServer)
-        )
-    ).inSingletonScope();
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [workspacePath, () => ctx.container.get(WorkspaceServer)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
 });

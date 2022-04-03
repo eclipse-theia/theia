@@ -809,4 +809,3 @@ export class LanguagesExtImpl implements LanguagesExt {
 function getPluginLabel(pluginInfo: PluginInfo): string {
     return pluginInfo.displayName || pluginInfo.name;
 }
-

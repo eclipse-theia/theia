@@ -20,14 +20,14 @@ import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration'
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
 import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
 import * as theia from '@theia/plugin';
+import { BackendAndFrontend, ProxyProvider } from '@theia/core';
 
 /**
  * Debug service to work with plugin and extension contributions.
@@ -44,23 +44,17 @@ export class PluginDebugService implements DebugService {
     protected readonly sessionId2contrib = new Map<string, PluginDebugAdapterContribution>();
     protected delegated: DebugService;
 
-    @inject(WebSocketConnectionProvider)
-    protected readonly connectionProvider: WebSocketConnectionProvider;
+    @inject(ProxyProvider) @named(BackendAndFrontend)
+    protected readonly proxyProvider: ProxyProvider;
+
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
     @postConstruct()
     protected init(): void {
-        this.delegated = this.connectionProvider.createProxy<DebugService>(DebugPath);
-        this.toDispose.pushAll([
-            Disposable.create(() => this.delegated.dispose()),
-            Disposable.create(() => {
-                for (const sessionId of this.sessionId2contrib.keys()) {
-                    const contrib = this.sessionId2contrib.get(sessionId)!;
-                    contrib.terminateDebugSession(sessionId);
-                }
-                this.sessionId2contrib.clear();
-            })]);
+        // Paul Maréchal: We should not get a proxy this way,
+        // this is both an anti-pattern and a code smell...
+        this.delegated = this.proxyProvider.getProxy<DebugService>(DebugPath);
     }
 
     registerDebugAdapterContribution(contrib: PluginDebugAdapterContribution): Disposable {
@@ -296,9 +290,5 @@ export class PluginDebugService implements DebugService {
         } else {
             return this.delegated.terminateDebugSession(sessionId);
         }
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
     }
 }

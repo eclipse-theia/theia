@@ -33,7 +33,6 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
     ApplyToKind,
-    BackgroundTaskEndedEvent,
     DependsOrder,
     NamedProblemMatcher,
     ProblemMatchData,
@@ -43,14 +42,11 @@ import {
     TaskConfiguration,
     TaskConfigurationScope,
     TaskCustomization,
-    TaskExitedEvent,
     TaskIdentifier,
     TaskInfo,
     TaskOutputPresentation,
-    TaskOutputProcessedEvent,
     TaskServer
 } from '../common';
-import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
 import { TaskResolverRegistry } from './task-contribution';
@@ -117,9 +113,6 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
-
-    @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
@@ -200,7 +193,7 @@ export class TaskService implements TaskConfigurationClient {
             }));
 
         // notify user that task has started
-        this.taskWatcher.onTaskCreated((event: TaskInfo) => {
+        this.taskServer.onTaskCreated((event: TaskInfo) => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
@@ -211,7 +204,7 @@ export class TaskService implements TaskConfigurationClient {
             });
         });
 
-        this.taskWatcher.onOutputProcessed(async (event: TaskOutputProcessedEvent) => {
+        this.taskServer.onDidProcessTaskOutput(async event => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
@@ -269,7 +262,7 @@ export class TaskService implements TaskConfigurationClient {
             }
         });
 
-        this.taskWatcher.onBackgroundTaskEnded((event: BackgroundTaskEndedEvent) => {
+        this.taskServer.onBackgroundTaskEnded(event => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
@@ -285,7 +278,7 @@ export class TaskService implements TaskConfigurationClient {
         });
 
         // notify user that task has finished
-        this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
+        this.taskServer.onTaskExit(event => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
@@ -1005,7 +998,7 @@ export class TaskService implements TaskConfigurationClient {
             this.logger.error(errorStr);
             this.messageService.error(errorStr);
             if (taskInfo && typeof taskInfo.terminalId === 'number') {
-                this.shellTerminalServer.onAttachAttempted(taskInfo.terminalId);
+                this.shellTerminalServer.attachAttempted(taskInfo.terminalId);
             }
         }
     }

@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '../../common';
+import { Deferred, Disposable, DisposableCollection, Emitter, Event, isPromiseLike, MaybePromise } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@phosphor/coreutils';
 import { PreferenceProviderDataChange } from './preference-provider';
 import { OverridePreferenceName } from './preference-language-override-service';
+import { ThrowIfCalledTwice } from '../../common/decorators';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
 export interface PreferenceProxyFactory {
@@ -48,11 +49,12 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
 
     @inject(PreferenceProxyOptions) protected readonly options: PreferenceProxyOptions;
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(PreferenceProxySchema) protected readonly promisedSchema: PreferenceSchema | Promise<PreferenceSchema>;
     @inject(PreferenceProxyFactory) protected readonly factory: PreferenceProxyFactory;
     protected toDispose = new DisposableCollection();
     protected _onPreferenceChangedEmitter: Emitter<PreferenceChangeEvent<T>> | undefined;
     protected schema: PreferenceSchema | undefined;
+    /** Resolves when `this.schema` has been set. */
+    protected schemaDeferred = new Deferred<PreferenceSchema>();
 
     protected get prefix(): string {
         return this.options.prefix ?? '';
@@ -89,17 +91,18 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         return this._onPreferenceChangedEmitter;
     }
 
-    get onPreferenceChanged(): Event<PreferenceChangeEvent<T>> {
-        return this.onPreferenceChangedEmitter.event;
+    @ThrowIfCalledTwice()
+    setSchema(schema: MaybePromise<PreferenceSchema>): this {
+        if (isPromiseLike<PreferenceSchema>(schema)) {
+            this.schemaDeferred.resolve(schema.then(ps => this.schema = ps));
+        } else {
+            this.schemaDeferred.resolve(this.schema = schema);
+        }
+        return this;
     }
 
-    @postConstruct()
-    protected init(): void {
-        if (this.promisedSchema instanceof Promise) {
-            this.promisedSchema.then(schema => this.schema = schema);
-        } else {
-            this.schema = this.promisedSchema;
-        }
+    get onPreferenceChanged(): Event<PreferenceChangeEvent<T>> {
+        return this.onPreferenceChangedEmitter.event;
     }
 
     get(target: unknown, property: string, receiver: unknown): unknown {
@@ -116,7 +119,7 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
             case 'dispose':
                 return this.dispose.bind(this);
             case 'ready':
-                return Promise.all([this.preferences.ready, this.promisedSchema]).then(() => undefined);
+                return Promise.all([this.preferences.ready, this.schemaDeferred.promise]).then(() => undefined);
             case 'get':
                 return this.getValue.bind(this);
             case 'toJSON':

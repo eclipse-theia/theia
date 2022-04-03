@@ -15,19 +15,18 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
-import { SearchInWorkspaceServer, SearchInWorkspaceClient, SIW_WS_PATH } from '../common/search-in-workspace-interface';
+import { BackendAndFrontend, ServiceContribution } from '@theia/core/lib/common';
+import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { rgPath } from 'vscode-ripgrep';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceServer).to(RipgrepSearchInWorkspaceServer);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<SearchInWorkspaceClient>(SIW_WS_PATH, client => {
-            const server = ctx.container.get<SearchInWorkspaceServer>(SearchInWorkspaceServer);
-            server.setClient(client);
-            client.onDidCloseConnection(() => server.dispose());
-            return server;
-        }));
+    bind(ServiceContribution)
+        .toDynamicValue(ctx => ServiceContribution.fromEntries(
+            [SIW_WS_PATH, () => ctx.container.get(SearchInWorkspaceServer)]
+        ))
+        .inSingletonScope()
+        .whenTargetNamed(BackendAndFrontend);
     bind(RgPath).toConstantValue(rgPath);
 });

@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { GitPrompt } from '../../common/git-prompt';
 import { bindPromptServer } from '../../browser/prompt/git-prompt-module';
+import { GitPrompt } from '../../common/git-prompt';
 import { GitQuickOpenPrompt } from './git-quick-open-prompt';
 
 export default new ContainerModule(bind => {
-    bind(GitQuickOpenPrompt).toSelf().inSingletonScope();
-    bind(GitPrompt).toService(GitQuickOpenPrompt);
+    bind(GitPrompt.Identifier).to(GitQuickOpenPrompt).inSingletonScope();
     bindPromptServer(bind);
 });

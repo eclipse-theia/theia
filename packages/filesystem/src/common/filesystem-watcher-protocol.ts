@@ -14,83 +14,67 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core';
+import { Disposable, Event, serviceIdentifier, servicePath } from '@theia/core';
 import { FileChangeType } from './files';
 export { FileChangeType };
 
-export const FileSystemWatcherService = Symbol('FileSystemWatcherServer2');
-/**
- * Singleton implementation of the watch server.
- *
- * Since multiple clients all make requests to this service, we need to track those individually via a `clientId`.
- */
-export interface FileSystemWatcherService extends JsonRpcServer<FileSystemWatcherServiceClient> {
-    /**
-     * @param clientId arbitrary id used to identify a client.
-     * @param uri the path to watch.
-     * @param options optional parameters.
-     * @returns promise to a unique `number` handle for this request.
-     */
-    watchFileChanges(clientId: number, uri: string, options?: WatchOptions): Promise<number>;
-    /**
-     * @param watcherId handle mapping to a previous `watchFileChanges` request.
-     */
-    unwatchFileChanges(watcherId: number): Promise<void>;
-}
-
-export interface FileSystemWatcherServiceClient {
-    /** Listen for change events emitted by the watcher. */
-    onDidFilesChanged(event: DidFilesChangedParams): void;
-    /** The watcher can crash in certain conditions. */
-    onError(event: FileSystemWatcherErrorParams): void;
+export interface WatchOptions {
+    ignored?: string[];
 }
 
 export interface DidFilesChangedParams {
-    /** Clients to route the events to. */
-    clients?: number[];
-    /** FileSystem changes that occurred. */
+    /**
+     * FileSystem changes that occurred.
+     */
     changes: FileChange[];
 }
 
 export interface FileSystemWatcherErrorParams {
-    /** Clients to route the events to. */
-    clients: number[];
-    /** The uri that originated the error. */
+    /**
+     * The uri that originated the error.
+     */
     uri: string;
 }
 
-export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
-export interface FileSystemWatcherServer extends JsonRpcServer<FileSystemWatcherClient> {
-    /**
-     * Start file watching for the given param.
-     * Resolve when watching is started.
-     * Return a watcher id.
-     */
-    watchFileChanges(uri: string, options?: WatchOptions): Promise<number>;
-
-    /**
-     * Stop file watching for the given id.
-     * Resolve when watching is stopped.
-     */
-    unwatchFileChanges(watcherId: number): Promise<void>;
-}
-
-export interface FileSystemWatcherClient {
-    /**
-     * Notify when files under watched uris are changed.
-     */
-    onDidFilesChanged(event: DidFilesChangedParams): void;
-
-    /**
-     * Notify when unable to watch files because of Linux handle limit.
-     */
-    onError(): void;
-}
-
-export interface WatchOptions {
-    ignored: string[];
-}
 export interface FileChange {
     uri: string;
     type: FileChangeType;
+}
+
+export const FileSystemWatcherOptions = serviceIdentifier<FileSystemWatcherOptions>('FileSystemWatcherOptions');
+export interface FileSystemWatcherOptions {
+    /**
+     * Amount of time in ms between change event emission.
+     */
+    eventDebounceMs?: number
+    /**
+     * @default false
+     */
+    verbose?: boolean
+}
+
+/**
+ * @internal
+ */
+export const FILE_SYSTEM_WATCHER_SERVER_PATH = servicePath<FileSystemWatcherServer>('/services/file-system-watcher-server');
+/**
+ * @internal
+ */
+export const FileSystemWatcherServer = serviceIdentifier<FileSystemWatcherServer>('FileSystemWatcherServer');
+export interface FileSystemWatcherServer {
+    onDidFilesChanged: Event<DidFilesChangedParams & { watcherId: number }>;
+    onError: Event<FileSystemWatcherErrorParams & { watcherId: number }>;
+    watchFileChanges(uri: string, options?: WatchOptions): Promise<number>;
+    unwatchFileChanges(watcherId: number): Promise<void>;
+}
+
+export const FileSystemWatcherService = serviceIdentifier<FileSystemWatcherService>('FileSystemWatcherService');
+export interface FileSystemWatcherService {
+    onError: Event<FileSystemWatcherErrorParams>;
+    watchFileChanges(uri: string, options?: WatchOptions): FileSystemWatcher;
+}
+
+export interface FileSystemWatcher extends Disposable {
+    onDidFilesChanged: Event<DidFilesChangedParams>;
+    onError: Event<FileSystemWatcherErrorParams>;
 }

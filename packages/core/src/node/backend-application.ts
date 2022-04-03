@@ -21,7 +21,7 @@ import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { inject, named, injectable, postConstruct } from 'inversify';
-import { ContributionProvider, MaybePromise, Stopwatch } from '../common';
+import { ContributionProvider, MaybePromise, serviceIdentifier, Stopwatch } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
@@ -45,7 +45,7 @@ export const BackendApplicationServer = Symbol('BackendApplicationServer');
  */
 export interface BackendApplicationServer extends BackendApplicationContribution { }
 
-export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
+export const BackendApplicationContribution = serviceIdentifier<BackendApplicationContribution>('BackendApplicationContribution');
 /**
  * Contribution for hooking into the backend lifecycle.
  */
@@ -157,14 +157,11 @@ export class BackendApplication {
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
-        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution) {
+        @inject(BackendApplicationCliContribution)
+        protected readonly cliParams: BackendApplicationCliContribution
+    ) {
         process.on('uncaughtException', error => {
-            if (error) {
-                console.error('Uncaught Exception: ', error.toString());
-                if (error.stack) {
-                    console.error(error.stack);
-                }
-            }
+            console.error(error?.stack ?? error ?? 'Uncaught Exception: undefined');
         });
 
         // Workaround for Electron not installing a handler to ignore SIGPIPE error

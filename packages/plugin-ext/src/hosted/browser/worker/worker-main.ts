@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '@theia/core/shared/reflect-metadata';
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl } from '../../../common/rpc-protocol';
+import { DefaultPluginRpc } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
@@ -35,6 +36,7 @@ import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
+import { BufferedConnection, ConnectionState, DeferredConnection, waitForRemote } from '@theia/core/lib/common/connection';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -42,20 +44,27 @@ const ctx = self as any;
 const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
-const emitter = new Emitter<string>();
-const rpc = new RPCProtocolImpl({
-    onMessage: emitter.event,
-    send: (m: string) => {
-        ctx.postMessage(m);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const messageEmitter = new Emitter<any[]>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const connectionToWorkerOwner = new DeferredConnection(waitForRemote(new BufferedConnection<any>({
+    state: ConnectionState.OPENED,
+    onClose: () => ({ dispose(): void { } }),
+    onError: () => ({ dispose(): void { } }),
+    onOpen: () => ({ dispose(): void { } }),
+    onMessage: messageEmitter.event,
+    sendMessage: message => {
+        ctx.postMessage(message);
     },
-},
-{
-    reviver: reviver
-});
+    close: () => {
+        throw new Error('cannot close this connection');
+    }
+})));
+const rpc = new DefaultPluginRpc(connectionToWorkerOwner, { reviver });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {
-    emitter.fire(message.data);
+    messageEmitter.fire(message.data);
 });
 
 const scripts = new Set<string>();

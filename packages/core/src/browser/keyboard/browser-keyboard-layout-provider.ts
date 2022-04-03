@@ -59,16 +59,17 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     }
 
     @postConstruct()
-    protected async initialize(): Promise<void> {
-        await this.loadState();
-        const keyboard = (navigator as NavigatorExtension).keyboard;
-        if (keyboard && keyboard.addEventListener) {
-            keyboard.addEventListener('layoutchange', async () => {
-                const newLayout = await this.getNativeLayout();
-                this.nativeLayoutChanged.fire(newLayout);
-            });
-        }
-        this.initialized.resolve();
+    protected initialize(): void {
+        this.loadState().then(() => {
+            const keyboard = (navigator as NavigatorExtension).keyboard;
+            if (keyboard && keyboard.addEventListener) {
+                keyboard.addEventListener('layoutchange', async () => {
+                    const newLayout = await this.getNativeLayout();
+                    this.nativeLayoutChanged.fire(newLayout);
+                });
+            }
+            this.initialized.resolve();
+        });
     }
 
     async getNativeLayout(): Promise<NativeKeyboardLayout> {

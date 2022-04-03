@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonRpcServer } from '@theia/core';
+import { Event, serviceIdentifier, servicePath } from '@theia/core';
 
 export interface SearchInWorkspaceOptions {
     /**
@@ -119,22 +119,21 @@ export namespace SearchInWorkspaceResult {
     }
 }
 
-export const SearchInWorkspaceClient = Symbol('SearchInWorkspaceClient');
-export interface SearchInWorkspaceClient {
+export const SIW_WS_PATH = servicePath<SearchInWorkspaceServer>('/services/search-in-workspace');
+export const SearchInWorkspaceServer = serviceIdentifier<SearchInWorkspaceServer>('SearchInWorkspaceServer');
+
+export interface SearchInWorkspaceServer {
+
     /**
      * Called by the server for every search match.
      */
-    onResult(searchId: number, result: SearchInWorkspaceResult): void;
+    onResult: Event<{ searchId: number, result: SearchInWorkspaceResult }>;
 
     /**
      * Called when no more search matches will come.
      */
-    onDone(searchId: number, error?: string): void;
-}
+    onDone: Event<{ searchId: number, error?: string }>;
 
-export const SIW_WS_PATH = '/services/search-in-workspace';
-export const SearchInWorkspaceServer = Symbol('SearchInWorkspaceServer');
-export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspaceClient> {
     /**
      * Start a search for WHAT in directories ROOTURIS. Return a unique search id.
      */
@@ -144,6 +143,4 @@ export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspace
      * Cancel an ongoing search.
      */
     cancel(searchId: number): Promise<void>;
-
-    dispose(): void;
 }

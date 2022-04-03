@@ -14,16 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { HostedPluginServer, HostedPluginClient, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
-import { ILogger, Disposable, ContributionProvider } from '@theia/core';
+import { ILogger, Disposable, ContributionProvider, Event, Emitter } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { LogPart } from '../../common/types';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
+
+    protected onDidDeployEmitter = new Emitter<void>();
+    protected onLogEmitter = new Emitter<LogPart>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected onMessageEmitter = new Emitter<{ pluginHostId: string; message: any }>();
+
     @inject(ILogger)
     protected readonly logger: ILogger;
 
@@ -40,30 +47,41 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     @named(Symbol.for(ExtPluginApiProvider))
     protected readonly extPluginAPIContributions: ContributionProvider<ExtPluginApiProvider>;
 
-    protected client: HostedPluginClient | undefined;
-
     protected deployedListener: Disposable;
 
     constructor(
-        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
+        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport
+    ) {
+        this.hostedPlugin.setClient({
+            postMessage: (pluginHostId, message) => this.onMessageEmitter.fire({ pluginHostId, message }),
+            log: logPart => this.onLogEmitter.fire(logPart),
+            notifyDidDeploy: () => this.onDidDeployEmitter.fire()
+        });
+    }
+
+    get onDidDeploy(): Event<void> {
+        return this.onDidDeployEmitter.event;
+    }
+
+    get onLog(): Event<LogPart> {
+        return this.onLogEmitter.event;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get onMessage(): Event<{ pluginHostId: string; message: any }> {
+        return this.onMessageEmitter.event;
     }
 
     @postConstruct()
     protected init(): void {
         this.deployedListener = this.pluginDeployer.onDidDeploy(() => {
-            if (this.client) {
-                this.client.onDidDeploy();
-            }
+            this.onDidDeployEmitter.fire();
         });
     }
 
     dispose(): void {
         this.hostedPlugin.clientClosed();
         this.deployedListener.dispose();
-    }
-    setClient(client: HostedPluginClient): void {
-        this.client = client;
-        this.hostedPlugin.setClient(client);
     }
 
     async getDeployedPluginIds(): Promise<string[]> {
@@ -108,12 +126,11 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return Promise.all(plugins.map(plugin => this.localizationService.localizePlugin(plugin)));
     }
 
-    onMessage(pluginHostId: string, message: string): Promise<void> {
-        this.hostedPlugin.onMessage(pluginHostId, message);
-        return Promise.resolve();
+    async handleMessage(pluginHostId: string, message: string): Promise<void> {
+        this.hostedPlugin.handleMessage(pluginHostId, message);
     }
 
-    getExtPluginAPI(): Promise<ExtPluginApi[]> {
-        return Promise.resolve(this.extPluginAPIContributions.getContributions().map(p => p.provideApi()));
+    async getExtPluginAPI(): Promise<ExtPluginApi[]> {
+        return this.extPluginAPIContributions.getContributions().map(p => p.provideApi());
     }
 }

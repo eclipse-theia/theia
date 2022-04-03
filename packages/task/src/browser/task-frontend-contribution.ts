@@ -26,7 +26,7 @@ import { TaskContribution, TaskResolverRegistry, TaskProviderRegistry } from './
 import { TaskService } from './task-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskConfiguration, TaskWatcher } from '../common';
+import { TaskConfiguration, TaskServer } from '../common';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
@@ -157,8 +157,8 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(TaskRestartRunningQuickOpen)
     protected readonly taskRestartRunningQuickOpen: TaskRestartRunningQuickOpen;
 
-    @inject(TaskWatcher)
-    protected readonly taskWatcher: TaskWatcher;
+    @inject(TaskServer)
+    protected readonly taskServer: TaskServer;
 
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
@@ -168,8 +168,8 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
     @postConstruct()
     protected async init(): Promise<void> {
-        this.taskWatcher.onTaskCreated(() => this.updateRunningTasksItem());
-        this.taskWatcher.onTaskExit(() => this.updateRunningTasksItem());
+        this.taskServer.onTaskCreated(() => this.updateRunningTasksItem());
+        this.taskServer.onTaskExit(() => this.updateRunningTasksItem());
     }
 
     onStart(): void {

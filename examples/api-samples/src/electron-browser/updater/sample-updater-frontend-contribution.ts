@@ -20,7 +20,6 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { isOSX } from '@theia/core/lib/common/os';
 import { CommonMenus } from '@theia/core/lib/browser';
 import {
-    Emitter,
     Command,
     MenuPath,
     MessageService,
@@ -31,7 +30,7 @@ import {
 } from '@theia/core/lib/common';
 import { ElectronMainMenuFactory } from '@theia/core/lib/electron-browser/menu/electron-main-menu-factory';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { SampleUpdater, UpdateStatus, SampleUpdaterClient } from '../../common/updater/sample-updater';
+import { SampleUpdater, UpdateStatus } from '../../common/updater/sample-updater';
 
 export namespace SampleUpdaterCommands {
 
@@ -68,18 +67,6 @@ export namespace SampleUpdaterMenu {
     export const MENU_PATH: MenuPath = [...CommonMenus.FILE_SETTINGS_SUBMENU, '3_settings_submenu_update'];
 }
 
-@injectable()
-export class SampleUpdaterClientImpl implements SampleUpdaterClient {
-
-    protected readonly onReadyToInstallEmitter = new Emitter<void>();
-    readonly onReadyToInstall = this.onReadyToInstallEmitter.event;
-
-    notifyReadyToInstall(): void {
-        this.onReadyToInstallEmitter.fire();
-    }
-
-}
-
 // Dynamic menus aren't yet supported by electron: https://github.com/eclipse-theia/theia/issues/446
 @injectable()
 export class ElectronMenuUpdater {
@@ -113,14 +100,11 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
     @inject(SampleUpdater)
     protected readonly updater: SampleUpdater;
 
-    @inject(SampleUpdaterClientImpl)
-    protected readonly updaterClient: SampleUpdaterClientImpl;
-
     protected readyToUpdate = false;
 
     @postConstruct()
     protected init(): void {
-        this.updaterClient.onReadyToInstall(async () => {
+        this.updater.onReadyToInstall(async () => {
             this.readyToUpdate = true;
             this.menuUpdater.update();
             this.handleUpdatesAvailable();
@@ -138,7 +122,7 @@ export class SampleUpdaterFrontendContribution implements CommandContribution, M
                     }
                     case UpdateStatus.NotAvailable: {
                         const { applicationName } = FrontendApplicationConfigProvider.get();
-                        this.messageService.info(`[Not Available]: You’re all good. You’ve got the latest version of ${applicationName}.`, { timeout: 3000 });
+                        this.messageService.info(`[Not Available]: You're all good. You've got the latest version of ${applicationName}.`, { timeout: 3000 });
                         break;
                     }
                     case UpdateStatus.InProgress: {
