@@ -7909,7 +7909,7 @@ export module '@theia/plugin' {
      *
      * A code action can be any command that is [known](#commands.getCommands) to the system.
      */
-    export interface CodeActionProvider {
+    export interface CodeActionProvider<T extends CodeAction = CodeAction> {
         /**
          * Provide commands for the given document and range.
          *
@@ -7921,12 +7921,7 @@ export module '@theia/plugin' {
          * @return An array of commands, quick fixes, or refactorings or a thenable of such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeActions(
-            document: TextDocument,
-            range: Range | Selection,
-            context: CodeActionContext,
-            token: CancellationToken | undefined
-        ): ProviderResult<(Command | CodeAction)[]>;
+        provideCodeActions(document: TextDocument, range: Range | Selection, context: CodeActionContext, token: CancellationToken | undefined): ProviderResult<(Command | T)[]>;
 
         /**
          * Given a code action fill in its `edit`-property. Changes to
@@ -7942,7 +7937,7 @@ export module '@theia/plugin' {
          * @return The resolved code action or a thenable that resolves to such. It is OK to return the given
          * `item`. When no result is returned, the given `item` will be used.
          */
-        resolveCodeAction?(codeAction: CodeAction, token: CancellationToken | undefined): ProviderResult<CodeAction>;
+        resolveCodeAction?(codeAction: T, token: CancellationToken | undefined): ProviderResult<T>;
     }
 
     /**
