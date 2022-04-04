@@ -214,7 +214,7 @@ export class DebugBreakpointWidget implements Disposable {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
         ReactDOM.render(<SelectComponent
-            value={this.context} onChange={this.updateInput}
+            defaultValue={this.context} onChange={this.updateInput}
             options={[
                 { value: 'condition', label: nls.localizeByDefault('Expression') },
                 { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },

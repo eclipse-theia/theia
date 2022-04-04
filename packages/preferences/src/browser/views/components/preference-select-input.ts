@@ -65,7 +65,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         const interactable = document.createElement('div');
         const selectComponent = React.createElement(SelectComponent, {
             options: this.selectOptions,
-            value: this.getDataValue(),
+            defaultValue: this.getDataValue(),
             onChange: (_, index) => this.handleUserInteraction(index),
             ref: this.selectComponent
         });

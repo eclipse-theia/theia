@@ -34,8 +34,10 @@ export interface SelectOption {
 
 export interface SelectComponentProps {
     options: SelectOption[]
-    value?: string | number
-    onChange?: (option: SelectOption, index: number) => void
+    defaultValue?: string | number
+    onChange?: (option: SelectOption, index: number) => void,
+    onBlur?: () => void,
+    onFocus?: () => void
 }
 
 export interface SelectComponentDropdownDimensions {
@@ -64,10 +66,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     constructor(props: SelectComponentProps) {
         super(props);
         let selected = 0;
-        if (typeof props.value === 'number') {
-            selected = props.value;
-        } else if (typeof props.value === 'string') {
-            selected = Math.max(props.options.findIndex(e => e.value === props.value), 0);
+        if (typeof props.defaultValue === 'number') {
+            selected = props.defaultValue;
+        } else if (typeof props.defaultValue === 'string') {
+            selected = Math.max(props.options.findIndex(e => e.value === props.defaultValue), 0);
         }
         this.state = {
             selected,
@@ -162,8 +164,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     override render(): React.ReactNode {
         const { options } = this.props;
         let { selected } = this.state;
-        while (options[selected]?.separator) {
-            selected = (selected + 1) % this.props.options.length;
+        if (options[selected]?.separator) {
+            selected = this.nextNotSeparator('forwards');
         }
         const selectedItemLabel = options[selected].label ?? options[selected].value;
         return <>
@@ -173,7 +175,13 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 tabIndex={0}
                 className="theia-select-component"
                 onClick={e => this.handleClickEvent(e)}
-                onBlur={() => this.hide()}
+                onBlur={
+                    () => {
+                        this.hide();
+                        this.props.onBlur?.();
+                    }
+                }
+                onFocus={() => this.props.onFocus?.()}
                 onKeyDown={e => this.handleKeypress(e)}
             >
                 <div key="label" className="theia-select-component-label">{selectedItemLabel}</div>
@@ -183,24 +191,36 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         </>;
     }
 
+    protected nextNotSeparator(direction: 'forwards' | 'backwards'): number {
+        const { options } = this.props;
+        const step = direction === 'forwards' ? 1 : -1;
+        const length = this.props.options.length;
+        let selected = this.state.selected;
+        let count = 0;
+        do {
+            selected = (selected + step) % length;
+            if (selected < 0) {
+                selected = length - 1;
+            }
+            count++;
+        }
+        while (options[selected]?.separator && count < length);
+        return selected;
+    }
+
     protected handleKeypress(ev: React.KeyboardEvent<HTMLDivElement>): void {
         if (!this.fieldRef.current) {
             return;
         }
         if (ev.key === 'ArrowUp') {
-            let selected = this.state.selected;
-            if (selected <= 0) {
-                selected = this.props.options.length - 1;
-            } else {
-                selected--;
-            }
+            const selected = this.nextNotSeparator('backwards');
             this.setState({
                 selected,
                 hover: selected
             });
         } else if (ev.key === 'ArrowDown') {
             if (this.state.dimensions) {
-                const selected = (this.state.selected + 1) % this.props.options.length;
+                const selected = this.nextNotSeparator('forwards');
                 this.setState({
                     selected,
                     hover: selected
@@ -208,8 +228,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             } else {
                 this.toggleVisibility();
                 this.setState({
+                    selected: 0,
                     hover: 0,
-                    selected: 0
                 });
             }
         } else if (ev.key === 'Enter') {

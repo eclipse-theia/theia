@@ -14,20 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ReactWidget, QuickInputService } from '@theia/core/lib/browser';
+import { CommandRegistry, Disposable, MessageService } from '@theia/core/lib/common';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, Disposable } from '@theia/core/lib/common';
-import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import URI from '@theia/core/lib/common/uri';
-import { ReactWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugConsoleContribution } from '../console/debug-console-contribution';
 import { DebugConfigurationManager } from '../debug-configuration-manager';
+import { DebugCommands } from '../debug-frontend-application-contribution';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugAction } from './debug-action';
+import { DebugConfigurationSelect } from './debug-configuration-select';
 import { DebugViewModel } from './debug-view-model';
-import { DebugSessionOptions } from '../debug-session-options';
-import { DebugCommands } from '../debug-frontend-application-contribution';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -48,8 +46,14 @@ export class DebugConfigurationWidget extends ReactWidget {
     @inject(DebugConsoleContribution)
     protected readonly debugConsole: DebugConsoleContribution;
 
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @postConstruct()
     protected init(): void {
@@ -74,68 +78,33 @@ export class DebugConfigurationWidget extends ReactWidget {
         this.stepRef.focus();
         return true;
     }
+
     protected stepRef: DebugAction | undefined;
     protected setStepRef = (stepRef: DebugAction | null) => this.stepRef = stepRef || undefined;
 
     render(): React.ReactNode {
-        const { options } = this;
         return <React.Fragment>
             <DebugAction run={this.start} label={nls.localizeByDefault('Start Debugging')} iconClass='debug-start' ref={this.setStepRef} />
-            <SelectComponent options={options} value={this.currentValue} onChange={option => this.setCurrentConfiguration(option)} />
+            <DebugConfigurationSelect
+                manager={this.manager}
+                quickInputService={this.quickInputService}
+                isMultiRoot={this.workspaceService.isMultiRootWorkspaceOpened}
+            />
             <DebugAction run={this.openConfiguration} label={nls.localizeByDefault('Open {0}', '"launch.json"')}
                 iconClass='settings-gear' />
             <DebugAction run={this.openConsole} label={nls.localizeByDefault('Debug Console')} iconClass='terminal' />
         </React.Fragment>;
     }
-    protected get currentValue(): string {
-        const { current } = this.manager;
-        return current ? this.toValue(current) : '__NO_CONF__';
-    }
-    protected get options(): SelectOption[] {
-        const items: SelectOption[] = Array.from(this.manager.all).map(option => ({
-            value: this.toValue(option),
-            label: this.toName(option)
-        }));
-        if (items.length === 0) {
-            items.push({
-                value: '__NO_CONF__',
-                label: nls.localizeByDefault('No Configurations')
-            });
-        }
-        items.push({
-            separator: true
-        });
-        items.push({
-            value: '__ADD_CONF__',
-            label: nls.localizeByDefault('Add Configuration...')
-        });
-        return items;
-    }
-    protected toValue({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
-        if (!workspaceFolderUri) {
-            return configuration.name;
-        }
-        return configuration.name + '__CONF__' + workspaceFolderUri;
-    }
-    protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
-        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceOpened) {
-            return configuration.name;
-        }
-        return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
-    }
 
-    protected readonly setCurrentConfiguration = (option: SelectOption) => {
-        const value = option.value!;
-        if (value === '__ADD_CONF__') {
-            this.manager.addConfiguration();
-        } else {
-            const [name, workspaceFolderUri] = value.split('__CONF__');
-            this.manager.current = this.manager.find(name, workspaceFolderUri);
+    protected readonly start = async () => {
+        let configuration;
+        try {
+            configuration = await this.manager.getSelectedConfiguration();
+        } catch (e) {
+            this.messageService.error(e.message);
+            return;
         }
-    };
 
-    protected readonly start = () => {
-        const configuration = this.manager.current;
         this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     };
 
