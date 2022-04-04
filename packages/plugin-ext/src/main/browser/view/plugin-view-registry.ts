@@ -838,7 +838,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             if (view.sideArea !== undefined) {
                 toDispose.pushAll([
                     this.shell.onDidAddWidget(w => {
-                        if ((w as Widget) === widget) {
+                        if (w.widget === widget) {
                             this.updateVisibleWidget(widget, view);
                         }
                     })

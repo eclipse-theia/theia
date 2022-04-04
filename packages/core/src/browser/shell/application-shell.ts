@@ -134,10 +134,9 @@ interface WidgetDragState {
     leaveTimeout?: number;
 }
 
-export const WidgetArea = Symbol('WidgetArea');
-
-export type AreaWidget = Widget & {
-    [WidgetArea]: ApplicationShell.Area;
+export type AreaWidget = {
+    widget: Widget,
+    area: ApplicationShell.Area
 };
 
 /**
@@ -198,17 +197,13 @@ export class ApplicationShell extends Widget {
     protected readonly onDidAddWidgetEmitter = new Emitter<AreaWidget>();
     readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
     protected fireDidAddWidget(widget: Widget, area: ApplicationShell.Area): void {
-        const areaWidget = widget as AreaWidget;
-        areaWidget[WidgetArea] = area;
-        this.onDidAddWidgetEmitter.fire(areaWidget);
+        this.onDidAddWidgetEmitter.fire({ widget, area });
     }
 
     protected readonly onDidRemoveWidgetEmitter = new Emitter<AreaWidget>();
     readonly onDidRemoveWidget = this.onDidRemoveWidgetEmitter.event;
     protected fireDidRemoveWidget(widget: Widget, area: ApplicationShell.Area): void {
-        const areaWidget = widget as AreaWidget;
-        areaWidget[WidgetArea] = area;
-        this.onDidRemoveWidgetEmitter.fire(areaWidget);
+        this.onDidRemoveWidgetEmitter.fire({ widget, area });
     }
 
     protected readonly onDidChangeActiveWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();

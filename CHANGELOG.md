@@ -12,6 +12,7 @@
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
 
+- [core] The view menu now shows the view location, and groups the views by location.menus by the view location. The `onDidAddWidget` and `onDidRemoveWidget` events now pass a tuple with both the widget and area.
 
 ## v1.24.0 - 3/31/2022
 

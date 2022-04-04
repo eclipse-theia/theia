@@ -37,13 +37,13 @@ export class NavigatorTabBarDecorator implements TabBarDecorator, FrontendApplic
             this.fireDidChangeDecorations();
         }
         this.toDispose.pushAll([
-            this.applicationShell.onDidAddWidget(widget => {
-                const saveable = Saveable.get(widget);
+            this.applicationShell.onDidAddWidget(w => {
+                const saveable = Saveable.get(w.widget);
                 if (saveable) {
-                    this.toDisposeOnDirtyChanged.set(widget.id, saveable.onDirtyChanged(() => this.fireDidChangeDecorations()));
+                    this.toDisposeOnDirtyChanged.set(w.widget.id, saveable.onDirtyChanged(() => this.fireDidChangeDecorations()));
                 }
             }),
-            this.applicationShell.onDidRemoveWidget(widget => this.toDisposeOnDirtyChanged.get(widget.id)?.dispose())
+            this.applicationShell.onDidRemoveWidget(w => this.toDisposeOnDirtyChanged.get(w.widget.id)?.dispose())
         ]);
     }
 

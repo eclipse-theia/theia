@@ -19,7 +19,7 @@ import { filterItems, QuickPickItem, QuickPickSeparator, QuickPicks } from '..';
 import { CancellationToken, Disposable } from '../../common';
 import { ContextKeyService } from '../context-key-service';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { ApplicationShell, WidgetArea } from '../shell';
+import { ApplicationShell } from '../shell';
 
 export interface QuickViewItem {
     readonly label: string;
@@ -56,30 +56,31 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
 
     @postConstruct()
     init(): void {
-        this.shell.onDidAddWidget(widget => {
+        this.shell.onDidAddWidget(w => {
+            const { widget, area } = w;
             const viewId = widget.id.startsWith('plugin-view-container:')
                 ? `plugin-view:${widget.id.substring('plugin-view-container:'.length)}`
                 : widget.id;
             const item = this.items.find(i => i.widgetId === viewId);
             if (item) {
-                item.location = widget[WidgetArea];
+                item.location = area;
             }
 
             if (this.containers.has(widget.id)) {
                 const containerData = this.containers.get(widget.id)!;
-                containerData.location = widget[WidgetArea];
+                containerData.location = area;
             } else {
-                this.containers.set(widget.id, { location: widget[WidgetArea], title: '' });
+                this.containers.set(widget.id, { location: area, title: '' });
             }
         });
 
-        this.shell.onDidRemoveWidget(widget => {
-            const item = this.items.find(i => i.widgetId === widget.id);
+        this.shell.onDidRemoveWidget(w => {
+            const item = this.items.find(i => i.widgetId === w.widget.id);
             if (item) {
                 item.location = item.defaultLocation;
             } else {
-                if (this.containers.has(widget.id)) {
-                    const containerData = this.containers.get(widget.id)!;
+                if (this.containers.has(w.widget.id)) {
+                    const containerData = this.containers.get(w.widget.id)!;
                     containerData.location = '';
                 }
             }
@@ -172,7 +173,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
             .sort((a, b) => locationOrder.indexOf(b.location) - locationOrder.indexOf(a.location));
 
         let previousLocation: string | undefined;
-        const itemsWithSeparators: (QuickPickSeparator|QuickPickItem)[] = [];
+        const itemsWithSeparators: (QuickPickSeparator | QuickPickItem)[] = [];
         for (const it of filteredItems) {
             const locationLabel = this.getLocationLabel(it.location);
             if (locationLabel !== previousLocation) {

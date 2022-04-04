@@ -46,8 +46,8 @@ export class EditorPreviewTreeDecorator implements TreeDecorator, FrontendApplic
     protected readonly toDisposeOnPreviewPinned = new Map<string, Disposable>();
 
     onDidInitializeLayout(app: FrontendApplication): void {
-        this.shell.onDidAddWidget(widget => this.registerEditorListeners(widget));
-        this.shell.onDidRemoveWidget(widget => this.unregisterEditorListeners(widget));
+        this.shell.onDidAddWidget(w => this.registerEditorListeners(w.widget));
+        this.shell.onDidRemoveWidget(w => this.unregisterEditorListeners(w.widget));
         this.editorWidgets.forEach(widget => this.registerEditorListeners(widget));
     }
 
