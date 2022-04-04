@@ -15,6 +15,8 @@
 // *****************************************************************************
 
 import { DebuggerDescription, DebugPath, DebugService } from '@theia/debug/lib/common/debug-service';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { Emitter, Event } from '@theia/core';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
@@ -38,6 +40,11 @@ export class PluginDebugService implements DebugService {
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
     protected readonly configurationProviders = new Map<number, PluginDebugConfigurationProvider>();
     protected readonly toDispose = new DisposableCollection();
+
+    protected readonly onDidChangeDebugConfigurationProvidersEmitter = new Emitter<void>();
+    get onDidChangeDebugConfigurationProviders(): Event<void> {
+        return this.onDidChangeDebugConfigurationProvidersEmitter.event;
+    }
 
     // maps session and contribution
     protected readonly sessionId2contrib = new Map<string, PluginDebugAdapterContribution>();
@@ -78,14 +85,21 @@ export class PluginDebugService implements DebugService {
         this.contributors.delete(debugType);
     }
 
+    // debouncing to send a single notification for multiple registrations at initialization time
+    fireOnDidConfigurationProvidersChanged = debounce(() => {
+        this.onDidChangeDebugConfigurationProvidersEmitter.fire();
+    }, 100);
+
     registerDebugConfigurationProvider(provider: PluginDebugConfigurationProvider): Disposable {
         const handle = provider.handle;
         this.configurationProviders.set(handle, provider);
+        this.fireOnDidConfigurationProvidersChanged();
         return Disposable.create(() => this.unregisterDebugConfigurationProvider(handle));
     }
 
     unregisterDebugConfigurationProvider(handle: number): void {
         this.configurationProviders.delete(handle);
+        this.fireOnDidConfigurationProvidersChanged();
     }
 
     async debugTypes(): Promise<string[]> {
@@ -122,6 +136,24 @@ export class PluginDebugService implements DebugService {
         return results;
     }
 
+    async fetchDynamicDebugConfiguration(name: string, providerType: string): Promise<DebugConfiguration | undefined> {
+        const pluginProviders =
+            Array.from(this.configurationProviders.values()).filter(p => (
+                p.triggerKind === DebugConfigurationProviderTriggerKind.Dynamic &&
+                p.type === providerType &&
+                p.provideDebugConfigurations
+            ));
+
+        for (const provider of pluginProviders) {
+            const configurations = await provider.provideDebugConfigurations(undefined);
+            for (const configuration of configurations) {
+                if (configuration.name === name) {
+                    return configuration;
+                }
+            }
+        }
+    }
+
     async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
         const pluginProviders =
             Array.from(this.configurationProviders.values()).filter(p => (
@@ -133,9 +165,6 @@ export class PluginDebugService implements DebugService {
 
         await Promise.all(pluginProviders.map(async provider => {
             const configurations = await provider.provideDebugConfigurations(undefined);
-            for (const configuration of configurations) {
-                configuration.dynamic = true;
-            }
             let configurationsPerType = configurationsRecord[provider.type];
             configurationsPerType = configurationsPerType ? configurationsPerType.concat(configurations) : configurations;
 

@@ -86,9 +86,15 @@ export class DebugConfigurationManager {
         return this.onWillProvideDynamicDebugConfigurationEmitter.event;
     }
 
+    get onDidChangeConfigurationProviders(): Event<void> {
+        return this.debug.onDidChangeDebugConfigurationProviders;
+    }
+
     protected debugConfigurationTypeKey: ContextKey<string>;
 
     protected initialized: Promise<void>;
+
+    protected recentDynamicOptionsTracker: DebugSessionOptions[] = [];
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -126,6 +132,9 @@ export class DebugConfigurationManager {
         this.updateCurrent();
     }, 500);
 
+    /**
+     * All _non-dynamic_ debug configurations.
+     */
     get all(): IterableIterator<DebugSessionOptions> {
         return this.getAll();
     }
@@ -160,11 +169,61 @@ export class DebugConfigurationManager {
     get current(): DebugSessionOptions | undefined {
         return this._currentOptions;
     }
+
+    async getSelectedConfiguration(): Promise<DebugSessionOptions | undefined> {
+        // providerType applies to dynamic configurations only
+        if (!this._currentOptions?.providerType) {
+            return this._currentOptions;
+        }
+
+        // Refresh a dynamic configuration from the provider.
+        // This allow providers to update properties before the execution e.g. program
+        const { providerType, configuration: { name } } = this._currentOptions;
+        const configuration = await this.fetchDynamicDebugConfiguration(name, providerType);
+
+        if (!configuration) {
+            const message = nls.localize(
+                'theia/debug/missingConfiguration',
+                "Dynamic configuration '{0}:{1}' is missing or not applicable", providerType, name);
+            throw new Error(message);
+        }
+
+        return { configuration, providerType };
+    }
+
     set current(option: DebugSessionOptions | undefined) {
         this.updateCurrent(option);
+        this.updateRecentlyUsedDynamicConfigurationOptions(option);
     }
+
+    protected updateRecentlyUsedDynamicConfigurationOptions(option: DebugSessionOptions | undefined): void {
+        if (option?.providerType) { // if it's a dynamic configuration option
+            // Removing an item already present in the list
+            const index = this.recentDynamicOptionsTracker.findIndex(item => this.dynamicOptionsMatch(item, option));
+            if (index > -1) {
+                this.recentDynamicOptionsTracker.splice(index, 1);
+            }
+            // Adding new item, most recent at the top of the list
+            const recentMax = 3;
+            if (this.recentDynamicOptionsTracker.unshift(option) > recentMax) {
+                // Keep the latest 3 dynamic configuration options to not clutter the dropdown.
+                this.recentDynamicOptionsTracker.splice(recentMax);
+            }
+        }
+    }
+
+    protected dynamicOptionsMatch(one: DebugSessionOptions, other: DebugSessionOptions): boolean {
+        return one.providerType !== undefined
+        && one.configuration.name === other.configuration.name
+        && one.providerType === other.providerType;
+    }
+
+    get recentDynamicOptions(): readonly DebugSessionOptions[] {
+        return this.recentDynamicOptionsTracker;
+    }
+
     protected updateCurrent(options: DebugSessionOptions | undefined = this._currentOptions): void {
-        this._currentOptions = options && !options.configuration.dynamic ? this.find(options.configuration.name, options.workspaceFolderUri) : options;
+        this._currentOptions = options && this.find(options.configuration, options.workspaceFolderUri, options.providerType);
 
         if (!this._currentOptions) {
             const model = this.getModel();
@@ -181,7 +240,24 @@ export class DebugConfigurationManager {
         this.debugConfigurationTypeKey.set(this.current && this.current.configuration.type);
         this.onDidChangeEmitter.fire(undefined);
     }
-    find(name: string, workspaceFolderUri: string | undefined): DebugSessionOptions | undefined {
+
+    /**
+     * @deprecated since 1.25.0
+     */
+    find(name: string, workspaceFolderUri: string): DebugSessionOptions | undefined;
+    /**
+     * Find / Resolve DebugSessionOptions from a given target debug configuration
+     */
+    find(targetConfiguration: DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined;
+    find(nameOrTargetConfiguration: string | DebugConfiguration, workspaceFolderUri?: string, providerType?: string): DebugSessionOptions | undefined {
+        // providerType is only applicable to dynamic debug configurations
+        if (typeof nameOrTargetConfiguration === 'object' && providerType) {
+            return {
+                configuration: nameOrTargetConfiguration,
+                providerType
+            };
+        }
+        const name = typeof nameOrTargetConfiguration === 'string' ? nameOrTargetConfiguration : nameOrTargetConfiguration.name;
         for (const model of this.models.values()) {
             if (model.workspaceFolderUri === workspaceFolderUri) {
                 for (const configuration of model.configurations) {
@@ -194,7 +270,6 @@ export class DebugConfigurationManager {
                 }
             }
         }
-        return undefined;
     }
 
     async openConfiguration(): Promise<void> {
@@ -349,7 +424,13 @@ export class DebugConfigurationManager {
         return this.debug.provideDynamicDebugConfigurations!();
     }
 
+    async fetchDynamicDebugConfiguration(name: string, type: string): Promise<DebugConfiguration | undefined> {
+        await this.fireWillProvideDynamicDebugConfiguration();
+        return this.debug.fetchDynamicDebugConfiguration(name, type);
+    }
+
     protected async fireWillProvideDynamicDebugConfiguration(): Promise<void> {
+        await this.initialized;
         await WaitUntilEvent.fire(this.onWillProvideDynamicDebugConfigurationEmitter, {});
     }
 
@@ -384,29 +465,43 @@ export class DebugConfigurationManager {
     async load(): Promise<void> {
         await this.initialized;
         const data = await this.storage.getData<DebugConfigurationManager.Data>('debug.configurations', {});
-        if (data.current) {
-            this.current = this.find(data.current.name, data.current.workspaceFolderUri);
+        this.resolveRecentDynamicOptionsFromData(data.recentDynamicOptions);
+
+        // Between versions 1.24 and 1.25, the expected format of the data changed so that old stored data
+        // may not contain the configuration key.
+        if (data.current && 'configuration' in data.current) {
+            this.current = this.find(data.current.configuration, data.current.workspaceFolderUri, data.current.providerType);
         }
+    }
+
+    protected resolveRecentDynamicOptionsFromData(options?: DebugSessionOptions[]): void {
+        if (!options || this.recentDynamicOptionsTracker.length !== 0) {
+            return;
+        }
+
+        this.recentDynamicOptionsTracker = options;
     }
 
     save(): void {
         const data: DebugConfigurationManager.Data = {};
-        const { current } = this;
+        const { current, recentDynamicOptionsTracker } = this;
         if (current) {
-            data.current = {
-                name: current.configuration.name,
-                workspaceFolderUri: current.workspaceFolderUri
-            };
+            data.current = current;
         }
-        this.storage.setData('debug.configurations', data);
-    }
 
+        if (this.recentDynamicOptionsTracker.length > 0) {
+            data.recentDynamicOptions = recentDynamicOptionsTracker;
+        }
+
+        if (Object.keys(data).length > 0) {
+            this.storage.setData('debug.configurations', data);
+        }
+    }
 }
+
 export namespace DebugConfigurationManager {
     export interface Data {
-        current?: {
-            name: string
-            workspaceFolderUri?: string
-        }
+        current?: DebugSessionOptions,
+        recentDynamicOptions?: DebugSessionOptions[]
     }
 }
