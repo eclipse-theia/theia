@@ -9,6 +9,14 @@
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
 - [plugin-dev] moved and renamed interface from: `@theia/debug/lib/browser/debug-contribution/DebugPluginConfiguration` to: `plugin-dev/src/common/PluginDebugConfiguration` [#11224](https://github.com/eclipse-theia/theia/pull/11224)
+- [debug, plugin-ext] [Debug view] Add dynamic debug configurations [#10212](https://github.com/eclipse-theia/theia/pull/10212)
+  - Changed signature of `DebugConfigurationManager.find` to receive a target DebugConfiguration instead of a configuration's name.  
+    NOTE: The original signature is still available but no longer used inside the framework and therefore marked as `deprecated`
+  - Multiple methods related to the selection of Debug configuration options were relocated from `debug-configuration-widget.tsx` to the new file `debug-configuration-select.tsx`.
+  - Removed optional interface property `DebugConfiguration.dynamic`.
+  - Added the following method to the interface `DebugService`: `fetchDynamicDebugConfiguration` as well as the property `onDidChangedDebugConfigurationProviders`.
+  - Removed method `DebugPrefixConfiguration#runDynamicConfiguration`
+  - [core] The interface `SelectComponentProps` was updated to rename a property from `value` to `defaultValue`
 
 ## v1.26.0 - 5/26/2022
 
