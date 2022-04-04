@@ -29,7 +29,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
 
     protected readonly onDidChangeEmitter = new Emitter<number>();
 
-    protected get onDidChange(): Event<number> {
+    protected get onDidSelectedChange(): Event<number> {
         return this.onDidChangeEmitter.event;
     }
 
@@ -42,17 +42,20 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         const values = this.enumValues;
         const defaultValue = this.preferenceNode.preference.data.default;
         for (let i = 0; i < values.length; i++) {
-            const index = i;
             const value = `${values[i]}`;
             const detail = defaultValue === value ? 'default' : undefined;
-            const enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
+            let enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
+            let markdown = false;
             const markdownEnumDescription = this.preferenceNode.preference.data.markdownEnumDescriptions?.[i];
+            if (markdownEnumDescription) {
+                enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
+                markdown = true;
+            }
             items.push({
                 value,
                 detail,
                 description: enumDescription,
-                markdownDescription: markdownEnumDescription,
-                onSelected: () => this.handleUserInteraction(index)
+                markdown
             });
         }
         return items;
@@ -63,7 +66,8 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         const selectComponent = React.createElement(SelectComponent, {
             options: this.selectComponentOptions,
             selected: this.getDataValue(),
-            onDidChange: this.onDidChange
+            onDidSelectedChange: this.onDidSelectedChange,
+            onChange: (_, index) => this.handleUserInteraction(index)
         });
         this.interactable = interactable;
         ReactDOM.render(selectComponent, interactable);

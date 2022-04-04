@@ -125,9 +125,10 @@
     border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
 }
 
-.debug-toolbar .debug-configuration {
+.debug-toolbar .theia-select-component {
     width: 100%;
     min-width: 40px;
+    margin: 0px 4px;
 }
 
 .debug-toolbar .debug-action {

@@ -25,3 +25,7 @@
 .theia-output .theia-output-warning {
     color: var(--theia-editorWarning-foreground);
 }
+
+#outputChannelList .theia-select-component {
+    width: 170px;
+}

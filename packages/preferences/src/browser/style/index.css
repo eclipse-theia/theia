@@ -434,3 +434,11 @@
 .theia-settings-container .preference-modified-scope-wrapper:not(:last-child)::after {
     content: ', ';
 }
+
+/** Select component */
+
+.theia-settings-container .theia-select-component {
+    height: 26px;
+    width: 100%;
+    max-width: 320px;
+}

@@ -18,16 +18,20 @@
     background-color: var(--theia-dropdown-background);
     outline: var(--theia-dropdown-border) solid 1px;
     outline-offset: -1px;
-    height: 26px;
+    min-height: 23px;
+    min-width: 90px;
     padding: 0px 8px;
-    width: 320px;
     display: flex;
     align-items: center;
+    user-select: none;
 }
 
 .theia-select-component .theia-select-component-label {
     width: 100%;
     color: var(--theia-dropdown-foreground);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .theia-select-component:focus {
@@ -41,6 +45,7 @@
     background-color: var(--theia-settings-dropdownBackground);
     outline: var(--theia-focusBorder) solid 1px;
     outline-offset: -1px;
+    user-select: none;
 }
 
 .theia-select-component-dropdown .theia-select-component-option {
@@ -50,6 +55,14 @@
 
 .theia-select-component-dropdown .theia-select-component-description {
     padding: 6px 5px;
+}
+
+.theia-select-component-dropdown .theia-select-component-description:first-child {
+    border-bottom: 1px solid var(--theia-editorWidget-border);
+    margin-bottom: 2px;
+}
+
+.theia-select-component-dropdown .theia-select-component-description:last-child {
     border-top: 1px solid var(--theia-editorWidget-border);
     margin-top: 2px;
 }
@@ -63,17 +76,15 @@
 }
 
 .theia-select-component-dropdown .theia-select-component-option.selected {
-    color: var(--theia-dropdown-foreground);
+    color: var(--theia-list-activeSelectionForeground);
     background: var(--theia-list-activeSelectionBackground);
     outline: var(--theia-focusBorder) solid 1px;
     outline-offset: -1px;
 }
 
 .theia-select-component-dropdown .theia-select-component-separator {
-    width: 100%;
+    width: 84px;
     height: 2px;
-    padding: 5px 3px;
-    background: var(--theia-dropdown-foreground);
+    margin: 5px 3px;
+    background: var(--theia-foreground);
 }
-
-/** color: var(--theia-settings-headerForeground); */

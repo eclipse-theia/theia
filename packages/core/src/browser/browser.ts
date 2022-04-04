@@ -156,3 +156,42 @@ export function preventNavigation(event: WheelEvent): void {
     event.preventDefault();
     event.stopPropagation();
 }
+
+export function measureTextWidth(text: string | string[]): number {
+    const measureElement = getMeasurementElement();
+    text = Array.isArray(text) ? text : [text];
+    let width = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        width = Math.max(measureElement.getBoundingClientRect().width, width);
+    }
+    return width;
+}
+
+export function measureTextHeight(text: string | string[], maxWidth?: number): number {
+    const measureElement = getMeasurementElement();
+    if (maxWidth !== undefined) {
+        measureElement.style.maxWidth = `${Math.ceil(maxWidth)}px`;
+    }
+    text = Array.isArray(text) ? text : [text];
+    let height = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        height = Math.max(measureElement.getBoundingClientRect().height, height);
+    }
+    measureElement.style.maxWidth = 'none';
+    return height;
+}
+
+function getMeasurementElement(): HTMLElement {
+    let measureElement = document.getElementById('measure');
+    if (!measureElement) {
+        measureElement = document.createElement('span');
+        measureElement.id = 'measure';
+        measureElement.style.fontFamily = 'var(--theia-ui-font-family)';
+        measureElement.style.fontSize = 'var(--theia-ui-font-size1)';
+        measureElement.style.visibility = 'hidden';
+        document.body.appendChild(measureElement);
+    }
+    return measureElement;
+}
