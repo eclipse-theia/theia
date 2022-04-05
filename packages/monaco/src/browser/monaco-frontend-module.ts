@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import * as MonacoNls from '@theia/monaco-editor-core/esm/vs/nls';
+import './monaco-monkey-patches';
 import { nls } from '@theia/core/lib/common/nls';
 import { FormatType, Localization } from '@theia/core/lib/common/i18n/localization';
 
