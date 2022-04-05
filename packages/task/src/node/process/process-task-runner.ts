@@ -203,23 +203,29 @@ export class ProcessTaskRunner implements TaskRunner {
         return { command, args, commandLine, options };
     }
 
+    protected quoteShellCommandOrArg(commandOrArg: string | ShellQuotedString, quotingFunctions?: ShellQuotingFunctions): string | ShellQuotedString {
+        // We want to quote arguments only if needed.
+        if (quotingFunctions && typeof commandOrArg === 'string' && this.argumentNeedsQuotes(commandOrArg, quotingFunctions)) {
+            return {
+                quoting: ShellQuoting.Strong,
+                value: commandOrArg,
+            };
+        } else {
+            return commandOrArg;
+        }
+    }
     protected buildShellCommand(systemSpecificCommand: OsSpecificCommand, quotingFunctions?: ShellQuotingFunctions): string {
         if (Array.isArray(systemSpecificCommand.args)) {
-            const commandLineElements: Array<string | ShellQuotedString> = [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => {
-                // We want to quote arguments only if needed.
-                if (quotingFunctions && typeof arg === 'string' && this.argumentNeedsQuotes(arg, quotingFunctions)) {
-                    return {
-                        quoting: ShellQuoting.Strong,
-                        value: arg,
-                    };
-                } else {
-                    return arg;
-                }
-            });
+            const commandLineElements: Array<string | ShellQuotedString> =
+                [systemSpecificCommand.command, ...systemSpecificCommand.args].map(arg => this.quoteShellCommandOrArg(arg));
             return createShellCommandLine(commandLineElements, quotingFunctions);
         } else {
             // No arguments are provided, so `command` is actually the full command line to execute.
-            return systemSpecificCommand.command ?? '';
+            if (systemSpecificCommand.command) {
+                return createShellCommandLine([this.quoteShellCommandOrArg(systemSpecificCommand.command, quotingFunctions)], quotingFunctions);
+            } else {
+                return '';
+            }
         }
     }
 
