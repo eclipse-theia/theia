@@ -91,6 +91,14 @@
     border-top: 1px solid var(--theia-tab-activeBorderTop);
 }
 
+#theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab .p-TabBar-tabLabel {
+    color: var(--theia-tab-unfocusedInactiveForeground);
+}
+
+#theia-main-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab.p-mod-current .p-TabBar-tabLabel {
+    color: var(--theia-tab-unfocusedActiveForeground);
+}
+
 .p-TabBar.theia-app-centers {
     background: var(--theia-editorGroupHeader-tabsBackground);
 }

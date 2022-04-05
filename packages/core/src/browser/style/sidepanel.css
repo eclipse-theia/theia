@@ -285,6 +285,14 @@
     border-top: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
 }
 
+#theia-bottom-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab .theia-tab-icon-label {
+    color: var(--theia-tab-unfocusedInactiveForeground);
+}
+
+#theia-bottom-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab.p-mod-current .theia-tab-icon-label {
+    color: var(--theia-tab-unfocusedActiveForeground);
+}
+
 /*-----------------------------------------------------------------------------
 | Hidden tab bars used for rendering vertical side bars
 |----------------------------------------------------------------------------*/

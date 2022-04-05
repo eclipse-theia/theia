@@ -690,6 +690,7 @@ export class ApplicationShell extends Widget {
                 this.collapseBottomPanel();
             }
             const widgets = toArray(this.bottomPanel.widgets());
+            this.bottomPanel.markActiveTabBar(widgets[0]?.title);
             if (bottomPanel.pinned && bottomPanel.pinned.length === widgets.length) {
                 widgets.forEach((a, i) => {
                     if (bottomPanel.pinned![i]) {
@@ -706,6 +707,9 @@ export class ApplicationShell extends Widget {
             this.mainPanel.restoreLayout(mainPanel);
             this.registerWithFocusTracker(mainPanel.main);
             const widgets = toArray(this.mainPanel.widgets());
+            // We don't store information about the last active tabbar
+            // So we simply mark the first as being active
+            this.mainPanel.markActiveTabBar(widgets[0]?.title);
             if (mainPanelPinned && mainPanelPinned.length === widgets.length) {
                 widgets.forEach((a, i) => {
                     if (mainPanelPinned[i]) {

@@ -1474,10 +1474,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.activeBorderTop',
-                defaults: {
-                    dark: 'focusBorder',
-                    light: 'focusBorder'
-                },
                 description: 'Border to the top of an active tab. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
