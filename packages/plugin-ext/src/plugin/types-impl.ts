@@ -679,6 +679,12 @@ export class SnippetString {
         return this;
     }
 
+    appendChoice(values: string[], number: number = this._tabstop++): SnippetString {
+        const value = values.map(s => s.replace(/\$|}|\\|,/g, '\\$&')).join(',');
+        this.value += `\$\{${number}|${value}|\}`;
+        return this;
+    }
+
     appendVariable(name: string, defaultValue?: string | ((snippet: SnippetString) => void)): SnippetString {
 
         if (typeof defaultValue === 'function') {
