@@ -46,16 +46,11 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
+        accessibilityInformation: AccessibilityInformation | undefined,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        args: any[] | undefined,
-        accessibilityInformation?: AccessibilityInformation): Promise<void> {
-        let ariaLabel: string | undefined = undefined;
-        let role: string | undefined = undefined;
-
-        if (accessibilityInformation) {
-            ariaLabel = accessibilityInformation.label;
-            role = accessibilityInformation.role;
-        }
+        args: any[] | undefined): Promise<void> {
+        const ariaLabel = accessibilityInformation?.label;
+        const role = accessibilityInformation?.role;
 
         const entry = {
             text: text || '',

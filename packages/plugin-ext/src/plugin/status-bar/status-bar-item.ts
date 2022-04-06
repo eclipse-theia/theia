@@ -131,8 +131,8 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 typeof this.color === 'string' ? this.color : this.color && this.color.id,
                 this.tooltip,
                 commandId,
-                args,
-                this._accessibilityInformation);
+                this._accessibilityInformation,
+                args);
         }, 0);
     }
 
