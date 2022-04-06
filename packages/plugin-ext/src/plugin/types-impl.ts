@@ -151,6 +151,11 @@ export class Disposable {
     }
 }
 
+export interface AccessibilityInformation {
+    label: string;
+    role?: string;
+}
+
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2
