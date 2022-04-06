@@ -37,7 +37,7 @@ export interface SelectComponentProps {
     options: SelectOption[]
     selected: number
     onChange?: (option: SelectOption, index: number) => void
-    onDidSelectedChange?: TheiaEvent<number>
+    onDidChangeSelected?: TheiaEvent<number>
 }
 
 export interface SelectComponentDropdownDimensions {
@@ -51,6 +51,7 @@ export interface SelectComponentState {
     dimensions?: SelectComponentDropdownDimensions
     selected: number
     original: number
+    hover: number
 }
 
 export const SELECT_COMPONENT_CONTAINER = 'select-component-container';
@@ -67,7 +68,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         const selected = Math.max(props.selected, 0);
         this.state = {
             selected,
-            original: selected
+            original: selected,
+            hover: selected
         };
 
         let list = document.getElementById(SELECT_COMPONENT_CONTAINER);
@@ -90,9 +92,9 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             return 0;
         }
         if (maxWidth) {
-            maxWidth -= 10; // Decrease width by 10 due to side padding
+            maxWidth = Math.ceil(maxWidth) + 10; // Decrease width by 10 due to side padding
         }
-        const descriptionHeight = measureTextHeight(this.props.options.map(e => e.description || ''), maxWidth) + 18;
+        const descriptionHeight = measureTextHeight(this.props.options.map(e => e.description || ''), { maxWidth: `${maxWidth}px` }) + 18;
         const singleLineHeight = measureTextHeight(firstLine.label || firstLine.value || firstLine.detail || '') + 6;
         const optimal = descriptionHeight + singleLineHeight * this.props.options.length;
         return optimal + 20; // Just to be safe, add another 20 pixels here
@@ -100,7 +102,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     attachListeners(): void {
         const hide = () => {
-            this.hide(true);
+            this.hide();
         };
         this.mountedListeners.set('scroll', hide);
         this.mountedListeners.set('wheel', hide);
@@ -148,7 +150,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 tabIndex={0}
                 className="theia-select-component"
                 onClick={e => this.handleClickEvent(e)}
-                onBlur={() => this.hide(true)}
+                onBlur={() => this.hide()}
                 onKeyDown={e => this.handleKeypress(e)}
             >
                 <div key="label" className="theia-select-component-label">{selectedItemLabel}</div>
@@ -170,13 +172,23 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 selected--;
             }
             this.setState({
-                selected
+                selected,
+                hover: selected
             });
         } else if (ev.key === 'ArrowDown') {
-            const selected = (this.state.selected + 1) % this.props.options.length;
-            this.setState({
-                selected
-            });
+            if (this.state.dimensions) {
+                const selected = (this.state.selected + 1) % this.props.options.length;
+                this.setState({
+                    selected,
+                    hover: selected
+                });
+            } else {
+                this.toggleVisibility();
+                this.setState({
+                    hover: 0,
+                    selected: 0
+                });
+            }
         } else if (ev.key === 'Enter') {
             if (!this.state.dimensions) {
                 this.toggleVisibility();
@@ -185,7 +197,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 this.selectOption(selected, this.props.options[selected]);
             }
         } else if (ev.key === 'Escape' || ev.key === 'Tab') {
-            this.hide(true);
+            this.hide();
         }
         ev.stopPropagation();
         ev.nativeEvent.stopImmediatePropagation();
@@ -212,15 +224,17 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 },
             });
         } else {
-            this.hide(true);
+            this.hide();
         }
     }
 
-    protected hide(reset?: boolean): void {
+    protected hide(index?: number): void {
+        const selectedIndex = index === undefined ? this.state.original : index;
         this.setState({
             dimensions: undefined,
-            selected: reset ? this.state.original : this.state.selected,
-            original: reset ? this.state.original : this.state.selected
+            selected: selectedIndex,
+            original: selectedIndex,
+            hover: selectedIndex
         });
     }
 
@@ -235,12 +249,12 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             this.optimalWidth = this.getOptimalWidth();
             this.optimalHeight = this.getOptimalHeight(Math.max(this.state.dimensions.width, this.optimalWidth));
         }
-        const clientHeight = document.getElementById('theia-app-shell')!.getBoundingClientRect().height;
-        const invert = this.optimalHeight > clientHeight - this.state.dimensions.top;
+        const clientRect = document.getElementById('theia-app-shell')!.getBoundingClientRect();
+        const invert = this.optimalHeight > clientRect.height - this.state.dimensions.top;
         const { options } = this.props;
-        const { selected } = this.state;
-        const description = selected !== undefined && options[selected].description;
-        const markdown = selected !== undefined && options[selected].markdown;
+        const { hover } = this.state;
+        const description = options[hover].description;
+        const markdown = options[hover].markdown;
         const items = options.map((item, i) => this.renderOption(i, item));
         if (description) {
             let descriptionNode: React.ReactNode | undefined;
@@ -259,11 +273,13 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 items.push(descriptionNode);
             }
         }
+        const calculatedWidth = Math.max(this.state.dimensions.width, this.optimalWidth);
+        const maxWidth = clientRect.width - this.state.dimensions.left;
         return <div key="dropdown" className="theia-select-component-dropdown" style={{
             top: invert ? 'none' : this.state.dimensions.top,
-            bottom: invert ? clientHeight - this.state.dimensions.top + this.state.dimensions.parentHeight : 'none',
+            bottom: invert ? clientRect.height - this.state.dimensions.top + this.state.dimensions.parentHeight : 'none',
             left: this.state.dimensions.left,
-            width: Math.max(this.state.dimensions.width, this.optimalWidth),
+            width: Math.min(calculatedWidth, maxWidth),
             position: 'absolute'
         }}>
             {items}
@@ -274,14 +290,14 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         if (option.separator) {
             return <div key={index} className="theia-select-component-separator" />;
         }
-        const selected = this.state.selected;
+        const selected = this.state.hover;
         return (
             <div
                 key={index}
                 className={`theia-select-component-option${index === selected ? ' selected' : ''}`}
                 onMouseOver={() => {
                     this.setState({
-                        selected: index
+                        hover: index
                     });
                 }}
                 onMouseDown={() => {
@@ -296,6 +312,6 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     protected selectOption(index: number, option: SelectOption): void {
         this.props.onChange?.(option, index);
-        this.hide();
+        this.hide(index);
     }
 }

@@ -49,6 +49,8 @@
 }
 
 .theia-select-component-dropdown .theia-select-component-option {
+    text-overflow: ellipsis;
+    overflow: hidden;
     display: flex;
     padding: 2px 5px;
 }
@@ -69,6 +71,10 @@
 
 .theia-select-component-dropdown .theia-select-component-option .theia-select-component-option-value {
     width: 100%;
+}
+
+.theia-select-component-dropdown .theia-select-component-option .theia-select-component-option-detail {
+    padding-left: 4px;
 }
 
 .theia-select-component-dropdown .theia-select-component-option:not(.selected) .theia-select-component-option-detail {
