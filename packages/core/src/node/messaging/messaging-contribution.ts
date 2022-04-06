@@ -211,12 +211,12 @@ export namespace MessagingContribution {
 
         push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
             const route = new Route(spec);
-            this.handlers.push((path, channel) => {
+            this.handlers.push((path, socket) => {
                 const params = route.match(path);
                 if (!params) {
                     return false;
                 }
-                callback(params, channel);
+                callback(params, socket);
                 return route.reverse(params);
             });
         }
