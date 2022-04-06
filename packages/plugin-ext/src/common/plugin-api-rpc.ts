@@ -640,7 +640,7 @@ export interface WorkspaceMain {
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
     $onWorkspaceLocationChanged(event: files.FileStat | undefined): void;
-    $provideTextDocumentContent(uri: string): Promise<string | undefined>;
+    $provideTextDocumentContent(uri: string): Promise<string | undefined | null>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
     $onWorkspaceTrustChanged(trust: boolean | undefined): void;
 }
@@ -1659,8 +1659,14 @@ export interface DebugConfigurationProvider {
     readonly type: string;
     readonly triggerKind: DebugConfigurationProviderTriggerKind;
     provideDebugConfigurations?(folder: string | undefined): Promise<theia.DebugConfiguration[]>;
-    resolveDebugConfiguration?(folder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
-    resolveDebugConfigurationWithSubstitutedVariables?(folder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+    resolveDebugConfiguration?(
+        folder: string | undefined,
+        debugConfiguration: theia.DebugConfiguration
+    ): Promise<theia.DebugConfiguration | undefined | null>;
+    resolveDebugConfigurationWithSubstitutedVariables?(
+        folder: string | undefined,
+        debugConfiguration: theia.DebugConfiguration
+    ): Promise<theia.DebugConfiguration | undefined | null>;
 }
 
 export interface DebugConfigurationProviderDescriptor {
@@ -1678,25 +1684,17 @@ export interface DebugExt {
     $sessionDidCreate(sessionId: string): void;
     $sessionDidDestroy(sessionId: string): void;
     $sessionDidChange(sessionId: string | undefined): void;
-    /**
-     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $provideDebugConfigurationsByHandle instead.
-     */
-    $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined, dynamic?: boolean): Promise<theia.DebugConfiguration[]>;
-
-    /**
-     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $resolveDebugConfigurationByHandle instead.
-     */
-    $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
-
-    /**
-     * @deprecated since 1.24.0. Use $registerDebugConfigurationProvider with $resolveDebugConfigurationWithSubstitutedVariablesByHandle instead.
-     */
-    $resolveDebugConfigurationWithSubstitutedVariables(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined):
-        Promise<theia.DebugConfiguration | undefined>;
-
     $provideDebugConfigurationsByHandle(handle: number, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
-    $resolveDebugConfigurationByHandle(handle: number, workspaceFolder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
-    $resolveDebugConfigurationWithSubstitutedVariablesByHandle(handle: number, workspaceFolder: string | undefined, debugConfiguration: theia.DebugConfiguration): Promise<theia.DebugConfiguration | undefined>;
+    $resolveDebugConfigurationByHandle(
+        handle: number,
+        workspaceFolder: string | undefined,
+        debugConfiguration: theia.DebugConfiguration
+    ): Promise<theia.DebugConfiguration | undefined | null>;
+    $resolveDebugConfigurationWithSubstitutedVariablesByHandle(
+        handle: number,
+        workspaceFolder: string | undefined,
+        debugConfiguration: theia.DebugConfiguration
+    ): Promise<theia.DebugConfiguration | undefined | null>;
 
     $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;

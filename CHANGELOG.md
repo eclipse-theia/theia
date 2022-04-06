@@ -13,6 +13,32 @@
 - [plugin] added support for `AccessibilityInformation` [#10961](https://github.com/eclipse-theia/theia/pull/10961) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
+- [debug] 
+The following methods may now return `undefined | null` ([#10999](https://github.com/eclipse-theia/theia/pull/10999)):
+  - DebugSessionManager
+    - resolveConfiguration
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - DebugService
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - theia.d.ts ProviderResult
+      it's now aligned to vscode and can return `null`
+  - plugin-api-rpc.ts DebugConfigurationProvider
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - DebugExt
+    - $resolveDebugConfigurationByHandle
+    - $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+  - DebugExtImpl
+    - $resolveDebugConfigurationByHandle
+    - $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+  - PluginDebugConfigurationProvider
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - PluginDebugService
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
 
 - [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
 

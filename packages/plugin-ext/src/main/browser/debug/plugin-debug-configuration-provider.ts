@@ -27,8 +27,14 @@ export class PluginDebugConfigurationProvider implements DebugConfigurationProvi
     public type: string;
     public triggerKind: DebugConfigurationProviderTriggerKind;
     provideDebugConfigurations: (folder: string | undefined) => Promise<DebugConfiguration[]>;
-    resolveDebugConfiguration: (folder: string | undefined, debugConfiguration: DebugConfiguration) => Promise<DebugConfiguration | undefined>;
-    resolveDebugConfigurationWithSubstitutedVariables: (folder: string | undefined, debugConfiguration: DebugConfiguration) => Promise<DebugConfiguration | undefined>;
+    resolveDebugConfiguration: (
+        folder: string | undefined,
+        debugConfiguration: DebugConfiguration
+    ) => Promise<DebugConfiguration | undefined | null>;
+    resolveDebugConfigurationWithSubstitutedVariables: (
+        folder: string | undefined,
+        debugConfiguration: DebugConfiguration
+    ) => Promise<DebugConfiguration | undefined | null>;
 
     constructor(
         description: DebugConfigurationProviderDescriptor,

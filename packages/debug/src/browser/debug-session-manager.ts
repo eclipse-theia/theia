@@ -193,6 +193,19 @@ export class DebugSessionManager {
                 await this.fireWillStartDebugSession();
                 const resolved = await this.resolveConfiguration(options);
 
+                if (!resolved) {
+                    // As per vscode API: https://code.visualstudio.com/api/references/vscode-api#DebugConfigurationProvider
+                    // "Returning the value 'undefined' prevents the debug session from starting.
+                    // Returning the value 'null' prevents the debug session from starting and opens the
+                    // underlying debug configuration instead."
+
+                    // eslint-disable-next-line no-null/no-null
+                    if (resolved === null) {
+                        this.debugConfigurationManager.openConfiguration();
+                    }
+                    return undefined;
+                }
+
                 // preLaunchTask isn't run in case of auto restart as well as postDebugTask
                 if (!options.configuration.__restart) {
                     const taskRun = await this.runTask(options.workspaceFolderUri, resolved.configuration.preLaunchTask, true);
@@ -221,17 +234,31 @@ export class DebugSessionManager {
     }
 
     protected configurationIds = new Map<string, number>();
-    protected async resolveConfiguration(options: Readonly<DebugSessionOptions>): Promise<InternalDebugSessionOptions> {
+    protected async resolveConfiguration(
+        options: Readonly<DebugSessionOptions>
+    ): Promise<InternalDebugSessionOptions | undefined | null> {
         if (InternalDebugSessionOptions.is(options)) {
             return options;
         }
         const { workspaceFolderUri } = options;
         let configuration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
-        configuration = await this.variableResolver.resolve(configuration, {
-            context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
-            configurationSection: 'launch'
-        });
-        configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
+
+        if (configuration) {
+            configuration = await this.variableResolver.resolve(configuration, {
+                context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
+                configurationSection: 'launch',
+            });
+
+            configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(
+                configuration,
+                workspaceFolderUri
+            );
+        }
+
+        if (!configuration) {
+            return configuration;
+        }
+
         const key = configuration.name + workspaceFolderUri;
         const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
         this.configurationIds.set(key, id);
@@ -242,15 +269,22 @@ export class DebugSessionManager {
         };
     }
 
-    protected async resolveDebugConfiguration(configuration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
+    protected async resolveDebugConfiguration(
+        configuration: DebugConfiguration,
+        workspaceFolderUri: string | undefined
+    ): Promise<DebugConfiguration | undefined | null> {
         await this.fireWillResolveDebugConfiguration(configuration.type);
         return this.debug.resolveDebugConfiguration(configuration, workspaceFolderUri);
     }
+
     protected async fireWillResolveDebugConfiguration(debugType: string): Promise<void> {
         await WaitUntilEvent.fire(this.onWillResolveDebugConfigurationEmitter, { debugType });
     }
 
-    protected async resolveDebugConfigurationWithSubstitutedVariables(configuration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
+    protected async resolveDebugConfigurationWithSubstitutedVariables(
+        configuration: DebugConfiguration,
+        workspaceFolderUri: string | undefined
+    ): Promise<DebugConfiguration | undefined | null> {
         return this.debug.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
     }
 
