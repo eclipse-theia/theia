@@ -10,6 +10,7 @@
 
 - [core] Move code for untitled resources into `core` from `plugin-ext` and allow users to open untitled editors with `New File` command. [#10868](https://github.com/eclipse-theia/theia/pull/10868)
 - [plugin] added support for `SnippetString.appendChoice` [#10969](https://github.com/eclipse-theia/theia/pull/10969) - Contributed on behalf of STMicroelectronics
+- [core] rename ConnectionHandlers.push param in packages/core/src/node/messaging/messaging-contribution.ts [#10995](https://github.com/eclipse-theia/theia/pull/10995)
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
 
