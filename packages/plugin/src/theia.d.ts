@@ -6879,8 +6879,7 @@ export module '@theia/plugin' {
      * thenable.
      *
      */
-    export type ProviderResult<T> = T | undefined | PromiseLike<T | undefined>;
-
+    export type ProviderResult<T> = T | undefined | null | Thenable<T | undefined | null>;
     /**
      * A symbol kind.
      */

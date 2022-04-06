@@ -276,7 +276,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         };
     }
 
-    async $provideTextDocumentContent(documentURI: string): Promise<string | undefined> {
+    async $provideTextDocumentContent(documentURI: string): Promise<string | undefined | null> {
         const uri = URI.parse(documentURI);
         const provider = this.documentContentProviders.get(uri.scheme);
         if (provider) {

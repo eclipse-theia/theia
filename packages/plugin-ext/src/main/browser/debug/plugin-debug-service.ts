@@ -147,52 +147,74 @@ export class PluginDebugService implements DebugService {
         return configurationsRecord;
     }
 
-    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
-        let resolved = config;
-
+    async resolveDebugConfiguration(
+        config: DebugConfiguration,
+        workspaceFolderUri: string | undefined
+    ): Promise<DebugConfiguration | undefined | null> {
         const allProviders = Array.from(this.configurationProviders.values());
+
+        const resolvers = allProviders
+            .filter(p => p.type === config.type && !!p.resolveDebugConfiguration)
+            .map(p => p.resolveDebugConfiguration);
+
         // Append debug type '*' at the end
-        const pluginProviders = allProviders.filter(p => p.type === config.type && !!p.resolveDebugConfiguration);
-        pluginProviders.push(...allProviders.filter(p => p.type === '*' && !!p.resolveDebugConfiguration));
+        resolvers.push(
+            ...allProviders
+                .filter(p => p.type === '*' && !!p.resolveDebugConfiguration)
+                .map(p => p.resolveDebugConfiguration)
+        );
 
-        for (const provider of pluginProviders) {
-            try {
-                const next = await provider.resolveDebugConfiguration(workspaceFolderUri, resolved);
-                if (next) {
-                    resolved = next;
-                } else {
-                    return resolved;
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
+        const resolved = await this.resolveDebugConfigurationByResolversChain(config, workspaceFolderUri, resolvers);
 
-        return this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri);
+        return resolved ? this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri) : resolved;
     }
 
-    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
-        let resolved = config;
-
+    async resolveDebugConfigurationWithSubstitutedVariables(
+        config: DebugConfiguration,
+        workspaceFolderUri: string | undefined
+    ): Promise<DebugConfiguration | undefined | null> {
         const allProviders = Array.from(this.configurationProviders.values());
-        // Append debug type '*' at the end
-        const pluginProviders = allProviders.filter(p => p.type === config.type && !!p.resolveDebugConfigurationWithSubstitutedVariables);
-        pluginProviders.push(...allProviders.filter(p => p.type === '*' && !!p.resolveDebugConfigurationWithSubstitutedVariables));
 
-        for (const provider of pluginProviders) {
+        const resolvers = allProviders
+            .filter(p => p.type === config.type && !!p.resolveDebugConfigurationWithSubstitutedVariables)
+            .map(p => p.resolveDebugConfigurationWithSubstitutedVariables);
+
+        // Append debug type '*' at the end
+        resolvers.push(
+            ...allProviders
+                .filter(p => p.type === '*' && !!p.resolveDebugConfigurationWithSubstitutedVariables)
+                .map(p => p.resolveDebugConfigurationWithSubstitutedVariables)
+        );
+
+        const resolved = await this.resolveDebugConfigurationByResolversChain(config, workspaceFolderUri, resolvers);
+
+        return resolved
+            ? this.delegated.resolveDebugConfigurationWithSubstitutedVariables(resolved, workspaceFolderUri)
+            : resolved;
+    }
+
+    protected async resolveDebugConfigurationByResolversChain(
+        config: DebugConfiguration,
+        workspaceFolderUri: string | undefined,
+        resolvers: ((
+            folder: string | undefined,
+            debugConfiguration: DebugConfiguration
+        ) => Promise<DebugConfiguration | null | undefined>)[]
+    ): Promise<DebugConfiguration | undefined | null> {
+        let resolved: DebugConfiguration | undefined | null = config;
+        for (const resolver of resolvers) {
             try {
-                const next = await provider.resolveDebugConfigurationWithSubstitutedVariables(workspaceFolderUri, resolved);
-                if (next) {
-                    resolved = next;
-                } else {
-                    return resolved;
+                if (!resolved) {
+                    // A provider has indicated to stop and process undefined or null as per specified in the vscode API
+                    // https://code.visualstudio.com/api/references/vscode-api#DebugConfigurationProvider
+                    break;
                 }
+                resolved = await resolver(workspaceFolderUri, resolved);
             } catch (e) {
                 console.error(e);
             }
         }
-
-        return this.delegated.resolveDebugConfigurationWithSubstitutedVariables(resolved, workspaceFolderUri);
+        return resolved;
     }
 
     registerDebugger(contribution: DebuggerContribution): Disposable {
