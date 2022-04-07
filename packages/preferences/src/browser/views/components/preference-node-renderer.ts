@@ -281,7 +281,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             const descriptionWrapper = document.createElement('div');
             descriptionWrapper.classList.add('pref-description');
             if (markdownDescription) {
-                const renderedDescription = this.markdownRenderer.renderInline(markdownDescription);
+                const renderedDescription = this.markdownRenderer.render(markdownDescription);
                 descriptionWrapper.onauxclick = this.openLink.bind(this);
                 descriptionWrapper.onclick = this.openLink.bind(this);
                 descriptionWrapper.oncontextmenu = () => false;

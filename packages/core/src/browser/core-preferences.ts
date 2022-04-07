@@ -23,6 +23,24 @@ import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
+const windowTitleDescription = [
+    'Controls the window title based on the active editor. Variables are substituted based on the context:',
+    '`${activeEditorShort}`: the file name (e.g. myFile.txt).',
+    '`${activeEditorMedium}`: the path of the file relative to the workspace folder (e.g. myFolder/myFileFolder/myFile.txt).',
+    '`${activeEditorLong}`: the full path of the file (e.g. /Users/Development/myFolder/myFileFolder/myFile.txt).',
+    '`${activeFolderShort}`: the name of the folder the file is contained in (e.g. myFileFolder).',
+    '`${activeFolderMedium}`: the path of the folder the file is contained in, relative to the workspace folder (e.g. myFolder/myFileFolder).',
+    '`${activeFolderLong}`: the full path of the folder the file is contained in (e.g. /Users/Development/myFolder/myFileFolder).',
+    '`${folderName}`: name of the workspace folder the file is contained in (e.g. myFolder).',
+    '`${folderPath}`: file path of the workspace folder the file is contained in (e.g. /Users/Development/myFolder).',
+    '`${rootName}`: name of the opened workspace or folder (e.g. myFolder or myWorkspace).',
+    '`${rootPath}`: file path of the opened workspace or folder (e.g. /Users/Development/myWorkspace).',
+    '`${appName}`: e.g. VS Code.',
+    '`${remoteName}`: e.g. SSH',
+    '`${dirty}`: an indicator for when the active editor has unsaved changes.',
+    '`${separator}`: a conditional separator (" - ") that only shows when surrounded by variables with values or static text.'
+].map(e => nls.localizeByDefault(e)).join('\n- ');
+
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
@@ -76,6 +94,20 @@ export const corePreferenceSchema: PreferenceSchema = {
             // eslint-disable-next-line max-len
             markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. By default, the menu bar will be visible, unless the window is full screen."),
             included: !(isOSX && environment.electron.is())
+        },
+        'window.title': {
+            type: 'string',
+            default: isOSX
+                ? '${activeEditorShort}${separator}${rootName}'
+                : '${dirty} ${activeEditorShort}${separator}${rootName}${separator}${appName}',
+            scope: 'application',
+            markdownDescription: windowTitleDescription
+        },
+        'window.titleSeparator': {
+            type: 'string',
+            default: ' - ',
+            scope: 'application',
+            markdownDescription: nls.localizeByDefault('Separator used by `window.title`.')
         },
         'http.proxy': {
             type: 'string',
@@ -211,9 +243,11 @@ export const corePreferenceSchema: PreferenceSchema = {
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
     'breadcrumbs.enabled': boolean;
-    'files.encoding': string
+    'files.encoding': string;
     'keyboard.dispatch': 'code' | 'keyCode';
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
+    'window.title': string;
+    'window.titleSeparator': string;
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
