@@ -79,10 +79,9 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     render(): React.ReactNode {
         const { options } = this;
-        const currentIndex = options.findIndex(e => e.value === this.currentValue);
         return <React.Fragment>
             <DebugAction run={this.start} label={nls.localizeByDefault('Start Debugging')} iconClass='debug-start' ref={this.setStepRef} />
-            <SelectComponent options={options} selected={currentIndex} onChange={option => this.setCurrentConfiguration(option)} />
+            <SelectComponent options={options} value={this.currentValue} onChange={option => this.setCurrentConfiguration(option)} />
             <DebugAction run={this.openConfiguration} label={nls.localizeByDefault('Open {0}', '"launch.json"')}
                 iconClass='settings-gear' />
             <DebugAction run={this.openConsole} label={nls.localizeByDefault('Debug Console')} iconClass='terminal' />

@@ -17,7 +17,6 @@
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
-import { Event, Emitter } from '@theia/core/lib/common/event';
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences/preference-provider';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { Preference } from '../../util/preference-types';
@@ -28,23 +27,19 @@ import * as ReactDOM from '@theia/core/shared/react-dom';
 @injectable()
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
 
-    protected readonly onDidChangeSelectedEmitter = new Emitter<number>();
-
-    protected get onDidChangeSelected(): Event<number> {
-        return this.onDidChangeSelectedEmitter.event;
-    }
+    protected readonly selectComponent = React.createRef<SelectComponent>();
 
     protected get enumValues(): JSONValue[] {
         return this.preferenceNode.preference.data.enum!;
     }
 
-    protected get selectComponentOptions(): SelectOption[] {
+    protected get selectOptions(): SelectOption[] {
         const items: SelectOption[] = [];
         const values = this.enumValues;
         const defaultValue = this.preferenceNode.preference.data.default;
         for (let i = 0; i < values.length; i++) {
             const value = `${values[i]}`;
-            const detail = PreferenceProvider.deepEqual(defaultValue, value) ? ' default' : undefined;
+            const detail = PreferenceProvider.deepEqual(defaultValue, value) ? 'default' : undefined;
             let enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
             let markdown = false;
             const markdownEnumDescription = this.preferenceNode.preference.data.markdownEnumDescriptions?.[i];
@@ -65,10 +60,10 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     protected createInteractable(parent: HTMLElement): void {
         const interactable = document.createElement('div');
         const selectComponent = React.createElement(SelectComponent, {
-            options: this.selectComponentOptions,
-            selected: this.getDataValue(),
-            onDidChangeSelected: this.onDidChangeSelected,
-            onChange: (_, index) => this.handleUserInteraction(index)
+            options: this.selectOptions,
+            value: this.getDataValue(),
+            onChange: (_, index) => this.handleUserInteraction(index),
+            ref: this.selectComponent
         });
         this.interactable = interactable;
         ReactDOM.render(selectComponent, interactable);
@@ -83,8 +78,8 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         this.updateInspection();
         const newValue = this.getDataValue();
         this.updateModificationStatus(this.getValue());
-        if (document.activeElement !== this.interactable) {
-            this.onDidChangeSelectedEmitter.fire(newValue);
+        if (document.activeElement !== this.interactable && this.selectComponent.current) {
+            this.selectComponent.current.value = newValue;
         }
     }
 
@@ -94,7 +89,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     protected getDataValue(): number {
         const currentValue = this.getValue();
         const selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
-        return selected > -1 ? selected : 0;
+        return Math.max(selected, 0);
     }
 
     protected handleUserInteraction(selected: number): void {

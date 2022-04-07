@@ -86,14 +86,10 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
 
     protected renderChannelSelector(): React.ReactNode {
         const channelOptionElements: SelectOption[] = [];
-        let selected = 0;
         this.outputChannelManager.getVisibleChannels().forEach((channel, i) => {
             channelOptionElements.push({
                 value: channel.name
             });
-            if (channel === this.outputChannelManager.selectedChannel) {
-                selected = i;
-            }
         });
         if (channelOptionElements.length === 0) {
             channelOptionElements.push({
@@ -101,7 +97,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
             });
         }
         return <div id='outputChannelList'>
-            <SelectComponent options={channelOptionElements} selected={selected} onChange={option => this.changeChannel(option)} />
+            <SelectComponent options={channelOptionElements} value={this.outputChannelManager.selectedChannel?.name} onChange={option => this.changeChannel(option)} />
         </div>;
     }
 

@@ -189,7 +189,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         return <SelectComponent
             key="debugConsoleSeverity"
             options={severityElements}
-            selected={this.consoleSessionManager.severity || Severity.Ignore}
+            value={this.consoleSessionManager.severity || Severity.Ignore}
             onChange={this.changeSeverity} />;
     }
 
@@ -207,7 +207,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         return <SelectComponent
             key="debugConsoleSelector"
             options={availableConsoles}
-            selected={0}
+            value={0}
             onChange={this.changeDebugConsole} />;
     }
 

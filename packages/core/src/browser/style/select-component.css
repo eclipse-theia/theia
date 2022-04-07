@@ -90,7 +90,7 @@
 
 .theia-select-component-dropdown .theia-select-component-separator {
     width: 84px;
-    height: 2px;
-    margin: 5px 3px;
+    height: 1px;
+    margin: 3px 3px;
     background: var(--theia-foreground);
 }

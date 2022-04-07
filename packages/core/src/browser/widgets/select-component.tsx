@@ -17,7 +17,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as DOMPurify from 'dompurify';
-import { Event as TheiaEvent } from '../../common/event';
 import { codicon } from './widget';
 import { measureTextHeight, measureTextWidth } from '../browser';
 
@@ -35,9 +34,8 @@ export interface SelectOption {
 
 export interface SelectComponentProps {
     options: SelectOption[]
-    selected: number
+    value?: string | number
     onChange?: (option: SelectOption, index: number) => void
-    onDidChangeSelected?: TheiaEvent<number>
 }
 
 export interface SelectComponentDropdownDimensions {
@@ -65,7 +63,12 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     constructor(props: SelectComponentProps) {
         super(props);
-        const selected = Math.max(props.selected, 0);
+        let selected = 0;
+        if (typeof props.value === 'number') {
+            selected = props.value;
+        } else if (typeof props.value === 'string') {
+            selected = Math.max(props.options.findIndex(e => e.value === props.value), 0);
+        }
         this.state = {
             selected,
             original: selected,
@@ -81,18 +84,38 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         this.dropdownElement = list;
     }
 
-    getOptimalWidth(): number {
+    get value(): string | number | undefined {
+        return this.props.options[this.state.selected].value ?? this.state.selected;
+    }
+
+    set value(value: string | number | undefined) {
+        let index = -1;
+        if (typeof value === 'number') {
+            index = value;
+        } else if (typeof value === 'string') {
+            index = this.props.options.findIndex(e => e.value === value);
+        }
+        if (index >= 0) {
+            this.setState({
+                selected: index,
+                original: index,
+                hover: index
+            });
+        }
+    }
+
+    protected getOptimalWidth(): number {
         const textWidth = measureTextWidth(this.props.options.map(e => e.label || e.value || '' + (e.detail || '')));
         return Math.ceil(textWidth + 16);
     }
 
-    getOptimalHeight(maxWidth?: number): number {
+    protected getOptimalHeight(maxWidth?: number): number {
         const firstLine = this.props.options.find(e => e.label || e.value || e.detail);
         if (!firstLine) {
             return 0;
         }
         if (maxWidth) {
-            maxWidth = Math.ceil(maxWidth) + 10; // Decrease width by 10 due to side padding
+            maxWidth = Math.ceil(maxWidth) + 10; // Increase width by 10 due to side padding
         }
         const descriptionHeight = measureTextHeight(this.props.options.map(e => e.description || ''), { maxWidth: `${maxWidth}px` }) + 18;
         const singleLineHeight = measureTextHeight(firstLine.label || firstLine.value || firstLine.detail || '') + 6;
@@ -100,7 +123,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         return optimal + 20; // Just to be safe, add another 20 pixels here
     }
 
-    attachListeners(): void {
+    protected attachListeners(): void {
         const hide = () => {
             this.hide();
         };
