@@ -23,6 +23,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationExtImpl implements NotificationExt {
     private readonly proxy: NotificationMain;
+    private mapProgressIdToCancellationSource: Map<string, CancellationTokenSource> = new Map();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN);
@@ -32,13 +33,20 @@ export class NotificationExtImpl implements NotificationExt {
         options: ProgressOptions,
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): Promise<R> {
+        const source = new CancellationTokenSource();
         const id = new Deferred<string>();
-        const tokenSource = new CancellationTokenSource();
-        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, tokenSource.token);
+        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, source.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
         const cancellable = options.cancellable;
+
         id.resolve(await this.proxy.$startProgress({ title, location, cancellable }));
+
+        if (cancellable) {
+            const progressId = await id.promise;
+            this.mapProgressIdToCancellationSource.set(progressId, source);
+        }
+
         const stop = async () => this.proxy.$stopProgress(await id.promise);
         const promise = Promise.all([
             progress,
@@ -46,6 +54,14 @@ export class NotificationExtImpl implements NotificationExt {
         ]);
         promise.then(stop, stop);
         return progress;
+    }
+
+    public $acceptProgressCanceled(id: string): void {
+        const source = this.mapProgressIdToCancellationSource.get(id);
+        if (source) {
+            source.cancel();
+            this.mapProgressIdToCancellationSource.delete(id);
+        }
     }
 
     protected mapLocation(location: ProgressLocation | { viewId: string }): string | undefined {
