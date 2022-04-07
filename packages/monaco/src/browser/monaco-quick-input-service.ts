@@ -259,6 +259,7 @@ export class MonacoQuickInputService implements QuickInputService {
                 wrapped.ignoreFocusOut = !!options.ignoreFocusOut;
                 wrapped.matchOnDescription = options.matchOnDescription ?? true;
                 wrapped.matchOnDetail = options.matchOnDetail ?? true;
+                wrapped.keepScrollPosition = options.keepScrollPosition ?? false;
                 wrapped.placeholder = options.placeholder;
                 wrapped.step = options.step;
                 wrapped.title = options.title;
@@ -468,6 +469,14 @@ class MonacoQuickPick<T extends QuickPickItem> extends MonacoQuickInput implemen
 
     set matchOnDetail(v: boolean) {
         this.wrapped.matchOnDetail = v;
+    }
+
+    get keepScrollPosition(): boolean {
+        return this.wrapped.keepScrollPosition;
+    }
+
+    set keepScrollPosition(v: boolean) {
+        this.wrapped.keepScrollPosition = v;
     }
 
     get items(): readonly (T | QuickPickSeparator)[] {
