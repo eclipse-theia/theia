@@ -580,6 +580,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     private _matchOnDescription = true;
     private _matchOnDetail = true;
     private _sortByLabel = true;
+    private _keepScrollPosition = false;
     private _activeItems: T[] = [];
     private _selectedItems: T[] = [];
     private readonly _onDidChangeActiveEmitter = new Emitter<T[]>();
@@ -664,6 +665,15 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     set sortByLabel(sortByLabel: boolean) {
         this._sortByLabel = sortByLabel;
         this.update({ sortByLabel });
+    }
+
+    get keepScrollPosition(): boolean {
+        return this._keepScrollPosition;
+    }
+
+    set keepScrollPosition(keepScrollPosition: boolean) {
+        this._keepScrollPosition = keepScrollPosition;
+        this.update({ keepScrollPosition });
     }
 
     get activeItems(): T[] {

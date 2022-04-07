@@ -201,6 +201,7 @@ export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInpu
     canSelectMany: boolean;
     matchOnDescription: boolean;
     matchOnDetail: boolean;
+    keepScrollPosition: boolean;
     readonly onDidAccept: Event<{ inBackground: boolean } | undefined>;
     readonly onDidChangeValue: Event<string>;
     readonly onDidTriggerButton: Event<QuickInputButton>;
@@ -261,6 +262,7 @@ export interface QuickPickOptions<T extends QuickPickItemOrSeparator> {
     matchOnDetail?: boolean;
     matchOnLabel?: boolean;
     sortByLabel?: boolean;
+    keepScrollPosition?: boolean;
     autoFocusOnList?: boolean;
     ignoreFocusOut?: boolean;
     valueSelection?: Readonly<[number, number]>;

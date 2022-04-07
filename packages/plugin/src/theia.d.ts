@@ -2191,6 +2191,11 @@ export module '@theia/plugin' {
          */
         matchOnDetail: boolean;
 
+        /*
+         * An optional flag to maintain the scroll position of the quick pick when the quick pick items are updated. Defaults to false.
+         */
+        keepScrollPosition?: boolean;
+
         /**
          * Active items. This can be read and updated by the extension.
          */
