@@ -23,6 +23,8 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationExtImpl implements NotificationExt {
     private readonly proxy: NotificationMain;
+    private handles: number = 0;
+    private _mapToHandleCancellationSource: Map<number, CancellationTokenSource> = new Map();
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN);
@@ -32,13 +34,21 @@ export class NotificationExtImpl implements NotificationExt {
         options: ProgressOptions,
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): Promise<R> {
+        let source: CancellationTokenSource | undefined;
+        const handle = this.handles++;
         const id = new Deferred<string>();
         const tokenSource = new CancellationTokenSource();
         const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, tokenSource.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
         const cancellable = options.cancellable;
-        id.resolve(await this.proxy.$startProgress({ title, location, cancellable }));
+
+        if (cancellable) {
+            source = new CancellationTokenSource();
+            this._mapToHandleCancellationSource.set(handle, source);
+        }
+
+        id.resolve(await this.proxy.$startProgress({ title, location, cancellable }, handle));
         const stop = async () => this.proxy.$stopProgress(await id.promise);
         const promise = Promise.all([
             progress,
@@ -46,6 +56,14 @@ export class NotificationExtImpl implements NotificationExt {
         ]);
         promise.then(stop, stop);
         return progress;
+    }
+
+    public $acceptProgressCanceled(handle: number): void {
+        const source = this._mapToHandleCancellationSource.get(handle);
+        if (source) {
+            source.cancel();
+            this._mapToHandleCancellationSource.delete(handle);
+        }
     }
 
     protected mapLocation(location: ProgressLocation | { viewId: string }): string | undefined {

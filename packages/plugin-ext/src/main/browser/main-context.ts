@@ -55,6 +55,7 @@ import { AuthenticationMainImpl } from './authentication-main';
 import { ThemingMainImpl } from './theming-main';
 import { CommentsMainImp } from './comments/comments-main';
 import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
+import { NotificationExtImpl } from '../../plugin/notification';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -105,6 +106,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const notificationMain = new NotificationMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
+
+    const notificationExt = new NotificationExtImpl(rpc);
+    rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_EXT, notificationExt);
 
     const terminalMain = new TerminalServiceMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);

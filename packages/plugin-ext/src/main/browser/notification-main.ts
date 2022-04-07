@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { NotificationMain } from '../../common/plugin-api-rpc';
+import { NotificationExt, NotificationMain, PLUGIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -25,6 +25,7 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
     private readonly progressService: ProgressService;
     private readonly progressMap = new Map<string, Progress>();
     private readonly progress2Work = new Map<string, number>();
+    private readonly proxy: NotificationExt;
 
     protected readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as not disposed */ })
@@ -32,15 +33,23 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.progressService = container.get(ProgressService);
+        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTIFICATION_EXT);
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    async $startProgress(options: NotificationMain.StartProgressOptions): Promise<string> {
+    async $startProgress(options: NotificationMain.StartProgressOptions, handle?: number): Promise<string> {
+
+        const onDidCancel = () => {
+            if (handle && !this.toDispose.disposed) {
+                this.proxy.$acceptProgressCanceled(handle);
+            }
+        };
+
         const progressMessage = this.mapOptions(options);
-        const progress = await this.progressService.showProgress(progressMessage);
+        const progress = await this.progressService.showProgress(progressMessage, onDidCancel);
         const id = progress.id;
         this.progressMap.set(id, progress);
         this.progress2Work.set(id, 0);

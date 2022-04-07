@@ -733,6 +733,7 @@ export interface NotificationExt {
         options: ProgressOptions,
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): PromiseLike<R>;
+    $acceptProgressCanceled(handle: number): void;
 }
 
 export interface ScmCommandArg {
@@ -934,7 +935,7 @@ export interface DecorationProvider {
 }
 
 export interface NotificationMain {
-    $startProgress(options: NotificationMain.StartProgressOptions): Promise<string>;
+    $startProgress(options: NotificationMain.StartProgressOptions, handle?: number): Promise<string>;
     $stopProgress(id: string): void;
     $updateProgress(id: string, report: NotificationMain.ProgressReport): void;
 }
@@ -1708,6 +1709,7 @@ export const PLUGIN_RPC_CONTEXT = {
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
     NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
+    NOTIFICATION_EXT: createProxyIdentifier<NotificationExt>('NotificationExt'),
     TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
     TREE_VIEWS_MAIN: createProxyIdentifier<TreeViewsMain>('TreeViewsMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
@@ -1737,6 +1739,7 @@ export const MAIN_RPC_CONTEXT = {
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
     WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),
     NOTIFICATION_EXT: createProxyIdentifier<NotificationExt>('NotificationExt'),
+    NOTIFICATION_MAIN: createProxyIdentifier<NotificationMain>('NotificationMain'),
     WORKSPACE_EXT: createProxyIdentifier<WorkspaceExt>('WorkspaceExt'),
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
@@ -1751,6 +1754,7 @@ export const MAIN_RPC_CONTEXT = {
     CUSTOM_EDITORS_EXT: createProxyIdentifier<CustomEditorsExt>('CustomEditorsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
+    TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
     FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
     ExtHostFileSystemEventService: createProxyIdentifier<ExtHostFileSystemEventServiceShape>('ExtHostFileSystemEventService'),
