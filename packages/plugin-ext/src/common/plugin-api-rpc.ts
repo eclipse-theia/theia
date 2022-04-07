@@ -407,7 +407,7 @@ export interface StatusBarMessageRegistryMain {
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
-        accessibilityInformation: theia.AccessibilityInformation | undefined,
+        accessibilityInformation: theia.AccessibilityInformation,
         args: any[] | undefined): PromiseLike<void>;
     $dispose(id: string): void;
 }

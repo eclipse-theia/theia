@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Disposable, StatusBarAlignment } from './types-impl';
-import { AccessibilityInformation, StatusBarItem } from '@theia/plugin';
+import { StatusBarItem } from '@theia/plugin';
 import {
     PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain
 } from '../common/plugin-api-rpc';
@@ -57,8 +57,8 @@ export class StatusBarMessageRegistryExt {
 
     }
 
-    createStatusBarItem(alignment?: StatusBarAlignment, priority?: number, id?: string, accessibilityInformation?: AccessibilityInformation): StatusBarItem {
-        return new StatusBarItemImpl(this.proxy, alignment, priority, id, accessibilityInformation);
+    createStatusBarItem(alignment?: StatusBarAlignment, priority?: number, id?: string): StatusBarItem {
+        return new StatusBarItemImpl(this.proxy, alignment, priority, id);
     }
 
 }
