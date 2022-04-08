@@ -25,7 +25,7 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
+import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer, PluginIdentifiers } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -165,7 +165,7 @@ export class HostedPluginSupport {
 
     protected readonly managers = new Map<string, PluginManagerExt>();
 
-    private readonly contributions = new Map<string, PluginContributions>();
+    private readonly contributions = new Map<PluginIdentifiers.UnversionedId, PluginContributions>();
 
     protected readonly activationEvents = new Set<string>();
 
@@ -240,7 +240,7 @@ export class HostedPluginSupport {
         return plugins;
     }
 
-    getPlugin(id: string): DeployedPlugin | undefined {
+    getPlugin(id: PluginIdentifiers.UnversionedId): DeployedPlugin | undefined {
         const contributions = this.contributions.get(id);
         return contributions && contributions.plugin;
     }
@@ -312,27 +312,33 @@ export class HostedPluginSupport {
         let syncPluginsMeasurement: Measurement | undefined;
 
         const toUnload = new Set(this.contributions.keys());
+        let didChangeInstallationStatus = false;
         try {
-            const pluginIds: string[] = [];
-            const deployedPluginIds = await this.server.getDeployedPluginIds();
+            const newPluginIds: PluginIdentifiers.VersionedId[] = [];
+            const [deployedPluginIds, uninstalledPluginIds] = await Promise.all([this.server.getDeployedPluginIds(), this.server.getUninstalledPluginIds()]);
             waitPluginsMeasurement.log('Waiting for backend deployment');
             syncPluginsMeasurement = this.measure('syncPlugins');
-            for (const pluginId of deployedPluginIds) {
-                toUnload.delete(pluginId);
-                if (!this.contributions.has(pluginId)) {
-                    pluginIds.push(pluginId);
+            for (const versionedId of deployedPluginIds) {
+                const unversionedId = PluginIdentifiers.unversionedFromVersioned(versionedId);
+                toUnload.delete(unversionedId);
+                if (!this.contributions.has(unversionedId)) {
+                    newPluginIds.push(versionedId);
                 }
             }
             for (const pluginId of toUnload) {
-                const contribution = this.contributions.get(pluginId);
-                if (contribution) {
-                    contribution.dispose();
+                this.contributions.get(pluginId)?.dispose();
+            }
+            for (const versionedId of uninstalledPluginIds) {
+                const plugin = this.getPlugin(PluginIdentifiers.unversionedFromVersioned(versionedId));
+                if (plugin && PluginIdentifiers.componentsToVersionedId(plugin.metadata.model) === versionedId && !plugin.metadata.outOfSync) {
+                    didChangeInstallationStatus = true;
+                    plugin.metadata.outOfSync = didChangeInstallationStatus = true;
                 }
             }
-            if (pluginIds.length) {
-                const plugins = await this.server.getDeployedPlugins({ pluginIds });
+            if (newPluginIds.length) {
+                const plugins = await this.server.getDeployedPlugins({ pluginIds: newPluginIds });
                 for (const plugin of plugins) {
-                    const pluginId = plugin.metadata.model.id;
+                    const pluginId = PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model);
                     const contributions = new PluginContributions(plugin);
                     this.contributions.set(pluginId, contributions);
                     contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
@@ -340,7 +346,7 @@ export class HostedPluginSupport {
                 }
             }
         } finally {
-            if (initialized || toUnload.size) {
+            if (initialized || toUnload.size || didChangeInstallationStatus) {
                 this.onDidChangePluginsEmitter.fire(undefined);
             }
 

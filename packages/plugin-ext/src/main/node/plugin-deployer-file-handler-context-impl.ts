@@ -25,7 +25,6 @@ export class PluginDeployerFileHandlerContextImpl implements PluginDeployerFileH
 
     async unzip(sourcePath: string, destPath: string): Promise<void> {
         await decompress(sourcePath, destPath);
-        return Promise.resolve();
     }
 
     pluginEntry(): PluginDeployerEntry {
