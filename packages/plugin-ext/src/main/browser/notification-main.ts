@@ -40,11 +40,11 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $startProgress(options: NotificationMain.StartProgressOptions, handle?: number): Promise<string> {
+    async $startProgress(options: NotificationMain.StartProgressOptions, progressId?: string): Promise<string> {
 
         const onDidCancel = () => {
-            if (handle && !this.toDispose.disposed) {
-                this.proxy.$acceptProgressCanceled(handle);
+            if (!this.toDispose.disposed) {
+                this.proxy.$acceptProgressCanceled(id);
             }
         };
 

@@ -733,7 +733,7 @@ export interface NotificationExt {
         options: ProgressOptions,
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): PromiseLike<R>;
-    $acceptProgressCanceled(handle: number): void;
+    $acceptProgressCanceled(progressId: string): void;
 }
 
 export interface ScmCommandArg {
@@ -935,7 +935,7 @@ export interface DecorationProvider {
 }
 
 export interface NotificationMain {
-    $startProgress(options: NotificationMain.StartProgressOptions, handle?: number): Promise<string>;
+    $startProgress(options: NotificationMain.StartProgressOptions, progressId?: string): Promise<string>;
     $stopProgress(id: string): void;
     $updateProgress(id: string, report: NotificationMain.ProgressReport): void;
 }
