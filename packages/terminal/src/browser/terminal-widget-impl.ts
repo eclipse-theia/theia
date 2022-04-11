@@ -14,30 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Terminal, RendererType } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
-import { isOSX } from '@theia/core/lib/common';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
-import { terminalsPath } from '../common/terminal-protocol';
-import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
-import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
-import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
-import { TerminalContribution } from './terminal-contribution';
-import URI from '@theia/core/lib/common/uri';
-import { TerminalService } from './base/terminal-service';
-import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
-import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
-import { TerminalThemeService } from './terminal-theme-service';
-import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
+import { ContributionProvider, Disposable, DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
+import { codicon, isFirefox, KeyCode, Message, MessageLoop, StatefulWidget, WebSocketConnectionProvider, Widget } from '@theia/core/lib/browser';
 import { Key } from '@theia/core/lib/browser/keys';
+import { isOSX } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import URI from '@theia/core/lib/common/uri';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { RequestHandler, RpcConnection } from '@theia/core/lib/common/message-rpc/rpc-protocol';
+import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { RendererType, Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
+import { IShellTerminalPreferences, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { terminalsPath } from '../common/terminal-protocol';
+import { TerminalWatcher } from '../common/terminal-watcher';
+import { TerminalService } from './base/terminal-service';
+import { TerminalDimensions, TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
+import { TerminalSearchWidget, TerminalSearchWidgetFactory } from './search/terminal-search-widget';
+import { TerminalContribution } from './terminal-contribution';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
+import { CursorStyle, DEFAULT_TERMINAL_RENDERER_TYPE, isTerminalRendererType, TerminalPreferences, TerminalRendererType } from './terminal-preferences';
+import { TerminalThemeService } from './terminal-theme-service';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -58,7 +58,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<MessageConnection> | undefined;
+    protected waitForConnection: Deferred<RpcConnection> | undefined;
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
@@ -507,16 +507,23 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
+        const waitForConnection = this.waitForConnection = new Deferred<RpcConnection>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.write(data));
+                const requestHandler: RequestHandler = _method => this.logger.warn('Received an unhandled RPC request from the terminal process');
+
+                const rpc = new RpcConnection(connection, requestHandler);
+                rpc.onNotification(event => {
+                    if (event.method === 'onData') {
+                        this.write(event.args[0]);
+                    }
+                });
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
                     if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return connection.sendRequest('write', data);
+                        return rpc.sendRequest('write', [data]);
                     }
                 };
 
@@ -524,12 +531,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 disposable.push(this.term.onData(sendData));
                 disposable.push(this.term.onBinary(sendData));
 
-                connection.onDispose(() => disposable.dispose());
+                connection.onClose(() => disposable.dispose());
 
-                this.toDisposeOnConnect.push(connection);
-                connection.listen();
                 if (waitForConnection) {
-                    waitForConnection.resolve(connection);
+                    waitForConnection.resolve(rpc);
                 }
             }
         }, { reconnecting: false });
@@ -579,7 +584,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     sendText(text: string): void {
         if (this.waitForConnection) {
             this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', text)
+                connection.sendRequest('write', [text])
             );
         }
     }

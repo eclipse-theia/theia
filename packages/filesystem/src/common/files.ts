@@ -837,7 +837,7 @@ export function hasOpenReadWriteCloseCapability(provider: FileSystemProvider): p
  */
 export interface FileSystemProviderWithFileReadStreamCapability extends FileSystemProvider {
     /**
-     * Read the  contents of the given file as stream.
+     * Read the contents of the given file as stream.
      * @param resource The `URI` of the file.
      *
      * @return The `ReadableStreamEvents` for the readable stream of the given file.

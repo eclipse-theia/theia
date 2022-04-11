@@ -26,10 +26,11 @@ import { DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
 import { DebugPreferences } from './debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
-import { Channel, DebugAdapterPath } from '../common/debug-service';
+import { DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 
 /**
  * DebugSessionContribution symbol for DI.

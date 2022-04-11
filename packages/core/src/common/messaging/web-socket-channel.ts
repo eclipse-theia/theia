@@ -16,157 +16,92 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
-import { Disposable, DisposableCollection } from '../disposable';
-import { Emitter } from '../event';
+import { Emitter, Event } from '../event';
+import { WriteBuffer } from '../message-rpc';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../message-rpc/array-buffer-message-buffer';
+import { Channel, MessageProvider, ChannelCloseEvent } from '../message-rpc/channel';
 
-export class WebSocketChannel implements IWebSocket {
-
+/**
+ * A channel that manages the main websocket connection between frontend and backend. All service channels
+ * are reusing this main channel. (multiplexing). An {@link IWebSocket} abstraction is used to keep the implementation
+ * independent of the actual websocket implementation and its execution context (backend vs. frontend).
+ */
+export class WebSocketChannel implements Channel {
     static wsPath = '/services';
 
-    protected readonly closeEmitter = new Emitter<[number, string]>();
-    protected readonly toDispose = new DisposableCollection(this.closeEmitter);
-
-    constructor(
-        readonly id: number,
-        protected readonly doSend: (content: string) => void
-    ) { }
-
-    dispose(): void {
-        this.toDispose.dispose();
+    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
+    get onClose(): Event<ChannelCloseEvent> {
+        return this.onCloseEmitter.event;
     }
 
-    protected checkNotDisposed(): void {
-        if (this.toDispose.disposed) {
-            throw new Error('The channel has been disposed.');
-        }
+    protected readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
+    get onMessage(): Event<MessageProvider> {
+        return this.onMessageEmitter.event;
     }
 
-    handleMessage(message: WebSocketChannel.Message): void {
-        if (message.kind === 'ready') {
-            this.fireOpen();
-        } else if (message.kind === 'data') {
-            this.fireMessage(message.content);
-        } else if (message.kind === 'close') {
-            this.fireClose(message.code, message.reason);
-        }
+    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
+    get onError(): Event<unknown> {
+        return this.onErrorEmitter.event;
     }
 
-    open(path: string): void {
-        this.checkNotDisposed();
-        this.doSend(JSON.stringify(<WebSocketChannel.OpenMessage>{
-            kind: 'open',
-            id: this.id,
-            path
-        }));
+    constructor(protected readonly socket: IWebSocket) {
+        socket.onClose((reason, code) => this.onCloseEmitter.fire({ reason, code }));
+        socket.onError(error => this.onErrorEmitter.fire(error));
+        socket.onMessage(buffer => this.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(buffer)));
     }
 
-    ready(): void {
-        this.checkNotDisposed();
-        this.doSend(JSON.stringify(<WebSocketChannel.ReadyMessage>{
-            kind: 'ready',
-            id: this.id
-        }));
+    getWriteBuffer(): WriteBuffer {
+        const result = new ArrayBufferWriteBuffer();
+
+        result.onCommit(buffer => {
+            if (this.socket.isConnected()) {
+                this.socket.send(buffer);
+            }
+        });
+
+        return result;
     }
 
-    send(content: string): void {
-        this.checkNotDisposed();
-        this.doSend(JSON.stringify(<WebSocketChannel.DataMessage>{
-            kind: 'data',
-            id: this.id,
-            content
-        }));
+    close(): void {
+        this.socket.close();
+        this.onCloseEmitter.dispose();
+        this.onMessageEmitter.dispose();
+        this.onErrorEmitter.dispose();
     }
-
-    close(code: number = 1000, reason: string = ''): void {
-        if (this.closing) {
-            // Do not try to close the channel if it is already closing.
-            return;
-        }
-        this.checkNotDisposed();
-        this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
-            kind: 'close',
-            id: this.id,
-            code,
-            reason
-        }));
-        this.fireClose(code, reason);
-    }
-
-    tryClose(code: number = 1000, reason: string = ''): void {
-        if (this.closing || this.toDispose.disposed) {
-            // Do not try to close the channel if it is already closing or disposed.
-            return;
-        }
-        this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
-            kind: 'close',
-            id: this.id,
-            code,
-            reason
-        }));
-        this.fireClose(code, reason);
-    }
-
-    protected fireOpen: () => void = () => { };
-    onOpen(cb: () => void): void {
-        this.checkNotDisposed();
-        this.fireOpen = cb;
-        this.toDispose.push(Disposable.create(() => this.fireOpen = () => { }));
-    }
-
-    protected fireMessage: (data: any) => void = () => { };
-    onMessage(cb: (data: any) => void): void {
-        this.checkNotDisposed();
-        this.fireMessage = cb;
-        this.toDispose.push(Disposable.create(() => this.fireMessage = () => { }));
-    }
-
-    fireError: (reason: any) => void = () => { };
-    onError(cb: (reason: any) => void): void {
-        this.checkNotDisposed();
-        this.fireError = cb;
-        this.toDispose.push(Disposable.create(() => this.fireError = () => { }));
-    }
-
-    protected closing = false;
-    protected fireClose(code: number, reason: string): void {
-        if (this.closing) {
-            return;
-        }
-        this.closing = true;
-        try {
-            this.closeEmitter.fire([code, reason]);
-        } finally {
-            this.closing = false;
-        }
-        this.dispose();
-    }
-    onClose(cb: (code: number, reason: string) => void): Disposable {
-        this.checkNotDisposed();
-        return this.closeEmitter.event(([code, reason]) => cb(code, reason));
-    }
-
 }
-export namespace WebSocketChannel {
-    export interface OpenMessage {
-        kind: 'open'
-        id: number
-        path: string
-    }
-    export interface ReadyMessage {
-        kind: 'ready'
-        id: number
-    }
-    export interface DataMessage {
-        kind: 'data'
-        id: number
-        content: string
-    }
-    export interface CloseMessage {
-        kind: 'close'
-        id: number
-        code: number
-        reason: string
-    }
-    export type Message = OpenMessage | ReadyMessage | DataMessage | CloseMessage;
+
+/**
+ * An abstraction that enables reuse of the `{@link WebSocketChannel} class in the frontend and backend
+ * independent of the actual underlying socket implementation.
+ */
+export interface IWebSocket {
+    /**
+     * Sends the given message over the web socket in binary format.
+     * @param message The binary message.
+     */
+    send(message: ArrayBuffer): void;
+    /**
+     * Closes the websocket from the local side.
+     */
+    close(): void;
+    /**
+     * The connection state of the web socket.
+     */
+    isConnected(): boolean;
+    /**
+     * Listener callback to handle incoming messages.
+     * @param cb The callback.
+     */
+    onMessage(cb: (message: ArrayBuffer) => void): void;
+    /**
+     * Listener callback to handle socket errors.
+     * @param cb The callback.
+     */
+    onError(cb: (reason: any) => void): void;
+    /**
+     * Listener callback to handle close events (Remote side).
+     * @param cb The callback.
+     */
+    onClose(cb: (reason: string, code?: number) => void): void;
 }
+

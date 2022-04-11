@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createTerminalTestContainer } from './test/terminal-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import * as http from 'http';
 import * as https from 'https';
+import { IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { createTerminalTestContainer } from './test/terminal-test-container';
+import { TestWebSocketChannelSetup } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { terminalsPath } from '../common/terminal-protocol';
-import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 
 describe('Terminal Backend Contribution', function (): void {
 
@@ -45,13 +45,19 @@ describe('Terminal Backend Contribution', function (): void {
     it('is data received from the terminal ws server', async () => {
         const terminalId = await shellTerminalServer.create({});
         await new Promise<void>((resolve, reject) => {
-            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
+            const path = `${terminalsPath}/${terminalId}`;
+            const { channel, multiPlexer } = new TestWebSocketChannelSetup({ server, path });
             channel.onError(reject);
-            channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
-            channel.onOpen(() => {
-                resolve();
-                channel.close();
+            channel.onClose(event => reject(new Error(`channel is closed with '${event.code}' code and '${event.reason}' reason}`)));
+
+            multiPlexer.onDidOpenChannel(event => {
+                if (event.id === path) {
+                    resolve();
+                    channel.close();
+                }
             });
+
         });
     });
+
 });

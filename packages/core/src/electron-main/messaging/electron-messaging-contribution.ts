@@ -14,26 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IpcMainEvent, ipcMain, WebContents } from '@theia/electron/shared/electron';
+import { ipcMain, IpcMainEvent, WebContents } from '@theia/electron/shared/electron';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { MessageConnection } from 'vscode-ws-jsonrpc';
-import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
+import { Emitter, Event, WriteBuffer } from '../../common';
 import { ContributionProvider } from '../../common/contribution-provider';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
-import { MessagingContribution } from '../../node/messaging/messaging-contribution';
-import { ConsoleLogger } from '../../node/messaging/logger';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
+import { Channel, ChannelCloseEvent, ChannelMultiplexer, MessageProvider } from '../../common/message-rpc/channel';
 import { ElectronConnectionHandler, THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
+import { MessagingContribution } from '../../node/messaging/messaging-contribution';
 import { ElectronMainApplicationContribution } from '../electron-main-application';
 import { ElectronMessagingService } from './electron-messaging-service';
-
 /**
  * This component replicates the role filled by `MessagingContribution` but for Electron.
  * Unlike the WebSocket based implementation, we do not expect to receive
  * connection events. Instead, we'll create channels based on incoming `open`
  * events on the `ipcMain` channel.
- *
  * This component allows communication between renderer process (frontend) and electron main process.
  */
+
 @injectable()
 export class ElectronMessagingContribution implements ElectronMainApplicationContribution, ElectronMessagingService {
 
@@ -43,14 +41,51 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
     @inject(ContributionProvider) @named(ElectronConnectionHandler)
     protected readonly connectionHandlers: ContributionProvider<ElectronConnectionHandler>;
 
-    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
-    protected readonly windowChannels = new Map<number, Map<number, WebSocketChannel>>();
+    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<Channel>();
+    /**
+     * Each electron window has a main chanel and its own multiplexer to route multiple client messages the same IPC connection.
+     */
+    protected readonly windowChannelMultiplexer = new Map<number, { channel: ElectronWebContentChannel, multiPlexer: ChannelMultiplexer }>();
 
     @postConstruct()
     protected init(): void {
-        ipcMain.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: IpcMainEvent, data: string) => {
-            this.handleIpcMessage(event, data);
+        ipcMain.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: IpcMainEvent, data: Uint8Array) => {
+            this.handleIpcEvent(event, data);
         });
+    }
+
+    protected handleIpcEvent(event: IpcMainEvent, data: Uint8Array): void {
+        const sender = event.sender;
+        try {
+            // Get the multiplexer for a given window id
+            const windowChannelData = this.windowChannelMultiplexer.get(sender.id)!;
+            if (!windowChannelData) {
+                const mainChannel = this.createWindowMainChannel(sender);
+                const multiPlexer = new ChannelMultiplexer(mainChannel);
+                multiPlexer.onDidOpenChannel(openEvent => {
+                    const { channel, id } = openEvent;
+                    if (this.channelHandlers.route(id, channel)) {
+                        console.debug(`Opening channel for service path '${id}'.`);
+                        channel.onClose(() => console.debug(`Closing channel on service path '${id}'.`));
+                    }
+                });
+
+                sender.once('did-navigate', () => multiPlexer.closeUnderlyingChannel({ reason: 'Window was refreshed' })); // When refreshing the browser window.
+                sender.once('destroyed', () => multiPlexer.closeUnderlyingChannel({ reason: 'Window was closed' })); // When closing the browser window.
+                this.windowChannelMultiplexer.set(sender.id, { channel: mainChannel, multiPlexer });
+            }
+            windowChannelData.channel.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));
+        } catch (error) {
+            console.error('IPC: Failed to handle message', { error, data });
+        }
+    }
+
+    /**
+     * Creates the main channel to a window.
+     * @param sender The window that the channel should be established to.
+     */
+    protected createWindowMainChannel(sender: WebContents): ElectronWebContentChannel {
+        return new ElectronWebContentChannel(sender);
     }
 
     onStart(): void {
@@ -59,73 +94,52 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         }
         for (const connectionHandler of this.connectionHandlers.getContributions()) {
             this.channelHandlers.push(connectionHandler.path, (params, channel) => {
-                const connection = createWebSocketConnection(channel, new ConsoleLogger());
-                connectionHandler.onConnection(connection);
+                connectionHandler.onConnection(channel);
             });
         }
     }
 
-    listen(spec: string, callback: (params: ElectronMessagingService.PathParams, connection: MessageConnection) => void): void {
-        this.ipcChannel(spec, (params, channel) => {
-            const connection = createWebSocketConnection(channel, new ConsoleLogger());
-            callback(params, connection);
-        });
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcChannel(spec: string, callback: (params: any, channel: WebSocketChannel) => void): void {
+    ipcChannel(spec: string, callback: (params: any, channel: Channel) => void): void {
         this.channelHandlers.push(spec, callback);
     }
+}
 
-    protected handleIpcMessage(event: IpcMainEvent, data: string): void {
-        const sender = event.sender;
-        try {
-            // Get the channel map for a given window id
-            let channels = this.windowChannels.get(sender.id)!;
-            if (!channels) {
-                this.windowChannels.set(sender.id, channels = new Map<number, WebSocketChannel>());
-            }
-            // Start parsing the message to extract the channel id and route
-            const message: WebSocketChannel.Message = JSON.parse(data.toString());
-            // Someone wants to open a logical channel
-            if (message.kind === 'open') {
-                const { id, path } = message;
-                const channel = this.createChannel(id, sender);
-                if (this.channelHandlers.route(path, channel)) {
-                    channel.ready();
-                    channels.set(id, channel);
-                    channel.onClose(() => channels.delete(id));
-                } else {
-                    console.error('Cannot find a service for the path: ' + path);
-                }
-            } else {
-                const { id } = message;
-                const channel = channels.get(id);
-                if (channel) {
-                    channel.handleMessage(message);
-                } else {
-                    console.error('The ipc channel does not exist', id);
-                }
-            }
-            const close = () => {
-                for (const channel of Array.from(channels.values())) {
-                    channel.close(undefined, 'webContent destroyed');
-                }
-                channels.clear();
-            };
-            sender.once('did-navigate', close); // When refreshing the browser window.
-            sender.once('destroyed', close); // When closing the browser window.
-        } catch (error) {
-            console.error('IPC: Failed to handle message', { error, data });
-        }
+/**
+ * Used to establish a connection between the ipcMain and the Electron frontend (window).
+ * Messages a transferred via electron IPC.
+ */
+export class ElectronWebContentChannel implements Channel {
+    protected readonly onCloseEmitter: Emitter<ChannelCloseEvent> = new Emitter();
+    get onClose(): Event<ChannelCloseEvent> {
+        return this.onCloseEmitter.event;
     }
 
-    protected createChannel(id: number, sender: WebContents): WebSocketChannel {
-        return new WebSocketChannel(id, content => {
-            if (!sender.isDestroyed()) {
-                sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
+    // Make the message emitter public so that we can easily forward messages received from the ipcMain.
+    readonly onMessageEmitter: Emitter<MessageProvider> = new Emitter();
+    get onMessage(): Event<MessageProvider> {
+        return this.onMessageEmitter.event;
+    }
+
+    protected readonly onErrorEmitter: Emitter<unknown> = new Emitter();
+    get onError(): Event<unknown> {
+        return this.onErrorEmitter.event;
+    }
+
+    constructor(protected readonly sender: Electron.WebContents) {
+    }
+
+    getWriteBuffer(): WriteBuffer {
+        const writer = new ArrayBufferWriteBuffer();
+
+        writer.onCommit(buffer => {
+            if (!this.sender.isDestroyed()) {
+                this.sender.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, new Uint8Array(buffer));
             }
         });
-    }
 
+        return writer;
+    }
+    close(): void {
+    }
 }

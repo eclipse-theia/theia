@@ -17,20 +17,21 @@
 /* eslint-disable no-unused-expressions */
 
 // tslint:disable-next-line:no-implicit-dependencies
-import 'reflect-metadata';
-import { createTaskTestContainer } from './test/task-test-container';
+import { isOSX, isWindows } from '@theia/core/lib/common/os';
+import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
+import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common';
-import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol';
+import { expect } from 'chai';
 import * as http from 'http';
 import * as https from 'https';
-import { isWindows, isOSX } from '@theia/core/lib/common/os';
-import { FileUri } from '@theia/core/lib/node';
+import 'reflect-metadata';
+import { TaskConfiguration, TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher } from '../common';
+import { ProcessTaskConfiguration, ProcessType } from '../common/process/task-protocol';
+import { createTaskTestContainer } from './test/task-test-container';
+import { TestWebSocketChannelSetup } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
-import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
-import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
-import { expect } from 'chai';
-import URI from '@theia/core/lib/common/uri';
+import { RpcConnection } from '@theia/core';
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -106,26 +107,37 @@ describe('Task server / back-end', function (): void {
 
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
         await new Promise<void>((resolve, reject) => {
-            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
-            channel.onError(reject);
-            channel.onClose((code, reason) => reject(new Error(`channel is closed with '${code}' code and '${reason}' reason`)));
-            channel.onMessage(msg => {
-                // check output of task on terminal is what we expect
-                const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
-                // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
-                // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
-                const currentMessage = msg.toString();
-                messages.unshift(currentMessage);
-                if (currentMessage.indexOf(expected) !== -1) {
-                    resolve();
-                    channel.close();
-                    return;
-                }
-                if (messages.length >= messagesToWaitFor) {
-                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
-                    channel.close();
-                }
+            const setup = new TestWebSocketChannelSetup({ server, path: `${terminalsPath}/${terminalId}` });
+            setup.multiPlexer.onDidOpenChannel(event => {
+                const channel = event.channel;
+                const connection = new RpcConnection(channel, (method, args) => {
+                    reject(`Received unexpected request: ${method} with args: ${args} `);
+                    return Promise.reject();
+                });
+                channel.onError(reject);
+                channel.onClose(() => reject(new Error('Channel has been closed')));
+                connection.onNotification(not => {
+                    // check output of task on terminal is what we expect
+                    const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
+                    // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
+                    // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
+                    const currentMessage = not.args[0];
+                    messages.unshift(currentMessage);
+                    if (currentMessage.indexOf(expected) !== -1) {
+                        resolve();
+                        channel.close();
+                        return;
+                    }
+                    if (messages.length >= messagesToWaitFor) {
+                        reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
+                        channel.close();
+                    }
+                });
+                channel.onMessage(reader => {
+
+                });
             });
+
         });
     });
 

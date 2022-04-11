@@ -16,32 +16,41 @@
 
 import * as http from 'http';
 import * as https from 'https';
-import { WebSocketChannel } from '../../../common/messaging/web-socket-channel';
-import { Disposable } from '../../../common/disposable';
 import { AddressInfo } from 'net';
-import { io } from 'socket.io-client';
-
-export class TestWebSocketChannel extends WebSocketChannel {
+import { io, Socket } from 'socket.io-client';
+import { Channel, ChannelMultiplexer } from '../../../common';
+import { toArrayBuffer } from '../../../common/message-rpc/array-buffer-message-buffer';
+import { IWebSocket, WebSocketChannel } from '../../../common/messaging/web-socket-channel';
+export class TestWebSocketChannelSetup {
+    public readonly multiPlexer: ChannelMultiplexer;
+    public readonly channel: Channel;
 
     constructor({ server, path }: {
         server: http.Server | https.Server,
         path: string
     }) {
-        super(0, content => socket.send(content));
         const socket = io(`ws://localhost:${(server.address() as AddressInfo).port}${WebSocketChannel.wsPath}`);
-        socket.on('error', error =>
-            this.fireError(error)
-        );
-        socket.on('disconnect', reason =>
-            this.fireClose(0, reason)
-        );
-        socket.on('message', data => {
-            this.handleMessage(JSON.parse(data.toString()));
+        this.channel = new WebSocketChannel(toIWebSocket(socket));
+        this.multiPlexer = new ChannelMultiplexer(this.channel);
+        socket.on('connect', () => {
+            this.multiPlexer.open(path);
         });
-        socket.on('connect', () =>
-            this.open(path)
-        );
-        this.toDispose.push(Disposable.create(() => socket.close()));
+        socket.connect();
     }
+}
 
+function toIWebSocket(socket: Socket): IWebSocket {
+    return {
+        close: () => {
+            socket.removeAllListeners('disconnect');
+            socket.removeAllListeners('error');
+            socket.removeAllListeners('message');
+            socket.close();
+        },
+        isConnected: () => socket.connected,
+        onClose: cb => socket.on('disconnect', reason => cb(reason)),
+        onError: cb => socket.on('error', reason => cb(reason)),
+        onMessage: cb => socket.on('message', data => cb(toArrayBuffer(data))),
+        send: message => socket.emit('message', message)
+    };
 }

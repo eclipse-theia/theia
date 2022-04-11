@@ -15,27 +15,25 @@
 // *****************************************************************************
 import { expect } from 'chai';
 import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from './array-buffer-message-buffer';
+import { RpcMessageDecoder, RpcMessageEncoder } from './rpc-message-encoder';
 
-describe('array message buffer tests', () => {
-    it('basic read write test', () => {
+describe('message buffer test', () => {
+    it('encode object', () => {
         const buffer = new ArrayBuffer(1024);
         const writer = new ArrayBufferWriteBuffer(buffer);
 
-        writer.writeUint8(8);
-        writer.writeUint32(10000);
-        writer.writeBytes(new Uint8Array([1, 2, 3, 4]));
-        writer.writeString('this is a string');
-        writer.writeString('another string');
-        writer.commit();
+        const encoder = new RpcMessageEncoder();
+        const jsonMangled = JSON.parse(JSON.stringify(encoder));
+
+        encoder.writeTypedValue(writer, encoder);
 
         const written = writer.getCurrentContents();
 
         const reader = new ArrayBufferReadBuffer(written);
 
-        expect(reader.readUint8()).equal(8);
-        expect(reader.readUint32()).equal(10000);
-        expect(reader.readBytes()).deep.equal(new Uint8Array([1, 2, 3, 4]).buffer);
-        expect(reader.readString()).equal('this is a string');
-        expect(reader.readString()).equal('another string');
+        const decoder = new RpcMessageDecoder();
+        const decoded = decoder.readTypedValue(reader);
+
+        expect(decoded).deep.equal(jsonMangled);
     });
 });

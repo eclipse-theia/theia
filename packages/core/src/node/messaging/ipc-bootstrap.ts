@@ -14,22 +14,47 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Socket } from 'net';
 import 'reflect-metadata';
+import { Emitter } from '../../common';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
+import { Channel, ChannelCloseEvent, MessageProvider } from '../../common/message-rpc/channel';
 import { dynamicRequire } from '../dynamic-require';
-import { ConsoleLogger } from 'vscode-ws-jsonrpc/lib/logger';
-import { createMessageConnection, IPCMessageReader, IPCMessageWriter, Trace } from 'vscode-ws-jsonrpc';
 import { checkParentAlive, IPCEntryPoint } from './ipc-protocol';
 
 checkParentAlive();
 
 const entryPoint = IPCEntryPoint.getScriptFromEnv();
-const reader = new IPCMessageReader(process);
-const writer = new IPCMessageWriter(process);
-const logger = new ConsoleLogger();
-const connection = createMessageConnection(reader, writer, logger);
-connection.trace(Trace.Off, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    log: (message: any, data?: string) => console.log(message, data)
-});
 
-dynamicRequire<{ default: IPCEntryPoint }>(entryPoint).default(connection);
+dynamicRequire<{ default: IPCEntryPoint }>(entryPoint).default(createChannel());
+
+function createChannel(): Channel {
+    const pipe = new Socket({
+        fd: 4
+    });
+
+    const onCloseEmitter = new Emitter<ChannelCloseEvent>();
+    const onMessageEmitter = new Emitter<MessageProvider>();
+    const onErrorEmitter = new Emitter<unknown>();
+    const eventEmitter: NodeJS.EventEmitter = process;
+    eventEmitter.on('error', error => onErrorEmitter.fire(error));
+    eventEmitter.on('close', () => onCloseEmitter.fire({ reason: 'Process has been closed from remote site (parent)' }));
+    pipe.on('data', (data: Uint8Array) => {
+        onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));
+    });
+
+    return {
+        close: () => process.exit(),
+        onClose: onCloseEmitter.event,
+        onError: onErrorEmitter.event,
+        onMessage: onMessageEmitter.event,
+        getWriteBuffer: () => {
+            const result = new ArrayBufferWriteBuffer();
+            result.onCommit(buffer => {
+                pipe.write(new Uint8Array(buffer));
+            });
+
+            return result;
+        }
+    };
+}

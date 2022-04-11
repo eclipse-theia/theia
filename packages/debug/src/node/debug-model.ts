@@ -26,7 +26,7 @@ import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event } from '@theia/core/lib/common/event';
-import { Channel } from '../common/debug-service';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 
 // FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
