@@ -22,6 +22,7 @@ import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { PreferenceService } from '../preferences';
+import { AccessibilityInformation } from '../../common/accessibility';
 
 export interface StatusBarEntry {
     /**
@@ -44,10 +45,7 @@ export interface StatusBarEntry {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments?: any[];
     priority?: number;
-    accessibilityInformation?: {
-        label: string,
-        role?: string;
-    };
+    accessibilityInformation?: AccessibilityInformation;
     onclick?: (e: MouseEvent) => void;
 }
 
