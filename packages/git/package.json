@@ -17,7 +17,7 @@
     "dugite-extra": "0.1.15",
     "find-git-exec": "^0.0.4",
     "find-git-repositories": "^0.1.1",
-    "moment": "2.24.0",
+    "moment": "2.29.2",
     "octicons": "^7.1.0",
     "p-queue": "^2.4.2",
     "ts-md5": "^1.2.2"
