@@ -1484,6 +1484,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.hoverBackground',
+                defaults: {
+                    dark: 'tab.inactiveBackground',
+                    light: 'tab.inactiveBackground'
+                },
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {

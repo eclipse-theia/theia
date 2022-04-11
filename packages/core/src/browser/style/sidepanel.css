@@ -277,12 +277,11 @@
 
 #theia-bottom-content-panel .p-TabBar-tab:not(.p-mod-current) {
     color: var(--theia-panelTitle-inactiveForeground);
-    border-top: var(--theia-border-width) solid transparent;
 }
 
 #theia-bottom-content-panel .p-TabBar-tab.p-mod-current {
     color: var(--theia-panelTitle-activeForeground);
-    border-top: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
+    box-shadow: 0 var(--theia-border-width) 0 var(--theia-panelTitle-activeBorder) inset;
 }
 
 #theia-bottom-content-panel .p-TabBar:not(.theia-tabBar-active) .p-TabBar-tab .theia-tab-icon-label {
