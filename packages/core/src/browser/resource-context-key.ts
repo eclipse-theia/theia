@@ -19,6 +19,7 @@ import URI from '../common/uri';
 import { URI as Uri } from 'vscode-uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
 import { LanguageService } from './language-service';
+import { ApplicationServer } from '../common/application-protocol';
 
 @injectable()
 export class ResourceContextKey {
@@ -29,6 +30,9 @@ export class ResourceContextKey {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(ApplicationServer)
+    protected readonly applicationService: ApplicationServer;
+
     protected resource: ContextKey<Uri>;
     protected resourceSchemeKey: ContextKey<string>;
     protected resourceFileName: ContextKey<string>;
@@ -38,7 +42,7 @@ export class ResourceContextKey {
     protected resourcePath: ContextKey<string>;
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
         this.resource = this.contextKeyService.createKey<Uri>('resource', undefined);
         this.resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
         this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
@@ -59,8 +63,8 @@ export class ResourceContextKey {
         this.resourceFileName.set(resourceUri && resourceUri.path.base);
         this.resourceExtname.set(resourceUri && resourceUri.path.ext);
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
-        this.resourceDirName.set(resourceUri && Uri.parse(resourceUri.path.dir.toString()).fsPath);
-        this.resourcePath.set(resourceUri && resourceUri['codeUri'].fsPath);
+        this.resourceDirName.set(resourceUri && resourceUri.path.dir.fsPath());
+        this.resourcePath.set(resourceUri && resourceUri.path.fsPath());
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {

@@ -92,10 +92,10 @@ self.MonacoEnvironment = {
 const { ThemeService } = require('@theia/core/lib/browser/theming');
 ThemeService.get().loadUserTheme();
 
-const nls = require('@theia/core/lib/browser/nls-loader');
+const preloader = require('@theia/core/lib/browser/preloader');
 
-// nls translations MUST be loaded before requiring any code that uses them
-module.exports = nls.loadTranslations().then(() => {
+// We need to fetch some data from the backend before the frontend starts (nls, os)
+module.exports = preloader.preload().then(() => {
     const { FrontendApplication } = require('@theia/core/lib/browser');
     const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
     const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()

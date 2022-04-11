@@ -31,6 +31,9 @@
  * "  /c: / home/user/dir / file  .txt "
  * └──────┴───────────────┴──────┴─────┘
  */
+
+import { OS } from './os';
+
 export class Path {
     static separator: '/' = '/';
 
@@ -68,6 +71,22 @@ export class Path {
      */
     static normalizePathSeparator(path: string): string {
         return path.split(/[\\]/).join(Path.separator);
+    }
+
+    /**
+     * Creates a windows path from the given path string.
+     * A windows path uses an upper case drive letter and backwards slashes.
+     * @param path The input path
+     * @returns Windows style path
+     */
+    static windowsPath(path: string): string {
+        const offset = path.charAt(0) === '/' ? 1 : 0;
+        if (path.charAt(offset + 1) === ':') {
+            const driveLetter = path.charAt(offset).toUpperCase();
+            const substring = path.substring(offset + 2).replace(/\//g, '\\');
+            return `${driveLetter}:${substring || '\\'}`;
+        }
+        return path.replace(/\//g, '\\');
     }
 
     /**
@@ -228,6 +247,20 @@ export class Path {
 
     toString(): string {
         return this.raw;
+    }
+
+    /**
+     * Converts the current path into a file system path.
+     * @param posix Indicates posix or windows file path.
+     * If `undefined`, the format will be determined by the `OS.backend.type` value.
+     * @returns A file system path.
+     */
+    fsPath(posix?: boolean): string {
+        if (posix === false || (posix === undefined && OS.backend.isWindows)) {
+            return Path.windowsPath(this.raw);
+        } else {
+            return this.raw;
+        }
     }
 
     relative(path: Path): Path | undefined {

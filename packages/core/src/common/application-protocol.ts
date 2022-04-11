@@ -23,6 +23,9 @@ export const ApplicationServer = Symbol('ApplicationServer');
 export interface ApplicationServer {
     getExtensionsInfos(): Promise<ExtensionInfo[]>;
     getApplicationInfo(): Promise<ApplicationInfo | undefined>;
+    /**
+     * @deprecated since 1.25.0. Use `OS.backend.type()` instead.
+     */
     getBackendOS(): Promise<OS.Type>;
 }
 

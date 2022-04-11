@@ -48,17 +48,14 @@ export class CommonVariableContribution implements VariableContribution {
     protected readonly appServer: ApplicationServer;
 
     async registerVariables(variables: VariableRegistry): Promise<void> {
-        const [execPath, backendOS] = await Promise.all([
-            this.env.getExecPath(),
-            this.appServer.getBackendOS()
-        ]);
+        const execPath = await this.env.getExecPath();
         variables.registerVariable({
             name: 'execPath',
             resolve: () => execPath
         });
         variables.registerVariable({
             name: 'pathSeparator',
-            resolve: () => backendOS === OS.Type.Windows ? '\\' : '/'
+            resolve: () => OS.backend.isWindows ? '\\' : '/'
         });
         variables.registerVariable({
             name: 'env',

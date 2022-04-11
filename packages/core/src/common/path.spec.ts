@@ -357,6 +357,50 @@ describe('Path', () => {
 
     });
 
+    describe('fsPath#windows', () => {
+        it('should retain windows style path', () => {
+            const path = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(path);
+        });
+
+        it('should create windows style path with slashes', () => {
+            const path = 'C:/path/to/file.txt';
+            const expected = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(expected);
+        });
+
+        it('should append slashes to drive letter', () => {
+            const path = 'C:';
+            const expected = 'C:\\';
+            expect(new Path(path).fsPath(false)).eq(expected);
+        });
+
+        it('should create windows style path from posix', () => {
+            const path = '/path/to/file.txt';
+            const expected = '\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(expected);
+        });
+    });
+
+    describe('fsPath#posix', () => {
+        it('should retain posix style path', () => {
+            const path = '/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(path);
+        });
+
+        it('should create posix style path from windows with slashes', () => {
+            const path = 'C:/path/to/file.txt';
+            const expected = '/c:/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(expected);
+        });
+
+        it('should create posix style path from windows', () => {
+            const path = 'C:\\path\\to\\file.txt';
+            const expected = '/c:/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(expected);
+        });
+    });
+
     function checkResolution(original: string, segments: string[], expected: string | undefined): void {
         it(`should resolve ${original} and ${segments.join(', ')} to ${expected}`, () => {
             const start = new Path(original);
