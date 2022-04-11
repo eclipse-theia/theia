@@ -55,7 +55,10 @@ export class NotificationsContribution implements FrontendApplicationContributio
             alignment: StatusBarAlignment.RIGHT,
             priority: -900,
             command: NotificationsCommands.TOGGLE.id,
-            tooltip: this.getStatusBarItemTooltip(count)
+            tooltip: this.getStatusBarItemTooltip(count),
+            accessibilityInformation: {
+                label: this.getStatusBarItemTooltip(count)
+            }
         });
     }
     protected getStatusBarItemText(count: number): string {

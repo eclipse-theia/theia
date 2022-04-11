@@ -407,6 +407,7 @@ export interface StatusBarMessageRegistryMain {
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
+        accessibilityInformation: theia.AccessibilityInformation,
         args: any[] | undefined): PromiseLike<void>;
     $dispose(id: string): void;
 }
@@ -712,6 +713,8 @@ export interface TreeViewItem {
     contextValue?: string;
 
     command?: Command;
+
+    accessibilityInformation?: theia.AccessibilityInformation;
 
 }
 

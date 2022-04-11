@@ -1422,6 +1422,10 @@ export class ApplicationShell extends Widget {
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',
                 command: 'core.toggle.bottom.panel',
+                accessibilityInformation: {
+                    label: 'Toggle Bottom Panel',
+                    role: 'button'
+                },
                 priority: -1000
             };
             this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
