@@ -25,6 +25,7 @@
     "ui-tests-report": "yarn ui-tests-report-generate && allure open allure-results/allure-report"
   },
   "files": [
+    "lib",
     "src"
   ],
   "dependencies": {
