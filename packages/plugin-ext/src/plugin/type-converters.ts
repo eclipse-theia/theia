@@ -949,12 +949,7 @@ export function getShellArgs(args: undefined | (string | theia.ShellQuotedString
 }
 
 function getCommand(command: string | theia.ShellQuotedString): string {
-    if (typeof command === 'string') {
-        return command;
-    }
-    const shellQuotedCommand = command as theia.ShellQuotedString;
-
-    return shellQuotedCommand.value;
+    return typeof command === 'string' ? command : command.value;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
