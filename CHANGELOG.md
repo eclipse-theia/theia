@@ -14,6 +14,8 @@
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
 
+- [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
+
 ## v1.24.0 - 3/31/2022
 
 [1.24.0 Milestone](https://github.com/eclipse-theia/theia/milestone/32)

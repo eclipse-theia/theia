@@ -36,7 +36,7 @@ export class LocalizationBackendContribution implements BackendApplicationContri
     configure(app: express.Application): void {
         app.get('/i18n/:locale', (req, res) => {
             let locale = req.params.locale;
-            locale = this.localizationProvider.getAvailableLanguages().includes(locale) && locale || 'en';
+            locale = this.localizationProvider.getAvailableLanguages().some(e => e.languageId === locale) ? locale : 'en';
             this.localizationProvider.setCurrentLanguage(locale);
             res.send(this.localizationProvider.loadLocalization(locale));
         });

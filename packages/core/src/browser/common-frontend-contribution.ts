@@ -1143,7 +1143,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     protected async configureDisplayLanguage(): Promise<void> {
         const availableLanguages = await this.localizationProvider.getAvailableLanguages();
         const items: QuickPickItem[] = [];
-        for (const additionalLanguage of ['en', ...availableLanguages]) {
+        for (const additionalLanguage of ['en', ...availableLanguages.map(e => e.languageId)]) {
             items.push({
                 label: additionalLanguage,
                 execute: async () => {

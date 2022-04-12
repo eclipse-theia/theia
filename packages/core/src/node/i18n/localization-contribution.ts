@@ -17,7 +17,7 @@
 import * as fs from 'fs-extra';
 import { inject, injectable, named } from 'inversify';
 import { ContributionProvider } from '../../common';
-import { Localization } from '../../common/i18n/localization';
+import { LanguageInfo, Localization } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 
 export const LocalizationContribution = Symbol('LocalizationContribution');
@@ -45,16 +45,12 @@ export class LocalizationRegistry {
         this.localizationProvider.addLocalizations(localization);
     }
 
-    registerLocalizationFromRequire(locale: string, required: unknown): void {
+    registerLocalizationFromRequire(locale: string | LanguageInfo, required: unknown): void {
         const translations = this.flattenTranslations(required);
-        const localization: Localization = {
-            languageId: locale,
-            translations
-        };
-        this.registerLocalization(localization);
+        this.registerLocalization(this.createLocalization(locale, translations));
     }
 
-    async registerLocalizationFromFile(localizationPath: string, locale?: string): Promise<void> {
+    async registerLocalizationFromFile(localizationPath: string, locale?: string | LanguageInfo): Promise<void> {
         if (!locale) {
             locale = this.identifyLocale(localizationPath);
         }
@@ -63,11 +59,23 @@ export class LocalizationRegistry {
         }
         const translationJson = await fs.readJson(localizationPath);
         const translations = this.flattenTranslations(translationJson);
-        const localization: Localization = {
-            languageId: locale,
-            translations
-        };
-        this.registerLocalization(localization);
+        this.registerLocalization(this.createLocalization(locale, translations));
+    }
+
+    protected createLocalization(locale: string | LanguageInfo, translations: Record<string, string>): Localization {
+        let localization: Localization;
+        if (typeof locale === 'string') {
+            localization = {
+                languageId: locale,
+                translations
+            };
+        } else {
+            localization = {
+                ...locale,
+                translations
+            };
+        }
+        return localization;
     }
 
     protected flattenTranslations(localization: unknown): Record<string, string> {
