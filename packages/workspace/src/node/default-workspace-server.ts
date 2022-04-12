@@ -101,14 +101,16 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
         return this.root.promise;
     }
 
-    async setMostRecentlyUsedWorkspace(uri: string): Promise<void> {
+    async setMostRecentlyUsedWorkspace(rawUri: string): Promise<void> {
+        const uri = FileUri.fsPath(rawUri);
         this.root = new Deferred();
         this.root.resolve(uri);
         const recentRoots = Array.from(new Set([uri, ...await this.getRecentWorkspaces()]));
         this.writeToUserHome({ recentRoots });
     }
 
-    async removeRecentWorkspace(uri: string): Promise<void> {
+    async removeRecentWorkspace(rawUri: string): Promise<void> {
+        const uri = FileUri.fsPath(rawUri);
         const recentRoots = await this.getRecentWorkspaces();
         const index = recentRoots.indexOf(uri);
         if (index !== -1) {
