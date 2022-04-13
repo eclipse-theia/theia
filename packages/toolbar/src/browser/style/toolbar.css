@@ -84,11 +84,11 @@
     line-height: var(--theia-toolbar-icon-size);
 }
 
-#main-toolbar .toolbar-item.action-item.enabled:hover:not(.dragging):not(.active) {
+#main-toolbar .toolbar-item.action-label.enabled:hover:not(.dragging):not(.active) {
     background-color: var(--theia-toolbar-hoverBackground);
 }
 
-#main-toolbar .toolbar-item.action-item:not(.enabled) {
+#main-toolbar .toolbar-item.action-label:not(.enabled) {
     cursor: default;
 }
 

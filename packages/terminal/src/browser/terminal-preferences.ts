@@ -18,8 +18,8 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
-import { EDITOR_FONT_DEFAULTS } from '@theia/editor/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 export const TerminalConfigSchema: PreferenceSchema = {
     type: 'object',
@@ -37,13 +37,13 @@ export const TerminalConfigSchema: PreferenceSchema = {
         'terminal.integrated.fontFamily': {
             type: 'string',
             markdownDescription: nls.localizeByDefault("Controls the font family of the terminal, this defaults to `#editor.fontFamily#`'s value."),
-            default: EDITOR_FONT_DEFAULTS.fontFamily
+            default: editorGeneratedPreferenceProperties['editor.fontFamily'].default,
         },
         'terminal.integrated.fontSize': {
             type: 'number',
             description: nls.localizeByDefault('Controls the font size in pixels of the terminal.'),
             minimum: 6,
-            default: EDITOR_FONT_DEFAULTS.fontSize
+            default: editorGeneratedPreferenceProperties['editor.fontSize'].default
         },
         'terminal.integrated.fontWeight': {
             type: 'string',
@@ -111,6 +111,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.shell.windows': {
             type: ['string', 'null'],
+            typeDetails: { isFilepath: true },
             markdownDescription: nls.localize('theia/terminal/shellWindows', 'The path of the shell that the terminal uses on Windows. (default: \'{0}\').', 'C:\\Windows\\System32\\cmd.exe'),
             default: undefined
         },

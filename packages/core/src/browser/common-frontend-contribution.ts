@@ -51,7 +51,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType, Saveable, SaveOptions } from './saveable';
-import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
+import { QuickInputService, QuickPick, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
 import { AsyncLocalizationProvider } from '../common/i18n/localization';
 import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
@@ -61,6 +61,8 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { DecorationStyle } from './decoration-style';
 import { isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveResourceService } from './save-resource-service';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
+import { createUntitledURI } from '../common';
 
 export namespace CommonMenus {
 
@@ -268,11 +270,20 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Show Menu Bar'
     });
-
+    export const NEW_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.newUntitledFile',
+        category: FILE_CATEGORY,
+        label: 'New File'
+    });
     export const SAVE = Command.toDefaultLocalizedCommand({
         id: 'core.save',
         category: FILE_CATEGORY,
         label: 'Save',
+    });
+    export const SAVE_AS = Command.toDefaultLocalizedCommand({
+        id: 'file.saveAs',
+        category: FILE_CATEGORY,
+        label: 'Save As...',
     });
     export const SAVE_WITHOUT_FORMATTING = Command.toDefaultLocalizedCommand({
         id: 'core.saveWithoutFormatting',
@@ -384,6 +395,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(UserWorkingDirectoryProvider)
+    protected readonly workingDirProvider: UserWorkingDirectoryProvider;
 
     protected pinnedKey: ContextKey<boolean>;
 
@@ -697,6 +711,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         registry.registerSubmenu(CommonMenus.VIEW_APPEARANCE_SUBMENU, nls.localizeByDefault('Appearance'));
+
+        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+            commandId: CommonCommands.NEW_FILE.id,
+            order: 'a'
+        });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
@@ -889,9 +908,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
-
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.save({ formatType: FormatType.ON })
+        });
+        commandRegistry.registerCommand(CommonCommands.SAVE_AS, {
+            isEnabled: () => this.saveResourceService.canSaveAs(this.shell.currentWidget),
+            execute: () => {
+                const { currentWidget } = this.shell;
+                // No clue what could have happened between `isEnabled` and `execute`
+                // when fetching currentWidget, so better to double-check:
+                if (this.saveResourceService.canSaveAs(currentWidget)) {
+                    this.saveResourceService.saveAs(currentWidget);
+                } else {
+                    this.messageService.error(nls.localize('theia/workspace/failSaveAs', 'Cannot run "{0}" for the current widget.', CommonCommands.SAVE_AS.label!));
+                }
+            },
         });
         commandRegistry.registerCommand(CommonCommands.SAVE_WITHOUT_FORMATTING, {
             execute: () => this.save({ formatType: FormatType.OFF })
@@ -923,6 +954,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }));
         commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
             execute: () => this.configureDisplayLanguage()
+        });
+        commandRegistry.registerCommand(CommonCommands.NEW_FILE, {
+            execute: async () => open(this.openerService, createUntitledURI('', await this.workingDirProvider.getUserWorkingDir()))
         });
     }
 
@@ -1056,6 +1090,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 command: CommonCommands.UNPIN_TAB.id,
                 keybinding: 'ctrlcmd+k shift+enter',
                 when: 'activeEditorIsPinned'
+            },
+            {
+                command: CommonCommands.NEW_FILE.id,
+                keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             }
         );
     }
@@ -1178,7 +1216,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         const itemsByTheme: { light: Array<QuickPickItem>, dark: Array<QuickPickItem>, hc: Array<QuickPickItem> } = { light: [], dark: [], hc: [] };
         for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
-            const themeItems = itemsByTheme[theme.type];
+            const themeItems: QuickPickItemOrSeparator[] = itemsByTheme[theme.type];
             if (themeItems.length === 0) {
                 themeItems.push({
                     type: 'separator',
@@ -1313,14 +1351,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // TODO: Following are not yet supported/no respective elements in theia:
             // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder,
             // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline
-            // list.invalidItemForeground,
-            // list.warningForeground, list.errorForeground => tree node needs an respective class
+            // list.invalidItemForeground => tree node needs an respective class
             { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8' }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.activeSelectionForeground', defaults: { dark: '#FFF', light: '#FFF' }, description: 'List/Tree foreground color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionBackground', defaults: { dark: '#37373D', light: '#E4E6F1' }, description: 'List/Tree background color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionForeground', description: 'List/Tree foreground color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
+            { id: 'list.errorForeground', defaults: { dark: '#F88070', light: '#B01011' }, description: 'Foreground color of list items containing errors.' },
+            { id: 'list.warningForeground', defaults: { dark: '#CCA700', light: '#855F00' }, description: 'Foreground color of list items containing warnings.' },
             { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
             { id: 'list.highlightForeground', defaults: { dark: '#18A3FF', light: '#0066BF', hc: 'focusBorder' }, description: 'List/Tree foreground color of the match highlights when searching inside the list/tree.' },
             { id: 'list.focusHighlightForeground', defaults: { dark: 'list.highlightForeground', light: 'list.activeSelectionForeground', hc: 'list.highlightForeground' }, description: 'List/Tree foreground color of the match highlights on actively focused items when searching inside the list/tree.' },
@@ -1435,10 +1474,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.activeBorderTop',
-                defaults: {
-                    dark: 'focusBorder',
-                    light: 'focusBorder'
-                },
                 description: 'Border to the top of an active tab. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
@@ -1449,6 +1484,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'tab.hoverBackground',
+                defaults: {
+                    dark: 'tab.inactiveBackground',
+                    light: 'tab.inactiveBackground'
+                },
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {

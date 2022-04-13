@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
+import type * as monaco from '@theia/monaco-editor-core';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
@@ -101,7 +102,7 @@ export enum CompletionItemInsertTextRule {
 }
 
 export interface Completion {
-    label: string;
+    label: string | theia.CompletionItemLabel;
     label2?: string;
     kind: CompletionItemKind;
     detail?: string;

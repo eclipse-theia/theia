@@ -195,12 +195,13 @@ export class MessageService {
         const report = (update: ProgressUpdate) => {
             this.client.reportProgress(id, update, message, cancellationSource.token);
         };
+        const type = message.type ?? MessageType.Progress;
         const actions = new Set<string>(message.actions);
         if (ProgressMessage.isCancelable(message)) {
             actions.delete(ProgressMessage.Cancel);
             actions.add(ProgressMessage.Cancel);
         }
-        const clientMessage = { ...message, actions: Array.from(actions) };
+        const clientMessage = { ...message, type, actions: Array.from(actions) };
         const result = this.client.showProgress(id, clientMessage, cancellationSource.token);
         if (ProgressMessage.isCancelable(message) && typeof onDidCancel === 'function') {
             result.then(value => {

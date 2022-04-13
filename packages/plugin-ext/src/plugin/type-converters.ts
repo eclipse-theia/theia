@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { URI } from './types-impl';
+import { QuickPickItemKind, URI } from './types-impl';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -735,7 +735,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         taskDto.problemMatcher = task.problemMatchers;
     }
     if ('detail' in task) {
-        taskDto.detail = (task as theia.Task2).detail;
+        taskDto.detail = task.detail;
     }
     if (typeof task.scope === 'object') {
         taskDto.scope = task.scope.uri.toString();
@@ -797,7 +797,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
     result.name = label;
     result.source = source;
     if (detail) {
-        (result as theia.Task2).detail = detail;
+        result.detail = detail;
     }
     if (typeof scope === 'string') {
         const uri = URI.parse(scope);
@@ -1067,31 +1067,24 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
 }
 
 export function convertToTransferQuickPickItems(items: rpc.Item[]): rpc.TransferQuickPickItems[] {
-    const pickItems: rpc.TransferQuickPickItems[] = [];
-    for (let handle = 0; handle < items.length; handle++) {
-        const item = items[handle];
-        let label: string;
-        let description: string | undefined;
-        let detail: string | undefined;
-        let picked: boolean | undefined;
-        let alwaysShow: boolean | undefined;
-
+    return items.map<rpc.TransferQuickPickItems>((item, index) => {
         if (typeof item === 'string') {
-            label = item;
+            return { type: 'item', label: item, handle: index };
+        } else if (item.kind === QuickPickItemKind.Separator) {
+            return { type: 'separator', label: item.label, handle: index };
         } else {
-            ({ label, description, detail, picked, alwaysShow } = item);
+            const { label, description, detail, picked, alwaysShow } = item;
+            return {
+                type: 'item',
+                label,
+                description,
+                detail,
+                picked,
+                alwaysShow,
+                handle: index,
+            };
         }
-
-        pickItems.push({
-            label,
-            description,
-            handle,
-            detail,
-            picked,
-            alwaysShow
-        });
-    }
-    return pickItems;
+    });
 }
 
 export namespace DecorationRenderOptions {

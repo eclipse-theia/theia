@@ -17,8 +17,7 @@
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import IModel = monaco.editor.IModel;
-import IMarkerData = monaco.editor.IMarkerData;
+import * as monaco from '@theia/monaco-editor-core';
 
 export class MonacoDiagnosticCollection implements Disposable {
 
@@ -57,7 +56,7 @@ export class MonacoDiagnosticCollection implements Disposable {
 
 export class MonacoModelDiagnostics implements Disposable {
     readonly uri: monaco.Uri;
-    protected _markers: IMarkerData[] = [];
+    protected _markers: monaco.editor.IMarkerData[] = [];
     protected _diagnostics: Diagnostic[] = [];
     constructor(
         uri: string,
@@ -80,7 +79,7 @@ export class MonacoModelDiagnostics implements Disposable {
         return this._diagnostics;
     }
 
-    get markers(): ReadonlyArray<IMarkerData> {
+    get markers(): ReadonlyArray<monaco.editor.IMarkerData> {
         return this._markers;
     }
 
@@ -94,7 +93,7 @@ export class MonacoModelDiagnostics implements Disposable {
         this.doUpdateModelMarkers(model ? model : undefined);
     }
 
-    protected doUpdateModelMarkers(model: IModel | undefined): void {
+    protected doUpdateModelMarkers(model: monaco.editor.ITextModel | undefined): void {
         if (model && this.uri.toString() === model.uri.toString()) {
             monaco.editor.setModelMarkers(model, this.owner, this._markers);
         }

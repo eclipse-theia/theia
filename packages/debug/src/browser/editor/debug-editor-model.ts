@@ -16,6 +16,10 @@
 
 import debounce = require('p-debounce');
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
+import * as monaco from '@theia/monaco-editor-core';
+import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
@@ -90,7 +94,7 @@ export class DebugEditorModel implements Disposable {
     readonly inlineValueDecorator: DebugInlineValueDecorator;
 
     @inject(MonacoConfigurationService)
-    readonly configurationService: monaco.services.IConfigurationService;
+    readonly configurationService: IConfigurationService;
 
     @postConstruct()
     protected init(): void {
@@ -140,9 +144,9 @@ export class DebugEditorModel implements Disposable {
                 const model = codeEditor.getModel()!;
                 const overrides = {
                     resource: model.uri,
-                    overrideIdentifier: model.getLanguageIdentifier().language,
+                    overrideIdentifier: model.getLanguageId(),
                 };
-                const { enabled, delay, sticky } = this.configurationService._configuration.getValue('editor.hover', overrides, undefined);
+                const { enabled, delay, sticky } = this.configurationService.getValue('editor.hover', overrides);
                 codeEditor.updateOptions({
                     hover: {
                         enabled,
@@ -159,13 +163,13 @@ export class DebugEditorModel implements Disposable {
             this.createFrameDecorations(),
             this.createInlineValueDecorations()
         ]);
-        const codeEditor = this.editor.getControl();
+        const codeEditor = this.editor.getControl() as unknown as StandaloneCodeEditor;
         codeEditor.removeDecorations(INLINE_VALUE_DECORATION_KEY);
-        codeEditor.setDecorations(INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
+        codeEditor.setDecorations('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
         this.editorDecorations = this.deltaDecorations(this.editorDecorations, newFrameDecorations);
     }
 
-    protected async createInlineValueDecorations(): Promise<monaco.editor.IDecorationOptions[]> {
+    protected async createInlineValueDecorations(): Promise<IDecorationOptions[]> {
         if (!this.sessions.isCurrentEditorFrame(this.uri)) {
             return [];
         }
@@ -290,7 +294,7 @@ export class DebugEditorModel implements Disposable {
                 glyphMarginClassName: className,
                 glyphMarginHoverMessage: message.map(value => ({ value })),
                 stickiness: DebugEditorModel.STICKINESS,
-                beforeContentClassName: renderInline ? `theia-debug-breakpoint-column ${className}-column` : undefined
+                beforeContentClassName: renderInline ? `theia-debug-breakpoint-column codicon ${className}` : undefined
             }
         };
     }
@@ -474,16 +478,16 @@ export class DebugEditorModel implements Disposable {
     static STICKINESS = monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges;
 
     static BREAKPOINT_HINT_DECORATION: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-breakpoint-hint',
+        glyphMarginClassName: 'codicon-debug-hint',
         stickiness: DebugEditorModel.STICKINESS
     };
 
     static TOP_STACK_FRAME_MARGIN: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-top-stack-frame',
+        glyphMarginClassName: 'codicon-debug-stackframe',
         stickiness: DebugEditorModel.STICKINESS
     };
     static FOCUSED_STACK_FRAME_MARGIN: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-focused-stack-frame',
+        glyphMarginClassName: 'codicon-debug-stackframe-focused',
         stickiness: DebugEditorModel.STICKINESS
     };
     static TOP_STACK_FRAME_DECORATION: monaco.editor.IModelDecorationOptions = {

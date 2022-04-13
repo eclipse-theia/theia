@@ -4,6 +4,12 @@
   font-size: inherit !important;
 }
 
+#quick-input-container {
+  position: fixed;
+  right: 50%;
+  z-index: 1000000;
+}
+
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */
@@ -115,19 +121,6 @@
   box-shadow: rgb(0 0 0 / 36%) 0px 0px 8px 2px;
 }
 
-.monaco-icon-label,
-.monaco-icon-label-container,
-.monaco-icon-name-container,
-.monaco-highlighted-label,
-.quick-input-list-row {
-  line-height: var(--theia-content-line-height) !important;
-  height: var(--theia-content-line-height) !important;
-}
-
-.monaco-icon-label-container {
-  font-family: var(--theia-ui-font-family) !important;
-}
-
 .quick-input-list
   .quick-input-list-rows
   > .quick-input-list-row
@@ -165,18 +158,11 @@
 
 .quick-input-list .monaco-list-row .codicon {
   color: var(--theia-foreground) !important;
-  padding-left: 0px !important;
+  padding: 2px !important;
 }
 
 .quick-input-list .monaco-list-row.focused .codicon {
   color: var(--theia-list-foreground) !important;
-}
-
-.monaco-action-bar .action-item {
-  height: var(--theia-ui-icon-font-size);
-  width: var(--theia-ui-icon-font-size);
-  margin: auto;
-  padding-right: calc(var(--theia-ui-padding) * 0.5);
 }
 
 .quick-input-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
@@ -194,6 +180,7 @@
 
 .monaco-icon-label > .monaco-icon-label-container {
   flex: 1 !important;
+  align-items: end;
 }
 
 .quick-input-list
@@ -220,8 +207,14 @@
   .monaco-icon-label-container
   .monaco-icon-name-container
   .label-name {
+    font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1) !important;
     color: var(--theia-foreground) !important;
+}
+
+.quick-input-list .monaco-icon-label::before {
+  transform: scale(0.8);
+  height: 16px;
 }
 
 .quick-input-list .quick-input-list-label {
@@ -258,4 +251,12 @@
 .monaco-editor .peekview-widget .monaco-list-row.focused.selected .monaco-highlighted-label,
 .monaco-editor .peekview-widget .monaco-list-row.focused.selected .codicon {
   color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.quick-input-titlebar {
+  background-color: var(--theia-quickInputTitle-background);
+}
+
+.quick-input-widget input {
+  background-color: var(--theia-input-background) !important;
 }

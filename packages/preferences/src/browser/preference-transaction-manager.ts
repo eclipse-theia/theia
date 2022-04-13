@@ -16,7 +16,7 @@
 
 import { CancellationError, Emitter, Event, MaybePromise, MessageService, nls, WaitUntilEvent } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
@@ -24,6 +24,7 @@ import { Mutex, MutexInterface } from 'async-mutex';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoJSONCEditor } from './monaco-jsonc-editor';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 
 export interface OnWillConcludeEvent<T> extends WaitUntilEvent {
     status: T | false;
@@ -82,6 +83,16 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
         }
     }
 
+    async waitFor(delay?: Promise<unknown>, disposeIfRejected?: boolean): Promise<void> {
+        try {
+            await this.queue.runExclusive(() => delay);
+        } catch {
+            if (disposeIfRejected) {
+                this.dispose();
+            }
+        }
+    }
+
     /**
      * @returns a promise reflecting the result of performing an action. Typically the promise will not resolve until the whole transaction is complete.
      */
@@ -92,7 +103,7 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 release = await this.queue.acquire();
                 if (!this.inUse) {
                     this.inUse = true;
-                    this.queue.waitForUnlock().then(() => this.dispose());
+                    this.disposeWhenDone();
                 }
                 return this.act(...args);
             } catch (e) {
@@ -101,13 +112,23 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 }
                 return false;
             } finally {
-                if (release) {
-                    release();
-                }
+                release?.();
             }
         } else {
             throw new Error('Transaction used after disposal.');
         }
+    }
+
+    protected disposeWhenDone(): void {
+        // Due to properties of the micro task system, it's possible for something to have been equeued between
+        // the resolution of the waitForUnlock() promise and the the time this code runs, so we have to check.
+        this.queue.waitForUnlock().then(() => {
+            if (!this.queue.isLocked()) {
+                this.dispose();
+            } else {
+                this.disposeWhenDone();
+            }
+        });
     }
 
     protected async conclude(): Promise<void> {
@@ -155,15 +176,23 @@ export interface PreferenceContext {
     getScope(): PreferenceScope;
 }
 export const PreferenceContext = Symbol('PreferenceContext');
+export const PreferenceTransactionPrelude = Symbol('PreferenceTransactionPrelude');
 
 @injectable()
 export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
-    reference: monaco.editor.IReference<MonacoEditorModel> | undefined;
+    reference: IReference<MonacoEditorModel> | undefined;
     @inject(PreferenceContext) protected readonly context: PreferenceContext;
+    @inject(PreferenceTransactionPrelude) protected readonly prelude?: Promise<unknown>;
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(MonacoJSONCEditor) protected readonly jsoncEditor: MonacoJSONCEditor;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+
+    @postConstruct()
+    protected override init(): Promise<void> {
+        this.waitFor(this.prelude);
+        return super.init();
+    }
 
     protected async setUp(): Promise<boolean> {
         const reference = await this.textModelService.createModelReference(this.context.getConfigUri()!);
@@ -238,6 +267,14 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
 }
 
 export interface PreferenceTransactionFactory {
-    (context: PreferenceContext): PreferenceTransaction;
+    (context: PreferenceContext, waitFor?: Promise<unknown>): PreferenceTransaction;
 }
 export const PreferenceTransactionFactory = Symbol('PreferenceTransactionFactory');
+
+export const preferenceTransactionFactoryCreator: interfaces.FactoryCreator<PreferenceTransaction> = ({ container }) =>
+    (context: PreferenceContext, waitFor?: Promise<unknown>) => {
+        const child = container.createChild();
+        child.bind(PreferenceContext).toConstantValue(context);
+        child.bind(PreferenceTransactionPrelude).toConstantValue(waitFor);
+        return child.get(PreferenceTransaction);
+    };

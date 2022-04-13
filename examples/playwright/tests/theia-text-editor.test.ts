@@ -164,7 +164,7 @@ test.describe('Theia Text Editor', () => {
         await sampleTextEditor.saveAndClose();
     });
 
-    test('should close without saving', async () => {
+    test.skip('should close without saving', async () => {
         const sampleTextEditor = await app.openEditor('sample.txt', TheiaTextEditor);
         await sampleTextEditor.replaceLineWithLineNumber('change again', 1);
         expect(await sampleTextEditor.isDirty()).toBe(true);

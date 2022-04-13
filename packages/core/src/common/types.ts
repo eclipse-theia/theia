@@ -15,6 +15,22 @@
 // *****************************************************************************
 
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
+export type MaybeUndefined<T> = { [P in keyof T]: T[P] | undefined };
+
+/**
+ * Creates a shallow copy with all ownkeys of the original object that are `null` made `undefined`
+ */
+export function nullToUndefined<T>(nullable: MaybeNull<T>): MaybeUndefined<T> {
+    const undefinable = { ...nullable } as MaybeUndefined<T>;
+    for (const key in nullable) {
+        // eslint-disable-next-line no-null/no-null
+        if (nullable[key] === null && Object.prototype.hasOwnProperty.call(nullable, key)) {
+            undefinable[key] = undefined;
+        }
+    }
+    return undefinable;
+}
 
 export type Deferred<T> = {
     [P in keyof T]: Promise<T[P]>

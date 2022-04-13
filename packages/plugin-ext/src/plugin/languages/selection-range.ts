@@ -26,6 +26,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import * as model from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import * as types from '../types-impl';
+import { Position } from '../../common/plugin-api-rpc';
 
 export class SelectionRangeProviderAdapter {
 
@@ -34,7 +35,7 @@ export class SelectionRangeProviderAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideSelectionRanges(resource: URI, position: monaco.IPosition[], token: theia.CancellationToken): Promise<model.SelectionRange[][]> {
+    provideSelectionRanges(resource: URI, position: Position[], token: theia.CancellationToken): Promise<model.SelectionRange[][]> {
         const documentData = this.documents.getDocumentData(resource);
 
         if (!documentData) {

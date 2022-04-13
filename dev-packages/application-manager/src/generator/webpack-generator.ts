@@ -56,8 +56,7 @@ export class WebpackGenerator extends AbstractGenerator {
 const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
-${this.ifMonaco(() => `const CopyWebpackPlugin = require('copy-webpack-plugin');
-`)}const CircularDependencyPlugin = require('circular-dependency-plugin');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 const CompressionPlugin = require('compression-webpack-plugin')
 
 const outputPath = path.resolve(__dirname, 'lib');
@@ -70,18 +69,10 @@ const { mode, staticCompression }  = yargs.option('mode', {
     type: 'boolean',
     default: true
 }).argv;
-const development = mode === 'development';${this.ifMonaco(() => `
-
-const monacoEditorCorePath = development ? '${this.resolve('@theia/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@theia/monaco-editor-core', 'min/vs')}';`)}
+const development = mode === 'development';
 
 const plugins = [
-    ${this.ifMonaco(() => `new CopyWebpackPlugin({
-        patterns: [{
-            from: monacoEditorCorePath,
-            to: 'vs'
-        }]
-    }),
-    `)}new webpack.ProvidePlugin({
+    new webpack.ProvidePlugin({
         // the Buffer class doesn't exist in the browser but some dependencies rely on it
         Buffer: ['buffer', 'Buffer']
     })
@@ -99,11 +90,15 @@ module.exports = {
     mode,
     plugins,
     devtool: 'source-map',
-    entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
+    entry: {
+        bundle: path.resolve(__dirname, 'src-gen/frontend/index.js'),
+        ${this.ifMonaco(() => "'editor.worker': '@theia/monaco-editor-core/esm/vs/editor/editor.worker.js'")}
+    },
     output: {
-        filename: 'bundle.js',
+        filename: '[name].js',
         path: outputPath,
-        devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]'
+        devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+        globalObject: 'self'
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
     cache: staticCompression,
@@ -200,10 +195,7 @@ module.exports = {
             'os': false,
             'timers': false
         },
-        extensions: ['.js']${this.ifMonaco(() => `,
-        alias: {
-            'vs': path.resolve(outputPath, monacoEditorCorePath)
-        }`)}
+        extensions: ['.js']
     },
     stats: {
         warnings: true,

@@ -22,6 +22,7 @@ import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { PreferenceService } from '../preferences';
+import { AccessibilityInformation } from '../../common/accessibility';
 
 export interface StatusBarEntry {
     /**
@@ -44,18 +45,12 @@ export interface StatusBarEntry {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments?: any[];
     priority?: number;
+    accessibilityInformation?: AccessibilityInformation;
     onclick?: (e: MouseEvent) => void;
 }
 
 export enum StatusBarAlignment {
     LEFT, RIGHT
-}
-
-export interface StatusBarEntryAttributes {
-    className?: string;
-    title?: string;
-    style?: object;
-    onClick?: (e: MouseEvent) => void;
 }
 
 export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
@@ -169,15 +164,15 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         };
     }
 
-    protected createAttributes(entry: StatusBarEntry): StatusBarEntryAttributes {
-        const attrs: StatusBarEntryAttributes = {};
+    protected createAttributes(entry: StatusBarEntry): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        const attrs: React.Attributes & React.HTMLAttributes<HTMLElement> = {};
 
         if (entry.command) {
             attrs.onClick = this.onclick(entry);
             attrs.className = 'element hasCommand';
         } else if (entry.onclick) {
             attrs.onClick = e => {
-                if (entry.onclick) {
+                if (entry.onclick && e instanceof MouseEvent) {
                     entry.onclick(e);
                 }
             };
@@ -189,14 +184,19 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         if (entry.tooltip) {
             attrs.title = entry.tooltip;
         }
+        if (entry.className) {
+            attrs.className += ' ' + entry.className;
+        }
+        if (entry.accessibilityInformation) {
+            attrs['aria-label'] = entry.accessibilityInformation.label;
+            attrs.role = entry.accessibilityInformation.role;
+        } else {
+            attrs['aria-label'] = [entry.text, entry.tooltip].join(', ');
+        }
 
         attrs.style = {
             color: entry.color || this.color
         };
-
-        if (entry.className) {
-            attrs.className += ' ' + entry.className;
-        }
 
         return attrs;
     }

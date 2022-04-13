@@ -24,6 +24,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import * as monaco from '@theia/monaco-editor-core';
 
 export interface WorkspaceSymbolProvider {
     provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;
@@ -87,6 +88,10 @@ export class MonacoLanguages implements LanguageService {
 
     getLanguage(languageId: string): Language | undefined {
         return this.mergeLanguages(monaco.languages.getLanguages().filter(language => language.id === languageId)).get(languageId);
+    }
+
+    getExtension(languageId: string): string | undefined {
+        return this.getLanguage(languageId)?.extensions.values().next().value;
     }
 
     protected mergeLanguages(registered: monaco.languages.ILanguageExtensionPoint[]): Map<string, Mutable<Language>> {

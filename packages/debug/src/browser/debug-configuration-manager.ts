@@ -26,7 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { PreferenceScope, PreferenceService, QuickPickValue, StorageService } from '@theia/core/lib/browser';
+import { LabelProvider, PreferenceScope, PreferenceService, QuickPickValue, StorageService } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { DebugConfigurationModel } from './debug-configuration-model';
@@ -37,6 +37,10 @@ import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import * as monaco from '@theia/monaco-editor-core';
+import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { nls } from '@theia/core';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -55,6 +59,9 @@ export class DebugConfigurationManager {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
@@ -160,7 +167,7 @@ export class DebugConfigurationManager {
         this._currentOptions = options && !options.configuration.dynamic ? this.find(options.configuration.name, options.workspaceFolderUri) : options;
 
         if (!this._currentOptions) {
-            const { model } = this;
+            const model = this.getModel();
             if (model) {
                 const configuration = model.configurations[0];
                 if (configuration) {
@@ -191,14 +198,23 @@ export class DebugConfigurationManager {
     }
 
     async openConfiguration(): Promise<void> {
-        const { model } = this;
+        const model = this.getModel();
         if (model) {
             await this.doOpen(model);
         }
     }
 
     async addConfiguration(): Promise<void> {
-        const { model } = this;
+        let rootUri: URI | undefined = undefined;
+        if (this.workspaceService.saved && this.workspaceService.tryGetRoots().length > 1) {
+            rootUri = await this.selectRootUri();
+            // Do not continue if the user explicitly does not choose a location.
+            if (!rootUri) {
+                return;
+            }
+        }
+
+        const model = this.getModel(rootUri);
         if (!model) {
             return;
         }
@@ -207,7 +223,7 @@ export class DebugConfigurationManager {
             return;
         }
         const editor = widget.editor.getControl();
-        const { commandService } = widget.editor;
+        const commandService = StandaloneServices.get(ICommandService);
         let position: monaco.Position | undefined;
         let depthInArray = 0;
         let lastProperty = '';
@@ -243,8 +259,24 @@ export class DebugConfigurationManager {
         await commandService.executeCommand('editor.action.triggerSuggest');
     }
 
-    protected get model(): DebugConfigurationModel | undefined {
-        const workspaceFolderUri = this.workspaceVariables.getWorkspaceRootUri();
+    protected async selectRootUri(): Promise<URI | undefined> {
+        const workspaceRoots = this.workspaceService.tryGetRoots();
+        const items: QuickPickValue<URI>[] = [];
+        for (const workspaceRoot of workspaceRoots) {
+            items.push({
+                label: this.labelProvider.getName(workspaceRoot.resource),
+                description: this.labelProvider.getLongName(workspaceRoot.resource),
+                value: workspaceRoot.resource
+            });
+        }
+        const root = await this.quickPickService.show(items, {
+            placeholder: nls.localize('theia/debug/addConfigurationPlaceholder', 'Select workspace root to add configuration to')
+        });
+        return root?.value;
+    }
+
+    protected getModel(uri?: URI): DebugConfigurationModel | undefined {
+        const workspaceFolderUri = this.workspaceVariables.getWorkspaceRootUri(uri);
         if (workspaceFolderUri) {
             const key = workspaceFolderUri.toString();
             for (const model of this.models.values()) {
@@ -312,7 +344,7 @@ export class DebugConfigurationManager {
         await WaitUntilEvent.fire(this.onWillProvideDebugConfigurationEmitter, {});
     }
 
-    async provideDynamicDebugConfigurations(): Promise<{ type: string, configurations: DebugConfiguration[] }[]> {
+    async provideDynamicDebugConfigurations(): Promise<Record<string, DebugConfiguration[]>> {
         await this.fireWillProvideDynamicDebugConfiguration();
         return this.debug.provideDynamicDebugConfigurations!();
     }

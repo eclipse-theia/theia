@@ -818,7 +818,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
                 const content = data ? data : icon ? <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> : '';
                 return <div key={node.id + className + index} className={className} style={style} title={tooltip}>
-                    {content}
+                    {content}{index !== tailDecorations.length - 1 ? ',' : ''}
                 </div>;
             })}
         </React.Fragment>;

@@ -40,7 +40,7 @@ import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TreeViewWidget } from './tree-view-widget';
 import { SEARCH_VIEW_CONTAINER_ID } from '@theia/search-in-workspace/lib/browser/search-in-workspace-factory';
-
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views';
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -229,9 +229,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
 
         if (viewContainer.themeIcon) {
-            const icon = monaco.theme.ThemeIcon.fromString(viewContainer.themeIcon);
+            const icon = ThemeIcon.fromString(viewContainer.themeIcon);
             if (icon) {
-                themeIconClass = monaco.theme.ThemeIcon.asClassName(icon) ?? '';
+                themeIconClass = ThemeIcon.asClassName(icon) ?? '';
             }
         }
 

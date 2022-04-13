@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// Aliases for monaco.editor.{theme-interfaces}
-export import MonacoThemeColor = monaco.editor.IColors;
-export import MonacoTokenRule = monaco.editor.ITokenThemeRule;
-export import MonacoBuiltinTheme = monaco.editor.BuiltinTheme;
+import * as monaco from '@theia/monaco-editor-core';
+
+export type MonacoThemeColor = monaco.editor.IColors;
+export interface MonacoTokenRule extends monaco.editor.ITokenThemeRule { };
+export type MonacoBuiltinTheme = monaco.editor.BuiltinTheme;
 export interface MonacoTheme extends monaco.editor.IStandaloneThemeData {
     name: string;
 }

@@ -124,6 +124,7 @@ import {
     FileSystemError,
     CommentThreadCollapsibleState,
     QuickInputButtons,
+    QuickPickItemKind,
     CommentMode,
     CallHierarchyItem,
     CallHierarchyIncomingCall,
@@ -853,10 +854,10 @@ export function createAPIFactory(
             stopDebugging(session?: theia.DebugSession): Thenable<void> {
                 return debugExt.stopDebugging(session);
             },
-            addBreakpoints(breakpoints: theia.Breakpoint[]): void {
+            addBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
                 debugExt.addBreakpoints(breakpoints);
             },
-            removeBreakpoints(breakpoints: theia.Breakpoint[]): void {
+            removeBreakpoints(breakpoints: readonly theia.Breakpoint[]): void {
                 debugExt.removeBreakpoints(breakpoints);
             }
         };
@@ -965,6 +966,7 @@ export function createAPIFactory(
             ProgressOptions,
             Progress,
             ParameterInformation,
+            QuickPickItemKind,
             SignatureInformation,
             SignatureHelp,
             SignatureHelpTriggerKind,

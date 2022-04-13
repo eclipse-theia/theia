@@ -17,7 +17,7 @@
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell, QuickInputService, QuickPickValue, QuickPickItemOrSeparator } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorPreferences } from './editor-preferences';
 import { ResourceProvider, MessageService } from '@theia/core';
@@ -202,7 +202,7 @@ export namespace EditorCommands {
 @injectable()
 export class EditorCommandContribution implements CommandContribution {
 
-    public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
+    public static readonly AUTOSAVE_PREFERENCE: string = 'files.autoSave';
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -233,7 +233,7 @@ export class EditorCommandContribution implements CommandContribution {
     @postConstruct()
     protected init(): void {
         this.editorPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'editor.autoSave' && e.newValue === 'on') {
+            if (e.preferenceName === 'files.autoSave' && e.newValue !== 'off') {
                 this.shell.saveAll();
             }
         });
@@ -285,7 +285,7 @@ export class EditorCommandContribution implements CommandContribution {
             return;
         }
         const current = editor.document.languageId;
-        const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItem> = [
+        const items: Array<QuickPickValue<'autoDetect' | Language> | QuickPickItemOrSeparator> = [
             { label: nls.localizeByDefault('Auto Detect'), value: 'autoDetect' },
             { type: 'separator', label: nls.localizeByDefault('languages (identifier)') },
             ... (this.languages.languages.map(language => this.toQuickPickLanguage(language, current))).sort((e, e2) => e.label.localeCompare(e2.label))
@@ -395,11 +395,12 @@ export class EditorCommandContribution implements CommandContribution {
         return new URI('file:///.txt');
     }
 
-    private isAutoSaveOn(): boolean {
+    protected isAutoSaveOn(): boolean {
         const autoSave = this.preferencesService.get(EditorCommandContribution.AUTOSAVE_PREFERENCE);
-        return autoSave === 'on' || autoSave === undefined;
+        return autoSave !== 'off';
     }
-    private async toggleAutoSave(): Promise<void> {
-        this.preferencesService.updateValue(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'on');
+
+    protected async toggleAutoSave(): Promise<void> {
+        this.preferencesService.updateValue(EditorCommandContribution.AUTOSAVE_PREFERENCE, this.isAutoSaveOn() ? 'off' : 'afterDelay');
     }
 }
