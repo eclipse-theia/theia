@@ -124,42 +124,54 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
         "restricted": false
     },
     "editor.language.brackets": {
-        "type": "array",
         "default": false,
         "description": nls.localizeByDefault("Defines the bracket symbols that increase or decrease the indentation."),
-        "items": {
-            "type": "array",
-            "items": [
-                {
-                    "type": "string",
-                    "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+        "anyOf": [
+            { "const": false },
+            {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string",
+                            "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+                        },
+                        {
+                            "type": "string",
+                            "description": nls.localizeByDefault("The closing bracket character or string sequence.")
+                        }
+                    ]
                 },
-                {
-                    "type": "string",
-                    "description": nls.localizeByDefault("The closing bracket character or string sequence.")
-                }
-            ]
-        },
+
+            },
+        ],
         "scope": "language-overridable",
         "restricted": false
     },
     "editor.language.colorizedBracketPairs": {
-        "type": "array",
         "default": false,
         "description": nls.localize("theia/editor/editor.language.colorizedBracketPairs", "Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled."),
-        "items": {
-            "type": "array",
-            "items": [
-                {
-                    "type": "string",
-                    "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+        "anyOf": [
+            { "const": false },
+            {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string",
+                            "description": nls.localizeByDefault("The opening bracket character or string sequence.")
+                        },
+                        {
+                            "type": "string",
+                            "description": nls.localizeByDefault("The closing bracket character or string sequence.")
+                        }
+                    ]
                 },
-                {
-                    "type": "string",
-                    "description": nls.localizeByDefault("The closing bracket character or string sequence.")
-                }
-            ]
-        },
+
+            },
+        ],
         "scope": "language-overridable",
         "restricted": false
     },
@@ -794,6 +806,7 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     },
     "editor.gotoLocation.multiple": {
         "deprecationMessage": "This setting is deprecated, please use separate settings like 'editor.editor.gotoLocation.multipleDefinitions' or 'editor.editor.gotoLocation.multipleImplementations' instead.",
+        "type": ["string", "null"],
         "default": null,
         "scope": "language-overridable",
         "restricted": false
@@ -2166,8 +2179,8 @@ export interface GeneratedEditorPreferences {
     'editor.semanticHighlighting.enabled': 'true' | 'false' | 'configuredByTheme';
     'editor.stablePeek': boolean;
     'editor.maxTokenizationLineLength': number;
-    'editor.language.brackets': Array<[string, string]>;
-    'editor.language.colorizedBracketPairs': Array<[string, string]>;
+    'editor.language.brackets': Array<[string, string]> | false;
+    'editor.language.colorizedBracketPairs': Array<[string, string]> | false;
     'diffEditor.maxComputationTime': number;
     'diffEditor.maxFileSize': number;
     'diffEditor.renderSideBySide': boolean;

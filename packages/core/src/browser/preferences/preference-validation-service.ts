@@ -37,6 +37,8 @@ export interface PreferenceValidationResult<T extends JSONValue> {
     messages: string[];
 }
 
+type ValidatablePreferenceTuple = ValidatablePreference & ({ items: ValidatablePreference[] } | { prefixItems: ValidatablePreference[] });
+
 @injectable()
 export class PreferenceValidationService {
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
@@ -74,6 +76,9 @@ export class PreferenceValidationService {
             if (!schema) {
                 console.warn('Request to validate preference with no schema registered:', key);
                 return value;
+            }
+            if (schema.const !== undefined) {
+                return this.validateConst(key, value, schema as ValidatablePreference & { const: JSONValue });
             }
             if (Array.isArray(schema.enum)) {
                 return this.validateEnum(key, value, schema as ValidatablePreference & { enum: JSONValue[] });
@@ -185,24 +190,71 @@ export class PreferenceValidationService {
         }
         return candidates[0];
     }
-
     protected validateArray(key: string, value: JSONValue, schema: ValidatablePreference): JSONValue[] {
         const candidate = Array.isArray(value) ? value : this.getDefaultFromSchema(schema);
         if (!Array.isArray(candidate)) {
             return [];
         }
-        if (!schema.items || Array.isArray(schema.items)) { // Arrays were allowed in some draft of JSON schema, but never officially supported.
+        if (!schema.items && !schema.prefixItems) { // Arrays were allowed in some draft of JSON schema, but never officially supported.
             console.warn('Requested validation of array without item specification:', key);
             return candidate;
         }
-        const valid = [];
-        for (const item of candidate) {
-            const validated = this.validateBySchema(key, item, schema.items);
-            if (validated === item) {
-                valid.push(item);
+        if (Array.isArray(schema.items) || Array.isArray(schema.prefixItems)) {
+            return this.validateTuple(key, value, schema as ValidatablePreferenceTuple);
+        }
+        const itemSchema = schema.items!;
+        const valid = candidate.filter(item => this.validateBySchema(key, item, itemSchema) === item);
+        return valid.length === candidate.length ? candidate : valid;
+    }
+
+    protected validateTuple(key: string, value: JSONValue, schema: ValidatablePreferenceTuple): JSONValue[] {
+        const defaultValue = this.getDefaultFromSchema(schema);
+        const maybeCandidate = Array.isArray(value) ? value : defaultValue;
+        // If we find that the provided value is not valid, we immediately bail and try the default value instead.
+        const shouldTryDefault = Array.isArray(schema.defaultValue ?? schema.default) && !PreferenceProvider.deepEqual(defaultValue, maybeCandidate);
+        const tryDefault = () => this.validateTuple(key, defaultValue, schema);
+        const candidate = Array.isArray(maybeCandidate) ? maybeCandidate : [];
+        // Only `prefixItems` is officially part of the JSON Schema spec, but `items` as array was part of a draft and was used by VSCode.
+        const tuple = (schema.prefixItems ?? schema.items) as Required<ValidatablePreference>['prefixItems'];
+        const lengthIsWrong = candidate.length < tuple.length || (candidate.length > tuple.length && !schema.additionalItems);
+        if (lengthIsWrong && shouldTryDefault) { return tryDefault(); }
+        let valid = true;
+        const validItems: JSONValue[] = [];
+        for (const [index, subschema] of tuple.entries()) {
+            const targetItem = candidate[index];
+            const validatedItem = targetItem === undefined ? this.getDefaultFromSchema(subschema) : this.validateBySchema(key, targetItem, subschema);
+            valid &&= validatedItem === targetItem;
+            if (!valid && shouldTryDefault) { return tryDefault(); }
+            validItems.push(validatedItem);
+        };
+        if (candidate.length > tuple.length) {
+            if (!schema.additionalItems) {
+                return validItems;
+            } else if (schema.additionalItems === true && !valid) {
+                validItems.push(...candidate.slice(tuple.length));
+                return validItems;
+            } else if (schema.additionalItems !== true) {
+                const applicableSchema = schema.additionalItems;
+                for (let i = tuple.length; i < candidate.length; i++) {
+                    const targetItem = candidate[i];
+                    const validatedItem = this.validateBySchema(key, targetItem, applicableSchema);
+                    if (validatedItem === targetItem) {
+                        validItems.push(targetItem);
+                    } else {
+                        valid = false;
+                        if (shouldTryDefault) { return tryDefault(); }
+                    }
+                }
             }
         }
-        return valid.length === candidate.length ? candidate : valid;
+        return valid ? candidate : validItems;
+    }
+
+    protected validateConst(key: string, value: JSONValue, schema: ValidatablePreference & { const: JSONValue }): JSONValue {
+        if (PreferenceProvider.deepEqual(value, schema.const)) {
+            return value;
+        }
+        return schema.const;
     }
 
     protected validateEnum(key: string, value: JSONValue, schema: ValidatablePreference & { enum: JSONValue[] }): JSONValue {

@@ -129,7 +129,6 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
                 deployPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}''`);
                 return;
             }
-
             const metadata = this.reader.readMetadata(manifest);
 
             const deployedLocations = this.deployedLocations.get(metadata.model.id) || new Set<string>();
