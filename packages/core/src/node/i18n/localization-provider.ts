@@ -33,7 +33,7 @@ export class LocalizationProvider {
                 });
             }
             merged.languageName = merged.languageName || localization.languageName;
-            merged.localizedLanguageName = merged.localizedLanguageName || merged.localizedLanguageName;
+            merged.localizedLanguageName = merged.localizedLanguageName || localization.localizedLanguageName;
             merged.languagePack = merged.languagePack || localization.languagePack;
             Object.assign(merged.translations, localization.translations);
         }
