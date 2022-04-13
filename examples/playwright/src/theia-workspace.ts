@@ -69,4 +69,8 @@ export class TheiaWorkspace {
         fs.emptyDirSync(this.workspacePath);
     }
 
+    remove(): void {
+        fs.removeSync(this.workspacePath);
+    }
+
 }

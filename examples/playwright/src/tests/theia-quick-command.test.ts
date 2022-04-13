@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaAboutDialog } from '../src/theia-about-dialog';
-import { TheiaApp } from '../src/theia-app';
-import { TheiaExplorerView } from '../src/theia-explorer-view';
-import { TheiaQuickCommandPalette } from '../src/theia-quick-command-palette';
+import { TheiaAboutDialog } from '../theia-about-dialog';
+import { TheiaApp } from '../theia-app';
+import { TheiaExplorerView } from '../theia-explorer-view';
+import { TheiaQuickCommandPalette } from '../theia-quick-command-palette';
 import test, { page } from './fixtures/theia-fixture';
 
 let app: TheiaApp;

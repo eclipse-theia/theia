@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TheiaApp } from '../src/theia-app';
-import { DOT_FILES_FILTER, TheiaExplorerView } from '../src/theia-explorer-view';
-import { TheiaWorkspace } from '../src/theia-workspace';
+import { TheiaApp } from '../theia-app';
+import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
+import { TheiaWorkspace } from '../theia-workspace';
 import { expect } from '@playwright/test';
 import test, { page } from './fixtures/theia-fixture';
 
@@ -30,7 +30,7 @@ test.describe('Theia Workspace', () => {
     });
 
     test('should be initialized with the contents of a file location', async () => {
-        const ws = new TheiaWorkspace(['tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
         const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);
@@ -39,7 +39,7 @@ test.describe('Theia Workspace', () => {
     });
 
     test('should be initialized with the contents of multiple file locations', async () => {
-        const ws = new TheiaWorkspace(['tests/resources/sample-files1', 'tests/resources/sample-files2']);
+        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1', 'src/tests/resources/sample-files2']);
         const app = await TheiaApp.load(page, ws);
         const explorer = await app.openView(TheiaExplorerView);
         const fileStatElements = await explorer.visibleFileStatNodes(DOT_FILES_FILTER);

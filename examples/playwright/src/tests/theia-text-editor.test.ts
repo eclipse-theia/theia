@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaApp } from '../src/theia-app';
-import { TheiaTextEditor } from '../src/theia-text-editor';
-import { TheiaWorkspace } from '../src/theia-workspace';
+import { TheiaApp } from '../theia-app';
+import { TheiaTextEditor } from '../theia-text-editor';
+import { TheiaWorkspace } from '../theia-workspace';
 import test, { page } from './fixtures/theia-fixture';
 
 let app: TheiaApp;
@@ -25,7 +25,7 @@ let app: TheiaApp;
 test.describe('Theia Text Editor', () => {
 
     test.beforeAll(async () => {
-        const ws = new TheiaWorkspace(['tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         app = await TheiaApp.load(page, ws);
     });
 

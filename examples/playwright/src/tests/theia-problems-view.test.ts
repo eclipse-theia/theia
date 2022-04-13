@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaApp } from '../src/theia-app';
-import { TheiaProblemsView } from '../src/theia-problem-view';
+import { TheiaApp } from '../theia-app';
+import { TheiaProblemsView } from '../theia-problem-view';
 import test, { page } from './fixtures/theia-fixture';
 
 let app: TheiaApp;

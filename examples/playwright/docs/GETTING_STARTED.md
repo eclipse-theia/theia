@@ -1,6 +1,6 @@
 # Getting Started
 
-This repository contains several tests based on Theia 🎭 Playwright in `examples/playwright/tests` that should help getting started quickly.
+This repository contains several tests based on Theia 🎭 Playwright in `examples/playwright/src/tests` that should help getting started quickly.
 You can also use this package as a template for your own tests.
 
 Please note that Theia 🎭 Playwright is built to be extended with custom page objects.
@@ -25,7 +25,7 @@ At any time, we can also get information from the text editor, such as obtaining
 ```typescript
 test("should undo and redo text changes and correctly update the dirty state", async () => {
     // 1. set up workspace contents and open Theia app
-    const ws = new TheiaWorkspace(["tests/resources/sample-files1"]);
+    const ws = new TheiaWorkspace(["src/tests/resources/sample-files1"]);
     const app = await TheiaApp.load(page, ws);
 
     // 2. open Theia text editor

@@ -2,21 +2,12 @@
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
     "composite": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "rootDir": "src",
     "outDir": "lib",
-    "baseUrl": ".",
-    "rootDir": "."
+    "baseUrl": "."
   },
   "include": [
-    "src",
-    "tests",
-    "configs"
+    "src"
   ],
   "references": []
 }
