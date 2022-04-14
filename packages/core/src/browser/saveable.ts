@@ -37,7 +37,7 @@ export interface Saveable {
     /**
      * Creates a snapshot of the dirty state.
      */
-    createSnapshot?(): object;
+    createSnapshot?(): Saveable.Snapshot;
     /**
      * Applies the given snapshot to the dirty state.
      */
@@ -56,6 +56,8 @@ export namespace Saveable {
          */
         soft?: boolean
     }
+
+    export type Snapshot = { value: string } | { read(): string | null };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isSource(arg: any): arg is SaveableSource {
         return !!arg && ('saveable' in arg) && is(arg.saveable);
