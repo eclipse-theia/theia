@@ -1418,6 +1418,7 @@ export class ApplicationShell extends Widget {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {
             const element: StatusBarEntry = {
+                name: 'Toggle Bottom Panel',
                 text: '$(codicon-window)',
                 alignment: StatusBarAlignment.RIGHT,
                 tooltip: 'Toggle Bottom Panel',

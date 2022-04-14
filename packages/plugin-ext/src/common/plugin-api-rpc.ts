@@ -401,10 +401,12 @@ export interface MessageRegistryMain {
 
 export interface StatusBarMessageRegistryMain {
     $setMessage(id: string,
+        name: string | undefined,
         text: string | undefined,
         priority: number,
         alignment: theia.StatusBarAlignment,
         color: string | undefined,
+        backgroundColor: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
         accessibilityInformation: theia.AccessibilityInformation,
