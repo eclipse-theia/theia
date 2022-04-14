@@ -1765,6 +1765,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'welcomePage.buttonHoverBackground', defaults: { dark: Color.rgba(200, 235, 255, .072), light: Color.rgba(0, 0, 0, .10) }, description: 'Hover background color for the buttons on the Welcome page.' },
             { id: 'walkThrough.embeddedEditorBackground', defaults: { dark: Color.rgba(0, 0, 0, .4), light: '#f4f4f4' }, description: 'Background color for the embedded editors on the Interactive Playground.' },
 
+            // Dropdown colors should be aligned with https://code.visualstudio.com/api/references/theme-color#dropdown-control
+
+            {
+                id: 'dropdown.background', defaults: {
+                    light: Color.white,
+                    dark: '#3C3C3C',
+                    hc: Color.black
+                }, description: 'Dropdown background.'
+            },
+            {
+                id: 'dropdown.listBackground', defaults: {
+                    hc: Color.black
+                }, description: 'Dropdown list background.'
+            },
+            {
+                id: 'dropdown.foreground', defaults: {
+                    dark: '#F0F0F0',
+                    hc: Color.white
+                }, description: 'Dropdown foreground.'
+            },
+            {
+                id: 'dropdown.border', defaults: {
+                    light: '#CECECE',
+                    dark: 'dropdown.background',
+                    hc: '#6FC3DF'
+                }, description: 'Dropdown border.'
+            },
+
             // Settings Editor colors should be aligned with https://code.visualstudio.com/api/references/theme-color#settings-editor-colors
             {
                 id: 'settings.headerForeground', defaults: {

@@ -156,3 +156,65 @@ export function preventNavigation(event: WheelEvent): void {
     event.preventDefault();
     event.stopPropagation();
 }
+
+export type PartialCSSStyle = Omit<Partial<CSSStyleDeclaration>,
+    'visibility' |
+    'display' |
+    'parentRule' |
+    'getPropertyPriority' |
+    'getPropertyValue' |
+    'item' |
+    'removeProperty' |
+    'setProperty'>;
+
+export function measureTextWidth(text: string | string[], style?: PartialCSSStyle): number {
+    const measureElement = getMeasurementElement(style);
+    text = Array.isArray(text) ? text : [text];
+    let width = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        width = Math.max(measureElement.getBoundingClientRect().width, width);
+    }
+    return width;
+}
+
+export function measureTextHeight(text: string | string[], style?: PartialCSSStyle): number {
+    const measureElement = getMeasurementElement(style);
+    text = Array.isArray(text) ? text : [text];
+    let height = 0;
+    for (const item of text) {
+        measureElement.textContent = item;
+        height = Math.max(measureElement.getBoundingClientRect().height, height);
+    }
+    return height;
+}
+
+const defaultStyle = document.createElement('div').style;
+defaultStyle.fontFamily = 'var(--theia-ui-font-family)';
+defaultStyle.fontSize = 'var(--theia-ui-font-size1)';
+defaultStyle.visibility = 'hidden';
+
+function getMeasurementElement(style?: PartialCSSStyle): HTMLElement {
+    let measureElement = document.getElementById('measure');
+    if (!measureElement) {
+        measureElement = document.createElement('span');
+        measureElement.id = 'measure';
+        measureElement.style.fontFamily = defaultStyle.fontFamily;
+        measureElement.style.fontSize = defaultStyle.fontSize;
+        measureElement.style.visibility = defaultStyle.visibility;
+        document.body.appendChild(measureElement);
+    }
+    const measureStyle = measureElement.style;
+    // Reset styling first
+    for (let i = 0; i < measureStyle.length; i++) {
+        const property = measureStyle[i];
+        measureStyle.setProperty(property, defaultStyle.getPropertyValue(property));
+    }
+    // Apply new styling
+    if (style) {
+        for (const [key, value] of Object.entries(style)) {
+            measureStyle.setProperty(key, value as string);
+        }
+    }
+    return measureElement;
+}

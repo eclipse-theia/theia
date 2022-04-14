@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
@@ -35,6 +35,7 @@ import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     position: monaco.Position,
@@ -212,23 +213,21 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
-        ReactDOM.render(<select
-            className='theia-select'
-            value={this.context} onChange={this.updateInput}>
-            {this.renderOption('condition', 'Expression')}
-            {this.renderOption('hitCondition', 'Hit Count')}
-            {this.renderOption('logMessage', 'Log Message')}
-        </select>, this.selectNode);
+        ReactDOM.render(<SelectComponent
+            value={this.context} onChange={this.updateInput}
+            options={[
+                { value: 'condition', label: nls.localizeByDefault('Expression') },
+                { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
+                { value: 'logMessage', label: nls.localizeByDefault('Log Message') },
+            ]}
+        />, this.selectNode);
     }
 
-    protected renderOption(context: DebugBreakpointWidget.Context, label: string): JSX.Element {
-        return <option value={context}>{label}</option>;
-    }
-    protected readonly updateInput = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    protected readonly updateInput = (option: SelectOption) => {
         if (this._input) {
             this._values[this.context] = this._input.getControl().getValue();
         }
-        this.context = e.currentTarget.value as DebugBreakpointWidget.Context;
+        this.context = option.value as DebugBreakpointWidget.Context;
         this.render();
         if (this._input) {
             this._input.focus();
@@ -259,12 +258,12 @@ export class DebugBreakpointWidget implements Disposable {
     }
     protected get placeholder(): string {
         if (this.context === 'logMessage') {
-            return "Message to log when breakpoint is hit. Expressions within {} are interpolated. 'Enter' to accept, 'esc' to cancel.";
+            return nls.localizeByDefault("Message to log when breakpoint is hit. Expressions within {} are interpolated. 'Enter' to accept, 'esc' to cancel.");
         }
         if (this.context === 'hitCondition') {
-            return "Break when hit count condition is met. 'Enter' to accept, 'esc' to cancel.";
+            return nls.localizeByDefault("Break when hit count condition is met. 'Enter' to accept, 'esc' to cancel.");
         }
-        return "Break when expression evaluates to true. 'Enter' to accept, 'esc' to cancel.";
+        return nls.localizeByDefault("Break when expression evaluates to true. 'Enter' to accept, 'esc' to cancel.");
     }
 
 }

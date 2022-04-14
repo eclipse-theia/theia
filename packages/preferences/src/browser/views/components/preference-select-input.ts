@@ -17,29 +17,56 @@
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
+import { PreferenceProvider } from '@theia/core/lib/browser/preferences/preference-provider';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
+import * as React from '@theia/core/shared/react';
+import * as ReactDOM from '@theia/core/shared/react-dom';
 
 @injectable()
-export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLSelectElement> {
+export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
+
+    protected readonly selectComponent = React.createRef<SelectComponent>();
 
     protected get enumValues(): JSONValue[] {
         return this.preferenceNode.preference.data.enum!;
     }
 
-    protected createInteractable(parent: HTMLElement): void {
-        const { enumValues } = this;
-        const interactable = document.createElement('select');
-        this.interactable = interactable;
-        interactable.classList.add('theia-select');
-        interactable.onchange = this.handleUserInteraction.bind(this);
-        for (const [index, value] of enumValues.entries()) {
-            const option = document.createElement('option');
-            option.value = index.toString();
-            option.textContent = `${value}`;
-            interactable.appendChild(option);
+    protected get selectOptions(): SelectOption[] {
+        const items: SelectOption[] = [];
+        const values = this.enumValues;
+        const defaultValue = this.preferenceNode.preference.data.default;
+        for (let i = 0; i < values.length; i++) {
+            const value = `${values[i]}`;
+            const detail = PreferenceProvider.deepEqual(defaultValue, value) ? 'default' : undefined;
+            let enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
+            let markdown = false;
+            const markdownEnumDescription = this.preferenceNode.preference.data.markdownEnumDescriptions?.[i];
+            if (markdownEnumDescription) {
+                enumDescription = this.markdownRenderer.renderInline(markdownEnumDescription);
+                markdown = true;
+            }
+            items.push({
+                value,
+                detail,
+                description: enumDescription,
+                markdown
+            });
         }
-        interactable.value = this.getDataValue();
+        return items;
+    }
+
+    protected createInteractable(parent: HTMLElement): void {
+        const interactable = document.createElement('div');
+        const selectComponent = React.createElement(SelectComponent, {
+            options: this.selectOptions,
+            value: this.getDataValue(),
+            onChange: (_, index) => this.handleUserInteraction(index),
+            ref: this.selectComponent
+        });
+        this.interactable = interactable;
+        ReactDOM.render(selectComponent, interactable);
         parent.appendChild(interactable);
     }
 
@@ -48,26 +75,25 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     }
 
     protected doHandleValueChange(): void {
-        const currentValue = this.interactable.value || undefined;
         this.updateInspection();
         const newValue = this.getDataValue();
         this.updateModificationStatus(this.getValue());
-        if (newValue !== currentValue && document.activeElement !== this.interactable) {
-            this.interactable.value = newValue;
+        if (document.activeElement !== this.interactable && this.selectComponent.current) {
+            this.selectComponent.current.value = newValue;
         }
     }
 
     /**
      * Returns the stringified index corresponding to the currently selected value.
      */
-    protected getDataValue(): string {
+    protected getDataValue(): number {
         const currentValue = this.getValue();
-        const selected = this.enumValues.findIndex(value => value === currentValue);
-        return selected > -1 ? selected.toString() : '0';
+        const selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        return Math.max(selected, 0);
     }
 
-    protected handleUserInteraction(): void {
-        const value = this.enumValues[Number(this.interactable.value)];
+    protected handleUserInteraction(selected: number): void {
+        const value = this.enumValues[selected];
         this.setPreferenceImmediately(value);
     }
 }
