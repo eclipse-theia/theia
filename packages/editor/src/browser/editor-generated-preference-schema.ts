@@ -16,7 +16,6 @@
 
 import { isOSX, isWindows, nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser';
-import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
 
 /* eslint-disable @typescript-eslint/quotes,max-len,no-null/no-null */
 
@@ -2167,6 +2166,8 @@ export const editorGeneratedPreferenceProperties: PreferenceSchema['properties']
     }
 };
 
+type QuickSuggestionValues = boolean | 'on' | 'inline' | 'off';
+
 export interface GeneratedEditorPreferences {
     'editor.rename.enablePreview': boolean;
     'editor.tabSize': number;
@@ -2176,7 +2177,7 @@ export interface GeneratedEditorPreferences {
     'editor.largeFileOptimizations': boolean;
     'editor.wordBasedSuggestions': boolean;
     'editor.wordBasedSuggestionsMode': 'currentDocument' | 'matchingDocuments' | 'allDocuments';
-    'editor.semanticHighlighting.enabled': 'true' | 'false' | 'configuredByTheme';
+    'editor.semanticHighlighting.enabled': true | false | 'configuredByTheme';
     'editor.stablePeek': boolean;
     'editor.maxTokenizationLineLength': number;
     'editor.language.brackets': Array<[string, string]> | false;
@@ -2199,8 +2200,8 @@ export interface GeneratedEditorPreferences {
     'editor.autoIndent': 'none' | 'keep' | 'brackets' | 'advanced' | 'full';
     'editor.autoSurround': 'languageDefined' | 'quotes' | 'brackets' | 'never';
     'editor.bracketPairColorization.enabled': boolean;
-    'editor.guides.bracketPairs': 'true' | 'active' | 'false';
-    'editor.guides.bracketPairsHorizontal': 'true' | 'active' | 'false';
+    'editor.guides.bracketPairs': true | 'active' | false;
+    'editor.guides.bracketPairsHorizontal': true | 'active' | false;
     'editor.guides.highlightActiveBracketPair': boolean;
     'editor.guides.indentation': boolean;
     'editor.guides.highlightActiveIndentation': boolean;
@@ -2234,13 +2235,13 @@ export interface GeneratedEditorPreferences {
     'editor.foldingMaximumRegions': number;
     'editor.unfoldOnClickAfterEndOfLine': boolean;
     'editor.fontFamily': string;
-    'editor.fontLigatures': 'undefined';
+    'editor.fontLigatures': boolean | string;
     'editor.fontSize': number;
-    'editor.fontWeight': 'undefined';
+    'editor.fontWeight': number | string;
     'editor.formatOnPaste': boolean;
     'editor.formatOnType': boolean;
     'editor.glyphMargin': boolean;
-    'editor.gotoLocation.multiple': 'undefined';
+    'editor.gotoLocation.multiple': null | 'peek' | 'gotoAndPeek' | 'goto';
     'editor.gotoLocation.multipleDefinitions': 'peek' | 'gotoAndPeek' | 'goto';
     'editor.gotoLocation.multipleTypeDefinitions': 'peek' | 'gotoAndPeek' | 'goto';
     'editor.gotoLocation.multipleDeclarations': 'peek' | 'gotoAndPeek' | 'goto';
@@ -2284,7 +2285,7 @@ export interface GeneratedEditorPreferences {
     'editor.parameterHints.cycle': boolean;
     'editor.peekWidgetDefaultFocus': 'tree' | 'editor';
     'editor.definitionLinkOpensInPeek': boolean;
-    'editor.quickSuggestions': 'undefined';
+    'editor.quickSuggestions': boolean | { other?: QuickSuggestionValues; comments?: QuickSuggestionValues; strings?: QuickSuggestionValues };
     'editor.quickSuggestionsDelay': number;
     'editor.renameOnType': boolean;
     'editor.renderControlCharacters': boolean;
@@ -2319,7 +2320,7 @@ export interface GeneratedEditorPreferences {
     'editor.suggest.preview': boolean;
     'editor.suggest.showInlineDetails': boolean;
     'editor.suggest.maxVisibleSuggestions': number;
-    'editor.suggest.filteredTypes': JSONObject;
+    'editor.suggest.filteredTypes': Record<string, boolean>;
     'editor.suggest.showMethods': boolean;
     'editor.suggest.showFunctions': boolean;
     'editor.suggest.showConstructors': boolean;
@@ -2354,11 +2355,11 @@ export interface GeneratedEditorPreferences {
     'editor.suggestOnTriggerCharacters': boolean;
     'editor.suggestSelection': 'first' | 'recentlyUsed' | 'recentlyUsedByPrefix';
     'editor.tabCompletion': 'on' | 'off' | 'onlySnippets';
-    'editor.unicodeHighlight.nonBasicASCII': 'true' | 'false' | 'inUntrustedWorkspace';
+    'editor.unicodeHighlight.nonBasicASCII': true | false | 'inUntrustedWorkspace';
     'editor.unicodeHighlight.invisibleCharacters': boolean;
     'editor.unicodeHighlight.ambiguousCharacters': boolean;
-    'editor.unicodeHighlight.includeComments': 'true' | 'false' | 'inUntrustedWorkspace';
-    'editor.unicodeHighlight.includeStrings': 'true' | 'false' | 'inUntrustedWorkspace';
+    'editor.unicodeHighlight.includeComments': true | false | 'inUntrustedWorkspace';
+    'editor.unicodeHighlight.includeStrings': true | false | 'inUntrustedWorkspace';
     'editor.unicodeHighlight.allowedCharacters': Record<string, boolean>;
     'editor.unicodeHighlight.allowedLocales': Record<string, boolean>;
     'editor.unusualLineTerminators': 'auto' | 'off' | 'prompt';

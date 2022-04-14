@@ -24,7 +24,7 @@ import { IJSONSchema } from 'src/common/json-schema';
 
 /* eslint-disable no-unused-expressions,no-null/no-null */
 
-describe.only('Preference Validation Service', () => {
+describe('Preference Validation Service', () => {
     const container = new Container();
     container.bind(PreferenceSchemaProvider).toConstantValue({ getDefaultValue: PreferenceSchemaProvider.prototype.getDefaultValue } as PreferenceSchemaProvider);
     container.bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();

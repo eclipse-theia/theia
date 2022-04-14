@@ -112,7 +112,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     } else if (name === 'editor.fontFamily') {
                         description.default = fontFamilyText;
                     }
-                    interfaceEntries.push(`'${name}': ${this.formatTypeForInterface(description)};`);
+                    interfaceEntries.push(`'${name}': ${this.formatSchemaForInterface(description)};`);
                 }
                 const stringified = JSON.stringify(properties, this.codeSnippetReplacer(), 4);
                 const propertyList = this.dequoteCodeSnippets(stringified);
@@ -182,7 +182,14 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         if (defaultValue !== undefined && this.preferenceValidationService.validateBySchema('any-preference', defaultValue, schema) !== defaultValue) {
             return 'HelpBadDefaultValue';
         }
-        const jsonType = schema.const !== undefined ? schema.const : (schema.type ?? schema.enum);
+        const jsonType = schema.const !== undefined ? schema.const : (schema.enum ?? schema.type);
+        if (jsonType === undefined) {
+            const subschemata = schema.anyOf ?? schema.oneOf;
+            if (subschemata) {
+                const permittedTypes = [].concat.apply(subschemata.map(subschema => this.formatSchemaForInterface(subschema).split(' | ')));
+                return Array.from(new Set(permittedTypes)).join(' | ');
+            }
+        }
         return this.formatTypeForInterface(jsonType);
 
     }
@@ -198,10 +205,15 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
             case 'true':
             case 'false':
                 return jsonType;
+            case true:
+            case false:
+            case null: // eslint-disable-line no-null/no-null
+                return `${jsonType}`;
             case 'integer':
                 return 'number';
             case 'array':
             case 'object':
+            case undefined:
                 // These have to be fixed manually, so we output a type that will cause a TS error.
                 return 'Help';
         }

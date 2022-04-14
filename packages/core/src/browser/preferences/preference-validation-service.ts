@@ -195,7 +195,7 @@ export class PreferenceValidationService {
         if (!Array.isArray(candidate)) {
             return [];
         }
-        if (!schema.items && !schema.prefixItems) { // Arrays were allowed in some draft of JSON schema, but never officially supported.
+        if (!schema.items && !schema.prefixItems) {
             console.warn('Requested validation of array without item specification:', key);
             return candidate;
         }
