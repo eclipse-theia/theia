@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { PreferenceLeafNodeRenderer } from './preference-node-renderer';
+import { injectable, interfaces } from '@theia/core/shared/inversify';
+import { Preference } from '../../util/preference-types';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 
 @injectable()
 export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<string, HTMLInputElement> {
@@ -56,5 +58,19 @@ export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<st
     protected async handleBlur(): Promise<void> {
         await this.setPreferenceWithDebounce.flush();
         this.handleValueChange();
+    }
+}
+
+@injectable()
+export class PreferenceStringInputRendererContribution extends PreferenceLeafNodeRendererContribution {
+    static ID = 'preference-string-input-renderer';
+    id = PreferenceStringInputRendererContribution.ID;
+
+    canHandleLeafNode(node: Preference.LeafNode): number {
+        return Preference.LeafNode.getType(node) === 'string' ? 2 : 0;
+    }
+
+    createLeafNodeRenderer(container: interfaces.Container): PreferenceNodeRenderer {
+        return container.get(PreferenceStringInputRenderer);
     }
 }

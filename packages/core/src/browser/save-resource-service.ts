@@ -14,32 +14,46 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
-import { Saveable, SaveOptions } from './saveable';
+import { inject, injectable } from 'inversify';
+import { MessageService, UNTITLED_SCHEME } from '../common';
+import { Navigatable, NavigatableWidget } from './navigatable-types';
+import { Saveable, SaveableSource, SaveOptions } from './saveable';
 import { Widget } from './widgets';
 
 @injectable()
 export class SaveResourceService {
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     /**
      * Indicate if the document can be saved ('Save' command should be disable if not).
      */
-     canSave(saveable: Saveable): boolean {
+    canSave(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
+        return Saveable.isDirty(widget) && (this.canSaveNotSaveAs(widget) || this.canSaveAs(widget));
+    }
+
+    canSaveNotSaveAs(widget?: Widget): widget is Widget & (Saveable | SaveableSource) {
         // By default, we never allow a document to be saved if it is untitled.
-        return Saveable.isDirty(saveable) && !Saveable.isUntitled(saveable);
+        return Boolean(widget && NavigatableWidget.getUri(widget)?.scheme !== UNTITLED_SCHEME);
     }
 
     /**
-     * Saves the document.
+     * Saves the document
      *
-     * This function is called only if `canSave` returns true, which means the document is not untitled
-     * and is thus saveable.
+     * No op if the widget is not saveable.
      */
     async save(widget: Widget | undefined, options?: SaveOptions): Promise<void> {
-        const saveable = Saveable.get(widget);
-        if (saveable && this.canSave(saveable)) {
-            await saveable.save(options);
+        if (this.canSaveNotSaveAs(widget)) {
+            await Saveable.save(widget, options);
+        } else if (this.canSaveAs(widget)) {
+            await this.saveAs(widget, options);
         }
     }
 
+    canSaveAs(saveable?: Widget): saveable is Widget & SaveableSource & Navigatable {
+        return false;
+    }
+
+    saveAs(sourceWidget: Widget & SaveableSource & Navigatable, options?: SaveOptions): Promise<void> {
+        return Promise.reject('Unsupported: The base SaveResourceService does not support saveAs action.');
+    }
 }

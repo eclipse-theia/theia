@@ -84,6 +84,7 @@ export interface PreferenceDataProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
     scope?: PreferenceScope;
+    typeDetails?: any;
 }
 export namespace PreferenceDataProperty {
     export function fromPreferenceSchemaProperty(schemaProps: PreferenceSchemaProperty, defaultScope: PreferenceScope = PreferenceScope.Workspace): PreferenceDataProperty {

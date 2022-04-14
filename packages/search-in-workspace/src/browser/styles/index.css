@@ -344,7 +344,7 @@
     background-image: var(--theia-icon-replace-all);
 }
 
-.replace-all-button-container .action-item.disabled {
+.replace-all-button-container .action-label.disabled {
     opacity: var(--theia-mod-disabled-opacity);
     background: transparent;
     cursor: default;

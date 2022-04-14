@@ -25,7 +25,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
-import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { filterItems, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
 
 @injectable()
@@ -108,7 +108,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     async getPicks(filter: string, token: CancellationToken): Promise<QuickPicks> {
-        const items: QuickPickItem[] = [];
+        const items: QuickPickItemOrSeparator[] = [];
         const configurations = this.debugConfigurationManager.all;
 
         for (const config of configurations) {
@@ -122,12 +122,11 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         }
 
         // Resolve dynamic configurations from providers
-        const configurationsByType = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
-        for (const typeConfigurations of configurationsByType) {
-            const dynamicConfigurations = typeConfigurations.configurations;
+        const record = await this.debugConfigurationManager.provideDynamicDebugConfigurations();
+        for (const [type, dynamicConfigurations] of Object.entries(record)) {
             if (dynamicConfigurations.length > 0) {
                 items.push({
-                    label: typeConfigurations.type,
+                    label: type,
                     type: 'separator'
                 });
             }
@@ -135,7 +134,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             for (const configuration of dynamicConfigurations) {
                 items.push({
                     label: configuration.name,
-                    execute: () => this.runConfiguration({ configuration })
+                    execute: () => this.runDynamicConfiguration({ configuration })
                 });
             }
         }
@@ -151,6 +150,14 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     protected runConfiguration(configuration: DebugSessionOptions): void {
         this.debugConfigurationManager.current = { ...configuration };
         this.commandRegistry.executeCommand(DebugCommands.START.id);
+    }
+
+    /**
+     * Execute the debug start command without affecting the current debug configuration
+     * @param configuration the `DebugSessionOptions`.
+     */
+    protected runDynamicConfiguration(configuration: DebugSessionOptions): void {
+        this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     }
 
     /**

@@ -39,6 +39,7 @@ describe('TypeScript', function () {
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
+    const { Range } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -215,7 +216,8 @@ module.exports = (port, host, argv) => Promise.resolve()
      * @param {MonacoEditor} editor
      */
     async function assertPeekOpened(editor) {
-        const referencesController = editor.getControl()._contributions['editor.contrib.referencesController'];
+        /** @type any */
+        const referencesController = editor.getControl().getContribution('editor.contrib.referencesController');
         await waitForAnimation(() => referencesController._widget && referencesController._widget._tree.getFocus().length);
 
         assert.isFalse(contextKeyService.match('editorTextFocus'));
@@ -459,7 +461,8 @@ module.exports = (port, host, argv) => Promise.resolve()
         // @ts-ignore
         assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
 
-        const suggest = editor.getControl()._contributions['editor.contrib.suggestController'];
+        /** @type any */
+        const suggest = editor.getControl().getContribution('editor.contrib.suggestController');
         const getFocusedLabel = () => {
             const focusedItem = suggest.widget.value.getFocusedItem();
             return focusedItem && focusedItem.item.completion.label;
@@ -521,7 +524,7 @@ module.exports = (port, host, argv) => Promise.resolve()
 
         // all rename edits should be grouped in one edit operation and applied in the same tick
         const waitForApplyRenameEdits = new Deferred();
-        editor.getControl().onDidChangeModelContent(waitForApplyRenameEdits.resolve);
+        editor.getControl().onDidChangeModelContent(() => waitForApplyRenameEdits.resolve());
         await waitForApplyRenameEdits.promise;
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
@@ -567,7 +570,8 @@ module.exports = (port, host, argv) => Promise.resolve()
         // @ts-ignore
         assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'backendApplicationModule');
 
-        const hover = editor.getControl()._contributions['editor.contrib.hover'];
+        /** @type any */
+        const hover = editor.getControl().getContribution('editor.contrib.hover');
 
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(!!hover._contentWidget && hover._contentWidget._isVisible);
@@ -692,7 +696,8 @@ DIV {
 
         const editor = await openEditor(serverUri);
 
-        const codeLens = editor.getControl()._contributions['css.editor.codeLens'];
+        /** @type any */
+        const codeLens = editor.getControl().getContribution('css.editor.codeLens');
         const codeLensNode = () => codeLens._lenses[0] && codeLens._lenses[0]._contentWidget && codeLens._lenses[0]._contentWidget._domNode;
         const codeLensNodeVisible = () => {
             const n = codeLensNode();
@@ -705,7 +710,7 @@ DIV {
         const position = { lineNumber: 16, column: 1 };
         // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions(position, position),
+            range: Range.fromPositions(position, position),
             forceMoveMarkers: false,
             text: 'export '
         }]);
@@ -714,7 +719,7 @@ DIV {
         // Recall `applyEdits` to workaround `vscode` bug, See: https://github.com/eclipse-theia/theia/issues/9714#issuecomment-876582947.
         // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions(position, position),
+            range: Range.fromPositions(position, position),
             forceMoveMarkers: false,
             text: ' '
         }]);
@@ -766,7 +771,8 @@ SPAN {
         editor.getControl().revealPosition({ lineNumber, column });
         assert.equal(currentChar(), ')');
 
-        const quickFixController = editor.getControl()._contributions['editor.contrib.quickFixController'];
+        /** @type any */
+        const quickFixController = editor.getControl().getContribution('editor.contrib.quickFixController');
         const lightBulbNode = () => {
             const ui = quickFixController._ui.rawValue;
             const lightBulb = ui && ui._lightBulbWidget.rawValue;
@@ -803,7 +809,7 @@ SPAN {
         // const { Container[ ] } = require('inversify');
         // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 18 }),
+            range: Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 18 }),
             forceMoveMarkers: false,
             text: ' '
         }]);
@@ -826,7 +832,7 @@ SPAN {
         // const { Container[  }  ]= require('inversify');
         // @ts-ignore
         editor.getControl().getModel().applyEdits([{
-            range: monaco.Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 21 }),
+            range: Range.fromPositions({ lineNumber, column: 18 }, { lineNumber, column: 21 }),
             forceMoveMarkers: false,
             text: '  }  '
         }]);

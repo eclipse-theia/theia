@@ -19,7 +19,6 @@ import {
     ApplicationShell,
     CommonCommands,
     NavigatableWidget,
-    open,
     OpenerService, OpenHandler,
     QuickInputService,
     Saveable,
@@ -47,7 +46,6 @@ import {
     DocumentHighlight
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
-import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { isUriComponents, toDocumentSymbol, toPosition } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -79,6 +77,7 @@ import {
 import { CustomEditorOpener } from '@theia/plugin-ext/lib/main/browser/custom-editors/custom-editor-opener';
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import * as monaco from '@theia/monaco-editor-core';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -273,10 +272,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
          * because of it we filter out editors from views based on `NavigatableWidget.is`
          * and apply actions only to them
          */
-        commands.registerCommand({ id: 'workbench.action.files.newUntitledFile' }, {
-            execute: () => open(this.openerService, createUntitledURI())
-        });
-
         if (!environment.electron.is() || isOSX) {
             commands.registerCommand({ id: 'workbench.action.files.openFileFolder' }, {
                 execute: () => commands.executeCommand(WorkspaceCommands.OPEN.id)
@@ -707,7 +702,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({
             id: 'copyRelativeFilePath'
         }, {
-            execute: () => commands.executeCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id)
+            execute: () => commands.executeCommand(WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id)
         });
         commands.registerCommand({
             id: 'revealInExplorer'

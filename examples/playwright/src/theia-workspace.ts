@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import * as fs from 'fs-extra';
-import { tmpdir } from 'os';
-import { sep } from 'path';
-import * as path from 'path';
+import { resolve } from 'path';
+import { OSUtil, urlEncodePath } from './util';
 
 export class TheiaWorkspace {
 
@@ -30,14 +29,14 @@ export class TheiaWorkspace {
      * @param {string[]} pathOfFilesToInitialize Path to files or folders that shall be copied to the workspace
      */
     constructor(protected pathOfFilesToInitialize?: string[]) {
-        this.workspacePath = fs.mkdtempSync(`${tmpdir}${sep}cloud-ws-`);
+        this.workspacePath = fs.mkdtempSync(`${OSUtil.tmpDir}${OSUtil.fileSeparator}cloud-ws-`);
     }
 
     /** Performs the file system operations preparing the workspace location synchronously. */
     initialize(): void {
         if (this.pathOfFilesToInitialize) {
             for (const initPath of this.pathOfFilesToInitialize) {
-                const absoluteInitPath = path.resolve(process.cwd(), initPath);
+                const absoluteInitPath = resolve(process.cwd(), initPath);
                 if (!fs.pathExistsSync(absoluteInitPath)) {
                     throw Error('Workspace does not exist at ' + absoluteInitPath);
                 }
@@ -47,15 +46,23 @@ export class TheiaWorkspace {
     }
 
     get path(): string {
-        return this.workspacePath;
+        let workspacePath = this.workspacePath;
+        if (!OSUtil.osStartsWithFileSeparator(this.workspacePath)) {
+            workspacePath = `${OSUtil.fileSeparator}${workspacePath}`;
+        }
+        if (OSUtil.isWindows) {
+            // Drive letters in windows paths have to be lower case
+            workspacePath = workspacePath.replace(/.:/, matchedChar => matchedChar.toLowerCase());
+        }
+        return workspacePath;
     }
 
     get urlEncodedPath(): string {
-        return this.path.replace(/[\\]/g, '/');
+        return urlEncodePath(this.path);
     }
 
     get escapedPath(): string {
-        return this.path.replace(/:/g, '%3A').replace(/[\\]/g, '%5C');
+        return this.path.replace(/:/g, '%3A');
     }
 
     clear(): void {

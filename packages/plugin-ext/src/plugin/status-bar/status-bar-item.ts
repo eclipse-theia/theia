@@ -29,6 +29,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     private _tooltip: string;
     private _color: string | ThemeColor;
     private _command: string | theia.Command;
+    private _accessibilityInformation: theia.AccessibilityInformation;
 
     private _isVisible: boolean;
     private _timeoutHandle: NodeJS.Timer | undefined;
@@ -73,6 +74,10 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         return this._command;
     }
 
+    public get accessibilityInformation(): theia.AccessibilityInformation {
+        return this._accessibilityInformation;
+    }
+
     public set text(text: string) {
         this._text = text;
         this.update();
@@ -90,6 +95,11 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
 
     public set command(command: string | theia.Command) {
         this._command = command;
+        this.update();
+    }
+
+    public set accessibilityInformation(information: theia.AccessibilityInformation) {
+        this._accessibilityInformation = information;
         this.update();
     }
 
@@ -126,6 +136,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 typeof this.color === 'string' ? this.color : this.color && this.color.id,
                 this.tooltip,
                 commandId,
+                this.accessibilityInformation,
                 args);
         }, 0);
     }

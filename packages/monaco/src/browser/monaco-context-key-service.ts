@@ -15,16 +15,18 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService as TheiaContextKeyService, ContextKey, ContextKeyChangeEvent, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { Emitter } from '@theia/core';
+import { AbstractContextKeyService, ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { ContextKeyExpr, ContextKeyExpression, IContext } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 
 @injectable()
-export class MonacoContextKeyService implements ContextKeyService {
+export class MonacoContextKeyService implements TheiaContextKeyService {
     protected readonly onDidChangeEmitter = new Emitter<ContextKeyChangeEvent>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
-    @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+    @inject(VSCodeContextKeyService)
+    protected readonly contextKeyService: VSCodeContextKeyService;
 
     @postConstruct()
     protected init(): void {
@@ -39,18 +41,21 @@ export class MonacoContextKeyService implements ContextKeyService {
         return this.contextKeyService.createKey(key, defaultValue);
     }
 
-    activeContext?: HTMLElement | monaco.contextKeyService.IContext;
+    activeContext?: HTMLElement | IContext;
 
     match(expression: string, context?: HTMLElement): boolean {
         const parsed = this.parse(expression);
-        const ctx = this.identifyContext(context);
-        if (!ctx) {
-            return this.contextKeyService.contextMatchesRules(parsed);
+        if (parsed) {
+            const ctx = this.identifyContext(context);
+            if (!ctx) {
+                return this.contextKeyService.contextMatchesRules(parsed);
+            }
+            return parsed.evaluate(ctx);
         }
-        return monaco.keybindings.KeybindingResolver.contextMatchesRules(ctx, parsed);
+        return true;
     }
 
-    protected identifyContext(callersContext?: HTMLElement | monaco.contextKeyService.IContext): monaco.contextKeyService.IContext | undefined {
+    protected identifyContext(callersContext?: HTMLElement | IContext): IContext | undefined {
         if (callersContext && 'getValue' in callersContext) {
             return callersContext;
         } else if (this.activeContext && 'getValue' in this.activeContext) {
@@ -63,11 +68,11 @@ export class MonacoContextKeyService implements ContextKeyService {
         return undefined;
     }
 
-    protected readonly expressions = new Map<string, monaco.contextkey.ContextKeyExpression>();
-    protected parse(when: string): monaco.contextkey.ContextKeyExpression | undefined {
+    protected readonly expressions = new Map<string, ContextKeyExpression>();
+    protected parse(when: string): ContextKeyExpression | undefined {
         let expression = this.expressions.get(when);
         if (!expression) {
-            expression = monaco.contextkey.ContextKeyExpr.deserialize(when);
+            expression = ContextKeyExpr.deserialize(when);
             if (expression) {
                 this.expressions.set(when, expression);
             }
@@ -76,7 +81,7 @@ export class MonacoContextKeyService implements ContextKeyService {
     }
 
     parseKeys(expression: string): Set<string> | undefined {
-        const expr = monaco.contextkey.ContextKeyExpr.deserialize(expression);
+        const expr = ContextKeyExpr.deserialize(expression);
         return expr ? new Set<string>(expr.keys()) : expr;
     }
 
@@ -96,8 +101,12 @@ export class MonacoContextKeyService implements ContextKeyService {
         }
     }
 
-    createScoped(target?: HTMLElement): ScopedValueStore {
-        return this.contextKeyService.createScoped(target);
+    createScoped(target: HTMLElement): ScopedValueStore {
+        const scoped = this.contextKeyService.createScoped(target);
+        if (scoped instanceof AbstractContextKeyService) {
+            return scoped as AbstractContextKeyService & { createScoped(): ScopedValueStore };
+        }
+        return this;
     }
 
     setContext(key: string, value: unknown): void {

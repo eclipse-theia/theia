@@ -100,7 +100,7 @@ export class SampleToolbarContribution extends AbstractToolbarContribution
             <div
                 role='button'
                 tabIndex={0}
-                className='icon-wrapper action-item item enabled codicon codicon-search'
+                className='icon-wrapper action-label item enabled codicon codicon-search'
                 id='easy-search-item-icon'
                 onClick={this.handleOnClick}
                 title='Search for files, text, commands, and more...'

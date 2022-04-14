@@ -17,6 +17,11 @@
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import * as monaco from '@theia/monaco-editor-core';
+import { clearConfiguredLanguageAssociations, registerConfiguredLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
 @injectable()
 export class MonacoMimeService extends MimeService {
@@ -26,7 +31,7 @@ export class MonacoMimeService extends MimeService {
 
     constructor() {
         super();
-        monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.event(() => {
+        StandaloneServices.get(ILanguageService).onDidChange(() => {
             if (this.updatingAssociations) {
                 return;
             }
@@ -42,14 +47,13 @@ export class MonacoMimeService extends MimeService {
     protected updateAssociations = debounce(() => {
         this.updatingAssociations = true;
         try {
-            monaco.mime.clearTextMimes(true);
+            clearConfiguredLanguageAssociations();
 
             for (const association of this.associations) {
                 const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
-                monaco.mime.registerTextMime({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
+                registerConfiguredLanguageAssociation({ id: association.id, mime: mimetype, filepattern: association.filepattern });
             }
-
-            monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.fire(undefined);
+            (StandaloneServices.get(ILanguageService) as LanguageService)['_onDidChange'].fire(undefined);
         } finally {
             this.updatingAssociations = false;
         }

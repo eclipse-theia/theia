@@ -115,7 +115,9 @@ export class CompletionAdapter {
 
     private convertCompletionItem(item: theia.CompletionItem, id: number, parentId: number,
         defaultInserting?: theia.Range, defaultReplacing?: theia.Range): CompletionDto | undefined {
-        if (typeof item.label !== 'string' || item.label.length === 0) {
+
+        const itemLabel = typeof item.label === 'string' ? item.label : item.label.label;
+        if (itemLabel.length === 0) {
             console.warn('Invalid Completion Item -> must have at least a label');
             return undefined;
         }
@@ -125,7 +127,7 @@ export class CompletionAdapter {
             throw Error('DisposableCollection is missing...');
         }
 
-        let insertText = item.label;
+        let insertText = itemLabel;
         let insertTextRules = item.keepWhitespace ? CompletionItemInsertTextRule.KeepWhitespace : 0;
         if (item.textEdit) {
             insertText = item.textEdit.newText;

@@ -203,7 +203,7 @@ export class ScmTreeWidget extends TreeWidget {
 
                 if (widget) {
                     const diffNavigator = this.diffNavigatorProvider(widget.editor);
-                    if (diffNavigator.canNavigate() && diffNavigator.hasPrevious()) {
+                    if (diffNavigator.hasPrevious()) {
                         diffNavigator.previous();
                     } else {
                         const previousNode = this.moveToPreviousFileNode();
@@ -256,7 +256,7 @@ export class ScmTreeWidget extends TreeWidget {
 
                 if (widget) {
                     const diffNavigator = this.diffNavigatorProvider(widget.editor);
-                    if (diffNavigator.canNavigate() && diffNavigator.hasNext()) {
+                    if (diffNavigator.hasNext()) {
                         diffNavigator.next();
                     } else {
                         const nextNode = this.moveToNextFileNode();
@@ -301,7 +301,7 @@ export class ScmTreeWidget extends TreeWidget {
 
                     if (widget) {
                         const diffNavigator = this.diffNavigatorProvider(widget.editor);
-                        if (diffNavigator.canNavigate() && diffNavigator.hasPrevious()) {
+                        if (diffNavigator.hasPrevious()) {
                             diffNavigator.previous();
                         } else {
                             const previousNode = this.moveToPreviousFileNode();
@@ -339,7 +339,7 @@ export class ScmTreeWidget extends TreeWidget {
 
                 if (widget) {
                     const diffNavigator = this.diffNavigatorProvider(widget.editor);
-                    if (diffNavigator.canNavigate() && diffNavigator.hasNext()) {
+                    if (diffNavigator.hasNext()) {
                         diffNavigator.next();
                     } else {
                         const nextNode = this.moveToNextFileNode();

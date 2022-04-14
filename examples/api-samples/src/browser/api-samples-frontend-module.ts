@@ -25,6 +25,7 @@ import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
 import { bindSampleToolbarContribution } from './toolbar/sample-toolbar-contribution';
 
 import '../../src/browser/style/branding.css';
+import { bindMonacoPreferenceExtractor } from './monaco-editor-preferences/monaco-editor-preference-extractor';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -40,4 +41,5 @@ export default new ContainerModule((
     bindVSXCommand(bind);
     bindSampleFilteredCommandContribution(bind);
     bindSampleToolbarContribution(bind, rebind);
+    bindMonacoPreferenceExtractor(bind);
 });

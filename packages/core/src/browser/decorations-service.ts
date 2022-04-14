@@ -48,7 +48,7 @@ export interface DecorationsService {
 
     registerDecorationsProvider(provider: DecorationsProvider): Disposable;
 
-    getDecoration(uri: URI, includeChildren: boolean): Decoration [];
+    getDecoration(uri: URI, includeChildren: boolean): Decoration[];
 }
 
 class DecorationDataRequest {
@@ -198,7 +198,7 @@ export class DecorationsServiceImpl implements DecorationsService {
         });
     }
 
-    getDecoration(uri: URI, includeChildren: boolean): Decoration [] {
+    getDecoration(uri: URI, includeChildren: boolean): Decoration[] {
         const data: Decoration[] = [];
         let containsChildren: boolean = false;
         for (const wrapper of this.data) {

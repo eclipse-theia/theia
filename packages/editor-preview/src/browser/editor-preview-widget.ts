@@ -17,7 +17,7 @@
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { DockPanel, TabBar, Widget, PINNED_CLASS } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
-import { Disposable, DisposableCollection, Emitter, SelectionService } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter, SelectionService, UNTITLED_SCHEME } from '@theia/core/lib/common';
 import { find } from '@theia/core/shared/@phosphor/algorithm';
 
 const PREVIEW_TITLE_CLASS = 'theia-editor-preview-title-unpinned';
@@ -97,9 +97,11 @@ export class EditorPreviewWidget extends EditorWidget {
         }
     }
 
-    override storeState(): { isPreview: boolean, editorState: object } {
-        const { _isPreview: isPreview } = this;
-        return { isPreview, editorState: this.editor.storeViewState() };
+    override storeState(): { isPreview: boolean, editorState: object } | undefined {
+        if (this.getResourceUri()?.scheme !== UNTITLED_SCHEME) {
+            const { _isPreview: isPreview } = this;
+            return { isPreview, editorState: this.editor.storeViewState() };
+        }
     }
 
     override restoreState(oldState: { isPreview: boolean, editorState: object }): void {

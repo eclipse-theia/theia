@@ -165,7 +165,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 this.renderBadge(data, isInSidePanel)
             ),
             h.div({
-                className: 'p-TabBar-tabCloseIcon action-item',
+                className: 'p-TabBar-tabCloseIcon action-label',
                 onclick: this.handleCloseClickEvent
             })
         );

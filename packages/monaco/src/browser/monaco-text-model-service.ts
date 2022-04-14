@@ -19,13 +19,18 @@ import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
-import IReference = monaco.editor.IReference;
+import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-export { IReference };
+import * as monaco from '@theia/monaco-editor-core';
+import { ITextModelService, ITextModelContentProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
+import { ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { ITextResourcePropertiesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/textResourceConfiguration';
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
 export interface MonacoEditorModelFactory {
@@ -39,7 +44,8 @@ export interface MonacoEditorModelFactory {
 }
 
 @injectable()
-export class MonacoTextModelService implements monaco.editor.ITextModelService {
+export class MonacoTextModelService implements ITextModelService {
+    declare readonly _serviceBrand: undefined;
 
     protected readonly _ready = new Deferred<void>();
     /**
@@ -73,6 +79,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     @inject(ApplicationServer)
     protected readonly applicationServer!: ApplicationServer;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     @postConstruct()
     public init(): void {
         let isWindowsBackend = false;
@@ -81,17 +90,13 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
             isWindowsBackend = os === OS.Type.Windows;
         }, () => undefined).then(() => this._ready.resolve());
 
-        const staticServices = monaco.services.StaticServices;
+        const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
 
-        if (staticServices.resourcePropertiesService) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const original = staticServices.resourcePropertiesService.get() as any;
-            original.getEOL = () => {
+        if (resourcePropertiesService) {
+            resourcePropertiesService.getEOL = () => {
                 const eol = this.editorPreferences['files.eol'];
-                if (eol) {
-                    if (eol !== 'auto') {
-                        return eol;
-                    }
+                if (eol && eol !== 'auto') {
+                    return eol;
                 }
                 return isWindowsBackend ? '\r\n' : '\n';
             };
@@ -131,53 +136,71 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger, this.editorPreferences);
     }
 
-    protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {
+    protected readonly modelOptions: { [name: string]: (keyof ITextModelUpdateOptions | undefined) } = {
         'editor.tabSize': 'tabSize',
         'editor.insertSpaces': 'insertSpaces'
     };
+
+    protected toModelOption(editorPreference: EditorPreferenceChange['preferenceName']): keyof ITextModelUpdateOptions | undefined {
+        switch (editorPreference) {
+            case 'editor.tabSize': return 'tabSize';
+            case 'editor.insertSpaces': return 'insertSpaces';
+            case 'editor.bracketPairColorization.enabled': return 'bracketColorizationOptions';
+            case 'editor.trimAutoWhitespace': return 'trimAutoWhitespace';
+
+        }
+        return undefined;
+    }
 
     protected updateModel(model: MonacoEditorModel, change?: EditorPreferenceChange): void {
         if (change) {
             if (!change.affects(model.uri, model.languageId)) {
                 return;
             }
-            if (change.preferenceName === 'editor.autoSave') {
-                model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, model.uri);
+            if (change.preferenceName === 'files.autoSave') {
+                model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
             }
-            if (change.preferenceName === 'editor.autoSaveDelay') {
-                model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, model.uri);
+            if (change.preferenceName === 'files.autoSaveDelay') {
+                model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
             }
             const modelOption = this.modelOptions[change.preferenceName];
             if (modelOption) {
-                const options: monaco.editor.ITextModelUpdateOptions = {};
+                const options: ITextModelUpdateOptions = {};
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                options[modelOption] = change.newValue as any;
+                const newValue = change.newValue as any;
+                options[modelOption] = change.preferenceName === 'editor.bracketPairColorization.enabled' ? { enabled: newValue } : newValue;
                 model.textEditorModel.updateOptions(options);
             }
         } else {
-            model.autoSave = this.editorPreferences.get('editor.autoSave', undefined, model.uri);
-            model.autoSaveDelay = this.editorPreferences.get('editor.autoSaveDelay', undefined, model.uri);
+            model.autoSave = this.editorPreferences.get('files.autoSave', undefined, model.uri);
+            model.autoSaveDelay = this.editorPreferences.get('files.autoSaveDelay', undefined, model.uri);
             model.textEditorModel.updateOptions(this.getModelOptions(model));
         }
     }
 
     /** @deprecated pass MonacoEditorModel instead  */
-    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(model: MonacoEditorModel): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(arg: string | MonacoEditorModel): monaco.editor.ITextModelUpdateOptions {
+    protected getModelOptions(uri: string): ITextModelUpdateOptions;
+    protected getModelOptions(model: MonacoEditorModel): ITextModelUpdateOptions;
+    protected getModelOptions(arg: string | MonacoEditorModel): ITextModelUpdateOptions {
         const uri = typeof arg === 'string' ? arg : arg.uri;
         const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
         return {
             tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
-            insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri)
+            insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri),
+            bracketColorizationOptions: { enabled: this.editorPreferences.get({ preferenceName: 'editor.bracketPairColorization.enabled', overrideIdentifier }, undefined, uri) },
+            trimAutoWhitespace: this.editorPreferences.get({ preferenceName: 'editor.trimAutoWhitespace', overrideIdentifier }, undefined, uri),
         };
     }
 
-    registerTextModelContentProvider(scheme: string, provider: monaco.editor.ITextModelContentProvider): monaco.IDisposable {
+    registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
         return {
             dispose(): void {
                 // no-op
             }
         };
+    }
+
+    canHandleResource(resource: monaco.Uri): boolean {
+        return this.fileService.canHandleResource(new URI(resource));
     }
 }

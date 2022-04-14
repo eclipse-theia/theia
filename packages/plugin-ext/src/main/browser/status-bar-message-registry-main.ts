@@ -45,15 +45,22 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
+        accessibilityInformation: types.AccessibilityInformation,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: any[] | undefined): Promise<void> {
+        const ariaLabel = accessibilityInformation?.label;
+        const role = accessibilityInformation?.role;
+
         const entry = {
             text: text || '',
+            ariaLabel,
+            role,
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
             tooltip,
             command,
+            accessibilityInformation,
             args
         };
 

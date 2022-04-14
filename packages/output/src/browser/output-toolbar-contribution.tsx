@@ -18,6 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { OutputWidget } from './output-widget';
 import { OutputCommands } from './output-commands';
 import { OutputContribution } from './output-contribution';
@@ -84,27 +85,25 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
     protected readonly NONE = '<no channels>';
 
     protected renderChannelSelector(): React.ReactNode {
-        const channelOptionElements: React.ReactNode[] = [];
-        this.outputChannelManager.getVisibleChannels().forEach(channel => {
-            channelOptionElements.push(<option value={channel.name} key={channel.name}>{channel.name}</option>);
+        const channelOptionElements: SelectOption[] = [];
+        this.outputChannelManager.getVisibleChannels().forEach((channel, i) => {
+            channelOptionElements.push({
+                value: channel.name
+            });
         });
         if (channelOptionElements.length === 0) {
-            channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
+            channelOptionElements.push({
+                value: this.NONE
+            });
         }
-        return <select
-            className='theia-select'
-            id='outputChannelList'
-            key='outputChannelList'
-            value={this.outputChannelManager.selectedChannel ? this.outputChannelManager.selectedChannel.name : this.NONE}
-            onChange={this.changeChannel}
-        >
-            {channelOptionElements}
-        </select>;
+        return <div id='outputChannelList'>
+            <SelectComponent options={channelOptionElements} value={this.outputChannelManager.selectedChannel?.name} onChange={option => this.changeChannel(option)} />
+        </div>;
     }
 
-    protected changeChannel = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const channelName = event.target.value;
-        if (channelName !== this.NONE) {
+    protected changeChannel = (option: SelectOption) => {
+        const channelName = option.value;
+        if (channelName !== this.NONE && channelName) {
             this.outputChannelManager.getChannel(channelName).show();
         }
     };

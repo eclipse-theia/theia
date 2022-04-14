@@ -26,6 +26,12 @@ describe('Monaco API', async function () {
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
     const { CommandRegistry } = require('@theia/core/lib/common/command');
+    const { SimpleKeybinding } = require('@theia/monaco-editor-core/esm/vs/base/common/keybindings');
+    const { IKeybindingService } = require('@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding');
+    const { StandaloneServices } = require('@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
+    const { KeyCode } = require('@theia/monaco-editor-core/esm/vs/base/common/keyCodes');
+    const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
+    const { Uri } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -49,12 +55,12 @@ describe('Monaco API', async function () {
     });
 
     it('KeybindingService.resolveKeybinding', () => {
-        const simpleKeybinding = new monaco.keybindings.SimpleKeybinding(true, true, true, true, monaco.KeyCode.KEY_K);
+        const simpleKeybinding = new SimpleKeybinding(true, true, true, true, KeyCode.KeyK);
         const chordKeybinding = simpleKeybinding.toChord();
         assert.equal(chordKeybinding.parts.length, 1);
         assert.equal(chordKeybinding.parts[0], simpleKeybinding);
 
-        const resolvedKeybindings = monacoEditor.getControl()._standaloneKeybindingService.resolveKeybinding(chordKeybinding);
+        const resolvedKeybindings = StandaloneServices.get(IKeybindingService).resolveKeybinding(chordKeybinding);
         assert.equal(resolvedKeybindings.length, 1);
 
         const resolvedKeybinding = resolvedKeybindings[0];
@@ -124,7 +130,7 @@ describe('Monaco API', async function () {
     it('TokenizationRegistry.getColorMap', async () => {
         if (textmateService['monacoThemeRegistry'].getThemeData().base !== 'vs') {
             const didChangeColorMap = new Promise(resolve => {
-                const toDispose = monaco.modes.TokenizationRegistry.onDidChange(() => {
+                const toDispose = TokenizationRegistry.onDidChange(() => {
                     toDispose.dispose();
                     resolve();
                 });
@@ -136,7 +142,7 @@ describe('Monaco API', async function () {
         const textMateColorMap = textmateService['grammarRegistry'].getColorMap();
         assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the light theme to be enabled.');
 
-        const monacoColorMap = (monaco.modes.TokenizationRegistry.getColorMap() || []).
+        const monacoColorMap = (TokenizationRegistry.getColorMap() || []).
             splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());
         assert.deepStrictEqual(monacoColorMap, textMateColorMap, 'Expected textmate colors to have the same index in the monaco color map.');
     });
@@ -148,7 +154,7 @@ describe('Monaco API', async function () {
             assert.fail('hoverContribution does not have OpenerService');
             return;
         }
-        /** @type {monaco.services.OpenerService} */
+        /** @type {import('@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService').OpenerService} */
         const openerService = hoverContribution['_openerService'];
 
         let opened = false;
@@ -157,7 +163,7 @@ describe('Monaco API', async function () {
             execute: arg => (console.log(arg), opened = arg === 'foo')
         });
         try {
-            await openerService.open(monaco.Uri.parse('command:' + id + '?"foo"'));
+            await openerService.open(Uri.parse('command:' + id + '?"foo"'));
             assert.isTrue(opened);
         } finally {
             unregisterCommand.dispose();

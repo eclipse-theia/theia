@@ -18,7 +18,7 @@ import { inject, injectable, optional } from 'inversify';
 import { isOSX } from '../../common/os';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { BrowserKeyboardLayoutProvider, KeyboardLayoutData } from './browser-keyboard-layout-provider';
-import { QuickPickValue, QuickInputService, QuickPickItem } from '../quick-input';
+import { QuickPickValue, QuickInputService, QuickPickItemOrSeparator } from '../quick-input';
 import { nls } from '../../common/nls';
 
 export namespace KeyboardCommands {
@@ -65,7 +65,7 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
             .filter(layout => layout.hardware === 'mac')
             .sort((a, b) => compare(a.name, b.name))
             .map(layout => this.toQuickPickValue(layout, current === layout));
-        let layouts: Array<QuickPickValue<KeyboardLayoutData | 'autodetect'> | QuickPickItem>;
+        let layouts: Array<QuickPickValue<KeyboardLayoutData | 'autodetect'> | QuickPickItemOrSeparator>;
         const macKeyboards = nls.localize('theia/core/keyboard/mac', 'Mac Keyboards');
         const pcKeyboards = nls.localize('theia/core/keyboard/pc', 'PC Keyboards');
         if (isOSX) {

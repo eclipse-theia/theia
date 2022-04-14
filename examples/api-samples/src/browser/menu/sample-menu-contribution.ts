@@ -29,6 +29,14 @@ const SampleCommand2: Command = {
     id: 'sample-command2',
     label: 'Sample Command2'
 };
+const SampleCommandWithProgressMessage: Command = {
+    id: 'sample-command-with-progress',
+    label: 'Sample Command With Progress Message'
+};
+const SampleCommandWithIndeterminateProgressMessage: Command = {
+    id: 'sample-command-with-indeterminate-progress',
+    label: 'Sample Command With Indeterminate Progress Message'
+};
 const SampleQuickInputCommand: Command = {
     id: 'sample-quick-input-command',
     category: 'Quick Input',
@@ -75,6 +83,61 @@ export class SampleCommandContribution implements CommandContribution {
                 if (result) {
                     this.messageService.info(`Positive Integer: ${result}`);
                 }
+            }
+        });
+        commands.registerCommand(SampleCommandWithProgressMessage, {
+            execute: () => {
+                this.messageService
+                    .showProgress({
+                        text: 'Starting to report progress',
+                    })
+                    .then(progress => {
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'First step completed',
+                                work: { done: 25, total: 100 }
+                            });
+                        }, 2000);
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'Next step completed',
+                                work: { done: 60, total: 100 }
+                            });
+                        }, 4000);
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'Complete',
+                                work: { done: 100, total: 100 }
+                            });
+                        }, 6000);
+                        window.setTimeout(() => progress.cancel(), 7000);
+                    });
+            }
+        });
+        commands.registerCommand(SampleCommandWithIndeterminateProgressMessage, {
+            execute: () => {
+                this.messageService
+                    .showProgress({
+                        text: 'Starting to report indeterminate progress',
+                    })
+                    .then(progress => {
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'First step completed',
+                            });
+                        }, 2000);
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'Next step completed',
+                            });
+                        }, 4000);
+                        window.setTimeout(() => {
+                            progress.report({
+                                message: 'Complete',
+                            });
+                        }, 6000);
+                        window.setTimeout(() => progress.cancel(), 7000);
+                    });
             }
         });
     }

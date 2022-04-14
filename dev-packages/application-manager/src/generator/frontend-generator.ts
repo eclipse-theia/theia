@@ -50,11 +50,11 @@ export class FrontendGenerator extends AbstractGenerator {
 <html lang="en">
 
 <head>${this.compileIndexHead(frontendModules)}
-  <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
 <body>
-  <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
+    <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
+    <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </body>
 
 </html>`;
@@ -80,6 +80,14 @@ const { Container } = require('inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
 FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
+
+${this.ifMonaco(() => `
+self.MonacoEnvironment = {
+    getWorkerUrl: function (moduleId, label) {
+        return './editor.worker.js';
+    }
+}
+`)}
 
 const { ThemeService } = require('@theia/core/lib/browser/theming');
 ThemeService.get().loadUserTheme();

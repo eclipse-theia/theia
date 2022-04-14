@@ -33,7 +33,7 @@ export class PreferenceTreeGenerator {
     protected readonly onSchemaChangedEmitter = new Emitter<CompositeTreeNode>();
     readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
     protected readonly commonlyUsedPreferences = [
-        'editor.autoSave', 'editor.autoSaveDelay', 'editor.fontSize',
+        'files.autoSave', 'files.autoSaveDelay', 'editor.fontSize',
         'editor.fontFamily', 'editor.tabSize', 'editor.renderWhitespace',
         'editor.cursorStyle', 'editor.multiCursorModifier', 'editor.insertSpaces',
         'editor.wordWrap', 'files.exclude', 'files.associations'
@@ -96,6 +96,7 @@ export class PreferenceTreeGenerator {
             }
         }
         for (const propertyName of propertyNames) {
+            const property = preferencesSchema.properties[propertyName];
             if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
                 const labels = propertyName.split('.');
                 const groupID = this.getGroupName(labels);
@@ -103,7 +104,7 @@ export class PreferenceTreeGenerator {
                 const subgroupID = [groupID, subgroupName].join('.');
                 const toplevelParent = this.getOrCreatePreferencesGroup(groupID, groupID, root, groups);
                 const immediateParent = subgroupName && this.getOrCreatePreferencesGroup(subgroupID, groupID, toplevelParent, groups);
-                this.createLeafNode(propertyName, immediateParent || toplevelParent, preferencesSchema.properties[propertyName]);
+                this.createLeafNode(propertyName, immediateParent || toplevelParent, property);
             }
         }
 

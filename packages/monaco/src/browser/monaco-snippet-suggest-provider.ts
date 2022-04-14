@@ -24,6 +24,8 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
+import * as monaco from '@theia/monaco-editor-core';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
@@ -49,13 +51,13 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             return undefined;
         }
 
-        const languageId = model.getModeId(); // TODO: look up a language id at the position
+        const languageId = model.getLanguageId(); // TODO: look up a language id at the position
         await this.loadSnippets(languageId);
         const snippetsForLanguage = this.snippets.get(languageId) || [];
 
         const pos = { lineNumber: position.lineNumber, column: 1 };
         const lineOffsets: number[] = [];
-        const linePrefixLow = model.getLineContent(position.lineNumber).substr(0, position.column - 1).toLowerCase();
+        const linePrefixLow = model.getLineContent(position.lineNumber).substring(0, position.column - 1).toLowerCase();
         const endsInWhitespace = linePrefixLow.match(/\s$/);
 
         while (pos.column < position.column) {
@@ -287,7 +289,7 @@ export class MonacoSnippetSuggestion implements monaco.languages.CompletionItem 
     protected resolved = false;
     resolve(): MonacoSnippetSuggestion {
         if (!this.resolved) {
-            const codeSnippet = new monaco.snippetParser.SnippetParser().parse(this.snippet.body).toString();
+            const codeSnippet = new SnippetParser().parse(this.snippet.body).toString();
             this.documentation = { value: '```\n' + codeSnippet + '```' };
             this.resolved = true;
         }

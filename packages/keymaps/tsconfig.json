@@ -16,6 +16,9 @@
       "path": "../monaco"
     },
     {
+      "path": "../preferences"
+    },
+    {
       "path": "../userstorage"
     }
   ]

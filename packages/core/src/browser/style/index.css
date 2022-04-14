@@ -181,13 +181,13 @@ blockquote {
     outline: none;
 }
 
-.action-item {
+.action-label {
   padding: 2px;
   border-radius: 5px;
   cursor: pointer;
 }
 
-.action-item:hover {
+.action-label:hover {
     background-color: var(--theia-toolbar-hoverBackground);
 }
 

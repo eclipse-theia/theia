@@ -89,6 +89,7 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Close Workspace'
     });
+    /** @deprecated @since 1.24 Use CommonCommands.NEW_FILE instead. */
     export const NEW_FILE = Command.toDefaultLocalizedCommand({
         id: 'file.newFile',
         category: FILE_CATEGORY,
@@ -142,11 +143,8 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Open Workspace Configuration File'
     });
-    export const SAVE_AS = Command.toDefaultLocalizedCommand({
-        id: 'file.saveAs',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Save As...',
-    });
+    /** @deprecated @since 1.24.0 Use `CommonCommands.SAVE_AS` instead */
+    export const SAVE_AS = CommonCommands.SAVE_AS;
     export const COPY_RELATIVE_FILE_PATH = Command.toDefaultLocalizedCommand({
         id: 'navigator.copyRelativeFilePath',
         label: 'Copy Relative Path'
@@ -157,10 +155,6 @@ export namespace WorkspaceCommands {
 export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerMenuAction(CommonMenus.FILE_NEW, {
-            commandId: WorkspaceCommands.NEW_FILE.id,
-            order: 'a'
-        });
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: WorkspaceCommands.NEW_FOLDER.id,
             order: 'b'

@@ -14,14 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes';
+import {
+    ChordKeybinding, KeybindingModifier, ResolvedKeybinding, ResolvedKeybindingPart, ScanCodeBinding, SimpleKeybinding
+} from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
+import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelProvider } from '@theia/monaco-editor-core/esm/vs/base/common/keybindingLabels';
+import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
+import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/browser/keys';
 import { isOSX } from '@theia/core/lib/common/os';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 
-export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
+export class MonacoResolvedKeybinding extends ResolvedKeybinding {
 
-    protected readonly parts: monaco.keybindings.ResolvedKeybindingPart[];
+    protected readonly parts: ResolvedKeybindingPart[];
 
     constructor(protected readonly keySequence: KeySequence, keybindingService: KeybindingRegistry) {
         super();
@@ -29,7 +36,7 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
             // eslint-disable-next-line no-null/no-null
             const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
             const keyAriaLabel = keyLabel;
-            return new monaco.keybindings.ResolvedKeybindingPart(
+            return new ResolvedKeybindingPart(
                 keyCode.ctrl,
                 keyCode.shift,
                 keyCode.alt,
@@ -40,45 +47,64 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
         });
     }
 
-    public getLabel(): string | null {
-        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
+    getLabel(): string | null {
+        return UILabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public getAriaLabel(): string | null {
-        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyAriaLabel);
+    getAriaLabel(): string | null {
+        return UILabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyAriaLabel);
     }
 
-    public getElectronAccelerator(): string | null {
+    getElectronAccelerator(): string | null {
         if (this.isChord()) {
             // Electron cannot handle chords
             // eslint-disable-next-line no-null/no-null
             return null;
         }
-        return monaco.keybindings.ElectronAcceleratorLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
+        return ElectronAcceleratorLabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public getUserSettingsLabel(): string | null {
-        return monaco.keybindings.UserSettingsLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
+    getUserSettingsLabel(): string | null {
+        return UserSettingsLabelProvider.toLabel(MonacoPlatform.OS, this.parts, p => p.keyLabel);
     }
 
-    public isWYSIWYG(): boolean {
+    isWYSIWYG(): boolean {
         return true;
     }
 
-    public isChord(): boolean {
+    isChord(): boolean {
         return this.parts.length > 1;
     }
 
-    public getDispatchParts(): (string | null)[] {
-        return this.keySequence.map(keyCode => monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
+    getDispatchParts(): (string | null)[] {
+        return this.keySequence.map(keyCode => USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
     }
 
-    public getSingleModifierDispatchParts(): (string | null)[] {
-        return []; /* NOOP */
+    getSingleModifierDispatchParts(): (KeybindingModifier | null)[] {
+        return this.keySequence.map(keybinding => this.getSingleModifierDispatchPart(keybinding));
     }
 
-    private toKeybinding(keyCode: KeyCode): monaco.keybindings.SimpleKeybinding {
-        return new monaco.keybindings.SimpleKeybinding(
+    protected getSingleModifierDispatchPart(code: KeyCode): KeybindingModifier | null {
+        if (code.key?.keyCode === undefined) {
+            return null; // eslint-disable-line no-null/no-null
+        }
+        if (KEY_CODE_MAP[code.key?.keyCode] === MonacoKeyCode.Ctrl && !code.shift && !code.alt && !code.meta) {
+            return 'ctrl';
+        }
+        if (KEY_CODE_MAP[code.key?.keyCode] === MonacoKeyCode.Shift && !code.ctrl && !code.alt && !code.meta) {
+            return 'shift';
+        }
+        if (KEY_CODE_MAP[code.key?.keyCode] === MonacoKeyCode.Alt && !code.shift && !code.ctrl && !code.meta) {
+            return 'alt';
+        }
+        if (KEY_CODE_MAP[code.key?.keyCode] === MonacoKeyCode.Meta && !code.shift && !code.alt && !code.ctrl) {
+            return 'meta';
+        }
+        return null; // eslint-disable-line no-null/no-null
+    }
+
+    private toKeybinding(keyCode: KeyCode): SimpleKeybinding {
+        return new SimpleKeybinding(
             keyCode.ctrl,
             keyCode.shift,
             keyCode.alt,
@@ -87,18 +113,16 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
         );
     }
 
-    public getParts(): monaco.keybindings.ResolvedKeybindingPart[] {
+    public getParts(): ResolvedKeybindingPart[] {
         return this.parts;
     }
 
-    static toKeybinding(keybinding: monaco.keybindings.Keybinding): string {
-        return keybinding instanceof monaco.keybindings.SimpleKeybinding
-            ? this.keyCode(keybinding).toString()
-            : this.keySequence(keybinding as monaco.keybindings.ChordKeybinding).join(' ');
+    static toKeybinding(keybindings: Array<SimpleKeybinding | ScanCodeBinding>): string {
+        return keybindings.map(binding => this.keyCode(binding)).join(' ');
     }
 
-    static keyCode(keybinding: monaco.keybindings.SimpleKeybinding): KeyCode {
-        const keyCode = keybinding.keyCode;
+    static keyCode(keybinding: SimpleKeybinding | ScanCodeBinding): KeyCode {
+        const keyCode = keybinding instanceof SimpleKeybinding ? keybinding.keyCode : USLayoutResolvedKeybinding['_scanCodeToKeyCode'](keybinding.scanCode);
         const sequence: Keystroke = {
             first: Key.getKey(this.monaco2BrowserKeyCode(keyCode & 0xff)),
             modifiers: []
@@ -122,11 +146,11 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
         return KeyCode.createKeyCode(sequence);
     }
 
-    static keySequence(keybinding: monaco.keybindings.ChordKeybinding): KeySequence {
+    static keySequence(keybinding: ChordKeybinding): KeySequence {
         return keybinding.parts.map(part => this.keyCode(part));
     }
 
-    private static monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
+    private static monaco2BrowserKeyCode(keyCode: MonacoKeyCode): number {
         for (let i = 0; i < KEY_CODE_MAP.length; i++) {
             if (KEY_CODE_MAP[i] === keyCode) {
                 return i;

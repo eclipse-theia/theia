@@ -24,7 +24,7 @@ import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { QuickInputButtons, ThemeIcon } from './types-impl';
+import { QuickInputButtons, QuickPickItemKind, ThemeIcon } from './types-impl';
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { convertToTransferQuickPickItems } from './type-converters';
@@ -420,10 +420,10 @@ export class QuickInputExt implements QuickInput {
         this.dispose();
     }
 
-    protected convertURL(iconPath: monaco.Uri | { light: string | monaco.Uri; dark: string | monaco.Uri } | monaco.theme.ThemeIcon):
+    protected convertURL(iconPath: URI | { light: string | URI; dark: string | URI } | ThemeIcon):
         URI | { light: string | URI; dark: string | URI } | ThemeIcon {
-        const toUrl = (arg: string | monaco.Uri) => {
-            arg = arg instanceof monaco.Uri && arg.scheme === 'file' ? arg.fsPath : arg;
+        const toUrl = (arg: string | URI) => {
+            arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
             if (typeof arg !== 'string') {
                 return arg.toString(true);
             }
@@ -435,10 +435,10 @@ export class QuickInputExt implements QuickInput {
         };
         if (ThemeIcon.is(iconPath)) {
             return iconPath;
-        } else if (typeof iconPath === 'string' || iconPath instanceof monaco.Uri) {
+        } else if (typeof iconPath === 'string' || iconPath instanceof URI) {
             return URI.parse(toUrl(iconPath));
         } else {
-            const { light, dark } = iconPath as { light: string | monaco.Uri, dark: string | monaco.Uri };
+            const { light, dark } = iconPath as { light: string | URI, dark: string | URI };
             return {
                 light: toUrl(light),
                 dark: toUrl(dark)
@@ -580,6 +580,7 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     private _matchOnDescription = true;
     private _matchOnDetail = true;
     private _sortByLabel = true;
+    private _keepScrollPosition = false;
     private _activeItems: T[] = [];
     private _selectedItems: T[] = [];
     private readonly _onDidChangeActiveEmitter = new Emitter<T[]>();
@@ -613,15 +614,20 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
             this._itemsToHandles.set(item, i);
         });
         this.update({
-            items: items.map((item, i) => ({
-                type: item.type,
-                label: item.label,
-                description: item.description,
-                handle: i,
-                detail: item.detail,
-                picked: item.picked,
-                alwaysShow: item.alwaysShow
-            }))
+            items: items.map((item, i) => {
+                if (item.kind === QuickPickItemKind.Separator) {
+                    return { kind: item.kind, label: item.label };
+                }
+                return {
+                    kind: item.kind,
+                    label: item.label,
+                    description: item.description,
+                    handle: i,
+                    detail: item.detail,
+                    picked: item.picked,
+                    alwaysShow: item.alwaysShow
+                };
+            })
         });
     }
 
@@ -659,6 +665,15 @@ export class QuickPickExt<T extends theia.QuickPickItem> extends QuickInputExt i
     set sortByLabel(sortByLabel: boolean) {
         this._sortByLabel = sortByLabel;
         this.update({ sortByLabel });
+    }
+
+    get keepScrollPosition(): boolean {
+        return this._keepScrollPosition;
+    }
+
+    set keepScrollPosition(keepScrollPosition: boolean) {
+        this._keepScrollPosition = keepScrollPosition;
+        this.update({ keepScrollPosition });
     }
 
     get activeItems(): T[] {

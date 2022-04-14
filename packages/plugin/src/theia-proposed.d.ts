@@ -643,6 +643,11 @@ export module '@theia/plugin' {
         contextValue?: string;
 
         /**
+         * Accessibility information used when screen reader interacts with this timeline item.
+         */
+        accessibilityInformation?: AccessibilityInformation;
+
+        /**
          * @param label A human-readable string describing the timeline item
          * @param timestamp A timestamp (in milliseconds since 1 January 1970 00:00:00) for when the timeline item occurred
          */

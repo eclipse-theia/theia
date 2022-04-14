@@ -21,6 +21,7 @@ import {
     CompositeTreeNode as BaseCompositeTreeNode,
     PreferenceInspection,
     CommonCommands,
+    JsonType,
 } from '@theia/core/lib/browser';
 import { Command, MenuPath } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
@@ -69,6 +70,10 @@ export namespace Preference {
 
     export namespace LeafNode {
         export const is = (node: BaseTreeNode | LeafNode): node is LeafNode => 'preference' in node && !!node.preference.data;
+
+        export const getType = (node: BaseTreeNode | LeafNode): JsonType | undefined => is(node)
+            ? Array.isArray(node.preference.data.type) ? node.preference.data.type[0] : node.preference.data.type
+            : undefined;
     }
 
     export const getValueInScope = <T extends JSONValue>(preferenceInfo: PreferenceInspection<T> | undefined, scope: number): T | undefined => {

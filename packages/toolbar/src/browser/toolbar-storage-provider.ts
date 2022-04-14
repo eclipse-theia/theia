@@ -20,6 +20,7 @@ import { injectable, postConstruct, inject, interfaces } from '@theia/core/share
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import * as monaco from '@theia/monaco-editor-core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { Widget } from '@theia/core/lib/browser';

@@ -28,6 +28,7 @@ import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
+import { ResourceEdit, ResourceFileEdit, ResourceTextEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
 
 export const BULK_EDIT_TREE_WIDGET_ID = 'bulkedit';
 export const BULK_EDIT_WIDGET_NAME = nls.localizeByDefault('Refactor Preview');
@@ -63,7 +64,7 @@ export class BulkEditTreeWidget extends TreeWidget {
         }));
     }
 
-    async initModel(edits: monaco.editor.ResourceEdit[]): Promise<void> {
+    async initModel(edits: ResourceEdit[]): Promise<void> {
         await this.model.initModel(edits, await this.getFileContentsMap(edits));
         this.quickView?.showItem(BULK_EDIT_WIDGET_NAME);
     }
@@ -149,14 +150,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         </div>;
     }
 
-    private async getFileContentsMap(edits: monaco.editor.ResourceEdit[]): Promise<Map<string, string>> {
+    private async getFileContentsMap(edits: ResourceEdit[]): Promise<Map<string, string>> {
         const fileContentMap = new Map<string, string>();
 
         if (edits) {
             for (const element of edits) {
                 if (element) {
-                    const filePath = (('newResource' in element) && (element as monaco.editor.ResourceFileEdit).newResource?.path) ||
-                        (('resource' in element) && (element as monaco.editor.ResourceTextEdit).resource.path);
+                    const filePath = (('newResource' in element) && (element as ResourceFileEdit).newResource?.path) ||
+                        (('resource' in element) && (element as ResourceTextEdit).resource.path);
 
                     if (filePath && !fileContentMap.has(filePath)) {
                         const fileUri = new URI(filePath).withScheme('file');

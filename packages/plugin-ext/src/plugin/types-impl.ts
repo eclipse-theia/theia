@@ -151,6 +151,11 @@ export class Disposable {
     }
 }
 
+export interface AccessibilityInformation {
+    label: string;
+    role?: string;
+}
+
 export enum StatusBarAlignment {
     Left = 1,
     Right = 2
@@ -676,6 +681,12 @@ export class SnippetString {
         this.value += value;
         this.value += '}';
 
+        return this;
+    }
+
+    appendChoice(values: string[], number: number = this._tabstop++): SnippetString {
+        const value = values.map(s => s.replace(/\$|}|\\|,/g, '\\$&')).join(',');
+        this.value += `\$\{${number}|${value}|\}`;
         return this;
     }
 
@@ -1742,6 +1753,11 @@ export class ProcessExecution {
     }
 }
 
+export enum QuickPickItemKind {
+    Separator = -1,
+    Default = 0,
+}
+
 export enum ShellQuoting {
     Escape = 1,
     Strong = 2,
@@ -2086,9 +2102,7 @@ export class Task {
 }
 
 @es5ClassCompat
-export class Task2 extends Task {
-    detail?: string;
-}
+export class Task2 extends Task { }
 
 @es5ClassCompat
 export class DebugAdapterExecutable {

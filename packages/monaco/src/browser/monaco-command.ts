@@ -25,6 +25,12 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { nls } from '@theia/core/lib/common/nls';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
+import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
+import { CommandsRegistry, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import * as monaco from '@theia/monaco-editor-core';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export namespace MonacoCommands {
 
@@ -67,8 +73,8 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
 
-    @inject(monaco.contextKeyService.ContextKeyService)
-    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+    @inject(VSCodeContextKeyService)
+    protected readonly contextKeyService: VSCodeContextKeyService;
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -129,12 +135,11 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
      * and execute them using the instantiation service of the current editor.
      */
     protected registerMonacoCommands(): void {
-        const editorRegistry = monaco.editorExtensions.EditorExtensionsRegistry;
-        const editorActions = new Map(editorRegistry.getEditorActions().map(({ id, label }) => [id, label]));
+        const editorActions = new Map(EditorExtensionsRegistry.getEditorActions().map(({ id, label }) => [id, label]));
 
-        const { codeEditorService, textModelService, contextKeyService } = this;
-        const [, globalInstantiationService] = monaco.services.StaticServices.init({ codeEditorService, textModelService, contextKeyService });
-        const monacoCommands = monaco.commands.CommandsRegistry.getCommands();
+        const { codeEditorService } = this;
+        const globalInstantiationService = StandaloneServices.initialize({});
+        const monacoCommands = CommandsRegistry.getCommands();
         for (const id of monacoCommands.keys()) {
             if (MonacoCommands.EXCLUDE_ACTIONS.has(id)) {
                 continue;
@@ -153,13 +158,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         }
                         return action.run();
                     }
-                    const editorCommand = !!editorRegistry.getEditorCommand(id) ||
-                        !(id.startsWith('_execute') || id === 'setContext' || MonacoCommands.COMMON_ACTIONS.has(id));
-                    const instantiationService = editorCommand ? editor && editor['_instantiationService'] : globalInstantiationService;
-                    if (!instantiationService) {
+                    if (!globalInstantiationService) {
                         return;
                     }
-                    return instantiationService.invokeFunction(
+                    return globalInstantiationService.invokeFunction(
                         monacoCommands.get(id)!.handler,
                         ...args
                     );
@@ -171,7 +173,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         const action = editor && editor.getAction(id);
                         return !!action && action.isSupported();
                     }
-                    if (!!editorRegistry.getEditorCommand(id)) {
+                    if (!!EditorExtensionsRegistry.getEditorCommand(id)) {
                         return !!editor;
                     }
                     return true;
@@ -199,7 +201,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected newShowReferenceHandler(): MonacoEditorCommandHandler {
         return {
             execute: (editor: MonacoEditor, uri: string, position: Position, locations: Location[]) => {
-                editor.commandService.executeCommand(
+                StandaloneServices.get(ICommandService).executeCommand(
                     'editor.action.showReferences',
                     monaco.Uri.parse(uri),
                     this.p2m.asPosition(position),
@@ -242,9 +244,9 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         const model = editor.document && editor.document.textEditorModel;
         if (model) {
             if (lineEnding === 'CRLF' || lineEnding === '\r\n') {
-                model.pushEOL(monaco.editor.EndOfLineSequence.CRLF);
+                model.pushEOL(EndOfLineSequence.CRLF);
             } else {
-                model.pushEOL(monaco.editor.EndOfLineSequence.LF);
+                model.pushEOL(EndOfLineSequence.LF);
             }
         }
     }

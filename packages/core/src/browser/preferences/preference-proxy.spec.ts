@@ -333,6 +333,48 @@ describe('Preference Proxy', () => {
                     expect(events).to.have.length(3, 'One event for base, one for each override');
                     expect(events.every(event => event.newValue === 'foo'), 'Should have returned the default in case of garbage.');
                 });
+
+                it("Validated proxies don't retain old values for overrides after a change (no emitter).", async () => {
+                    const { proxy, validationCallCounter } = await prepareValidationTest();
+                    prefSchema.registerOverrideIdentifier('swift');
+                    const initialValue = proxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'swift' });
+                    expect(initialValue).to.equal('foo', 'Proxy should start with default value.');
+                    expect(validationCallCounter.calls).to.equal(1, 'Retrieval should validate (1).');
+                    await prefService.set('my.pref', 'bar', PreferenceScope.User);
+                    expect(proxy.get('my.pref')).to.equal('bar', 'The base should have been updated.');
+                    expect(validationCallCounter.calls).to.equal(2, 'Retrieval should validate (2).');
+                    expect(proxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'swift' })).to.equal('bar', 'Proxy should update empty overrides on change.');
+                    expect(validationCallCounter.calls).to.equal(3, 'Retrieval should validate (3).');
+                });
+
+                // The scenario with a listener differs because the proxy will start caching known valid values when a listener is attached.
+                it("Validated proxies don't retain old values for overrides after a change (with emitter)", async () => {
+                    const { proxy, validationCallCounter } = await prepareValidationTest();
+                    prefSchema.registerOverrideIdentifier('swift');
+                    const override = { preferenceName: 'my.pref', overrideIdentifier: 'swift' };
+                    proxy.onPreferenceChanged; // Initialize the listeners.
+                    const initialValue = proxy.get(override);
+                    expect(initialValue).to.equal('foo', 'Proxy should start with default value.');
+                    expect(validationCallCounter.calls).to.equal(1, 'Retrieval should validate.');
+
+                    await prefService.set('my.pref', 'bar', PreferenceScope.User);
+                    expect(validationCallCounter.calls).to.equal(2, 'Event should trigger validation (1).');
+                    expect(proxy.get('my.pref')).to.equal('bar', 'The base should have been updated.');
+                    expect(proxy.get(override)).to.equal('bar', 'Proxy should update empty overrides on change.');
+                    expect(validationCallCounter.calls).to.equal(2, 'Subsequent retrievals should not trigger validation. (1)');
+
+                    await prefService.set(prefService.overridePreferenceName(override), 'baz', PreferenceScope.User);
+                    expect(validationCallCounter.calls).to.equal(3, 'Event should trigger validation (2).');
+                    expect(proxy.get('my.pref')).to.equal('bar', 'Base should not have been updated.');
+                    expect(proxy.get(override)).to.equal('baz', 'Override should have been updated');
+                    expect(validationCallCounter.calls).to.equal(3, 'Subsequent retrievals should not trigger validation. (2)');
+
+                    await prefService.set('my.pref', 'boom', PreferenceScope.User);
+                    expect(validationCallCounter.calls).to.equal(4, 'Event should trigger validation (3).');
+                    expect(proxy.get('my.pref')).to.equal('boom', 'Base should have been updated.');
+                    expect(proxy.get(override)).to.equal('baz', 'Override should not have been updated');
+                    expect(validationCallCounter.calls).to.equal(4, 'Subsequent retrievals should not trigger validation. (3)');
+                });
             }
 
             it('toJSON with deep', async () => {

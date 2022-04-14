@@ -20,6 +20,7 @@ import { LabelProviderContribution, LabelProvider, URIIconReference } from '@the
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { TreeViewNode } from './tree-view-widget';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
 
 @injectable()
 export class PluginTreeViewNodeLabelProvider implements LabelProviderContribution {
@@ -47,7 +48,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
                 const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
                 return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
             }
-            return monaco.theme.ThemeIcon.asClassName({ id: node.themeIconId });
+            return ThemeIcon.asClassName({ id: node.themeIconId });
         }
         if (node.resourceUri) {
             return this.labelProvider.getIcon(new URI(node.resourceUri));

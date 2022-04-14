@@ -24,6 +24,7 @@ import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
@@ -181,47 +182,43 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     }
 
     protected renderSeveritySelector(widget: Widget | undefined): React.ReactNode {
-        const severityElements: React.ReactNode[] = [];
-        Severity.toArray().forEach(s => severityElements.push(<option value={s} key={s}>{s}</option>));
-        const selectedValue = Severity.toString(this.consoleSessionManager.severity || Severity.Ignore);
+        const severityElements: SelectOption[] = Severity.toArray().map(e => ({
+            value: e
+        }));
 
-        return <select
-            className='theia-select'
-            id={'debugConsoleSeverity'}
-            key={'debugConsoleSeverity'}
-            value={selectedValue}
-            onChange={this.changeSeverity}
-        >
-            {severityElements}
-        </select>;
+        return <SelectComponent
+            key="debugConsoleSeverity"
+            options={severityElements}
+            value={this.consoleSessionManager.severity || Severity.Ignore}
+            onChange={this.changeSeverity} />;
     }
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
-        const availableConsoles: React.ReactNode[] = [];
+        const availableConsoles: SelectOption[] = [];
         this.consoleSessionManager.all.forEach(e => {
             if (e instanceof DebugConsoleSession) {
-                availableConsoles.push(<option value={e.id} key={e.id}>{e.debugSession.label}</option>);
+                availableConsoles.push({
+                    value: e.id,
+                    label: e.debugSession.label
+                });
             }
         });
-        return <select
-            className='theia-select'
-            id='debugConsoleSelector'
-            key='debugConsoleSelector'
-            value={undefined}
-            onChange={this.changeDebugConsole}
-        >
-            {availableConsoles}
-        </select>;
+
+        return <SelectComponent
+            key="debugConsoleSelector"
+            options={availableConsoles}
+            value={0}
+            onChange={this.changeDebugConsole} />;
     }
 
-    protected changeDebugConsole = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const id = event.target.value;
+    protected changeDebugConsole = (option: SelectOption) => {
+        const id = option.value!;
         const session = this.consoleSessionManager.get(id);
         this.consoleSessionManager.selectedSession = session;
     };
 
-    protected changeSeverity = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        this.consoleSessionManager.severity = Severity.fromValue(event.target.value);
+    protected changeSeverity = (option: SelectOption) => {
+        this.consoleSessionManager.severity = Severity.fromValue(option.value);
     };
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: ConsoleWidget) => T): T | false {

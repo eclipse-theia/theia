@@ -56,6 +56,7 @@ import { CommentsMainImp } from './comments/comments-main';
 import { CustomEditorsMainImpl } from './custom-editors/custom-editors-main';
 import { SecretsMainImpl } from './secrets-main';
 import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -86,7 +87,8 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const openerService = container.get<OpenerService>(OpenerService);
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
-    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver);
+    const languageService = container.get(MonacoLanguages);
+    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
     const bulkEditService = container.get(MonacoBulkEditService);

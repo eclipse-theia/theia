@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2022 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// eslint-disable-next-line spaced-comment
-/// <reference types="@theia/monaco/src/typings/monaco/index"/>
+/**
+ * Accessibility information which controls screen reader behavior.
+ */
+export interface AccessibilityInformation {
+    /**
+     * Label to be read out by a screen reader once the item has focus.
+     */
+    readonly label: string;
+
+    /**
+     * Role of the widget which defines how a screen reader interacts with it.
+     * The role should be set in special cases when for example a tree-like element behaves like a checkbox.
+     * If role is not specified the editor will pick the appropriate role automatically.
+     * More about aria roles can be found here https://w3c.github.io/aria/#widget_roles
+     */
+    readonly role?: string;
+}

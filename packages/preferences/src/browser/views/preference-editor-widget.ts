@@ -33,6 +33,7 @@ import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './
 import { Preference } from '../util/preference-types';
 import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-tree-generator';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
+import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
 
 export interface PreferencesEditorState {
     firstVisibleChildID: string,
@@ -63,10 +64,12 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferenceNodeRendererFactory) protected readonly rendererFactory: PreferenceNodeRendererFactory;
+    @inject(PreferenceNodeRendererCreatorRegistry) protected readonly rendererRegistry: PreferenceNodeRendererCreatorRegistry;
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
 
     @postConstruct()
     protected async init(): Promise<void> {
+
         this.id = PreferencesEditorWidget.ID;
         this.title.label = PreferencesEditorWidget.LABEL;
         this.addClass('settings-main');
@@ -78,6 +81,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.createContainers();
         await this.preferenceService.ready;
         this.handleDisplayChange({ source: PreferenceFilterChangeSource.Schema });
+        this.rendererRegistry.onDidChange(() => this.handleRegistryChange());
     }
 
     protected createContainers(): void {
@@ -106,6 +110,14 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
         this.resetScroll(currentFirstVisible, e.source === PreferenceFilterChangeSource.Search && !isFiltered);
+    }
+
+    protected handleRegistryChange(): void {
+        for (const [id, renderer, collection] of this.allRenderers()) {
+            renderer.dispose();
+            collection.delete(id);
+        }
+        this.handleDisplayChange({ source: PreferenceFilterChangeSource.Schema });
     }
 
     protected handleSchemaChange(isFiltered: boolean): void {

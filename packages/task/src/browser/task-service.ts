@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationShell, FrontendApplication, QuickPickItem, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
+import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { CommandService, ILogger } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { QuickPickItemOrSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -1010,8 +1010,8 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    protected getCustomizeProblemMatcherItems(): Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> {
-        const items: Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItem> = [];
+    protected getCustomizeProblemMatcherItems(): Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItemOrSeparator> {
+        const items: Array<QuickPickValue<QuickPickProblemMatcherItem> | QuickPickItemOrSeparator> = [];
         items.push({
             label: 'Continue without scanning the task output',
             value: { problemMatchers: undefined }

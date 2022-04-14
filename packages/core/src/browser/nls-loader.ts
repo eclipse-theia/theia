@@ -16,8 +16,15 @@
 
 import { nls } from '../common/nls';
 import { Endpoint } from './endpoint';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export async function loadTranslations(): Promise<void> {
+    const defaultLocale = FrontendApplicationConfigProvider.get().defaultLocale;
+    if (defaultLocale && !nls.locale) {
+        Object.assign(nls, {
+            locale: defaultLocale
+        });
+    }
     if (nls.locale) {
         const endpoint = new Endpoint({ path: '/i18n/' + nls.locale }).getRestUrl().toString();
         const response = await fetch(endpoint);

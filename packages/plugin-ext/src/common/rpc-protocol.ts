@@ -94,7 +94,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     constructor(connection: MessageConnection, transformations?: {
         replacer?: (key: string | undefined, value: any) => any,
-        reviver?: (key: string | undefined, value: any) =>  any
+        reviver?: (key: string | undefined, value: any) => any
     }) {
         this.toDispose.push(
             this.multiplexer = new RPCMultiplexer(connection)

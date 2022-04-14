@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
@@ -26,6 +26,16 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
+import * as monaco from '@theia/monaco-editor-core';
+import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
+import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
+import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { TextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 
 export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     position: monaco.Position,
@@ -100,36 +110,38 @@ export class DebugBreakpointWidget implements Disposable {
             return;
         }
         this.toDispose.push(input);
-        this.toDispose.push(monaco.modes.CompletionProviderRegistry.register({ scheme: input.uri.scheme }, {
-            provideCompletionItems: async (model, position, context, token) => {
-                const suggestions = [];
-                if ((this.context === 'condition' || this.context === 'logMessage')
-                    && input.uri.toString() === model.uri.toString()) {
-                    const editor = this.editor.getControl();
-                    const items = await monaco.suggest.provideSuggestionItems(
-                        editor.getModel()!,
-                        new monaco.Position(editor.getPosition()!.lineNumber, 1),
-                        new monaco.suggest.CompletionOptions(undefined, new Set<monaco.languages.CompletionItemKind>().add(monaco.languages.CompletionItemKind.Snippet)),
-                        context, token);
-                    let overwriteBefore = 0;
-                    if (this.context === 'condition') {
-                        overwriteBefore = position.column - 1;
-                    } else {
-                        // Inside the curly brackets, need to count how many useful characters are behind the position so they would all be taken into account
-                        const value = editor.getModel()!.getValue();
-                        while ((position.column - 2 - overwriteBefore >= 0)
-                            && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {
-                            overwriteBefore++;
+        this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
+            ({ scheme: input.uri.scheme }, {
+                provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
+                    const suggestions: monaco.languages.CompletionItem[] = [];
+                    if ((this.context === 'condition' || this.context === 'logMessage')
+                        && input.uri.toString() === model.uri.toString()) {
+                        const editor = this.editor.getControl();
+                        const completions = await provideSuggestionItems(
+                            StandaloneServices.get(ILanguageFeaturesService).completionProvider,
+                            editor.getModel()! as unknown as TextModel,
+                            new monaco.Position(editor.getPosition()!.lineNumber, 1),
+                            new CompletionOptions(undefined, new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)),
+                            context as unknown as CompletionContext, token);
+                        let overwriteBefore = 0;
+                        if (this.context === 'condition') {
+                            overwriteBefore = position.column - 1;
+                        } else {
+                            // Inside the curly brackets, need to count how many useful characters are behind the position so they would all be taken into account
+                            const value = editor.getModel()!.getValue();
+                            while ((position.column - 2 - overwriteBefore >= 0)
+                                && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {
+                                overwriteBefore++;
+                            }
+                        }
+                        for (const { completion } of completions.items) {
+                            completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
+                            suggestions.push(completion as unknown as monaco.languages.CompletionItem);
                         }
                     }
-                    for (const { completion } of items) {
-                        completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
-                        suggestions.push(completion);
-                    }
+                    return { suggestions };
                 }
-                return { suggestions };
-            }
-        }));
+            }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
             const heightInLines = input.getControl().getModel()!.getLineCount() + 1;
@@ -201,23 +213,21 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
-        ReactDOM.render(<select
-            className='theia-select'
-            value={this.context} onChange={this.updateInput}>
-            {this.renderOption('condition', 'Expression')}
-            {this.renderOption('hitCondition', 'Hit Count')}
-            {this.renderOption('logMessage', 'Log Message')}
-        </select>, this.selectNode);
+        ReactDOM.render(<SelectComponent
+            value={this.context} onChange={this.updateInput}
+            options={[
+                { value: 'condition', label: nls.localizeByDefault('Expression') },
+                { value: 'hitCondition', label: nls.localizeByDefault('Hit Count') },
+                { value: 'logMessage', label: nls.localizeByDefault('Log Message') },
+            ]}
+        />, this.selectNode);
     }
 
-    protected renderOption(context: DebugBreakpointWidget.Context, label: string): JSX.Element {
-        return <option value={context}>{label}</option>;
-    }
-    protected readonly updateInput = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    protected readonly updateInput = (option: SelectOption) => {
         if (this._input) {
             this._values[this.context] = this._input.getControl().getValue();
         }
-        this.context = e.currentTarget.value as DebugBreakpointWidget.Context;
+        this.context = option.value as DebugBreakpointWidget.Context;
         this.render();
         if (this._input) {
             this._input.focus();
@@ -230,8 +240,7 @@ export class DebugBreakpointWidget implements Disposable {
             return;
         }
         const value = this._input.getControl().getValue();
-        const decorations: monaco.editor.IDecorationOptions[] = !!value ? [] : [{
-            color: undefined,
+        const decorations: IDecorationOptions[] = !!value ? [] : [{
             range: {
                 startLineNumber: 0,
                 endLineNumber: 0,
@@ -245,16 +254,16 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }
         }];
-        this._input.getControl().setDecorations(DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
+        (this._input.getControl() as unknown as StandaloneCodeEditor).setDecorations('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {
         if (this.context === 'logMessage') {
-            return "Message to log when breakpoint is hit. Expressions within {} are interpolated. 'Enter' to accept, 'esc' to cancel.";
+            return nls.localizeByDefault("Message to log when breakpoint is hit. Expressions within {} are interpolated. 'Enter' to accept, 'esc' to cancel.");
         }
         if (this.context === 'hitCondition') {
-            return "Break when hit count condition is met. 'Enter' to accept, 'esc' to cancel.";
+            return nls.localizeByDefault("Break when hit count condition is met. 'Enter' to accept, 'esc' to cancel.");
         }
-        return "Break when expression evaluates to true. 'Enter' to accept, 'esc' to cancel.";
+        return nls.localizeByDefault("Break when expression evaluates to true. 'Enter' to accept, 'esc' to cancel.");
     }
 
 }
