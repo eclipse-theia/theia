@@ -39,10 +39,12 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
     }
 
     async $setMessage(id: string,
+        name: string | undefined,
         text: string | undefined,
         priority: number,
         alignment: number,
         color: string | undefined,
+        backgroundColor: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
         accessibilityInformation: types.AccessibilityInformation,
@@ -52,12 +54,15 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         const role = accessibilityInformation?.role;
 
         const entry = {
+            name,
             text: text || '',
             ariaLabel,
             role,
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
+            // In contrast to color, the backgroundColor must be a theme color. Thus, do not hand in the plain string if it cannot be resolved.
+            backgroundColor: backgroundColor && (this.colorRegistry.getCurrentColor(backgroundColor)),
             tooltip,
             command,
             accessibilityInformation,

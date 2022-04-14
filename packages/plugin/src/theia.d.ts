@@ -2482,6 +2482,14 @@ export module '@theia/plugin' {
     export interface StatusBarItem {
 
         /**
+         * The identifier of this item.
+         *
+         * *Note*: if no identifier was provided by the {@linkcode window.createStatusBarItem}
+         * method, the identifier will match the {@link Extension.id extension identifier}.
+         */
+        readonly id: string;
+
+        /**
          * The alignment of this item.
          */
         readonly alignment: StatusBarAlignment;
@@ -2491,6 +2499,13 @@ export module '@theia/plugin' {
          * be shown more to the left.
          */
         readonly priority: number;
+
+        /**
+         * The name of the entry, like 'Python Language Indicator', 'Git Status' etc.
+         * Try to keep the length of the name short, yet descriptive enough that
+         * users can understand what the status bar item is about.
+         */
+        name: string | undefined;
 
         /**
          * The text to show for the entry. To set a text with icon use the following pattern in text string:
@@ -2507,6 +2522,20 @@ export module '@theia/plugin' {
          * The foreground color for this entry.
          */
         color: string | ThemeColor | undefined;
+
+        /**
+         * The background color for this entry.
+         *
+         * *Note*: only the following colors are supported:
+         * * `new ThemeColor('statusBarItem.errorBackground')`
+         * * `new ThemeColor('statusBarItem.warningBackground')`
+         *
+         * More background colors may be supported in the future.
+         *
+         * *Note*: when a background color is set, the statusbar may override
+         * the `color` choice to ensure the entry is readable in all themes.
+         */
+        backgroundColor: ThemeColor | undefined;
 
         /**
          * The identifier of a command to run on click.
