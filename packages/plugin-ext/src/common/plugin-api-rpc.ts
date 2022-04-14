@@ -1824,7 +1824,6 @@ export const PLUGIN_RPC_CONTEXT = {
     CUSTOM_EDITORS_MAIN: createProxyIdentifier<CustomEditorsMain>('CustomEditorsMain'),
     WEBVIEW_VIEWS_MAIN: createProxyIdentifier<WebviewViewsMain>('WebviewViewsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
-    TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
