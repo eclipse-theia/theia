@@ -197,6 +197,7 @@
   .monaco-icon-label
   .monaco-icon-description-container
   .label-description {
+    font-family: var(--theia-ui-font-family);
     font-size: calc(var(--theia-ui-font-size1) * 0.95) !important;
     color: var(--theia-foreground) !important;
 }
