@@ -63,7 +63,7 @@ export namespace FrontendApplicationConfig {
     export const DEFAULT: FrontendApplicationConfig = {
         applicationName: 'Eclipse Theia',
         defaultTheme: 'dark',
-        defaultIconTheme: 'none',
+        defaultIconTheme: 'theia-file-icons',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
         defaultLocale: ''
     };
