@@ -13,11 +13,11 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "scripts": {
     "prepare": "yarn clean && yarn build",
-    "clean": "rimraf lib",
-    "build": "tsc --incremental && yarn lint && npx playwright install chromium",
+    "clean": "rimraf lib *.tsbuildinfo",
+    "build": "tsc --incremental && npx playwright install chromium",
     "theia:start": "rimraf .tmp.cfg && THEIA_CONFIG_DIR=$PWD/.tmp.cfg yarn --cwd ../browser start",
-    "lint": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests",
-    "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src ./tests --fix",
+    "lint": "eslint -c ./.eslintrc.js --ext .ts ./src",
+    "lint:fix": "eslint -c ./.eslintrc.js --ext .ts ./src --fix",
     "ui-tests": "yarn && playwright test --config=./configs/playwright.config.ts",
     "ui-tests-ci": "yarn && playwright test --config=./configs/playwright.ci.config.ts",
     "ui-tests-headful": "yarn && playwright test --config=./configs/playwright.headful.config.ts",
@@ -39,5 +39,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "main": "lib/index"
 }

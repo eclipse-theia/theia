@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaApp } from '../src/theia-app';
-import { DOT_FILES_FILTER, TheiaExplorerView } from '../src/theia-explorer-view';
-import { TheiaWorkspace } from '../src/theia-workspace';
+import { TheiaApp } from '../theia-app';
+import { DOT_FILES_FILTER, TheiaExplorerView } from '../theia-explorer-view';
+import { TheiaWorkspace } from '../theia-workspace';
 import test, { page } from './fixtures/theia-fixture';
 
 let app: TheiaApp;
@@ -26,7 +26,7 @@ let explorer: TheiaExplorerView;
 test.describe('Theia Explorer View', () => {
 
     test.beforeAll(async () => {
-        const ws = new TheiaWorkspace(['tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         app = await TheiaApp.load(page, ws);
         explorer = await app.openView(TheiaExplorerView);
     });
