@@ -68,10 +68,11 @@ export class WorkspaceCliContribution implements CliContribution {
             }
             const untitledWorkspaceUri = await this.workspaceUtils.getUntitledWorkspaceUri(
                 new URI(await this.envVariablesServer.getConfigDirUri()),
-                uri => !fs.existsSync(uri.path.toString()),
+                async uri => !await fs.pathExists(uri.path.fsPath()),
             );
-            const untitledWorkspacePath = untitledWorkspaceUri.path.toString();
+            const untitledWorkspacePath = untitledWorkspaceUri.path.fsPath();
 
+            await fs.ensureDir(path.dirname(untitledWorkspacePath));
             await fs.writeFile(untitledWorkspacePath, JSON.stringify({ folders }, undefined, 4));
             return untitledWorkspacePath;
         } catch {

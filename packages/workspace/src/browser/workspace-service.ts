@@ -445,7 +445,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             () => this.messageService.warn(nls.localize(
                 'theia/workspace/untitled-cleanup',
                 'There appear to be many untitled workspace files. Please check {0} and remove any unused files.',
-                configDirURI.resolve('workspaces').path.toString())
+                configDirURI.resolve('workspaces').path.fsPath())
             ),
         );
     }
