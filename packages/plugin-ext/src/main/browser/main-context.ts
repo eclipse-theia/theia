@@ -110,7 +110,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
 
     const notificationExt = new NotificationExtImpl(rpc);
-    rpc.set(PLUGIN_RPC_CONTEXT.NOTIFICATION_EXT, notificationExt);
+    rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, notificationExt);
 
     const terminalMain = new TerminalServiceMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);
