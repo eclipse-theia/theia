@@ -23,6 +23,11 @@ import { PropertyViewContentWidget } from './property-view-content-widget';
 import { PropertyViewService } from './property-view-service';
 import { nls } from '@theia/core/lib/common/nls';
 
+/**
+ * The main container for the selection-specific property widgets.
+ * Based on the given selection, the registered `PropertyViewWidgetProvider` provides the
+ * content widget that displays the corresponding properties.
+ */
 @injectable()
 export class PropertyViewWidget extends BaseWidget {
 

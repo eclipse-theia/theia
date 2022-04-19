@@ -20,6 +20,9 @@ import { PropertyDataService } from './property-data-service';
 import { PropertyViewContentWidget } from './property-view-content-widget';
 
 export const PropertyViewWidgetProvider = Symbol('PropertyViewWidgetProvider');
+/**
+ * The `PropertyViewWidgetProvider` should be implemented to provide a property view content widget for the given selection..
+ */
 export interface PropertyViewWidgetProvider {
     /**
      * A unique id for this provider.
@@ -58,8 +61,10 @@ export interface PropertyViewWidgetProvider {
     updateContentWidget(selection: Object | undefined): void;
 
 }
+
 /**
- * `DefaultPropertyViewWidgetProvider` should be extended to provide a new content property view widget for the given selection.
+ * The `DefaultPropertyViewWidgetProvider` is the default abstract implementation of the {@link PropertyViewWidgetProvider}
+ * and should be extended to provide a property view content widget for the given selection.
  */
 @injectable()
 export abstract class DefaultPropertyViewWidgetProvider implements PropertyViewWidgetProvider {
