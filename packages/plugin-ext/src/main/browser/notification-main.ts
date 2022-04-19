@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NotificationExt, NotificationMain, PLUGIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { NotificationExt, NotificationMain, MAIN_RPC_CONTEXT } from '../../common';
 import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -32,7 +32,7 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.progressService = container.get(ProgressService);
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTIFICATION_EXT);
+        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTIFICATION_EXT);
     }
 
     dispose(): void {
