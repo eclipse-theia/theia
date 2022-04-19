@@ -92,7 +92,11 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
      */
     protected getDataValue(): number {
         const currentValue = this.getValue();
-        const selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        let selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        if (selected === -1) {
+            const fallback = this.getFallbackValue();
+            selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, fallback));
+        }
         return Math.max(selected, 0);
     }
 
