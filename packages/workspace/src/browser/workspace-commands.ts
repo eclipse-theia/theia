@@ -65,7 +65,7 @@ export namespace WorkspaceCommands {
         id: 'workspace:openFile',
         originalCategory: FILE_CATEGORY,
         category: nls.localizeByDefault(CommonCommands.FILE_CATEGORY),
-        dialogLabel: 'Open File'
+        dialogLabel: nls.localizeByDefault('Open File')
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
         id: 'workspace:openFolder',
