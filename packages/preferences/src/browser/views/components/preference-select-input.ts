@@ -44,7 +44,11 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     }
 
     protected getFallbackValue(): JSONValue {
-        return this.preferenceNode.preference.data.enum![0];
+        const { default: schemaDefault, defaultValue, enum: enumValues } = this.preferenceNode.preference.data;
+        return schemaDefault !== undefined
+            ? schemaDefault : defaultValue !== undefined
+                ? defaultValue
+                : enumValues![0];
     }
 
     protected doHandleValueChange(): void {
