@@ -28,7 +28,7 @@ const config: PlaywrightTestConfig = {
         screenshot: 'only-on-failure',
         viewport: { width: 1920, height: 1080 }
     },
-    snapshotDir: '../tests/snapshots',
+    snapshotDir: '../src/tests/snapshots',
     expect: {
         toMatchSnapshot: { threshold: 0.15 }
     },

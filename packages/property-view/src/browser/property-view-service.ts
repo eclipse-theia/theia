@@ -40,7 +40,8 @@ export class PropertyViewService {
 
     /**
      * Return a property view widget provider with the highest priority for the given selection.
-     * Never reject, return DefaultProvider ('No properties available') if no other matches.
+     * Never reject, return the default provider ({@link EmptyPropertyViewWidgetProvider};
+     * displays `No properties available`) if there are no other matches.
      */
     async getProvider(selection: Object | undefined): Promise<PropertyViewWidgetProvider> {
         const provider = await this.prioritize(selection);

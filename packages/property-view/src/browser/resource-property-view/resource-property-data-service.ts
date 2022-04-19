@@ -22,6 +22,9 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PropertyDataService } from '../property-data-service';
 
+/**
+ * This data service provides property data for {@link FileSelection}s and selections of {@link Navigatable}s.
+ */
 @injectable()
 export class ResourcePropertyDataService implements PropertyDataService {
 

@@ -37,27 +37,6 @@ export class PluginDebugAdapterContribution {
         return this.description.label;
     }
 
-    /**
-     * @deprecated since 1.24.0, Use [PluginDebugConfigurationProvider](plugin-debug-configuration-provider.ts)
-     */
-    async provideDebugConfigurations(workspaceFolderUri: string | undefined, dynamic: boolean = false): Promise<DebugConfiguration[]> {
-        return this.debugExt.$provideDebugConfigurations(this.type, workspaceFolderUri, dynamic);
-    }
-
-    /**
-     * @deprecated since 1.24.0, Use [PluginDebugConfigurationProvider](plugin-debug-configuration-provider.ts)
-     */
-    async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
-        return this.debugExt.$resolveDebugConfigurations(config, workspaceFolderUri);
-    }
-
-    /**
-     * @deprecated since 1.24.0, Use [PluginDebugConfigurationProvider](plugin-debug-configuration-provider.ts)
-     */
-    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
-        return this.debugExt.$resolveDebugConfigurationWithSubstitutedVariables(config, workspaceFolderUri);
-    }
-
     async createDebugSession(config: DebugConfiguration): Promise<string> {
         await this.pluginService.activateByDebug('onDebugAdapterProtocolTracker', config.type);
         return this.debugExt.$createDebugSession(config);

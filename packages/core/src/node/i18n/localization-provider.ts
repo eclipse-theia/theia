@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Localization } from '../../common/i18n/localization';
+import { LanguageInfo, Localization } from '../../common/i18n/localization';
 
 @injectable()
 export class LocalizationProvider {
@@ -29,11 +29,11 @@ export class LocalizationProvider {
             if (!merged) {
                 this.localizations.set(localization.languageId, merged = {
                     languageId: localization.languageId,
-                    languageName: localization.languageName,
-                    localizedLanguageName: localization.localizedLanguageName,
                     translations: {}
                 });
             }
+            merged.languageName = merged.languageName || localization.languageName;
+            merged.localizedLanguageName = merged.localizedLanguageName || localization.localizedLanguageName;
             merged.languagePack = merged.languagePack || localization.languagePack;
             Object.assign(merged.translations, localization.translations);
         }
@@ -47,14 +47,19 @@ export class LocalizationProvider {
         return this.currentLanguage;
     }
 
-    getAvailableLanguages(all?: boolean): string[] {
-        const languageIds: string[] = [];
+    getAvailableLanguages(all?: boolean): LanguageInfo[] {
+        const languageIds: LanguageInfo[] = [];
         for (const localization of this.localizations.values()) {
             if (all || localization.languagePack) {
-                languageIds.push(localization.languageId);
+                languageIds.push({
+                    languageId: localization.languageId,
+                    languageName: localization.languageName,
+                    languagePack: localization.languagePack,
+                    localizedLanguageName: localization.localizedLanguageName
+                });
             }
         }
-        return languageIds.sort((a, b) => a.localeCompare(b));
+        return languageIds.sort((a, b) => a.languageId.localeCompare(b.languageId));
     }
 
     loadLocalization(languageId: string): Localization {

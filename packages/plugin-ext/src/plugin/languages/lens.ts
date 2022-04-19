@@ -71,7 +71,7 @@ export class CodeLensAdapter {
             return undefined;
         }
 
-        let newLens: theia.CodeLens | undefined;
+        let newLens: theia.CodeLens | undefined | null;
         if (typeof this.provider.resolveCodeLens === 'function' && !lens.isResolved) {
             newLens = await this.provider.resolveCodeLens(lens, token);
             if (token.isCancellationRequested) {

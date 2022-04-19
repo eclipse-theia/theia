@@ -13,16 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
 import { Emitter, Event } from '../common/event';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+/**
+ * `SelectionProvider` is implemented by services to notify listeners about selection changes.
+ */
 export interface SelectionProvider<T> {
     onSelectionChanged: Event<T | undefined>;
 }
 
+/**
+ * Singleton service that is used to share the current selection globally in a Theia application.
+ * On each change of selection, subscribers are notified and receive the updated selection object.
+ */
 @injectable()
 export class SelectionService implements SelectionProvider<Object | undefined> {
 

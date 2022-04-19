@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { OSUtil } from '../src/util';
-import { TheiaApp } from '../src/theia-app';
-import { TheiaMenuBar } from '../src/theia-main-menu';
+import { OSUtil } from '../util';
+import { TheiaApp } from '../theia-app';
+import { TheiaMenuBar } from '../theia-main-menu';
 import test, { page } from './fixtures/theia-fixture';
 
 let menuBar: TheiaMenuBar;

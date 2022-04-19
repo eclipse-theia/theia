@@ -262,7 +262,8 @@ class TreeViewExtImpl<T> implements Disposable {
             // root
             return [];
         }
-        const parent = this.treeDataProvider.getParent && await this.treeDataProvider.getParent(element);
+        const result = this.treeDataProvider.getParent && await this.treeDataProvider.getParent(element);
+        const parent = result ? result : undefined;
         const chain = await this.calculateRevealParentChain(parent);
         if (!chain) {
             // parents are inconsistent

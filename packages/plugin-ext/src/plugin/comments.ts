@@ -171,7 +171,7 @@ export class CommentsExtImpl implements CommentsExt {
 
         const documentData = this._documents.getDocumentData(URI.revive(uriComponents));
         if (documentData) {
-            const ranges: theia.Range[] | undefined = await commentController.commentingRangeProvider!.provideCommentingRanges(documentData.document, token);
+            const ranges: theia.Range[] | undefined | null = await commentController.commentingRangeProvider!.provideCommentingRanges(documentData.document, token);
             if (ranges) {
                 return ranges.map(x => fromRange(x));
             }

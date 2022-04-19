@@ -20,16 +20,19 @@ export const AsyncLocalizationProvider = Symbol('AsyncLocalizationProvider');
 export interface AsyncLocalizationProvider {
     getCurrentLanguage(): Promise<string>
     setCurrentLanguage(languageId: string): Promise<void>
-    getAvailableLanguages(): Promise<string[]>
+    getAvailableLanguages(): Promise<LanguageInfo[]>
     loadLocalization(languageId: string): Promise<Localization>
 }
 
-export interface Localization {
+export interface Localization extends LanguageInfo {
+    translations: { [key: string]: string };
+}
+
+export interface LanguageInfo {
     languageId: string;
     languageName?: string;
     languagePack?: boolean;
     localizedLanguageName?: string;
-    translations: { [key: string]: string };
 }
 
 export type FormatType = string | number | boolean | undefined;

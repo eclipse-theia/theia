@@ -17,6 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Disposable } from '@theia/core/lib/common';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import URI from '@theia/core/lib/common/uri';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -80,11 +81,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         const { options } = this;
         return <React.Fragment>
             <DebugAction run={this.start} label={nls.localizeByDefault('Start Debugging')} iconClass='debug-start' ref={this.setStepRef} />
-            <select className='theia-select debug-configuration' value={this.currentValue} onChange={this.setCurrentConfiguration}>
-                {options.length ? options : <option value='__NO_CONF__'>{nls.localizeByDefault('No Configurations')}</option>}
-                <option disabled>{'Add Configuration...'.replace(/./g, '-')}</option>
-                <option value='__ADD_CONF__'>{nls.localizeByDefault('Add Configuration...')}</option>
-            </select>
+            <SelectComponent options={options} value={this.currentValue} onChange={option => this.setCurrentConfiguration(option)} />
             <DebugAction run={this.openConfiguration} label={nls.localizeByDefault('Open {0}', '"launch.json"')}
                 iconClass='settings-gear' />
             <DebugAction run={this.openConsole} label={nls.localizeByDefault('Debug Console')} iconClass='terminal' />
@@ -94,10 +91,25 @@ export class DebugConfigurationWidget extends ReactWidget {
         const { current } = this.manager;
         return current ? this.toValue(current) : '__NO_CONF__';
     }
-    protected get options(): React.ReactNode[] {
-        return Array.from(this.manager.all).map((options, index) =>
-            <option key={index} value={this.toValue(options)}>{this.toName(options)}</option>
-        );
+    protected get options(): SelectOption[] {
+        const items: SelectOption[] = Array.from(this.manager.all).map(option => ({
+            value: this.toValue(option),
+            label: this.toName(option)
+        }));
+        if (items.length === 0) {
+            items.push({
+                value: '__NO_CONF__',
+                label: nls.localizeByDefault('No Configurations')
+            });
+        }
+        items.push({
+            separator: true
+        });
+        items.push({
+            value: '__ADD_CONF__',
+            label: nls.localizeByDefault('Add Configuration...')
+        });
+        return items;
     }
     protected toValue({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
         if (!workspaceFolderUri) {
@@ -112,8 +124,8 @@ export class DebugConfigurationWidget extends ReactWidget {
         return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
     }
 
-    protected readonly setCurrentConfiguration = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = event.currentTarget.value;
+    protected readonly setCurrentConfiguration = (option: SelectOption) => {
+        const value = option.value!;
         if (value === '__ADD_CONF__') {
             this.manager.addConfiguration();
         } else {
