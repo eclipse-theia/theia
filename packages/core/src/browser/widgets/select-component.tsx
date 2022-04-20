@@ -35,7 +35,9 @@ export interface SelectOption {
 export interface SelectComponentProps {
     options: SelectOption[]
     value?: string | number
-    onChange?: (option: SelectOption, index: number) => void
+    onChange?: (option: SelectOption, index: number) => void,
+    onBlur?: () => void,
+    onFocus?: () => void
 }
 
 export interface SelectComponentDropdownDimensions {
@@ -173,7 +175,13 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 tabIndex={0}
                 className="theia-select-component"
                 onClick={e => this.handleClickEvent(e)}
-                onBlur={() => this.hide()}
+                onBlur={
+                    () => {
+                        this.hide();
+                        this.props.onBlur?.();
+                    }
+                }
+                onFocus={() => this.props.onFocus?.()}
                 onKeyDown={e => this.handleKeypress(e)}
             >
                 <div key="label" className="theia-select-component-label">{selectedItemLabel}</div>
