@@ -19,7 +19,6 @@ import URI from '../common/uri';
 import { URI as Uri } from 'vscode-uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
 import { LanguageService } from './language-service';
-import { ApplicationServer } from '../common/application-protocol';
 
 @injectable()
 export class ResourceContextKey {
@@ -30,9 +29,6 @@ export class ResourceContextKey {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject(ApplicationServer)
-    protected readonly applicationService: ApplicationServer;
-
     protected resource: ContextKey<Uri>;
     protected resourceSchemeKey: ContextKey<string>;
     protected resourceFileName: ContextKey<string>;
@@ -42,7 +38,7 @@ export class ResourceContextKey {
     protected resourcePath: ContextKey<string>;
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.resource = this.contextKeyService.createKey<Uri>('resource', undefined);
         this.resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
         this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);

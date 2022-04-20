@@ -251,12 +251,12 @@ export class Path {
 
     /**
      * Converts the current path into a file system path.
-     * @param posix Indicates posix or windows file path.
+     * @param format Determines the format of the path.
      * If `undefined`, the format will be determined by the `OS.backend.type` value.
      * @returns A file system path.
      */
-    fsPath(posix?: boolean): string {
-        if (posix === false || (posix === undefined && OS.backend.isWindows)) {
+    fsPath(format?: Path.Format): string {
+        if (format === Path.Format.Windows || (format === undefined && OS.backend.isWindows)) {
             return Path.windowsPath(this.raw);
         } else {
             return this.raw;
@@ -323,5 +323,12 @@ export class Path {
             }
         }
         return new Path((this.isAbsolute ? '/' : '') + resultArray.join('/') + (trailingSlash ? '/' : ''));
+    }
+}
+
+export namespace Path {
+    export enum Format {
+        Posix,
+        Windows
     }
 }
