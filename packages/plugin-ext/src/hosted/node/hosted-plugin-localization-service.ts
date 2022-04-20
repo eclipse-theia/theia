@@ -149,10 +149,10 @@ interface PackageTranslation {
 async function loadPackageTranslations(pluginPath: string, locale: string): Promise<PackageTranslation> {
     const localizedPluginPath = path.join(pluginPath, `package.nls.${locale}.json`);
     try {
-        const defaultValue = await fs.readJson(path.join(pluginPath, 'package.nls.json'));
+        const defaultValue = coerceLocalizations(await fs.readJson(path.join(pluginPath, 'package.nls.json')));
         if (await fs.pathExists(localizedPluginPath)) {
             return {
-                translation: await fs.readJson(localizedPluginPath),
+                translation: coerceLocalizations(await fs.readJson(localizedPluginPath)),
                 default: defaultValue
             };
         }
@@ -165,6 +165,27 @@ async function loadPackageTranslations(pluginPath: string, locale: string): Prom
         }
         return {};
     }
+}
+
+interface LocalizeInfo {
+    message: string
+    comment?: string
+}
+
+function isLocalizeInfo(obj: unknown): obj is LocalizeInfo {
+    return typeof obj === 'object' && obj && 'message' in obj || false;
+}
+
+function coerceLocalizations(translations: Record<string, string | LocalizeInfo>): Record<string, string> {
+    for (const [key, value] of Object.entries(translations)) {
+        if (isLocalizeInfo(value)) {
+            translations[key] = value.message;
+        } else if (typeof value !== 'string') {
+            // Only strings or LocalizeInfo values are valid
+            translations[key] = 'INVALID TRANSLATION VALUE';
+        }
+    }
+    return translations as Record<string, string>;
 }
 
 const NLS_REGEX = /^%([\w\d.-]+)%$/i;
