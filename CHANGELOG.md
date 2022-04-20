@@ -42,6 +42,7 @@ The following methods may now return `undefined | null` ([#10999](https://github
     - resolveDebugConfigurationWithSubstitutedVariables
 
 - [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
+- [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
 
 ## v1.24.0 - 3/31/2022
 
