@@ -23,8 +23,6 @@ import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/c
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as monaco from '@theia/monaco-editor-core';
 import { ITextModelService, ITextModelContentProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { ITextModelUpdateOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
@@ -47,11 +45,12 @@ export interface MonacoEditorModelFactory {
 export class MonacoTextModelService implements ITextModelService {
     declare readonly _serviceBrand: undefined;
 
-    protected readonly _ready = new Deferred<void>();
     /**
      * This component does some asynchronous work before being fully initialized.
+     *
+     * @deprecated since 1.25.0. Is instantly resolved.
      */
-    readonly ready: Promise<void> = this._ready.promise;
+    readonly ready: Promise<void> = Promise.resolve();
 
     protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
         uri => this.loadModel(new URI(uri))
@@ -76,20 +75,11 @@ export class MonacoTextModelService implements ITextModelService {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(ApplicationServer)
-    protected readonly applicationServer!: ApplicationServer;
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
     @postConstruct()
     public init(): void {
-        let isWindowsBackend = false;
-
-        this.applicationServer.getBackendOS().then(os => {
-            isWindowsBackend = os === OS.Type.Windows;
-        }, () => undefined).then(() => this._ready.resolve());
-
         const resourcePropertiesService = StandaloneServices.get(ITextResourcePropertiesService);
 
         if (resourcePropertiesService) {
@@ -98,7 +88,7 @@ export class MonacoTextModelService implements ITextModelService {
                 if (eol && eol !== 'auto') {
                     return eol;
                 }
-                return isWindowsBackend ? '\r\n' : '\n';
+                return OS.backend.isWindows ? '\r\n' : '\n';
             };
         }
     }
@@ -120,7 +110,6 @@ export class MonacoTextModelService implements ITextModelService {
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
-        await this.ready;
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (await this.createModel(resource)).load();

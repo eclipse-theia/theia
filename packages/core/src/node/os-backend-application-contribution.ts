@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2021 TypeFox and others.
+// Copyright (C) 2022 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,20 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '../common/nls';
-import { Endpoint } from './endpoint';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import * as express from 'express';
+import { injectable } from 'inversify';
+import { BackendApplicationContribution } from './backend-application';
+import { OS } from '../common/os';
 
-export async function loadTranslations(): Promise<void> {
-    const defaultLocale = FrontendApplicationConfigProvider.get().defaultLocale;
-    if (defaultLocale && !nls.locale) {
-        Object.assign(nls, {
-            locale: defaultLocale
+@injectable()
+export class OSBackendApplicationContribution implements BackendApplicationContribution {
+
+    configure(app: express.Application): void {
+        app.get('/os', (_, res) => {
+            res.send(OS.type());
         });
-    }
-    if (nls.locale) {
-        const endpoint = new Endpoint({ path: '/i18n/' + nls.locale }).getRestUrl().toString();
-        const response = await fetch(endpoint);
-        nls.localization = await response.json();
     }
 }

@@ -95,7 +95,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected getNodeTooltip(node: TreeNode): string | undefined {
         const operativeNode = this.compressionService.getCompressionChain(node)?.tail() ?? node;
         const uri = UriSelection.getUri(operativeNode);
-        return uri ? uri.path.toString() : undefined;
+        return uri ? uri.path.fsPath() : undefined;
     }
 
     protected override getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {

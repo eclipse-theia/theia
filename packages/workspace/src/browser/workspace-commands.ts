@@ -14,10 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
@@ -204,18 +203,10 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
-    @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
     private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
-
-    protected backendOS: Promise<OS.Type>;
-
-    @postConstruct()
-    async init(): Promise<void> {
-        this.backendOS = this.applicationServer.getBackendOS();
-    };
 
     get onDidCreateNewFile(): Event<DidCreateNewResourceEvent> {
         return this.onDidCreateNewFileEmitter.event;
@@ -395,10 +386,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected async validateFileRename(oldName: string, newName: string, parent: FileStat): Promise<string> {
-        if (
-            await this.backendOS === OS.Type.Windows
-            && parent.resource.resolve(newName).isEqual(parent.resource.resolve(oldName), false)
-        ) {
+        if (OS.backend.isWindows && parent.resource.resolve(newName).isEqual(parent.resource.resolve(oldName), false)) {
             return '';
         }
         return this.validateFileName(newName, parent, false);
