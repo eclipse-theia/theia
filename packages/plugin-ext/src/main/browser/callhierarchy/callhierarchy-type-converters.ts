@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCalls } from '@theia/callhierarchy/lib/browser';
+import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from '@theia/callhierarchy/lib/browser';
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
 import * as callhierarchy from '@theia/core/shared/vscode-languageserver-protocol';
@@ -171,7 +171,7 @@ export function fromCaller(caller: CallHierarchyIncomingCall): model.CallHierarc
     };
 }
 
-export function toCallee(callee: model.CallHierarchyOutgoingCall): CallHierarchyOutgoingCalls {
+export function toCallee(callee: model.CallHierarchyOutgoingCall): CallHierarchyOutgoingCall {
     return {
         to: toDefinition(callee.to),
         fromRanges: callee.fromRanges.map(toRange),
@@ -185,7 +185,7 @@ export function fromCallHierarchyCallerToModelCallHierarchyIncomingCall(caller: 
     };
 }
 
-export function fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall(callee: CallHierarchyOutgoingCalls): model.CallHierarchyOutgoingCall {
+export function fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall(callee: CallHierarchyOutgoingCall): model.CallHierarchyOutgoingCall {
     return {
         to: fromDefinition(callee.to),
         fromRanges: callee.fromRanges.map(fromRange),

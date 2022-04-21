@@ -38,7 +38,7 @@ export interface CallHierarchyIncomingCall {
     fromRanges: Range[];
 }
 
-export interface CallHierarchyOutgoingCalls {
+export interface CallHierarchyOutgoingCall {
     to: CallHierarchyItem;
     fromRanges: Range[];
 }
