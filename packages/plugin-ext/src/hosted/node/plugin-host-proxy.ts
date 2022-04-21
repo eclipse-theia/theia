@@ -32,7 +32,7 @@ export function connectProxyResolver(configProvider: PreferenceRegistryExtImpl):
         env: process.env,
     });
     const lookup = createPatchedModules(configProvider, resolveProxy);
-    return configureModuleLoading(lookup);
+    configureModuleLoading(lookup);
 }
 
 interface PatchedModules {

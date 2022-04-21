@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { DefaultBrowserRequestService } from '../../browser/request/browser-request-service';
+import { ProxyingBrowserRequestService } from '../../browser/request/browser-request-service';
 import { RequestService } from '@theia/request-service';
 
 export default new ContainerModule(bind => {
-    // We bind the non-xhr request service here. This will always proxy every request through the backend.
+    // This version of the request service will always proxy every request through the backend.
     // We do this since the backend currently cannot automatically resolve proxies, but the frontend can.
     // We try to avoid confusion with this where some (frontend) requests successfully go through the proxy, but some others (backend) don't.
-    bind(RequestService).to(DefaultBrowserRequestService).inSingletonScope();
+    bind(RequestService).to(ProxyingBrowserRequestService).inSingletonScope();
 });

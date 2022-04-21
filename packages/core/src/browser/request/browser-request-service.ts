@@ -20,10 +20,7 @@ import { BackendRequestService, RequestConfiguration, RequestContext, RequestOpt
 import { PreferenceService } from '../preferences/preference-service';
 
 @injectable()
-export class DefaultBrowserRequestService implements RequestService {
-
-    @inject(BackendRequestService)
-    protected readonly backendRequestService: RequestService;
+export abstract class AbstractBrowserRequestService implements RequestService {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -43,19 +40,25 @@ export class DefaultBrowserRequestService implements RequestService {
             });
         });
         this.preferenceService.onPreferencesChanged(e => {
-            const config: RequestConfiguration = {};
-            if ('http.proxy' in e) {
-                config.proxyUrl = e['http.proxy'].newValue;
-            }
-            if ('http.proxyAuthorization' in e) {
-                config.proxyAuthorization = e['http.proxyAuthorization'].newValue;
-            }
-            if ('http.proxyStrictSSL' in e) {
-                config.strictSSL = e['http.proxyStrictSSL'].newValue;
-            }
-            this.configure(config);
+            this.configurePromise.then(() => this.configure({
+                proxyUrl: e['http.proxy']?.newValue,
+                proxyAuthorization: e['http.proxyAuthorization']?.newValue,
+                strictSSL: e['http.proxyStrictSSL']?.newValue
+            }));
         });
     }
+
+    abstract configure(config: RequestConfiguration): Promise<void>;
+    abstract request(options: RequestOptions, token?: CancellationToken): Promise<RequestContext>;
+    abstract resolveProxy(url: string): Promise<string | undefined>;
+
+}
+
+@injectable()
+export class ProxyingBrowserRequestService extends AbstractBrowserRequestService {
+
+    @inject(BackendRequestService)
+    protected readonly backendRequestService: RequestService;
 
     configure(config: RequestConfiguration): Promise<void> {
         return this.backendRequestService.configure(config);
@@ -65,29 +68,21 @@ export class DefaultBrowserRequestService implements RequestService {
         return this.backendRequestService.resolveProxy(url);
     }
 
-    protected transformBackendResponse(context: RequestContext): RequestContext {
-        // In the `backend-request-facade` we transform the binary buffer into a base64 string to save space
-        // We need to tranform it back into a binary buffer here
-        const transferedBuffer = context.buffer as unknown as string;
-        context.buffer = Uint8Array.from(atob(transferedBuffer), c => c.charCodeAt(0));
-        return context;
-    }
-
     async request(options: RequestOptions): Promise<RequestContext> {
         // Wait for both the preferences and the configuration of the backend service
         await this.configurePromise;
         const backendResult = await this.backendRequestService.request(options);
-        return this.transformBackendResponse(backendResult);
+        return RequestContext.decompress(backendResult);
     }
 }
 
 @injectable()
-export class XHRBrowserRequestService extends DefaultBrowserRequestService {
+export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
 
     protected authorization?: string;
 
     override configure(config: RequestConfiguration): Promise<void> {
-        if ('proxyAuthorization' in config) {
+        if (config.proxyAuthorization !== undefined) {
             this.authorization = config.proxyAuthorization;
         }
         return super.configure(config);
@@ -98,6 +93,8 @@ export class XHRBrowserRequestService extends DefaultBrowserRequestService {
             const xhrResult = await this.xhrRequest(options, token);
             const statusCode = xhrResult.res.statusCode ?? 200;
             if (statusCode >= 400) {
+                // We might've been blocked by the firewall
+                // Try it through the backend request service
                 return super.request(options);
             }
             return xhrResult;

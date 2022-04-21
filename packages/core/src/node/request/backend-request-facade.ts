@@ -30,13 +30,7 @@ export class BackendRequestFacade implements RequestService {
 
     async request(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
         const context = await this.requestService.request(options, token);
-        // Convert the buffer to base64 before sending it to the frontend
-        // This reduces the amount of JSON data transferred massively
-        const base64Data = Buffer.from(context.buffer).toString('base64');
-        Object.assign(context, {
-            buffer: base64Data
-        });
-        return context;
+        return RequestContext.compress(context);
     }
 
     resolveProxy(url: string): Promise<string | undefined> {

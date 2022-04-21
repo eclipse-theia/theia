@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request-service": "1.24.0",
+    "@theia/request-service": "1.25.0",
     "semver": "^5.4.1"
   }
 }

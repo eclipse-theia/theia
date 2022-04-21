@@ -75,6 +75,33 @@ export namespace RequestContext {
             throw err;
         }
     }
+
+    /**
+     * Convert the buffer to base64 before sending it to the frontend.
+     * This reduces the amount of JSON data transferred massively.
+     * Does nothing if the buffer is already compressed.
+     */
+    export function compress(context: RequestContext): RequestContext {
+        if (context.buffer instanceof Uint8Array && Buffer !== undefined) {
+            const base64Data = Buffer.from(context.buffer).toString('base64');
+            Object.assign(context, {
+                buffer: base64Data
+            });
+        }
+        return context;
+    }
+
+    /**
+     * Decompresses a base64 buffer into a normal array buffer
+     * Does nothing if the buffer is not compressed.
+     */
+    export function decompress(context: RequestContext): RequestContext {
+        const buffer = context.buffer;
+        if (typeof buffer === 'string' && typeof atob === 'function') {
+            context.buffer = Uint8Array.from(atob(buffer), c => c.charCodeAt(0));
+        }
+        return context;
+    }
 }
 
 export interface RequestConfiguration {

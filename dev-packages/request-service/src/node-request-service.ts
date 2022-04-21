@@ -16,9 +16,8 @@
 
 import * as http from 'http';
 import * as https from 'https';
-import { parse as parseUrl } from 'url';
 import { getProxyAgent, ProxyAgent } from './proxy';
-import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService } from './request-service';
+import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService } from './common-request-service';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 
 export interface RawRequestFunction {
@@ -38,7 +37,7 @@ export class NodeRequestService implements RequestService {
     protected authorization?: string;
 
     protected getNodeRequest(options: RequestOptions): RawRequestFunction {
-        const endpoint = parseUrl(options.url!);
+        const endpoint = new URL(options.url);
         const module = endpoint.protocol === 'https:' ? https : http;
         return module.request;
     }
@@ -48,26 +47,25 @@ export class NodeRequestService implements RequestService {
     }
 
     async configure(config: RequestConfiguration): Promise<void> {
-        if ('proxyUrl' in config) {
+        if (config.proxyUrl !== undefined) {
             this.proxyUrl = config.proxyUrl;
         }
-        if ('strictSSL' in config) {
+        if (config.strictSSL !== undefined) {
             this.strictSSL = config.strictSSL;
         }
-        if ('proxyAuthorization' in config) {
+        if (config.proxyAuthorization !== undefined) {
             this.authorization = config.proxyAuthorization;
         }
     }
 
     protected async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
         const { strictSSL } = this;
+        options.strictSSL = options.strictSSL ?? strictSSL;
         const agent = options.agent ? options.agent : getProxyAgent(options.url || '', process.env, {
             proxyUrl: await this.getProxyUrl(options.url),
-            strictSSL
+            strictSSL: options.strictSSL
         });
-
         options.agent = agent;
-        options.strictSSL = options.strictSSL ?? strictSSL;
 
         const authorization = options.proxyAuthorization || this.authorization;
         if (authorization) {
@@ -84,7 +82,7 @@ export class NodeRequestService implements RequestService {
         return new Promise(async (resolve, reject) => {
             options = await this.processOptions(options);
 
-            const endpoint = parseUrl(options.url);
+            const endpoint = new URL(options.url);
             const rawRequest = options.getRawRequest
                 ? options.getRawRequest(options)
                 : this.getNodeRequest(options);
@@ -93,7 +91,7 @@ export class NodeRequestService implements RequestService {
                 hostname: endpoint.hostname,
                 port: endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80),
                 protocol: endpoint.protocol,
-                path: endpoint.path,
+                path: endpoint.pathname + endpoint.search,
                 method: options.type || 'GET',
                 headers: options.headers,
                 agent: options.agent,
@@ -105,11 +103,11 @@ export class NodeRequestService implements RequestService {
             }
 
             const req = rawRequest(opts, async res => {
-                const followRedirects: number = options.followRedirects ?? 3;
-                if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && followRedirects > 0 && res.headers['location']) {
+                const followRedirects = options.followRedirects ?? 3;
+                if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && followRedirects > 0 && res.headers.location) {
                     this.request({
                         ...options,
-                        url: res.headers['location'],
+                        url: res.headers.location,
                         followRedirects: followRedirects - 1
                     }, token).then(resolve, reject);
                 } else {

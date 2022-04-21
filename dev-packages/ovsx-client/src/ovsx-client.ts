@@ -34,7 +34,7 @@ export interface OVSXClientOptions {
 
 export class OVSXClient {
 
-    constructor(readonly options: OVSXClientOptions, readonly request: RequestService) { }
+    constructor(readonly options: OVSXClientOptions, protected readonly request: RequestService) { }
 
     async search(param?: VSXSearchParam): Promise<VSXSearchResult> {
         const searchUri = await this.buildSearchUri(param);
@@ -105,18 +105,16 @@ export class OVSXClient {
     }
 
     protected async fetchJson<R>(url: string): Promise<R> {
-        const e = await this.request.request({
+        const requestContext = await this.request.request({
             url,
             headers: { 'Accept': 'application/json' }
         });
-        return RequestContext.asJson<R>(e);
+        return RequestContext.asJson<R>(requestContext);
     }
 
     async fetchText(url: string): Promise<string> {
-        const e = await this.request.request({
-            url
-        });
-        return RequestContext.asText(e);
+        const requestContext = await this.request.request({ url });
+        return RequestContext.asText(requestContext);
     }
 
     /**

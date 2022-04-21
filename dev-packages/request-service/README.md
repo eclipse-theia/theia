@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/request-service` package is used to send proxy-aware http requests to other service.
+The `@theia/request-service` package is used to send proxy-aware http requests to other services.
 
 ## Additional Information
 
