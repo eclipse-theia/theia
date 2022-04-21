@@ -25,14 +25,14 @@ import { nls } from '@theia/core/lib/common/nls';
 interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string }
 
 export interface DebugConfigurationSelectProps {
-    manager: DebugConfigurationManager,
-    quickInputService: QuickInputService,
+    manager: DebugConfigurationManager
+    quickInputService: QuickInputService
     isMultiRoot: boolean
 }
 
 export interface DebugProviderSelectState {
-    providerTypes: string[],
-    currentValue: string | undefined
+    providerTypes: string[]
+    currentValue?: string
 }
 
 export class DebugConfigurationSelect extends React.Component<DebugConfigurationSelectProps, DebugProviderSelectState> {
@@ -49,8 +49,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         this.manager = props.manager;
         this.quickInputService = props.quickInputService;
         this.state = {
-            providerTypes: [],
-            currentValue: undefined
+            providerTypes: []
         };
         this.manager.onDidChangeConfigurationProviders(() => {
             this.refreshDebugConfigurations();
@@ -62,8 +61,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     }
 
     override render(): React.ReactNode {
+        const options = this.renderOptions();
+        console.log('**********  state', JSON.stringify(this.state));
+        console.log('options:', JSON.stringify(options));
         return <SelectComponent
-            options={this.renderOptions()}
+            options={options}
             value={this.currentValue}
             onChange={option => this.setCurrentConfiguration(option)}
             onFocus={() => this.refreshDebugConfigurations()}

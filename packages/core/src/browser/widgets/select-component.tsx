@@ -65,18 +65,22 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     constructor(props: SelectComponentProps) {
         super(props);
-        let selected = 0;
-        if (typeof props.value === 'number') {
-            selected = props.value;
-        } else if (typeof props.value === 'string') {
-            selected = Math.max(props.options.findIndex(e => e.value === props.value), 0);
-        }
-        this.state = {
-            selected,
-            original: selected,
-            hover: selected
-        };
-
+        // let selected = 0;
+        // console.log('Constructing');
+        // if (typeof props.value === 'number') {
+        //     selected = props.value;
+        //     console.log('value is a number');
+        // } else if (typeof props.value === 'string') {
+        //     selected = Math.max(props.options.findIndex(e => e.value === props.value), 0);
+        //     console.log('selected on component: ', selected, JSON.stringify(props.options[selected]));
+        // } else {
+        //     console.log('constructing else');
+        // }
+        // this.state = {
+        //     selected,
+        //     original: selected,
+        //     hover: selected
+        // };
         let list = document.getElementById(SELECT_COMPONENT_CONTAINER);
         if (!list) {
             list = document.createElement('div');
@@ -84,6 +88,25 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             document.body.appendChild(list);
         }
         this.dropdownElement = list;
+    }
+
+    static getDerivedStateFromProps(props: SelectComponentProps, state: SelectComponentState): SelectComponentState {
+        let selected = 0;
+        console.log('Constructing');
+        if (typeof props.value === 'number') {
+            selected = props.value;
+            console.log('value is a number');
+        } else if (typeof props.value === 'string') {
+            selected = Math.max(props.options.findIndex(e => e.value === props.value), 0);
+            console.log('selected on component: ', selected, JSON.stringify(props.options[selected]));
+        } else {
+            console.log('constructing else');
+        }
+        return {
+            selected,
+            original: selected,
+            hover: selected
+        };
     }
 
     get value(): string | number | undefined {
@@ -162,12 +185,13 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     }
 
     override render(): React.ReactNode {
-        const { options } = this.props;
+        const { options, ...rest } = this.props;
         let { selected } = this.state;
         while (options[selected]?.separator) {
             selected = (selected + 1) % this.props.options.length;
         }
         const selectedItemLabel = options[selected].label ?? options[selected].value;
+        console.log('selectedItemLabel: ', selectedItemLabel, selected, JSON.stringify(rest));
         return <>
             <div
                 key="select-component"
