@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { OS } from '@theia/core/lib/common';
 import { OpenerService } from '@theia/core/lib/browser';
 import { Position } from '@theia/editor/lib/browser';
@@ -28,20 +27,11 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 @injectable()
 export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContribution {
 
-    @inject(ApplicationServer) protected appServer: ApplicationServer;
     @inject(OpenerService) protected openerService: OpenerService;
     @inject(FileService) protected fileService: FileService;
 
-    protected backendOs: Promise<OS.Type>;
-
-    @postConstruct()
-    protected init(): void {
-        this.backendOs = this.appServer.getBackendOS();
-    }
-
     async getRegExp(): Promise<RegExp> {
-        const os = await this.backendOs;
-        const baseLocalLinkClause = os === OS.Type.Windows ? winLocalLinkClause : unixLocalLinkClause;
+        const baseLocalLinkClause = OS.backend.isWindows ? winLocalLinkClause : unixLocalLinkClause;
         return new RegExp(`${baseLocalLinkClause}(${lineAndColumnClause})`);
     }
 
@@ -107,7 +97,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
             return info;
         }
 
-        const lineAndColumnMatchIndex = (await this.backendOs) === OS.Type.Windows ? winLineAndColumnMatchIndex : unixLineAndColumnMatchIndex;
+        const lineAndColumnMatchIndex = OS.backend.isWindows ? winLineAndColumnMatchIndex : unixLineAndColumnMatchIndex;
         for (let i = 0; i < lineAndColumnClause.length; i++) {
             const lineMatchIndex = lineAndColumnMatchIndex + (lineAndColumnClauseGroupCount * i);
             const rowNumber = matches[lineMatchIndex];

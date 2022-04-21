@@ -41,7 +41,7 @@ export interface PropertyDataService {
     /**
      * Provide property data for the given selection.
      * Resolve to a property view content widget.
-     * Never reject if `canHandle` return a positive number; otherwise should reject.
+     * Never reject if `canHandle` returns a positive number; otherwise should reject.
      */
     providePropertyData(selection: Object | undefined): Promise<Object | undefined>;
 

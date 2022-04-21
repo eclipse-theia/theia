@@ -20,6 +20,10 @@ import * as React from '@theia/core/shared/react';
 import { PropertyViewContentWidget } from './property-view-content-widget';
 import { DefaultPropertyViewWidgetProvider } from './property-view-widget-provider';
 
+/**
+ * Property view widget that is shown if no property data or selection is available.
+ * This widget is provided by the {@link EmptyPropertyViewWidgetProvider}.
+ */
 class EmptyPropertyViewWidget extends ReactWidget implements PropertyViewContentWidget {
 
     static readonly ID = 'theia-empty-property-view';
@@ -47,7 +51,7 @@ class EmptyPropertyViewWidget extends ReactWidget implements PropertyViewContent
 }
 
 /**
- * `DefaultPropertyViewWidgetProvider` is implemented to provide the PropertyViewEmptyWidget
+ * `EmptyPropertyViewWidgetProvider` is implemented to provide the {@link EmptyPropertyViewWidget}
  *  if the given selection is undefined or no other provider can handle the given selection.
  */
 @injectable()

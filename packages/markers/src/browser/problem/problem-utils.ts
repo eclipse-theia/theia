@@ -63,4 +63,29 @@ export namespace ProblemUtils {
      */
     export const ownerCompare = (a: Marker<Diagnostic>, b: Marker<Diagnostic>): number => a.owner.localeCompare(b.owner);
 
+    export function getPriority(marker: Marker<Diagnostic>): number {
+        const { severity } = marker.data;
+        switch (severity) {
+            case DiagnosticSeverity.Error: return 30;
+            case DiagnosticSeverity.Warning: return 20;
+            case DiagnosticSeverity.Information: return 10;
+            default: return 0;
+        }
+    }
+
+    export function getColor(marker: Marker<Diagnostic>): string {
+        const { severity } = marker.data;
+        switch (severity) {
+            case DiagnosticSeverity.Error: return 'list.errorForeground';
+            case DiagnosticSeverity.Warning: return 'list.warningForeground';
+            default: return 'successBackground';
+        }
+    }
+
+    export function filterMarker(marker: Marker<Diagnostic>): boolean {
+        const { severity } = marker.data;
+        return severity === DiagnosticSeverity.Error
+            || severity === DiagnosticSeverity.Warning
+            || severity === DiagnosticSeverity.Information;
+    }
 }

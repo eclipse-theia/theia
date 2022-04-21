@@ -158,7 +158,6 @@
 
 .quick-input-list .monaco-list-row .codicon {
   color: var(--theia-foreground) !important;
-  padding: 2px !important;
 }
 
 .quick-input-list .monaco-list-row.focused .codicon {
@@ -180,7 +179,7 @@
 
 .monaco-icon-label > .monaco-icon-label-container {
   flex: 1 !important;
-  align-items: end;
+  line-height: 22px;
 }
 
 .quick-input-list
@@ -197,6 +196,7 @@
   .monaco-icon-label
   .monaco-icon-description-container
   .label-description {
+    font-family: var(--theia-ui-font-family);
     font-size: calc(var(--theia-ui-font-size1) * 0.95) !important;
     color: var(--theia-foreground) !important;
 }
@@ -214,7 +214,14 @@
 
 .quick-input-list .monaco-icon-label::before {
   transform: scale(0.8);
-  height: 16px;
+}
+
+.quick-input-list .monaco-icon-label.codicon::before {
+  padding-top: 3px;
+}
+
+.quick-input-list .monaco-icon-label.theia-file-icons-js {
+  line-height: inherit;
 }
 
 .quick-input-list .quick-input-list-label {

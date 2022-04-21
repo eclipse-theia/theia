@@ -21,7 +21,7 @@ import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } 
 import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { MonacoEditorModel } from './monaco-editor-model';
-import { IResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor';
+import { IResourceEditorInput, ITextResourceEditorInput } from '@theia/monaco-editor-core/esm/vs/platform/editor/common/editor';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
@@ -105,11 +105,18 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
         return undefined;
     }
 
-    protected createEditorOpenerOptions(input: IResourceEditorInput, source: ICodeEditor | null, sideBySide?: boolean): EditorOpenerOptions {
+    protected createEditorOpenerOptions(input: IResourceEditorInput | ITextResourceEditorInput, source: ICodeEditor | null, sideBySide?: boolean): EditorOpenerOptions {
         const mode = this.getEditorOpenMode(input);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
+        const selection = this.getSelection(input);
         const preview = !!this.preferencesService.get<boolean>(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
-        return { mode, widgetOptions, preview };
+        return { mode, widgetOptions, preview, selection };
+    }
+
+    protected getSelection(input: IResourceEditorInput | ITextResourceEditorInput): EditorOpenerOptions['selection'] {
+        if ('options' in input && input.options && 'selection' in input.options) {
+            return this.m2p.asRange(input.options.selection);
+        }
     }
 
     protected getEditorOpenMode(input: IResourceEditorInput): WidgetOpenMode {

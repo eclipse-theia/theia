@@ -11,10 +11,39 @@
 - [core] Move code for untitled resources into `core` from `plugin-ext` and allow users to open untitled editors with `New File` command. [#10868](https://github.com/eclipse-theia/theia/pull/10868)
 - [plugin] added support for `SnippetString.appendChoice` [#10969](https://github.com/eclipse-theia/theia/pull/10969) - Contributed on behalf of STMicroelectronics
 - [plugin] added support for `AccessibilityInformation` [#10961](https://github.com/eclipse-theia/theia/pull/10961) - Contributed on behalf of STMicroelectronics
+- [plugin] added missing properties `id`, `name` and `backgroundColor` to `StatusBarItem` [#11026](https://github.com/eclipse-theia/theia/pull/11026) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
+- [debug] 
+The following methods may now return `undefined | null` ([#10999](https://github.com/eclipse-theia/theia/pull/10999)):
+  - DebugSessionManager
+    - resolveConfiguration
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - DebugService
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - theia.d.ts ProviderResult
+      it's now aligned to vscode and can return `null`
+  - plugin-api-rpc.ts DebugConfigurationProvider
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - DebugExt
+    - $resolveDebugConfigurationByHandle
+    - $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+  - DebugExtImpl
+    - $resolveDebugConfigurationByHandle
+    - $resolveDebugConfigurationWithSubstitutedVariablesByHandle
+  - PluginDebugConfigurationProvider
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
+  - PluginDebugService
+    - resolveDebugConfiguration
+    - resolveDebugConfigurationWithSubstitutedVariables
 
 - [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
+- [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
+- [markers, scm] deprecated `ProblemDecorator` and `SCMNavigatorDecorator` classes. They are no longer bound in the `inversify` container by default. [#10846](https://github.com/eclipse-theia/theia/pull/10846)
 
 ## v1.24.0 - 3/31/2022
 

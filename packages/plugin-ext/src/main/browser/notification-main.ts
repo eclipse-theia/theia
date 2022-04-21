@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NotificationMain } from '../../common/plugin-api-rpc';
+import { NotificationExt, NotificationMain, MAIN_RPC_CONTEXT } from '../../common';
 import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class NotificationMainImpl implements NotificationMain, Disposable {
-
     private readonly progressService: ProgressService;
     private readonly progressMap = new Map<string, Progress>();
     private readonly progress2Work = new Map<string, number>();
+    private readonly proxy: NotificationExt;
 
     protected readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as not disposed */ })
@@ -32,6 +32,7 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.progressService = container.get(ProgressService);
+        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.NOTIFICATION_EXT);
     }
 
     dispose(): void {
@@ -39,8 +40,15 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
     }
 
     async $startProgress(options: NotificationMain.StartProgressOptions): Promise<string> {
+        const onDidCancel = () => {
+            // If the map does not contain current id, it has already stopped and should not be cancelled
+            if (this.progressMap.has(id)) {
+                this.proxy.$acceptProgressCanceled(id);
+            }
+        };
+
         const progressMessage = this.mapOptions(options);
-        const progress = await this.progressService.showProgress(progressMessage);
+        const progress = await this.progressService.showProgress(progressMessage, onDidCancel);
         const id = progress.id;
         this.progressMap.set(id, progress);
         this.progress2Work.set(id, 0);
@@ -58,10 +66,11 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
 
     $stopProgress(id: string): void {
         const progress = this.progressMap.get(id);
+
         if (progress) {
-            progress.cancel();
             this.progressMap.delete(id);
             this.progress2Work.delete(id);
+            progress.cancel();
         }
     }
 

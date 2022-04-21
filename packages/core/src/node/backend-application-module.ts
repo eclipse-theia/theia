@@ -36,6 +36,7 @@ import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../c
 import { EnvironmentUtils } from './environment-utils';
 import { ProcessUtils } from './process-utils';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
+import { OSBackendApplicationContribution } from './os-backend-application-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -110,6 +111,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(EnvironmentUtils).toSelf().inSingletonScope();
     bind(ProcessUtils).toSelf().inSingletonScope();
+
+    bind(OSBackendApplicationContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(OSBackendApplicationContribution);
 
     bindNodeStopwatch(bind);
     bindBackendStopwatchServer(bind);

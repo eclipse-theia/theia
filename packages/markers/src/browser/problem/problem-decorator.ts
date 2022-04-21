@@ -26,11 +26,13 @@ import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
 import { ProblemPreferences } from './problem-preferences';
 import { ProblemUtils } from './problem-utils';
-import { OpenEditorNode } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-tree-model';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 
+/**
+ * @deprecated since 1.25.0
+ * URI-based decorators should implement `DecorationsProvider` and contribute decorations via the `DecorationsService`.
+ */
 @injectable()
 export class ProblemDecorator implements TreeDecorator {
 
@@ -85,10 +87,8 @@ export class ProblemDecorator implements TreeDecorator {
         for (const node of new DepthFirstTreeIterator(tree.root)) {
             const nodeUri = this.getUriFromNode(node);
             if (nodeUri) {
-                let decorator = baseDecorations.get(nodeUri);
-                if (OpenEditorNode.is(node)) {
-                    decorator = this.appendSuffixDecoration(node.uri, decorator);
-                } else if (decorator) {
+                const decorator = baseDecorations.get(nodeUri);
+                if (decorator) {
                     this.appendContainerMarkers(node, decorator, decorations);
                 }
                 if (decorator) {
@@ -97,20 +97,6 @@ export class ProblemDecorator implements TreeDecorator {
             }
         }
         return decorations;
-    }
-
-    protected appendSuffixDecoration(nodeURI: URI, existingDecorations?: TreeDecoration.Data): TreeDecoration.Data {
-        const workspaceAndPath = this.generateCaptionSuffix(nodeURI);
-        const color = existingDecorations?.fontData?.color;
-        const captionSuffix: WidgetDecoration.CaptionAffix = { data: workspaceAndPath };
-        if (color) {
-            Object.assign(captionSuffix, { fontData: { color } });
-        }
-        const suffixDecorations: TreeDecoration.Data = {
-            captionSuffixes: [captionSuffix]
-        };
-        const decorator = existingDecorations ?? {};
-        return Object.assign(decorator, suffixDecorations);
     }
 
     protected generateCaptionSuffix(nodeURI: URI): string {

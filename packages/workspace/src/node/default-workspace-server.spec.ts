@@ -78,7 +78,7 @@ describe('DefaultWorkspaceServer', function (): void {
 
             const recent = await workspaceServer.getRecentWorkspaces();
 
-            expect(recent).to.have.members([FileUri.fsPath(tmpConfigDir)]);
+            expect(recent).to.have.members([tmpConfigDir.toString()]);
         });
 
         it('should ignore non-string array entries but return remaining existing file paths', async function (): Promise<void> {
@@ -95,7 +95,7 @@ describe('DefaultWorkspaceServer', function (): void {
 
             const recent = await workspaceServer.getRecentWorkspaces();
 
-            expect(recent).to.have.members([FileUri.fsPath(tmpConfigDir)]);
+            expect(recent).to.have.members([tmpConfigDir.toString()]);
         });
     });
 });

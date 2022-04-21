@@ -59,8 +59,8 @@ export class ResourceContextKey {
         this.resourceFileName.set(resourceUri && resourceUri.path.base);
         this.resourceExtname.set(resourceUri && resourceUri.path.ext);
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
-        this.resourceDirName.set(resourceUri && Uri.parse(resourceUri.path.dir.toString()).fsPath);
-        this.resourcePath.set(resourceUri && resourceUri['codeUri'].fsPath);
+        this.resourceDirName.set(resourceUri && resourceUri.path.dir.fsPath());
+        this.resourcePath.set(resourceUri && resourceUri.path.fsPath());
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {

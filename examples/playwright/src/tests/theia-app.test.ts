@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TheiaApp } from '../src/theia-app';
+import { TheiaApp } from '../theia-app';
 
 import { expect } from '@playwright/test';
 import test, { page } from './fixtures/theia-fixture';

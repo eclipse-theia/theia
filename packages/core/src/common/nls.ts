@@ -71,7 +71,8 @@ class LocalizationKeyProvider {
     private data = this.buildData();
 
     get(defaultValue: string): string | undefined {
-        return this.data.get(Localization.normalize(defaultValue.toLowerCase()));
+        const normalized = Localization.normalize(defaultValue);
+        return this.data.get(normalized) || this.data.get(normalized.toUpperCase());
     }
 
     /**
@@ -86,16 +87,36 @@ class LocalizationKeyProvider {
         const keys: NlsKeys = bundles.keys;
         const messages: Record<string, string[]> = bundles.messages;
         const data = new Map<string, string>();
-        for (const [fileKey, messageBundle] of Object.entries(messages)) {
-            const keyBundle = keys[fileKey];
-            for (let i = 0; i < messageBundle.length; i++) {
-                const message = Localization.normalize(messageBundle[i]).toLowerCase();
-                const key = keyBundle[i];
-                const localizationKey = this.buildKey(typeof key === 'string' ? key : key.key, fileKey);
-                data.set(message, localizationKey);
+        const keysAndMessages = this.buildKeyMessageTuples(keys, messages);
+        for (const { key, message } of keysAndMessages) {
+            data.set(message, key);
+        }
+        // Second pass adds each message again in upper case, if the message doesn't already exist in upper case
+        // The second pass is needed to not accidentally override any translations which actually use the upper case message
+        for (const { key, message } of keysAndMessages) {
+            const upperMessage = message.toUpperCase();
+            if (!data.has(upperMessage)) {
+                data.set(upperMessage, key);
             }
         }
         return data;
+    }
+
+    private buildKeyMessageTuples(keys: NlsKeys, messages: Record<string, string[]>): { key: string, message: string }[] {
+        const list: { key: string, message: string }[] = [];
+        for (const [fileKey, messageBundle] of Object.entries(messages)) {
+            const keyBundle = keys[fileKey];
+            for (let i = 0; i < messageBundle.length; i++) {
+                const message = Localization.normalize(messageBundle[i]);
+                const key = keyBundle[i];
+                const localizationKey = this.buildKey(typeof key === 'string' ? key : key.key, fileKey);
+                list.push({
+                    key: localizationKey,
+                    message
+                });
+            }
+        }
+        return list;
     }
 
     private buildKey(key: string, filepath: string): string {

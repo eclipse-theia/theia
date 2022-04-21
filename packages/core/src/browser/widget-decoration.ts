@@ -97,6 +97,20 @@ export namespace WidgetDecoration {
          */
         readonly fontData?: FontData;
     }
+
+    export namespace TailDecoration {
+        /**
+         * Combines all fields of all `TailDecoration` variants
+         */
+        export type AnyPartial = Partial<TailDecoration & TailDecorationIcon & TailDecorationIconClass>;
+        /**
+         * Represents any permissible concrete `TailDecoration` variation.
+         */
+        export type AnyConcrete = TailDecoration | TailDecorationIcon | TailDecorationIconClass;
+        export function isDotDecoration(decoration: AnyPartial): decoration is TailDecorationIcon {
+            return decoration.icon === 'circle';
+        }
+    }
     export interface TailDecorationIcon extends BaseTailDecoration {
         /**
          * This should be the name of the Font Awesome icon with out the `fa fa-` prefix, just the name, for instance `paw`.

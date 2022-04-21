@@ -35,6 +35,11 @@ import {
 } from './resource-property-view-tree-items';
 import { nls } from '@theia/core/lib/common/nls';
 
+/**
+ * This widget fetches the property data for {@link FileSelection}s and selections of {@link Navigatable}s
+ * and renders that property data as a {@link TreeWidget}.
+ * This widget is provided by the registered `ResourcePropertyViewWidgetProvider`.
+ */
 @injectable()
 export class ResourcePropertyViewTreeWidget extends TreeWidget implements PropertyViewContentWidget {
 

@@ -20,14 +20,22 @@ import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 
 export class StatusBarItemImpl implements theia.StatusBarItem {
 
+    /** Map from allowed background colors to corresponding foreground colors. */
+    private static BACKGROUND_COLORS = new Map<string, string>([
+        ['statusBarItem.errorBackground', 'statusBarItem.errorForeground'],
+        ['statusBarItem.warningBackground', 'statusBarItem.warningForeground']
+    ]);
+
     private _id: string;
 
     private _alignment: StatusBarAlignment;
     private _priority: number;
 
+    private _name: string | undefined;
     private _text: string;
     private _tooltip: string;
-    private _color: string | ThemeColor;
+    private _color: string | ThemeColor | undefined;
+    private _backgroundColor: ThemeColor | undefined;
     private _command: string | theia.Command;
     private _accessibilityInformation: theia.AccessibilityInformation;
 
@@ -58,6 +66,10 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         return this._priority;
     }
 
+    public get name(): string | undefined {
+        return this._name;
+    }
+
     public get text(): string {
         return this._text;
     }
@@ -66,8 +78,12 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         return this._tooltip;
     }
 
-    public get color(): string | ThemeColor {
+    public get color(): string | ThemeColor | undefined {
         return this._color;
+    }
+
+    public get backgroundColor(): ThemeColor | undefined {
+        return this._backgroundColor;
     }
 
     public get command(): string | theia.Command {
@@ -76,6 +92,11 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
 
     public get accessibilityInformation(): theia.AccessibilityInformation {
         return this._accessibilityInformation;
+    }
+
+    public set name(name: string | undefined) {
+        this._name = name;
+        this.update();
     }
 
     public set text(text: string) {
@@ -88,8 +109,17 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         this.update();
     }
 
-    public set color(color: string | ThemeColor) {
+    public set color(color: string | ThemeColor | undefined) {
         this._color = color;
+        this.update();
+    }
+
+    public set backgroundColor(backgroundColor: ThemeColor | undefined) {
+        if (backgroundColor && StatusBarItemImpl.BACKGROUND_COLORS.has(backgroundColor.id)) {
+            this._backgroundColor = backgroundColor;
+        } else {
+            this._backgroundColor = undefined;
+        }
         this.update();
     }
 
@@ -129,11 +159,22 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
 
             const commandId = typeof this.command === 'object' ? this.command.command : this.command;
             const args = typeof this.command === 'object' ? this.command.arguments : undefined;
+
+            let color = this.color;
+            if (this.backgroundColor) {
+                // If an error or warning background color is set, set the corresponding foreground color
+                color = StatusBarItemImpl.BACKGROUND_COLORS.get(this.backgroundColor.id);
+            }
+
             // Set to status bar
-            this._proxy.$setMessage(this.id, this.text,
+            this._proxy.$setMessage(
+                this.id,
+                this.name,
+                this.text,
                 this.priority,
                 this.alignment,
-                typeof this.color === 'string' ? this.color : this.color && this.color.id,
+                typeof color === 'string' ? color : color?.id,
+                this.backgroundColor?.id,
                 this.tooltip,
                 commandId,
                 this.accessibilityInformation,

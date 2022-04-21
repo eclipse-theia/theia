@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaApp } from '../src/theia-app';
-import { TheiaNotificationIndicator } from '../src/theia-notification-indicator';
-import { TheiaProblemIndicator } from '../src/theia-problem-indicator';
-import { TheiaStatusBar } from '../src/theia-status-bar';
-import { TheiaToggleBottomIndicator } from '../src/theia-toggle-bottom-indicator';
+import { TheiaApp } from '../theia-app';
+import { TheiaNotificationIndicator } from '../theia-notification-indicator';
+import { TheiaProblemIndicator } from '../theia-problem-indicator';
+import { TheiaStatusBar } from '../theia-status-bar';
+import { TheiaToggleBottomIndicator } from '../theia-toggle-bottom-indicator';
 import test, { page } from './fixtures/theia-fixture';
 
 let statusBar: TheiaStatusBar;

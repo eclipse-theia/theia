@@ -38,7 +38,9 @@ export interface StatusBarEntry {
      */
     text: string;
     alignment: StatusBarAlignment;
+    name?: string;
     color?: string;
+    backgroundColor?: string;
     className?: string;
     tooltip?: string;
     command?: string;
@@ -195,7 +197,8 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         }
 
         attrs.style = {
-            color: entry.color || this.color
+            color: entry.color || this.color,
+            backgroundColor: entry.backgroundColor
         };
 
         return attrs;

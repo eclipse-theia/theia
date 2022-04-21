@@ -16,9 +16,6 @@
       "path": "../filesystem"
     },
     {
-      "path": "../navigator"
-    },
-    {
       "path": "../workspace"
     }
   ]

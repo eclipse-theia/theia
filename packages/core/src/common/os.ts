@@ -62,4 +62,10 @@ export namespace OS {
         return Type.Linux;
     }
 
+    export const backend = {
+        type,
+        isWindows,
+        isOSX
+    };
+
 }

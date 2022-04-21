@@ -1591,6 +1591,34 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: Color.rgba(255, 255, 255, 0.12)
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
             },
+            {
+                id: 'statusBarItem.errorBackground', defaults: {
+                    dark: Color.darken('errorBackground', 0.4),
+                    light: Color.darken('errorBackground', 0.4),
+                    hc: undefined,
+                }, description: 'Status bar error items background color. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.errorForeground', defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Status bar error items foreground color. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningBackground', defaults: {
+                    dark: Color.darken('warningBackground', 0.4),
+                    light:  Color.darken('warningBackground', 0.4),
+                    hc: undefined
+                }, description: 'Status bar warning items background color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningForeground', defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
 
             // Quickinput colors should be aligned with https://code.visualstudio.com/api/references/theme-color#quick-picker
             // if not yet contributed by Monaco, check runtime css variables to learn.

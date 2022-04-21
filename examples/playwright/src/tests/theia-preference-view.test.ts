@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
-import { TheiaApp } from '../src/theia-app';
-import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../src/theia-preference-view';
+import { TheiaApp } from '../theia-app';
+import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import test, { page } from './fixtures/theia-fixture';
 
 let app: TheiaApp;

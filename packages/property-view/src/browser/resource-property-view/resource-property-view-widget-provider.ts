@@ -20,6 +20,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { DefaultPropertyViewWidgetProvider } from '../property-view-widget-provider';
 import { ResourcePropertyViewTreeWidget } from './resource-property-view-tree-widget';
 
+/**
+ * Provides the {@link ResourcePropertyViewTreeWidget} for
+ * {@link FileSelection}s and selections of {@link Navigatable}s.
+ */
 @injectable()
 export class ResourcePropertyViewWidgetProvider extends DefaultPropertyViewWidgetProvider {
 

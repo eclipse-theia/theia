@@ -34,8 +34,6 @@ import { ScmTreeModelProps } from './scm-tree-model';
 import { ScmGroupsTreeModel } from './scm-groups-tree-model';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
-import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
-import { ScmNavigatorDecorator } from './decorations/scm-navigator-decorator';
 import { ScmDecorationsService } from './decorations/scm-decorations-service';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmContextKeyService } from './scm-context-key-service';
@@ -47,8 +45,6 @@ import { LabelProviderContribution } from '@theia/core/lib/browser/label-provide
 import { bindScmPreferences } from './scm-preferences';
 import { ScmTabBarDecorator } from './decorations/scm-tab-bar-decorator';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { OpenEditorsTreeDecorator } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-decorator-service';
-
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
     bind(ScmService).toSelf().inSingletonScope();
@@ -110,9 +106,6 @@ export default new ContainerModule(bind => {
     bind(TabBarToolbarContribution).toService(ScmContribution);
     bind(ColorContribution).toService(ScmContribution);
 
-    bind(ScmNavigatorDecorator).toSelf().inSingletonScope();
-    bind(NavigatorTreeDecorator).toService(ScmNavigatorDecorator);
-    bind(OpenEditorsTreeDecorator).toService(ScmNavigatorDecorator);
     bind(ScmDecorationsService).toSelf().inSingletonScope();
 
     bind(ScmAvatarService).toSelf().inSingletonScope();

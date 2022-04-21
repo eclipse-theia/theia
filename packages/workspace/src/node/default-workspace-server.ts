@@ -24,6 +24,7 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -101,14 +102,16 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
         return this.root.promise;
     }
 
-    async setMostRecentlyUsedWorkspace(uri: string): Promise<void> {
+    async setMostRecentlyUsedWorkspace(rawUri: string): Promise<void> {
+        const uri = rawUri && new URI(rawUri).toString(); // the empty string is used as a signal from the frontend not to load a workspace.
         this.root = new Deferred();
         this.root.resolve(uri);
         const recentRoots = Array.from(new Set([uri, ...await this.getRecentWorkspaces()]));
         this.writeToUserHome({ recentRoots });
     }
 
-    async removeRecentWorkspace(uri: string): Promise<void> {
+    async removeRecentWorkspace(rawUri: string): Promise<void> {
+        const uri = rawUri && new URI(rawUri).toString(); // the empty string is used as a signal from the frontend not to load a workspace.
         const recentRoots = await this.getRecentWorkspaces();
         const index = recentRoots.indexOf(uri);
         if (index !== -1) {
@@ -126,7 +129,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer, BackendApplicati
             data.recentRoots.forEach(element => {
                 if (element.length > 0) {
                     if (this.workspaceStillExist(element)) {
-                        listUri.push(FileUri.fsPath(element));
+                        listUri.push(element);
                     }
                 }
             });
