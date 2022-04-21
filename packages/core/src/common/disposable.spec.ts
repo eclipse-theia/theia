@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import { DisposableCollection, Disposable } from './disposable';
 
 describe('Disposables', () => {
-    /* eslint-disable no-unused-expressions,deprecation/deprecation */
+    /* eslint-disable no-unused-expressions */
     it('Is safe to use Disposable.NULL', () => {
         const collectionA = new DisposableCollection(Disposable.NULL);
         const collectionB = new DisposableCollection(Disposable.NULL);
@@ -27,5 +27,4 @@ describe('Disposables', () => {
         expect(collectionA.disposed, 'A should be disposed after being disposed.').to.be.true;
         expect(collectionB.disposed, 'B should not be disposed because A was disposed.').to.be.false;
     });
-
 });
