@@ -30,9 +30,14 @@ export namespace Disposable {
     export function create(func: () => void): Disposable {
         return { dispose: func };
     }
+    /** Always provides a reference to a new disposable. */
     export declare const NULL: Disposable;
 }
 
+/**
+ * Ensures that every reference to {@link Disposable.NULL} returns a new object,
+ * as sharing a disposable between multiple {@link DisposableCollection} can have unexpected side effects
+ */
 Object.defineProperty(Disposable, 'NULL', {
     configurable: false,
     enumerable: true,
