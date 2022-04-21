@@ -121,7 +121,7 @@ export class PluginContributionHandler {
     handleContributions(clientId: string, plugin: DeployedPlugin): Disposable {
         const contributions = plugin.contributes;
         if (!contributions) {
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -357,7 +357,7 @@ export class PluginContributionHandler {
 
     protected registerCommands(contribution: PluginContribution): Disposable {
         if (!contribution.commands) {
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         const toDispose = new DisposableCollection();
         for (const { iconUrl, themeIcon, command, category, title, originalTitle } of contribution.commands) {
@@ -378,7 +378,7 @@ export class PluginContributionHandler {
     registerCommand(command: Command): Disposable {
         if (this.hasCommand(command.id)) {
             console.warn(`command '${command.id}' already registered`);
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
 
         const commandHandler: CommandHandler = {
@@ -410,7 +410,7 @@ export class PluginContributionHandler {
     registerCommandHandler(id: string, execute: CommandHandler['execute']): Disposable {
         if (this.hasCommandHandler(id)) {
             console.warn(`command handler '${id}' already registered`);
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
 
         this.commandHandlers.set(id, execute);
@@ -446,7 +446,7 @@ export class PluginContributionHandler {
         if (Object.keys(defaultOverrides.properties).length) {
             return this.preferenceSchemaProvider.setSchema(defaultOverrides);
         }
-        return Disposable.NULL;
+        return Disposable.createNull();
     }
 
     private createRegex(value: string | undefined): RegExp | undefined {

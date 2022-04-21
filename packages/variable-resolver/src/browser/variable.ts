@@ -69,7 +69,7 @@ export class VariableRegistry implements Disposable {
     registerVariable(variable: Variable): Disposable {
         if (this.variables.has(variable.name)) {
             console.warn(`A variables with name ${variable.name} is already registered.`);
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         this.variables.set(variable.name, variable);
         const disposable = {

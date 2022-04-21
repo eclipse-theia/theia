@@ -228,7 +228,7 @@ export class CommandRegistry implements CommandService {
     registerCommand(command: Command, handler?: CommandHandler): Disposable {
         if (this._commands[command.id]) {
             console.warn(`A command ${command.id} is already registered.`);
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         const toDispose = new DisposableCollection(this.doRegisterCommand(command));
         if (handler) {

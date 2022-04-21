@@ -74,7 +74,7 @@ export class PluginCustomEditorRegistry {
     registerCustomEditor(editor: CustomEditor): Disposable {
         if (this.editors.has(editor.viewType)) {
             console.warn('editor with such id already registered: ', JSON.stringify(editor));
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         this.editors.set(editor.viewType, editor);
 

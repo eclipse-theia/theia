@@ -454,12 +454,12 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
         const { commandRegistry, keybindingRegistry } = this.services;
         const command = commandRegistry.getCommand(menu.action.commandId);
         if (!command) {
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         const { id } = command;
         if (this.hasCommand(id)) {
             // several menu items can be registered for the same command in different contexts
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
 
         // We freeze the `isEnabled`, `isVisible`, and `isToggled` states so they won't change.

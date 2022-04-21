@@ -295,7 +295,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     setSchema(schema: PreferenceSchema): Disposable {
         const changes = this.doSetSchema(schema);
         if (!changes.length) {
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         this.fireDidPreferenceSchemaChanged();
         this.emitPreferencesChangedEvent(changes);

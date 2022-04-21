@@ -30,7 +30,7 @@ export class KeybindingsContributionPointHandler {
 
     handle(contributions: PluginContribution): Disposable {
         if (!contributions || !contributions.keybindings) {
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         const toDispose = new DisposableCollection();
         for (const raw of contributions.keybindings) {

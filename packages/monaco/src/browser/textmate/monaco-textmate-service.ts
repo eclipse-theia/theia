@@ -203,7 +203,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         const languageService = StandaloneServices.get(ILanguageService) as LanguageService;
         if (languageService['_encounteredLanguages'].has(language)) {
             cb();
-            return Disposable.NULL;
+            return Disposable.createNull();
         }
         return monaco.languages.onLanguage(language, cb);
     }

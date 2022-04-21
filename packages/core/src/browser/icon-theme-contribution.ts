@@ -57,7 +57,7 @@ export class DefaultFileIconThemeContribution implements IconTheme, IconThemeCon
 
     /* rely on behaviour before for backward-compatibility */
     activate(): Disposable {
-        return Disposable.NULL;
+        return Disposable.createNull();
     }
 
 }

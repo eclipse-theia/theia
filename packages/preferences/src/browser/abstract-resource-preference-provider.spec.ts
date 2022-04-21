@@ -50,7 +50,7 @@ class MockFileService {
     onDidFilesChange = RETURN_DISPOSABLE;
 }
 
-const RETURN_DISPOSABLE = () => Disposable.NULL;
+const RETURN_DISPOSABLE = () => Disposable.createNull();
 
 const mockSchemaProvider = { getCombinedSchema: () => ({ properties: {} }) };
 
