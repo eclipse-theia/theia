@@ -25,7 +25,7 @@ describe('Disposables', () => {
         expect(!collectionA.disposed && !collectionB.disposed, 'Neither should be disposed before either is disposed.').to.be.true;
         collectionA.dispose();
         expect(collectionA.disposed, 'A should be disposed after being disposed.').to.be.true;
-        expect(collectionB.disposed, 'B should not have be disposed because A was disposed.').to.be.false;
+        expect(collectionB.disposed, 'B should not be disposed because A was disposed.').to.be.false;
     });
 
 });
