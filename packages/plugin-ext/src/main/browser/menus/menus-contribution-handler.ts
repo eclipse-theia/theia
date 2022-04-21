@@ -96,7 +96,7 @@ export class MenusContributionPointHandler {
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes && plugin.contributes.menus;
         if (!allMenus) {
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
 
@@ -192,7 +192,7 @@ export class MenusContributionPointHandler {
     protected registerAction(plugin: DeployedPlugin, location: string, action: MenuTree): Disposable {
         const allMenus = plugin.contributes && plugin.contributes.menus;
         if (!allMenus) {
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
 
         switch (location) {
@@ -213,7 +213,7 @@ export class MenusContributionPointHandler {
             default: if (allMenus.hasOwnProperty(location)) {
                 return this.registerGlobalMenuAction(action, location, plugin);
             }
-                return Disposable.createNull();
+                return Disposable.NULL;
         }
     }
 
@@ -229,7 +229,7 @@ export class MenusContributionPointHandler {
         if (menu.command && menu.when) {
             return this.quickCommandService.pushCommandContext(menu.command, menu.when);
         }
-        return Disposable.createNull();
+        return Disposable.NULL;
     }
 
     protected registerEditorTitleAction(location: string, action: Menu): Disposable {
@@ -350,7 +350,7 @@ export class MenusContributionPointHandler {
 
     protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): Disposable {
         if (!action.command) {
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         const id = this.createSyntheticCommandId(action.command, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
@@ -398,7 +398,7 @@ export class MenusContributionPointHandler {
 
     protected registerScmTitleAction(location: string, action: Menu): Disposable {
         if (!action.command) {
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const selectedRepository = () => this.toScmArg(this.scmService.selectedRepository);
         return this.registerTitleAction(location, action, {
@@ -489,7 +489,7 @@ export class MenusContributionPointHandler {
         const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
         if (!menuPaths.length) {
             this.logger.warn(`'${plugin.metadata.model.id}' plugin contributes items to a menu with invalid identifier: ${location}`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
 
         const selectedResource = () => {
@@ -514,7 +514,7 @@ export class MenusContributionPointHandler {
 
     protected registerMenuAction(menuPath: MenuPath, menu: MenuTree, handler: (command: string) => CommandHandler): Disposable {
         if (!menu.command) {
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
@@ -581,7 +581,7 @@ export class MenusContributionPointHandler {
         const command = this.commands.getCommand(id);
         if (command) {
             cb(command);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         // Registering a menu action requires the related command to be already registered.

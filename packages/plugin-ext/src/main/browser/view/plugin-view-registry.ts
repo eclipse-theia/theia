@@ -221,7 +221,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
         if (this.viewContainers.has(viewContainer.id)) {
             console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
         const containerClass = 'theia-plugin-view-container';
@@ -304,7 +304,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     registerView(viewContainerId: string, view: View): Disposable {
         if (this.views.has(view.id)) {
             console.warn('view with such id already registered: ', JSON.stringify(view));
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
 
@@ -734,7 +734,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
             console.error(`data provider for '${viewId}' view is already registered`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         this.viewDataProviders.set(viewId, provider);
         const toDispose = new DisposableCollection(Disposable.create(() => {

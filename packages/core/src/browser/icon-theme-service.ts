@@ -116,7 +116,7 @@ export class IconThemeService {
     register(iconTheme: IconTheme): Disposable {
         if (this._iconThemes.has(iconTheme.id)) {
             console.warn(new Error(`Icon theme '${iconTheme.id}' has already been registered, skipping.`));
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         this._iconThemes.set(iconTheme.id, iconTheme);
         this.onDidChangeEmitter.fire(undefined);

@@ -59,7 +59,7 @@ export class ColorRegistry {
     }
 
     protected doRegister(definition: ColorDefinition): Disposable {
-        return Disposable.createNull();
+        return Disposable.NULL;
     }
 
 }

@@ -51,7 +51,7 @@ export class ProblemPatternRegistry {
         }
         if (!value.name) {
             console.error('Only named Problem Patterns can be registered.');
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const problemPattern = ProblemPattern.fromProblemPatternContribution(value);
         return this.add(problemPattern.name!, problemPattern);

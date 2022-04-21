@@ -28,19 +28,18 @@ export namespace Disposable {
         return !!arg && typeof arg === 'object' && 'dispose' in arg && typeof arg['dispose'] === 'function';
     }
     export function create(func: () => void): Disposable {
-        return {
-            dispose: func
-        };
+        return { dispose: func };
     }
-    /**
-     * @deprecated since 1.25 Disposable.NULL should not be used because adding it to DisposableCollections may produce side effects in other collections
-     * Use Disposable.createNull instead.
-     */
-    export const NULL = create(() => { });
-    export function createNull(): Disposable {
-        return create(() => { });
-    }
+    export declare const NULL: Disposable;
 }
+
+Object.defineProperty(Disposable, 'NULL', {
+    configurable: false,
+    enumerable: true,
+    get(): Disposable {
+        return { dispose: () => { } };
+    }
+});
 
 export class DisposableCollection implements Disposable {
 

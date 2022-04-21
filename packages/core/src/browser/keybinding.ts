@@ -241,7 +241,7 @@ export class KeybindingRegistry {
             });
         } catch (error) {
             this.logger.warn(`Could not register keybinding:\n  ${common.Keybinding.stringify(binding)}\n${error}`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
     }
 

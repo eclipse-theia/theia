@@ -67,7 +67,7 @@ export class PluginDebugService implements DebugService {
 
         if (this.contributors.has(type)) {
             console.warn(`Debugger with type '${type}' already registered.`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
 
         this.contributors.set(type, contrib);

@@ -58,7 +58,7 @@ export class DefaultPreferenceNodeRendererCreatorRegistry implements PreferenceN
     registerPreferenceNodeRendererCreator(creator: PreferenceNodeRendererCreator): Disposable {
         if (this._creators.has(creator.id)) {
             console.warn(`A preference node renderer creator ${creator.id} is already registered.`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         this._creators.set(creator.id, creator);
         this.fireDidChange();

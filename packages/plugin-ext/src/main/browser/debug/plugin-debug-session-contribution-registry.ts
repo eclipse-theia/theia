@@ -63,7 +63,7 @@ export class PluginDebugSessionContributionRegistry implements DebugSessionContr
 
         if (this.contribs.has(debugType)) {
             console.warn(`Debug session contribution already registered for ${debugType}`);
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
 
         this.contribs.set(debugType, contrib);

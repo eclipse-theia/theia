@@ -64,7 +64,7 @@ export class ProblemMatcherRegistry {
     register(matcher: ProblemMatcherContribution): Disposable {
         if (!matcher.name) {
             console.error('Only named Problem Matchers can be registered.');
-            return Disposable.createNull();
+            return Disposable.NULL;
         }
         const toDispose = new DisposableCollection(Disposable.create(() => {
             /* mark as not disposed */

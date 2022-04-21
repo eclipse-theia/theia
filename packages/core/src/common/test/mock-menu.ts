@@ -26,10 +26,10 @@ export class MockMenuModelRegistry extends MenuModelRegistry {
     }
 
     override registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
-        return Disposable.createNull();
+        return Disposable.NULL;
     }
 
     override registerSubmenu(menuPath: MenuPath, label: string): Disposable {
-        return Disposable.createNull();
+        return Disposable.NULL;
     }
 }

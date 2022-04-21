@@ -19,18 +19,9 @@ import { DisposableCollection, Disposable } from './disposable';
 
 describe('Disposables', () => {
     /* eslint-disable no-unused-expressions,deprecation/deprecation */
-    it("Isn't safe to use Disposable.NULL", () => {
+    it('Is safe to use Disposable.NULL', () => {
         const collectionA = new DisposableCollection(Disposable.NULL);
         const collectionB = new DisposableCollection(Disposable.NULL);
-        expect(!collectionA.disposed && !collectionB.disposed, 'Neither should be disposed before either is disposed.').to.be.true;
-        collectionA.dispose();
-        expect(collectionA.disposed, 'A should be disposed after being disposed.').to.be.true;
-        expect(collectionB.disposed, 'B should not have be disposed because A was disposed, but it probably will be.').to.be.true;
-    });
-
-    it('Is safe to use Disposable.createNull', () => {
-        const collectionA = new DisposableCollection(Disposable.createNull());
-        const collectionB = new DisposableCollection(Disposable.createNull());
         expect(!collectionA.disposed && !collectionB.disposed, 'Neither should be disposed before either is disposed.').to.be.true;
         collectionA.dispose();
         expect(collectionA.disposed, 'A should be disposed after being disposed.').to.be.true;
