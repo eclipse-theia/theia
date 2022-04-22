@@ -26,6 +26,8 @@ import { CancellationToken, Emitter, Event, nls } from '@theia/core';
 export class ProblemDecorationsProvider implements DecorationsProvider {
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
 
+    protected currentUris: URI[] = [];
+
     protected readonly onDidChangeEmitter = new Emitter<URI[]>();
     get onDidChange(): Event<URI[]> {
         return this.onDidChangeEmitter.event;
@@ -33,7 +35,11 @@ export class ProblemDecorationsProvider implements DecorationsProvider {
 
     @postConstruct()
     protected init(): void {
-        this.problemManager.onDidChangeMarkers(() => this.onDidChangeEmitter.fire(Array.from(this.problemManager.getUris(), stringified => new URI(stringified))));
+        this.problemManager.onDidChangeMarkers(() => {
+            const newUris = Array.from(this.problemManager.getUris(), stringified => new URI(stringified));
+            this.onDidChangeEmitter.fire(newUris.concat(this.currentUris));
+            this.currentUris = newUris;
+        });
     }
 
     provideDecorations(uri: URI, token: CancellationToken): Decoration | Promise<Decoration | undefined> | undefined {
