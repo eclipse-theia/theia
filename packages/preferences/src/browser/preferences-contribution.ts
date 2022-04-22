@@ -27,7 +27,8 @@ import {
     PreferenceService,
     QuickInputService,
     QuickPickItem,
-    isFirefox
+    isFirefox,
+    QuickPickService
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -52,6 +53,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
+    @inject(QuickPickService) private readonly quickPickService: QuickPickService;
 
     constructor() {
         super({
@@ -135,6 +137,12 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             execute: () => this.openFolderPreferences(root => this.openJson(PreferenceScope.Folder, root.resource.toString()))
+        });
+        commands.registerCommand({ id: 'quick-pick-test-command', 'label': 'Test QuickPickService.show' }, {
+            execute: async () => {
+                const quickPickValue = await this.quickPickService.show([{ label: 'First item!' }, { label: 'Second item!' }, { label: 'Third item?' }]);
+                console.log('SENTINEL FOR RESOLVING THE QUICKPICK PROMISE!', quickPickValue)
+            }
         });
     }
 
