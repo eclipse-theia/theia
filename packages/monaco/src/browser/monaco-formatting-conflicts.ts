@@ -93,7 +93,7 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
             }
         }
 
-        return new Promise<T>(async (resolve, reject) => {
+        return new Promise<T | undefined>(async (resolve, reject) => {
             const items = formatters
                 .filter(formatter => formatter.displayName)
                 .map(formatter => ({
@@ -104,8 +104,12 @@ export class MonacoFormattingConflictsContribution implements FrontendApplicatio
                 .sort((a, b) => a.label!.localeCompare(b.label!));
 
             const selectedFormatter = await this.monacoQuickInputService.showQuickPick(items, { placeholder: 'Select formatter for the current document' });
-            this.setDefaultFormatter(languageId, selectedFormatter.detail ? selectedFormatter.detail : '');
-            resolve(selectedFormatter.value);
+            if (selectedFormatter) {
+                this.setDefaultFormatter(languageId, selectedFormatter.detail ? selectedFormatter.detail : '');
+                resolve(selectedFormatter.value);
+            } else {
+                resolve(undefined);
+            }
         });
     }
 }

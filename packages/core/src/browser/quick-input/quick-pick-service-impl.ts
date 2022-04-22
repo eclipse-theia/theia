@@ -46,7 +46,7 @@ export class QuickPickServiceImpl implements QuickPickService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private items: Array<any> = [];
 
-    async show<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T> {
+    async show<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T | undefined> {
         this.items = items;
         const opts = Object.assign({}, options, {
             onDidAccept: () => this.onDidAcceptEmitter.fire(),
@@ -56,7 +56,7 @@ export class QuickPickServiceImpl implements QuickPickService {
             onDidHide: () => this.onDidHideEmitter.fire(),
             onDidTriggerButton: (btn: QuickInputButtonHandle) => this.onDidTriggerButtonEmitter.fire(btn),
         });
-        return this.quickInputService?.showQuickPick(this.items, opts);
+        return this.quickInputService?.showQuickPick<T>(this.items, opts);
     }
 
     hide(): void {

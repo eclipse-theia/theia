@@ -123,7 +123,7 @@ export class GitSyncService {
         }];
 
         const selectedCWD = await this.quickInputService?.showQuickPick(methods, { placeholder: 'Select current working directory for new terminal' });
-        if (await this.confirm('Synchronize Changes', methods.find(({ detail }) => detail === selectedCWD.detail)!.warning)) {
+        if (selectedCWD && await this.confirm('Synchronize Changes', methods.find(({ detail }) => detail === selectedCWD.detail)!.warning)) {
             return (selectedCWD.detail as GitSyncService.SyncMethod);
         } else {
             return (undefined);
@@ -165,7 +165,7 @@ export class GitSyncService {
 
         const selectedRemote = await this.quickInputService?.showQuickPick(remotes.map(remote => ({ label: remote })),
             { placeholder: `Pick a remote to publish the branch ${branch} to:` });
-        return selectedRemote.label;
+        return selectedRemote?.label;
     }
 
     protected shouldPush(status: WorkingDirectoryStatus): boolean {
