@@ -24,10 +24,12 @@
  */
 import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
-import { CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
+import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { JsonType, PreferenceItem, PreferenceValidationService } from '@theia/core/lib/browser';
+import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 function generateContent(properties: string, interfaceEntries: string[]): string {
     return `/********************************************************************************
@@ -82,6 +84,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
+    @inject(PreferenceValidationService) protected readonly preferenceValidationService: PreferenceValidationService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract Editor preference schema from Monaco' }, {
@@ -109,7 +112,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     } else if (name === 'editor.fontFamily') {
                         description.default = fontFamilyText;
                     }
-                    interfaceEntries.push(`'${name}': ${this.formatTypeForInterface(description.enum ?? description.type)};`);
+                    interfaceEntries.push(`'${name}': ${this.formatSchemaForInterface(description)};`);
                 }
                 const stringified = JSON.stringify(properties, this.codeSnippetReplacer(), 4);
                 const propertyList = this.dequoteCodeSnippets(stringified);
@@ -173,7 +176,25 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         return undefined;
     }
 
-    protected formatTypeForInterface(jsonType: string | string[]): string {
+    protected formatSchemaForInterface(schema: PreferenceItem): string {
+        const defaultValue = schema.default !== undefined ? schema.default : schema.defaultValue;
+        // There are a few preferences for which VSCode uses defaults that do not match the schema. We have to handle those manually.
+        if (defaultValue !== undefined && this.preferenceValidationService.validateBySchema('any-preference', defaultValue, schema) !== defaultValue) {
+            return 'HelpBadDefaultValue';
+        }
+        const jsonType = schema.const !== undefined ? schema.const : (schema.enum ?? schema.type);
+        if (jsonType === undefined) {
+            const subschemata = schema.anyOf ?? schema.oneOf;
+            if (subschemata) {
+                const permittedTypes = [].concat.apply(subschemata.map(subschema => this.formatSchemaForInterface(subschema).split(' | ')));
+                return Array.from(new Set(permittedTypes)).join(' | ');
+            }
+        }
+        return this.formatTypeForInterface(jsonType);
+
+    }
+
+    protected formatTypeForInterface(jsonType?: MaybeArray<JsonType | JSONValue> | undefined): string {
         if (Array.isArray(jsonType)) {
             return jsonType.map(subtype => this.formatTypeForInterface(subtype)).join(' | ');
         }
@@ -184,10 +205,15 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
             case 'true':
             case 'false':
                 return jsonType;
+            case true:
+            case false:
+            case null: // eslint-disable-line no-null/no-null
+                return `${jsonType}`;
             case 'integer':
                 return 'number';
             case 'array':
             case 'object':
+            case undefined:
                 // These have to be fixed manually, so we output a type that will cause a TS error.
                 return 'Help';
         }

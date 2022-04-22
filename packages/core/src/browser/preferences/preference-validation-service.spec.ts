@@ -20,6 +20,7 @@ import { JsonType, PreferenceItem, PreferenceSchemaProvider } from './preference
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import * as assert from 'assert';
 import { JSONValue } from '@phosphor/coreutils';
+import { IJSONSchema } from 'src/common/json-schema';
 
 /* eslint-disable no-unused-expressions,no-null/no-null */
 
@@ -194,6 +195,39 @@ describe('Preference Validation Service', () => {
             assert.deepStrictEqual(actual, expected);
         });
     });
+    describe('should validate tuples', () => {
+        const schema: PreferenceItem & { items: IJSONSchema[] } = {
+            'type': 'array',
+            'items': [{
+                'type': 'number',
+            },
+            {
+                'type': 'string',
+            }],
+        };
+        it('good input -> returns same object', () => {
+            const expected = [1, 'two'];
+            assert.strictEqual(validateBySchema(expected, schema), expected);
+        });
+        it('bad input -> should use the default if supplied present and valid', () => {
+            const defaultValue = [8, 'three'];
+            const withDefault = { ...schema, default: defaultValue };
+            assert.strictEqual(validateBySchema('not even an array!', withDefault), defaultValue);
+            assert.strictEqual(validateBySchema(['first fails', 'second ok'], withDefault), defaultValue);
+            assert.strictEqual(validateBySchema([], withDefault), defaultValue);
+            assert.strictEqual(validateBySchema([2, ['second fails']], withDefault), defaultValue);
+        });
+        it('bad input -> in the absence of a default, it should return any good values or the default for each subschema', () => {
+            const withSubDefault: PreferenceItem = { ...schema, items: [{ type: 'string', default: 'cool' }, ...schema.items] };
+            assert.deepStrictEqual(validateBySchema('not an array', withSubDefault), ['cool', 0, '']);
+            assert.deepStrictEqual(validateBySchema([2, 8, null], withSubDefault), ['cool', 8, '']);
+        });
+        it("bad input -> uses the default, but fixes fields that don't match schema", () => {
+            const defaultValue = [8, 8];
+            const withDefault = { ...schema, default: defaultValue };
+            assert.deepStrictEqual(validateBySchema('something invalid', withDefault), [8, '']);
+        });
+    });
     describe('should validate type arrays', () => {
         const type: JsonType[] = ['boolean', 'string', 'number'];
         it('good input -> returns same value', () => {
@@ -230,6 +264,31 @@ describe('Preference Validation Service', () => {
         it('bad input -> first validator, if default absent or default ill-formed', () => {
             assert.strictEqual(validateBySchema({}, { ...schema, default: 0 }), 1);
             assert.strictEqual(validateBySchema({}, { ...schema, default: undefined }), 1);
+        });
+    });
+    describe('should validate oneOfs', () => {
+        // Between 4 and 6 should be rejected
+        const schema: PreferenceItem = { oneOf: [{ type: 'number', minimum: 1, maximum: 6 }, { type: 'number', minimum: 4, maximum: 10 }], default: 8 };
+        it('good input -> returns same value', () => {
+            assert.strictEqual(validateBySchema(2, schema), 2);
+            assert.strictEqual(validateBySchema(7, schema), 7);
+        });
+        it('bad input -> returns default if present and valid', () => {
+            assert.strictEqual(validateBySchema(5, schema), 8);
+        });
+        it('bad input -> returns value if default absent or invalid.', () => {
+            assert.strictEqual(validateBySchema(5, { ...schema, default: undefined }), 5);
+        });
+    });
+    describe('should validate consts', () => {
+        const schema: PreferenceItem = { const: { 'the only': 'possible value' }, default: 'ignore-the-default' };
+        const goodValue = { 'the only': 'possible value' };
+        it('good input -> returns same value', () => {
+            assert.strictEqual(validateBySchema(goodValue, schema), goodValue);
+        });
+        it('bad input -> returns the const value for any other value', () => {
+            assert.deepStrictEqual(validateBySchema('literally anything else', schema), goodValue);
+            assert.deepStrictEqual(validateBySchema('ignore-the-default', schema), goodValue);
         });
     });
     describe('should maintain triple equality for valid object types', () => {

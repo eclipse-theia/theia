@@ -71,7 +71,11 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     }
 
     protected getFallbackValue(): JSONValue {
-        return this.preferenceNode.preference.data.enum![0];
+        const { default: schemaDefault, defaultValue, enum: enumValues } = this.preferenceNode.preference.data;
+        return schemaDefault !== undefined
+            ? schemaDefault : defaultValue !== undefined
+                ? defaultValue
+                : enumValues![0];
     }
 
     protected doHandleValueChange(): void {
@@ -88,7 +92,11 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
      */
     protected getDataValue(): number {
         const currentValue = this.getValue();
-        const selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        let selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        if (selected === -1) {
+            const fallback = this.getFallbackValue();
+            selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, fallback));
+        }
         return Math.max(selected, 0);
     }
 
