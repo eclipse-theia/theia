@@ -302,8 +302,6 @@ describe('Type converters:', () => {
 
         it('should convert to task dto with ShellStringQuoted', () => {
             const result: TaskDto | undefined = Converter.fromTask(shellPluginTaskWithQuotedCommand);
-
-            // then
             assert.notStrictEqual(result, undefined);
             assert.deepStrictEqual(result, shellTaskDto);
         });
