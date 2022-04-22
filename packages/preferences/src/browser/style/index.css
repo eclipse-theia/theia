@@ -92,6 +92,14 @@
     z-index: -1;
 }
 
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab {
+    color: var(--theia-panelTitle-inactiveForeground);
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab:hover {
+    color: var(--theia-panelTitle-activeForeground);
+}
+
 #theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.p-mod-current {
     color: var(--theia-panelTitle-activeForeground);
     border-bottom: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
