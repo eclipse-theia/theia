@@ -186,7 +186,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
                     mouseColumn: this.m2p.asPosition(undefined, e.target.mouseColumn).character,
                     range: range && this.m2p.asRange(range) || undefined,
                     position: position && this.m2p.asPosition(position.lineNumber, position.column) || undefined,
-                    detail: undefined,
+                    detail: (e.target as monaco.editor.IMouseTargetMargin).detail || {},
                 },
                 event: e.event.browserEvent
             });
