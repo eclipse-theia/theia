@@ -43,8 +43,9 @@ export class GitDecorationProvider implements DecorationsProvider {
         const newDecorations = new Map<string, Decoration>();
         this.collectDecorationData(event.status.changes, newDecorations);
 
+        const uris = new Set([...this.decorations.keys()].concat([...newDecorations.keys()]));
         this.decorations = newDecorations;
-        this.onDidChangeDecorationsEmitter.fire(Array.from(newDecorations.keys(), value => new URI(value)));
+        this.onDidChangeDecorationsEmitter.fire(Array.from(uris, value => new URI(value)));
     }
 
     private collectDecorationData(changes: GitFileChange[], bucket: Map<string, Decoration>): void {
