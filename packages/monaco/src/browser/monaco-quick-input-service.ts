@@ -80,6 +80,9 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.initContainer();
         this.initController();
         this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService));
+        this.controller.onShow(() => {
+            this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
+        });
     }
 
     setContextKey(key: string | undefined): void {
@@ -156,7 +159,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     private initContainer(): void {
         const container = this.container = document.createElement('div');
         container.id = 'quick-input-container';
-        this.shell.mainPanel.node.appendChild(this.container);
+        document.body.appendChild(this.container);
     }
 
     private initController(): void {
