@@ -235,6 +235,19 @@ describe('Type converters:', () => {
             }
         };
 
+        const shellPluginTaskWithQuotedCommand: theia.Task = {
+            ...shellPluginTask, execution: {
+                command: {
+                    quoting: types.ShellQuoting.Strong,
+                    value: 'yarn'
+                },
+                args,
+                options: {
+                    cwd
+                }
+            }
+        };
+
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
@@ -278,11 +291,17 @@ describe('Type converters:', () => {
             }
         };
 
-        it('should convert to task dto', () => {
+        it('should convert to task dto with string command', () => {
             // when
             const result: TaskDto | undefined = Converter.fromTask(shellPluginTask);
 
             // then
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, shellTaskDto);
+        });
+
+        it('should convert to task dto with ShellStringQuoted', () => {
+            const result: TaskDto | undefined = Converter.fromTask(shellPluginTaskWithQuotedCommand);
             assert.notStrictEqual(result, undefined);
             assert.deepStrictEqual(result, shellTaskDto);
         });

@@ -885,13 +885,12 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
         return taskDto;
     }
 
-    const command = execution.command;
-    if (typeof command === 'string') {
-        taskDto.command = command;
+    if (execution.command) {
+        taskDto.command = getCommand(execution.command);
         taskDto.args = getShellArgs(execution.args);
         return taskDto;
     } else {
-        throw new Error('Converting ShellQuotedString command is not implemented');
+        throw new Error('Command is undefined');
     }
 }
 
@@ -947,6 +946,10 @@ export function getShellArgs(args: undefined | (string | theia.ShellQuotedString
     });
 
     return result;
+}
+
+function getCommand(command: string | theia.ShellQuotedString): string {
+    return typeof command === 'string' ? command : command.value;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
