@@ -53,7 +53,7 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         this.interactable = interactable;
         interactable.type = 'number';
         interactable.classList.add('theia-input');
-        interactable.defaultValue = this.getValue().toString();
+        interactable.defaultValue = this.getValue()?.toString() ?? '';
         interactable.oninput = this.handleUserInteraction.bind(this);
         interactable.onblur = this.handleBlur.bind(this);
         interactableWrapper.appendChild(interactable);
@@ -84,7 +84,7 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         const { value } = this.interactable;
         const currentValue = value.length ? Number(value) : NaN;
         this.updateInspection();
-        const newValue = this.getValue();
+        const newValue = this.getValue() ?? '';
         this.updateModificationStatus(newValue);
         if (newValue !== currentValue) {
             if (document.activeElement !== this.interactable) {

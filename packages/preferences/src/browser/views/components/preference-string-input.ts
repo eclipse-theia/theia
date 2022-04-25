@@ -27,7 +27,7 @@ export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<st
         interactable.type = 'text';
         interactable.spellcheck = false;
         interactable.classList.add('theia-input');
-        interactable.defaultValue = this.getValue();
+        interactable.defaultValue = this.getValue() ?? '';
         interactable.oninput = this.handleUserInteraction.bind(this);
         interactable.onblur = this.handleBlur.bind(this);
         parent.appendChild(interactable);
@@ -40,7 +40,7 @@ export class PreferenceStringInputRenderer extends PreferenceLeafNodeRenderer<st
     protected doHandleValueChange(): void {
         const currentValue = this.interactable.value;
         this.updateInspection();
-        const newValue = this.getValue();
+        const newValue = this.getValue() ?? '';
         this.updateModificationStatus(newValue);
         if (newValue !== currentValue) {
             if (document.activeElement !== this.interactable) {
