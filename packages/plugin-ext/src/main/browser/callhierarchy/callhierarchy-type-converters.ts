@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller, Callee as CallHierarchyCallee } from '@theia/callhierarchy/lib/browser';
+import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from '@theia/callhierarchy/lib/browser';
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
 import * as callhierarchy from '@theia/core/shared/vscode-languageserver-protocol';
@@ -70,136 +70,124 @@ export function toRange(range: model.Range): callhierarchy.Range {
 }
 
 export namespace SymbolKindConverter {
-    // tslint:disable-next-line:no-null-keyword
-    const fromMapping: { [kind: number]: model.SymbolKind } = Object.create(null);
-    fromMapping[callhierarchy.SymbolKind.File] = model.SymbolKind.File;
-    fromMapping[callhierarchy.SymbolKind.Module] = model.SymbolKind.Module;
-    fromMapping[callhierarchy.SymbolKind.Namespace] = model.SymbolKind.Namespace;
-    fromMapping[callhierarchy.SymbolKind.Package] = model.SymbolKind.Package;
-    fromMapping[callhierarchy.SymbolKind.Class] = model.SymbolKind.Class;
-    fromMapping[callhierarchy.SymbolKind.Method] = model.SymbolKind.Method;
-    fromMapping[callhierarchy.SymbolKind.Property] = model.SymbolKind.Property;
-    fromMapping[callhierarchy.SymbolKind.Field] = model.SymbolKind.Field;
-    fromMapping[callhierarchy.SymbolKind.Constructor] = model.SymbolKind.Constructor;
-    fromMapping[callhierarchy.SymbolKind.Enum] = model.SymbolKind.Enum;
-    fromMapping[callhierarchy.SymbolKind.Interface] = model.SymbolKind.Interface;
-    fromMapping[callhierarchy.SymbolKind.Function] = model.SymbolKind.Function;
-    fromMapping[callhierarchy.SymbolKind.Variable] = model.SymbolKind.Variable;
-    fromMapping[callhierarchy.SymbolKind.Constant] = model.SymbolKind.Constant;
-    fromMapping[callhierarchy.SymbolKind.String] = model.SymbolKind.String;
-    fromMapping[callhierarchy.SymbolKind.Number] = model.SymbolKind.Number;
-    fromMapping[callhierarchy.SymbolKind.Boolean] = model.SymbolKind.Boolean;
-    fromMapping[callhierarchy.SymbolKind.Array] = model.SymbolKind.Array;
-    fromMapping[callhierarchy.SymbolKind.Object] = model.SymbolKind.Object;
-    fromMapping[callhierarchy.SymbolKind.Key] = model.SymbolKind.Key;
-    fromMapping[callhierarchy.SymbolKind.Null] = model.SymbolKind.Null;
-    fromMapping[callhierarchy.SymbolKind.EnumMember] = model.SymbolKind.EnumMember;
-    fromMapping[callhierarchy.SymbolKind.Struct] = model.SymbolKind.Struct;
-    fromMapping[callhierarchy.SymbolKind.Event] = model.SymbolKind.Event;
-    fromMapping[callhierarchy.SymbolKind.Operator] = model.SymbolKind.Operator;
-    fromMapping[callhierarchy.SymbolKind.TypeParameter] = model.SymbolKind.TypeParameter;
-
     export function fromSymbolKind(kind: callhierarchy.SymbolKind): model.SymbolKind {
-        return fromMapping[kind] || model.SymbolKind.Property;
+        switch (kind) {
+            case callhierarchy.SymbolKind.File: return model.SymbolKind.File;
+            case callhierarchy.SymbolKind.Module: return model.SymbolKind.Module;
+            case callhierarchy.SymbolKind.Namespace: return model.SymbolKind.Namespace;
+            case callhierarchy.SymbolKind.Package: return model.SymbolKind.Package;
+            case callhierarchy.SymbolKind.Class: return model.SymbolKind.Class;
+            case callhierarchy.SymbolKind.Method: return model.SymbolKind.Method;
+            case callhierarchy.SymbolKind.Property: return model.SymbolKind.Property;
+            case callhierarchy.SymbolKind.Field: return model.SymbolKind.Field;
+            case callhierarchy.SymbolKind.Constructor: return model.SymbolKind.Constructor;
+            case callhierarchy.SymbolKind.Enum: return model.SymbolKind.Enum;
+            case callhierarchy.SymbolKind.Interface: return model.SymbolKind.Interface;
+            case callhierarchy.SymbolKind.Function: return model.SymbolKind.Function;
+            case callhierarchy.SymbolKind.Variable: return model.SymbolKind.Variable;
+            case callhierarchy.SymbolKind.Constant: return model.SymbolKind.Constant;
+            case callhierarchy.SymbolKind.String: return model.SymbolKind.String;
+            case callhierarchy.SymbolKind.Number: return model.SymbolKind.Number;
+            case callhierarchy.SymbolKind.Boolean: return model.SymbolKind.Boolean;
+            case callhierarchy.SymbolKind.Array: return model.SymbolKind.Array;
+            case callhierarchy.SymbolKind.Object: return model.SymbolKind.Object;
+            case callhierarchy.SymbolKind.Key: return model.SymbolKind.Key;
+            case callhierarchy.SymbolKind.Null: return model.SymbolKind.Null;
+            case callhierarchy.SymbolKind.EnumMember: return model.SymbolKind.EnumMember;
+            case callhierarchy.SymbolKind.Struct: return model.SymbolKind.Struct;
+            case callhierarchy.SymbolKind.Event: return model.SymbolKind.Event;
+            case callhierarchy.SymbolKind.Operator: return model.SymbolKind.Operator;
+            case callhierarchy.SymbolKind.TypeParameter: return model.SymbolKind.TypeParameter;
+            default: return model.SymbolKind.Property;
+        }
     }
-
-    // tslint:disable-next-line:no-null-keyword
-    const toMapping: { [kind: number]: callhierarchy.SymbolKind } = Object.create(null);
-    toMapping[model.SymbolKind.File] = callhierarchy.SymbolKind.File;
-    toMapping[model.SymbolKind.Module] = callhierarchy.SymbolKind.Module;
-    toMapping[model.SymbolKind.Namespace] = callhierarchy.SymbolKind.Namespace;
-    toMapping[model.SymbolKind.Package] = callhierarchy.SymbolKind.Package;
-    toMapping[model.SymbolKind.Class] = callhierarchy.SymbolKind.Class;
-    toMapping[model.SymbolKind.Method] = callhierarchy.SymbolKind.Method;
-    toMapping[model.SymbolKind.Property] = callhierarchy.SymbolKind.Property;
-    toMapping[model.SymbolKind.Field] = callhierarchy.SymbolKind.Field;
-    toMapping[model.SymbolKind.Constructor] = callhierarchy.SymbolKind.Constructor;
-    toMapping[model.SymbolKind.Enum] = callhierarchy.SymbolKind.Enum;
-    toMapping[model.SymbolKind.Interface] = callhierarchy.SymbolKind.Interface;
-    toMapping[model.SymbolKind.Function] = callhierarchy.SymbolKind.Function;
-    toMapping[model.SymbolKind.Variable] = callhierarchy.SymbolKind.Variable;
-    toMapping[model.SymbolKind.Constant] = callhierarchy.SymbolKind.Constant;
-    toMapping[model.SymbolKind.String] = callhierarchy.SymbolKind.String;
-    toMapping[model.SymbolKind.Number] = callhierarchy.SymbolKind.Number;
-    toMapping[model.SymbolKind.Boolean] = callhierarchy.SymbolKind.Boolean;
-    toMapping[model.SymbolKind.Array] = callhierarchy.SymbolKind.Array;
-    toMapping[model.SymbolKind.Object] = callhierarchy.SymbolKind.Object;
-    toMapping[model.SymbolKind.Key] = callhierarchy.SymbolKind.Key;
-    toMapping[model.SymbolKind.Null] = callhierarchy.SymbolKind.Null;
-    toMapping[model.SymbolKind.EnumMember] = callhierarchy.SymbolKind.EnumMember;
-    toMapping[model.SymbolKind.Struct] = callhierarchy.SymbolKind.Struct;
-    toMapping[model.SymbolKind.Event] = callhierarchy.SymbolKind.Event;
-    toMapping[model.SymbolKind.Operator] = callhierarchy.SymbolKind.Operator;
-    toMapping[model.SymbolKind.TypeParameter] = callhierarchy.SymbolKind.TypeParameter;
-
     export function toSymbolKind(kind: model.SymbolKind): callhierarchy.SymbolKind {
-        return toMapping[kind] || model.SymbolKind.Property;
+        switch (kind) {
+            case model.SymbolKind.File: return callhierarchy.SymbolKind.File;
+            case model.SymbolKind.Module: return callhierarchy.SymbolKind.Module;
+            case model.SymbolKind.Namespace: return callhierarchy.SymbolKind.Namespace;
+            case model.SymbolKind.Package: return callhierarchy.SymbolKind.Package;
+            case model.SymbolKind.Class: return callhierarchy.SymbolKind.Class;
+            case model.SymbolKind.Method: return callhierarchy.SymbolKind.Method;
+            case model.SymbolKind.Property: return callhierarchy.SymbolKind.Property;
+            case model.SymbolKind.Field: return callhierarchy.SymbolKind.Field;
+            case model.SymbolKind.Constructor: return callhierarchy.SymbolKind.Constructor;
+            case model.SymbolKind.Enum: return callhierarchy.SymbolKind.Enum;
+            case model.SymbolKind.Interface: return callhierarchy.SymbolKind.Interface;
+            case model.SymbolKind.Function: return callhierarchy.SymbolKind.Function;
+            case model.SymbolKind.Variable: return callhierarchy.SymbolKind.Variable;
+            case model.SymbolKind.Constant: return callhierarchy.SymbolKind.Constant;
+            case model.SymbolKind.String: return callhierarchy.SymbolKind.String;
+            case model.SymbolKind.Number: return callhierarchy.SymbolKind.Number;
+            case model.SymbolKind.Boolean: return callhierarchy.SymbolKind.Boolean;
+            case model.SymbolKind.Array: return callhierarchy.SymbolKind.Array;
+            case model.SymbolKind.Object: return callhierarchy.SymbolKind.Object;
+            case model.SymbolKind.Key: return callhierarchy.SymbolKind.Key;
+            case model.SymbolKind.Null: return callhierarchy.SymbolKind.Null;
+            case model.SymbolKind.EnumMember: return callhierarchy.SymbolKind.EnumMember;
+            case model.SymbolKind.Struct: return callhierarchy.SymbolKind.Struct;
+            case model.SymbolKind.Event: return callhierarchy.SymbolKind.Event;
+            case model.SymbolKind.Operator: return callhierarchy.SymbolKind.Operator;
+            case model.SymbolKind.TypeParameter: return callhierarchy.SymbolKind.TypeParameter;
+            default: return callhierarchy.SymbolKind.Property;
+        }
     }
 }
 
-export function toDefinition(definition: model.CallHierarchyDefinition): CallHierarchyDefinition;
-export function toDefinition(definition: model.CallHierarchyDefinition | undefined): CallHierarchyDefinition | undefined;
-export function toDefinition(definition: model.CallHierarchyDefinition | undefined): CallHierarchyDefinition | undefined {
+export function toDefinition(definition: model.CallHierarchyItem): CallHierarchyItem;
+export function toDefinition(definition: model.CallHierarchyItem | undefined): CallHierarchyItem | undefined;
+export function toDefinition(definition: model.CallHierarchyItem | undefined): CallHierarchyItem | undefined {
     if (!definition) {
         return undefined;
     }
     return {
-        location: {
-            uri: fromUriComponents(definition.uri),
-            range: toRange(definition.range)
-        },
+        ...definition,
+        kind: SymbolKindConverter.toSymbolKind(definition.kind),
+        range: toRange(definition.range),
         selectionRange: toRange(definition.selectionRange),
-        symbolName: definition.name,
-        symbolKind: SymbolKindConverter.toSymbolKind(definition.kind),
-        containerName: undefined,
-        tags: definition.tags,
-        data: definition.data,
     };
 }
 
-export function fromDefinition(definition: CallHierarchyDefinition): model.CallHierarchyDefinition {
+export function fromDefinition(definition: CallHierarchyItem): model.CallHierarchyItem {
     return {
-        uri: toUriComponents(definition.location.uri),
-        range: fromRange(definition.location.range),
-        selectionRange: fromRange(definition.selectionRange),
-        name: definition.symbolName,
-        kind: SymbolKindConverter.fromSymbolKind(definition.symbolKind),
-        tags: definition.tags,
-        data: definition.data,
+        ...definition,
+        kind: SymbolKindConverter.fromSymbolKind(definition.kind),
+        range: fromRange(definition.range),
+        selectionRange: fromRange(definition.range),
     };
 }
 
-export function toCaller(caller: model.CallHierarchyReference): CallHierarchyCaller {
+export function toCaller(caller: model.CallHierarchyIncomingCall): CallHierarchyIncomingCall {
     return {
-        callerDefinition: toDefinition(caller.callerDefinition),
-        references: caller.references.map(toRange)
+        from: toDefinition(caller.from),
+        fromRanges: caller.fromRanges.map(toRange)
     };
 }
 
-export function fromCaller(caller: CallHierarchyCaller): model.CallHierarchyReference {
+export function fromCaller(caller: CallHierarchyIncomingCall): model.CallHierarchyIncomingCall {
     return {
-        callerDefinition: fromDefinition(caller.callerDefinition),
-        references: caller.references.map(fromRange)
+        from: fromDefinition(caller.from),
+        fromRanges: caller.fromRanges.map(fromRange)
     };
 }
 
-export function toCallee(callee: model.CallHierarchyReference): CallHierarchyCallee {
+export function toCallee(callee: model.CallHierarchyOutgoingCall): CallHierarchyOutgoingCall {
     return {
-        calleeDefinition: toDefinition(callee.callerDefinition),
-        references: callee.references.map(toRange),
+        to: toDefinition(callee.to),
+        fromRanges: callee.fromRanges.map(toRange),
     };
 }
 
-export function fromCallHierarchyCallerToModelCallHierarchyIncomingCall(caller: CallHierarchyCaller): model.CallHierarchyIncomingCall {
+export function fromCallHierarchyCallerToModelCallHierarchyIncomingCall(caller: CallHierarchyIncomingCall): model.CallHierarchyIncomingCall {
     return {
-        from: fromDefinition(caller.callerDefinition),
-        fromRanges: caller.references.map(fromRange),
+        from: fromDefinition(caller.from),
+        fromRanges: caller.fromRanges.map(fromRange),
     };
 }
 
-export function fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall(callee: CallHierarchyCallee): model.CallHierarchyOutgoingCall {
+export function fromCallHierarchyCalleeToModelCallHierarchyOutgoingCall(callee: CallHierarchyOutgoingCall): model.CallHierarchyOutgoingCall {
     return {
-        to: fromDefinition(callee.calleeDefinition),
-        fromRanges: callee.references.map(fromRange),
+        to: fromDefinition(callee.to),
+        fromRanges: callee.fromRanges.map(fromRange),
     };
 }

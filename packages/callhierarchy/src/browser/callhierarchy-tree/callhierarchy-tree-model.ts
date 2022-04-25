@@ -16,8 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CompositeTreeNode, TreeModelImpl, TreeNode } from '@theia/core/lib/browser';
-import { CallHierarchyTree, DefinitionNode } from './callhierarchy-tree';
-import { CallHierarchyServiceProvider } from '../callhierarchy-service';
+import { CallHierarchyTree, ItemNode } from './callhierarchy-tree';
+import { CallHierarchyServiceProvider, CallHierarchySession } from '../callhierarchy-service';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -25,7 +25,8 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 @injectable()
 export class CallHierarchyTreeModel extends TreeModelImpl {
 
-    private _languageId: string | undefined;
+    protected _languageId: string | undefined;
+    protected currentSession?: CallHierarchySession;
 
     @inject(CallHierarchyTree) protected override readonly tree: CallHierarchyTree;
     @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
@@ -48,15 +49,16 @@ export class CallHierarchyTreeModel extends TreeModelImpl {
                 this.tree.callHierarchyService = callHierarchyService;
                 const cancellationSource = new CancellationTokenSource();
                 const rootDefinition = await callHierarchyService.getRootDefinition(uri, position, cancellationSource.token);
-                const definitions = rootDefinition && (Array.isArray(rootDefinition) ? rootDefinition : [rootDefinition]);
-                if (definitions) {
+                if (rootDefinition) {
+                    this.currentSession?.dispose();
+                    this.currentSession = rootDefinition;
                     const root: CompositeTreeNode = {
                         id: 'call-hierarchy-tree-root',
                         parent: undefined,
                         children: [],
                         visible: false,
                     };
-                    definitions.forEach(definition => CompositeTreeNode.addChild(root, DefinitionNode.create(definition, root)));
+                    rootDefinition.items.forEach(definition => CompositeTreeNode.addChild(root, ItemNode.create(definition, root)));
                     this.tree.root = root;
                 }
             }

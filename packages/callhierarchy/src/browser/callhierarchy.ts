@@ -14,26 +14,31 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Range, SymbolKind, Location, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
+import { Range, SymbolKind, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
+import { UriComponents } from '@theia/core/lib/common/uri';
 
 export const CALLHIERARCHY_ID = 'callhierarchy';
 
-export interface Definition {
-    location: Location,
-    selectionRange: Range,
-    symbolName: string,
-    symbolKind: SymbolKind,
-    containerName: string | undefined,
+export interface CallHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
+    kind: SymbolKind;
+    name: string;
+    detail?: string;
+    uri: UriComponents;
+    range: Range;
+    selectionRange: Range;
     tags?: readonly SymbolTag[];
-    data?: unknown,
+    data?: unknown;
 }
 
-export interface Caller {
-    callerDefinition: Definition,
-    references: Range[]
+export interface CallHierarchyIncomingCall {
+    from: CallHierarchyItem;
+    fromRanges: Range[];
 }
 
-export interface Callee {
-    calleeDefinition: Definition,
-    references: Range[]
+export interface CallHierarchyOutgoingCall {
+    to: CallHierarchyItem;
+    fromRanges: Range[];
 }

@@ -18,16 +18,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import URI from '@theia/core/lib/common/uri';
+import URI, { UriComponents } from '@theia/core/lib/common/uri';
 
-export interface UriComponents {
-    scheme: string;
-    authority: string;
-    path: string;
-    query: string;
-    fragment: string;
-    external?: string;
-}
+export { UriComponents };
 
 // some well known URI schemas
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/network.ts#L9-L79
@@ -88,11 +81,5 @@ export namespace Schemes {
 }
 
 export function theiaUritoUriComponents(uri: URI): UriComponents {
-    return {
-        scheme: uri.scheme,
-        authority: uri.authority,
-        path: uri.path.toString(),
-        query: uri.query,
-        fragment: uri.fragment
-    };
+    return uri.toComponents();
 }

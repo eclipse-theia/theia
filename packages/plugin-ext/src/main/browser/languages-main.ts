@@ -50,7 +50,7 @@ import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
 import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
-import { CallHierarchyService, CallHierarchyServiceProvider, Definition } from '@theia/callhierarchy/lib/browser';
+import { CallHierarchyService, CallHierarchyServiceProvider, CallHierarchyItem } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ObjectIdentifier } from '../../common/object-identifier';
@@ -804,8 +804,12 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
             selector: language,
             getRootDefinition: (uri: DocumentUri, position: Position, cancellationToken: CancellationToken) =>
                 this.proxy.$provideRootDefinition(handle, toUriComponents(uri), fromPosition(position), cancellationToken)
-                    .then(def => Array.isArray(def) ? def.map(item => toDefinition(item)) : toDefinition(def)),
-            getCallers: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
+                    .then(def => {
+                        if (!def) { return undefined; }
+                        const defs = Array.isArray(def) ? def : [def];
+                        return { dispose: () => this.proxy.$releaseCallHierarchy(handle, defs[0]?._sessionId), items: defs.map(item => toDefinition(item)) };
+                    }),
+            getCallers: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallers(handle, fromDefinition(definition), cancellationToken)
                 .then(result => {
                     if (!result) {
                         return undefined!;
@@ -818,7 +822,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     return undefined!;
                 }),
 
-            getCallees: (definition: Definition, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
+            getCallees: (definition: CallHierarchyItem, cancellationToken: CancellationToken) => this.proxy.$provideCallees(handle, fromDefinition(definition), cancellationToken)
                 .then(result => {
                     if (!result) {
                         return undefined;

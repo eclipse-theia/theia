@@ -59,9 +59,10 @@ import {
     CodeAction,
     FoldingRange,
     SelectionRange,
-    CallHierarchyDefinition,
-    CallHierarchyReference,
-    ChainedCacheId
+    ChainedCacheId,
+    CallHierarchyItem,
+    CallHierarchyIncomingCall,
+    CallHierarchyOutgoingCall,
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -612,16 +613,20 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideRootDefinition(
         handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken
-    ): Promise<CallHierarchyDefinition | CallHierarchyDefinition[] | undefined> {
+    ): Promise<CallHierarchyItem[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token), undefined);
     }
 
-    $provideCallers(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
+    $provideCallers(handle: number, definition: CallHierarchyItem, token: theia.CancellationToken): Promise<CallHierarchyIncomingCall[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token), undefined);
     }
 
-    $provideCallees(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
+    $provideCallees(handle: number, definition: CallHierarchyItem, token: theia.CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined> {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallees(definition, token), undefined);
+    }
+
+    $releaseCallHierarchy(handle: number, session?: string): Promise<boolean> {
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.releaseSession(session), false);
     }
     // ### Call Hierarchy Provider end
 

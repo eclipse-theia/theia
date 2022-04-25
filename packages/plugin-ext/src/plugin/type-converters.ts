@@ -675,7 +675,7 @@ export function toLocation(value: model.Location): types.Location {
     return new types.Location(URI.revive(value.uri), toRange(value.range));
 }
 
-export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.CallHierarchyItem {
+export function fromCallHierarchyItem(item: types.CallHierarchyItem): model.CallHierarchyItem {
     return <model.CallHierarchyItem>{
         kind: SymbolKind.fromSymbolKind(item.kind),
         name: item.name,
@@ -684,7 +684,8 @@ export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.Call
         range: fromRange(item.range),
         selectionRange: fromRange(item.selectionRange),
         tags: item.tags,
-        data: item.data,
+        _itemId: item._itemId,
+        _sessionId: item._sessionId,
     };
 }
 
@@ -698,7 +699,9 @@ export function toCallHierarchyItem(value: model.CallHierarchyItem): types.CallH
         toRange(value.selectionRange),
     );
     item.tags = value.tags;
-    item.data = value.data;
+    item._itemId = value._itemId;
+    item._sessionId = value._sessionId;
+
     return item;
 }
 

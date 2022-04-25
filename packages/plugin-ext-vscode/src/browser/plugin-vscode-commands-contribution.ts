@@ -604,7 +604,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         new CancellationTokenSource().token
                     );
                     if (definition) {
-                        return Array.isArray(definition) ? definition.map(item => fromDefinition(item)) : [fromDefinition(definition)];
+                        return definition.items.map(item => fromDefinition(item));
                     };
                     return [];
                 }

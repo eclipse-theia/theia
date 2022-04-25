@@ -16,11 +16,11 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
-import * as model from '../../common/plugin-api-rpc-model';
+import * as dto from '../../common/plugin-api-rpc-model';
 import * as rpc from '../../common/plugin-api-rpc';
 import * as types from '../types-impl';
+import { fromRange } from '../type-converters';
 
 export class CallHierarchyAdapter {
 
@@ -29,9 +29,12 @@ export class CallHierarchyAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
+    protected sessionIds = 0;
+    protected readonly cache = new Map<string, Map<string, theia.CallHierarchyItem>>();
+
     async provideRootDefinition(
         resource: URI, position: rpc.Position, token: theia.CancellationToken
-    ): Promise<model.CallHierarchyDefinition | model.CallHierarchyDefinition[] | undefined> {
+    ): Promise<dto.CallHierarchyItem[] | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -48,83 +51,74 @@ export class CallHierarchyAdapter {
         if (!definition) {
             return undefined;
         }
-
-        return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item)) : this.fromCallHierarchyItem(definition);
+        const sessionId = (this.sessionIds++).toString(36);
+        this.cache.set(sessionId, new Map());
+        return Array.isArray(definition) ? definition.map(item => this.fromCallHierarchyItem(item, sessionId)) : [this.fromCallHierarchyItem(definition, sessionId)];
     }
 
-    async provideCallers(definition: model.CallHierarchyDefinition, token: theia.CancellationToken): Promise<model.CallHierarchyReference[] | undefined> {
+    async provideCallers(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyIncomingCall[] | undefined> {
         const callers = await this.provider.provideCallHierarchyIncomingCalls(this.toCallHierarchyItem(definition), token);
         if (!callers) {
             return undefined;
         }
 
-        return callers.map(item => this.fromCallHierarchyIncomingCall(item));
+        return callers.map(item => this.fromCallHierarchyIncomingCall(item, definition._sessionId!));
     }
 
-    async provideCallees(definition: model.CallHierarchyDefinition, token: theia.CancellationToken): Promise<model.CallHierarchyReference[] | undefined> {
+    async provideCallees(definition: dto.CallHierarchyItem, token: theia.CancellationToken): Promise<dto.CallHierarchyOutgoingCall[] | undefined> {
         const callees = await this.provider.provideCallHierarchyOutgoingCalls(this.toCallHierarchyItem(definition), token);
         if (!callees) {
             return undefined;
         }
 
-        return callees.map(item => this.fromCallHierarchyOutgoingCall(item));
+        return callees.map(item => this.fromCallHierarchyOutgoingCall(item, definition._sessionId!));
     }
 
-    private fromCallHierarchyItem(item: theia.CallHierarchyItem): model.CallHierarchyDefinition {
-        return {
+    private fromCallHierarchyItem(item: theia.CallHierarchyItem, sessionId: string): dto.CallHierarchyItem {
+        const sessionCache = this.cache.get(sessionId)!;
+        const itemId = sessionCache.size.toString(36);
+        const definition: dto.CallHierarchyItem = {
             uri: item.uri,
-            range: this.fromRange(item.range),
-            selectionRange: this.fromRange(item.selectionRange),
+            range: fromRange(item.range),
+            selectionRange: fromRange(item.selectionRange),
             name: item.name,
             kind: item.kind,
             tags: item.tags,
-            data: item.data,
+            _itemId: itemId,
+            _sessionId: sessionId,
         };
+        sessionCache.set(itemId, item);
+        return definition;
     }
 
-    private fromRange(range: theia.Range): model.Range {
+    private toCallHierarchyItem(definition: dto.CallHierarchyItem): theia.CallHierarchyItem {
+        const cached = this.cache.get(definition._sessionId!)?.get(definition._itemId!);
+        if (!cached) {
+            throw new Error(`Found no cached item corresponding to ${definition.name} in ${definition.uri.path} with ID ${definition.data}.`);
+        }
+        return cached;
+    }
+
+    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall, sessionId: string): dto.CallHierarchyIncomingCall {
         return {
-            startLineNumber: range.start.line + 1,
-            startColumn: range.start.character + 1,
-            endLineNumber: range.end.line + 1,
-            endColumn: range.end.character + 1,
+            from: this.fromCallHierarchyItem(caller.from, sessionId),
+            fromRanges: caller.fromRanges.map(r => fromRange(r))
         };
     }
 
-    private toRange(range: model.Range): types.Range {
-        return new types.Range(
-            range.startLineNumber - 1,
-            range.startColumn - 1,
-            range.endLineNumber - 1,
-            range.endColumn - 1,
-        );
-    }
-
-    private toCallHierarchyItem(definition: model.CallHierarchyDefinition): theia.CallHierarchyItem {
-        const item = new types.CallHierarchyItem(
-            Converter.SymbolKind.toSymbolKind(definition.kind),
-            definition.name,
-            definition.detail ? definition.detail : '',
-            URI.revive(definition.uri),
-            this.toRange(definition.range),
-            this.toRange(definition.selectionRange),
-        );
-        item.tags = definition.tags;
-        item.data = definition.data;
-        return item;
-    }
-
-    private fromCallHierarchyIncomingCall(caller: theia.CallHierarchyIncomingCall): model.CallHierarchyReference {
+    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall, sessionId: string): dto.CallHierarchyOutgoingCall {
         return {
-            callerDefinition: this.fromCallHierarchyItem(caller.from),
-            references: caller.fromRanges.map(l => this.fromRange(l))
+            to: this.fromCallHierarchyItem(caller.to, sessionId),
+            fromRanges: caller.fromRanges.map(r => fromRange(r)),
         };
     }
 
-    protected fromCallHierarchyOutgoingCall(caller: theia.CallHierarchyOutgoingCall): model.CallHierarchyReference {
-        return {
-            callerDefinition: this.fromCallHierarchyItem(caller.to),
-            references: caller.fromRanges.map(this.fromRange.bind(this)),
-        };
+    releaseSession(session?: string): Promise<boolean> {
+        if (session !== undefined) {
+            return Promise.resolve(this.cache.delete(session));
+        } else {
+            this.cache.clear();
+            return Promise.resolve(true);
+        }
     }
 }

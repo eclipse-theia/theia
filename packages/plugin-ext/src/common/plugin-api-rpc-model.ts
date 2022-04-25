@@ -517,22 +517,6 @@ export interface RenameLocation {
     text: string;
 }
 
-export interface CallHierarchyDefinition {
-    name: string;
-    kind: SymbolKind;
-    detail?: string;
-    uri: UriComponents;
-    range: Range;
-    selectionRange: Range;
-    tags?: readonly SymbolTag[];
-    data: unknown;
-}
-
-export interface CallHierarchyReference {
-    callerDefinition: CallHierarchyDefinition,
-    references: Range[]
-}
-
 export interface CallHierarchyItem {
     _sessionId?: string;
     _itemId?: string;
@@ -544,7 +528,7 @@ export interface CallHierarchyItem {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
-    data: unknown;
+    data?: unknown;
 }
 
 export interface CallHierarchyIncomingCall {

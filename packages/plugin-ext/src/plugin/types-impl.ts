@@ -2437,7 +2437,6 @@ export class CallHierarchyItem {
     range: Range;
     selectionRange: Range;
     tags?: readonly SymbolTag[];
-    data?: unknown;
 
     constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
         this.kind = kind;
@@ -2448,7 +2447,7 @@ export class CallHierarchyItem {
         this.selectionRange = selectionRange;
     }
 
-    static isCallHierarchyItem(thing: {}): thing is theia.CallHierarchyItem {
+    static isCallHierarchyItem(thing: {}): thing is CallHierarchyItem {
         if (thing instanceof CallHierarchyItem) {
             return true;
         }

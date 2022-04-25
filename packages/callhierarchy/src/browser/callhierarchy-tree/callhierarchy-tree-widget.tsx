@@ -20,9 +20,9 @@ import {
     TreeModel, DockPanel, codicon
 } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { DefinitionNode, CallerNode } from './callhierarchy-tree';
+import { ItemNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
-import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
+import { CALLHIERARCHY_ID, CallHierarchyItem, CallHierarchyIncomingCall } from '../callhierarchy';
 import { CALL_HIERARCHY_LABEL } from '../callhierarchy-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { Location, Range, SymbolKind, DocumentUri, SymbolTag } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -71,7 +71,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     protected override createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
-        if (DefinitionNode.is(node)) {
+        if (ItemNode.is(node)) {
             classNames.push(DEFINITION_NODE_CLASS);
         }
         return classNames;
@@ -90,7 +90,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (DefinitionNode.is(node)) {
+        if (ItemNode.is(node)) {
             return this.decorateDefinitionCaption(node.definition);
         }
         if (CallerNode.is(node)) {
@@ -99,11 +99,10 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected decorateDefinitionCaption(definition: Definition): React.ReactNode {
-        const containerName = definition.containerName;
-        const symbol = definition.symbolName;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
-        const container = (containerName) ? containerName + ' — ' + location : location;
+    protected decorateDefinitionCaption(definition: CallHierarchyItem): React.ReactNode {
+        const symbol = definition.name;
+        const location = this.labelProvider.getName(URI.fromComponents(definition.uri));
+        const container = location;
         const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
         const classNames = ['definitionNode'];
         if (isDeprecated) {
@@ -111,7 +110,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
 
         return <div className={classNames.join(' ')}>
-            <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
+            <div className={'symbol-icon ' + this.toIconClass(definition.kind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>
                     {symbol}
@@ -123,13 +122,12 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         </div>;
     }
 
-    protected decorateCallerCaption(caller: Caller): React.ReactNode {
-        const definition = caller.callerDefinition;
-        const containerName = definition.containerName;
-        const symbol = definition.symbolName;
-        const referenceCount = caller.references.length;
-        const location = this.labelProvider.getName(new URI(definition.location.uri));
-        const container = (containerName) ? containerName + ' — ' + location : location;
+    protected decorateCallerCaption(caller: CallHierarchyIncomingCall): React.ReactNode {
+        const definition = caller.from;
+        const symbol = definition.name;
+        const referenceCount = caller.fromRanges.length;
+        const location = this.labelProvider.getName(URI.fromComponents(definition.uri));
+        const container = location;
         const isDeprecated = definition.tags?.includes(SymbolTag.Deprecated);
         const classNames = ['definitionNode'];
         if (isDeprecated) {
@@ -137,7 +135,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
 
         return <div className={classNames.join(' ')}>
-            <div className={'symbol-icon ' + this.toIconClass(definition.symbolKind)}></div>
+            <div className={'symbol-icon ' + this.toIconClass(definition.kind)}></div>
             <div className='definitionNode-content'>
                 <span className='symbol'>
                     {symbol}
@@ -179,12 +177,12 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     private openEditor(node: TreeNode, keepFocus: boolean): void {
 
-        if (DefinitionNode.is(node)) {
+        if (ItemNode.is(node)) {
             const def = node.definition;
-            this.doOpenEditor(node.definition.location.uri, def.selectionRange ? def.selectionRange : def.location.range, keepFocus);
+            this.doOpenEditor(URI.fromComponents(def.uri).toString(), def.selectionRange ? def.selectionRange : def.range, keepFocus);
         }
         if (CallerNode.is(node)) {
-            this.doOpenEditor(node.caller.callerDefinition.location.uri, node.caller.references[0], keepFocus);
+            this.doOpenEditor(URI.fromComponents(node.caller.from.uri).toString(), node.caller.fromRanges[0], keepFocus);
         }
     }
 
@@ -217,9 +215,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((oldState as any).root && (oldState as any).languageId) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const root = this.inflateFromStorage((oldState as any).root) as DefinitionNode;
+            const root = this.inflateFromStorage((oldState as any).root) as ItemNode;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.model.initializeCallHierarchy((oldState as any).languageId, root.definition.location.uri, root.definition.location.range.start);
+            this.model.initializeCallHierarchy((oldState as any).languageId, URI.fromComponents(root.definition.uri).toString(), root.definition.range.start);
         }
     }
 }
