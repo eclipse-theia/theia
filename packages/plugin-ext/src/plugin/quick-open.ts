@@ -451,6 +451,7 @@ export class QuickInputExt implements QuickInput {
     }
 
     _fireChangedValue(changedValue: string): void {
+        this._value = changedValue;
         this._onDidChangeValueEmitter.fire(changedValue);
     }
 
@@ -532,39 +533,6 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
             this._validationMessage = validationMessage;
             this.update({ validationMessage });
         }
-    }
-
-    override async show(): Promise<void> {
-        super.show();
-
-        const update = (value: string) => {
-            this.value = value;
-            if (this.validationMessage && this.validationMessage.length > 0) {
-                return this.validationMessage;
-            }
-        };
-
-        this.quickOpen.showInputBox({
-            id: this._id,
-            busy: this.busy,
-            buttons: this.buttons,
-            enabled: this.enabled,
-            ignoreFocusOut: this.ignoreFocusOut,
-            password: this.password,
-            placeholder: this.placeholder,
-            prompt: this.prompt,
-            step: this.step,
-            title: this.title,
-            totalSteps: this.totalSteps,
-            validationMessage: this.validationMessage,
-            value: this.value,
-            visible: this.visible,
-            validateInput(value: string): string | undefined {
-                if (value.length > 0) {
-                    return update(value);
-                }
-            }
-        });
     }
 }
 

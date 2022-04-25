@@ -478,7 +478,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         if (currentValue === undefined) {
             currentValue = this.inspection?.defaultValue;
         }
-        return currentValue ?? this.getFallbackValue();
+        return currentValue !== undefined ? currentValue : this.getFallbackValue();
     }
 
     protected setPreferenceWithDebounce = debounce(this.setPreferenceImmediately.bind(this), 500, { leading: false, trailing: true });

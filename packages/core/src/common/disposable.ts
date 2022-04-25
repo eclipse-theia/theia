@@ -28,12 +28,23 @@ export namespace Disposable {
         return !!arg && typeof arg === 'object' && 'dispose' in arg && typeof arg['dispose'] === 'function';
     }
     export function create(func: () => void): Disposable {
-        return {
-            dispose: func
-        };
+        return { dispose: func };
     }
-    export const NULL = create(() => { });
+    /** Always provides a reference to a new disposable. */
+    export declare const NULL: Disposable;
 }
+
+/**
+ * Ensures that every reference to {@link Disposable.NULL} returns a new object,
+ * as sharing a disposable between multiple {@link DisposableCollection} can have unexpected side effects
+ */
+Object.defineProperty(Disposable, 'NULL', {
+    configurable: false,
+    enumerable: true,
+    get(): Disposable {
+        return { dispose: () => { } };
+    }
+});
 
 export class DisposableCollection implements Disposable {
 

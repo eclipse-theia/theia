@@ -75,11 +75,11 @@
 }
 
 .p-Widget > .theia-view-container-part-header {
-    border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+    box-shadow: 0 1px 0 var(--theia-sideBarSectionHeader-border) inset;
 }
 
 .p-Widget.p-first-visible > .theia-view-container-part-header {
-    border-top: none;
+    box-shadow: none;
 }
 
 .theia-view-container-part-header .theia-ExpansionToggle {

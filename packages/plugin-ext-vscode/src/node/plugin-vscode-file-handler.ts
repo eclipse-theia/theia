@@ -54,7 +54,11 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     protected async getExtensionDir(context: PluginDeployerFileHandlerContext): Promise<string> {
-        return FileUri.fsPath(this.systemExtensionsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
+        let extensionsDirUri = this.systemExtensionsDirUri;
+        if (context.pluginEntry().type === PluginType.User) {
+            extensionsDirUri = await this.environment.getExtensionsDirUri();
+        }
+        return FileUri.fsPath(extensionsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 
     protected async decompress(extensionDir: string, context: PluginDeployerFileHandlerContext): Promise<void> {

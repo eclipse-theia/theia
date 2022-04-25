@@ -81,7 +81,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
         }
         console.log('loading mocha...');
         // replace console.log by theia logger for mocha
-        await page.waitForFunction(() => !!(window as any)['theia']['@theia/core/lib/common/logger'].logger, {
+        await page.waitForFunction(() => !!(window as any)['theia']?.['@theia/core/lib/common/logger']?.logger, {
             timeout: 30 * 1000
         });
         await page.addScriptTag({ path: require.resolve('mocha/mocha.js') });
