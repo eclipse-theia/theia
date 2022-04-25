@@ -1701,7 +1701,7 @@ export interface DebugExt {
         debugConfiguration: theia.DebugConfiguration
     ): Promise<theia.DebugConfiguration | undefined | null>;
 
-    $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string>;
+    $createDebugSession(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
     $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined>;
 }

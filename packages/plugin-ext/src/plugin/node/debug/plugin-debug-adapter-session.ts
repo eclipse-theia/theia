@@ -27,6 +27,7 @@ import { Channel } from '@theia/debug/lib/common/debug-service';
 export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
     readonly type: string;
     readonly name: string;
+    readonly workspaceFolder: theia.WorkspaceFolder | undefined;
     readonly configuration: theia.DebugConfiguration;
 
     constructor(
@@ -38,6 +39,7 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
 
         this.type = theiaSession.type;
         this.name = theiaSession.name;
+        this.workspaceFolder = theiaSession.workspaceFolder;
         this.configuration = theiaSession.configuration;
     }
 

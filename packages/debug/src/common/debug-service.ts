@@ -100,9 +100,10 @@ export interface DebugService extends Disposable {
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).
      * @param config The resolved [debug configuration](#DebugConfiguration).
+     * @param workspaceFolderUri The worspace folder for this sessions or undefined when folderless
      * @returns The identifier of the created [debug adapter session](#DebugAdapterSession).
      */
-    createDebugSession(config: DebugConfiguration): Promise<string>;
+    createDebugSession(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<string>;
 
     /**
      * Stop a running session for the given session id.
