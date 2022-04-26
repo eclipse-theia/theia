@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2020 Arm and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { ScmHistorySupport } from './scm-history-widget';
-export { ScmHistoryProvider } from './scm-history-provider';
+
+import { ScmProvider } from '@theia/scm/lib/browser/scm-provider';
+import { ScmHistorySupport } from './scm-history-widget';
+
+export interface ScmHistoryProvider extends ScmProvider {
+    historySupport?: ScmHistorySupport;
+}
+export namespace ScmHistoryProvider {
+    export function is(scmProvider: ScmProvider | undefined): scmProvider is ScmHistoryProvider {
+        return !!scmProvider && 'historySupport' in scmProvider;
+    }
+}

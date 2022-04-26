@@ -17,10 +17,11 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
 import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '../../common';
-import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
-import { PreferenceChange, PreferenceScope, PreferenceService } from './preference-service';
-import { OverridePreferenceName, PreferenceChangeImpl, PreferenceChanges, PreferenceProviderDataChange, PreferenceProxy } from '.';
+import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
+import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@phosphor/coreutils';
+import { PreferenceProviderDataChange } from './preference-provider';
+import { OverridePreferenceName } from './preference-language-override-service';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
 export interface PreferenceProxyFactory {

@@ -19,7 +19,7 @@
 import { SelectionService } from '../common/selection-service';
 import { UriSelection } from '../common/selection';
 import { CommandHandler } from './command';
-import { MaybeArray } from '.';
+import { MaybeArray } from './types';
 import URI from './uri';
 
 export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHandler {
@@ -145,4 +145,3 @@ export namespace UriAwareCommandHandler {
         return new UriAwareCommandHandler<URI[]>(selectionService, handler, { multi: true });
     }
 }
-

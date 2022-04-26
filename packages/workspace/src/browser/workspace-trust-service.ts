@@ -21,7 +21,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { WorkspaceService } from '.';
+import { WorkspaceService } from './workspace-service';
 import {
     WorkspaceTrustPreferences, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WorkspaceTrustPrompt
 } from './workspace-trust-preferences';

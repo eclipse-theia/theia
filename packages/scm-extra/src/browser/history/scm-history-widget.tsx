@@ -21,7 +21,7 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
 import URI from '@theia/core/lib/common/uri';
-import { ScmHistoryProvider } from '.';
+import { ScmHistoryProvider } from './scm-history-provider';
 import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
 import { ScmHistoryCommit, ScmFileChange, ScmFileChangeNode } from '../scm-file-change-node';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
