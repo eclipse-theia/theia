@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { serviceIdentifier } from '..';
+import { serviceIdentifier } from '../types';
 import { Filter } from './filter';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

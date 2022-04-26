@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { filterItems, QuickPickItem, QuickPicks } from '..';
+import { filterItems, QuickPickItem, QuickPicks } from '../../common/quick-pick-service';
 import { CancellationToken, Disposable } from '../../common';
 import { ContextKeyService } from '../context-key-service';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
