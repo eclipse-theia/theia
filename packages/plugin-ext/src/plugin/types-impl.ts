@@ -28,7 +28,6 @@ import type * as theia from '@theia/plugin';
 import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
-import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 import * as paths from 'path';
@@ -260,6 +259,11 @@ export namespace TextEditorSelectionChangeKind {
         }
         return undefined;
     }
+}
+
+export enum TextDocumentChangeReason {
+    Undo = 1,
+    Redo = 2,
 }
 
 @es5ClassCompat
@@ -935,7 +939,7 @@ export class CompletionItem implements theia.CompletionItem {
     kind?: CompletionItemKind;
     tags?: CompletionItemTag[];
     detail: string;
-    documentation: string | MarkdownString;
+    documentation: string | theia.MarkdownString;
     sortText: string;
     filterText: string;
     preselect: boolean;
@@ -1054,9 +1058,9 @@ export enum MarkerTag {
 @es5ClassCompat
 export class ParameterInformation {
     label: string | [number, number];
-    documentation?: string | MarkdownString;
+    documentation?: string | theia.MarkdownString;
 
-    constructor(label: string | [number, number], documentation?: string | MarkdownString) {
+    constructor(label: string | [number, number], documentation?: string | theia.MarkdownString) {
         this.label = label;
         this.documentation = documentation;
     }
@@ -1065,10 +1069,10 @@ export class ParameterInformation {
 @es5ClassCompat
 export class SignatureInformation {
     label: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | theia.MarkdownString;
     parameters: ParameterInformation[];
 
-    constructor(label: string, documentation?: string | MarkdownString) {
+    constructor(label: string, documentation?: string | theia.MarkdownString) {
         this.label = label;
         this.documentation = documentation;
         this.parameters = [];
@@ -1095,20 +1099,18 @@ export class SignatureHelp {
 @es5ClassCompat
 export class Hover {
 
-    public contents: MarkdownString[] | theia.MarkedString[];
+    public contents: theia.MarkdownString[] | theia.MarkedString[];
     public range?: Range;
 
     constructor(
-        contents: MarkdownString | theia.MarkedString | MarkdownString[] | theia.MarkedString[],
+        contents: theia.MarkdownString | theia.MarkedString | theia.MarkdownString[] | theia.MarkedString[],
         range?: Range
     ) {
         if (!contents) {
             illegalArgument('contents must be defined');
         }
         if (Array.isArray(contents)) {
-            this.contents = <MarkdownString[] | theia.MarkedString[]>contents;
-        } else if (isMarkdownString(contents)) {
-            this.contents = [contents];
+            this.contents = <theia.MarkdownString[] | theia.MarkedString[]>contents;
         } else {
             this.contents = [contents];
         }
@@ -2484,6 +2486,12 @@ export class CallHierarchyOutgoingCall {
         this.fromRanges = fromRanges;
         this.to = item;
     }
+}
+
+export enum LanguageStatusSeverity {
+    Information = 0,
+    Warning = 1,
+    Error = 2
 }
 
 @es5ClassCompat

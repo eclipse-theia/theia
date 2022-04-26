@@ -66,6 +66,16 @@ describe('Preferences', function () {
     }
 
     async function deleteAllValues() {
+        return setValueTo('', [], undefined);
+    }
+
+    /**
+     * 
+     * @param {string} key 
+     * @param {string[]} path 
+     * @param {any} value 
+     */
+    async function setValueTo(key, path, value) {
         const reference = await modelService.createModelReference(uri);
         if (reference.object.dirty) {
             await reference.object.revert();
@@ -73,7 +83,7 @@ describe('Preferences', function () {
         /** @type {import ('@theia/preferences/lib/browser/folder-preference-provider').FolderPreferenceProvider} */
         const provider = Array.from(folderPreferences['providers'].values()).find(candidate => candidate.getConfigUri().isEqual(uri));
         assert.isDefined(provider);
-        await provider['doSetPreference']('', [], undefined);
+        await provider['doSetPreference'](key, path, value);
         reference.dispose();
     }
 
@@ -92,7 +102,10 @@ describe('Preferences', function () {
         if (!fileExistsBeforehand) {
             await fileService.delete(uri, { fromUserGesture: false }).catch(() => { });
         } else {
-            await fileService.write(uri, contentBeforehand);
+            let content = '';
+            try { content = JSON.parse(contentBeforehand); } catch { }
+            // Use the preference service because its promise is guaranteed to resolve after the file change is complete.
+            await setValueTo('', [], content);
         }
     });
 

@@ -277,6 +277,7 @@ describe('TypeScript', function () {
             const from = 'an editor' + (preview ? ' preview' : '');
             it('within ' + from, async function () {
                 const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(24);
                 // const demoInstance = new Demo|Class('demo');
                 editor.getControl().setPosition({ lineNumber: 24, column: 30 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
@@ -299,6 +300,7 @@ describe('TypeScript', function () {
                 await editorManager.open(definitionFileUri, { mode: 'open' });
 
                 const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(32);
                 // const bar: Defined|Interface = { coolField: [] };
                 editor.getControl().setPosition({ lineNumber: 32, column: 19 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
@@ -319,6 +321,7 @@ describe('TypeScript', function () {
 
             it(`from ${from} to an editor preview`, async function () {
                 const editor = await openEditor(demoFileUri);
+                editor.getControl().revealLine(32);
                 // const bar: Defined|Interface = { coolField: [] };
                 editor.getControl().setPosition({ lineNumber: 32, column: 19 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');

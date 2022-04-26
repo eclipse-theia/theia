@@ -2227,6 +2227,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: Color.lighten('activityBar.foreground', 0.1),
                 }, description: 'Foreground color of active toolbar item',
             },
+            {
+                id: 'editorHoverWidgetInternalBorder',
+                defaults: {
+                    dark: Color.transparent('editorHoverWidget-border', 0.5),
+                    light: Color.transparent('editorHoverWidget-border', 0.5),
+                    hc: Color.transparent('editorHoverWidget-border', 0.5),
+                },
+                description: 'The border between subelements of a hover widget'
+            }
         );
     }
 }

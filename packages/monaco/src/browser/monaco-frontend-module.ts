@@ -86,6 +86,8 @@ import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-edit
 import { ConfigurationTarget, IConfigurationChangeEvent, IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
 import { StandaloneConfigurationService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { Configuration } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationModels';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MonacoMarkdownRenderer } from './markdown-renderer/monaco-markdown-renderer';
 
 decorate(injectable(), VSCodeContextKeyService);
 
@@ -141,6 +143,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoOutlineContribution);
+
+    rebind(MarkdownRenderer).to(MonacoMarkdownRenderer).inSingletonScope();
 
     bind(MonacoFormattingConflictsContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoFormattingConflictsContribution);

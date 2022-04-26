@@ -43,7 +43,7 @@ import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import * as markdownit from '@theia/core/shared/markdown-it';
-import { isMarkdownString } from '../../../plugin/markdown-string';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
 
@@ -312,7 +312,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             };
         }
 
-        if (node.tooltip && isMarkdownString(node.tooltip)) {
+        if (node.tooltip && MarkdownString.is(node.tooltip)) {
             // Render markdown in custom tooltip
             const tooltip = this.markdownIt.render(node.tooltip.value);
 

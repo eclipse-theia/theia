@@ -122,6 +122,12 @@ export namespace ArrayUtils {
     export function asHeadAndTail<T>(array: Array<T>): HeadAndTail<T> {
         return Object.assign(array, HeadAndChildrenImpl, TailImpl);
     }
+
+    export enum Sort {
+        LeftBeforeRight = -1,
+        RightBeforeLeft = 1,
+        Equal = 0,
+    }
 }
 
 /**

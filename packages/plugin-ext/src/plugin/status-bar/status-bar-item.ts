@@ -33,7 +33,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
 
     private _name: string | undefined;
     private _text: string;
-    private _tooltip: string;
+    private _tooltip: string | theia.MarkdownString | undefined;
     private _color: string | ThemeColor | undefined;
     private _backgroundColor: ThemeColor | undefined;
     private _command: string | theia.Command;
@@ -74,7 +74,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         return this._text;
     }
 
-    public get tooltip(): string {
+    public get tooltip(): string | theia.MarkdownString | undefined {
         return this._tooltip;
     }
 
@@ -104,7 +104,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         this.update();
     }
 
-    public set tooltip(tooltip: string) {
+    public set tooltip(tooltip: string | theia.MarkdownString | undefined) {
         this._tooltip = tooltip;
         this.update();
     }

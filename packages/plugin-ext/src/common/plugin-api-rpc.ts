@@ -27,7 +27,8 @@ import {
     EndOfLine,
     OverviewRulerLane,
     IndentAction,
-    FileOperationOptions
+    FileOperationOptions,
+    TextDocumentChangeReason,
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
 import {
@@ -99,6 +100,7 @@ import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
 // eslint-disable-next-line @theia/runtime-import-check
 import { PickOptions, QuickInputButtonHandle, QuickPickItem, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { Severity } from '@theia/core/lib/common/severity';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -408,7 +410,7 @@ export interface StatusBarMessageRegistryMain {
         alignment: theia.StatusBarAlignment,
         color: string | undefined,
         backgroundColor: string | undefined,
-        tooltip: string | undefined,
+        tooltip: string | theia.MarkdownString | undefined,
         command: string | undefined,
         accessibilityInformation: theia.AccessibilityInformation,
         args: any[] | undefined): PromiseLike<void>;
@@ -1221,6 +1223,8 @@ export interface ModelChangedEvent {
     readonly eol: string;
 
     readonly versionId: number;
+
+    readonly reason: TextDocumentChangeReason | undefined;
 }
 
 export interface DocumentsExt {
@@ -1420,6 +1424,19 @@ export interface PluginInfo {
     displayName?: string;
 }
 
+export interface LanguageStatus {
+    readonly id: string;
+    readonly name: string;
+    readonly selector: SerializedDocumentFilter[];
+    readonly severity: Severity;
+    readonly label: string;
+    readonly detail: string;
+    readonly busy: boolean;
+    readonly source: string;
+    readonly command: Command | undefined;
+    readonly accessibilityInfo: theia.AccessibilityInformation | undefined;
+}
+
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
         context: CompletionContext, token: CancellationToken): Promise<CompletionResultDto | undefined>;
@@ -1531,6 +1548,8 @@ export interface LanguagesMain {
     $emitDocumentSemanticTokensEvent(eventHandle: number): void;
     $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $setLanguageStatus(handle: number, status: LanguageStatus): void;
+    $removeLanguageStatus(handle: number): void;
 }
 
 export interface WebviewInitData {

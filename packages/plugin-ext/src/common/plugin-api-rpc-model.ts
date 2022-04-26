@@ -16,6 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import type * as monaco from '@theia/monaco-editor-core';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
@@ -70,13 +71,7 @@ export interface Range {
     readonly endColumn: number;
 }
 
-export interface MarkdownString {
-    value: string;
-    isTrusted?: boolean;
-    uris?: {
-        [href: string]: UriComponents;
-    };
-}
+export { MarkdownStringDTO as MarkdownString };
 
 export interface SerializedDocumentFilter {
     $serialized: true;
@@ -106,7 +101,7 @@ export interface Completion {
     label2?: string;
     kind: CompletionItemKind;
     detail?: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
     sortText?: string;
     filterText?: string;
     preselect?: boolean;
@@ -227,12 +222,12 @@ export enum MarkerTag {
 
 export interface ParameterInformation {
     label: string | [number, number];
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
 }
 
 export interface SignatureInformation {
     label: string;
-    documentation?: string | MarkdownString;
+    documentation?: string | MarkdownStringDTO;
     parameters: ParameterInformation[];
 }
 
@@ -250,7 +245,7 @@ export interface SignatureHelpContext {
 }
 
 export interface Hover {
-    contents: MarkdownString[];
+    contents: MarkdownStringDTO[];
     range?: Range;
 }
 
@@ -596,7 +591,7 @@ export enum CommentMode {
 
 export interface Comment {
     readonly uniqueIdInThread: number;
-    readonly body: MarkdownString;
+    readonly body: MarkdownStringDTO;
     readonly userName: string;
     readonly userIconPath?: string;
     readonly contextValue?: string;
