@@ -473,7 +473,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         return modifiedScopes;
     }
 
-    protected getValue(): ValueType {
+    // Many preferences allow `null` and even use it as a default regardless of the declared type.
+    protected getValue(): ValueType | null {
         let currentValue = Preference.getValueInScope(this.inspection, this.scopeTracker.currentScope.scope);
         if (currentValue === undefined) {
             currentValue = this.inspection?.defaultValue;

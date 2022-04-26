@@ -26,7 +26,7 @@ export class PreferenceBooleanInputRenderer extends PreferenceLeafNodeRenderer<b
         this.interactable = interactable;
         interactable.type = 'checkbox';
         interactable.classList.add('theia-input');
-        interactable.defaultChecked = this.getValue();
+        interactable.defaultChecked = Boolean(this.getValue());
         interactable.onchange = this.handleUserInteraction.bind(this);
         parent.appendChild(interactable);
     }
@@ -46,7 +46,7 @@ export class PreferenceBooleanInputRenderer extends PreferenceLeafNodeRenderer<b
     protected doHandleValueChange(): void {
         const currentValue = this.interactable.checked;
         this.updateInspection();
-        const newValue = this.getValue();
+        const newValue = Boolean(this.getValue());
         this.updateModificationStatus(newValue);
         if (newValue !== currentValue && document.activeElement !== this.interactable) {
             this.interactable.checked = newValue;
