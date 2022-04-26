@@ -101,10 +101,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     override onStart(app: FrontendApplication): void {
         this.handleTitleBarStyling(app);
         if (isOSX) {
-            // OSX: Recreate the menus when changing windows.
-            // OSX only has one menu bar for all windows, so we need to swap
-            // between them as the user switches windows.
-            electronRemote.getCurrentWindow().on('focus', () => this.setMenu(app));
+            this.attachWindowFocusListener(app);
         }
         // Make sure the application menu is complete, once the frontend application is ready.
         // https://github.com/theia-ide/theia/issues/5100
@@ -123,6 +120,16 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.shell.bottomPanel.onDidToggleMaximized(() => {
             this.handleToggleMaximized();
         });
+    }
+
+    protected attachWindowFocusListener(app: FrontendApplication): void {
+        // OSX: Recreate the menus when changing windows.
+        // OSX only has one menu bar for all windows, so we need to swap
+        // between them as the user switches windows.
+        const targetWindow = electronRemote.getCurrentWindow();
+        const callback = () => this.setMenu(app);
+        targetWindow.on('focus', callback);
+        window.addEventListener('unload', () => targetWindow.off('focus', callback));
     }
 
     handleTitleBarStyling(app: FrontendApplication): void {
