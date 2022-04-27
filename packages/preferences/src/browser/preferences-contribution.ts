@@ -27,7 +27,7 @@ import {
     PreferenceService,
     QuickInputService,
     QuickPickItem,
-    isFirefox
+    isFirefox,
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';

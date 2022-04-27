@@ -57,7 +57,7 @@ export class ToolbarCommandQuickInputService {
         });
     }
 
-    protected openColumnQP(): Promise<QuickPickItem> {
+    protected openColumnQP(): Promise<QuickPickItem | undefined> {
         return this.quickInputService.showQuickPick(this.columnQuickPickItems, {
             placeholder: nls.localize('theia/toolbar/toolbarLocationPlaceholder', 'Where would you like the command added?')
         });
@@ -74,7 +74,7 @@ export class ToolbarCommandQuickInputService {
                     const iconDialog = this.iconDialogFactory(command);
                     const iconClass = await iconDialog.open();
                     if (iconClass) {
-                        const { id } = await this.openColumnQP();
+                        const { id } = await this.openColumnQP() ?? {};
                         if (ToolbarAlignmentString.is(id)) {
                             this.model.addItem({ ...command, iconClass }, id);
                         }

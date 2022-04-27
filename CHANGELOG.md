@@ -45,6 +45,7 @@ The following methods may now return `undefined | null` ([#10999](https://github
 - [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
 - [markers, scm] deprecated `ProblemDecorator` and `SCMNavigatorDecorator` classes. They are no longer bound in the `inversify` container by default. [#10846](https://github.com/eclipse-theia/theia/pull/10846)
 - [callhierarchy] types `Definition`, `Caller` and `Callee` removed and replaced with `CallHierarchyItem`, `CallHierarchyIncomingCall`, `CallHierarchyOutgoingCall`
+- [core] changed return type of `QuickInputService.showQuickPick` and its implementation in `MonacoQuickInputService` to `Promise<T | undefined>`. `undefined` will be returned if the user closes the quick pick without making a selection.
 
 ## v1.24.0 - 3/31/2022
 
