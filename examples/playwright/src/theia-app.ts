@@ -24,6 +24,16 @@ import { TheiaStatusBar } from './theia-status-bar';
 import { TheiaView } from './theia-view';
 import { TheiaWorkspace } from './theia-workspace';
 
+export interface TheiaAppData {
+    loadingSelector: string;
+    shellSelector: string;
+};
+
+export const DefaultTheiaAppData: TheiaAppData = {
+    loadingSelector: '.theia-preload',
+    shellSelector: '.theia-ApplicationShell'
+};
+
 export class TheiaApp {
 
     readonly statusBar = new TheiaStatusBar(this);
@@ -31,20 +41,33 @@ export class TheiaApp {
     readonly menuBar = new TheiaMenuBar(this);
     public workspace: TheiaWorkspace;
 
-    public static async load(page: Page, initialWorkspace?: TheiaWorkspace): Promise<TheiaApp> {
-        const app = new TheiaApp(page, initialWorkspace);
-        await TheiaApp.loadOrReload(page, '/#' + app.workspace.urlEncodedPath);
-        await page.waitForSelector('.theia-preload', { state: 'detached' });
-        await page.waitForSelector('.theia-ApplicationShell');
-        await app.waitForInitialized();
-        return Promise.resolve(app);
+    static async load(page: Page, initialWorkspace?: TheiaWorkspace): Promise<TheiaApp> {
+        return this.loadApp(page, TheiaApp, initialWorkspace);
     }
 
-    protected static async loadOrReload(page: Page, url: string): Promise<void> {
+    static async loadApp<T extends TheiaApp>(page: Page, appFactory: { new(page: Page, initialWorkspace?: TheiaWorkspace): T }, initialWorkspace?: TheiaWorkspace): Promise<T> {
+        const app = new appFactory(page, initialWorkspace);
+        await app.load();
+        return app;
+    }
+
+    public constructor(public page: Page, initialWorkspace?: TheiaWorkspace, protected appData = DefaultTheiaAppData) {
+        this.workspace = initialWorkspace ? initialWorkspace : new TheiaWorkspace();
+        this.workspace.initialize();
+    }
+
+    protected async load(): Promise<void> {
+        await this.loadOrReload(this.page, '/#' + this.workspace.urlEncodedPath);
+        await this.page.waitForSelector(this.appData.loadingSelector, { state: 'detached' });
+        await this.page.waitForSelector(this.appData.shellSelector);
+        await this.waitForInitialized();
+    }
+
+    protected async loadOrReload(page: Page, url: string): Promise<void> {
         if (page.url() === url) {
             await page.reload();
         } else {
-            const wasLoadedAlready = await page.isVisible('.theia-ApplicationShell');
+            const wasLoadedAlready = await page.isVisible(this.appData.shellSelector);
             await page.goto(url);
             if (wasLoadedAlready) {
                 // Theia doesn't refresh on URL change only
@@ -52,11 +75,6 @@ export class TheiaApp {
                 await page.reload();
             }
         }
-    }
-
-    protected constructor(public page: Page, initialWorkspace?: TheiaWorkspace) {
-        this.workspace = initialWorkspace ? initialWorkspace : new TheiaWorkspace();
-        this.workspace.initialize();
     }
 
     async isMainContentPanelVisible(): Promise<boolean> {
