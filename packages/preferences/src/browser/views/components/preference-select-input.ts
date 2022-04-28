@@ -23,6 +23,7 @@ import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
+import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 
 @injectable()
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
@@ -38,7 +39,9 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         const values = this.enumValues;
         const defaultValue = this.preferenceNode.preference.data.default;
         for (let i = 0; i < values.length; i++) {
-            const value = `${values[i]}`;
+            const value = values[i];
+            const stringValue = `${value}`;
+            const label = escapeInvisibleChars(stringValue);
             const detail = PreferenceProvider.deepEqual(defaultValue, value) ? 'default' : undefined;
             let enumDescription = this.preferenceNode.preference.data.enumDescriptions?.[i];
             let markdown = false;
@@ -48,7 +51,8 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
                 markdown = true;
             }
             items.push({
-                value,
+                label,
+                value: stringValue,
                 detail,
                 description: enumDescription,
                 markdown
