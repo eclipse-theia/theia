@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import React = require('react');
+import * as React from 'react';
 import { injectable } from 'inversify';
-import { KeybindingRenderingItem } from '../watermark';
+import { RenderableKeybindingStringSegment } from './keybinding-util';
 
 export interface KeybindingProps {
-    keybinding: KeybindingRenderingItem;
+    segments: RenderableKeybindingStringSegment[];
 }
 
 /**
@@ -29,11 +29,7 @@ export interface KeybindingProps {
 export class KeybindingSegmentsWidget extends React.Component<KeybindingProps> {
 
     override render(): React.ReactNode {
-        if (!this.props.keybinding.keybinding) {
-            return undefined;
-        }
-
-        return this.props.keybinding.keySegments.map((segment, index) => {
+        return this.props.segments.map((segment, index) => {
             if (segment.key) {
                 return <span key={index} className='monaco-keybinding-key'>
                     <span>{segment.value}</span>

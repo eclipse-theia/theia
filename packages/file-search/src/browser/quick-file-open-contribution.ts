@@ -68,7 +68,6 @@ export class QuickFileOpenFrontendContribution implements QuickAccessContributio
     }
 
     registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
-        // 'Open File...' command should be visible in the watermark widget
         registry.registerWatermarkCommand(quickFileOpen.id, {
             rank: 1,
             isVisible: () => this.workspaceService.tryGetRoots().length > 0

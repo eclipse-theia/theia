@@ -28,9 +28,7 @@ export interface KeybindingRenderingItem {
     command: Command
     keybinding: ScopedKeybinding
     keySegments: RenderableKeybindingStringSegment[]
-
     commandLabel: string;
-
 }
 
 @injectable()
@@ -115,7 +113,7 @@ export class WatermarkWidget extends ReactWidget {
                 {item.commandLabel}
             </td>
             <td title={item.keybinding.keybinding} className='watermark-keybinding monaco-keybinding'>
-                {<KeybindingSegmentsWidget keybinding={item} />}
+                {<KeybindingSegmentsWidget segments={item.keySegments} />}
             </td>
         </tr>;
     }

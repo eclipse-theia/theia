@@ -25,7 +25,6 @@ export interface WatermarkCommandOptions {
     /**
      * Test whether the watermark command should be shown
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isVisible?(): boolean;
 }
 

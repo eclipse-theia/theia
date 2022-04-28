@@ -131,7 +131,6 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     }
 
     registerWatermarkCommands(registry: WatermarkCommandRegistry): void {
-        // 'Find in Files' should be shown in the watermark widget
         registry.registerWatermarkCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id, {
             rank: 2,
             isVisible: () => this.workspaceService.tryGetRoots().length > 0
