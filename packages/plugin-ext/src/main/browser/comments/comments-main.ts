@@ -124,10 +124,23 @@ export class CommentThreadImpl implements CommentThread, Disposable {
     private readonly onDidChangeCollapsibleStateEmitter = new Emitter<CommentThreadCollapsibleState | undefined>();
     readonly onDidChangeCollapsibleState = this.onDidChangeCollapsibleStateEmitter.event;
 
+    private readonly onDidChangeCanReplyEmitter = new Emitter<boolean>();
+    readonly onDidChangeCanReply = this.onDidChangeCanReplyEmitter.event;
+
     private _isDisposed: boolean;
 
     get isDisposed(): boolean {
         return this._isDisposed;
+    }
+
+    private _canReply: boolean = true;
+    get canReply(): boolean {
+        return this._canReply;
+    }
+
+    set canReply(canReply: boolean) {
+        this._canReply = canReply;
+        this.onDidChangeCanReplyEmitter.fire(this._canReply);
     }
 
     constructor(
@@ -150,6 +163,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         if (modified('contextValue')) { this._contextValue = changes.contextValue; }
         if (modified('comments')) { this._comments = changes.comments; }
         if (modified('collapseState')) { this._collapsibleState = changes.collapseState; }
+        if (modified('canReply')) { this._canReply = changes.canReply!; }
     }
 
     dispose(): void {
@@ -159,6 +173,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         this.onDidChangeInputEmitter.dispose();
         this.onDidChangeLabelEmitter.dispose();
         this.onDidChangeRangeEmitter.dispose();
+        this.onDidChangeCanReplyEmitter.dispose();
     }
 }
 

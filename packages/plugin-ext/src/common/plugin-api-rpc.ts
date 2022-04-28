@@ -1791,6 +1791,7 @@ export type CommentThreadChanges = Partial<{
     contextValue: string,
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
+    canReply: boolean;
 }>;
 
 export interface CommentsMain {
