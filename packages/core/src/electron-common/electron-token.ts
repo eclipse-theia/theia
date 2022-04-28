@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 /**
- * This token is unique the the current running instance. It is used by the backend
+ * This token is unique to the current running instance. It is used by the backend
  * to make sure it is an electron browser window that is connecting to its services.
  *
- * The identifier is a string, which makes it usable as a key for cookies or similar.
+ * The identifier is a string, which makes it usable as a key for cookies, environments, etc.
  */
-export const ElectronSecurityToken = 'x-theia-electron-token';
+// Note that it needs to be uppercase for it to work properly in Windows environments.
+export const ElectronSecurityToken: string = 'THEIA_ELECTRON_TOKEN';
 export interface ElectronSecurityToken {
     value: string;
 };
