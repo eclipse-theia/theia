@@ -73,6 +73,20 @@ export class NoneIconTheme implements IconTheme, LabelProviderContribution {
 }
 
 @injectable()
+export class TheiaFileIconTheme implements IconTheme {
+
+    readonly id = 'theia-file-icons';
+    readonly label = 'File Icons (Theia)';
+    readonly hasFileIcons = true;
+    readonly hasFolderIcons = true;
+
+    activate(): Disposable {
+        return Disposable.NULL;
+    }
+
+}
+
+@injectable()
 export class IconThemeService {
     protected static STORAGE_KEY = 'iconTheme';
 
@@ -92,6 +106,9 @@ export class IconThemeService {
 
     @inject(NoneIconTheme)
     protected readonly noneIconTheme: NoneIconTheme;
+
+    @inject(TheiaFileIconTheme)
+    protected readonly theiaFileIconTheme: TheiaFileIconTheme;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
@@ -169,7 +186,7 @@ export class IconThemeService {
     }
 
     get fallback(): IconTheme {
-        return this.noneIconTheme;
+        return this.theiaFileIconTheme;
     }
 
     protected load(): string | undefined {

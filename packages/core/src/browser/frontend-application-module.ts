@@ -81,7 +81,7 @@ import { bindResourceProvider, bindMessageService, bindPreferenceService } from 
 import { ColorRegistry } from './color-registry';
 import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
 import { ExternalUriService } from './external-uri-service';
-import { IconThemeService, NoneIconTheme } from './icon-theme-service';
+import { IconThemeService, NoneIconTheme, TheiaFileIconTheme } from './icon-theme-service';
 import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution';
 import { TreeLabelProvider } from './tree/tree-label-provider';
 import { ProgressBar } from './progress-bar';
@@ -129,6 +129,7 @@ ColorApplicationContribution.initBackground();
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NoneIconTheme).toSelf().inSingletonScope();
+    bind(TheiaFileIconTheme).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(NoneIconTheme);
     bind(IconThemeService).toSelf().inSingletonScope();
     bindContributionProvider(bind, IconThemeContribution);

@@ -17,9 +17,8 @@
 import { injectable, inject, named } from 'inversify';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ContributionProvider } from '../common/contribution-provider';
-import { IconThemeService, IconTheme } from './icon-theme-service';
+import { IconThemeService, TheiaFileIconTheme } from './icon-theme-service';
 import { MaybePromise } from '../common/types';
-import { Disposable } from '../common/disposable';
 
 export const IconThemeContribution = Symbol('IconThemeContribution');
 export interface IconThemeContribution {
@@ -44,20 +43,13 @@ export class IconThemeApplicationContribution implements FrontendApplicationCont
 }
 
 @injectable()
-export class DefaultFileIconThemeContribution implements IconTheme, IconThemeContribution {
+export class DefaultFileIconThemeContribution implements IconThemeContribution {
 
-    readonly id = 'theia-file-icons';
-    readonly label = 'File Icons (Theia)';
-    readonly hasFileIcons = true;
-    readonly hasFolderIcons = true;
+    @inject(TheiaFileIconTheme)
+    protected readonly theiaFileIconTheme: TheiaFileIconTheme;
 
     registerIconThemes(iconThemes: IconThemeService): MaybePromise<void> {
-        iconThemes.register(this);
-    }
-
-    /* rely on behaviour before for backward-compatibility */
-    activate(): Disposable {
-        return Disposable.NULL;
+        iconThemes.register(this.theiaFileIconTheme);
     }
 
 }
