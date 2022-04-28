@@ -6,17 +6,55 @@
 
 ## v1.25.0 - 4/28/2022
 
-[1.25.0 Milestone](https://github.com/eclipse-theia/theia/milestone/33)
+[1.25.0 Milestone](https://github.com/eclipse-theia/theia/milestone/35)
 
-- [core] Move code for untitled resources into `core` from `plugin-ext` and allow users to open untitled editors with `New File` command. [#10868](https://github.com/eclipse-theia/theia/pull/10868)
-- [plugin] added support for `SnippetString.appendChoice` [#10969](https://github.com/eclipse-theia/theia/pull/10969) - Contributed on behalf of STMicroelectronics
-- [plugin] added support for `AccessibilityInformation` [#10961](https://github.com/eclipse-theia/theia/pull/10961) - Contributed on behalf of STMicroelectronics
+- [callhierarchy] added handling to cache instances of `callhierarchy` providers [#10857](https://github.com/eclipse-theia/theia/pull/10857)
+- [core] added `property-view` API documentation [#11022](https://github.com/eclipse-theia/theia/pull/11022)
+- [core] added `selection-service` APIdocumentation [#11022](https://github.com/eclipse-theia/theia/pull/11022)
+- [core] added additional statusbar theming colors [#11026](https://github.com/eclipse-theia/theia/pull/11026)
+- [core] added better support for conversion between windows and posix paths [#10591](https://github.com/eclipse-theia/theia/pull/10591)
+- [core] added handling to guarantee `showQuickPick` resolves on hide [#11068](https://github.com/eclipse-theia/theia/pull/11068)
+- [core] added support for a custom select component [#10991](https://github.com/eclipse-theia/theia/pull/10991)
+- [core] added support for decorations in file-based tree-views [#10846](https://github.com/eclipse-theia/theia/pull/10846)
+- [core] fixed an issue with `Disposable.NULL` [#11053](https://github.com/eclipse-theia/theia/pull/11053)
+- [core] fixed issue when attempting to perform `save as` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
+- [core] fixed issue with the electron token on Windows [#11082](https://github.com/eclipse-theia/theia/pull/11082)
+- [core] fixed localization issue resulting in incorrect casing after translating [#11042](https://github.com/eclipse-theia/theia/pull/11042)
+- [core] fixed styling issues related to quick-input styling [#11029](https://github.com/eclipse-theia/theia/pull/11029)
+- [core] improved display and styling of tabbars [#10908](https://github.com/eclipse-theia/theia/pull/10908)
+- [core] moved code for untitled resources into `core` from `plugin-ext` and allow users to open untitled editors with `New File` command [#10868](https://github.com/eclipse-theia/theia/pull/10868)
+- [core] removed window focus listener on `unload` [#11075](https://github.com/eclipse-theia/theia/pull/11075)
+- [git] upgraded `moment` to resolve vulnerability [#11009](https://github.com/eclipse-theia/theia/pull/11009)
+- [monaco] fixed issue related to `selection` in monaco editors [#11049](https://github.com/eclipse-theia/theia/pull/11049)
+- [monaco] improved quick-pick attachment [#11054](https://github.com/eclipse-theia/theia/pull/11054)
+- [monaco] restored `detail` to `EditorMouseEvent` to fix `CommentThread` issue [#11065](https://github.com/eclipse-theia/theia/pull/11065)
+- [playwright] added handling to improve extensibility for custom theia applications [#11071](https://github.com/eclipse-theia/theia/pull/11071)
+- [playwright] fixed an issue with publishing the `lib` folder [#11014](https://github.com/eclipse-theia/theia/pull/11014)
+- [plugin] added `CancellationToken` logic for `withProgress` API [#11027](https://github.com/eclipse-theia/theia/pull/11027)
+- [plugin] added `canReply` support to `CommentThread` [#11062](https://github.com/eclipse-theia/theia/pull/11062) - Contributed on behalf of STMicroelectronics
 - [plugin] added missing properties `id`, `name` and `backgroundColor` to `StatusBarItem` [#11026](https://github.com/eclipse-theia/theia/pull/11026) - Contributed on behalf of STMicroelectronics
-- [plugin] Add `canReply` to `CommentThread` [#11062](https://github.com/eclipse-theia/theia/pull/11062) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for `AccessibilityInformation` [#10961](https://github.com/eclipse-theia/theia/pull/10961) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for `Accessibility` VS Code API [#10961](https://github.com/eclipse-theia/theia/pull/10961)
+- [plugin] added support for `ShellQuotedStrings` in Tasks API [#10997](https://github.com/eclipse-theia/theia/pull/10997)
+- [plugin] added support for `SnippetString.appendChoice` [#10969](https://github.com/eclipse-theia/theia/pull/10969) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for `keepScrollPosition` in `QuickPick` [#11002](https://github.com/eclipse-theia/theia/pull/11002)
+- [plugin] added support for the generic type in `CodeActionProvider` [#10988](https://github.com/eclipse-theia/theia/pull/10988)
+- [plugin] aligned signatures of `showQuickPick` with the VS Code API [#10974](https://github.com/eclipse-theia/theia/pull/10974)
+- [plugin] fixed an issue with `onDidTerminateDebugSession` [#10954](https://github.com/eclipse-theia/theia/pull/10954)
+- [plugin] fixed localization issue affecting preferences rendering [#11039](https://github.com/eclipse-theia/theia/pull/11039)
+- [plugin] fixed multi-step quick-open menus [#11055](https://github.com/eclipse-theia/theia/pull/11055)
+- [preferences] fixed issue with `files.eol` preference rendering [#11079](https://github.com/eclipse-theia/theia/pull/11079)
+- [preferences] improved preference validation warnings [#11025](https://github.com/eclipse-theia/theia/pull/11025)
+- [preferences] updated handling to make node renderers more robust against `null` values [#11074](https://github.com/eclipse-theia/theia/pull/11074)
+- [workspace] fixed issue resulting in duplicate entries for recent workspaces [#11016]
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
-- [debug] 
-The following methods may now return `undefined | null` ([#10999](https://github.com/eclipse-theia/theia/pull/10999)):
+
+- [callhierarchy] types `Definition`, `Caller` and `Callee` removed and replaced with `CallHierarchyItem`, `CallHierarchyIncomingCall`, `CallHierarchyOutgoingCall` [#10857](https://github.com/eclipse-theia/theia/pull/10857)
+- [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
+- [core] changed return type of `QuickInputService.showQuickPick` and its implementation in `MonacoQuickInputService` to `Promise<T | undefined>`. `undefined` will be returned if the user closes the quick pick without making a selection [#11068](https://github.com/eclipse-theia/theia/pull/11068)
+- [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
+- [debug] the following methods may now return `undefined | null` [#10999](https://github.com/eclipse-theia/theia/pull/10999):
   - DebugSessionManager
     - resolveConfiguration
     - resolveDebugConfiguration
@@ -41,12 +79,7 @@ The following methods may now return `undefined | null` ([#10999](https://github
   - PluginDebugService
     - resolveDebugConfiguration
     - resolveDebugConfigurationWithSubstitutedVariables
-
-- [core] changed return type of `(Async)LocalizationProvider#getAvailableLanguages` from `string[]` to `LanguageInfo[]` [#11018](https://github.com/eclipse-theia/theia/pull/11018)
-- [core] changed return type of `Saveable.createSnapshot` from `object` to `{ value: string } | { read(): string | null }` [#11032](https://github.com/eclipse-theia/theia/pull/11032)
-- [markers, scm] deprecated `ProblemDecorator` and `SCMNavigatorDecorator` classes. They are no longer bound in the `inversify` container by default. [#10846](https://github.com/eclipse-theia/theia/pull/10846)
-- [callhierarchy] types `Definition`, `Caller` and `Callee` removed and replaced with `CallHierarchyItem`, `CallHierarchyIncomingCall`, `CallHierarchyOutgoingCall`
-- [core] changed return type of `QuickInputService.showQuickPick` and its implementation in `MonacoQuickInputService` to `Promise<T | undefined>`. `undefined` will be returned if the user closes the quick pick without making a selection.
+- [markers, scm] deprecated `ProblemDecorator` and `SCMNavigatorDecorator` classes. They are no longer bound in the `inversify` container by default [#10846](https://github.com/eclipse-theia/theia/pull/10846)
 
 ## v1.24.0 - 3/31/2022
 
