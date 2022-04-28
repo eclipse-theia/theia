@@ -76,6 +76,7 @@
     "test": "yarn -s test:theia && yarn -s electron test && yarn -s browser test",
     "test:theia": "lerna run --scope \"@theia/!(example-)*\" test --stream --concurrency=1",
     "test:playwright": "concurrently --success first -c gray,blue -k -n theia,playwright \"yarn -s --cwd examples/playwright theia:start\" \"yarn -s --cwd examples/playwright ui-tests-ci\"",
+    "version": "lerna run version",
     "watch": "concurrently --kill-others -n tsc,browser,electron -c red,yellow,blue \"tsc -b -w --preserveWatchOutput\" \"yarn -s --cwd examples/browser watch:bundle\" \"yarn -s --cwd examples/electron watch:bundle\"",
     "watch:compile": "concurrently --kill-others -n cleanup,tsc -c magenta,red \"ts-clean dev-packages/* packages/* -w\" \"tsc -b -w --preserveWatchOutput\"",
     "performance:startup": "yarn -s performance:startup:browser && yarn -s performance:startup:electron",
