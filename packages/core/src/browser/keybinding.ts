@@ -314,9 +314,9 @@ export class KeybindingRegistry {
      * @param keybinding the keybinding
      * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
      */
-    acceleratorFor(keybinding: common.Keybinding, separator: string = ' '): string[] {
+    acceleratorFor(keybinding: common.Keybinding, separator: string = ' ', asciiOnly = false): string[] {
         const bindingKeySequence = this.resolveKeybinding(keybinding);
-        return this.acceleratorForSequence(bindingKeySequence, separator);
+        return this.acceleratorForSequence(bindingKeySequence, separator, asciiOnly);
     }
 
     /**
@@ -325,8 +325,8 @@ export class KeybindingRegistry {
      * @param keySequence the keysequence
      * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
      */
-    acceleratorForSequence(keySequence: KeySequence, separator: string = ' '): string[] {
-        return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator));
+    acceleratorForSequence(keySequence: KeySequence, separator: string = ' ', asciiOnly = false): string[] {
+        return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator, asciiOnly));
     }
 
     /**

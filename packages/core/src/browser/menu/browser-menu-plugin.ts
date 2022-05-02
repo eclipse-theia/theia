@@ -479,7 +479,7 @@ export class MenuCommandRegistry extends PhosphorCommandRegistry {
         // Only consider the first keybinding.
         if (bindings.length) {
             const binding = bindings[0];
-            const keys = keybindingRegistry.acceleratorFor(binding);
+            const keys = keybindingRegistry.acceleratorFor(binding, ' ', true);
             this.addKeyBinding({
                 command: id,
                 keys,
