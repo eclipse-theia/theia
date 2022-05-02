@@ -31,13 +31,17 @@ describe('Monaco API', async function () {
     const { StandaloneServices } = require('@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
     const { KeyCode } = require('@theia/monaco-editor-core/esm/vs/base/common/keyCodes');
     const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
+    const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
     const { Uri } = require('@theia/monaco-editor-core');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const textmateService = container.get(MonacoTextmateService);
+    /** @type {import('@theia/core/src/common/command').CommandRegistry} */
     const commands = container.get(CommandRegistry);
+    /** @type {import('@theia/monaco/src/browser/monaco-context-key-service').MonacoContextKeyService} */
+    const contextKeys = container.get(MonacoContextKeyService);
 
     /** @type {MonacoEditor} */
     let monacoEditor;
@@ -168,6 +172,17 @@ describe('Monaco API', async function () {
         } finally {
             unregisterCommand.dispose();
         }
+    });
+
+    it('Supports setting contexts using the command registry', async () => {
+        const setContext = 'setContext';
+        const key = 'monaco-api-test-context';
+        const firstValue = 'first setting';
+        const secondValue = 'second setting';
+        await commands.executeCommand(setContext, key, firstValue);
+        assert.isTrue(contextKeys.match(`${key} == ${firstValue}`));
+        await commands.executeCommand(setContext, key, secondValue);
+        assert.isTrue(contextKeys.match(`${key} == ${secondValue}`));
     });
 
 });
