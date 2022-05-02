@@ -71,7 +71,7 @@ export class HostedPluginSupport {
         }
     }
 
-    onMessage(pluginHostId: string, message: string): void {
+    onMessage(pluginHostId: string, message: ArrayBuffer): void {
         // need to perform routing
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (this.pluginRunners.length > 0) {

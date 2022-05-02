@@ -13,16 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { Disposable } from '../disposable';
 import { Emitter, Event } from '../event';
 import { getUintType, UintType, ReadBuffer, WriteBuffer } from './message-buffer';
 
-export class ArrayBufferWriteBuffer implements WriteBuffer {
+export class ArrayBufferWriteBuffer implements WriteBuffer, Disposable {
+
     constructor(private buffer: ArrayBuffer = new ArrayBuffer(1024), private offset: number = 0) {
     }
 
     private get msg(): DataView {
         return new DataView(this.buffer);
     }
+
+    protected isDisposed = false;
 
     ensureCapacity(value: number): WriteBuffer {
         let newLength = this.buffer.byteLength;
@@ -97,12 +101,22 @@ export class ArrayBufferWriteBuffer implements WriteBuffer {
     }
 
     commit(): void {
+        if (this.isDisposed) {
+            throw new Error('Error during commit. The Writebuffer is already disposed')
+        }
         this.onCommitEmitter.fire(this.getCurrentContents());
+        this.dispose();
     }
 
     getCurrentContents(): ArrayBuffer {
         return this.buffer.slice(0, this.offset);
+    }
 
+    dispose(): void {
+        if (!this.isDisposed) {
+            this.onCommitEmitter.dispose();
+            this.isDisposed = true;
+        }
     }
 }
 

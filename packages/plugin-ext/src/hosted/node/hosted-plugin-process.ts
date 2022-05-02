@@ -14,16 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as cp from 'child_process';
-import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
-import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
-import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
-import { MessageType } from '../../common/rpc-protocol';
-import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import * as psTree from 'ps-tree';
+import { ConnectionErrorHandler, ContributionProvider, ILogger, MessageService } from '@theia/core/lib/common';
+import { toArrayBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import * as cp from 'child_process';
+import * as psTree from 'ps-tree';
+import { Readable, Writable } from 'stream';
+import { DeployedPlugin, HostedPluginClient, PluginHostEnvironmentVariable, PLUGIN_HOST_BACKEND, ServerPluginRunner } from '../../common/plugin-protocol';
+import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
+import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
+import { configureCachedReceive, encodeMessageStart } from './cached-process-messaging';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -82,14 +85,17 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public acceptMessage(pluginHostId: string, message: string): boolean {
+    public acceptMessage(pluginHostId: string, message: ArrayBuffer): boolean {
         return pluginHostId === 'main';
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public onMessage(pluginHostId: string, jsonMessage: string): void {
+    public onMessage(pluginHostId: string, message: ArrayBuffer): void {
         if (this.childProcess) {
-            this.childProcess.send(jsonMessage);
+            const messageStart = encodeMessageStart(message);
+            const pipe = this.childProcess.stdio[4] as Writable;
+            pipe.write(messageStart);
+            pipe.write(new Uint8Array(message));
         }
     }
 
@@ -106,12 +112,12 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const waitForTerminated = new Deferred<void>();
         cp.on('message', message => {
             const msg = JSON.parse(message);
-            if ('type' in msg && msg.type === MessageType.Terminated) {
+            if (ProcessTerminatedMessage.is(msg)) {
                 waitForTerminated.resolve();
             }
         });
         const stopTimeout = this.cli.pluginHostStopTimeout;
-        cp.send(JSON.stringify({ type: MessageType.Terminate, stopTimeout }));
+        cp.send(JSON.stringify({ type: ProcessTerminateMessage.TYPE, stopTimeout }));
 
         const terminateTimeout = this.cli.pluginHostTerminateTimeout;
         if (terminateTimeout) {
@@ -156,9 +162,10 @@ export class HostedPluginProcess implements ServerPluginRunner {
             logger: this.logger,
             args: []
         });
-        this.childProcess.on('message', message => {
+
+        configureCachedReceive(this.childProcess.stdio[4] as Readable, buffer => {
             if (this.client) {
-                this.client.postMessage(PLUGIN_HOST_BACKEND, message);
+                this.client.postMessage(PLUGIN_HOST_BACKEND, toArrayBuffer(buffer));
             }
         });
     }
@@ -184,7 +191,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             silent: true,
             env: env,
             execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe']
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));

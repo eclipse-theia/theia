@@ -21,6 +21,7 @@ import { Channel, MessageProvider } from './channel';
 import { ReadBuffer } from './message-buffer';
 import { RpcMessage, RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
 import { CancellationToken, CancellationTokenSource } from '../../../shared/vscode-languageserver-protocol';
+import { Disposable } from '../disposable';
 
 /**
  * Handles request messages received by the {@link RpcServer}.
@@ -104,11 +105,18 @@ export class RpcServer {
             const result = await this.requestHandler(method, args);
             this.cancellationTokenSources.delete(id);
             this.encoder.replyOK(output, id, result);
+            output.commit();
         } catch (err) {
+            // In case of an error the output write buffer might already contain a partially written message.
+            // So we dispose the output buffer and create  a new clean write buffer
+            if (Disposable.is(output)) {
+                output.dispose();
+            }
+            const errorOutput = this.channel.getWriteBuffer();
             this.cancellationTokenSources.delete(id);
-            this.encoder.replyErr(output, id, err);
+            this.encoder.replyErr(errorOutput, id, err);
+            errorOutput.commit();
         }
-        output.commit();
     }
 
     protected async handleNotify(id: number, method: string, args: any[]): Promise<void> {

@@ -58,7 +58,7 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
         const sender = event.sender;
         try {
             // Get the multiplexer for a given window id
-            const windowChannelData = this.windowChannelMultiplexer.get(sender.id)!;
+            const windowChannelData = this.windowChannelMultiplexer.get(sender.id);
             if (!windowChannelData) {
                 const mainChannel = this.createWindowMainChannel(sender);
                 const multiPlexer = new ChannelMultiplexer(mainChannel);
@@ -74,7 +74,7 @@ export class ElectronMessagingContribution implements ElectronMainApplicationCon
                 sender.once('destroyed', () => multiPlexer.closeUnderlyingChannel({ reason: 'Window was closed' })); // When closing the browser window.
                 this.windowChannelMultiplexer.set(sender.id, { channel: mainChannel, multiPlexer });
             }
-            windowChannelData.channel.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));
+            windowChannelData!.channel.onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));
         } catch (error) {
             console.error('IPC: Failed to handle message', { error, data });
         }

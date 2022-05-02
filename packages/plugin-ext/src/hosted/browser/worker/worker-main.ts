@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
@@ -35,6 +34,9 @@ import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
+import { ChannelCloseEvent, MessageProvider } from '@theia/core';
+import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -42,21 +44,31 @@ const ctx = self as any;
 const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
-const emitter = new Emitter<string>();
-const rpc = new RPCProtocolImpl({
-    onMessage: emitter.event,
-    send: (m: string) => {
-        ctx.postMessage(m);
-    },
-},
-{
-    reviver: reviver
-});
+const onCloseEmitter = new Emitter<ChannelCloseEvent>();
+const onErrorEmitter = new Emitter<unknown>();
+const onMessageEmitter = new Emitter<MessageProvider>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {
-    emitter.fire(message.data);
+    onMessageEmitter.fire(() => new ArrayBufferReadBuffer(message.data));
 });
+
+const rpc = new RPCProtocolImpl({
+    close: () => { },
+    getWriteBuffer: () => {
+        const writeBuffer = new ArrayBufferWriteBuffer();
+        writeBuffer.onCommit(buffer => {
+            ctx.postMessage(buffer);
+        });
+        return writeBuffer;
+    },
+    onClose: onCloseEmitter.event,
+    onError: onErrorEmitter.event,
+    onMessage: onMessageEmitter.event
+},
+    {
+        reviver: reviver
+    });
 
 const scripts = new Set<string>();
 

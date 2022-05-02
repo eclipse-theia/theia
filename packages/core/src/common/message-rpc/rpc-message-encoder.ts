@@ -98,13 +98,12 @@ export function transformErrorForSerialization(error: Error): SerializedError {
 
 export enum ObjectType {
     JSON = 1,
-    ArrayBuffer = 2,
-    ByteArray = 3,
+    ARRAY_BUFFER = 2,
+    BYTE_ARRAY = 3,
     UNDEFINED = 4,
-    ObjectArray = 5,
+    OBJECT_ARRAY = 5,
     RESPONSE_ERROR = 6,
     ERROR = 7
-
 }
 
 /**
@@ -158,6 +157,10 @@ export class RpcMessageDecoder {
     protected tagIntType: UintType;
 
     constructor() {
+        this.registerDecoders();
+    }
+
+    protected registerDecoders(): void {
         this.registerDecoder(ObjectType.JSON, {
             read: buf => JSON.parse(buf.readString())
         });
@@ -182,15 +185,15 @@ export class RpcMessageDecoder {
             }
         });
 
-        this.registerDecoder(ObjectType.ByteArray, {
+        this.registerDecoder(ObjectType.BYTE_ARRAY, {
             read: buf => new Uint8Array(buf.readBytes())
         });
 
-        this.registerDecoder(ObjectType.ArrayBuffer, {
+        this.registerDecoder(ObjectType.ARRAY_BUFFER, {
             read: buf => buf.readBytes()
         });
 
-        this.registerDecoder(ObjectType.ObjectArray, {
+        this.registerDecoder(ObjectType.OBJECT_ARRAY, {
             read: buf => {
                 const encodedSeparately = buf.readUint8() === 1;
 
@@ -213,9 +216,10 @@ export class RpcMessageDecoder {
      * by retrieving the highest tag value and calculating the required Uint size to store it.
      * @param tag the tag for which the decoder should be registered.
      * @param decoder the decoder that should be registered.
+     * @param overwrite flag to indicate wether an existing registration with the same tag should be overwritten with the new registration.
      */
-    registerDecoder(tag: number, decoder: ValueDecoder): void {
-        if (this.decoders.has(tag)) {
+    registerDecoder(tag: number, decoder: ValueDecoder, overwrite = false): void {
+        if (!overwrite && this.decoders.has(tag)) {
             throw new Error(`Decoder already registered: ${tag}`);
         }
         this.decoders.set(tag, decoder);
@@ -356,7 +360,7 @@ export class RpcMessageEncoder {
             write: (buf, value) => buf.writeString(JSON.stringify(value))
         });
 
-        this.registerEncoder(ObjectType.ByteArray, {
+        this.registerEncoder(ObjectType.BYTE_ARRAY, {
             is: value => value instanceof Uint8Array,
             write: (buf, value: Uint8Array) => {
                 /* When running in a nodejs context the received Uint8Array might be
@@ -367,22 +371,22 @@ export class RpcMessageEncoder {
             }
         });
 
-        this.registerEncoder(ObjectType.ArrayBuffer, {
+        this.registerEncoder(ObjectType.ARRAY_BUFFER, {
             is: value => value instanceof ArrayBuffer,
             write: (buf, value: ArrayBuffer) => buf.writeBytes(value)
         });
 
-        this.registerEncoder(ObjectType.ObjectArray, {
+        this.registerEncoder(ObjectType.OBJECT_ARRAY, {
             is: value => Array.isArray(value),
             write: (buf, args: any[]) => {
                 const encodeSeparately = this.requiresSeparateEncoding(args);
                 buf.writeUint8(encodeSeparately ? 1 : 0);
                 if (!encodeSeparately) {
-                    this.writeTypedValue(buf, args, ObjectType.ObjectArray);
+                    this.writeTypedValue(buf, args, ObjectType.OBJECT_ARRAY);
                 } else {
                     buf.writeInteger(args.length);
                     for (let i = 0; i < args.length; i++) {
-                        this.writeTypedValue(buf, args[i], ObjectType.ObjectArray);
+                        this.writeTypedValue(buf, args[i], ObjectType.OBJECT_ARRAY);
                     }
                 }
             }
@@ -394,14 +398,20 @@ export class RpcMessageEncoder {
      * After the successful registration the {@link tagIntType} is recomputed
      * by retrieving the highest tag value and calculating the required Uint size to store it.
      * @param tag the tag for which the encoder should be registered.
-     * @param decoder the encoder that should be registered.
+     * @param encoder the encoder that should be registered.
+     * @param overwrite to indicate wether an existing registration with the same tag should be overwritten with the new registration.
      */
-    registerEncoder<T>(tag: number, encoder: ValueEncoder): void {
-        if (this.registeredTags.has(tag)) {
+    registerEncoder<T>(tag: number, encoder: ValueEncoder, overwrite = false): void {
+        if (!overwrite && this.registeredTags.has(tag)) {
             throw new Error(`Tag already registered: ${tag}`);
         }
-        this.registeredTags.add(tag);
-        this.encoders.push([tag, encoder]);
+        if (!overwrite) {
+            this.registeredTags.add(tag);
+            this.encoders.push([tag, encoder]);
+        } else {
+            const overrideIndex = this.encoders.findIndex(existingEncoder => existingEncoder[0] === tag);
+            this.encoders[overrideIndex] = [tag, encoder];
+        }
         const maxTagId = this.encoders.map(value => value[0]).sort().reverse()[0];
         this.tagIntType = getUintType(maxTagId);
     }

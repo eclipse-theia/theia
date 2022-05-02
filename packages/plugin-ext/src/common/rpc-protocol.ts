@@ -22,15 +22,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Emitter, Event } from '@theia/core/lib/common/event';
-import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { Deferred } from '@theia/core/lib/common/promise-util';
-import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { Event } from '@theia/core/lib/common/event';
+import { Channel, ChannelMultiplexer, Disposable, DisposableCollection, ReadBuffer, WriteBuffer } from '@theia/core';
+import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '@theia/core/lib/common/message-rpc/array-buffer-message-buffer';
+import { ObjectType, RpcMessageDecoder, RpcMessageEncoder } from '@theia/core/lib/common/message-rpc/rpc-message-encoder';
 import URI from '@theia/core/lib/common/uri';
-import { CancellationToken, CancellationTokenSource } from '@theia/core/shared/vscode-languageserver-protocol';
-import { Range, Position } from '../plugin/types-impl';
+import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-
+import { Position, Range } from '../plugin/types-impl';
+import { ClientProxyHandler, RpcInvocationHandler, RpcMessageParser } from './proxy-handler';
 export interface MessageConnection {
     send(msg: string): void;
     onMessage: Event<string>;
@@ -77,47 +77,37 @@ export namespace ConnectionClosedError {
 }
 
 export class RPCProtocolImpl implements RPCProtocol {
-
-    private readonly locals = new Map<string, any>();
+    private readonly locals = new Map<string, RpcInvocationHandler>();
     private readonly proxies = new Map<string, any>();
-    private lastMessageId = 0;
-    private readonly cancellationTokenSources = new Map<string, CancellationTokenSource>();
-    private readonly pendingRPCReplies = new Map<string, Deferred<any>>();
-    private readonly multiplexer: RPCMultiplexer;
-
-    private replacer: (key: string | undefined, value: any) => any;
-    private reviver: (key: string | undefined, value: any) => any;
+    private readonly multiplexer: ChannelMultiplexer;
+    private messageParser: RpcMessageParser;
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as no disposed */ })
     );
 
-    constructor(connection: MessageConnection, transformations?: {
+    constructor(channel: Channel, transformations: {
         replacer?: (key: string | undefined, value: any) => any,
         reviver?: (key: string | undefined, value: any) => any
-    }) {
-        this.toDispose.push(
-            this.multiplexer = new RPCMultiplexer(connection)
-        );
-        this.multiplexer.onMessage(msg => this.receiveOneMessage(msg));
-        this.toDispose.push(Disposable.create(() => {
-            this.proxies.clear();
-            for (const reply of this.pendingRPCReplies.values()) {
-                reply.reject(ConnectionClosedError.create());
-            }
-            this.pendingRPCReplies.clear();
-        }));
+    } = {}) {
+        this.multiplexer = new QueuingChannelMultiplexer(channel);
+        this.toDispose.push(Disposable.create(() => this.multiplexer.closeUnderlyingChannel()));
 
-        this.reviver = transformations?.reviver || ObjectsTransferrer.reviver;
-        this.replacer = transformations?.replacer || ObjectsTransferrer.replacer;
-    }
+        const reviver = transformations?.reviver || ObjectsTransferrer.reviver;
+        const replacer = transformations?.replacer || ObjectsTransferrer.replacer;
 
-    private get isDisposed(): boolean {
-        return this.toDispose.disposed;
+        this.messageParser = {
+            encoder: new PluginRpcMessageEncoder(replacer),
+            decoder: new PluginRpcMessageDecoder(reviver)
+        };
     }
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    protected get isDisposed(): boolean {
+        return this.toDispose.disposed;
     }
 
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
@@ -132,190 +122,81 @@ export class RPCProtocolImpl implements RPCProtocol {
         return proxy;
     }
 
+    protected createProxy<T>(proxyId: string): T {
+        const handler = new ClientProxyHandler(proxyId, this.messageParser);
+
+        this.multiplexer.open(proxyId).then(_channel => {
+            handler.listen(_channel);
+        });
+        return new Proxy(Object.create(null), handler);
+    }
+
     set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
         if (this.isDisposed) {
             throw ConnectionClosedError.create();
         }
-        this.locals.set(identifier.id, instance);
-        if (Disposable.is(instance)) {
-            this.toDispose.push(instance);
+        const invocationHandler = this.locals.get(identifier.id);
+        if (!invocationHandler) {
+            const handler = new RpcInvocationHandler(identifier.id, instance, this.messageParser);
+
+            const channel = this.multiplexer.getOpenChannel(identifier.id);
+            if (channel) {
+                handler.listen(channel);
+            } else {
+                const channelOpenListener = this.multiplexer.onDidOpenChannel(event => {
+                    if (event.id === identifier.id) {
+                        handler.listen(event.channel);
+                        channelOpenListener.dispose();
+                    }
+                });
+            }
+
+            this.locals.set(identifier.id, handler);
+            if (Disposable.is(instance)) {
+                this.toDispose.push(instance);
+            }
+            this.toDispose.push(Disposable.create(() => this.locals.delete(identifier.id)));
+
         }
-        this.toDispose.push(Disposable.create(() => this.locals.delete(identifier.id)));
         return instance;
-    }
-
-    private createProxy<T>(proxyId: string): T {
-        const handler = {
-            get: (target: any, name: string) => {
-                if (!target[name] && name.charCodeAt(0) === 36 /* CharCode.DollarSign */) {
-                    target[name] = (...myArgs: any[]) =>
-                        this.remoteCall(proxyId, name, myArgs);
-                }
-                return target[name];
-            }
-        };
-        return new Proxy(Object.create(null), handler);
-    }
-
-    private remoteCall(proxyId: string, methodName: string, args: any[]): Promise<any> {
-        if (this.isDisposed) {
-            return Promise.reject(ConnectionClosedError.create());
-        }
-        const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
-        if (cancellationToken && cancellationToken.isCancellationRequested) {
-            return Promise.reject(canceled());
-        }
-
-        const callId = String(++this.lastMessageId);
-        const result = new Deferred();
-
-        if (cancellationToken) {
-            args.push('add.cancellation.token');
-            cancellationToken.onCancellationRequested(() =>
-                this.multiplexer.send(this.cancel(callId))
-            );
-        }
-
-        this.pendingRPCReplies.set(callId, result);
-        this.multiplexer.send(this.request(callId, proxyId, methodName, args));
-        return result.promise;
-    }
-
-    private receiveOneMessage(rawmsg: string): void {
-        if (this.isDisposed) {
-            return;
-        }
-        try {
-            const msg = <RPCMessage>JSON.parse(rawmsg, this.reviver);
-
-            switch (msg.type) {
-                case MessageType.Request:
-                    this.receiveRequest(msg);
-                    break;
-                case MessageType.Reply:
-                    this.receiveReply(msg);
-                    break;
-                case MessageType.ReplyErr:
-                    this.receiveReplyErr(msg);
-                    break;
-                case MessageType.Cancel:
-                    this.receiveCancel(msg);
-                    break;
-            }
-        } catch (e) {
-            // exception does not show problematic content: log it!
-            console.log('failed to parse message: ' + rawmsg);
-            throw e;
-        }
-
-    }
-
-    private receiveCancel(msg: CancelMessage): void {
-        const cancellationTokenSource = this.cancellationTokenSources.get(msg.id);
-        if (cancellationTokenSource) {
-            cancellationTokenSource.cancel();
-        }
-    }
-
-    private receiveRequest(msg: RequestMessage): void {
-        const callId = msg.id;
-        const proxyId = msg.proxyId;
-        // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
-        const args = msg.args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
-
-        const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
-        if (addToken) {
-            const tokenSource = new CancellationTokenSource();
-            this.cancellationTokenSources.set(callId, tokenSource);
-            args.push(tokenSource.token);
-        }
-        const invocation = this.invokeHandler(proxyId, msg.method, args);
-
-        invocation.then(result => {
-            this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(this.replyOK(callId, result));
-        }, error => {
-            this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(this.replyErr(callId, error));
-        });
-    }
-
-    private receiveReply(msg: ReplyMessage): void {
-        const callId = msg.id;
-        const pendingReply = this.pendingRPCReplies.get(callId);
-        if (!pendingReply) {
-            return;
-        }
-        this.pendingRPCReplies.delete(callId);
-        pendingReply.resolve(msg.res);
-    }
-
-    private receiveReplyErr(msg: ReplyErrMessage): void {
-        const callId = msg.id;
-        const pendingReply = this.pendingRPCReplies.get(callId);
-        if (!pendingReply) {
-            return;
-        }
-        this.pendingRPCReplies.delete(callId);
-
-        let err: Error | undefined = undefined;
-        if (msg.err && msg.err.$isError) {
-            err = new Error();
-            err.name = msg.err.name;
-            err.message = msg.err.message;
-            err.stack = msg.err.stack;
-        }
-        pendingReply.reject(err);
-    }
-
-    private invokeHandler(proxyId: string, methodName: string, args: any[]): Promise<any> {
-        try {
-            return Promise.resolve(this.doInvokeHandler(proxyId, methodName, args));
-        } catch (err) {
-            return Promise.reject(err);
-        }
-    }
-
-    private doInvokeHandler(proxyId: string, methodName: string, args: any[]): any {
-        const actor = this.locals.get(proxyId);
-        if (!actor) {
-            throw new Error('Unknown actor ' + proxyId);
-        }
-        const method = actor[methodName];
-        if (typeof method !== 'function') {
-            throw new Error('Unknown method ' + methodName + ' on actor ' + proxyId);
-        }
-        return method.apply(actor, args);
-    }
-
-    private cancel(req: string): string {
-        return `{"type":${MessageType.Cancel},"id":"${req}"}`;
-    }
-
-    private request(req: string, rpcId: string, method: string, args: any[]): string {
-        return `{"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, this.replacer)}}`;
-    }
-
-    private replyOK(req: string, res: any): string {
-        if (typeof res === 'undefined') {
-            return `{"type":${MessageType.Reply},"id":"${req}"}`;
-        }
-        return `{"type":${MessageType.Reply},"id":"${req}","res":${safeStringify(res, this.replacer)}}`;
-    }
-
-    private replyErr(req: string, err: any): string {
-        err = typeof err === 'string' ? new Error(err) : err;
-        if (err instanceof Error) {
-            return `{"type":${MessageType.ReplyErr},"id":"${req}","err":${safeStringify(transformErrorForSerialization(err))}}`;
-        }
-        return `{"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
     }
 }
 
-function canceled(): Error {
-    const error = new Error('Canceled');
-    error.name = error.message;
-    return error;
+export class PluginRpcMessageEncoder extends RpcMessageEncoder {
+    constructor(protected replacer: (key: string | undefined, value: any) => any) {
+        super();
+    }
+    protected override registerEncoders(): void {
+        super.registerEncoders();
+        // Overwrite default json encoder.
+        this.registerEncoder(ObjectType.JSON, {
+            is: value => true,
+            write: (buf, value) => {
+                const json = JSON.stringify(value, this.replacer);
+                buf.writeString(json);
+            }
+        }, true);
+        // We don't want/need special encoding for `ResponseErrors`. Overwrite with no-op encoder.
+        // The default Error encoder will be used as fallback
+        this.registerEncoder(ObjectType.RESPONSE_ERROR, {
+            is: () => false,
+            write: () => { }
+        }, true);
+    }
+}
+
+export class PluginRpcMessageDecoder extends RpcMessageDecoder {
+
+    constructor(protected reviver: (key: string | undefined, value: any) => any) {
+        super();
+    }
+    protected override registerDecoders(): void {
+        super.registerDecoders();
+        this.registerDecoder(ObjectType.JSON, {
+            read: buf => JSON.parse(buf.readString(), this.reviver)
+        }, true);
+    }
+
 }
 
 /**
@@ -323,61 +204,82 @@ function canceled(): Error {
  *  - multiple messages to be sent from one stack get sent in bulk at `process.nextTick`.
  *  - each incoming message is handled in a separate `process.nextTick`.
  */
-class RPCMultiplexer implements Disposable, MessageConnection {
+export class QueuingChannelMultiplexer extends ChannelMultiplexer {
+    protected messagesToSend: ArrayBuffer[] = [];
+    protected readonly toDispose = new DisposableCollection();
 
-    private readonly connection: MessageConnection;
-    private readonly sendAccumulatedBound: () => void;
-
-    private messagesToSend: string[];
-
-    private readonly messageEmitter = new Emitter<string>();
-    private readonly toDispose = new DisposableCollection();
-
-    constructor(connection: MessageConnection) {
-        this.connection = connection;
-        this.sendAccumulatedBound = this.sendAccumulated.bind(this);
-
+    constructor(underlyingChannel: Channel) {
+        super(underlyingChannel);
         this.toDispose.push(Disposable.create(() => this.messagesToSend = []));
-        this.toDispose.push(this.connection.onMessage((msg: string) => {
-            const messages = JSON.parse(msg);
-            for (const message of messages) {
-                this.messageEmitter.fire(message);
-            }
-        }));
-        this.toDispose.push(this.messageEmitter);
-
-        this.messagesToSend = [];
     }
 
-    dispose(): void {
-        this.toDispose.dispose();
+    protected override getUnderlyingWriteBuffer(): WriteBuffer {
+        const writer = new ArrayBufferWriteBuffer();
+        writer.onCommit(buffer => this.commitSingleMessage(buffer));
+        return writer;
     }
 
-    get onMessage(): Event<string> {
-        return this.messageEmitter.event;
-    }
-
-    private sendAccumulated(): void {
-        const tmp = this.messagesToSend;
-        this.messagesToSend = [];
-        this.connection.send(JSON.stringify(tmp));
-    }
-
-    public send(msg: string): void {
+    protected commitSingleMessage(msg: ArrayBuffer): void {
         if (this.toDispose.disposed) {
             throw ConnectionClosedError.create();
         }
         if (this.messagesToSend.length === 0) {
             if (typeof setImmediate !== 'undefined') {
-                setImmediate(this.sendAccumulatedBound);
+                setImmediate(() => this.sendAccumulated());
             } else {
-                setTimeout(this.sendAccumulatedBound, 0);
+                setTimeout(() => this.sendAccumulated(), 0);
             }
         }
         this.messagesToSend.push(msg);
     }
+
+    protected sendAccumulated(): void {
+        const cachedMessages = this.messagesToSend;
+        this.messagesToSend = [];
+        const writer = this.underlyingChannel.getWriteBuffer();
+
+        if (cachedMessages.length > 0) {
+            writer.writeInteger(cachedMessages.length);
+            cachedMessages.forEach(msg => {
+                writer.writeBytes(msg);
+            });
+
+        }
+        writer.commit();
+    }
+
+    protected override handleMessage(buffer: ReadBuffer): void {
+        // Read in the list of messages and handle each message individually
+        const length = buffer.readInteger();
+        if (length > 0) {
+            for (let index = 0; index < length; index++) {
+                const message = buffer.readBytes();
+                this.handleSingleMessage(new ArrayBufferReadBuffer(message));
+
+            }
+        }
+    }
+
+    protected handleSingleMessage(buffer: ReadBuffer): void {
+        return super.handleMessage(buffer);
+    }
 }
 
+interface SerializedObject {
+    $type: SerializedObjectType;
+    data: string;
+}
+
+enum SerializedObjectType {
+    THEIA_URI,
+    VSCODE_URI,
+    THEIA_RANGE,
+    TEXT_BUFFER
+}
+
+function isSerializedObject(obj: any): obj is SerializedObject {
+    return obj && obj.$type !== undefined && obj.data !== undefined;
+}
 /**
  * These functions are responsible for correct transferring objects via rpc channel.
  *
@@ -457,90 +359,3 @@ export namespace ObjectsTransferrer {
 
 }
 
-interface SerializedObject {
-    $type: SerializedObjectType;
-    data: string;
-}
-
-enum SerializedObjectType {
-    THEIA_URI,
-    VSCODE_URI,
-    THEIA_RANGE,
-    TEXT_BUFFER
-}
-
-function isSerializedObject(obj: any): obj is SerializedObject {
-    return obj && obj.$type !== undefined && obj.data !== undefined;
-}
-
-export const enum MessageType {
-    Request = 1,
-    Reply = 2,
-    ReplyErr = 3,
-    Cancel = 4,
-    Terminate = 5,
-    Terminated = 6
-}
-
-class CancelMessage {
-    type: MessageType.Cancel;
-    id: string;
-}
-
-class RequestMessage {
-    type: MessageType.Request;
-    id: string;
-    proxyId: string;
-    method: string;
-    args: any[];
-}
-
-class ReplyMessage {
-    type: MessageType.Reply;
-    id: string;
-    res: any;
-}
-
-class ReplyErrMessage {
-    type: MessageType.ReplyErr;
-    id: string;
-    err: SerializedError;
-}
-
-type RPCMessage = RequestMessage | ReplyMessage | ReplyErrMessage | CancelMessage;
-
-export interface SerializedError {
-    readonly $isError: true;
-    readonly name: string;
-    readonly message: string;
-    readonly stack: string;
-}
-
-export function transformErrorForSerialization(error: Error): SerializedError {
-    if (error instanceof Error) {
-        const { name, message } = error;
-        const stack: string = (<any>error).stacktrace || error.stack;
-        return {
-            $isError: true,
-            name,
-            message,
-            stack
-        };
-    }
-
-    // return as is
-    return error;
-}
-
-interface JSONStringifyReplacer {
-    (key: string, value: any): any;
-}
-
-function safeStringify(obj: any, replacer?: JSONStringifyReplacer): string {
-    try {
-        return JSON.stringify(obj, replacer);
-    } catch (err) {
-        console.error('error stringifying response: ', err);
-        return 'null';
-    }
-}

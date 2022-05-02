@@ -99,8 +99,9 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         }).catch(FileSystemMainImpl._handleError);
     }
 
-    $readFile(uri: UriComponents): Promise<BinaryBuffer> {
-        return this._fileService.readFile(new CoreURI(URI.revive(uri))).then(file => file.value).catch(FileSystemMainImpl._handleError);
+    async $readFile(uri: UriComponents): Promise<BinaryBuffer> {
+        return (await this._fileService.readFile(new CoreURI(URI.revive(uri)))).value;
+
     }
 
     $writeFile(uri: UriComponents, content: BinaryBuffer): Promise<void> {

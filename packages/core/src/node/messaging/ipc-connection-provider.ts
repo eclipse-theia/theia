@@ -17,7 +17,7 @@
 import * as cp from 'child_process';
 import { inject, injectable } from 'inversify';
 import * as path from 'path';
-import { Writable } from 'stream';
+import { Duplex } from 'stream';
 import { Message } from 'vscode-ws-jsonrpc';
 import { ConnectionErrorHandler, Disposable, DisposableCollection, Emitter, ILogger } from '../../common';
 import { ArrayBufferReadBuffer, ArrayBufferWriteBuffer } from '../../common/message-rpc/array-buffer-message-buffer';
@@ -82,7 +82,7 @@ export class IPCConnectionProvider {
         const onCloseEmitter = new Emitter<ChannelCloseEvent>();
         const onMessageEmitter = new Emitter<MessageProvider>();
         const onErrorEmitter = new Emitter<unknown>();
-        const pipe = childProcess.stdio[4] as Writable;
+        const pipe = childProcess.stdio[4] as Duplex;
 
         pipe.on('data', (data: Uint8Array) => {
             onMessageEmitter.fire(() => new ArrayBufferReadBuffer(data.buffer));
