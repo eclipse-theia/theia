@@ -41,6 +41,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export enum DebugState {
     Inactive,
@@ -79,7 +80,8 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly labelProvider: LabelProvider,
         protected readonly messages: MessageClient,
         protected readonly fileService: FileService,
-        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>
+        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>,
+        protected readonly workspaceService: WorkspaceService,
     ) {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.connection.onDidClose(() => {
@@ -747,10 +749,19 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     get label(): string {
-        if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
-            return this.configuration.name + ' (' + (this.options.id + 1) + ')';
+        const showWSFolderInLabel = this.workspaceService.isMultiRootWorkspaceOpened && this.options.workspaceFolderUri;
+        if (showWSFolderInLabel) {
+            const wsFolder = this.labelProvider.getName(new URI(this.options.workspaceFolderUri));
+            if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
+                return this.configuration.name + ' (' + (this.options.id + 1) + ' - ' + wsFolder + ')';
+            }
+            return this.configuration.name + ' (' + wsFolder + ')';
+        } else {
+            if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
+                return this.configuration.name + ' (' + (this.options.id + 1) + ')';
+            }
+            return this.configuration.name;
         }
-        return this.configuration.name;
     }
 
     get visible(): boolean {

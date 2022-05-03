@@ -30,6 +30,7 @@ import { Channel, DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -114,6 +115,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly fileService: FileService;
     @inject(ContributionProvider) @named(DebugContribution)
     protected readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     get(sessionId: string, options: DebugSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
@@ -135,7 +138,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             this.labelProvider,
             this.messages,
             this.fileService,
-            this.debugContributionProvider);
+            this.debugContributionProvider,
+            this.workspaceService);
     }
 
     protected getTraceOutputChannel(): OutputChannel | undefined {
