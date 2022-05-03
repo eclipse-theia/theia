@@ -69,7 +69,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
     }
 
     protected readonly expressions = new Map<string, ContextKeyExpression>();
-    protected parse(when: string): ContextKeyExpression | undefined {
+    parse(when: string): ContextKeyExpression | undefined {
         let expression = this.expressions.get(when);
         if (!expression) {
             expression = ContextKeyExpr.deserialize(when);
