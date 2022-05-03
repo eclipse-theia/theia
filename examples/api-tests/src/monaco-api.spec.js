@@ -29,10 +29,9 @@ describe('Monaco API', async function () {
     const { SimpleKeybinding } = require('@theia/monaco-editor-core/esm/vs/base/common/keybindings');
     const { IKeybindingService } = require('@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding');
     const { StandaloneServices } = require('@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
-    const { KeyCode } = require('@theia/monaco-editor-core/esm/vs/base/common/keyCodes');
     const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
     const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
-    const { Uri } = require('@theia/monaco-editor-core');
+    const { URI } = require('@theia/monaco-editor-core/esm/vs/base/common/uri');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -59,7 +58,7 @@ describe('Monaco API', async function () {
     });
 
     it('KeybindingService.resolveKeybinding', () => {
-        const simpleKeybinding = new SimpleKeybinding(true, true, true, true, KeyCode.KeyK);
+        const simpleKeybinding = new SimpleKeybinding(true, true, true, true, 41 /* KeyCode.KeyK */);
         const chordKeybinding = simpleKeybinding.toChord();
         assert.equal(chordKeybinding.parts.length, 1);
         assert.equal(chordKeybinding.parts[0], simpleKeybinding);
@@ -167,7 +166,7 @@ describe('Monaco API', async function () {
             execute: arg => (console.log(arg), opened = arg === 'foo')
         });
         try {
-            await openerService.open(Uri.parse('command:' + id + '?"foo"'));
+            await openerService.open(URI.parse('command:' + id + '?"foo"'));
             assert.isTrue(opened);
         } finally {
             unregisterCommand.dispose();

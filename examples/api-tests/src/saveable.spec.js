@@ -31,7 +31,7 @@ describe('Saveable', function () {
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { Deferred } = require('@theia/core/lib/common/promise-util');
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
-    const { Range } = require('@theia/monaco-editor-core');
+    const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
 
     const container = window.theia.container;
     /** @type {EditorManager} */
