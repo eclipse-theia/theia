@@ -22,7 +22,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
-    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon
+    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
@@ -71,7 +71,7 @@ export interface CellData {
 }
 
 @injectable()
-export class KeybindingWidget extends ReactWidget {
+export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -131,10 +131,7 @@ export class KeybindingWidget extends ReactWidget {
         this.title.caption = KeybindingWidget.LABEL;
         this.title.iconClass = codicon('three-bars');
         this.title.closable = true;
-        this.update();
-
-        // Initialize the list of keybinding items.
-        this.items = this.getItems();
+        this.updateItemsAndRerender();
 
         // Listen to changes made in the `keymaps.json` and update the view accordingly.
         if (this.keymapsService.onDidChangeKeymaps) {
@@ -143,7 +140,13 @@ export class KeybindingWidget extends ReactWidget {
                 this.doSearchKeybindings();
             }));
         }
+        this.toDispose.push(this.keybindingRegistry.onKeybindingsChanged(this.updateItemsAndRerender));
     }
+
+    protected updateItemsAndRerender = debounce(() => {
+        this.items = this.getItems();
+        this.update();
+    }, 100, { leading: false, trailing: true });
 
     /**
      * Determine if there currently is a search term.
@@ -670,6 +673,23 @@ export class KeybindingWidget extends ReactWidget {
         return property.value;
     }
 
+    storeState(): object | undefined {
+        return { query: this.query };
+    }
+
+    restoreState(oldState: { query: string }): void {
+        if (typeof oldState?.query === 'string') {
+            this.onRender.push({
+                dispose: () => {
+                    const searchField = this.findSearchField();
+                    if (searchField) {
+                        searchField.value = oldState.query;
+                        this.searchKeybindings();
+                    }
+                }
+            });
+        }
+    }
 }
 /**
  * Dialog used to edit keybindings, and reset custom keybindings.
