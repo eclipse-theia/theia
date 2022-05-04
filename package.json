@@ -54,6 +54,7 @@
     "all": "yarn -s install && yarn -s lint && yarn -s build",
     "browser": "yarn -s --cwd examples/browser",
     "build": "yarn -s compile && yarn -s build:examples",
+    "build-p": "yarn -s compile && lerna run --scope=\"@theia/example-*\" bundle --parallel",
     "build:examples": "yarn -s download:plugins && lerna run --scope=\"@theia/example-*\" bundle --parallel",
     "clean": "yarn -s rebuild:clean && yarn -s lint:clean && node scripts/run-reverse-topo.js yarn -s clean",
     "compile": "echo Compiling TypeScript sources... && yarn -s compile:clean && yarn -s compile:tsc",

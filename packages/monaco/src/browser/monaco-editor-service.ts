@@ -25,9 +25,9 @@ import { IResourceEditorInput, ITextResourceEditorInput } from '@theia/monaco-ed
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
 import { StandaloneCodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditorService';
-import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { ContextKeyService as VSCodeContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
 
 decorate(injectable(), StandaloneCodeEditorService);
 
@@ -51,8 +51,8 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
-    constructor() {
-        super(StandaloneServices.get(IContextKeyService), StandaloneServices.get(IStandaloneThemeService));
+    constructor(@inject(VSCodeContextKeyService) contextKeyService: VSCodeContextKeyService) {
+        super(contextKeyService, StandaloneServices.get(IStandaloneThemeService));
     }
 
     /**

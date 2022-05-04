@@ -29,15 +29,18 @@ describe('Monaco API', async function () {
     const { SimpleKeybinding } = require('@theia/monaco-editor-core/esm/vs/base/common/keybindings');
     const { IKeybindingService } = require('@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding');
     const { StandaloneServices } = require('@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices');
-    const { KeyCode } = require('@theia/monaco-editor-core/esm/vs/base/common/keyCodes');
     const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
-    const { Uri } = require('@theia/monaco-editor-core');
+    const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
+    const { URI } = require('@theia/monaco-editor-core/esm/vs/base/common/uri');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const textmateService = container.get(MonacoTextmateService);
+    /** @type {import('@theia/core/src/common/command').CommandRegistry} */
     const commands = container.get(CommandRegistry);
+    /** @type {import('@theia/monaco/src/browser/monaco-context-key-service').MonacoContextKeyService} */
+    const contextKeys = container.get(MonacoContextKeyService);
 
     /** @type {MonacoEditor} */
     let monacoEditor;
@@ -55,7 +58,7 @@ describe('Monaco API', async function () {
     });
 
     it('KeybindingService.resolveKeybinding', () => {
-        const simpleKeybinding = new SimpleKeybinding(true, true, true, true, KeyCode.KeyK);
+        const simpleKeybinding = new SimpleKeybinding(true, true, true, true, 41 /* KeyCode.KeyK */);
         const chordKeybinding = simpleKeybinding.toChord();
         assert.equal(chordKeybinding.parts.length, 1);
         assert.equal(chordKeybinding.parts[0], simpleKeybinding);
@@ -163,11 +166,23 @@ describe('Monaco API', async function () {
             execute: arg => (console.log(arg), opened = arg === 'foo')
         });
         try {
-            await openerService.open(Uri.parse('command:' + id + '?"foo"'));
+            await openerService.open(URI.parse('command:' + id + '?"foo"'));
             assert.isTrue(opened);
         } finally {
             unregisterCommand.dispose();
         }
+    });
+
+    it('Supports setting contexts using the command registry', async () => {
+        const setContext = 'setContext';
+        const key = 'monaco-api-test-context';
+        const firstValue = 'first setting';
+        const secondValue = 'second setting';
+        assert.isFalse(contextKeys.match(`${key} == ${firstValue}`));
+        await commands.executeCommand(setContext, key, firstValue);
+        assert.isTrue(contextKeys.match(`${key} == ${firstValue}`));
+        await commands.executeCommand(setContext, key, secondValue);
+        assert.isTrue(contextKeys.match(`${key} == ${secondValue}`));
     });
 
 });
