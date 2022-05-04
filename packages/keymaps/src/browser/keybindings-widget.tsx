@@ -22,11 +22,12 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
-    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon
+    KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope, SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, ContextMenuRenderer
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { isOSX } from '@theia/core';
+import { KeymapsMenus } from './keymaps-menu';
 
 /**
  * Representation of a keybinding item for the view.
@@ -75,6 +76,9 @@ export class KeybindingWidget extends ReactWidget {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
@@ -347,11 +351,15 @@ export class KeybindingWidget extends ReactWidget {
     protected renderRow(item: KeybindingItem, index: number): React.ReactNode {
         const { command, keybinding } = item;
         // TODO get rid of array functions in event handlers
-        return <tr className='kb-item-row' key={index} onDoubleClick={() => this.editKeybinding(item)}>
+        return <tr
+            className={'kb-item-row'}
+            key={index}
+            onDoubleClick={() => this.editKeybinding(item)}
+            onContextMenu={this.handleContextMenu(index, item)}>
             <td className='kb-actions'>
                 {this.renderActions(item)}
             </td>
-            <td className='kb-label' title={this.getCommandLabel(command)}>
+            <td className='kb-label' title={this.getCommandTooltip(command)}>
                 {this.renderMatchedData(item.labels.command)}
             </td>
             <td title={this.getKeybindingLabel(keybinding)} className='kb-keybinding monaco-keybinding'>
@@ -485,12 +493,21 @@ export class KeybindingWidget extends ReactWidget {
      *
      * @returns a human-readable label for the given command.
      */
-    protected getCommandLabel(command: Command): string {
+    getCommandLabel(command: Command): string {
         if (command.label) {
             // Prefix the command label with the category if it exists, else return the simple label.
             return command.category ? `${command.category}: ${command.label}` : command.label;
         }
         return command.id;
+    }
+
+    protected getCommandTooltip(command: Command): string {
+        if (!command.label) {
+            return command.id;
+        }
+        return command.category
+            ? `${command.category}: ${command.label} (${command.id})`
+            : `${command.label} (${command.id})`;
     }
 
     protected getKeybindingLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
@@ -668,6 +685,28 @@ export class KeybindingWidget extends ReactWidget {
             </>;
         }
         return property.value;
+    }
+
+    protected handleContextMenu = (index: number, item: KeybindingItem) => (e: React.SyntheticEvent) => {
+        this.resetRowSelection();
+        this.setRowSelection(index);
+
+        const target = e.nativeEvent.target as HTMLElement;
+        const domRect = target.getBoundingClientRect();
+        this.contextMenuRenderer.render({
+            menuPath: KeymapsMenus.KEYBINDINGS_WIDGET_CONTEXT_MENU,
+            anchor: { x: domRect.left, y: domRect.bottom },
+            args: [this, { id: item.command.id, value: item }],
+            onHide: () => this.resetRowSelection()
+        });
+    };
+
+    protected resetRowSelection(): void {
+        Array.from(document.getElementsByClassName('kb-item-row')).forEach(i => i.classList.remove('selected'));
+    }
+
+    protected setRowSelection(index: number): void {
+        document.getElementsByClassName('kb-item-row')[index]?.classList.add('selected');
     }
 
 }

@@ -52,8 +52,10 @@
     min-height: var(--theia-icon-size);
 }
 
-.th-action, .th-keybinding,
-.kb-actions, .kb-keybinding {
+.th-action,
+.th-keybinding,
+.kb-actions,
+.kb-keybinding {
     min-height: 18px;
     overflow: hidden;
     vertical-align: middle;
@@ -70,8 +72,13 @@
     padding: 2px 10px 5px 10px;
 }
 
-.th-label, .th-source, .th-context, .th-keybinding,
-.kb-label, .kb-source, .kb-context {
+.th-label,
+.th-source,
+.th-context,
+.th-keybinding,
+.kb-label,
+.kb-source,
+.kb-context {
     padding: 2px 10px 5px 10px;
     min-height: 18px;
     overflow: hidden;
@@ -138,7 +145,7 @@
 }
 
 .no-kb {
-    border: 1px solid  var(--theia-editorWarning-foreground);
+    border: 1px solid var(--theia-editorWarning-foreground);
 }
 
 #search-kb {
@@ -167,4 +174,32 @@
     width: 50%;
     margin-left: auto;
     margin-right: auto;
+}
+
+/* .kb table tbody tr:hover,
+.kb table tbody tr:hover .kb-action-item,
+.kb table tbody tr:hover td code,
+.kb table tbody tr:hover .fuzzy-match {
+    background-color: var(--theia-list-activeSelectionBackground) !important;
+    color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.kb table tbody tr:hover .monaco-keybinding>.monaco-keybinding-key {
+    color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.kb table tbody tr::selection {
+    background-color: red;
+} */
+
+
+/* .kb-item-row.selected {
+    background-color: var(--theia-list-activeSelectionBackground) !important;
+    color: var(--theia-list-activeSelectionForeground) !important;
+} */
+
+
+#kb-table-container tr.kb-item-row.selected {
+    background-color: var(--theia-list-activeSelectionBackground) !important;
+    color: var(--theia-list-activeSelectionForeground) !important;
 }
