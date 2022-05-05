@@ -46,7 +46,7 @@
 - [preferences] fixed issue with `files.eol` preference rendering [#11079](https://github.com/eclipse-theia/theia/pull/11079)
 - [preferences] improved preference validation warnings [#11025](https://github.com/eclipse-theia/theia/pull/11025)
 - [preferences] updated handling to make node renderers more robust against `null` values [#11074](https://github.com/eclipse-theia/theia/pull/11074)
-- [workspace] fixed issue resulting in duplicate entries for recent workspaces [#11016]
+- [workspace] fixed issue resulting in duplicate entries for recent workspaces [#11016](https://github.com/eclipse-theia/theia/pull/11016)
 
 <a name="breaking_changes_1.25.0">[Breaking Changes:](#breaking_changes_1.25.0)</a>
 
@@ -115,7 +115,7 @@
 - [monaco] updated where the quick-input menu is attached [#10909](https://github.com/eclipse-theia/theia/pull/10909)
 - [monaco] upgraded `monaco` dependency from `0.23` to ca. `0.33` (state as of VSCode 1.65.2) [#10736](https://github.com/eclipse-theia/theia/pull/10736)
 - [navigator] fixed `initiallyCollapsed` option for the `'Open Editors'` [#10930](https://github.com/eclipse-theia/theia/pull/10930)
-- [navigator] updated visibility of the `add folder` command [#10840]
+- [navigator] updated visibility of the `add folder` command [#10840](https://github.com/eclipse-theia/theia/pull/10840)
 - [playwright] fixed playwright tests for Windows and MacOS [#10826](https://github.com/eclipse-theia/theia/pull/10826) - Contributed on behalf of STMicroelectronics
 - [playwright] updated tests to use `THEIA_CONFIG_DIR` [#10925](https://github.com/eclipse-theia/theia/pull/10925)
 - [plugin] added `SourceFixAll` declaration [#10921](https://github.com/eclipse-theia/theia/pull/10921)
@@ -162,7 +162,7 @@
 - [markers] `ProblemDecorator` reimplemented to reduce redundancy and align more closely with VSCode. `collectMarkers` now returns `Map<string, TreeDecoration.Data>`, `getOverlayIconColor` renamed to `getColor`, `getOverlayIcon` removed, `appendContainerMarkers` returns `void` [#10820](https://github.com/eclipse-theia/theia/pull/10820)
 - [monaco] the following breaking changes were made in the Monaco uplift. [#10736](https://github.com/eclipse-theia/theia/pull/10736)
   - `QuickPickItem` is now only for selectable items. Use `QuickPickItemOrSeparator` when either an item or a separator is intended.
-  - `editor.autoSave` preference renamed `files.autoSave` and accepts `on`, `off`, `afterDelay`, `onFocusChange`. Use `!== 'off'` to check for any active state.
+  - `editor.autoSave` preference renamed `files.autoSave` and accepts `off`, `afterDelay`, `onFocusChange`, `onWindowChange`. Use `!== 'off'` to check for any active state, as `on` is no longer a valid value.
   - `editor.autoSaveDelay` renamed `files.autoSaveDelay`.
   - `commandService`, `instantiationService` removed from `MonacoEditor`. Use `StandaloneServices.get(IInstantationService / ICommandService)` instead.
   - `DecorationMiniMapOptions.position`, `DecorationOverviewRulerOptions.position` no longer optional.
