@@ -1,14 +1,34 @@
 # Getting Started
 
-This repository contains several tests based on Theia 🎭 Playwright in `examples/playwright/src/tests` that should help getting started quickly.
-You can also use this package as a template for your own tests.
+The fastest way to getting started is to clone the [theia-playwright-template](https://github.com/eclipse-theia/theia-playwright-template) and build the theia-playwright-template.
 
-Please note that Theia 🎭 Playwright is built to be extended with custom page objects.
-Please refer to the [extension guide](EXTENSIBILITY.md).
+```bash
+git clone git@github.com:eclipse-theia/theia-playwright-template.git
+cd theia-playwright-template
+yarn
+```
+
+The most important files in the theia-playwright-template are:
+
+* Example test in `tests/theia-app.test.ts`
+* Example page object in `test/page-objects/theia-app.ts`
+* Configuration files in `configs`, including the base playwright configuration at `configs/playwright.config.ts`
+* `package.json` with all required dependencies and scripts for running and debugging the tests
+
+Now, let's run the tests:
+
+1. Run your Theia application under test (not part of the theia-playwright-template)
+2. Run `yarn ui-tests` in the theia-playwright-template to run its tests in headless mode
+
+Please note that Theia 🎭 Playwright is built to be extended with custom page objects, such as the one in `test/page-objects/theia-app.ts` in the theia-playwright-template.
+We recommend to add further page objects for all custom views, editors, widgets, etc.
+Please refer to the [extension guide](EXTENSIBILITY.md) for more information.
+
+Moreover, this repository contains several tests based on Theia 🎭 Playwright in `examples/playwright/src/tests` that may serve as additional examples for writing tests.
 
 ## Adding further tests
 
-Let's write a system test for the Theia text editor as an example:
+Let's write another system test for the Theia text editor as an example:
 
 1. Initialize a prepared workspace containing a file `sampleFolder/sample.txt` and open the workspace with the Theia application under test
 2. Open the Theia text editor

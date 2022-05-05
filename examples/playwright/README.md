@@ -33,6 +33,7 @@ It is [extensible](./docs/EXTENSIBILITY.md) so you can add dedicated page object
 
 - [Getting Started](./docs/GETTING_STARTED.md)
 - [Extensibility](./docs/EXTENSIBILITY.md)
+- [Theia 🎭 Playwright Template](https://github.com/eclipse-theia/theia-playwright-template)
 - [Building and Developing Theia 🎭 Playwright](./docs/DEVELOPING.md)
 
 ## Additional Information
