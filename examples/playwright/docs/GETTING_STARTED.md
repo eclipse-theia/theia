@@ -28,7 +28,7 @@ Moreover, this repository contains several tests based on Theia 🎭 Playwright 
 
 ## Adding further tests
 
-Let's write add another system test for the Theia text editor as an example:
+Let's write another system test for the Theia text editor as an example:
 
 1. Initialize a prepared workspace containing a file `sampleFolder/sample.txt` and open the workspace with the Theia application under test
 2. Open the Theia text editor
