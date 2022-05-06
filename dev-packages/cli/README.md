@@ -313,11 +313,14 @@ The property `theiaPlugins` describes the list of plugins to download, for examp
 
 ```json
 "theiaPlugins": {
+    "vscode.theme-defaults": "https://open-vsx.org/api/vscode/theme-defaults/1.62.3/file/vscode.theme-defaults-1.62.3.vsix",
     "vscode-builtin-extension-pack": "https://open-vsx.org/api/eclipse-theia/builtin-extension-pack/1.50.0/file/eclipse-theia.builtin-extension-pack-1.50.0.vsix",
     "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/0.14.4/file/EditorConfig.EditorConfig-0.14.4.vsix",
     "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/2.1.1/file/dbaeumer.vscode-eslint-2.1.1.vsix",
 }
 ```
+
+Please note that in order to use `extensionPacks` properly you should use `namespace.name` as the `id` you give extensions so that when resolving the pack we do not re-download an existing plugin under a different name.
 
 The property `theiaPluginsExcludeIds` can be used to declare the list of plugin `ids` to exclude when using extension-packs.
 The `ids` referenced by the property will not be downloaded when resolving extension-packs, and can be used to omit extensions which are problematic or unwanted. The format of the property is as follows:
