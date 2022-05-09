@@ -120,6 +120,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.shell.bottomPanel.onDidToggleMaximized(() => {
             this.handleToggleMaximized();
         });
+        this.attachMenuBarVisibilityListener();
     }
 
     protected attachWindowFocusListener(app: FrontendApplication): void {
@@ -130,6 +131,15 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         const callback = () => this.setMenu(app);
         targetWindow.on('focus', callback);
         window.addEventListener('unload', () => targetWindow.off('focus', callback));
+    }
+
+    protected attachMenuBarVisibilityListener(): void {
+        this.preferenceService.onPreferenceChanged(e => {
+            if (e.preferenceName === 'window.menuBarVisibility') {
+                const targetWindow = electronRemote.getCurrentWindow();
+                this.handleFullScreen(targetWindow, e.newValue);
+            }
+        });
     }
 
     handleTitleBarStyling(app: FrontendApplication): void {
@@ -309,7 +319,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
             isEnabled: () => currentWindow.isFullScreenable(),
             isVisible: () => currentWindow.isFullScreenable(),
-            execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
+            execute: () => this.toggleFullScreen(currentWindow)
         });
     }
 
@@ -377,4 +387,22 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             order: '0'
         });
     }
+
+    protected toggleFullScreen(currentWindow: electron.BrowserWindow): void {
+        currentWindow.setFullScreen(!currentWindow.isFullScreen());
+        const menuBarVisibility = this.preferenceService.get('window.menuBarVisibility', 'classic');
+        this.handleFullScreen(currentWindow, menuBarVisibility);
+    }
+
+    protected handleFullScreen(currentWindow: electron.BrowserWindow, menuBarVisibility: string): void {
+        const shouldShowTop = !currentWindow.isFullScreen() || menuBarVisibility === 'visible';
+        if (this.titleBarStyle === 'native') {
+            currentWindow.menuBarVisible = shouldShowTop;
+        } else if (shouldShowTop) {
+            this.shell.topPanel.show();
+        } else {
+            this.shell.topPanel.hide();
+        }
+    }
+
 }
