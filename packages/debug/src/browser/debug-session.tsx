@@ -749,19 +749,14 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     get label(): string {
-        const showWSFolderInLabel = this.workspaceService.isMultiRootWorkspaceOpened && this.options.workspaceFolderUri;
-        if (showWSFolderInLabel) {
-            const wsFolder = this.labelProvider.getName(new URI(this.options.workspaceFolderUri));
-            if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
-                return this.configuration.name + ' (' + (this.options.id + 1) + ' - ' + wsFolder + ')';
-            }
-            return this.configuration.name + ' (' + wsFolder + ')';
-        } else {
-            if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
-                return this.configuration.name + ' (' + (this.options.id + 1) + ')';
-            }
-            return this.configuration.name;
+        const suffixes = [];
+        if (InternalDebugSessionOptions.is(this.options) && this.options.id) {
+            suffixes.push(String(this.options.id + 1));
         }
+        if (this.workspaceService.isMultiRootWorkspaceOpened && this.options.workspaceFolderUri) {
+            suffixes.push(this.labelProvider.getName(new URI(this.options.workspaceFolderUri)));
+        }
+        return suffixes.length === 0 ? this.configuration.name : this.configuration.name + ` (${suffixes.join(' - ')})`;
     }
 
     get visible(): boolean {

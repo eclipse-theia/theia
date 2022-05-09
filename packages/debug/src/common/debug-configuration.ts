@@ -77,9 +77,6 @@ export interface DebugConfiguration {
 
     /** Indicates if it's a dynamic debug configuration */
     dynamic?: boolean;
-
-    /** The worspace folder used for looking up tasks, resolving variables, etc. */
-    workspaceFolderUri?: string;
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {

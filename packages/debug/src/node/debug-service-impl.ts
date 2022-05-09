@@ -65,7 +65,7 @@ export class DebugServiceImpl implements DebugService {
     }
 
     protected readonly sessions = new Set<string>();
-    async createDebugSession(config: DebugConfiguration): Promise<string> {
+    async createDebugSession(config: DebugConfiguration, _workspaceFolderUri?: string): Promise<string> {
         const session = await this.sessionManager.create(config, this.registry);
         this.sessions.add(session.id);
         return session.id;
