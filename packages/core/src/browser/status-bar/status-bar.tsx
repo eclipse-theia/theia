@@ -173,11 +173,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             attrs.onClick = this.onclick(entry);
             attrs.className = 'element hasCommand';
         } else if (entry.onclick) {
-            attrs.onClick = e => {
-                if (entry.onclick && e instanceof MouseEvent) {
-                    entry.onclick(e);
-                }
-            };
+            attrs.onClick = e => entry.onclick?.(e.nativeEvent);
             attrs.className = 'element hasCommand';
         } else {
             attrs.className = 'element';
