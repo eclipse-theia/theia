@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from '@playwright/test';
+import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
 import { TheiaApp } from '../theia-app';
 import { TheiaTextEditor } from '../theia-text-editor';
 import { TheiaWorkspace } from '../theia-workspace';
@@ -27,6 +28,11 @@ test.describe('Theia Text Editor', () => {
     test.beforeAll(async () => {
         const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
         app = await TheiaApp.load(page, ws);
+
+        // set auto-save preference to off
+        const preferenceView = await app.openPreferences(TheiaPreferenceView);
+        await preferenceView.setOptionsPreferenceById(PreferenceIds.Editor.AutoSave, DefaultPreferences.Editor.AutoSave.Off);
+        await preferenceView.close();
     });
 
     test('should be visible and active after opening "sample.txt"', async () => {
@@ -164,7 +170,7 @@ test.describe('Theia Text Editor', () => {
         await sampleTextEditor.saveAndClose();
     });
 
-    test.skip('should close without saving', async () => {
+    test('should close without saving', async () => {
         const sampleTextEditor = await app.openEditor('sample.txt', TheiaTextEditor);
         await sampleTextEditor.replaceLineWithLineNumber('change again', 1);
         expect(await sampleTextEditor.isDirty()).toBe(true);

@@ -38,14 +38,14 @@ test.describe('Preference View', () => {
         const preferences = await app.openPreferences(TheiaPreferenceView);
         const preferenceId = PreferenceIds.DiffEditor.MaxComputationTime;
 
-        await preferences.resetStringPreferenceById(preferenceId);
+        await preferences.resetPreferenceById(preferenceId);
         expect(await preferences.getStringPreferenceById(preferenceId)).toBe(DefaultPreferences.DiffEditor.MaxComputationTime);
 
         await preferences.setStringPreferenceById(preferenceId, '8000');
         await preferences.waitForModified(preferenceId);
         expect(await preferences.getStringPreferenceById(preferenceId)).toBe('8000');
 
-        await preferences.resetStringPreferenceById(preferenceId);
+        await preferences.resetPreferenceById(preferenceId);
         expect(await preferences.getStringPreferenceById(preferenceId)).toBe(DefaultPreferences.DiffEditor.MaxComputationTime);
     });
 
@@ -53,15 +53,30 @@ test.describe('Preference View', () => {
         const preferences = await app.openPreferences(TheiaPreferenceView);
         const preferenceId = PreferenceIds.Explorer.AutoReveal;
 
-        await preferences.resetBooleanPreferenceById(preferenceId);
+        await preferences.resetPreferenceById(preferenceId);
         expect(await preferences.getBooleanPreferenceById(preferenceId)).toBe(DefaultPreferences.Explorer.AutoReveal.Enabled);
 
         await preferences.setBooleanPreferenceById(preferenceId, false);
         await preferences.waitForModified(preferenceId);
         expect(await preferences.getBooleanPreferenceById(preferenceId)).toBe(false);
 
-        await preferences.resetBooleanPreferenceById(preferenceId);
+        await preferences.resetPreferenceById(preferenceId);
         expect(await preferences.getBooleanPreferenceById(preferenceId)).toBe(DefaultPreferences.Explorer.AutoReveal.Enabled);
+    });
+
+    test('should be able to read, set, and reset Options preferences', async () => {
+        const preferences = await app.openPreferences(TheiaPreferenceView);
+        const preferenceId = PreferenceIds.Editor.RenderWhitespace;
+
+        await preferences.resetPreferenceById(preferenceId);
+        expect(await preferences.getOptionsPreferenceById(preferenceId)).toBe(DefaultPreferences.Editor.RenderWhitespace.Selection);
+
+        await preferences.setOptionsPreferenceById(preferenceId, DefaultPreferences.Editor.RenderWhitespace.Boundary);
+        await preferences.waitForModified(preferenceId);
+        expect(await preferences.getOptionsPreferenceById(preferenceId)).toBe(DefaultPreferences.Editor.RenderWhitespace.Boundary);
+
+        await preferences.resetPreferenceById(preferenceId);
+        expect(await preferences.getOptionsPreferenceById(preferenceId)).toBe(DefaultPreferences.Editor.RenderWhitespace.Selection);
     });
 
     test('should throw an error if we try to read, set, or reset a non-existing preference', async () => {
@@ -69,13 +84,17 @@ test.describe('Preference View', () => {
 
         preferences.customTimeout = 500;
         try {
-            await expect(preferences.getBooleanPreferenceById('no.a.real.preference')).rejects.toThrowError();
-            await expect(preferences.setBooleanPreferenceById('no.a.real.preference', true)).rejects.toThrowError();
-            await expect(preferences.resetBooleanPreferenceById('no.a.real.preference')).rejects.toThrowError();
+            await expect(preferences.getBooleanPreferenceById('not.a.real.preference')).rejects.toThrowError();
+            await expect(preferences.setBooleanPreferenceById('not.a.real.preference', true)).rejects.toThrowError();
+            await expect(preferences.resetPreferenceById('not.a.real.preference')).rejects.toThrowError();
 
-            await expect(preferences.getStringPreferenceById('no.a.real.preference')).rejects.toThrowError();
-            await expect(preferences.setStringPreferenceById('no.a.real.preference', 'a')).rejects.toThrowError();
-            await expect(preferences.resetStringPreferenceById('no.a.real.preference')).rejects.toThrowError();
+            await expect(preferences.getStringPreferenceById('not.a.real.preference')).rejects.toThrowError();
+            await expect(preferences.setStringPreferenceById('not.a.real.preference', 'a')).rejects.toThrowError();
+            await expect(preferences.resetPreferenceById('not.a.real.preference')).rejects.toThrowError();
+
+            await expect(preferences.getOptionsPreferenceById('not.a.real.preference')).rejects.toThrowError();
+            await expect(preferences.setOptionsPreferenceById('not.a.real.preference', 'a')).rejects.toThrowError();
+            await expect(preferences.resetPreferenceById('not.a.real.preference')).rejects.toThrowError();
         } finally {
             preferences.customTimeout = undefined;
         }
@@ -86,8 +105,14 @@ test.describe('Preference View', () => {
         const stringPreference = PreferenceIds.DiffEditor.MaxComputationTime;
         const booleanPreference = PreferenceIds.Explorer.AutoReveal;
 
-        await expect(preferences.getBooleanPreferenceById(stringPreference)).rejects.toThrowError();
-        await expect(preferences.setBooleanPreferenceById(stringPreference, true)).rejects.toThrowError();
-        await expect(preferences.setStringPreferenceById(booleanPreference, 'true')).rejects.toThrowError();
+        preferences.customTimeout = 500;
+        try {
+            await expect(preferences.getBooleanPreferenceById(stringPreference)).rejects.toThrowError();
+            await expect(preferences.setBooleanPreferenceById(stringPreference, true)).rejects.toThrowError();
+            await expect(preferences.setStringPreferenceById(booleanPreference, 'true')).rejects.toThrowError();
+            await expect(preferences.setOptionsPreferenceById(booleanPreference, 'true')).rejects.toThrowError();
+        } finally {
+            preferences.customTimeout = undefined;
+        }
     });
 });
