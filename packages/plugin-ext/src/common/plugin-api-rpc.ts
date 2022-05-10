@@ -71,7 +71,8 @@ import {
     CommentThreadCollapsibleState,
     CommentThread,
     CommentThreadChangedEvent,
-    CodeActionProviderDocumentation
+    CodeActionProviderDocumentation,
+    LinkedEditingRanges
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1483,6 +1484,7 @@ export interface LanguagesExt {
     $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: CancellationToken): Promise<CallHierarchyItem[] | undefined>;
     $provideCallers(handle: number, definition: CallHierarchyItem, token: CancellationToken): Promise<CallHierarchyIncomingCall[] | undefined>;
     $provideCallees(handle: number, definition: CallHierarchyItem, token: CancellationToken): Promise<CallHierarchyOutgoingCall[] | undefined>;
+    $provideLinkedEditingRanges(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<LinkedEditingRanges | undefined>;
     $releaseCallHierarchy(handle: number, session?: string): Promise<boolean>;
 }
 
@@ -1531,6 +1533,7 @@ export interface LanguagesMain {
     $emitDocumentSemanticTokensEvent(eventHandle: number): void;
     $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerLinkedEditingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
 export interface WebviewInitData {

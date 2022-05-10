@@ -948,6 +948,32 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         });
     }
 
+    // --- linked editing range
+
+    $registerLinkedEditingRangeProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const linkedEditingRangeProvider = this.createLinkedEditingRangeProvider(handle);
+        this.register(handle,
+            (monaco.languages.registerLinkedEditingRangeProvider as RegistrationFunction<monaco.languages.LinkedEditingRangeProvider>)(languageSelector, linkedEditingRangeProvider)
+        );
+    }
+
+    protected createLinkedEditingRangeProvider(handle: number): monaco.languages.LinkedEditingRangeProvider {
+        return {
+            provideLinkedEditingRanges: async (model: monaco.editor.ITextModel, position: monaco.Position, token: CancellationToken):
+                Promise<monaco.languages.LinkedEditingRanges | undefined> => {
+                const res = await this.proxy.$provideLinkedEditingRanges(handle, model.uri, position, token);
+                if (res) {
+                    return {
+                        ranges: res.ranges,
+                        wordPattern: reviveRegExp(res.wordPattern)
+                    };
+                }
+                return undefined;
+            }
+        };
+    };
+
 }
 
 function reviveMarker(marker: MarkerData): vst.Diagnostic {

@@ -140,7 +140,8 @@ import {
     SourceControlInputBoxValidationType,
     URI,
     FileDecoration,
-    ExtensionMode
+    ExtensionMode,
+    LinkedEditingRanges
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -779,6 +780,9 @@ export function createAPIFactory(
             },
             registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
                 return languagesExt.registerCallHierarchyProvider(selector, provider);
+            },
+            registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
+                return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
             }
         };
 
@@ -1035,7 +1039,8 @@ export function createAPIFactory(
             SourceControlInputBoxValidationType,
             FileDecoration,
             CancellationError,
-            ExtensionMode
+            ExtensionMode,
+            LinkedEditingRanges
         };
     };
 }
