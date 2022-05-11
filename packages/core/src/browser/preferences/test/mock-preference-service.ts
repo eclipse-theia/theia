@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { PreferenceService, PreferenceChange, OverridePreferenceName } from '../';
 import { Emitter, Event } from '../../../common';
 import URI from '../../../common/uri';
-import { PreferenceChanges, PreferenceInspection } from '../preference-service';
+import { PreferenceChange, PreferenceChanges, PreferenceInspection, PreferenceService } from '../preference-service';
 import { PreferenceScope } from '../preference-scope';
+import { OverridePreferenceName } from '../preference-language-override-service';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {

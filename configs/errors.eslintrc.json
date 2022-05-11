@@ -139,7 +139,14 @@
     "@theia/runtime-import-check": "error",
     "@theia/shared-dependencies": "error",
     "import/no-extraneous-dependencies": "error",
-    "import/no-dynamic-require": "error"
+    "import/no-dynamic-require": "error",
+    "no-restricted-imports": [
+      "error",
+      ".",
+      "./",
+      "..",
+      "../"
+    ]
   },
   "overrides": [
     {

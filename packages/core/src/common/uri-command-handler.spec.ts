@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { SelectionService } from '.';
+import { SelectionService } from './selection-service';
 import { MaybeArray } from './types';
 import URI from './uri';
 import { UriAwareCommandHandler, UriCommandHandler } from './uri-command-handler';

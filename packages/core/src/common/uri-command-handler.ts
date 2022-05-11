@@ -19,8 +19,8 @@
 import { SelectionService } from '../common/selection-service';
 import { UriSelection } from '../common/selection';
 import { CommandHandler } from './command';
-import { MaybeArray } from '.';
 import URI from './uri';
+import { MaybeArray } from './types';
 
 export interface UriCommandHandler<T extends MaybeArray<URI>> extends CommandHandler {
 

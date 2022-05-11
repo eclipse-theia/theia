@@ -17,8 +17,7 @@
 import * as chalk from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { sortLocalization } from '.';
-import { Localization } from './common';
+import { Localization, sortLocalization } from './common';
 import { deepl, DeeplLanguage, DeeplParameters, isSupportedLanguage, supportedLanguages } from './deepl-api';
 
 export interface LocalizationOptions {
