@@ -135,16 +135,17 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             const client = new OVSXClient({ apiVersion, apiUrl });
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(Array.from(extensionPacks.values()).flat());
-            const extensionPacksToDownload = await Promise.all(Array.from(ids, async id => {
+            const extensionPacksToDownload: PluginDownload[] = [];
+            for (const id of ids) {
                 const extension = await client.getLatestCompatibleExtensionVersion(id);
                 const version = extension?.version;
                 const downloadUrl = extension?.files.download;
                 if (downloadUrl) {
-                    return <PluginDownload>{ id: id, downloadUrl: downloadUrl, version: version };
+                    extensionPacksToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
                 } else {
-                    throw Error(`No download url for extension pack ${id} (${version})`);
+                    failures.push(`No download url for extension pack ${id} (${version})`);
                 }
-            }));
+            }
             await downloader(extensionPacksToDownload);
         }
 
@@ -155,16 +156,17 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             const client = new OVSXClient({ apiVersion, apiUrl });
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(pluginDependencies);
-            const extensionDependenciesToDownload = await Promise.all(Array.from(ids, async id => {
+            const extensionDependenciesToDownload: PluginDownload[] = [];
+            for (const id of ids) {
                 const extension = await client.getLatestCompatibleExtensionVersion(id);
                 const version = extension?.version;
                 const downloadUrl = extension?.files.download;
                 if (downloadUrl) {
-                    return <PluginDownload>{ id: id, downloadUrl: downloadUrl, version: version };
+                    extensionDependenciesToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
                 } else {
-                    throw Error(`No download url for extension dependency ${id} (${version})`);
+                    failures.push(`No download url for extension dependency ${id} (${version})`);
                 }
-            }));
+            }
             await downloader(extensionDependenciesToDownload);
         }
 
