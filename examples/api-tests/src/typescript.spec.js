@@ -576,17 +576,17 @@ DIV {
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'DemoClass');
     });
 
-    // TODO: FIXME! As of 28/01/2022 this test is failing or timing out for unknown reasons.
-    it.skip('run reference code lens', async function () {
-        this.timeout(300_000); // 5 min (give time to `tsserver` to initialize and then respond to make this test pass.)
-        const globalValue = preferences.inspect('javascript.referencesCodeLens.enabled').globalValue;
-        toTearDown.push({ dispose: () => preferences.set('javascript.referencesCodeLens.enabled', globalValue, PreferenceScope.User) });
+    it('run reference code lens', async function () {
+        const preferenceName = 'typescript.referencesCodeLens.enabled';
+        const globalValue = preferences.inspect(preferenceName).globalValue;
+        toTearDown.push({ dispose: () => preferences.set(preferenceName, globalValue, PreferenceScope.User) });
+        await preferences.set(preferenceName, false, PreferenceScope.User);
 
         const editor = await openEditor(demoFileUri);
 
-        /** @type any */
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codelens/browser/codelensController').CodeLensContribution} */
         const codeLens = editor.getControl().getContribution('css.editor.codeLens');
-        const codeLensNode = () => codeLens._lenses[0] && codeLens._lenses[0]._contentWidget && codeLens._lenses[0]._contentWidget._domNode;
+        const codeLensNode = () => codeLens['_lenses'][0]?.['_contentWidget']?.['_domNode'];
         const codeLensNodeVisible = () => {
             const n = codeLensNode();
             return !!n && n.style.visibility !== 'hidden';
@@ -594,46 +594,28 @@ DIV {
 
         assert.isFalse(codeLensNodeVisible());
 
-        // [export ]function load(raw) {
-        const position = { lineNumber: 16, column: 1 };
-        editor.getControl().getModel().applyEdits([{
-            range: Range.fromPositions(position, position),
-            forceMoveMarkers: false,
-            text: 'export '
-        }]);
-        await preferences.set('javascript.referencesCodeLens.enabled', true, PreferenceScope.User);
-
-        // Recall `applyEdits` to workaround `vscode` bug, See: https://github.com/eclipse-theia/theia/issues/9714#issuecomment-876582947.
-        editor.getControl().getModel().applyEdits([{
-            range: Range.fromPositions(position, position),
-            forceMoveMarkers: false,
-            text: ' '
-        }]);
+        // |interface DemoInterface {
+        const position = { lineNumber: 2, column: 1 };
+        await preferences.set(preferenceName, true, PreferenceScope.User);
 
         editor.getControl().revealPosition(position);
         await waitForAnimation(() => codeLensNodeVisible());
 
         assert.isTrue(codeLensNodeVisible());
         const node = codeLensNode();
-        if (node) {
-            assert.equal(nodeAsString(node), `
+        assert.isDefined(node);
+        assert.equal(nodeAsString(node), `
 SPAN {
   A {
-    "20 references"
+    "1 reference"
   }
 }
 `);
-            const link = node.getElementsByTagName('a').item(0);
-            if (link) {
-                link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                await assertPeekOpened(editor);
-                await closePeek(editor);
-            } else {
-                assert.isDefined(link);
-            }
-        } else {
-            assert.isDefined(node);
-        }
+        const link = node.getElementsByTagName('a').item(0);
+        assert.isDefined(link);
+        link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        await assertPeekOpened(editor);
+        await closePeek(editor);
     });
 
     it('editor.action.quickFix', async function () {
