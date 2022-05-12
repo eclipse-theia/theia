@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { OutlineViewTreeModel } from './outline-view-tree-model';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Emitter, Mutable, UriSelection } from '@theia/core';
+import { Emitter, Mutable, serviceIdentifier, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
@@ -69,7 +69,7 @@ export namespace OutlineSymbolInformationNode {
 }
 
 export type OutlineViewWidgetFactory = () => OutlineViewWidget;
-export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
+export const OutlineViewWidgetFactory = serviceIdentifier<OutlineViewWidgetFactory>('OutlineViewWidgetFactory');
 
 @injectable()
 export class OutlineViewWidget extends TreeWidget {

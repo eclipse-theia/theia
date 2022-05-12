@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const EditorPreviewConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -34,8 +35,8 @@ export interface EditorPreviewConfiguration {
     'editor.enablePreview': boolean;
 }
 
-export const EditorPreviewPreferenceContribution = Symbol('EditorPreviewPreferenceContribution');
-export const EditorPreviewPreferences = Symbol('EditorPreviewPreferences');
+export const EditorPreviewPreferenceContribution = serviceIdentifier<PreferenceContribution>('EditorPreviewPreferenceContribution');
+export const EditorPreviewPreferences = serviceIdentifier<EditorPreviewPreferences>('EditorPreviewPreferences');
 export type EditorPreviewPreferences = PreferenceProxy<EditorPreviewConfiguration>;
 
 export function createEditorPreviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = EditorPreviewConfigSchema): EditorPreviewPreferences {
@@ -44,8 +45,8 @@ export function createEditorPreviewPreferences(preferences: PreferenceService, s
 
 export function bindEditorPreviewPreferences(bind: interfaces.Bind): void {
     bind(EditorPreviewPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(EditorPreviewPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(EditorPreviewPreferenceContribution);
         return createEditorPreviewPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(EditorPreviewPreferenceContribution).toConstantValue({ schema: EditorPreviewConfigSchema });

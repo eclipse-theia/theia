@@ -16,7 +16,7 @@
 
 import * as stream from 'stream';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Disposable } from '@theia/core/lib/common';
+import { Disposable, serviceIdentifier } from '@theia/core';
 
 /**
  * The MultiRingBuffer is a ring buffer implementation that allows
@@ -78,7 +78,7 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
     }
 }
 
-export const MultiRingBufferOptions = Symbol('MultiRingBufferOptions');
+export const MultiRingBufferOptions = serviceIdentifier<MultiRingBufferOptions>('MultiRingBufferOptions');
 export interface MultiRingBufferOptions {
     readonly size: number,
     readonly encoding?: string,

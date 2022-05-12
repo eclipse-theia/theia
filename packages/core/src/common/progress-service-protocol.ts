@@ -19,8 +19,9 @@ import {
     ProgressMessage
 } from './message-service-protocol';
 import { CancellationToken } from './cancellation';
+import { serviceIdentifier } from './types';
 
-export const ProgressClient = Symbol('ProgressClient');
+export const ProgressClient = serviceIdentifier<ProgressClient>('ProgressClient');
 export interface ProgressClient {
 
     /**

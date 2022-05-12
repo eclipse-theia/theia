@@ -16,11 +16,11 @@
 
 import * as fs from 'fs-extra';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider } from '../../common';
+import { ContributionProvider, serviceIdentifier } from '../../common';
 import { LanguageInfo, Localization } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 
-export const LocalizationContribution = Symbol('LocalizationContribution');
+export const LocalizationContribution = serviceIdentifier<LocalizationContribution>('LocalizationContribution');
 
 export interface LocalizationContribution {
     registerLocalizations(registry: LocalizationRegistry): Promise<void>;

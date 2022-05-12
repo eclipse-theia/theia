@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 
-export const ITerminalServer = Symbol('ITerminalServer');
+export const ITerminalServer = serviceIdentifier<ITerminalServer>('ITerminalServer');
 
 export const terminalPath = '/services/terminal';
 export const terminalsPath = '/services/terminals';

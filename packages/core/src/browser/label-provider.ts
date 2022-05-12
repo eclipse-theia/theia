@@ -18,8 +18,7 @@ import { inject, injectable, named, postConstruct } from 'inversify';
 import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
-import { Prioritizeable } from '../common/types';
-import { Event, Emitter, Disposable, Path } from '../common';
+import { Event, Emitter, Disposable, Path, Prioritizeable, serviceIdentifier } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
 import { EnvVariablesServer } from '../common/env-variables/env-variables-protocol';
 import { ResourceLabelFormatter, ResourceLabelFormatting } from '../common/label-protocol';
@@ -47,7 +46,7 @@ export const FOLDER_ICON = DEFAULT_FOLDER_ICON;
  */
 export const FILE_ICON = DEFAULT_FILE_ICON;
 
-export const LabelProviderContribution = Symbol('LabelProviderContribution');
+export const LabelProviderContribution = serviceIdentifier<LabelProviderContribution>('LabelProviderContribution');
 /**
  * A {@link LabelProviderContribution} determines how specific elements/nodes are displayed in the workbench.
  * Theia views use a common {@link LabelProvider} to determine the label and/or an icon for elements shown in the UI. This includes elements in lists

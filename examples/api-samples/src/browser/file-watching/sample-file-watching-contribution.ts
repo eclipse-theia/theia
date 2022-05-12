@@ -21,6 +21,7 @@ import {
 } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { serviceIdentifier } from '@theia/core';
 
 export function bindSampleFileWatching(bind: interfaces.Bind): void {
     bind(FrontendApplicationContribution).to(SampleFileWatchingContribution).inSingletonScope();
@@ -30,7 +31,7 @@ export function bindSampleFileWatching(bind: interfaces.Bind): void {
     );
 }
 
-const FileWatchingPreferences = Symbol('FileWatchingPreferences');
+const FileWatchingPreferences = serviceIdentifier<FileWatchingPreferences>('FileWatchingPreferences');
 type FileWatchingPreferences = PreferenceProxy<FileWatchingPreferencesSchema>;
 
 interface FileWatchingPreferencesSchema {

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection, serviceIdentifier } from '@theia/core';
 
 /**
  * Provides an additional environment object when executing every single Git command.
  */
-export const GitEnvProvider = Symbol('GitEnvProvider');
+export const GitEnvProvider = serviceIdentifier<GitEnvProvider>('GitEnvProvider');
 export interface GitEnvProvider extends Disposable {
 
     /**

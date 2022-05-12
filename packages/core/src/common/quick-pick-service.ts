@@ -20,9 +20,10 @@ import { Event } from './event';
 import { KeySequence } from './keys';
 import { CancellationToken } from './cancellation';
 import { URI as Uri } from 'vscode-uri';
+import { serviceIdentifier } from './types';
 
 export const quickPickServicePath = '/services/quickPick';
-export const QuickPickService = Symbol('QuickPickService');
+export const QuickPickService = serviceIdentifier<QuickPickService>('QuickPickService');
 export interface QuickPickService {
     show<T extends QuickPickItem>(items: Array<T | QuickPickSeparator>, options?: QuickPickOptions<T>): Promise<T | undefined>;
     setItems<T extends QuickPickItem>(items: Array<T>): void;
@@ -269,7 +270,7 @@ export interface QuickPickOptions<T extends QuickPickItemOrSeparator> {
     onDidTriggerItemButton?: (ItemButtonEvent: QuickPickItemButtonContext<T>) => void
 }
 
-export const QuickInputService = Symbol('QuickInputService');
+export const QuickInputService = serviceIdentifier<QuickInputService>('QuickInputService');
 export interface QuickInputService {
     readonly backButton: QuickInputButton;
     readonly onShow: Event<void>;

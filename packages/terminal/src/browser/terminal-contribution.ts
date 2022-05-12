@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 
-export const TerminalContribution = Symbol('TerminalContribution');
+export const TerminalContribution = serviceIdentifier<TerminalContribution>('TerminalContribution');
 export interface TerminalContribution {
     onCreate(term: TerminalWidgetImpl): void;
 }

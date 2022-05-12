@@ -16,18 +16,18 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, MaybePromise, serviceIdentifier } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@phosphor/coreutils';
 import { PreferenceProviderDataChange } from './preference-provider';
 import { OverridePreferenceName } from './preference-language-override-service';
 
-export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
+export const PreferenceProxySchema = serviceIdentifier<MaybePromise<PreferenceSchema>>('PreferenceProxySchema');
 export interface PreferenceProxyFactory {
     <T>(schema: MaybePromise<PreferenceSchema>, options?: PreferenceProxyOptions): PreferenceProxy<T>;
 }
-export const PreferenceProxyFactory = Symbol('PreferenceProxyFactory');
+export const PreferenceProxyFactory = serviceIdentifier<PreferenceProxyFactory>('PreferenceProxyFactory');
 
 export class PreferenceProxyChange extends PreferenceChangeImpl {
     constructor(change: PreferenceProviderDataChange, protected readonly overrideIdentifier?: string) {

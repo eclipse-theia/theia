@@ -20,7 +20,7 @@ import { injectable, interfaces, inject, postConstruct } from '@theia/core/share
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { DEFAULT_SCROLL_OPTIONS, Dialog, DialogProps, Message } from '@theia/core/lib/browser';
-import { Command, Disposable, nls } from '@theia/core';
+import { Command, Disposable, nls, serviceIdentifier } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import PerfectScrollbar from 'perfect-scrollbar';
@@ -34,10 +34,10 @@ export interface ToolbarIconDialogFactory {
     (command: Command): ToolbarIconSelectorDialog;
 }
 
-export const ToolbarIconDialogFactory = Symbol('ToolbarIconDialogFactory');
-export const ToolbarCommand = Symbol('ToolbarCommand');
-export const FontAwesomeIcons = Symbol('FontAwesomeIcons');
-export const CodiconIcons = Symbol('CodiconIcons');
+export const ToolbarIconDialogFactory = serviceIdentifier<ToolbarIconDialogFactory>('ToolbarIconDialogFactory');
+export const ToolbarCommand = serviceIdentifier<Command>('ToolbarCommand');
+export const FontAwesomeIcons = serviceIdentifier<string[]>('FontAwesomeIcons');
+export const CodiconIcons = serviceIdentifier<string[]>('CodiconIcons');
 
 const FIFTY_MS = 50;
 @injectable()

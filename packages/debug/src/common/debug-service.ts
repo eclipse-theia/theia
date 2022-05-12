@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable } from '@theia/core';
+import { Disposable, serviceIdentifier } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebugConfiguration } from './debug-configuration';
@@ -34,7 +34,7 @@ export const DebugPath = '/services/debug';
 /**
  * DebugService symbol for DI.
  */
-export const DebugService = Symbol('DebugService');
+export const DebugService = serviceIdentifier<DebugService>('DebugService');
 
 /**
  * This service provides functionality to configure and to start a new debug adapter session.

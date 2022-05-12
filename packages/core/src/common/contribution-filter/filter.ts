@@ -14,7 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const Filter = Symbol('Filter');
+import { serviceIdentifier } from '../types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const Filter = serviceIdentifier<Filter<any>>('Filter');
 
 /**
  * @param toTest Object that should be tested

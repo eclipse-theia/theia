@@ -24,7 +24,7 @@ import { FrontendApplicationContribution } from '../frontend-application';
 import { CommandRegistry } from '../../common/command';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
-import { Event, Emitter } from '../../common/event';
+import { Event, Emitter, serviceIdentifier } from '../../common';
 import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
 import { MenuModelRegistry } from '../../common/menu';
 import { nls } from '../../common/nls';
@@ -32,7 +32,7 @@ import { nls } from '../../common/nls';
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
  */
-export const TabBarToolbarContribution = Symbol('TabBarToolbarContribution');
+export const TabBarToolbarContribution = serviceIdentifier<TabBarToolbarContribution>('TabBarToolbarContribution');
 /**
  * Representation of a tabbar toolbar contribution.
  */
@@ -268,7 +268,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
 /**
  * Factory for instantiating tab-bar toolbars.
  */
-export const TabBarToolbarFactory = Symbol('TabBarToolbarFactory');
+export const TabBarToolbarFactory = serviceIdentifier<TabBarToolbarFactory>('TabBarToolbarFactory');
 export interface TabBarToolbarFactory {
     (): TabBarToolbar;
 }

@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable } from '@theia/core';
+import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable, serviceIdentifier } from '@theia/core';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { Preference } from '../../util/preference-types';
 import { PreferenceNodeRenderer } from './preference-node-renderer';
 
-export const PreferenceNodeRendererCreatorRegistry = Symbol('PreferenceNodeRendererCreatorRegistry');
+export const PreferenceNodeRendererCreatorRegistry = serviceIdentifier<PreferenceNodeRendererCreatorRegistry>('PreferenceNodeRendererCreatorRegistry');
 export interface PreferenceNodeRendererCreatorRegistry {
     registerPreferenceNodeRendererCreator(creator: PreferenceNodeRendererCreator): Disposable;
     unregisterPreferenceNodeRendererCreator(creator: PreferenceNodeRendererCreator): void;
@@ -27,12 +27,12 @@ export interface PreferenceNodeRendererCreatorRegistry {
     onDidChange: Event<void>;
 }
 
-export const PreferenceNodeRendererContribution = Symbol('PreferenceNodeRendererContribution');
+export const PreferenceNodeRendererContribution = serviceIdentifier<PreferenceNodeRendererContribution>('PreferenceNodeRendererContribution');
 export interface PreferenceNodeRendererContribution {
     registerPreferenceNodeRendererCreator(registry: PreferenceNodeRendererCreatorRegistry): void;
 }
 
-export const PreferenceNodeRendererCreator = Symbol('PreferenceNodeRendererCreator');
+export const PreferenceNodeRendererCreator = serviceIdentifier<PreferenceNodeRendererCreator>('PreferenceNodeRendererCreator');
 export interface PreferenceNodeRendererCreator {
     id: string;
     canHandle(node: Preference.TreeNode): number;

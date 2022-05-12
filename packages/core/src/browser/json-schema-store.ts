@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
 import { FrontendApplicationContribution } from './frontend-application';
-import { MaybePromise } from '../common';
+import { MaybePromise, serviceIdentifier } from '../common';
 import { Endpoint } from './endpoint';
 import { timeout, Deferred } from '../common/promise-util';
 
@@ -30,7 +30,7 @@ export interface JsonSchemaRegisterContext {
     registerSchema(config: JsonSchemaConfiguration): void;
 }
 
-export const JsonSchemaContribution = Symbol('JsonSchemaContribution');
+export const JsonSchemaContribution = serviceIdentifier<JsonSchemaContribution>('JsonSchemaContribution');
 export interface JsonSchemaContribution {
     registerSchemas(store: JsonSchemaRegisterContext): MaybePromise<void>
 }
@@ -120,4 +120,3 @@ export namespace DefaultJsonSchemaContribution {
         schema: any;
     }
 }
-

@@ -28,9 +28,10 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
+import { serviceIdentifier } from '@theia/core';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
-export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
+export const InDebugReplContextKey = serviceIdentifier<InDebugReplContextKey>('inDebugReplContextKey');
 
 export namespace DebugConsoleCommands {
 
@@ -164,7 +165,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     static bindContribution(bind: interfaces.Bind): void {
         bind(InDebugReplContextKey).toDynamicValue(({ container }) =>
-            container.get<ContextKeyService>(ContextKeyService).createKey('inDebugRepl', false)
+            container.get(ContextKeyService).createKey('inDebugRepl', false)
         ).inSingletonScope();
         bind(DebugConsoleSession).toSelf().inRequestScope();
         bind(DebugConsoleSessionFactory).toFactory(context => (session: DebugSession) => {

@@ -23,7 +23,7 @@ import {
     CommonCommands,
     JsonType,
 } from '@theia/core/lib/browser';
-import { Command, MenuPath } from '@theia/core';
+import { Command, MenuPath, serviceIdentifier } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 export namespace Preference {
@@ -39,7 +39,7 @@ export namespace Preference {
         }
     }
 
-    export const Node = Symbol('Preference.Node');
+    export const Node = serviceIdentifier<Node>('Preference.Node');
     export type Node = TreeNode;
 
     export type TreeNode = CompositeTreeNode | LeafNode;

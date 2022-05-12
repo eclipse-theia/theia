@@ -37,7 +37,7 @@ export default new ContainerModule(bind => {
     bind(TabBarToolbarContribution).toService(KeymapsFrontendContribution);
     bind(WidgetFactory).toDynamicValue(context => ({
         id: KeybindingWidget.ID,
-        createWidget: () => context.container.get<KeybindingWidget>(KeybindingWidget),
+        createWidget: () => context.container.get(KeybindingWidget),
     })).inSingletonScope();
     bind(KeybindingSchemaUpdater).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(KeybindingSchemaUpdater);

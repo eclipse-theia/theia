@@ -26,6 +26,7 @@ import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { serviceIdentifier } from '@theia/core';
 
 export const enum FileOperation {
     CREATE,
@@ -557,7 +558,7 @@ export function ensureFileSystemProviderError(error?: Error): Error {
     return error;
 }
 
-export const FileSystemProvider = Symbol('FileSystemProvider');
+export const FileSystemProvider = serviceIdentifier<FileSystemProvider>('FileSystemProvider');
 /**
  * A {@link FileSystemProvider} provides the capabilities to read, write, discover, and to manage files and folders
  * of the underlying (potentially virtual) file system. {@link FileSystemProvider}s can be used to serve files from both the

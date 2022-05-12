@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, serviceIdentifier } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@phosphor/signaling';
 import { Message, MessageLoop } from '@phosphor/messaging';
@@ -44,7 +44,7 @@ export const SHELL_TABBAR_CONTEXT_COPY: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU
 export const SHELL_TABBAR_CONTEXT_PIN: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '4_pin'];
 export const SHELL_TABBAR_CONTEXT_SPLIT: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '5_split'];
 
-export const TabBarRendererFactory = Symbol('TabBarRendererFactory');
+export const TabBarRendererFactory = serviceIdentifier<TabBarRendererFactory>('TabBarRendererFactory');
 export type TabBarRendererFactory = () => TabBarRenderer;
 
 /**

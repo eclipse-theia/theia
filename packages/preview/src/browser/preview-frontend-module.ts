@@ -43,7 +43,7 @@ export default new ContainerModule(bind => {
         id: PreviewUri.id,
         async createWidget(options: NavigatableWidgetOptions): Promise<PreviewWidget> {
             const { container } = ctx;
-            const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(options.uri));
+            const resource = await container.get(ResourceProvider)(new URI(options.uri));
             const child = container.createChild();
             child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
             return child.get(PreviewWidget);

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Emitter, Event, Disposable } from '../../common';
+import { Emitter, Event, Disposable, serviceIdentifier } from '../../common';
 import { CompositeTreeNode, TreeNode, Tree } from './tree';
 
-export const TreeExpansionService = Symbol('TreeExpansionService');
+export const TreeExpansionService = serviceIdentifier<TreeExpansionService>('TreeExpansionService');
 
 /**
  * The tree expandable service.

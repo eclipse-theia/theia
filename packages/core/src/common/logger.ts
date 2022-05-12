@@ -17,6 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer, LogLevel, ConsoleLogger, rootLoggerName } from './logger-protocol';
+import { serviceIdentifier } from './types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -55,12 +56,12 @@ export function setRootLogger(aLogger: ILogger): void {
 export type Log = (message: any, ...params: any[]) => void;
 export type Loggable = (log: Log) => void;
 
-export const LoggerFactory = Symbol('LoggerFactory');
+export const LoggerFactory = serviceIdentifier<LoggerFactory>('LoggerFactory');
 export type LoggerFactory = (name: string) => ILogger;
 
-export const LoggerName = Symbol('LoggerName');
+export const LoggerName = serviceIdentifier<string>('LoggerName');
 
-export const ILogger = Symbol('ILogger');
+export const ILogger = serviceIdentifier<ILogger>('ILogger');
 
 export interface ILogger {
     /**

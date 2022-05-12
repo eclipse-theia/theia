@@ -69,7 +69,7 @@ describe('Preference Service', () => {
     beforeEach(async () => {
         testContainer = createTestContainer();
         prefSchema = testContainer.get(PreferenceSchemaProvider);
-        prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
+        prefService = testContainer.get(PreferenceService) as PreferenceServiceImpl;
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
         getProvider(PreferenceScope.Folder).markReady();

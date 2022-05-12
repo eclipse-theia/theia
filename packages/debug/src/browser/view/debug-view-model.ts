@@ -16,7 +16,7 @@
 
 import debounce from 'p-debounce';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter, serviceIdentifier } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -27,7 +27,7 @@ import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 
-export const DebugViewOptions = Symbol('DebugViewOptions');
+export const DebugViewOptions = serviceIdentifier<DebugViewOptions>('DebugViewOptions');
 export interface DebugViewOptions {
     session?: DebugSession
 }

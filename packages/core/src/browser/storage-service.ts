@@ -19,8 +19,9 @@ import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { WindowService } from './window/window-service';
 import { environment } from '@theia/application-package/lib/environment';
+import { serviceIdentifier } from '../common';
 
-export const StorageService = Symbol('IStorageService');
+export const StorageService = serviceIdentifier<StorageService>('IStorageService');
 /**
  * The storage service provides an interface to some data storage that allows extensions to keep state among sessions.
  */

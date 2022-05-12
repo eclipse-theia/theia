@@ -18,10 +18,10 @@ import { injectable, inject, named } from 'inversify';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ContributionProvider } from '../common/contribution-provider';
 import { IconThemeService, IconTheme } from './icon-theme-service';
-import { MaybePromise } from '../common/types';
+import { MaybePromise, serviceIdentifier } from '../common';
 import { Disposable } from '../common/disposable';
 
-export const IconThemeContribution = Symbol('IconThemeContribution');
+export const IconThemeContribution = serviceIdentifier<IconThemeContribution>('IconThemeContribution');
 export interface IconThemeContribution {
     registerIconThemes(iconThemes: IconThemeService): MaybePromise<void>;
 }

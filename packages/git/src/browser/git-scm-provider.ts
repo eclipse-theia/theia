@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { Emitter } from '@theia/core';
+import { Emitter, serviceIdentifier } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandService } from '@theia/core/lib/common/command';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
@@ -497,7 +497,7 @@ export namespace GitScmProvider {
         };
     }
 
-    export const Factory = Symbol('GitScmProvider.Factory');
+    export const Factory = serviceIdentifier<Factory>('GitScmProvider.Factory');
     export type Factory = (options: GitScmProviderOptions) => GitScmProvider;
 }
 

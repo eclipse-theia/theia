@@ -44,8 +44,8 @@ beforeEach(() => {
     container.bind(MockLogLevelCliContribution).toSelf().inSingletonScope();
     container.bind(LogLevelCliContribution).toService(MockLogLevelCliContribution);
 
-    logLevelCliContribution = container.get<MockLogLevelCliContribution>(MockLogLevelCliContribution);
-    server = container.get<ConsoleLoggerServer>(ConsoleLoggerServer);
+    logLevelCliContribution = container.get(MockLogLevelCliContribution);
+    server = container.get(ConsoleLoggerServer);
 });
 
 describe('ConsoleLoggerServer', function (): void {

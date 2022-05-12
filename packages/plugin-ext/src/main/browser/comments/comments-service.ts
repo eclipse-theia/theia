@@ -27,6 +27,7 @@ import {
 } from '../../../common/plugin-api-rpc-model';
 import { CommentController } from './comments-main';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { serviceIdentifier } from '@theia/core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -49,7 +50,7 @@ export interface WorkspaceCommentThreadsEventMain {
     commentThreads: CommentThread[];
 }
 
-export const CommentsService = Symbol('CommentsService');
+export const CommentsService = serviceIdentifier<CommentsService>('CommentsService');
 
 export interface CommentsService {
     readonly onDidSetResourceCommentInfos: Event<ResourceCommentThreadEvent>;

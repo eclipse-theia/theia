@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
+import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS, serviceIdentifier } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
@@ -30,7 +30,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ITextResourcePropertiesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/textResourceConfiguration';
 
-export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
+export const MonacoEditorModelFactory = serviceIdentifier<MonacoEditorModelFactory>('MonacoEditorModelFactory');
 export interface MonacoEditorModelFactory {
 
     readonly scheme: string;

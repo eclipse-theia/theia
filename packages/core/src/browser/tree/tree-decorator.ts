@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Tree, TreeNode } from './tree';
-import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { Event, Emitter, Disposable, DisposableCollection, MaybePromise, serviceIdentifier } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
 
 /**
@@ -76,7 +76,7 @@ export interface TreeDecorator {
 
 }
 
-export const TreeDecoratorService = Symbol('TreeDecoratorService');
+export const TreeDecoratorService = serviceIdentifier<TreeDecoratorService>('TreeDecoratorService');
 
 /**
  * The {@link TreeDecoratorService} manages a set of known {link TreeDecorator}s and emits events when
@@ -85,7 +85,7 @@ export const TreeDecoratorService = Symbol('TreeDecoratorService');
  *
  * ### Example usage
  * ```typescript
- * export const MyTreeDecorator = Symbol('MyTreeDecorator');
+ * export const MyTreeDecorator = serviceIdentifier<MyTreeDecorator>('MyTreeDecorator');
  *
  * @injectable()
  * export class MyDecorationService extends AbstractTreeDecoratorService {

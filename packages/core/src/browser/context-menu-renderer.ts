@@ -18,10 +18,10 @@
 
 import { injectable } from 'inversify';
 import { MenuPath } from '../common/menu';
-import { Disposable, DisposableCollection } from '../common/disposable';
+import { Disposable, DisposableCollection, serviceIdentifier } from '../common';
 
 export interface Coordinate { x: number; y: number; }
-export const Coordinate = Symbol('Coordinate');
+export const Coordinate = serviceIdentifier<Coordinate>('Coordinate');
 
 export type Anchor = MouseEvent | Coordinate;
 

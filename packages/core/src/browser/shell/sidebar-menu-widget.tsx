@@ -19,9 +19,12 @@ import * as React from 'react';
 import { ReactWidget } from '../widgets';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuPath } from '../../common/menu';
+import { serviceIdentifier } from '../../common';
+import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
+import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
 
-export const SidebarTopMenuWidgetFactory = Symbol('SidebarTopMenuWidgetFactory');
-export const SidebarBottomMenuWidgetFactory = Symbol('SidebarBottomMenuWidgetFactory');
+export const SidebarTopMenuWidgetFactory = serviceIdentifier<() => SidebarTopMenuWidget>('SidebarTopMenuWidgetFactory');
+export const SidebarBottomMenuWidgetFactory = serviceIdentifier<() => SidebarBottomMenuWidget>('SidebarBottomMenuWidgetFactory');
 
 export interface SidebarMenu {
   id: string;

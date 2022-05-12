@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const GitCommitDetailWidgetOptions = Symbol('GitCommitDetailWidgetOptions');
+import { serviceIdentifier } from '@theia/core';
+
+export const GitCommitDetailWidgetOptions = serviceIdentifier<GitCommitDetailWidgetOptions>('GitCommitDetailWidgetOptions');
 export interface GitCommitDetailWidgetOptions {
     rootUri: string;
     commitSha: string;

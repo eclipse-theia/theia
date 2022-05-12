@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '../types';
+
 export const localizationPath = '/services/i18n';
 
-export const AsyncLocalizationProvider = Symbol('AsyncLocalizationProvider');
+export const AsyncLocalizationProvider = serviceIdentifier<AsyncLocalizationProvider>('AsyncLocalizationProvider');
 export interface AsyncLocalizationProvider {
     getCurrentLanguage(): Promise<string>
     setCurrentLanguage(languageId: string): Promise<void>

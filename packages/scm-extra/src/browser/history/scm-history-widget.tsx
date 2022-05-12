@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
+import { Event as TheiaEvent, DisposableCollection, serviceIdentifier } from '@theia/core';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, codicon } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
@@ -31,7 +31,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { ScmHistoryProvider } from './scm-history-provider';
 
-export const ScmHistorySupport = Symbol('scm-history-support');
+export const ScmHistorySupport = serviceIdentifier<ScmHistorySupport>('scm-history-support');
 export interface ScmHistorySupport {
     getCommitHistory(options?: HistoryWidgetOptions): Promise<ScmHistoryCommit[]>;
     readonly onDidChangeHistory: TheiaEvent<void>;

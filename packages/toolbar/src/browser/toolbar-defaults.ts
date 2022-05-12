@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
+import { nls, serviceIdentifier } from '@theia/core';
 import { DeflatedToolbarTree, ToolbarAlignment } from './toolbar-interfaces';
 
 // This file specifies the default layout of the toolbar. This binding should be overridden for extenders.
 // Both Toolbar Command Items and Toolbar Contributions can be specified here.
-export const ToolbarDefaultsFactory = Symbol('ToolbarDefaultsFactory');
+export const ToolbarDefaultsFactory = serviceIdentifier<() => DeflatedToolbarTree>('ToolbarDefaultsFactory');
 export const ToolbarDefaults: () => DeflatedToolbarTree = () => ({
     items: {
         [ToolbarAlignment.LEFT]: [

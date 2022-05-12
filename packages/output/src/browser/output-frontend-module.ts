@@ -41,7 +41,7 @@ export default new ContainerModule(bind => {
     bind(OutputWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: OUTPUT_WIDGET_KIND,
-        createWidget: () => context.container.get<OutputWidget>(OutputWidget)
+        createWidget: () => context.container.get(OutputWidget)
     }));
     bindViewContribution(bind, OutputContribution);
     bind(OpenHandler).to(OutputContribution).inSingletonScope();

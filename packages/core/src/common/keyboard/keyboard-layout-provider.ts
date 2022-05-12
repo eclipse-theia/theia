@@ -16,16 +16,17 @@
 
 import type { IKeyboardLayoutInfo, IKeyboardMapping } from 'native-keymap';
 import { Event } from '../event';
+import { serviceIdentifier } from '../types';
 
 export const keyboardPath = '/services/keyboard';
 
-export const KeyboardLayoutProvider = Symbol('KeyboardLayoutProvider');
+export const KeyboardLayoutProvider = serviceIdentifier<KeyboardLayoutProvider>('KeyboardLayoutProvider');
 
 export interface KeyboardLayoutProvider {
     getNativeLayout(): Promise<NativeKeyboardLayout>;
 }
 
-export const KeyboardLayoutChangeNotifier = Symbol('KeyboardLayoutChangeNotifier');
+export const KeyboardLayoutChangeNotifier = serviceIdentifier<KeyboardLayoutChangeNotifier>('KeyboardLayoutChangeNotifier');
 
 export interface KeyboardLayoutChangeNotifier {
     onDidChangeNativeLayout: Event<NativeKeyboardLayout>;
@@ -39,7 +40,7 @@ export interface KeyValidationInput {
     altKey?: boolean;
 }
 
-export const KeyValidator = Symbol('KeyValidator');
+export const KeyValidator = serviceIdentifier<KeyValidator>('KeyValidator');
 
 export interface KeyValidator {
     validateKey(input: KeyValidationInput): void;

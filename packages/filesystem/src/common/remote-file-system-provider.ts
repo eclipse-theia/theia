@@ -31,10 +31,11 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { newWriteableStream, ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken, cancelled } from '@theia/core/lib/common/cancellation';
+import { serviceIdentifier } from '@theia/core';
 
 export const remoteFileSystemPath = '/services/remote-filesystem';
 
-export const RemoteFileSystemServer = Symbol('RemoteFileSystemServer');
+export const RemoteFileSystemServer = serviceIdentifier<RemoteFileSystemServer>('RemoteFileSystemServer');
 export interface RemoteFileSystemServer extends JsonRpcServer<RemoteFileSystemClient> {
     getCapabilities(): Promise<FileSystemProviderCapabilities>
     stat(resource: string): Promise<Stat>;

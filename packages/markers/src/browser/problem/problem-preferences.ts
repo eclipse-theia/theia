@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const ProblemConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -45,8 +46,8 @@ export interface ProblemConfiguration {
     'problems.autoReveal': boolean
 }
 
-export const ProblemPreferenceContribution = Symbol('ProblemPreferenceContribution');
-export const ProblemPreferences = Symbol('ProblemPreferences');
+export const ProblemPreferenceContribution = serviceIdentifier<PreferenceContribution>('ProblemPreferenceContribution');
+export const ProblemPreferences = serviceIdentifier<ProblemPreferences>('ProblemPreferences');
 export type ProblemPreferences = PreferenceProxy<ProblemConfiguration>;
 
 export function createProblemPreferences(preferences: PreferenceService, schema: PreferenceSchema = ProblemConfigSchema): ProblemPreferences {
@@ -55,8 +56,8 @@ export function createProblemPreferences(preferences: PreferenceService, schema:
 
 export const bindProblemPreferences = (bind: interfaces.Bind): void => {
     bind(ProblemPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(ProblemPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(ProblemPreferenceContribution);
         return createProblemPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(ProblemPreferenceContribution).toConstantValue({ schema: ProblemConfigSchema });

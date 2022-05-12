@@ -42,7 +42,7 @@ export default new ContainerModule(bind => {
     );
     bind(WidgetFactory).toDynamicValue(context => ({
         id: PROBLEMS_WIDGET_ID,
-        createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
+        createWidget: () => context.container.get(ProblemWidget)
     }));
     bind(ApplicationShellLayoutMigration).to(ProblemLayoutVersion3Migration).inSingletonScope();
 

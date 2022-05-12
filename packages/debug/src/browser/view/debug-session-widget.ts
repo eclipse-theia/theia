@@ -25,8 +25,9 @@ import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
 import { DebugWatchWidget } from './debug-watch-widget';
+import { serviceIdentifier } from '@theia/core';
 
-export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
+export const DebugSessionWidgetFactory = serviceIdentifier<DebugSessionWidgetFactory>('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
 export const DEBUG_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
     label: 'debug',

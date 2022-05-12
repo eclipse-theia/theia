@@ -17,9 +17,9 @@
 import * as yargs from 'yargs';
 import { inject, named, injectable } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
-import { MaybePromise } from '../common/types';
+import { MaybePromise, serviceIdentifier } from '../common';
 
-export const CliContribution = Symbol('CliContribution');
+export const CliContribution = serviceIdentifier<CliContribution>('CliContribution');
 
 /**
  * Call back for extension to contribute options to the cli.

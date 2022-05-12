@@ -16,10 +16,10 @@
 
 import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { ILogger, Emitter, Event, ContributionProvider, MaybePromise, WaitUntilEvent } from '../common';
+import { ILogger, Emitter, Event, ContributionProvider, MaybePromise, WaitUntilEvent, serviceIdentifier } from '../common';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const WidgetFactory = Symbol('WidgetFactory');
+export const WidgetFactory = serviceIdentifier<WidgetFactory>('WidgetFactory');
 
 /**
  * A {@link WidgetFactory} is used to create new widgets. Factory-specific information (options) can be passed as serializable JSON data.

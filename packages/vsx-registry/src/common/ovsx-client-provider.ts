@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { OVSXClient } from '@theia/ovsx-client';
 import { VSXEnvironment } from './vsx-environment';
 
-export const OVSXClientProvider = Symbol('OVSXClientProvider');
+export const OVSXClientProvider = serviceIdentifier<OVSXClientProvider>('OVSXClientProvider');
 export type OVSXClientProvider = () => Promise<OVSXClient>;
 
 export async function createOVSXClient(vsxEnvironment: VSXEnvironment): Promise<OVSXClient> {

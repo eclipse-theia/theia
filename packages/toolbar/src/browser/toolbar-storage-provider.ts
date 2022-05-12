@@ -16,7 +16,7 @@
 
 import * as jsoncParser from 'jsonc-parser';
 import { Command, deepClone, Disposable, DisposableCollection, Emitter, MessageService, nls } from '@theia/core';
-import { injectable, postConstruct, inject, interfaces } from '@theia/core/shared/inversify';
+import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
@@ -48,7 +48,7 @@ export class ToolbarStorageProvider implements Disposable {
     @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(LateInjector) protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
+    @inject(LateInjector) protected lateInjector: LateInjector;
     @inject(UserToolbarURI) protected readonly USER_TOOLBAR_URI: URI;
 
     get ready(): Promise<void> {

@@ -75,16 +75,16 @@ before(() => {
     testContainer.bind<ContributionProvider<LabelProviderContribution>>(ContributionProvider).toDynamicValue(ctx => ({
         getContributions(): LabelProviderContribution[] {
             return [
-                ctx.container.get<MarkerTreeLabelProvider>(MarkerTreeLabelProvider),
-                ctx.container.get<TreeLabelProvider>(TreeLabelProvider),
-                ctx.container.get<WorkspaceUriLabelProviderContribution>(WorkspaceUriLabelProviderContribution),
-                ctx.container.get<DefaultUriLabelProviderContribution>(DefaultUriLabelProviderContribution)
+                ctx.container.get(MarkerTreeLabelProvider),
+                ctx.container.get(TreeLabelProvider),
+                ctx.container.get(WorkspaceUriLabelProviderContribution),
+                ctx.container.get(DefaultUriLabelProviderContribution)
             ];
         }
     })).inSingletonScope();
 
-    markerTreeLabelProvider = testContainer.get<MarkerTreeLabelProvider>(MarkerTreeLabelProvider);
-    workspaceService = testContainer.get<WorkspaceService>(WorkspaceService);
+    markerTreeLabelProvider = testContainer.get(MarkerTreeLabelProvider);
+    workspaceService = testContainer.get(WorkspaceService);
 });
 
 after(() => {

@@ -20,9 +20,9 @@ import { Emitter } from '../common/event';
 import { ThemeService } from './theming';
 import { FrontendApplicationContribution } from './frontend-application';
 import { ContributionProvider } from '../common/contribution-provider';
-import { Disposable, DisposableCollection } from '../common/disposable';
+import { Disposable, DisposableCollection, serviceIdentifier } from '../common';
 
-export const ColorContribution = Symbol('ColorContribution');
+export const ColorContribution = serviceIdentifier<ColorContribution>('ColorContribution');
 export interface ColorContribution {
     registerColors(colors: ColorRegistry): void;
 }

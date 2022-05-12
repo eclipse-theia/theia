@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '../../../shared/inversify';
-import { Emitter, Event } from '../../common';
+import { Emitter, Event, serviceIdentifier } from '../../common';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { Coordinate } from '../context-menu-renderer';
 import { RendererHost } from '../widgets/react-renderer';
@@ -24,10 +24,10 @@ import { Styles } from './breadcrumbs-constants';
 export interface BreadcrumbPopupContainerFactory {
     (parent: HTMLElement, breadcrumbId: string, position: Coordinate): BreadcrumbPopupContainer;
 }
-export const BreadcrumbPopupContainerFactory = Symbol('BreadcrumbPopupContainerFactory');
+export const BreadcrumbPopupContainerFactory = serviceIdentifier<BreadcrumbPopupContainerFactory>('BreadcrumbPopupContainerFactory');
 
 export type BreadcrumbID = string;
-export const BreadcrumbID = Symbol('BreadcrumbID');
+export const BreadcrumbID = serviceIdentifier<BreadcrumbID>('BreadcrumbID');
 
 /**
  * This class creates a popup container at the given position

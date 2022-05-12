@@ -24,7 +24,7 @@
 
 import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { MaybePromise } from '@theia/core/lib/common/types';
+import { MaybePromise, serviceIdentifier } from '@theia/core';
 import { Event } from '@theia/core/lib/common/event';
 import { Channel } from '../common/debug-service';
 
@@ -33,7 +33,7 @@ import { Channel } from '../common/debug-service';
 /**
  * DebugAdapterSession symbol for DI.
  */
-export const DebugAdapterSession = Symbol('DebugAdapterSession');
+export const DebugAdapterSession = serviceIdentifier<DebugAdapterSession>('DebugAdapterSession');
 
 /**
  * The debug adapter session. The debug adapter session manages the lifecycle of a
@@ -50,7 +50,7 @@ export interface DebugAdapterSession {
 /**
  * DebugAdapterSessionFactory symbol for DI.
  */
-export const DebugAdapterSessionFactory = Symbol('DebugAdapterSessionFactory');
+export const DebugAdapterSessionFactory = serviceIdentifier<DebugAdapterSessionFactory>('DebugAdapterSessionFactory');
 
 /**
  * The [debug session](#DebugSession) factory.
@@ -123,7 +123,7 @@ export interface DebugAdapter {
 /**
  * DebugAdapterFactory symbol for DI.
  */
-export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
+export const DebugAdapterFactory = serviceIdentifier<DebugAdapterFactory>('DebugAdapterFactory');
 
 /**
  * Factory to start debug adapter.
@@ -136,7 +136,7 @@ export interface DebugAdapterFactory {
 /**
  * DebugAdapterContribution symbol for DI.
  */
-export const DebugAdapterContribution = Symbol('DebugAdapterContribution');
+export const DebugAdapterContribution = serviceIdentifier<DebugAdapterContribution>('DebugAdapterContribution');
 
 /**
  * A contribution point for debug adapters.

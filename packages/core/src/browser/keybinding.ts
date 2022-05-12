@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
-import { Emitter, Event } from '../common/event';
+import { Emitter, Event, serviceIdentifier } from '../common';
 import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { KeyCode, KeySequence, Key } from './keyboard/keys';
@@ -59,7 +59,7 @@ export interface ScopedKeybinding extends common.Keybinding {
     scope: KeybindingScope;
 }
 
-export const KeybindingContribution = Symbol('KeybindingContribution');
+export const KeybindingContribution = serviceIdentifier<KeybindingContribution>('KeybindingContribution');
 /**
  * Allows extensions to contribute {@link common.Keybinding}s
  */
@@ -71,7 +71,7 @@ export interface KeybindingContribution {
     registerKeybindings(keybindings: KeybindingRegistry): void;
 }
 
-export const KeybindingContext = Symbol('KeybindingContext');
+export const KeybindingContext = serviceIdentifier<KeybindingContext>('KeybindingContext');
 export interface KeybindingContext {
     /**
      * The unique ID of the current context.

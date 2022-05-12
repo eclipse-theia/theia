@@ -16,14 +16,14 @@
 
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
-import { ILogger } from '@theia/core';
+import { ILogger, serviceIdentifier } from '@theia/core';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
 
-export const RgPath = Symbol('RgPath');
+export const RgPath = serviceIdentifier<string>('RgPath');
 
 /**
  * Typing for ripgrep's arbitrary data object:

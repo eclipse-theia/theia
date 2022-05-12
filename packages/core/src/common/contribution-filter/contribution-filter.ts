@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
+import { serviceIdentifier } from '../types';
 import { Filter } from './filter';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ContributionType = interfaces.ServiceIdentifier<any>;
 
-export const ContributionFilterRegistry = Symbol('ContributionFilterRegistry');
+export const ContributionFilterRegistry = serviceIdentifier<ContributionFilterRegistry>('ContributionFilterRegistry');
 export interface ContributionFilterRegistry {
 
     /**
@@ -43,7 +44,7 @@ export interface ContributionFilterRegistry {
     applyFilters<T extends Object>(toFilter: T[], type: ContributionType): T[]
 }
 
-export const FilterContribution = Symbol('FilterContribution');
+export const FilterContribution = serviceIdentifier<FilterContribution>('FilterContribution');
 /**
  * Register filters to remove contributions.
  */

@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
+
 export const workspacePath = '/services/workspace';
 
 /**
  * The JSON-RPC workspace interface.
  */
-export const WorkspaceServer = Symbol('WorkspaceServer');
+export const WorkspaceServer = serviceIdentifier<WorkspaceServer>('WorkspaceServer');
 export interface WorkspaceServer {
 
     /**

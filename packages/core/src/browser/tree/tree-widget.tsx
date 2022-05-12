@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { Disposable, MenuPath, SelectionService } from '../../common';
+import { Disposable, MaybePromise, MenuPath, SelectionService, serviceIdentifier } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
@@ -38,7 +38,6 @@ import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
 import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
-import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
 
@@ -58,7 +57,7 @@ export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
-export const TreeProps = Symbol('TreeProps');
+export const TreeProps = serviceIdentifier<TreeProps>('TreeProps');
 
 /**
  * Representation of tree properties.

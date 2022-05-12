@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@phosphor/messaging';
-import { Disposable, MaybeArray, nls } from '@theia/core/lib/common';
+import { Disposable, MaybeArray, nls, serviceIdentifier } from '@theia/core';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget, codiconArray, Key, LabelProvider } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer, LocationListRendererFactory } from '../location';
@@ -26,12 +26,12 @@ import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters, FileDialogTreeFil
 import URI from '@theia/core/lib/common/uri';
 import { Panel } from '@theia/core/shared/@phosphor/widgets';
 
-export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');
+export const OpenFileDialogFactory = serviceIdentifier<OpenFileDialogFactory>('OpenFileDialogFactory');
 export interface OpenFileDialogFactory {
     (props: OpenFileDialogProps): OpenFileDialog;
 }
 
-export const SaveFileDialogFactory = Symbol('SaveFileDialogFactory');
+export const SaveFileDialogFactory = serviceIdentifier<SaveFileDialogFactory>('SaveFileDialogFactory');
 export interface SaveFileDialogFactory {
     (props: SaveFileDialogProps): SaveFileDialog;
 }

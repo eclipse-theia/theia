@@ -90,7 +90,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(envVariablesPath, () => {
-            const envVariablesServer = ctx.container.get<EnvVariablesServer>(EnvVariablesServer);
+            const envVariablesServer = ctx.container.get(EnvVariablesServer);
             return envVariablesServer;
         })
     ).inSingletonScope();
@@ -104,7 +104,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindContributionProvider(bind, WsRequestValidatorContribution);
     bind(KeytarService).to(KeytarServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get<KeytarService>(KeytarService))
+        new JsonRpcConnectionHandler(keytarServicePath, () => ctx.container.get(KeytarService))
     ).inSingletonScope();
 
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();

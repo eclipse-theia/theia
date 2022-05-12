@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import {
     createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService
 } from '@theia/core/lib/browser/preferences';
@@ -58,8 +59,8 @@ export interface WorkspaceTrustConfiguration {
     [WORKSPACE_TRUST_EMPTY_WINDOW]: boolean;
 }
 
-export const WorkspaceTrustPreferenceContribution = Symbol('WorkspaceTrustPreferenceContribution');
-export const WorkspaceTrustPreferences = Symbol('WorkspaceTrustPreferences');
+export const WorkspaceTrustPreferenceContribution = serviceIdentifier<PreferenceContribution>('WorkspaceTrustPreferenceContribution');
+export const WorkspaceTrustPreferences = serviceIdentifier<WorkspaceTrustPreferences>('WorkspaceTrustPreferences');
 export type WorkspaceTrustPreferences = PreferenceProxy<WorkspaceTrustConfiguration>;
 
 export function createWorkspaceTrustPreferences(preferences: PreferenceService, schema: PreferenceSchema = workspaceTrustPreferenceSchema): WorkspaceTrustPreferences {
@@ -68,8 +69,8 @@ export function createWorkspaceTrustPreferences(preferences: PreferenceService, 
 
 export function bindWorkspaceTrustPreferences(bind: interfaces.Bind): void {
     bind(WorkspaceTrustPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(WorkspaceTrustPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(WorkspaceTrustPreferenceContribution);
         return createWorkspaceTrustPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(WorkspaceTrustPreferenceContribution).toConstantValue({ schema: workspaceTrustPreferenceSchema });

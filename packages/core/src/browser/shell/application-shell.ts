@@ -22,7 +22,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable, environment, serviceIdentifier } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget, SaveOptions, SaveableSource } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -68,8 +68,8 @@ export type ApplicationShellLayoutVersion =
  */
 export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 
-export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
-export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
+export const ApplicationShellOptions = serviceIdentifier<RecursivePartial<ApplicationShell.Options>>('ApplicationShellOptions');
+export const DockPanelRendererFactory = serviceIdentifier<DockPanelRendererFactory>('DockPanelRendererFactory');
 export interface DockPanelRendererFactory {
     (): DockPanelRenderer
 }

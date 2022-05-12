@@ -43,7 +43,7 @@ describe('variable api', () => {
     });
 
     beforeEach(() => {
-        variableRegistry = testContainer.get<VariableRegistry>(VariableRegistry);
+        variableRegistry = testContainer.get(VariableRegistry);
     });
 
     it('should register and return variable', () => {

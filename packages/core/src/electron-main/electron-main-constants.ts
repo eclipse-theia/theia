@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const ElectronMainApplicationGlobals = Symbol('ElectronMainApplicationGlobals');
+import { serviceIdentifier } from '../common';
+
+export const ElectronMainApplicationGlobals = serviceIdentifier<ElectronMainApplicationGlobals>('ElectronMainApplicationGlobals');
 export interface ElectronMainApplicationGlobals {
     readonly THEIA_APP_PROJECT_PATH: string
     readonly THEIA_BACKEND_MAIN_PATH: string

@@ -22,7 +22,7 @@ import {
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable, nls } from '@theia/core/lib/common';
+import { Disposable, nls, serviceIdentifier } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
@@ -32,7 +32,7 @@ import * as DOMPurify from '@theia/core/shared/dompurify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceNodeRendererContribution, PreferenceNodeRendererCreator, PreferenceNodeRendererCreatorRegistry } from './preference-node-renderer-creator';
 
-export const PreferenceNodeRendererFactory = Symbol('PreferenceNodeRendererFactory');
+export const PreferenceNodeRendererFactory = serviceIdentifier<PreferenceNodeRendererFactory>('PreferenceNodeRendererFactory');
 export type PreferenceNodeRendererFactory = (node: Preference.TreeNode) => PreferenceNodeRenderer;
 export const HEADER_CLASS = 'settings-section-category-title';
 export const SUBHEADER_CLASS = 'settings-section-subcategory-title';

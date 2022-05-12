@@ -16,11 +16,12 @@
 
 import { TextmateRegistry } from './textmate-registry';
 import * as monaco from '@theia/monaco-editor-core';
+import { serviceIdentifier } from '@theia/core';
 
 /**
  * Callback for extensions to contribute language grammar definitions
  */
-export const LanguageGrammarDefinitionContribution = Symbol('LanguageGrammarDefinitionContribution');
+export const LanguageGrammarDefinitionContribution = serviceIdentifier<LanguageGrammarDefinitionContribution>('LanguageGrammarDefinitionContribution');
 export interface LanguageGrammarDefinitionContribution {
     registerTextmateLanguage(registry: TextmateRegistry): void;
 }

@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { OS } from './os';
+import { serviceIdentifier } from './types';
 
 export const applicationPath = '/services/application';
 
-export const ApplicationServer = Symbol('ApplicationServer');
+export const ApplicationServer = serviceIdentifier<ApplicationServer>('ApplicationServer');
 
 export interface ApplicationServer {
     getExtensionsInfos(): Promise<ExtensionInfo[]>;

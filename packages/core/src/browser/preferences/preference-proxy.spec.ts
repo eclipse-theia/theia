@@ -74,7 +74,7 @@ describe('Preference Proxy', () => {
     beforeEach(async () => {
         testContainer = createTestContainer();
         prefSchema = testContainer.get(PreferenceSchemaProvider);
-        prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
+        prefService = testContainer.get(PreferenceService) as PreferenceServiceImpl;
         validator = testContainer.get(PreferenceValidationService);
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
@@ -122,13 +122,13 @@ describe('Preference Proxy', () => {
                         resolve(s);
                     }, 1000));
                     const proxy = (testOptions.useFactory || options?.validated)
-                        ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(promisedSchema, options)
+                        ? testContainer.get(PreferenceProxyFactory)(promisedSchema, options)
                         : createPreferenceProxy(prefService, promisedSchema, options);
                     return { proxy, promisedSchema };
                 } else {
                     prefSchema.setSchema(s);
                     const proxy = (testOptions.useFactory || options?.validated)
-                        ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(s, options)
+                        ? testContainer.get(PreferenceProxyFactory)(s, options)
                         : createPreferenceProxy(prefService, s, options);
                     return { proxy };
                 }

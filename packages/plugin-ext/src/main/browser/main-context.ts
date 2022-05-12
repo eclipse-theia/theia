@@ -85,7 +85,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const modelService = container.get(EditorModelService);
     const editorManager = container.get(EditorManager);
-    const openerService = container.get<OpenerService>(OpenerService);
+    const openerService = container.get(OpenerService);
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
     const languageService = container.get(MonacoLanguages);

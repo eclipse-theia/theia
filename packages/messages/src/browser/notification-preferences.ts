@@ -23,6 +23,7 @@ import {
     PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const NotificationConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -39,8 +40,8 @@ export interface NotificationConfiguration {
     'notification.timeout': number
 }
 
-export const NotificationPreferenceContribution = Symbol('NotificationPreferenceContribution');
-export const NotificationPreferences = Symbol('NotificationPreferences');
+export const NotificationPreferenceContribution = serviceIdentifier<PreferenceContribution>('NotificationPreferenceContribution');
+export const NotificationPreferences = serviceIdentifier<NotificationPreferences>('NotificationPreferences');
 export type NotificationPreferences = PreferenceProxy<NotificationConfiguration>;
 
 export function createNotificationPreferences(preferences: PreferenceService, schema: PreferenceSchema = NotificationConfigSchema): NotificationPreferences {
@@ -49,8 +50,8 @@ export function createNotificationPreferences(preferences: PreferenceService, sc
 
 export function bindNotificationPreferences(bind: interfaces.Bind): void {
     bind(NotificationPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(NotificationPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(NotificationPreferenceContribution);
         return createNotificationPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(NotificationPreferenceContribution).toConstantValue({ schema: NotificationConfigSchema });

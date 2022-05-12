@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import * as nsfw from '@theia/core/shared/nsfw';
 
 /**
  * Inversify service identifier allowing extensions to override options passed to nsfw by the file watcher.
  */
-export const NsfwOptions = Symbol('NsfwOptions');
+export const NsfwOptions = serviceIdentifier<NsfwOptions>('NsfwOptions');
 export type NsfwOptions = nsfw.Options;

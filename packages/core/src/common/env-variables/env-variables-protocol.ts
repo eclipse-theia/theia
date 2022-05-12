@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '../types';
+
 export const envVariablesPath = '/services/envs';
 
-export const EnvVariablesServer = Symbol('EnvVariablesServer');
+export const EnvVariablesServer = serviceIdentifier<EnvVariablesServer>('EnvVariablesServer');
 export interface EnvVariablesServer {
     getExecPath(): Promise<string>
     getVariables(): Promise<EnvVariable[]>

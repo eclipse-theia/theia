@@ -23,6 +23,7 @@ import {
     PreferenceSchema
 } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const PreviewConfigSchema: PreferenceSchema = {
     type: 'object',
@@ -39,8 +40,8 @@ export interface PreviewConfiguration {
     'preview.openByDefault': boolean;
 }
 
-export const PreviewPreferenceContribution = Symbol('PreviewPreferenceContribution');
-export const PreviewPreferences = Symbol('PreviewPreferences');
+export const PreviewPreferenceContribution = serviceIdentifier<PreferenceContribution>('PreviewPreferenceContribution');
+export const PreviewPreferences = serviceIdentifier<PreviewPreferences>('PreviewPreferences');
 export type PreviewPreferences = PreferenceProxy<PreviewConfiguration>;
 
 export function createPreviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = PreviewConfigSchema): PreviewPreferences {
@@ -49,8 +50,8 @@ export function createPreviewPreferences(preferences: PreferenceService, schema:
 
 export function bindPreviewPreferences(bind: interfaces.Bind): void {
     bind(PreviewPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(PreviewPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(PreviewPreferenceContribution);
         return createPreviewPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(PreviewPreferenceContribution).toConstantValue({ schema: PreviewConfigSchema });

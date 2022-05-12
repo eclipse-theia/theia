@@ -19,8 +19,9 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { ProcessTaskRunner } from './process/process-task-runner';
 import { Task } from './task';
 import { TaskConfiguration } from '../common/task-protocol';
+import { serviceIdentifier } from '@theia/core';
 
-export const TaskRunnerContribution = Symbol('TaskRunnerContribution');
+export const TaskRunnerContribution = serviceIdentifier<TaskRunnerContribution>('TaskRunnerContribution');
 
 /** The {@link TaskRunnerContribution} can be used to contribute custom {@link TaskRunner}s. */
 export interface TaskRunnerContribution {
@@ -31,7 +32,7 @@ export interface TaskRunnerContribution {
     registerRunner(runners: TaskRunnerRegistry): void;
 }
 
-export const TaskRunner = Symbol('TaskRunner');
+export const TaskRunner = serviceIdentifier<TaskRunner>('TaskRunner');
 /**
  * A {@link TaskRunner} knows how to run a task configuration of a particular type.
  */

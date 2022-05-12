@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable } from '../../common';
+import { Event, Emitter, DisposableCollection, Disposable, deepFreeze, unreachable, serviceIdentifier } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
 import { PreferenceSchemaProvider } from './preference-contribution';
@@ -77,7 +77,7 @@ export interface PreferenceChanges {
     [preferenceName: string]: PreferenceChange
 }
 
-export const PreferenceService = Symbol('PreferenceService');
+export const PreferenceService = serviceIdentifier<PreferenceService>('PreferenceService');
 /**
  * Service to manage preferences including, among others, getting and setting preference values as well
  * as listening to preference changes.
@@ -259,7 +259,7 @@ export type PreferenceInspectionScope = keyof Omit<PreferenceInspection<unknown>
  * We cannot load providers directly in the case if they depend on `PreferenceService` somehow.
  * It allows to load them lazily after DI is configured.
  */
-export const PreferenceProviderProvider = Symbol('PreferenceProviderProvider');
+export const PreferenceProviderProvider = serviceIdentifier<PreferenceProviderProvider>('PreferenceProviderProvider');
 export type PreferenceProviderProvider = (scope: PreferenceScope, uri?: URI) => PreferenceProvider;
 
 @injectable()

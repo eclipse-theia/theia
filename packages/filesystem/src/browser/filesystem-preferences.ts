@@ -24,6 +24,7 @@ import {
 } from '@theia/core/lib/browser/preferences';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 // See https://github.com/Microsoft/vscode/issues/30180
 export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
@@ -120,8 +121,8 @@ export interface FileSystemConfiguration {
     'files.maxConcurrentUploads': number
 }
 
-export const FileSystemPreferenceContribution = Symbol('FilesystemPreferenceContribution');
-export const FileSystemPreferences = Symbol('FileSystemPreferences');
+export const FileSystemPreferenceContribution = serviceIdentifier<PreferenceContribution>('FilesystemPreferenceContribution');
+export const FileSystemPreferences = serviceIdentifier<FileSystemPreferences>('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService, schema: PreferenceSchema = filesystemPreferenceSchema): FileSystemPreferences {
@@ -130,8 +131,8 @@ export function createFileSystemPreferences(preferences: PreferenceService, sche
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
     bind(FileSystemPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(FileSystemPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(FileSystemPreferenceContribution);
         return createFileSystemPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(FileSystemPreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });

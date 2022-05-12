@@ -19,8 +19,9 @@ import { TreeModelImpl, TreeNode, TreeProps, CompositeTreeNode, SelectableTreeNo
 import URI from '@theia/core/lib/common/uri';
 import { ScmProvider, ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
 import { ScmContextKeyService } from './scm-context-key-service';
+import { serviceIdentifier } from '@theia/core';
 
-export const ScmTreeModelProps = Symbol('ScmTreeModelProps');
+export const ScmTreeModelProps = serviceIdentifier<ScmTreeModelProps>('ScmTreeModelProps');
 export interface ScmTreeModelProps {
     defaultExpansion?: 'collapsed' | 'expanded';
     nestingThreshold?: number;

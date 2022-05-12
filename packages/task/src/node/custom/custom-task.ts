@@ -15,18 +15,18 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, MaybePromise } from '@theia/core/lib/common/';
+import { ILogger, MaybePromise, serviceIdentifier } from '@theia/core';
 import { Task, TaskOptions } from '../task';
 import { TaskManager } from '../task-manager';
 import { TaskInfo } from '../../common/task-protocol';
 import { Process } from '@theia/process/lib/node';
 
-export const TaskCustomOptions = Symbol('TaskCustomOptions');
+export const TaskCustomOptions = serviceIdentifier<TaskCustomOptions>('TaskCustomOptions');
 export interface TaskCustomOptions extends TaskOptions {
     process: Process
 }
 
-export const TaskFactory = Symbol('TaskFactory');
+export const TaskFactory = serviceIdentifier<TaskFactory>('TaskFactory');
 export type TaskFactory = (options: TaskCustomOptions) => CustomTask;
 
 /** Represents a Task launched as a fake process by `CustomTaskRunner`. */

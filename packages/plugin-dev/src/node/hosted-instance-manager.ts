@@ -24,7 +24,7 @@ import * as request from 'request';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { environment, isWindows } from '@theia/core';
+import { environment, isWindows, serviceIdentifier } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
@@ -35,7 +35,7 @@ import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-pl
 
 const DEFAULT_HOSTED_PLUGIN_PORT = 3030;
 
-export const HostedInstanceManager = Symbol('HostedInstanceManager');
+export const HostedInstanceManager = serviceIdentifier<HostedInstanceManager>('HostedInstanceManager');
 
 /**
  * Is responsible for running and handling separate Theia instance with given plugin.

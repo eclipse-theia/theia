@@ -18,8 +18,9 @@ import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { TaskConfiguration } from '../common/task-protocol';
 import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';
+import { serviceIdentifier } from '@theia/core';
 
-export const TaskContribution = Symbol('TaskContribution');
+export const TaskContribution = serviceIdentifier<TaskContribution>('TaskContribution');
 
 /**
  * A {@link TaskContribution} allows to contribute custom {@link TaskResolver}s and/or {@link TaskProvider}s.

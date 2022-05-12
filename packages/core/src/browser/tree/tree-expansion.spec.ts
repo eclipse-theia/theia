@@ -148,7 +148,7 @@ describe('TreeExpansionService', () => {
             expanded: false
         };
 
-        const treeModel = container.get<TreeModel>(TreeModel);
+        const treeModel = container.get(TreeModel);
         treeModel.root = root;
 
         assert.isFalse(root.expanded, 'before');

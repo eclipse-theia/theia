@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
+
 export const VSX_ENVIRONMENT_PATH = '/services/vsx-environment';
 
-export const VSXEnvironment = Symbol('VSXEnvironment');
+export const VSXEnvironment = serviceIdentifier<VSXEnvironment>('VSXEnvironment');
 export interface VSXEnvironment {
     getRegistryUri(): Promise<string>;
     getRegistryApiUri(): Promise<string>;

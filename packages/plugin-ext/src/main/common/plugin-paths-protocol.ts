@@ -14,10 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
+
 export const pluginPathsServicePath = '/services/plugin-paths';
 
 // Service to create plugin configuration folders for different purpose.
-export const PluginPathsService = Symbol('PluginPathsService');
+export const PluginPathsService = serviceIdentifier<PluginPathsService>('PluginPathsService');
 export interface PluginPathsService {
     /** Returns hosted log path. Create directory by this path if it is not exist on the file system. */
     getHostLogPath(): Promise<string>;

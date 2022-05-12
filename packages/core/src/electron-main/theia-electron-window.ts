@@ -20,7 +20,7 @@ import { APPLICATION_STATE_CHANGE_SIGNAL, CLOSE_REQUESTED_SIGNAL, RELOAD_REQUEST
 import { BrowserWindow, BrowserWindowConstructorOptions, ipcMain, IpcMainEvent } from '../../electron-shared/electron';
 import { inject, injectable, postConstruct } from '../../shared/inversify';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
-import { DisposableCollection, Emitter, Event, isWindows } from '../common';
+import { DisposableCollection, Emitter, Event, isWindows, serviceIdentifier } from '../common';
 import { createDisposableListener } from './event-utils';
 
 /**
@@ -37,9 +37,9 @@ export interface TheiaBrowserWindowOptions extends BrowserWindowConstructorOptio
     screenLayout?: string;
 }
 
-export const TheiaBrowserWindowOptions = Symbol('TheiaBrowserWindowOptions');
+export const TheiaBrowserWindowOptions = serviceIdentifier<TheiaBrowserWindowOptions>('TheiaBrowserWindowOptions');
 
-export const WindowApplicationConfig = Symbol('WindowApplicationConfig');
+export const WindowApplicationConfig = serviceIdentifier<WindowApplicationConfig>('WindowApplicationConfig');
 export type WindowApplicationConfig = FrontendApplicationConfig;
 
 @injectable()
@@ -190,4 +190,4 @@ export interface TheiaElectronWindowFactory {
     (options: TheiaBrowserWindowOptions, config: FrontendApplicationConfig): TheiaElectronWindow;
 }
 
-export const TheiaElectronWindowFactory = Symbol('TheiaElectronWindowFactory');
+export const TheiaElectronWindowFactory = serviceIdentifier<TheiaElectronWindowFactory>('TheiaElectronWindowFactory');

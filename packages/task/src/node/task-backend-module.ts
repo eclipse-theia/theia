@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {
-            const taskServer = ctx.container.get<TaskServer>(TaskServer);
+            const taskServer = ctx.container.get(TaskServer);
             taskServer.setClient(client);
             // when connection closes, cleanup that client of task-server
             client.onDidCloseConnection(() => {

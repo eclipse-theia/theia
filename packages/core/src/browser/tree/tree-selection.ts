@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { TreeNode } from './tree';
-import { Event, Disposable, SelectionProvider } from '../../common';
+import { Event, Disposable, SelectionProvider, serviceIdentifier } from '../../common';
 
 /**
  * The tree selection service.
  */
-export const TreeSelectionService = Symbol('TreeSelectionService');
+export const TreeSelectionService = serviceIdentifier<TreeSelectionService>('TreeSelectionService');
 export interface TreeSelectionService extends Disposable, SelectionProvider<ReadonlyArray<Readonly<SelectableTreeNode>>> {
 
     /**

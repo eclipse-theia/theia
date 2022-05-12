@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationError, Emitter, Event, MaybePromise, MessageService, nls, WaitUntilEvent } from '@theia/core';
+import { CancellationError, Emitter, Event, MaybePromise, MessageService, nls, serviceIdentifier, WaitUntilEvent } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
@@ -175,8 +175,8 @@ export interface PreferenceContext {
     getConfigUri(): URI;
     getScope(): PreferenceScope;
 }
-export const PreferenceContext = Symbol('PreferenceContext');
-export const PreferenceTransactionPrelude = Symbol('PreferenceTransactionPrelude');
+export const PreferenceContext = serviceIdentifier<PreferenceContext>('PreferenceContext');
+export const PreferenceTransactionPrelude = serviceIdentifier<Promise<unknown> | undefined>('PreferenceTransactionPrelude');
 
 @injectable()
 export class PreferenceTransaction extends Transaction<[string, string[], unknown], boolean> {
@@ -269,7 +269,7 @@ export class PreferenceTransaction extends Transaction<[string, string[], unknow
 export interface PreferenceTransactionFactory {
     (context: PreferenceContext, waitFor?: Promise<unknown>): PreferenceTransaction;
 }
-export const PreferenceTransactionFactory = Symbol('PreferenceTransactionFactory');
+export const PreferenceTransactionFactory = serviceIdentifier<PreferenceTransactionFactory>('PreferenceTransactionFactory');
 
 export const preferenceTransactionFactoryCreator: interfaces.FactoryCreator<PreferenceTransaction> = ({ container }) =>
     (context: PreferenceContext, waitFor?: Promise<unknown>) => {

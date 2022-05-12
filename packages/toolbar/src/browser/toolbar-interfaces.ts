@@ -16,6 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { ReactTabBarToolbarItem, TabBarToolbar, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { serviceIdentifier } from '@theia/core';
 
 export enum ToolbarAlignment {
     LEFT = 'left',
@@ -46,22 +47,20 @@ export interface ToolbarContributionProperties {
 
 export type ToolbarContribution = ReactTabBarToolbarItem & ToolbarContributionProperties;
 
-export const ToolbarContribution = Symbol('ToolbarContribution');
+export const ToolbarContribution = serviceIdentifier<ToolbarContribution>('ToolbarContribution');
 
-export const Toolbar = Symbol('Toolbar');
-export const ToolbarFactory = Symbol('ToolbarFactory');
+export const Toolbar = serviceIdentifier<Toolbar>('Toolbar');
+export const ToolbarFactory = serviceIdentifier<() => Toolbar>('ToolbarFactory');
 export type Toolbar = TabBarToolbar;
 
 export type ToolbarItem = ToolbarContribution | TabBarToolbarItem;
 export interface DeflatedContributedToolbarItem { id: string; group: 'contributed' };
 export type ToolbarItemDeflated = DeflatedContributedToolbarItem | TabBarToolbarItem;
 
-export const LateInjector = Symbol('LateInjector');
+export const LateInjector = serviceIdentifier<<T>(id: interfaces.ServiceIdentifier<T>) => T>('LateInjector');
+export type LateInjector = <T>(identifier: interfaces.ServiceIdentifier<T>) => T;
 
-export const lateInjector = <T>(
-    context: interfaces.Container,
-    serviceIdentifier: interfaces.ServiceIdentifier<T>,
-): T => context.get<T>(serviceIdentifier);
+export const lateInjectorFactory = (ctx: interfaces.Context): LateInjector => identifier => ctx.container.get(identifier);
 
 export interface ToolbarItemPosition {
     alignment: ToolbarAlignment;
@@ -73,4 +72,3 @@ export enum IconSet {
     FA = 'fa',
     CODICON = 'codicon'
 }
-

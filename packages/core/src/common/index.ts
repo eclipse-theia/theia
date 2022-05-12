@@ -41,6 +41,7 @@ export * from './contribution-filter';
 export * from './nls';
 export * from './numbers';
 export * from './performance';
+export { Deferred } from './promise-util';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };

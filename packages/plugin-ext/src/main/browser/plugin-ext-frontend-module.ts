@@ -201,7 +201,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_CONTAINER_FACTORY_ID,
         createWidget: (identifier: ViewContainerIdentifier) =>
-            container.get<ViewContainer.Factory>(ViewContainer.Factory)(identifier)
+            container.get(ViewContainer.Factory)(identifier)
     })).inSingletonScope();
     bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(PluginViewRegistry).toSelf().inSingletonScope();

@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const GitConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -57,8 +58,8 @@ export interface GitConfiguration {
     'git.alwaysSignOff': boolean
 }
 
-export const GitPreferenceContribution = Symbol('GitPreferenceContribution');
-export const GitPreferences = Symbol('GitPreferences');
+export const GitPreferenceContribution = serviceIdentifier<PreferenceContribution>('GitPreferenceContribution');
+export const GitPreferences = serviceIdentifier<GitPreferences>('GitPreferences');
 export type GitPreferences = PreferenceProxy<GitConfiguration>;
 
 export function createGitPreferences(preferences: PreferenceService, schema: PreferenceSchema = GitConfigSchema): GitPreferences {
@@ -67,8 +68,8 @@ export function createGitPreferences(preferences: PreferenceService, schema: Pre
 
 export function bindGitPreferences(bind: interfaces.Bind): void {
     bind(GitPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(GitPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(GitPreferenceContribution);
         return createGitPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(GitPreferenceContribution).toConstantValue({ schema: GitConfigSchema });

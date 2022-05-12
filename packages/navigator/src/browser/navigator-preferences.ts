@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const EXPLORER_COMPACT_FOLDERS = 'explorer.compactFolders';
 
@@ -42,8 +43,8 @@ export interface FileNavigatorConfiguration {
     [EXPLORER_COMPACT_FOLDERS]: boolean;
 }
 
-export const FileNavigatorPreferenceContribution = Symbol('FileNavigatorPreferenceContribution');
-export const FileNavigatorPreferences = Symbol('NavigatorPreferences');
+export const FileNavigatorPreferenceContribution = serviceIdentifier<PreferenceContribution>('FileNavigatorPreferenceContribution');
+export const FileNavigatorPreferences = serviceIdentifier<FileNavigatorPreferences>('NavigatorPreferences');
 export type FileNavigatorPreferences = PreferenceProxy<FileNavigatorConfiguration>;
 
 export function createNavigatorPreferences(preferences: PreferenceService, schema: PreferenceSchema = FileNavigatorConfigSchema): FileNavigatorPreferences {
@@ -52,8 +53,8 @@ export function createNavigatorPreferences(preferences: PreferenceService, schem
 
 export function bindFileNavigatorPreferences(bind: interfaces.Bind): void {
     bind(FileNavigatorPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(FileNavigatorPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(FileNavigatorPreferenceContribution);
         return createNavigatorPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(FileNavigatorPreferenceContribution).toConstantValue({ schema: FileNavigatorConfigSchema });

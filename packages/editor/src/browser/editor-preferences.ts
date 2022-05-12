@@ -26,7 +26,7 @@ import {
 } from '@theia/core/lib/browser/preferences';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { nls } from '@theia/core/lib/common/nls';
-import { environment } from '@theia/core';
+import { environment, serviceIdentifier } from '@theia/core';
 import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema';
 
 /* eslint-disable @theia/localization-check,max-len,no-null/no-null */
@@ -195,8 +195,8 @@ export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
-export const EditorPreferenceContribution = Symbol('EditorPreferenceContribution');
-export const EditorPreferences = Symbol('EditorPreferences');
+export const EditorPreferenceContribution = serviceIdentifier<PreferenceContribution>('EditorPreferenceContribution');
+export const EditorPreferences = serviceIdentifier<EditorPreferences>('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 /**
@@ -212,7 +212,7 @@ export function createEditorPreferences(preferences: PreferenceService, schema: 
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
-        const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);
+        const factory = ctx.container.get(PreferenceProxyFactory);
         return factory(editorPreferenceSchema, { validated: true });
     }).inSingletonScope();
     bind(EditorPreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });

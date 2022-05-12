@@ -32,6 +32,7 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
+import { serviceIdentifier } from '@theia/core';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -156,7 +157,7 @@ export namespace MiniBrowserProps {
 
 }
 
-export const MiniBrowserContentFactory = Symbol('MiniBrowserContentFactory');
+export const MiniBrowserContentFactory = serviceIdentifier<MiniBrowserContentFactory>('MiniBrowserContentFactory');
 export type MiniBrowserContentFactory = (props: MiniBrowserProps) => MiniBrowserContent;
 
 @injectable()

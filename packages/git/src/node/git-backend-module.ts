@@ -58,7 +58,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     });
     if (SINGLE_THREADED) {
         bind(GitLocator).toDynamicValue(ctx => {
-            const logger = ctx.container.get<ILogger>(ILogger);
+            const logger = ctx.container.get(ILogger);
             return new GitLocatorImpl({
                 info: (message, ...args) => logger.info(message, ...args),
                 error: (message, ...args) => logger.error(message, ...args)
@@ -79,11 +79,8 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     bind(ConnectionContainerModule).toConstantValue(gitConnectionModule);
 }
 
-const gitConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    // DugiteGit is bound in singleton scope; each connection should use a proxy for that.
-    const GitProxy = Symbol('GitProxy');
-    bind(GitProxy).toDynamicValue(ctx => new Proxy(ctx.container.get(DugiteGit), {}));
-    bindBackendService(GitPath, GitProxy);
+const gitConnectionModule = ConnectionContainerModule.create(({ bindBackendService }) => {
+    bindBackendService(GitPath, DugiteGit);
 });
 
 export function bindRepositoryWatcher(bind: interfaces.Bind): void {
@@ -102,7 +99,7 @@ export default new ContainerModule(bind => {
     bindRepositoryWatcher(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler<GitWatcherClient>(GitWatcherPath, client => {
-            const server = context.container.get<GitWatcherServer>(GitWatcherServer);
+            const server = context.container.get(GitWatcherServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
@@ -112,7 +109,7 @@ export default new ContainerModule(bind => {
     bindPrompt(bind);
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler<GitPromptClient>(GitPrompt.WS_PATH, client => {
-            const server = context.container.get<GitPromptServer>(GitPromptServer);
+            const server = context.container.get(GitPromptServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;

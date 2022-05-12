@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Disposable } from '../common';
+import { Disposable, serviceIdentifier } from '../common';
 import { Emitter, Event } from '../common/event';
 
 export interface ContextKey<T> {
@@ -37,7 +37,7 @@ export interface ContextKeyChangeEvent {
     affects(keys: Set<string>): boolean;
 }
 
-export const ContextKeyService = Symbol('ContextKeyService');
+export const ContextKeyService = serviceIdentifier<ContextKeyService>('ContextKeyService');
 export interface ContextKeyService extends Disposable {
     readonly onDidChange: Event<ContextKeyChangeEvent>;
 

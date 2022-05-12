@@ -17,7 +17,7 @@
 import { interfaces } from 'inversify';
 import { nls } from '../../common/nls';
 import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '../../browser/preferences';
-import { isOSX, isWindows } from '../../common';
+import { isOSX, isWindows, serviceIdentifier } from '../../common';
 
 export namespace ZoomLevel {
     export const DEFAULT = 0;
@@ -57,8 +57,8 @@ export class ElectronWindowConfiguration {
     'window.titleBarStyle': 'native' | 'custom';
 }
 
-export const ElectronWindowPreferenceContribution = Symbol('ElectronWindowPreferenceContribution');
-export const ElectronWindowPreferences = Symbol('ElectronWindowPreferences');
+export const ElectronWindowPreferenceContribution = serviceIdentifier<PreferenceContribution>('ElectronWindowPreferenceContribution');
+export const ElectronWindowPreferences = serviceIdentifier<ElectronWindowPreferences>('ElectronWindowPreferences');
 export type ElectronWindowPreferences = PreferenceProxy<ElectronWindowConfiguration>;
 
 export function createElectronWindowPreferences(preferences: PreferenceService, schema: PreferenceSchema = electronWindowPreferencesSchema): ElectronWindowPreferences {
@@ -67,8 +67,8 @@ export function createElectronWindowPreferences(preferences: PreferenceService, 
 
 export function bindWindowPreferences(bind: interfaces.Bind): void {
     bind(ElectronWindowPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(ElectronWindowPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(ElectronWindowPreferenceContribution);
         return createElectronWindowPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(ElectronWindowPreferenceContribution).toConstantValue({ schema: electronWindowPreferencesSchema });

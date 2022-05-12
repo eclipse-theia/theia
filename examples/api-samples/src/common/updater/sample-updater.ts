@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { serviceIdentifier } from '@theia/core';
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 
 export enum UpdateStatus {
@@ -22,7 +23,7 @@ export enum UpdateStatus {
 }
 
 export const SampleUpdaterPath = '/services/sample-updater';
-export const SampleUpdater = Symbol('SampleUpdater');
+export const SampleUpdater = serviceIdentifier<SampleUpdater>('SampleUpdater');
 export interface SampleUpdater extends JsonRpcServer<SampleUpdaterClient> {
     checkForUpdates(): Promise<{ status: UpdateStatus }>;
     onRestartToUpdateRequested(): void;
@@ -31,7 +32,7 @@ export interface SampleUpdater extends JsonRpcServer<SampleUpdaterClient> {
     setUpdateAvailable(available: boolean): Promise<void>; // Mock
 }
 
-export const SampleUpdaterClient = Symbol('SampleUpdaterClient');
+export const SampleUpdaterClient = serviceIdentifier<SampleUpdaterClient>('SampleUpdaterClient');
 export interface SampleUpdaterClient {
     notifyReadyToInstall(): void;
 }

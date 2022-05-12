@@ -17,6 +17,7 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -52,8 +53,8 @@ export interface HostedPluginConfiguration {
     'hosted-plugin.launchOutFiles': string[];
 }
 
-export const HostedPluginPreferenceContribution = Symbol('HostedPluginPreferenceContribution');
-export const HostedPluginPreferences = Symbol('HostedPluginPreferences');
+export const HostedPluginPreferenceContribution = serviceIdentifier<PreferenceContribution>('HostedPluginPreferenceContribution');
+export const HostedPluginPreferences = serviceIdentifier<HostedPluginPreferences>('HostedPluginPreferences');
 export type HostedPluginPreferences = PreferenceProxy<HostedPluginConfiguration>;
 
 export function createNavigatorPreferences(preferences: PreferenceService, schema: PreferenceSchema = HostedPluginConfigSchema): HostedPluginPreferences {
@@ -62,8 +63,8 @@ export function createNavigatorPreferences(preferences: PreferenceService, schem
 
 export function bindHostedPluginPreferences(bind: interfaces.Bind): void {
     bind(HostedPluginPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(HostedPluginPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(HostedPluginPreferenceContribution);
         return createNavigatorPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(HostedPluginPreferenceContribution).toConstantValue({ schema: HostedPluginConfigSchema });

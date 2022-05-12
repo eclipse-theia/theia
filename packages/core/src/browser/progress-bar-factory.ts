@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
- import { ProgressBar } from './progress-bar';
+import { serviceIdentifier } from '../common';
+import { ProgressBar } from './progress-bar';
 
-export const ProgressBarFactory = Symbol('ProgressBarFactory');
+export const ProgressBarFactory = serviceIdentifier<ProgressBarFactory>('ProgressBarFactory');
 export interface ProgressBarFactory {
     (options: ProgressBarOptions): ProgressBar;
 }
 
-export const ProgressBarOptions = Symbol('ProgressBarOptions');
+export const ProgressBarOptions = serviceIdentifier<ProgressBarOptions>('ProgressBarOptions');
 export interface ProgressBarOptions {
     locationId: string;
     container: HTMLElement;

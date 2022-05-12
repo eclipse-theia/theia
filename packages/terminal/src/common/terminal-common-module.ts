@@ -24,7 +24,7 @@ import { ILogger } from '@theia/core';
  */
 export function createCommonBindings(bind: interfaces.Bind): void {
     bind(ILogger).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
+        const logger = ctx.container.get(ILogger);
         return logger.child('terminal');
     }).inSingletonScope().whenTargetNamed('terminal');
 }

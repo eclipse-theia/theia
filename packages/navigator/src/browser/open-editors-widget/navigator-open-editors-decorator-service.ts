@@ -16,9 +16,9 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { TreeDecorator, AbstractTreeDecoratorService } from '@theia/core/lib/browser/tree/tree-decorator';
-import { ContributionProvider } from '@theia/core/lib/common';
+import { ContributionProvider, serviceIdentifier } from '@theia/core/lib/common';
 
-export const OpenEditorsTreeDecorator = Symbol('OpenEditorsTreeDecorator');
+export const OpenEditorsTreeDecorator = serviceIdentifier<TreeDecorator>('OpenEditorsTreeDecorator');
 
 @injectable()
 export class OpenEditorsTreeDecoratorService extends AbstractTreeDecoratorService {

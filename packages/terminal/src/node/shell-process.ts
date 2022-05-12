@@ -18,17 +18,17 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
-import { isWindows, isOSX, OS } from '@theia/core/lib/common';
+import { isWindows, isOSX, OS, serviceIdentifier } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { EnvironmentUtils } from '@theia/core/lib/node/environment-utils';
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 
-export const ShellProcessFactory = Symbol('ShellProcessFactory');
+export const ShellProcessFactory = serviceIdentifier<ShellProcessFactory>('ShellProcessFactory');
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
 
-export const ShellProcessOptions = Symbol('ShellProcessOptions');
+export const ShellProcessOptions = serviceIdentifier<ShellProcessOptions>('ShellProcessOptions');
 export interface ShellProcessOptions {
     shellPreferences?: IShellTerminalPreferences,
     shell?: string,

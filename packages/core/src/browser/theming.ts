@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event } from '../common/event';
-import { Disposable } from '../common/disposable';
+import { Disposable, Emitter, Event, serviceIdentifier } from '../common';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
@@ -25,7 +24,7 @@ import { Theme, ThemeChangeEvent } from '../common/theme';
  */
 export * from '../common/theme';
 
-export const ThemeServiceSymbol = Symbol('ThemeService');
+export const ThemeServiceSymbol = serviceIdentifier<ThemeService>('ThemeService');
 
 export class ThemeService {
 

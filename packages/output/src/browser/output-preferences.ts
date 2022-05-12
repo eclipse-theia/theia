@@ -23,6 +23,7 @@ import {
     createPreferenceProxy
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const OutputConfigSchema: PreferenceSchema = {
     'type': 'object',
@@ -39,8 +40,8 @@ export interface OutputConfiguration {
     'output.maxChannelHistory': number
 }
 
-export const OutputPreferenceContribution = Symbol('OutputPreferenceContribution');
-export const OutputPreferences = Symbol('OutputPreferences');
+export const OutputPreferenceContribution = serviceIdentifier<PreferenceContribution>('OutputPreferenceContribution');
+export const OutputPreferences = serviceIdentifier<OutputPreferences>('OutputPreferences');
 export type OutputPreferences = PreferenceProxy<OutputConfiguration>;
 
 export function createOutputPreferences(preferences: PreferenceService, schema: PreferenceSchema = OutputConfigSchema): OutputPreferences {
@@ -49,8 +50,8 @@ export function createOutputPreferences(preferences: PreferenceService, schema: 
 
 export function bindOutputPreferences(bind: interfaces.Bind): void {
     bind(OutputPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(OutputPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(OutputPreferenceContribution);
         return createOutputPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(OutputPreferenceContribution).toConstantValue({ schema: OutputConfigSchema });

@@ -19,7 +19,7 @@ import { LocationService } from './location-service';
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
-import { DisposableCollection, Emitter, Path } from '@theia/core/lib/common';
+import { DisposableCollection, Emitter, Path, serviceIdentifier } from '@theia/core/lib/common';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileDialogModel } from '../file-dialog/file-dialog-model';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -66,12 +66,12 @@ class ResolvedDirectoryCache {
     }
 }
 
-export const LocationListRendererFactory = Symbol('LocationListRendererFactory');
+export const LocationListRendererFactory = serviceIdentifier<LocationListRendererFactory>('LocationListRendererFactory');
 export interface LocationListRendererFactory {
     (options: LocationListRendererOptions): LocationListRenderer;
 }
 
-export const LocationListRendererOptions = Symbol('LocationListRendererOptions');
+export const LocationListRendererOptions = serviceIdentifier<LocationListRendererOptions>('LocationListRendererOptions');
 export interface LocationListRendererOptions {
     model: FileDialogModel;
     host?: HTMLElement;

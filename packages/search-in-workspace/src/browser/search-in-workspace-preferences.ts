@@ -17,6 +17,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
+import { serviceIdentifier } from '@theia/core';
 
 export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -72,8 +73,8 @@ export class SearchInWorkspaceConfiguration {
     'search.followSymlinks': boolean;
 }
 
-export const SearchInWorkspacePreferenceContribution = Symbol('SearchInWorkspacePreferenceContribution');
-export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');
+export const SearchInWorkspacePreferenceContribution = serviceIdentifier<PreferenceContribution>('SearchInWorkspacePreferenceContribution');
+export const SearchInWorkspacePreferences = serviceIdentifier<SearchInWorkspacePreferences>('SearchInWorkspacePreferences');
 export type SearchInWorkspacePreferences = PreferenceProxy<SearchInWorkspaceConfiguration>;
 
 export function createSearchInWorkspacePreferences(preferences: PreferenceService, schema: PreferenceSchema = searchInWorkspacePreferencesSchema): SearchInWorkspacePreferences {
@@ -82,8 +83,8 @@ export function createSearchInWorkspacePreferences(preferences: PreferenceServic
 
 export function bindSearchInWorkspacePreferences(bind: interfaces.Bind): void {
     bind(SearchInWorkspacePreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(SearchInWorkspacePreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(SearchInWorkspacePreferenceContribution);
         return createSearchInWorkspacePreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(SearchInWorkspacePreferenceContribution).toConstantValue({ schema: searchInWorkspacePreferencesSchema });

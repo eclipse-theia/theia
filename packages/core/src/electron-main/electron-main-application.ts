@@ -26,12 +26,11 @@ import { FrontendApplicationConfig } from '@theia/application-package/lib/applic
 import URI from '../common/uri';
 import { FileUri } from '../node/file-uri';
 import { Deferred } from '../common/promise-util';
-import { MaybePromise } from '../common/types';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
-import { Disposable, DisposableCollection, isOSX, isWindows } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, serviceIdentifier } from '../common';
 import {
     RequestTitleBarStyle,
     Restart, StopReason,
@@ -91,7 +90,7 @@ export interface ElectronMainExecutionParams {
  *          ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
  *     ).inSingletonScope();
  */
-export const ElectronMainApplicationContribution = Symbol('ElectronMainApplicationContribution');
+export const ElectronMainApplicationContribution = serviceIdentifier<ElectronMainApplicationContribution>('ElectronMainApplicationContribution');
 export interface ElectronMainApplicationContribution {
     /**
      * The application is ready and is starting. This is the time to initialize

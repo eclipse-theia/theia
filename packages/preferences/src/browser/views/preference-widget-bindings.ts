@@ -90,7 +90,7 @@ export function createPreferencesWidgetContainer(parent: interfaces.Container): 
     child.bind(PreferencesWidget).toSelf();
 
     child.bind(PreferenceNodeRendererFactory).toFactory(({ container }) => (node: Preference.TreeNode) => {
-        const registry = container.get<PreferenceNodeRendererCreatorRegistry>(PreferenceNodeRendererCreatorRegistry);
+        const registry = container.get(PreferenceNodeRendererCreatorRegistry);
         const creator = registry.getPreferenceNodeRendererCreator(node);
         return creator.createRenderer(node, container);
     });

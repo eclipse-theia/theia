@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ChildProcess } from 'child_process';
-import { Disposable } from '@theia/core';
+import { Disposable, serviceIdentifier } from '@theia/core';
 import {
     Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus,
     GitFileChange, CommitWithChanges, GitFileBlame, Remote as RemoteModel, StashEntry
@@ -29,7 +29,7 @@ export const GitPath = '/services/git';
 /**
  * Git symbol for DI.
  */
-export const Git = Symbol('Git');
+export const Git = serviceIdentifier<Git>('Git');
 
 export namespace Git {
 

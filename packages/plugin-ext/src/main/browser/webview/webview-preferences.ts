@@ -24,6 +24,7 @@ import {
     PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 const frontendConfig = FrontendApplicationConfigProvider.get();
 
@@ -53,8 +54,8 @@ export interface WebviewConfiguration {
     'webview.warnIfUnsecure'?: boolean
 }
 
-export const WebviewPreferenceContribution = Symbol('WebviewPreferenceContribution');
-export const WebviewPreferences = Symbol('WebviewPreferences');
+export const WebviewPreferenceContribution = serviceIdentifier<PreferenceContribution>('WebviewPreferenceContribution');
+export const WebviewPreferences = serviceIdentifier<WebviewPreferences>('WebviewPreferences');
 export type WebviewPreferences = PreferenceProxy<WebviewConfiguration>;
 
 export function createWebviewPreferences(preferences: PreferenceService, schema: PreferenceSchema = WebviewConfigSchema): WebviewPreferences {
@@ -63,8 +64,8 @@ export function createWebviewPreferences(preferences: PreferenceService, schema:
 
 export function bindWebviewPreferences(bind: interfaces.Bind): void {
     bind(WebviewPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(WebviewPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(WebviewPreferenceContribution);
         return createWebviewPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(WebviewPreferenceContribution).toConstantValue({ schema: WebviewConfigSchema });

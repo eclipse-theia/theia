@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DisposableCollection, deepClone, Disposable } from '@theia/core/lib/common';
+import { DisposableCollection, deepClone, Disposable, serviceIdentifier } from '@theia/core';
 import { TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
@@ -57,7 +57,7 @@ import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/co
 import { IQuickInputService } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
 import { ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 
-export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
+export const MonacoEditorFactory = serviceIdentifier<MonacoEditorFactory>('MonacoEditorFactory');
 export interface MonacoEditorFactory {
     readonly scheme: string;
     create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): MonacoEditor;

@@ -17,11 +17,12 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { TreeDecorator, AbstractTreeDecoratorService } from '@theia/core/lib/browser/tree/tree-decorator';
+import { serviceIdentifier } from '@theia/core';
 
 /**
  * Symbol for all decorators that would like to contribute into the outline.
  */
-export const OutlineTreeDecorator = Symbol('OutlineTreeDecorator');
+export const OutlineTreeDecorator = serviceIdentifier<TreeDecorator>('OutlineTreeDecorator');
 
 /**
  * Decorator service for the outline.

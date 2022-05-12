@@ -17,10 +17,10 @@
 import { inject, injectable, optional } from 'inversify';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Disposable } from '../../common';
+import { Disposable, serviceIdentifier } from '../../common';
 
 export type RendererHost = HTMLElement;
-export const RendererHost = Symbol('RendererHost');
+export const RendererHost = serviceIdentifier<RendererHost>('RendererHost');
 
 @injectable()
 export class ReactRenderer implements Disposable {

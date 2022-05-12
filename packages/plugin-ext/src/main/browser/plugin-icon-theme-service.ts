@@ -28,7 +28,7 @@ import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
-import { RecursivePartial } from '@theia/core/lib/common/types';
+import { RecursivePartial, serviceIdentifier } from '@theia/core/lib/common/types';
 import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { FileStatNode, DirNode } from '@theia/filesystem/lib/browser';
@@ -81,7 +81,7 @@ export interface PluginIconThemeDocument extends PluginIconsAssociation {
     hidesExplorerArrows?: boolean;
 }
 
-export const PluginIconThemeFactory = Symbol('PluginIconThemeFactory');
+export const PluginIconThemeFactory = serviceIdentifier<PluginIconThemeFactory>('PluginIconThemeFactory');
 export type PluginIconThemeFactory = (definition: PluginIconThemeDefinition) => PluginIconTheme;
 
 @injectable()

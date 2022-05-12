@@ -21,8 +21,9 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { ICommandEvent, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { StandaloneCommandService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import * as monaco from '@theia/monaco-editor-core';
+import { serviceIdentifier } from '@theia/core';
 
-export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
+export const MonacoCommandServiceFactory = serviceIdentifier<MonacoCommandServiceFactory>('MonacoCommandServiceFactory');
 export interface MonacoCommandServiceFactory {
     (): MonacoCommandService;
 }

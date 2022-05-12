@@ -18,6 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Disposable } from './disposable';
 import { CommandRegistry, Command } from './command';
 import { ContributionProvider } from './contribution-provider';
+import { serviceIdentifier } from './types';
 
 /**
  * A menu entry representing an action, e.g. "New File".
@@ -84,7 +85,7 @@ export const SETTINGS_MENU: MenuPath = ['settings_menu'];
 export const ACCOUNTS_MENU: MenuPath = ['accounts_menu'];
 export const ACCOUNTS_SUBMENU = [...ACCOUNTS_MENU, '1_accounts_submenu'];
 
-export const MenuContribution = Symbol('MenuContribution');
+export const MenuContribution = serviceIdentifier<MenuContribution>('MenuContribution');
 
 /**
  * Representation of a menu contribution.

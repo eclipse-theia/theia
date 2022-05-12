@@ -18,12 +18,12 @@ import { enableJSDOM } from '../test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
-import { Container, injectable } from 'inversify';
+import { Container } from 'inversify';
 import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import * as os from '../../common/os';
-import { ILogger, Loggable } from '../../common/logger';
+import { ILogger } from '../../common/logger';
 import { LocalStorageService } from '../storage-service';
 import { MessageService } from '../../common/message-service';
 import { WindowService } from '../window/window-service';
@@ -57,7 +57,7 @@ describe('browser keyboard layout provider', function (): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const container = new Container();
         container.bind(BrowserKeyboardLayoutProvider).toSelf();
-        container.bind(ILogger).to(MockLogger);
+        container.bind(ILogger).toDynamicValue(() => createFakeLogger());
         container.bind(LocalStorageService).toSelf().inSingletonScope();
         container.bind(MessageService).toConstantValue({} as MessageService);
         container.bind(WindowService).toConstantValue({} as WindowService);
@@ -148,24 +148,10 @@ describe('browser keyboard layout provider', function (): void {
 
 });
 
-@injectable()
-class MockLogger implements Partial<ILogger> {
-    trace(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
-    debug(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
-    info(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
-    warn(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
-    error(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
-    fatal(loggable: Loggable): Promise<void> {
-        return Promise.resolve();
-    }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createFakeLogger(): any {
+    // eslint-disable-next-line no-null/no-null
+    return new Proxy(Object.create(null), {
+        get: (target, property, receiver) => () => Promise.resolve()
+    });
 }

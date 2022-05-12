@@ -118,7 +118,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockStorageService.getData).withArgs('theia-git-all-repositories').resolves(allRepos);
         sinon.stub(mockWorkspaceService, 'roots').value(Promise.resolve(roots));
         (<sinon.SinonStub>mockWorkspaceService.tryGetRoots).returns(roots);
-        gitRepositoryProvider = testContainer.get<GitRepositoryProvider>(GitRepositoryProvider);
+        gitRepositoryProvider = testContainer.get(GitRepositoryProvider);
         (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allRepos);
 
@@ -139,7 +139,7 @@ describe('GitRepositoryProvider', () => {
         sinon.stub(mockWorkspaceService, 'roots').resolves(oldRoots);
         const stubWsRoots = <sinon.SinonStub>mockWorkspaceService.tryGetRoots;
         stubWsRoots.returns(oldRoots);
-        gitRepositoryProvider = testContainer.get<GitRepositoryProvider>(GitRepositoryProvider);
+        gitRepositoryProvider = testContainer.get(GitRepositoryProvider);
         (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allReposA);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderB.resource.toString(), {}).resolves(allReposB);
@@ -181,7 +181,7 @@ describe('GitRepositoryProvider', () => {
         stubWsRoots.onCall(0).returns(oldRoots);
         stubWsRoots.onCall(1).returns(oldRoots);
         stubWsRoots.onCall(2).returns(newRoots);
-        gitRepositoryProvider = testContainer.get<GitRepositoryProvider>(GitRepositoryProvider);
+        gitRepositoryProvider = testContainer.get(GitRepositoryProvider);
         (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allReposA);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderB.resource.toString(), {}).resolves(allReposB);
@@ -213,7 +213,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockStorageService.getData).withArgs('theia-git-all-repositories').resolves(allReposA);
         sinon.stub(mockWorkspaceService, 'roots').value(Promise.resolve(roots));
         (<sinon.SinonStub>mockWorkspaceService.tryGetRoots).returns(roots);
-        gitRepositoryProvider = testContainer.get<GitRepositoryProvider>(GitRepositoryProvider);
+        gitRepositoryProvider = testContainer.get(GitRepositoryProvider);
         (<sinon.SinonStub>mockFilesystem.exists).withArgs(folderA.resource.toString()).resolves(true); // folderA exists
         (<sinon.SinonStub>mockFilesystem.exists).withArgs(folderB.resource.toString()).resolves(false); // folderB does not exist
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allReposA);
@@ -233,7 +233,7 @@ describe('GitRepositoryProvider', () => {
         (<sinon.SinonStub>mockStorageService.getData).withArgs('theia-git-all-repositories').resolves(undefined);
         sinon.stub(mockWorkspaceService, 'roots').value(Promise.resolve(roots));
         (<sinon.SinonStub>mockWorkspaceService.tryGetRoots).returns(roots);
-        gitRepositoryProvider = testContainer.get<GitRepositoryProvider>(GitRepositoryProvider);
+        gitRepositoryProvider = testContainer.get(GitRepositoryProvider);
         (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), {}).resolves(allReposA);
         (<sinon.SinonStub>mockGit.repositories).withArgs(folderA.resource.toString(), { maxCount: 1 }).resolves([allReposA[0]]);

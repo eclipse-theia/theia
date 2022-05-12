@@ -16,9 +16,9 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ContributionProvider, MaybePromise, Prioritizeable } from '@theia/core';
+import { ContributionProvider, MaybePromise, Prioritizeable, serviceIdentifier } from '@theia/core';
 
-export const PreviewHandler = Symbol('PreviewHandler');
+export const PreviewHandler = serviceIdentifier<PreviewHandler>('PreviewHandler');
 
 /**
  * The parameters given to the preview handler to render the preview content.

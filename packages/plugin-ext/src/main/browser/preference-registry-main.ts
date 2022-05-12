@@ -61,7 +61,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
     constructor(prc: RPCProtocol, container: interfaces.Container) {
         this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
         this.preferenceService = container.get(PreferenceService);
-        const preferenceProviderProvider = container.get<PreferenceProviderProvider>(PreferenceProviderProvider);
+        const preferenceProviderProvider = container.get(PreferenceProviderProvider);
         const preferenceServiceImpl = container.get(PreferenceServiceImpl);
         const workspaceService = container.get(WorkspaceService);
 

@@ -21,7 +21,7 @@ import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
+import { Disposable, DisposableCollection, MenuPath, isOSX, serviceIdentifier } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoConfigurationService } from '@theia/monaco/lib/browser/monaco-frontend-module';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
@@ -35,7 +35,7 @@ import { DebugExceptionWidget } from './debug-exception-widget';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator';
 
-export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
+export const DebugEditorModelFactory = serviceIdentifier<DebugEditorModelFactory>('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
 
 @injectable()

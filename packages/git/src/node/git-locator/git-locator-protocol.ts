@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable } from '@theia/core';
+import { Disposable, serviceIdentifier } from '@theia/core';
 
 export interface GitLocateOptions {
     readonly maxCount?: number;
 }
 
-export const GitLocator = Symbol('GitLocator');
+export const GitLocator = serviceIdentifier<GitLocator>('GitLocator');
 export interface GitLocator extends Disposable {
 
     /**

@@ -16,13 +16,13 @@
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, serviceIdentifier } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, Disposable, Emitter, Event } from '@theia/core/lib/common';
 import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from './callhierarchy';
 import { LanguageSelector, score } from '../common/language-selector';
 
-export const CallHierarchyService = Symbol('CallHierarchyService');
+export const CallHierarchyService = serviceIdentifier<CallHierarchyService>('CallHierarchyService');
 
 export interface CallHierarchySession {
     items: CallHierarchyItem[];

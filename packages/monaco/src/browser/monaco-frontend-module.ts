@@ -34,7 +34,7 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
 import { ContainerModule, decorate, injectable, interfaces } from '@theia/core/shared/inversify';
-import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { bindContributionProvider, MenuContribution, CommandContribution, serviceIdentifier } from '@theia/core';
 import {
     FrontendApplicationContribution, KeybindingContribution,
     PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
@@ -71,7 +71,6 @@ import { MonacoEditorServices } from './monaco-editor';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MonacoThemingService } from './monaco-theming-service';
-import { bindContributionProvider } from '@theia/core';
 import { WorkspaceSymbolCommand } from './workspace-symbol-command';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -181,10 +180,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(ColorRegistry).toService(MonacoColorRegistry);
 });
 
-export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
+export const MonacoConfigurationService = serviceIdentifier<IConfigurationService>('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): IConfigurationService {
-    const preferences = container.get<PreferenceService>(PreferenceService);
-    const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
+    const preferences = container.get(PreferenceService);
+    const preferenceSchemaProvider = container.get(PreferenceSchemaProvider);
     const service = StandaloneServices.get(IConfigurationService) as StandaloneConfigurationService;
     const _configuration: Configuration = service['_configuration'];
 

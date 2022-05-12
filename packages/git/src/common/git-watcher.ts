@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
+import { JsonRpcServer, JsonRpcProxy, serviceIdentifier } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './git-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
@@ -69,7 +69,7 @@ export interface GitWatcherClient {
 /**
  * The symbol of the Git watcher backend for DI.
  */
-export const GitWatcherServer = Symbol('GitWatcherServer');
+export const GitWatcherServer = serviceIdentifier<GitWatcherServer>('GitWatcherServer');
 
 /**
  * Service representation communicating between the backend and the frontend.
@@ -89,7 +89,7 @@ export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
 
 }
 
-export const GitWatcherServerProxy = Symbol('GitWatcherServerProxy');
+export const GitWatcherServerProxy = serviceIdentifier<GitWatcherServerProxy>('GitWatcherServerProxy');
 export type GitWatcherServerProxy = JsonRpcProxy<GitWatcherServer>;
 
 @injectable()

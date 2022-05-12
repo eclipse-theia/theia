@@ -139,7 +139,7 @@ describe('frontend-connection-status', function (): void {
     });
 
     it('should switch status to offline on websocket close', () => {
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
         mockSocketClosedEmitter.fire(undefined);
@@ -147,7 +147,7 @@ describe('frontend-connection-status', function (): void {
     });
 
     it('should switch status to online on websocket established', () => {
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockSocketClosedEmitter.fire(undefined);
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.OFFLINE);
@@ -156,7 +156,7 @@ describe('frontend-connection-status', function (): void {
     });
 
     it('should switch status to online on any websocket activity', () => {
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockSocketClosedEmitter.fire(undefined);
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.OFFLINE);
@@ -165,7 +165,7 @@ describe('frontend-connection-status', function (): void {
     });
 
     it('should perform ping request after socket activity', () => {
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockIncomingMessageActivityEmitter.fire(undefined);
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
@@ -174,8 +174,8 @@ describe('frontend-connection-status', function (): void {
         sinon.assert.calledOnce(pingSpy);
     });
 
-    it('should not perform ping request before desired timeout',  () => {
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+    it('should not perform ping request before desired timeout', () => {
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockIncomingMessageActivityEmitter.fire(undefined);
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
@@ -185,10 +185,10 @@ describe('frontend-connection-status', function (): void {
     });
 
     it('should switch to offline mode if ping request was rejected', () => {
-        const pingService = testContainer.get<PingService>(PingService);
+        const pingService = testContainer.get(PingService);
         pingSpy.restore();
         const stub = sinon.stub(pingService, 'ping').onFirstCall().throws('failed to make a ping request');
-        const frontendConnectionStatusService = testContainer.get<FrontendConnectionStatusService>(FrontendConnectionStatusService);
+        const frontendConnectionStatusService = testContainer.get(FrontendConnectionStatusService);
         frontendConnectionStatusService['init']();
         mockIncomingMessageActivityEmitter.fire(undefined);
         expect(frontendConnectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);

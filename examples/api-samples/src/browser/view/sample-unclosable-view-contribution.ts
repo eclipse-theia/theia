@@ -82,6 +82,6 @@ export const bindSampleUnclosableView = (bind: interfaces.Bind) => {
     bind(SampleViewUnclosableView).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SampleViewUnclosableView.ID,
-        createWidget: () => ctx.container.get<SampleViewUnclosableView>(SampleViewUnclosableView)
+        createWidget: () => ctx.container.get(SampleViewUnclosableView)
     }));
 };

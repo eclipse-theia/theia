@@ -16,7 +16,7 @@
 
 import throttle = require('@theia/core/shared/lodash.throttle');
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Resource, MaybePromise } from '@theia/core';
+import { Resource, MaybePromise, serviceIdentifier } from '@theia/core';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener, codicon } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -34,7 +34,7 @@ const DEFAULT_ICON = codicon('eye');
 
 let widgetCounter: number = 0;
 
-export const PreviewWidgetOptions = Symbol('PreviewWidgetOptions');
+export const PreviewWidgetOptions = serviceIdentifier<PreviewWidgetOptions>('PreviewWidgetOptions');
 export interface PreviewWidgetOptions {
     resource: Resource
 }

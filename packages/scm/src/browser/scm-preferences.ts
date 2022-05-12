@@ -23,6 +23,7 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const scmPreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -44,8 +45,8 @@ export interface ScmConfiguration {
     'scm.defaultViewMode': 'tree' | 'list'
 }
 
-export const ScmPreferenceContribution = Symbol('ScmPreferenceContribution');
-export const ScmPreferences = Symbol('ScmPreferences');
+export const ScmPreferenceContribution = serviceIdentifier<PreferenceContribution>('ScmPreferenceContribution');
+export const ScmPreferences = serviceIdentifier<ScmPreferences>('ScmPreferences');
 export type ScmPreferences = PreferenceProxy<ScmConfiguration>;
 
 export function createScmPreferences(preferences: PreferenceService, schema: PreferenceSchema = scmPreferenceSchema): ScmPreferences {
@@ -54,8 +55,8 @@ export function createScmPreferences(preferences: PreferenceService, schema: Pre
 
 export function bindScmPreferences(bind: interfaces.Bind): void {
     bind(ScmPreferences).toDynamicValue((ctx: interfaces.Context) => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(ScmPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(ScmPreferenceContribution);
         return createScmPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(ScmPreferenceContribution).toConstantValue({ schema: scmPreferenceSchema });

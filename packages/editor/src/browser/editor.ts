@@ -17,7 +17,7 @@
 import { Position, Range, Location } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as lsp from '@theia/core/shared/vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
-import { Event, Disposable, TextDocumentContentChangeDelta, Reference } from '@theia/core/lib/common';
+import { Event, Disposable, TextDocumentContentChangeDelta, Reference, serviceIdentifier } from '@theia/core/lib/common';
 import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
@@ -25,7 +25,7 @@ export {
     Position, Range, Location
 };
 
-export const TextEditorProvider = Symbol('TextEditorProvider');
+export const TextEditorProvider = serviceIdentifier<TextEditorProvider>('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 
 export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposable {

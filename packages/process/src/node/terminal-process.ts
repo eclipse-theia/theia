@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { isWindows } from '@theia/core';
+import { isWindows, serviceIdentifier } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions, /* ProcessErrorEvent */ } from './process';
 import { ProcessManager } from './process-manager';
@@ -26,7 +26,7 @@ import { signame } from './utils';
 import { PseudoPty } from './pseudo-pty';
 import { Writable } from 'stream';
 
-export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
+export const TerminalProcessOptions = serviceIdentifier<TerminalProcessOptions>('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
     /**
      * Windows only. Allow passing complex command lines already escaped for CommandLineToArgvW.
@@ -35,7 +35,7 @@ export interface TerminalProcessOptions extends ProcessOptions {
     isPseudo?: boolean;
 }
 
-export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
+export const TerminalProcessFactory = serviceIdentifier<TerminalProcessFactory>('TerminalProcessFactory');
 export interface TerminalProcessFactory {
     (options: TerminalProcessOptions): TerminalProcess;
 }

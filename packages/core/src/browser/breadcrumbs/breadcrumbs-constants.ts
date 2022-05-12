@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise, Event } from '../../common';
+import { MaybePromise, Event, serviceIdentifier } from '../../common';
 import { Disposable } from '../../../shared/vscode-languageserver-protocol';
 import URI from '../../common/uri';
 
@@ -48,7 +48,7 @@ export interface Breadcrumb {
     readonly containerClass?: string;
 }
 
-export const BreadcrumbsContribution = Symbol('BreadcrumbsContribution');
+export const BreadcrumbsContribution = serviceIdentifier<BreadcrumbsContribution>('BreadcrumbsContribution');
 export interface BreadcrumbsContribution {
 
     /**

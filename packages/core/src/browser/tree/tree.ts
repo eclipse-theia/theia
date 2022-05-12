@@ -15,13 +15,11 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Event, Emitter, WaitUntilEvent } from '../../common/event';
-import { Disposable, DisposableCollection } from '../../common/disposable';
+import { Disposable, DisposableCollection, Event, Emitter, Mutable, serviceIdentifier, WaitUntilEvent } from '../../common';
 import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
-import { Mutable } from '../../common/types';
 import { timeout } from '../../common/promise-util';
 
-export const Tree = Symbol('Tree');
+export const Tree = serviceIdentifier<Tree>('Tree');
 
 /**
  * The tree - an abstract data type.

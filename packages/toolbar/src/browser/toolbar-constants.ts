@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, MenuPath, nls } from '@theia/core';
+import { Command, MenuPath, nls, serviceIdentifier } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
@@ -63,7 +63,7 @@ export namespace ToolbarCommands {
     }, 'theia/toolbar/openJSON');
 }
 
-export const UserToolbarURI = Symbol('UserToolbarURI');
+export const UserToolbarURI = serviceIdentifier<URI>('UserToolbarURI');
 export const USER_TOOLBAR_URI = new URI().withScheme(UserStorageUri.scheme).withPath('/user/toolbar.json');
 export namespace ToolbarMenus {
     export const TOOLBAR_ITEM_CONTEXT_MENU: MenuPath = ['toolbar:toolbarItemContextMenu'];

@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
-import { ILogger, ContributionProvider, DisposableCollection, Disposable } from '@theia/core';
+import { ILogger, ContributionProvider, DisposableCollection, Disposable, serviceIdentifier } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
@@ -32,7 +32,7 @@ import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common
 import { TokenizationSupportAdapter } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneLanguages';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 
-export const OnigasmPromise = Symbol('OnigasmPromise');
+export const OnigasmPromise = serviceIdentifier<OnigasmPromise>('OnigasmPromise');
 export type OnigasmPromise = Promise<IOnigLib>;
 
 @injectable()

@@ -28,7 +28,7 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TheiaDockPanel } from './theia-dock-panel';
 import { SidePanelToolbar } from './side-panel-toolbar';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
-import { DisposableCollection, Disposable } from '../../common/disposable';
+import { DisposableCollection, Disposable, serviceIdentifier } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuPath } from '../../common/menu';
 import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
@@ -40,7 +40,7 @@ export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
 /** The class name added to collapsed side panels. */
 const COLLAPSED_CLASS = 'theia-mod-collapsed';
 
-export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
+export const SidePanelHandlerFactory = serviceIdentifier<() => SidePanelHandler>('SidePanelHandlerFactory');
 
 export const SIDE_PANEL_TOOLBAR_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_TOOLBAR_CONTEXT_MENU'];
 

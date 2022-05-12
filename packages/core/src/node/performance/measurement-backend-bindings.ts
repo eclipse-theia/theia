@@ -27,7 +27,7 @@ export function bindNodeStopwatch(bind: interfaces.Bind): interfaces.BindingWhen
 
 export function bindBackendStopwatchServer(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<unknown> {
     bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new JsonRpcConnectionHandler<never>(stopwatchPath, () => container.get<BackendStopwatch>(BackendStopwatch))
+        new JsonRpcConnectionHandler<never>(stopwatchPath, () => container.get(BackendStopwatch))
     ).inSingletonScope();
 
     bind(DefaultBackendStopwatch).toSelf().inSingletonScope();

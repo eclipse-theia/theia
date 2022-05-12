@@ -13,7 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-export const MetricsContribution = Symbol('MetricsContribution');
+
+import { serviceIdentifier } from '@theia/core';
+
+export const MetricsContribution = serviceIdentifier<MetricsContribution>('MetricsContribution');
 export interface MetricsContribution {
     startCollecting(): void;
     getMetrics(): string;

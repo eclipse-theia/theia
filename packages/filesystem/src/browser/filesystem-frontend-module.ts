@@ -60,7 +60,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bind(FileSystem).toDynamicValue(({ container }) => {
         const fileService = container.get(FileService);
-        const environments = container.get<EnvVariablesServer>(EnvVariablesServer);
+        const environments = container.get(EnvVariablesServer);
         const convertStat: (stat: BaseStatWithMetadata | FileStatWithMetadata) => FileStat = stat => ({
             uri: stat.resource.toString(),
             lastModification: stat.mtime,

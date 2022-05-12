@@ -16,7 +16,7 @@
 
 import * as Ajv from 'ajv';
 import { inject, injectable, interfaces, named, postConstruct } from 'inversify';
-import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable } from '../../common';
+import { ContributionProvider, bindContributionProvider, Emitter, Event, Disposable, Mutable, serviceIdentifier } from '../../common';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
 import {
@@ -26,7 +26,6 @@ import { FrontendApplicationConfigProvider } from '../frontend-application-confi
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { bindPreferenceConfigurations, PreferenceConfigurations } from './preference-configurations';
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
-import { Mutable } from '../../common/types';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { JSONValue } from '@phosphor/coreutils';
 
@@ -37,7 +36,7 @@ export { OVERRIDE_PROPERTY_PATTERN } from './preference-language-override-servic
 
 /* eslint-disable guard-for-in, @typescript-eslint/no-explicit-any */
 
-export const PreferenceContribution = Symbol('PreferenceContribution');
+export const PreferenceContribution = serviceIdentifier<PreferenceContribution>('PreferenceContribution');
 
 /**
  * A {@link PreferenceContribution} allows adding additional custom preferences.

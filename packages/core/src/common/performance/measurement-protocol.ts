@@ -17,10 +17,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable } from 'inversify';
+import { MaybePromise, serviceIdentifier } from '../types';
 import { Measurement, MeasurementOptions } from './measurement';
 import { Stopwatch } from './stopwatch';
 
-export const BackendStopwatch = Symbol('BackendStopwatch');
+export const BackendStopwatch = serviceIdentifier<BackendStopwatch>('BackendStopwatch');
 
 /** API path of the stopwatch service that exposes the back-end stopwatch to clients. */
 export const stopwatchPath = '/services/stopwatch';
@@ -28,7 +29,10 @@ export const stopwatchPath = '/services/stopwatch';
 /** Token representing a remote measurement in the {@link BackendStopwatch} protocol. */
 export type RemoteMeasurement = number;
 
-export const BackendStopwatchOptions = Symbol('BackendStopwatchOptions');
+/**
+ * This identifier is currently not used internaly.
+ */
+export const BackendStopwatchOptions = serviceIdentifier<unknown>('BackendStopwatchOptions');
 
 /**
  * A service that exposes the back-end's {@link Stopwatch} to clients
@@ -44,7 +48,7 @@ export interface BackendStopwatch {
      * @param options optional configuration of the new measurement
      * @returns a token identifying an unique self-timing measurement relative to the back-end's timeline
      */
-    start(name: string, options?: MeasurementOptions): Promise<RemoteMeasurement>;
+    start(name: string, options?: MeasurementOptions): MaybePromise<RemoteMeasurement>;
 
     /**
      * Stop a measurement previously {@link start started} and log in the back-end a measurement of
@@ -54,7 +58,7 @@ export interface BackendStopwatch {
      * @param message a message to log
      * @param messageArgs optional arguments to the `message`
      */
-    stop(measurement: RemoteMeasurement, message: string, messageArgs: any[]): Promise<void>;
+    stop(measurement: RemoteMeasurement, message: string, messageArgs: any[]): MaybePromise<void>;
 
 }
 
@@ -62,7 +66,7 @@ export interface BackendStopwatch {
  * Default implementation of the (remote) back-end stopwatch service.
  */
 @injectable()
-export class DefaultBackendStopwatch {
+export class DefaultBackendStopwatch implements BackendStopwatch {
 
     readonly measurements = new Map<number, Measurement>();
 

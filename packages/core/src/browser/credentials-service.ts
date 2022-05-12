@@ -21,7 +21,7 @@
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/workbench/services/credentials/common/credentials.ts#L12
 
 import { inject, injectable } from 'inversify';
-import { Emitter, Event } from '../common/event';
+import { Emitter, Event, serviceIdentifier } from '../common';
 import { KeytarService } from '../common/keytar-protocol';
 
 export interface CredentialsProvider {
@@ -32,7 +32,7 @@ export interface CredentialsProvider {
     findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
 }
 
-export const CredentialsService = Symbol('CredentialsService');
+export const CredentialsService = serviceIdentifier<CredentialsService>('CredentialsService');
 
 export interface CredentialsService extends CredentialsProvider {
     readonly onDidChangePassword: Event<CredentialsChangeEvent>;
@@ -82,7 +82,7 @@ export class CredentialsServiceImpl implements CredentialsService {
 
 class KeytarCredentialsProvider implements CredentialsProvider {
 
-    constructor(private readonly keytarService: KeytarService) {}
+    constructor(private readonly keytarService: KeytarService) { }
 
     deletePassword(service: string, account: string): Promise<boolean> {
         return this.keytarService.deletePassword(service, account);

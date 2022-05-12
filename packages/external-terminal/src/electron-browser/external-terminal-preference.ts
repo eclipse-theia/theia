@@ -25,11 +25,12 @@ import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/pr
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
-export const ExternalTerminalPreferences = Symbol('ExternalTerminalPreferences');
+export const ExternalTerminalPreferences = serviceIdentifier<ExternalTerminalPreferences>('ExternalTerminalPreferences');
 export type ExternalTerminalPreferences = PreferenceProxy<ExternalTerminalConfiguration>;
 
-export const ExternalTerminalSchemaPromise = Symbol('ExternalTerminalSchemaPromise');
+export const ExternalTerminalSchemaPromise = serviceIdentifier<ExternalTerminalSchemaPromise>('ExternalTerminalSchemaPromise');
 export type ExternalTerminalSchemaPromise = Promise<PreferenceSchema>;
 
 export function bindExternalTerminalPreferences(bind: interfaces.Bind): void {

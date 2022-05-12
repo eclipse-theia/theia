@@ -16,8 +16,10 @@
 
 import { interfaces } from 'inversify';
 import { ContributionFilterRegistry } from './contribution-filter';
+import { serviceIdentifier } from './types';
 
-export const ContributionProvider = Symbol('ContributionProvider');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ContributionProvider = serviceIdentifier<ContributionProvider<any>>('ContributionProvider');
 
 export interface ContributionProvider<T extends object> {
 

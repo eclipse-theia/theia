@@ -46,7 +46,7 @@ before(() => {
     });
 
     testContainer.bind(ProblemTree).toSelf().inSingletonScope();
-    problemTree = testContainer.get<ProblemTree>(ProblemTree);
+    problemTree = testContainer.get(ProblemTree);
 });
 
 after(() => {

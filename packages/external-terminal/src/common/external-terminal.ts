@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const ExternalTerminalService = Symbol('ExternalTerminalService');
+import { serviceIdentifier } from '@theia/core';
+
+export const ExternalTerminalService = serviceIdentifier<ExternalTerminalService>('ExternalTerminalService');
 export const externalTerminalServicePath = '/services/external-terminal';
 
 /**

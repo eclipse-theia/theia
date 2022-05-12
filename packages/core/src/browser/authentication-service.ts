@@ -23,7 +23,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Emitter, Event } from '../common/event';
 import { StorageService } from '../browser/storage-service';
-import { Disposable, DisposableCollection } from '../common/disposable';
+import { Disposable, DisposableCollection, serviceIdentifier } from '../common';
 import { ACCOUNTS_MENU, ACCOUNTS_SUBMENU, MenuModelRegistry } from '../common/menu';
 import { Command, CommandRegistry } from '../common/command';
 import { nls } from '../common/nls';
@@ -108,7 +108,7 @@ export interface AuthenticationProvider {
      */
     removeSession(sessionId: string): Thenable<void>;
 }
-export const AuthenticationService = Symbol('AuthenticationService');
+export const AuthenticationService = serviceIdentifier<AuthenticationService>('AuthenticationService');
 
 export interface AuthenticationService {
     isAuthenticationProviderRegistered(id: string): boolean;

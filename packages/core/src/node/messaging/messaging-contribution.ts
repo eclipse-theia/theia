@@ -22,7 +22,7 @@ import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider, serviceIdentifier } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService, WebSocketChannelConnection } from './messaging-service';
@@ -32,7 +32,7 @@ import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
 
-export const MessagingContainer = Symbol('MessagingContainer');
+export const MessagingContainer = serviceIdentifier<interfaces.Container>('MessagingContainer');
 
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution, MessagingService {

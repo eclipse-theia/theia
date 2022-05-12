@@ -16,13 +16,13 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JsonRpcProxy, JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection, serviceIdentifier } from '@theia/core';
 
-export const GitPromptServer = Symbol('GitPromptServer');
+export const GitPromptServer = serviceIdentifier<GitPromptServer>('GitPromptServer');
 export interface GitPromptServer extends JsonRpcServer<GitPromptClient> {
 }
 
-export const GitPromptServerProxy = Symbol('GitPromptServerProxy');
+export const GitPromptServerProxy = serviceIdentifier<GitPromptServerProxy>('GitPromptServerProxy');
 export interface GitPromptServerProxy extends JsonRpcProxy<GitPromptServer> {
 }
 
@@ -142,7 +142,7 @@ export namespace GitPrompt {
 
 }
 
-export const GitPromptClient = Symbol('GitPromptClient');
+export const GitPromptClient = serviceIdentifier<GitPromptClient>('GitPromptClient');
 export interface GitPromptClient {
 
     ask(question: GitPrompt.Question): Promise<GitPrompt.Answer>;

@@ -18,8 +18,9 @@ import { injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { SectionPreferenceProvider } from './section-preference-provider';
+import { serviceIdentifier } from '@theia/core';
 
-export const UserPreferenceProviderFactory = Symbol('UserPreferenceProviderFactory');
+export const UserPreferenceProviderFactory = serviceIdentifier<UserPreferenceProviderFactory>('UserPreferenceProviderFactory');
 export interface UserPreferenceProviderFactory {
     (uri: URI, section: string): UserPreferenceProvider;
 };

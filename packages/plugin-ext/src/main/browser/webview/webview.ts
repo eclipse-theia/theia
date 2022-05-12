@@ -49,6 +49,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import { ViewColumn } from '../../../plugin/types-impl';
+import { serviceIdentifier } from '@theia/core';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -82,7 +83,7 @@ export class WebviewWidgetIdentifier {
     id: string;
 }
 
-export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
+export const WebviewWidgetExternalEndpoint = serviceIdentifier<string>('WebviewWidgetExternalEndpoint');
 
 @injectable()
 export class WebviewWidget extends BaseWidget implements StatefulWidget {

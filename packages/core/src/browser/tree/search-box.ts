@@ -18,6 +18,7 @@ import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-
 import { BaseWidget, Message } from '../widgets/widget';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from '../keyboard/keys';
+import { serviceIdentifier } from '../../common';
 
 /**
  * Initializer properties for the search box widget.
@@ -343,7 +344,7 @@ export namespace SearchBox {
 /**
  * Search box factory.
  */
-export const SearchBoxFactory = Symbol('SearchBoxFactory');
+export const SearchBoxFactory = serviceIdentifier<SearchBoxFactory>('SearchBoxFactory');
 export interface SearchBoxFactory {
 
     /**

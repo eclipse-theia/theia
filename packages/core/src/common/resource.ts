@@ -20,7 +20,7 @@ import URI from '../common/uri';
 import { ContributionProvider } from './contribution-provider';
 import { Event, Emitter } from './event';
 import { Disposable } from './disposable';
-import { MaybePromise } from './types';
+import { MaybePromise, serviceIdentifier } from './types';
 import { CancellationToken } from './cancellation';
 import { ApplicationError } from './application-error';
 import { ReadableStream, Readable } from './stream';
@@ -169,7 +169,7 @@ export namespace ResourceError {
     export const OutOfSync = ApplicationError.declare(-40001, (raw: ApplicationError.Literal<{ uri: URI }>) => raw);
 }
 
-export const ResourceResolver = Symbol('ResourceResolver');
+export const ResourceResolver = serviceIdentifier<ResourceResolver>('ResourceResolver');
 export interface ResourceResolver {
     /**
      * Reject if a resource cannot be provided.
@@ -177,7 +177,7 @@ export interface ResourceResolver {
     resolve(uri: URI): MaybePromise<Resource>;
 }
 
-export const ResourceProvider = Symbol('ResourceProvider');
+export const ResourceProvider = serviceIdentifier<ResourceProvider>('ResourceProvider');
 export type ResourceProvider = (uri: URI) => Promise<Resource>;
 
 @injectable()

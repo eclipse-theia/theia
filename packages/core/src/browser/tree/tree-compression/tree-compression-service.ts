@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { ArrayUtils } from '../../../common/types';
+import { ArrayUtils, serviceIdentifier } from '../../../common';
 import { TreeNode } from '../tree';
 import { ExpandableTreeNode } from '../tree-expansion';
 
@@ -35,7 +35,7 @@ export interface CompressionHead extends CompressionParent {
 
 export interface CompressionTail extends CompressionChild { }
 
-export const CompressionToggle = Symbol('CompressionToggle');
+export const CompressionToggle = serviceIdentifier<CompressionToggle>('CompressionToggle');
 export interface CompressionToggle {
     compress: boolean;
 }

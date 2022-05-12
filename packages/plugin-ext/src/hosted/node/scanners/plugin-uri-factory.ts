@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { PluginPackage } from '../../../common';
 
-export const PluginUriFactory = Symbol('PluginUriFactory');
+export const PluginUriFactory = serviceIdentifier<PluginUriFactory>('PluginUriFactory');
 /**
  * Creates URIs for resources used in plugin contributions. Projects where plugin host is not located on the back-end
  * machine and therefor resources cannot be loaded from the local file system in the back end can override the factory.

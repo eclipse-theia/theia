@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, MaybePromise } from '../../common';
+import { ContributionProvider, MaybePromise, serviceIdentifier } from '../../common';
 import { Socket } from 'socket.io';
 
 import * as http from 'http';
@@ -23,7 +23,7 @@ import * as http from 'http';
 /**
  * Bind components to this symbol to subscribe to WebSocket events.
  */
-export const MessagingListenerContribution = Symbol('MessagingListenerContribution');
+export const MessagingListenerContribution = serviceIdentifier<MessagingListenerContribution>('MessagingListenerContribution');
 export interface MessagingListenerContribution {
     /**
      * Function invoked when a HTTP connection is upgraded to a websocket.

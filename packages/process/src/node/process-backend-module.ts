@@ -28,7 +28,7 @@ export default new ContainerModule(bind => {
     bind(ProcessManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(ProcessManager);
     bind(ILogger).toDynamicValue(ctx => {
-        const parentLogger = ctx.container.get<ILogger>(ILogger);
+        const parentLogger = ctx.container.get(ILogger);
         return parentLogger.child('process');
     }).inSingletonScope().whenTargetNamed('process');
     bind(RawProcessFactory).toFactory(ctx =>

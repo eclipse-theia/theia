@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '@theia/core';
+import { Event, serviceIdentifier } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
@@ -132,7 +132,7 @@ export abstract class TerminalWidget extends BaseWidget {
 /**
  * Terminal widget options.
  */
-export const TerminalWidgetOptions = Symbol('TerminalWidgetOptions');
+export const TerminalWidgetOptions = serviceIdentifier<TerminalWidgetOptions>('TerminalWidgetOptions');
 export interface TerminalWidgetOptions {
 
     /**

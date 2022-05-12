@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ProcessManager } from './process-manager';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger, serviceIdentifier } from '@theia/core';
 import { Process, ProcessType, ProcessOptions, ForkOptions, ProcessErrorEvent } from './process';
 import { ChildProcess, spawn, fork } from 'child_process';
 import * as stream from 'stream';
@@ -25,7 +25,7 @@ import * as stream from 'stream';
 export { DevNullStream } from './dev-null-stream';
 import { DevNullStream } from './dev-null-stream';
 
-export const RawProcessOptions = Symbol('RawProcessOptions');
+export const RawProcessOptions = serviceIdentifier<RawProcessOptions | RawForkOptions>('RawProcessOptions');
 
 /**
  * Options to spawn a new process (`spawn`).
@@ -49,7 +49,7 @@ export interface RawProcessOptions extends ProcessOptions {
 export interface RawForkOptions extends ForkOptions {
 }
 
-export const RawProcessFactory = Symbol('RawProcessFactory');
+export const RawProcessFactory = serviceIdentifier<RawProcessFactory>('RawProcessFactory');
 export interface RawProcessFactory {
     (options: RawProcessOptions | RawForkOptions): RawProcess;
 }

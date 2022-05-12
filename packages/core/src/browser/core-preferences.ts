@@ -20,6 +20,7 @@ import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
+import { serviceIdentifier } from '../common';
 
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -177,8 +178,8 @@ export interface CoreConfiguration {
     'workbench.sash.size': number;
 }
 
-export const CorePreferenceContribution = Symbol('CorePreferenceContribution');
-export const CorePreferences = Symbol('CorePreferences');
+export const CorePreferenceContribution = serviceIdentifier<PreferenceContribution>('CorePreferenceContribution');
+export const CorePreferences = serviceIdentifier<CorePreferences>('CorePreferences');
 export type CorePreferences = PreferenceProxy<CoreConfiguration>;
 
 export function createCorePreferences(preferences: PreferenceService, schema: PreferenceSchema = corePreferenceSchema): CorePreferences {
@@ -187,8 +188,8 @@ export function createCorePreferences(preferences: PreferenceService, schema: Pr
 
 export function bindCorePreferences(bind: interfaces.Bind): void {
     bind(CorePreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(CorePreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(CorePreferenceContribution);
         return createCorePreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(CorePreferenceContribution).toConstantValue({ schema: corePreferenceSchema });

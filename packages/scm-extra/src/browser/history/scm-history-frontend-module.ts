@@ -27,7 +27,7 @@ export function bindScmHistoryModule(bind: interfaces.Bind): void {
     bind(ScmHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SCM_HISTORY_ID,
-        createWidget: () => ctx.container.get<ScmHistoryWidget>(ScmHistoryWidget)
+        createWidget: () => ctx.container.get(ScmHistoryWidget)
     }));
 
     bindViewContribution(bind, ScmHistoryContribution);

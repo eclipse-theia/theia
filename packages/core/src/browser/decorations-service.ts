@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event } from '../common';
+import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event, serviceIdentifier } from '../common';
 import { TernarySearchTree } from '../common/ternary-search-tree';
 import URI from '../common/uri';
 
@@ -41,7 +41,7 @@ export interface Decoration {
 export interface ResourceDecorationChangeEvent {
     affectsResource(uri: URI): boolean;
 }
-export const DecorationsService = Symbol('DecorationsService');
+export const DecorationsService = serviceIdentifier<DecorationsService>('DecorationsService');
 export interface DecorationsService {
 
     readonly onDidChangeDecorations: Event<Map<string, Decoration>>;

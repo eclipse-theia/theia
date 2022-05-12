@@ -23,7 +23,7 @@ import { ILogger } from '../../common/logger';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
-import { MaybePromise } from '../../common/types';
+import { MaybePromise, serviceIdentifier } from '../../common';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
 import { CommonCommands } from '../common-frontend-contribution';
 import { WindowService } from '../window/window-service';
@@ -86,7 +86,7 @@ export namespace ApplicationShellLayoutMigrationError {
     }
 }
 
-export const ApplicationShellLayoutMigration = Symbol('ApplicationShellLayoutMigration');
+export const ApplicationShellLayoutMigration = serviceIdentifier<ApplicationShellLayoutMigration>('ApplicationShellLayoutMigration');
 export interface ApplicationShellLayoutMigration {
     /**
      * A target migration version.

@@ -20,6 +20,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { interfaces } from '@theia/core/shared/inversify';
 import { ExtensionSchemaContribution, extensionsSchemaID } from './recommended-extensions-json-schema';
+import { serviceIdentifier } from '@theia/core';
 
 export interface RecommendedExtensions {
     recommendations?: string[];
@@ -52,7 +53,11 @@ export const recommendedExtensionNotificationPreferencesSchema: PreferenceSchema
     }
 };
 
-export const ExtensionNotificationPreferences = Symbol('ExtensionNotificationPreferences');
+export const ExtensionNotificationPreferences = serviceIdentifier<ExtensionNotificationPreferences>('ExtensionNotificationPreferences');
+export interface ExtensionNotificationPreferences {
+    [IGNORE_RECOMMENDATIONS_ID]: boolean
+    extensions: { recommendations: string[] }
+}
 
 export function bindExtensionPreferences(bind: interfaces.Bind): void {
     bind(ExtensionSchemaContribution).toSelf().inSingletonScope();
@@ -61,7 +66,7 @@ export function bindExtensionPreferences(bind: interfaces.Bind): void {
     bind(PreferenceConfiguration).toConstantValue({ name: 'extensions' });
 
     bind(ExtensionNotificationPreferences).toDynamicValue(({ container }) => {
-        const preferenceService = container.get<PreferenceService>(PreferenceService);
+        const preferenceService = container.get(PreferenceService);
         return createPreferenceProxy(preferenceService, recommendedExtensionNotificationPreferencesSchema);
     }).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: recommendedExtensionNotificationPreferencesSchema });

@@ -44,7 +44,7 @@ import {
     ToolbarFactory,
     Toolbar,
     LateInjector,
-    lateInjector,
+    lateInjectorFactory,
 } from './toolbar-interfaces';
 import { ToolbarCommandQuickInputService } from './toolbar-command-quick-input-service';
 import { ToolbarStorageProvider } from './toolbar-storage-provider';
@@ -193,7 +193,7 @@ export function bindToolbar(bind: interfaces.Bind): void {
     bindToolbarIconDialog(bind);
     bind(ToolbarDefaultsFactory).toConstantValue(ToolbarDefaults);
     bind(ToolbarPreferences).toDynamicValue(({ container }) => {
-        const preferences = container.get<PreferenceService>(PreferenceService);
+        const preferences = container.get(PreferenceService);
         return createPreferenceProxy(preferences, ToolbarPreferencesSchema);
     }).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({
@@ -205,7 +205,5 @@ export function bindToolbar(bind: interfaces.Bind): void {
     bind(ToolbarController).toSelf().inSingletonScope();
     bind(ToolbarStorageProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, ToolbarContribution);
-    bind(LateInjector).toFactory(
-        <T>(context: interfaces.Context) => (id: interfaces.ServiceIdentifier<T>): T => lateInjector(context.container, id),
-    );
+    bind(LateInjector).toDynamicValue(lateInjectorFactory).inSingletonScope();
 }

@@ -52,6 +52,6 @@ export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).toService(DebugAdapterSessionManager);
 
     bind(ILogger).toDynamicValue(({ container }) =>
-        container.get<ILogger>(ILogger).child('debug')
+        container.get(ILogger).child('debug')
     ).inSingletonScope().whenTargetNamed('debug');
 });

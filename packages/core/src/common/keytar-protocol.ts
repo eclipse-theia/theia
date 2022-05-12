@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from './types';
+
 export const keytarServicePath = '/services/keytar';
 
-export const KeytarService = Symbol('KeytarService');
+export const KeytarService = serviceIdentifier<KeytarService>('KeytarService');
 export interface KeytarService {
     setPassword(service: string, account: string, password: string): Promise<void>;
     getPassword(service: string, account: string): Promise<string | undefined>;

@@ -17,14 +17,14 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Endpoint } from '@theia/core/lib/browser';
-import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
+import { MaybePromise, Prioritizeable, serviceIdentifier } from '@theia/core';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
 
 /**
  * Contribution for the `LocationMapperService`.
  */
-export const LocationMapper = Symbol('LocationMapper');
+export const LocationMapper = serviceIdentifier<LocationMapper>('LocationMapper');
 export interface LocationMapper {
 
     /**

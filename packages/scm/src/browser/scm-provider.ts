@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, Event } from '@theia/core/lib/common';
+import { Disposable, Event, serviceIdentifier } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 
 export interface ScmProvider extends Disposable {
@@ -38,7 +38,7 @@ export interface ScmProvider extends Disposable {
     readonly amendSupport?: ScmAmendSupport;
 }
 
-export const ScmResourceGroup = Symbol('ScmResourceGroup');
+export const ScmResourceGroup = serviceIdentifier<ScmResourceGroup>('ScmResourceGroup');
 export interface ScmResourceGroup extends Disposable {
     readonly id: string;
     readonly label: string;

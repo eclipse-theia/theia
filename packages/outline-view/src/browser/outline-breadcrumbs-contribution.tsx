@@ -20,10 +20,10 @@ import { LabelProvider, BreadcrumbsService, Widget, TreeNode, OpenerService, ope
 import URI from '@theia/core/lib/common/uri';
 import { OutlineViewService } from './outline-view-service';
 import { OutlineSymbolInformationNode, OutlineViewWidget } from './outline-view-widget';
-import { Disposable, DisposableCollection, Emitter, Event, UriSelection } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter, Event, serviceIdentifier, UriSelection } from '@theia/core/lib/common';
 
 export const OutlineBreadcrumbType = Symbol('OutlineBreadcrumb');
-export const BreadcrumbPopupOutlineViewFactory = Symbol('BreadcrumbPopupOutlineViewFactory');
+export const BreadcrumbPopupOutlineViewFactory = serviceIdentifier<BreadcrumbPopupOutlineViewFactory>('BreadcrumbPopupOutlineViewFactory');
 export const OUTLINE_BREADCRUMB_CONTAINER_CLASS = 'outline-element';
 export interface BreadcrumbPopupOutlineViewFactory {
     (): BreadcrumbPopupOutlineView;

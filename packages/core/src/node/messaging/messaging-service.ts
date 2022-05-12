@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Socket } from 'socket.io';
+import { serviceIdentifier } from '../../common';
 import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
@@ -47,11 +48,11 @@ export interface MessagingService {
 }
 export namespace MessagingService {
     /** Inversify container identifier for the `MessagingService` component. */
-    export const Identifier = Symbol('MessagingService');
+    export const Identifier = serviceIdentifier<MessagingService>('MessagingService');
     export interface PathParams {
         [name: string]: string
     }
-    export const Contribution = Symbol('MessagingService.Contribution');
+    export const Contribution = serviceIdentifier<Contribution>('MessagingService.Contribution');
     export interface Contribution {
         configure(service: MessagingService): void;
     }

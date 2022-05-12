@@ -16,8 +16,9 @@
 
 import { injectable } from 'inversify';
 import { JsonRpcServer } from './messaging/proxy-factory';
+import { serviceIdentifier } from './types';
 
-export const ILoggerServer = Symbol('ILoggerServer');
+export const ILoggerServer = serviceIdentifier<ILoggerServer>('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
@@ -29,7 +30,7 @@ export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
     child(name: string): Promise<void>;
 }
 
-export const ILoggerClient = Symbol('ILoggerClient');
+export const ILoggerClient = serviceIdentifier<ILoggerClient>('ILoggerClient');
 
 export interface ILogLevelChangedEvent {
     loggerName: string;

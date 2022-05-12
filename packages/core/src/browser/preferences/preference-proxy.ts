@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, Event, MaybePromise } from '../../common';
+import { Disposable, Event, MaybePromise, serviceIdentifier } from '../../common';
 import { PreferenceService } from './preference-service';
 import { PreferenceSchema } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
@@ -119,7 +119,7 @@ export interface PreferenceRetrieval<T> {
  * ```
  */
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceRetrieval<T>;
-export const PreferenceProxyOptions = Symbol('PreferenceProxyOptions');
+export const PreferenceProxyOptions = serviceIdentifier<PreferenceProxyOptions>('PreferenceProxyOptions');
 /**
  * Proxy configuration parameters.
  */

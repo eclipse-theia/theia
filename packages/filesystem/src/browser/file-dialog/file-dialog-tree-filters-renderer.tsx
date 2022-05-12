@@ -18,6 +18,7 @@ import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
 import * as React from '@theia/core/shared/react';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { serviceIdentifier } from '@theia/core';
 
 export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
 
@@ -35,12 +36,12 @@ export class FileDialogTreeFilters {
     [name: string]: string[];
 }
 
-export const FileDialogTreeFiltersRendererFactory = Symbol('FileDialogTreeFiltersRendererFactory');
+export const FileDialogTreeFiltersRendererFactory = serviceIdentifier<FileDialogTreeFiltersRendererFactory>('FileDialogTreeFiltersRendererFactory');
 export interface FileDialogTreeFiltersRendererFactory {
     (options: FileDialogTreeFiltersRendererOptions): FileDialogTreeFiltersRenderer;
 }
 
-export const FileDialogTreeFiltersRendererOptions = Symbol('FileDialogTreeFiltersRendererOptions');
+export const FileDialogTreeFiltersRendererOptions = serviceIdentifier<FileDialogTreeFiltersRendererOptions>('FileDialogTreeFiltersRendererOptions');
 export interface FileDialogTreeFiltersRendererOptions {
     suppliedFilters: FileDialogTreeFilters;
     fileDialogTree: FileDialogTree;

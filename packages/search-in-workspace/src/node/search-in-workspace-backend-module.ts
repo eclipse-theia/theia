@@ -24,7 +24,7 @@ export default new ContainerModule(bind => {
     bind(SearchInWorkspaceServer).to(RipgrepSearchInWorkspaceServer);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<SearchInWorkspaceClient>(SIW_WS_PATH, client => {
-            const server = ctx.container.get<SearchInWorkspaceServer>(SearchInWorkspaceServer);
+            const server = ctx.container.get(SearchInWorkspaceServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;

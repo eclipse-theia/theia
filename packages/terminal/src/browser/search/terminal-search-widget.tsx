@@ -21,9 +21,10 @@ import '../../../src/browser/style/terminal-search.css';
 import { Terminal } from 'xterm';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { codicon, Key } from '@theia/core/lib/browser';
+import { serviceIdentifier } from '@theia/core';
 
 export const TERMINAL_SEARCH_WIDGET_FACTORY_ID = 'terminal-search';
-export const TerminalSearchWidgetFactory = Symbol('TerminalSearchWidgetFactory');
+export const TerminalSearchWidgetFactory = serviceIdentifier<TerminalSearchWidgetFactory>('TerminalSearchWidgetFactory');
 export type TerminalSearchWidgetFactory = (terminal: Terminal) => TerminalSearchWidget;
 
 @injectable()

@@ -26,9 +26,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { DebugSessionManager } from '../debug-session-manager';
 import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
-import { Disposable } from '@theia/core';
+import { Disposable, serviceIdentifier } from '@theia/core';
 
-export const DebugConsoleSessionFactory = Symbol('DebugConsoleSessionFactory');
+export const DebugConsoleSessionFactory = serviceIdentifier<DebugConsoleSessionFactory>('DebugConsoleSessionFactory');
 
 export type DebugConsoleSessionFactory = (debugSession: DebugSession) => DebugConsoleSession;
 

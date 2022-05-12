@@ -30,7 +30,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar, TabBarDelegator, TabBarToolbarItem } from './shell/tab-bar-toolbar';
-import { isEmpty } from '../common';
+import { isEmpty, serviceIdentifier } from '../common';
 import { WidgetManager } from './widget-manager';
 import { Key } from './keys';
 import { ProgressBarFactory } from './progress-bar-factory';
@@ -861,7 +861,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
 export namespace ViewContainer {
 
-    export const Factory = Symbol('ViewContainerFactory');
+    export const Factory = serviceIdentifier<Factory>('ViewContainerFactory');
     export interface Factory {
         (options: ViewContainerIdentifier): ViewContainer;
     }

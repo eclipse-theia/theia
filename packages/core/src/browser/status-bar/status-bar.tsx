@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
 import Octicon, { getIconByName } from '@primer/octicons-react';
-import { CommandService } from '../../common';
+import { CommandService, serviceIdentifier } from '../../common';
 import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
@@ -57,7 +57,7 @@ export enum StatusBarAlignment {
 
 export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
 
-export const StatusBar = Symbol('StatusBar');
+export const StatusBar = serviceIdentifier<StatusBar>('StatusBar');
 
 export interface StatusBar {
     setBackgroundColor(color?: string): Promise<void>;

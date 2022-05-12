@@ -118,7 +118,7 @@ describe('keybindings', () => {
 
     beforeEach(async () => {
         stub = sinon.stub(os, 'isOSX').value(false);
-        keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
+        keybindingRegistry = testContainer.get(KeybindingRegistry);
         await keybindingRegistry.onStart();
     });
 

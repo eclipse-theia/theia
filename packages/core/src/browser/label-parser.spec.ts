@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 import { LabelParser, LabelPart, LabelIcon } from './label-parser';
-import { CommandService } from './../common';
+import { CommandService, Event } from './../common';
 import { Container } from 'inversify';
 import { expect } from 'chai';
 
@@ -26,9 +26,9 @@ before(() => {
     const testContainer = new Container();
     testContainer.bind(LabelParser).toSelf().inSingletonScope();
     testContainer.bind(CommandService).toDynamicValue(ctx => ({
-        executeCommand<T>(): Promise<T | undefined> {
-            return Promise.resolve(undefined);
-        }
+        onDidExecuteCommand: Event.None,
+        onWillExecuteCommand: Event.None,
+        executeCommand: async () => undefined
     })).inSingletonScope();
 
     statusBarEntryUtility = testContainer.get(LabelParser);

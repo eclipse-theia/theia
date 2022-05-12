@@ -20,7 +20,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core/lib/common/';
+import { ILogger, serviceIdentifier } from '@theia/core';
 import { Process, IProcessExitEvent } from '@theia/process/lib/node';
 import { Task, TaskOptions } from '../task';
 import { TaskManager } from '../task-manager';
@@ -44,14 +44,14 @@ export function removeAnsiEscapeCodes(str: string): string {
     return str.trimRight();
 }
 
-export const TaskProcessOptions = Symbol('TaskProcessOptions');
+export const TaskProcessOptions = serviceIdentifier<TaskProcessOptions>('TaskProcessOptions');
 export interface TaskProcessOptions extends TaskOptions {
     process: Process;
     processType: ProcessType;
     command?: string;
 }
 
-export const TaskFactory = Symbol('TaskFactory');
+export const TaskFactory = serviceIdentifier<TaskFactory>('TaskFactory');
 export type TaskFactory = (options: TaskProcessOptions) => ProcessTask;
 
 /** Represents a Task launched as a process by `ProcessTaskRunner`. */

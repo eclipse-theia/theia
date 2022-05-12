@@ -14,9 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import type { interfaces } from 'inversify';
+
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
 export type MaybeNull<T> = { [P in keyof T]: T[P] | null };
 export type MaybeUndefined<T> = { [P in keyof T]: T[P] | undefined };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptyMeansAny<T> = {} extends T ? T & { [key: string | symbol]: any } : T;
+
+/**
+ * Create a typed Inversify identifier.
+ */
+export function serviceIdentifier<T>(name: string): symbol & interfaces.Abstract<EmptyMeansAny<T>> {
+    return Symbol(name) as symbol & interfaces.Abstract<T>;
+}
 
 /**
  * Creates a shallow copy with all ownkeys of the original object that are `null` made `undefined`
@@ -32,9 +44,6 @@ export function nullToUndefined<T>(nullable: MaybeNull<T>): MaybeUndefined<T> {
     return undefinable;
 }
 
-export type Deferred<T> = {
-    [P in keyof T]: Promise<T[P]>
-};
 export type RecursivePartial<T> = {
     [P in keyof T]?: T[P] extends Array<infer I>
     ? Array<RecursivePartial<I>>

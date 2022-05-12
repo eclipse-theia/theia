@@ -23,6 +23,7 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { serviceIdentifier } from '@theia/core';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -45,8 +46,8 @@ export interface WorkspaceConfiguration {
     'workspace.supportMultiRootWorkspace': boolean
 }
 
-export const WorkspacePreferenceContribution = Symbol('WorkspacePreferenceContribution');
-export const WorkspacePreferences = Symbol('WorkspacePreferences');
+export const WorkspacePreferenceContribution = serviceIdentifier<PreferenceContribution>('WorkspacePreferenceContribution');
+export const WorkspacePreferences = serviceIdentifier<WorkspacePreferences>('WorkspacePreferences');
 export type WorkspacePreferences = PreferenceProxy<WorkspaceConfiguration>;
 
 export function createWorkspacePreferences(preferences: PreferenceService, schema: PreferenceSchema = workspacePreferenceSchema): WorkspacePreferences {
@@ -55,8 +56,8 @@ export function createWorkspacePreferences(preferences: PreferenceService, schem
 
 export function bindWorkspacePreferences(bind: interfaces.Bind): void {
     bind(WorkspacePreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(WorkspacePreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(WorkspacePreferenceContribution);
         return createWorkspacePreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(WorkspacePreferenceContribution).toConstantValue({ schema: workspacePreferenceSchema });

@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
+import { JsonRpcServer, JsonRpcProxy, serviceIdentifier } from '@theia/core';
 import { FileChangeType } from './files';
 export { FileChangeType };
 
-export const FileSystemWatcherService = Symbol('FileSystemWatcherServer2');
+export const FileSystemWatcherService = serviceIdentifier<FileSystemWatcherService>('FileSystemWatcherServer2');
 /**
  * Singleton implementation of the watch server.
  *
@@ -60,7 +60,7 @@ export interface FileSystemWatcherErrorParams {
     uri: string;
 }
 
-export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
+export const FileSystemWatcherServer = serviceIdentifier<FileSystemWatcherServer>('FileSystemWatcherServer');
 export interface FileSystemWatcherServer extends JsonRpcServer<FileSystemWatcherClient> {
     /**
      * Start file watching for the given param.
@@ -96,7 +96,7 @@ export interface FileChange {
     type: FileChangeType;
 }
 
-export const FileSystemWatcherServerProxy = Symbol('FileSystemWatcherServerProxy');
+export const FileSystemWatcherServerProxy = serviceIdentifier<FileSystemWatcherServerProxy>('FileSystemWatcherServerProxy');
 export type FileSystemWatcherServerProxy = JsonRpcProxy<FileSystemWatcherServer>;
 
 /**

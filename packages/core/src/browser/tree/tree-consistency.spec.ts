@@ -80,7 +80,7 @@ describe('Tree Consistency', () => {
         container.rebind(TreeImpl).toService(ConsistencyTestTree);
         const tree = container.get(ConsistencyTestTree);
 
-        const model = container.get<TreeModel>(TreeModel);
+        const model = container.get(TreeModel);
 
         model.root = createConsistencyTestRoot('Foo');
         await new Promise(resolve => setTimeout(resolve, 50));

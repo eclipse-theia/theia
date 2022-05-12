@@ -17,11 +17,12 @@
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcher, ProblemMatch, WatchingPattern } from './problem-matcher-protocol';
+import { serviceIdentifier } from '@theia/core';
 
 export const taskPath = '/services/task';
 
-export const TaskServer = Symbol('TaskServer');
-export const TaskClient = Symbol('TaskClient');
+export const TaskServer = serviceIdentifier<TaskServer>('TaskServer');
+export const TaskClient = serviceIdentifier<TaskClient>('TaskClient');
 export enum DependsOrder {
     Sequence = 'sequence',
     Parallel = 'parallel',

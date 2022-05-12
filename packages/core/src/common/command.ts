@@ -20,6 +20,7 @@ import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 import { nls } from './nls';
 import debounce = require('p-debounce');
+import { serviceIdentifier } from './types';
 
 /**
  * A command is a unique identifier of a function
@@ -134,7 +135,7 @@ export interface CommandHandler {
     isToggled?(...args: any[]): boolean;
 }
 
-export const CommandContribution = Symbol('CommandContribution');
+export const CommandContribution = serviceIdentifier<CommandContribution>('CommandContribution');
 /**
  * The command contribution should be implemented to register custom commands and handler.
  */
@@ -155,7 +156,7 @@ export interface WillExecuteCommandEvent extends WaitUntilEvent, CommandEvent {
 }
 
 export const commandServicePath = '/services/commands';
-export const CommandService = Symbol('CommandService');
+export const CommandService = serviceIdentifier<CommandService>('CommandService');
 /**
  * The command service should be used to execute commands.
  */

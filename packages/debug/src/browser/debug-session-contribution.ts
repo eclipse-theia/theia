@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { MessageClient } from '@theia/core/lib/common';
+import { MessageClient, serviceIdentifier } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -34,7 +34,7 @@ import { DebugContribution } from './debug-contribution';
 /**
  * DebugSessionContribution symbol for DI.
  */
-export const DebugSessionContribution = Symbol('DebugSessionContribution');
+export const DebugSessionContribution = serviceIdentifier<DebugSessionContribution>('DebugSessionContribution');
 /**
  * The [debug session](#DebugSession) contribution.
  * Can be used to instantiate a specific debug sessions.
@@ -53,7 +53,7 @@ export interface DebugSessionContribution {
 /**
  * DebugSessionContributionRegistry symbol for DI.
  */
-export const DebugSessionContributionRegistry = Symbol('DebugSessionContributionRegistry');
+export const DebugSessionContributionRegistry = serviceIdentifier<DebugSessionContributionRegistry>('DebugSessionContributionRegistry');
 /**
  * Debug session contribution registry.
  */
@@ -83,7 +83,7 @@ export class DebugSessionContributionRegistryImpl implements DebugSessionContrib
 /**
  * DebugSessionFactory symbol for DI.
  */
-export const DebugSessionFactory = Symbol('DebugSessionFactory');
+export const DebugSessionFactory = serviceIdentifier<DebugSessionFactory>('DebugSessionFactory');
 
 /**
  * The [debug session](#DebugSession) factory.

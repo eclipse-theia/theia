@@ -19,13 +19,14 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import { serviceIdentifier } from '@theia/core';
 
 @injectable()
 export class WorkspaceFilePreferenceProviderOptions {
     workspaceUri: URI;
 }
 
-export const WorkspaceFilePreferenceProviderFactory = Symbol('WorkspaceFilePreferenceProviderFactory');
+export const WorkspaceFilePreferenceProviderFactory = serviceIdentifier<WorkspaceFilePreferenceProviderFactory>('WorkspaceFilePreferenceProviderFactory');
 export type WorkspaceFilePreferenceProviderFactory = (options: WorkspaceFilePreferenceProviderOptions) => WorkspaceFilePreferenceProvider;
 
 @injectable()

@@ -20,12 +20,12 @@ import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
 import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection, serviceIdentifier } from '../common';
 
 /**
  * Service for listening on backend connection changes.
  */
-export const ConnectionStatusService = Symbol('ConnectionStatusService');
+export const ConnectionStatusService = serviceIdentifier<ConnectionStatusService>('ConnectionStatusService');
 export interface ConnectionStatusService {
 
     /**
@@ -70,7 +70,7 @@ export class ConnectionStatusOptions {
 
 }
 
-export const PingService = Symbol('PingService');
+export const PingService = serviceIdentifier<PingService>('PingService');
 export interface PingService {
     ping(): Promise<void>;
 }

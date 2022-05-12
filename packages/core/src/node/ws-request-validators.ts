@@ -16,12 +16,12 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as http from 'http';
-import { ContributionProvider, MaybePromise } from '../common';
+import { ContributionProvider, MaybePromise, serviceIdentifier } from '../common';
 
 /**
  * Bind components to this symbol to filter WebSocket connections.
  */
-export const WsRequestValidatorContribution = Symbol('RequestValidatorContribution');
+export const WsRequestValidatorContribution = serviceIdentifier<WsRequestValidatorContribution>('RequestValidatorContribution');
 export interface WsRequestValidatorContribution {
     /**
      * Return `false` to prevent the protocol upgrade from going through, blocking the WebSocket connection.

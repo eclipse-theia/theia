@@ -17,6 +17,7 @@
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
+import { serviceIdentifier } from '@theia/core';
 
 export const debugPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -79,8 +80,8 @@ export class DebugConfiguration {
     'debug.confirmOnExit': 'never' | 'always';
 }
 
-export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');
-export const DebugPreferences = Symbol('DebugPreferences');
+export const DebugPreferenceContribution = serviceIdentifier<PreferenceContribution>('DebugPreferenceContribution');
+export const DebugPreferences = serviceIdentifier<DebugPreferences>('DebugPreferences');
 export type DebugPreferences = PreferenceProxy<DebugConfiguration>;
 
 export function createDebugPreferences(preferences: PreferenceService, schema: PreferenceSchema = debugPreferencesSchema): DebugPreferences {
@@ -89,8 +90,8 @@ export function createDebugPreferences(preferences: PreferenceService, schema: P
 
 export function bindDebugPreferences(bind: interfaces.Bind): void {
     bind(DebugPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(DebugPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(DebugPreferenceContribution);
         return createDebugPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(DebugPreferenceContribution).toConstantValue({ schema: debugPreferencesSchema });

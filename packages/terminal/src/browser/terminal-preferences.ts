@@ -20,6 +20,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { serviceIdentifier } from '@theia/core';
 
 export const TerminalConfigSchema: PreferenceSchema = {
     type: 'object',
@@ -196,8 +197,8 @@ export function isTerminalRendererType(arg: any): arg is TerminalRendererType {
     return typeof arg === 'string' && (arg === 'canvas' || arg === 'dom');
 }
 
-export const TerminalPreferenceContribution = Symbol('TerminalPreferenceContribution');
-export const TerminalPreferences = Symbol('TerminalPreferences');
+export const TerminalPreferenceContribution = serviceIdentifier<PreferenceContribution>('TerminalPreferenceContribution');
+export const TerminalPreferences = serviceIdentifier<TerminalPreferences>('TerminalPreferences');
 export type TerminalPreferences = PreferenceProxy<TerminalConfiguration>;
 
 export function createTerminalPreferences(preferences: PreferenceService, schema: PreferenceSchema = TerminalConfigSchema): TerminalPreferences {
@@ -206,8 +207,8 @@ export function createTerminalPreferences(preferences: PreferenceService, schema
 
 export function bindTerminalPreferences(bind: interfaces.Bind): void {
     bind(TerminalPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        const contribution = ctx.container.get<PreferenceContribution>(TerminalPreferenceContribution);
+        const preferences = ctx.container.get(PreferenceService);
+        const contribution = ctx.container.get(TerminalPreferenceContribution);
         return createTerminalPreferences(preferences, contribution.schema);
     }).inSingletonScope();
     bind(TerminalPreferenceContribution).toConstantValue({ schema: TerminalConfigSchema });

@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { TextEditor } from './editor';
 
 export interface DiffNavigator {
@@ -24,5 +25,5 @@ export interface DiffNavigator {
     previous(): void;
 }
 
-export const DiffNavigatorProvider = Symbol('DiffNavigatorProvider');
+export const DiffNavigatorProvider = serviceIdentifier<DiffNavigatorProvider>('DiffNavigatorProvider');
 export type DiffNavigatorProvider = (editor: TextEditor) => DiffNavigator;

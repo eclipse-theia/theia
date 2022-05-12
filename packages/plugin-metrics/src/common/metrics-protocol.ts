@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
+
 /**
  * The JSON-RPC interface for plugin metrics
  */
 export const metricsJsonRpcPath = '/services/plugin-ext/metrics';
-export const PluginMetrics = Symbol('PluginMetrics');
+export const PluginMetrics = serviceIdentifier<PluginMetrics>('PluginMetrics');
 export interface PluginMetrics {
     setMetrics(metrics: string): void;
     getMetrics(): string;

@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { MessageConnection } from 'vscode-ws-jsonrpc';
+import { serviceIdentifier } from '../types';
 
-export const ConnectionHandler = Symbol('ConnectionHandler');
+export const ConnectionHandler = serviceIdentifier<ConnectionHandler>('ConnectionHandler');
 
 export interface ConnectionHandler {
     readonly path: string;

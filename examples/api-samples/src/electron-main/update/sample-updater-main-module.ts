@@ -27,7 +27,7 @@ export default new ContainerModule(bind => {
     bind(ElectronMainApplicationContribution).toService(SampleUpdater);
     bind(ElectronConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler<SampleUpdaterClient>(SampleUpdaterPath, client => {
-            const server = context.container.get<SampleUpdater>(SampleUpdater);
+            const server = context.container.get(SampleUpdater);
             server.setClient(client);
             client.onDidCloseConnection(() => server.disconnectClient(client));
             return server;

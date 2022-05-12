@@ -63,7 +63,7 @@ import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-l
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
-import { Mutable } from '@theia/core/lib/common/types';
+import { Mutable, serviceIdentifier } from '@theia/core';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { FileSystemUtils } from '../common/filesystem-utils';
@@ -174,7 +174,7 @@ export interface UserFileOperationEvent extends WaitUntilEvent {
     readonly source?: URI;
 }
 
-export const FileServiceContribution = Symbol('FileServiceContribution');
+export const FileServiceContribution = serviceIdentifier<FileServiceContribution>('FileServiceContribution');
 
 /**
  * A {@link FileServiceContribution} can be used to add custom {@link FileSystemProvider}s.

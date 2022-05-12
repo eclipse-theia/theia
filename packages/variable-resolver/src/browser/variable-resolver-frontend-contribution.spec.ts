@@ -70,7 +70,7 @@ describe('variable-resolver-frontend-contribution', () => {
     });
 
     beforeEach(() => {
-        variableRegistry = testContainer.get<VariableRegistry>(VariableRegistry);
+        variableRegistry = testContainer.get(VariableRegistry);
 
         const variableRegistrar = testContainer.get(VariableResolverFrontendContribution);
         variableRegistrar.onStart();

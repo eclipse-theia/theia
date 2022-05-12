@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '../../common';
 import type { MessageConnection } from 'vscode-jsonrpc';
 import type { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
@@ -33,7 +34,7 @@ export namespace ElectronMessagingService {
     export interface PathParams {
         [name: string]: string
     }
-    export const Contribution = Symbol('ElectronMessagingService.Contribution');
+    export const Contribution = serviceIdentifier<Contribution>('ElectronMessagingService.Contribution');
     export interface Contribution {
         configure(service: ElectronMessagingService): void;
     }

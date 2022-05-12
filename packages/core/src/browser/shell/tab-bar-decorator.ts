@@ -17,11 +17,11 @@
 import debounce = require('lodash.debounce');
 import { Title, Widget } from '@phosphor/widgets';
 import { inject, injectable, named } from 'inversify';
-import { Event, Emitter, ContributionProvider } from '../../common';
+import { Event, Emitter, ContributionProvider, serviceIdentifier } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
 import { FrontendApplicationContribution } from '../frontend-application';
 
-export const TabBarDecorator = Symbol('TabBarDecorator');
+export const TabBarDecorator = serviceIdentifier<TabBarDecorator>('TabBarDecorator');
 
 export interface TabBarDecorator {
 

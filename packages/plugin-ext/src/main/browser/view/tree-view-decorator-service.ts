@@ -16,13 +16,13 @@
 
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { AbstractTreeDecoratorService, TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
-import { bindContributionProvider, ContributionProvider } from '@theia/core';
+import { bindContributionProvider, ContributionProvider, serviceIdentifier } from '@theia/core';
 import { TreeNode } from '@theia/core/lib/browser';
 import { TreeItem, Uri } from '@theia/plugin';
 import URI from '@theia/core/lib/common/uri';
 import { FileTreeDecoratorAdapter } from '@theia/filesystem/lib/browser';
 
-export const TreeViewDecorator = Symbol('TreeViewDecorator');
+export const TreeViewDecorator = serviceIdentifier<TreeDecorator>('TreeViewDecorator');
 
 @injectable()
 export class TreeViewDecoratorAdapter extends FileTreeDecoratorAdapter {

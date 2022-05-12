@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
+
 export const MiniBrowserServicePath = '/services/mini-browser-service';
-export const MiniBrowserService = Symbol('MiniBrowserService');
+export const MiniBrowserService = serviceIdentifier<MiniBrowserService>('MiniBrowserService');
 export interface MiniBrowserService {
 
     /**

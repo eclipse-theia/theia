@@ -19,13 +19,14 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { SectionPreferenceProvider } from './section-preference-provider';
+import { serviceIdentifier } from '@theia/core';
 
-export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
+export const FolderPreferenceProviderFactory = serviceIdentifier<FolderPreferenceProviderFactory>('FolderPreferenceProviderFactory');
 export interface FolderPreferenceProviderFactory {
     (uri: URI, section: string, folder: FileStat): FolderPreferenceProvider;
 }
 
-export const FolderPreferenceProviderFolder = Symbol('FolderPreferenceProviderFolder');
+export const FolderPreferenceProviderFolder = serviceIdentifier<FileStat>('FolderPreferenceProviderFolder');
 export interface FolderPreferenceProviderOptions {
     readonly configUri: URI;
     readonly sectionName: string | undefined;

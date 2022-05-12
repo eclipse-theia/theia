@@ -54,11 +54,11 @@ export function bindLogger(bind: interfaces.Bind, props?: {
  */
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).toDynamicValue(ctx =>
-        ({
-            initialize(): void {
-                setRootLogger(ctx.container.get<ILogger>(ILogger));
-            }
-        }));
+    ({
+        initialize(): void {
+            setRootLogger(ctx.container.get(ILogger));
+        }
+    }));
 
     bind(DispatchingLoggerClient).toSelf().inSingletonScope();
     bindLogger(bind, {
@@ -75,7 +75,7 @@ export const loggerBackendModule = new ContainerModule(bind => {
             const dispatching = container.get(DispatchingLoggerClient);
             dispatching.clients.add(client);
             client.onDidCloseConnection(() => dispatching.clients.delete(client));
-            return container.get<ILoggerServer>(ILoggerServer);
+            return container.get(ILoggerServer);
         })
     ).inSingletonScope();
 });

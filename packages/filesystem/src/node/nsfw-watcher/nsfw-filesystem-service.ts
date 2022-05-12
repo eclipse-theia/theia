@@ -24,12 +24,13 @@ import {
 } from '../../common/filesystem-watcher-protocol';
 import { FileChangeCollection } from '../file-change-collection';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { serviceIdentifier } from '@theia/core';
 
 export interface NsfwWatcherOptions {
     ignored: IMinimatch[]
 }
 
-export const NsfwFileSystemWatcherServerOptions = Symbol('NsfwFileSystemWatcherServerOptions');
+export const NsfwFileSystemWatcherServerOptions = serviceIdentifier<NsfwFileSystemWatcherServerOptions>('NsfwFileSystemWatcherServerOptions');
 export interface NsfwFileSystemWatcherServerOptions {
     verbose: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

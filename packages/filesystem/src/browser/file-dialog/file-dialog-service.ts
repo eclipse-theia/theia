@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MaybeArray } from '@theia/core/lib/common';
+import { MaybeArray, serviceIdentifier } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { FileStat } from '../../common/files';
 import { DirNode } from '../file-tree';
@@ -25,7 +25,7 @@ import { FileService } from '../file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 
-export const FileDialogService = Symbol('FileDialogService');
+export const FileDialogService = serviceIdentifier<FileDialogService>('FileDialogService');
 export interface FileDialogService {
 
     showOpenDialog(props: OpenFileDialogProps & { canSelectMany: true }, folder?: FileStat): Promise<MaybeArray<URI> | undefined>;

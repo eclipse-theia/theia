@@ -17,8 +17,9 @@
 import * as React from 'react';
 import { injectable } from 'inversify';
 import { Breadcrumb, Styles } from './breadcrumbs-constants';
+import { serviceIdentifier } from '../../common';
 
-export const BreadcrumbRenderer = Symbol('BreadcrumbRenderer');
+export const BreadcrumbRenderer = serviceIdentifier<BreadcrumbRenderer>('BreadcrumbRenderer');
 export interface BreadcrumbRenderer {
     /**
      * Renders the given breadcrumb. If `onClick` is given, it is called on breadcrumb click.

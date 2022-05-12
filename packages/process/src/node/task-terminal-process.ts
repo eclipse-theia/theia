@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { TerminalProcess, TerminalProcessOptions } from './terminal-process';
 
-export const TaskTerminalProcessFactory = Symbol('TaskTerminalProcessFactory');
+export const TaskTerminalProcessFactory = serviceIdentifier<TaskTerminalProcessFactory>('TaskTerminalProcessFactory');
 export interface TaskTerminalProcessFactory {
     (options: TerminalProcessOptions): TaskTerminalProcess;
 }

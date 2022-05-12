@@ -57,7 +57,7 @@ import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
-import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
+import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
@@ -173,7 +173,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const tabBarDecoratorService = container.get(TabBarDecoratorService);
         const iconThemeService = container.get(IconThemeService);
         const selectionService = container.get(SelectionService);
-        const commandService = container.get<CommandService>(CommandService);
+        const commandService = container.get(CommandService);
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
     });
 
@@ -299,10 +299,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(PingService).toDynamicValue(ctx => {
         // let's reuse a simple and cheap service from this package
-        const envServer: EnvVariablesServer = ctx.container.get(EnvVariablesServer);
+        const envServer = ctx.container.get(EnvVariablesServer);
         return {
-            ping(): Promise<EnvVariable | undefined> {
-                return envServer.getValue('does_not_matter');
+            ping: async () => {
+                await envServer.getValue('does_not_matter');
             }
         };
     });

@@ -21,7 +21,7 @@ import { BreadcrumbsService } from './breadcrumbs-service';
 import { BreadcrumbRenderer } from './breadcrumb-renderer';
 import PerfectScrollbar from 'perfect-scrollbar';
 import URI from '../../common/uri';
-import { Emitter, Event } from '../../common';
+import { Emitter, Event, serviceIdentifier } from '../../common';
 import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
 import { DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
@@ -181,7 +181,7 @@ export class BreadcrumbsRenderer extends ReactRenderer {
     };
 }
 
-export const BreadcrumbsRendererFactory = Symbol('BreadcrumbsRendererFactory');
+export const BreadcrumbsRendererFactory = serviceIdentifier<BreadcrumbsRendererFactory>('BreadcrumbsRendererFactory');
 export interface BreadcrumbsRendererFactory {
     (): BreadcrumbsRenderer;
 }

@@ -39,7 +39,7 @@ export class TimelineMainImpl implements TimelineMain {
     private readonly providerEmitters = new Map<string, Emitter<TimelineChangeEvent>>();
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TIMELINE_EXT);
-        this.timelineService = container.get<TimelineService>(TimelineService);
+        this.timelineService = container.get(TimelineService);
     }
 
     async $registerTimelineProvider(provider: TimelineProviderDescriptor): Promise<void> {

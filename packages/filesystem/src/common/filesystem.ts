@@ -17,12 +17,12 @@
 /* eslint-disable max-len */
 
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ApplicationError } from '@theia/core/lib/common';
+import { ApplicationError, serviceIdentifier } from '@theia/core/lib/common';
 
 /**
  * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService` instead
  */
-export const FileSystem = Symbol('FileSystem');
+export const FileSystem = serviceIdentifier<FileSystem>('FileSystem');
 export interface FileSystem {
 
     /**

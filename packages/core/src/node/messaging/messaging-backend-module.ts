@@ -25,12 +25,14 @@ import { MessagingListener, MessagingListenerContribution } from './messaging-li
 export const messagingBackendModule = new ContainerModule(bind => {
     bindContributionProvider(bind, ConnectionContainerModule);
     bindContributionProvider(bind, MessagingService.Contribution);
-    bind(MessagingService.Identifier).to(MessagingContribution).inSingletonScope();
-    bind(MessagingContribution).toDynamicValue(({ container }) => {
-        const child = container.createChild();
-        child.bind(MessagingContainer).toConstantValue(container);
-        return child.get(MessagingService.Identifier);
-    }).inSingletonScope();
+    bind(MessagingContribution)
+        .toDynamicValue(({ container }) => {
+            const child = container.createChild();
+            child.bind(MessagingContainer).toConstantValue(container);
+            return child.resolve(MessagingContribution);
+        })
+        .inSingletonScope();
+    bind(MessagingService.Identifier).toService(MessagingContribution);
     bind(BackendApplicationContribution).toService(MessagingContribution);
     bind(MessagingListener).toSelf().inSingletonScope();
     bindContributionProvider(bind, MessagingListenerContribution);

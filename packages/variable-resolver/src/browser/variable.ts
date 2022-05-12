@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import { Disposable, DisposableCollection, MaybePromise, serviceIdentifier } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 
 /**
@@ -41,7 +41,7 @@ export interface Variable {
     resolve(context?: URI, argument?: string, configurationSection?: string): MaybePromise<Object | undefined>;
 }
 
-export const VariableContribution = Symbol('VariableContribution');
+export const VariableContribution = serviceIdentifier<VariableContribution>('VariableContribution');
 /**
  * The variable contribution should be implemented to register custom variables.
  */

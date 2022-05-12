@@ -28,7 +28,7 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { MenuPath } from '@theia/core/lib/common';
+import { MenuPath, serviceIdentifier } from '@theia/core';
 import { codicon, ContextMenuRenderer, TooltipService } from '@theia/core/lib/browser';
 import { VSXExtensionNamespaceAccess, VSXUser } from '@theia/ovsx-client/lib/ovsx-types';
 
@@ -83,7 +83,7 @@ export class VSXExtensionOptions {
     readonly id: string;
 }
 
-export const VSXExtensionFactory = Symbol('VSXExtensionFactory');
+export const VSXExtensionFactory = serviceIdentifier<VSXExtensionFactory>('VSXExtensionFactory');
 export type VSXExtensionFactory = (options: VSXExtensionOptions) => VSXExtension;
 
 @injectable()

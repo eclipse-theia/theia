@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSessionConnection } from './debug-session-connection';
 
-export const DebugContribution = Symbol('DebugContribution');
+export const DebugContribution = serviceIdentifier<DebugContribution>('DebugContribution');
 
 export interface DebugContribution {
     register(configType: string, connection: DebugSessionConnection): void;

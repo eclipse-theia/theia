@@ -26,11 +26,12 @@ import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
 import { TreeSearch } from './tree-search';
+import { serviceIdentifier } from '../../common';
 
 /**
  * The tree model.
  */
-export const TreeModel = Symbol('TreeModel');
+export const TreeModel = serviceIdentifier<TreeModel>('TreeModel');
 export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionService {
 
     /**

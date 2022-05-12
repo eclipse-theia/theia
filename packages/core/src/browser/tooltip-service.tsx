@@ -19,10 +19,10 @@ import * as React from 'react';
 import ReactTooltip from 'react-tooltip';
 import { ReactRenderer, RendererHost } from './widgets/react-renderer';
 import { CorePreferences } from './core-preferences';
-import { DisposableCollection } from '../common/disposable';
+import { DisposableCollection, serviceIdentifier } from '../common';
 import { v4 } from 'uuid';
 
-export const TooltipService = Symbol('TooltipService');
+export const TooltipService = serviceIdentifier<TooltipService>('TooltipService');
 
 export interface TooltipService {
     tooltipId: string;

@@ -16,13 +16,12 @@
 
 import * as cp from 'child_process';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
+import { ILogger, ConnectionErrorHandler, ContributionProvider, Deferred, MessageService, serviceIdentifier } from '@theia/core';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin, PLUGIN_HOST_BACKEND } from '../../common/plugin-protocol';
 import { MessageType } from '../../common/rpc-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import * as psTree from 'ps-tree';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 
 export interface IPCConnectionOptions {
@@ -32,7 +31,7 @@ export interface IPCConnectionOptions {
     readonly errorHandler?: ConnectionErrorHandler;
 }
 
-export const HostedPluginProcessConfiguration = Symbol('HostedPluginProcessConfiguration');
+export const HostedPluginProcessConfiguration = serviceIdentifier<HostedPluginProcessConfiguration>('HostedPluginProcessConfiguration');
 export interface HostedPluginProcessConfiguration {
     readonly path: string
 }

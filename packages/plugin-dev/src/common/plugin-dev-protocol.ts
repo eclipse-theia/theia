@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { serviceIdentifier } from '@theia/core';
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 // eslint-disable-next-line @theia/runtime-import-check
 import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contribution';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 export const pluginDevServicePath = '/services/plugin-dev';
-export const PluginDevServer = Symbol('PluginDevServer');
+export const PluginDevServer = serviceIdentifier<PluginDevServer>('PluginDevServer');
 export interface PluginDevServer extends JsonRpcServer<PluginDevClient> {
     getHostedPlugin(): Promise<PluginMetadata | undefined>;
     runHostedPluginInstance(uri: string): Promise<string>;

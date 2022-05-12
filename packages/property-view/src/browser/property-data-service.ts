@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const PropertyDataService = Symbol('PropertyDataService');
+import { serviceIdentifier } from '@theia/core';
+
+export const PropertyDataService = serviceIdentifier<PropertyDataService>('PropertyDataService');
 /**
  * `PropertyDataService` should be implemented to provide property data for the given selection.
  */

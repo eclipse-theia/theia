@@ -20,12 +20,12 @@ import { dirname } from 'path';
 import { pathExists } from '@theia/core/shared/fs-extra';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { MessageService } from '@theia/core';
+import { MessageService, serviceIdentifier } from '@theia/core';
 
 /**
  * Initializer hook for Git.
  */
-export const GitInit = Symbol('GitInit');
+export const GitInit = serviceIdentifier<GitInit>('GitInit');
 export interface GitInit extends Disposable {
 
     /**

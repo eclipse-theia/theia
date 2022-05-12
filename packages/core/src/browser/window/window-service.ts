@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '../../common/event';
+import { Event, serviceIdentifier } from '../../common';
 import { NewWindowOptions } from '../../common/window';
 
 /**
  * Service for opening new browser windows.
  */
-export const WindowService = Symbol('WindowService');
+export const WindowService = serviceIdentifier<WindowService>('WindowService');
 
 export interface WindowService {
     /**

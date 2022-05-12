@@ -27,8 +27,9 @@ import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
 import { ConsoleSessionManager } from './console-session-manager';
 import * as monaco from '@theia/monaco-editor-core';
+import { serviceIdentifier } from '@theia/core';
 
-export const ConsoleOptions = Symbol('ConsoleWidgetOptions');
+export const ConsoleOptions = serviceIdentifier<ConsoleOptions>('ConsoleWidgetOptions');
 export interface ConsoleOptions {
     id: string
     title?: {
