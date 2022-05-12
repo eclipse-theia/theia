@@ -109,6 +109,8 @@ export namespace ConsoleLogger {
     export function log(name: string, logLevel: number, message: string, params: any[]): void {
         const console = consoles.get(logLevel) || originalConsoleLog;
         const severity = (LogLevel.strings.get(logLevel) || 'unknown').toUpperCase();
-        console(`${name} ${severity} ${message}`, ...params);
+        const now = new Date();
+        const timestamp = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
+        console(`${timestamp} ${name} ${severity} ${message}`, ...params);
     }
 }
