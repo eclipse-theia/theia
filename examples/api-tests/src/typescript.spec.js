@@ -48,6 +48,7 @@ describe('TypeScript', function () {
     const contextKeyService = container.get(ContextKeyService);
     const commands = container.get(CommandRegistry);
     const openerService = container.get(OpenerService);
+    /** @type {KeybindingRegistry} */
     const keybindings = container.get(KeybindingRegistry);
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
@@ -108,11 +109,12 @@ describe('TypeScript', function () {
     /**
      * @param {() => Promise<unknown> | unknown} condition
      * @param {number | undefined} [timeout]
+     * @param {string | undefined} [message]
      * @returns {Promise<void>}
      */
-    function waitForAnimation(condition, timeout) {
-        const success = new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
+    function waitForAnimation(condition, timeout, message) {
+        const success = new Promise(async (resolve, reject) => {
+            toTearDown.push({ dispose: () => reject(message ?? 'Test terminated before resolution.') });
             do {
                 await animationFrame();
             } while (!condition());
@@ -120,8 +122,8 @@ describe('TypeScript', function () {
         });
         if (timeout !== undefined) {
             const timedOut = new Promise((_, fail) => {
-                const toClear = setTimeout(() => fail(new Error('Wait for animation timed out.')), timeout);
-                toTearDown.push({ dispose: () => (fail(new Error('Wait for animation timed out.')), clearTimeout(toClear)) });
+                const toClear = setTimeout(() => fail(new Error(message ?? 'Wait for animation timed out.')), timeout);
+                toTearDown.push({ dispose: () => (fail(new Error(message ?? 'Wait for animation timed out.')), clearTimeout(toClear)) });
             });
             return Promise.race([success, timedOut]);
         }
@@ -733,4 +735,42 @@ SPAN {
         });
     }
 
+    it('Can execute code actions', async function () {
+        const editor = await openEditor(demoFileUri);
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').QuickFixController} */
+        const quickFixController = editor.getControl().getContribution('editor.contrib.quickFixController');
+        const isActionAvailable = () => {
+            const lightbulbVisibility = quickFixController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
+            return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
+        }
+        assert.isFalse(isActionAvailable());
+        // import { DefinedInterface } from "./demo-definitions-file";
+        assert.strictEqual(editor.getControl().getModel().getLineContent(30), 'import { DefinedInterface } from "./demo-definitions-file";');
+        editor.getControl().revealLine(30);
+        editor.getControl().setSelection(new Selection(30, 1, 30, 60));
+        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (1)');
+        assert.isTrue(isActionAvailable());
+
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (1)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('ArrowDown');
+        keybindings.dispatchKeyDown('Enter');
+
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
+
+        editor.getControl().setSelection(new Selection(30, 1, 30, 64));
+        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (2)');
+
+        // Change it back: https://github.com/eclipse-theia/theia/issues/11059
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (2)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('ArrowDown');
+        keybindings.dispatchKeyDown('Enter');
+
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
+    });
 });
