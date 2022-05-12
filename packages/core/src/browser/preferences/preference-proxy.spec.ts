@@ -43,7 +43,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 import { expect } from 'chai';
-import { PreferenceValidationService } from '.';
+import { PreferenceValidationService } from './preference-validation-service';
 import { JSONValue } from '@phosphor/coreutils';
 let testContainer: Container;
 

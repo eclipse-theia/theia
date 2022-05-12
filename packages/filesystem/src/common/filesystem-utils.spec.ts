@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FileSystemUtils } from '.';
 import { FileStat } from './files';
 import { expect } from 'chai';
+import { FileSystemUtils } from './filesystem-utils';
 
 describe('generateUniqueResourceURI', () => {
     describe('Target is file', () => {

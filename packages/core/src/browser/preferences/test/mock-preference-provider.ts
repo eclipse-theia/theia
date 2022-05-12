@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces } from 'inversify';
-import { PreferenceProvider } from '../';
+import { PreferenceProvider } from '../preference-provider';
 import { PreferenceScope } from '../preference-scope';
 
 export class MockPreferenceProvider extends PreferenceProvider {
