@@ -77,7 +77,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                     command: commandId
                 });
             }
-            menu.aboutToClose.connect(() => onHide);
+            menu.aboutToClose.connect(() => onHide());
             menu.open(anchor.x, anchor.y);
         }
         this.onDidShowContextMenuEmitter.fire();
