@@ -31,6 +31,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { Channel } from '@theia/debug/lib/common/debug-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -45,8 +46,10 @@ export class PluginDebugSession extends DebugSession {
         protected override readonly messages: MessageClient,
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>) {
-        super(id, options, parentSession, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService, debugContributionProvider);
+        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
+        protected override readonly workspaceService: WorkspaceService) {
+        super(id, options, parentSession, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService, debugContributionProvider,
+            workspaceService);
     }
 
     protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -71,7 +74,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected readonly connectionFactory: (sessionId: string) => Promise<Channel>,
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
-        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>
+        protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
+        protected override readonly workspaceService: WorkspaceService,
     ) {
         super();
     }
@@ -94,7 +98,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.messages,
             this.fileService,
             this.terminalOptionsExt,
-            this.debugContributionProvider
+            this.debugContributionProvider,
+            this.workspaceService,
         );
     }
 }

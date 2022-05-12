@@ -214,7 +214,7 @@ export class DebugSessionManager {
                     }
                 }
 
-                const sessionId = await this.debug.createDebugSession(resolved.configuration);
+                const sessionId = await this.debug.createDebugSession(resolved.configuration, options.workspaceFolderUri);
                 return this.doStart(sessionId, resolved);
             } catch (e) {
                 if (DebugError.NotFound.is(e)) {

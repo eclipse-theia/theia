@@ -264,14 +264,14 @@ export class PluginDebugService implements DebugService {
         return snippets;
     }
 
-    async createDebugSession(config: DebugConfiguration): Promise<string> {
+    async createDebugSession(config: DebugConfiguration, workspaceFolder: string | undefined): Promise<string> {
         const contributor = this.contributors.get(config.type);
         if (contributor) {
-            const sessionId = await contributor.createDebugSession(config);
+            const sessionId = await contributor.createDebugSession(config, workspaceFolder);
             this.sessionId2contrib.set(sessionId, contributor);
             return sessionId;
         } else {
-            return this.delegated.createDebugSession(config);
+            return this.delegated.createDebugSession(config, workspaceFolder);
         }
     }
 

@@ -54,6 +54,7 @@ import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-cons
 import { ContributionProvider } from '@theia/core/lib/common';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ConnectionImpl } from '../../../common/connection';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -73,6 +74,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
     private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
+    private readonly workspaceService: WorkspaceService;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly configurationProviders = new Map<number, DisposableCollection>();
@@ -95,6 +97,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
+        this.workspaceService = container.get(WorkspaceService);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
             this.debugExt.$breakpointsDidChange(
@@ -155,7 +158,8 @@ export class DebugMainImpl implements DebugMain, Disposable {
             },
             this.fileService,
             terminalOptionsExt,
-            this.debugContributionProvider
+            this.debugContributionProvider,
+            this.workspaceService,
         );
 
         const toDispose = new DisposableCollection(

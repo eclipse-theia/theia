@@ -9649,6 +9649,11 @@ export module '@theia/plugin' {
         readonly name: string;
 
         /**
+         * The workspace folder of this session or `undefined` for a folderless setup.
+         */
+        readonly workspaceFolder: WorkspaceFolder | undefined;
+
+        /**
          * The "resolved" [debug configuration](#DebugConfiguration) of this session.
          */
         readonly configuration: DebugConfiguration;
