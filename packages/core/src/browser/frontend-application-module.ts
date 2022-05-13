@@ -61,7 +61,7 @@ import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/e
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
-import { bindCorePreferences } from './core-preferences';
+import { bindCorePreferences, CorePreferences } from './core-preferences';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -122,6 +122,7 @@ import { TooltipService, TooltipServiceImpl } from './tooltip-service';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
+import { TheiaDockPanel } from './shell/theia-dock-panel';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -175,6 +176,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const selectionService = container.get(SelectionService);
         const commandService = container.get<CommandService>(CommandService);
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService, selectionService, commandService);
+    });
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => options => {
+        const corePreferences = container.get<CorePreferences>(CorePreferences);
+        return new TheiaDockPanel(options, corePreferences);
     });
 
     bindContributionProvider(bind, TabBarDecorator);

@@ -119,6 +119,7 @@ export class SidePanelHandler {
     @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory: () => SidebarBottomMenuWidget;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
+    @inject(TheiaDockPanel.Factory) protected readonly dockPanelFactory: TheiaDockPanel.Factory;
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
@@ -177,7 +178,7 @@ export class SidePanelHandler {
     }
 
     protected createSidePanel(): TheiaDockPanel {
-        const sidePanel = new TheiaDockPanel({
+        const sidePanel = this.dockPanelFactory({
             mode: 'single-document'
         });
         sidePanel.id = 'theia-' + this.side + '-side-panel';
