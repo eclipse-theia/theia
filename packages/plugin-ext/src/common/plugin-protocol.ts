@@ -827,8 +827,8 @@ export interface PluginDependencies {
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
-    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void>;
-    deployBackendPlugins(backendPlugins: PluginDeployerEntry[], isUnderDevelopment?: boolean): Promise<void>;
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
     getDeployedPlugin(pluginId: string): DeployedPlugin | undefined;
     undeployPlugin(pluginId: string): Promise<boolean>;
