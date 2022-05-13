@@ -26,6 +26,7 @@ import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
+import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -54,7 +55,7 @@ export class DebugViewModel implements Disposable {
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeEmitter,
         this.onDidChangeBreakpointsEmitter,
-        this.onDidChangeWatchExpressionsEmitter
+        this.onDidChangeWatchExpressionsEmitter,
     );
 
     @inject(DebugSessionManager)
@@ -129,6 +130,10 @@ export class DebugViewModel implements Disposable {
 
     get functionBreakpoints(): DebugFunctionBreakpoint[] {
         return this.manager.getFunctionBreakpoints(this.currentSession);
+    }
+
+    get instructionBreakpoints(): DebugInstructionBreakpoint[] {
+        return this.manager.getInstructionBreakpoints(this.currentSession);
     }
 
     async start(): Promise<void> {

@@ -42,6 +42,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from './debug-contribution';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 
 export enum DebugState {
     Inactive,
@@ -56,6 +57,10 @@ export class DebugSession implements CompositeTreeElement {
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected fireDidChange(): void {
         this.onDidChangeEmitter.fire(undefined);
+    }
+    protected readonly onDidFocusStackFrameEmitter = new Emitter<DebugStackFrame | undefined>();
+    get onDidFocusStackFrame(): Event<DebugStackFrame | undefined> {
+        return this.onDidFocusStackFrameEmitter.event;
     }
 
     protected readonly onDidChangeBreakpointsEmitter = new Emitter<URI>();
@@ -235,6 +240,7 @@ export class DebugSession implements CompositeTreeElement {
         this.fireDidChange();
         if (thread) {
             this.toDisposeOnCurrentThread.push(thread.onDidChanged(() => this.fireDidChange()));
+            this.toDisposeOnCurrentThread.push(thread.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire(frame)));
 
             // If this thread is missing stack frame information, then load that.
             this.updateFrames();
@@ -513,13 +519,15 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     getFunctionBreakpoints(): DebugFunctionBreakpoint[] {
-        const breakpoints = [];
-        for (const breakpoint of this.getBreakpoints(BreakpointManager.FUNCTION_URI)) {
-            if (breakpoint instanceof DebugFunctionBreakpoint) {
-                breakpoints.push(breakpoint);
-            }
+        return this.getBreakpoints(BreakpointManager.FUNCTION_URI).filter((breakpoint): breakpoint is DebugFunctionBreakpoint => breakpoint instanceof DebugFunctionBreakpoint);
+    }
+
+    getInstructionBreakpoints(): DebugInstructionBreakpoint[] {
+        if (this.capabilities.supportsInstructionBreakpoints) {
+            return this.getBreakpoints(BreakpointManager.FUNCTION_URI)
+                .filter((breakpoint): breakpoint is DebugInstructionBreakpoint => breakpoint instanceof DebugInstructionBreakpoint);
         }
-        return breakpoints;
+        return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, this.asDebugBreakpointOptions()));
     }
 
     getBreakpoints(uri?: URI): DebugBreakpoint[] {
@@ -614,6 +622,8 @@ export class DebugSession implements CompositeTreeElement {
                 await this.sendExceptionBreakpoints();
             } else if (affectedUri.toString() === BreakpointManager.FUNCTION_URI.toString()) {
                 await this.sendFunctionBreakpoints(affectedUri);
+            } else if (affectedUri.toString() === BreakpointManager.INSTRUCTION_URI.toString()) {
+                await this.sendInstructionBreakpoints();
             } else {
                 await this.sendSourceBreakpoints(affectedUri, sourceModified);
             }
@@ -640,7 +650,7 @@ export class DebugSession implements CompositeTreeElement {
                 const response = await this.sendRequest('setFunctionBreakpoints', {
                     breakpoints: enabled.map(b => b.origin.raw)
                 });
-                response.body.breakpoints.map((raw, index) => {
+                response.body.breakpoints.forEach((raw, index) => {
                     // node debug adapter returns more breakpoints sometimes
                     if (enabled[index]) {
                         enabled[index].update({ raw });
@@ -679,7 +689,7 @@ export class DebugSession implements CompositeTreeElement {
                 sourceModified,
                 breakpoints: enabled.map(({ origin }) => origin.raw)
             });
-            response.body.breakpoints.map((raw, index) => {
+            response.body.breakpoints.forEach((raw, index) => {
                 // node debug adapter returns more breakpoints sometimes
                 if (enabled[index]) {
                     enabled[index].update({ raw });
@@ -703,6 +713,23 @@ export class DebugSession implements CompositeTreeElement {
             }
         }
         this.setSourceBreakpoints(affectedUri, all);
+    }
+
+    protected async sendInstructionBreakpoints(): Promise<void> {
+        if (!this.capabilities.supportsInstructionBreakpoints) {
+            return;
+        }
+        const all = this.breakpoints.getInstructionBreakpoints().map(breakpoint => new DebugInstructionBreakpoint(breakpoint, this.asDebugBreakpointOptions()));
+        const enabled = all.filter(breakpoint => breakpoint.enabled);
+        try {
+            const response = await this.sendRequest('setInstructionBreakpoints', {
+                breakpoints: enabled.map(renderable => renderable.origin),
+            });
+            response.body.breakpoints.forEach((raw, index) => enabled[index]?.update({ raw }));
+        } catch {
+            enabled.forEach(breakpoint => breakpoint.update({ raw: { verified: false } }));
+        }
+        this.setBreakpoints(BreakpointManager.INSTRUCTION_URI, all);
     }
 
     protected setBreakpoints(uri: URI, breakpoints: DebugBreakpoint[]): void {
