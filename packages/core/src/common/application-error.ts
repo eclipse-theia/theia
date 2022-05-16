@@ -32,11 +32,12 @@ export namespace ApplicationError {
         code: C;
         is(arg: object | undefined): arg is ApplicationError<C, D>
     }
-    const codes: number[] = [];
+    const codes = new Set<number>();
     export function declare<C extends number, D>(code: C, factory: (...args: any[]) => Literal<D>): Constructor<C, D> {
-        if (codes.indexOf(code) !== -1) {
+        if (codes.has(code)) {
             throw new Error(`An application error for '${code}' code is already declared`);
         }
+        codes.add(code);
         const constructorOpt = Object.assign((...args: any[]) => new Impl(code, factory(...args), constructorOpt), {
             code,
             is(arg: object | undefined): arg is ApplicationError<C, D> {
