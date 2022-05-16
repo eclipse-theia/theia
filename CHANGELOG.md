@@ -9,6 +9,7 @@
 - [plugin] moved `WebviewViewResolveContext` from `window` to `root` namespace [#11216](https://github.com/eclipse-theia/theia/pull/11216) - Contributed on behalf of STMicroelectronics
 - [plugin] Add support for property `color` of `ThemeIcon`. [#11243](https://github.com/eclipse-theia/theia/pull/11243) - Contributed on behalf of STMicroelectronics
 - [plugin] Add support for `TreeItemLabel` in `TreeItem`. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
+- [plugin] Support `TextEditor#show()` and `TextEditor#hide()` [#11168](https://github.com/eclipse-theia/theia/pull/11168) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 

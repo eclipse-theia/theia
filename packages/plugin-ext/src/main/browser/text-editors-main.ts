@@ -28,9 +28,10 @@ import {
     DecorationRenderOptions,
     ThemeDecorationInstanceRenderOptions,
     DecorationOptions,
-    WorkspaceEditDto
+    WorkspaceEditDto,
+    DocumentsMain,
 } from '../../common/plugin-api-rpc';
-import { Range } from '../../common/plugin-api-rpc-model';
+import { Range, TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -54,6 +55,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     constructor(
         private readonly editorsAndDocuments: EditorsAndDocumentsMain,
+        private readonly documents: DocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
         private readonly monacoEditorService: MonacoEditorService,
@@ -85,6 +87,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         if (disposables) {
             disposables.dispose();
         }
+    }
+
+    $tryShowTextDocument(uri: UriComponents, options?: TextDocumentShowOptions): Promise<void> {
+        return this.documents.$tryShowDocument(uri, options);
     }
 
     $trySetOptions(id: string, options: TextEditorConfigurationUpdate): Promise<void> {
@@ -171,6 +177,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     $removeTextEditorDecorationType(key: string): void {
         this.monacoEditorService.removeDecorationType(key);
+    }
+
+    $tryHideEditor(id: string): Promise<void> {
+        return this.editorsAndDocuments.hideEditor(id);
     }
 
     $trySetDecorations(id: string, key: string, ranges: DecorationOptions[]): Promise<void> {

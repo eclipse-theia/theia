@@ -41,6 +41,7 @@ export class EditorsAndDocumentsMain implements Disposable {
     private readonly textEditors = new Map<string, TextEditorMain>();
 
     private readonly modelService: EditorModelService;
+    private readonly editorService: EditorManager;
 
     private readonly onTextEditorAddEmitter = new Emitter<TextEditorMain[]>();
     private readonly onTextEditorRemoveEmitter = new Emitter<string[]>();
@@ -59,10 +60,10 @@ export class EditorsAndDocumentsMain implements Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
-        const editorService = container.get(EditorManager);
+        this.editorService = container.get(EditorManager);
         this.modelService = container.get(EditorModelService);
 
-        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), editorService, this.modelService);
+        this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), this.editorService, this.modelService);
         this.toDispose.push(this.stateComputer);
         this.toDispose.push(this.onTextEditorAddEmitter);
         this.toDispose.push(this.onTextEditorRemoveEmitter);
@@ -167,6 +168,19 @@ export class EditorsAndDocumentsMain implements Disposable {
 
     saveAll(includeUntitled?: boolean): Promise<boolean> {
         return this.modelService.saveAll(includeUntitled);
+    }
+
+    hideEditor(id: string): Promise<void> {
+        for (const editorWidget of this.editorService.all) {
+            const monacoEditor = MonacoEditor.get(editorWidget);
+            if (monacoEditor) {
+                if (id === new EditorSnapshot(monacoEditor).id) {
+                    editorWidget.close();
+                    break;
+                }
+            }
+        }
+        return Promise.resolve();
     }
 }
 

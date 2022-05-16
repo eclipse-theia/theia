@@ -94,7 +94,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const bulkEditService = container.get(MonacoBulkEditService);
     const monacoEditorService = container.get(MonacoEditorService);
-    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, rpc, bulkEditService, monacoEditorService);
+    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, documentsMain, rpc, bulkEditService, monacoEditorService);
     rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
 
     // start listening only after all clients are subscribed to events

@@ -187,6 +187,20 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     // This override only serves to inform external callers that they can use EditorOpenerOptions.
     override open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+
+        /* check whether we have a split request without a counter */
+        if (options && options.counter === undefined && options.widgetOptions?.mode) {
+            switch (options.widgetOptions.mode) {
+                case 'split-right':
+                case 'split-bottom':
+                case 'split-top':
+                case 'split-left':
+                    const counter = this.createCounterForUri(uri);
+                    const splitOptions: EditorOpenerOptions = { counter, ...options };
+                    return super.open(uri, splitOptions);
+            }
+        }
+
         return super.open(uri, options);
     }
 
