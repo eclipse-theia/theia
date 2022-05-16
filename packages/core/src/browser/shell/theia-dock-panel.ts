@@ -20,7 +20,6 @@ import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
-import { inject } from 'inversify';
 import { Emitter, environment } from '../../common';
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
@@ -53,7 +52,7 @@ export class TheiaDockPanel extends DockPanel {
     readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
 
     constructor(options?: DockPanel.IOptions,
-        @inject(CorePreferences) protected readonly preferences?: CorePreferences
+        protected readonly preferences?: CorePreferences
     ) {
         super(options);
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
@@ -242,4 +241,10 @@ export class TheiaDockPanel extends DockPanel {
         return this.maximizedElement;
     }
 
+}
+export namespace TheiaDockPanel {
+    export const Factory = Symbol('TheiaDockPanel#Factory');
+    export interface Factory {
+        (options?: DockPanel.IOptions): TheiaDockPanel;
+    }
 }

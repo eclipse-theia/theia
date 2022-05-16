@@ -80,6 +80,9 @@ export interface DockPanelRendererFactory {
 @injectable()
 export class DockPanelRenderer implements DockLayout.IRenderer {
 
+    @inject(TheiaDockPanel.Factory)
+    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
+
     readonly tabBarClasses: string[] = [];
 
     constructor(
@@ -206,6 +209,9 @@ export class ApplicationShell extends Widget {
 
     protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
     readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
+
+    @inject(TheiaDockPanel.Factory)
+    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
 
     /**
      * Construct a new application shell.
@@ -477,11 +483,11 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
-        const dockPanel = new TheiaDockPanel({
+        const dockPanel = this.dockPanelFactory({
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        }, this.corePreferences);
+        });
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
@@ -495,11 +501,11 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(BOTTOM_AREA_CLASS);
-        const dockPanel = new TheiaDockPanel({
+        const dockPanel = this.dockPanelFactory({
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        }, this.corePreferences);
+        });
         dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
