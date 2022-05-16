@@ -110,7 +110,6 @@ export namespace ConsoleLogger {
         const console = consoles.get(logLevel) || originalConsoleLog;
         const severity = (LogLevel.strings.get(logLevel) || 'unknown').toUpperCase();
         const now = new Date();
-        const timestamp = `${now.toLocaleString('en-GB')}.${now.getMilliseconds()}`;
-        console(`${timestamp} ${name} ${severity} ${message}`, ...params);
+        console(`${now.toISOString()} ${name} ${severity} ${message}`, ...params);
     }
 }
