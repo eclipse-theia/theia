@@ -97,6 +97,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': nls.localizeByDefault('Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.'),
             'default': false
         },
+        'workbench.editor.mouseBackForwardToNavigate': {
+            'type': 'boolean',
+            // nls-todo: Will be available with newer VSCode API
+            'description': nls.localize('theia/core/mouseBackForwardToNavigate', "Enables the use of mouse buttons four and five for commands 'Go Back' and 'Go Forward'."),
+            'default': true
+        },
         'workbench.commandPalette.history': {
             type: 'number',
             default: 50,
@@ -166,6 +172,7 @@ export interface CoreConfiguration {
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
+    'workbench.editor.mouseBackForwardToNavigate': boolean;
     'workbench.editor.closeOnFileDelete': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;
