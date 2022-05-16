@@ -1215,6 +1215,22 @@ export module '@theia/plugin' {
          * @param revealType The scrolling strategy for revealing `range`.
          */
         revealRange(range: Range, revealType?: TextEditorRevealType): void;
+
+        /**
+         * Shows this text editor. A [column](#ViewColumn) can be provided to control where the editor is being shown. Might change the [active editor](#window.activeTextEditor).
+         *
+         * @deprecated use [window.showTextDocument](#Window.showTextDocument) instead.
+         *
+         * @param column A [view column](#ViewColumn) in which this editor should be shown.
+         */
+        show(column?: ViewColumn): void;
+
+        /**
+         * Hides this text editor.
+         *
+         * @deprecated use 'workbench.action.closeActiveEditor' command instead.
+         */
+        hide(): void;
     }
 
     /**
