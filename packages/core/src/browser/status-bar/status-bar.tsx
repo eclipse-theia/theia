@@ -162,10 +162,13 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
         childStrings.forEach((val, key) => {
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
+                const animation = val.animation ? ` fa-${val.animation}` : '';
                 if (val.name.startsWith('codicon-')) {
-                    children.push(<span key={key} className={`codicon ${val.name}${val.animation ? ' fa-' + val.animation : ''}`}></span>);
+                    children.push(<span key={key} className={`codicon ${val.name}${animation}`}></span>);
+                } else if (val.name.startsWith('fa-')) {
+                    children.push(<span key={key} className={`fa ${val.name}${animation}`}></span>);
                 } else {
-                    children.push(<span key={key} className={val.animation ? 'fa-' + val.animation : '' + ' ' + codicon(val.name)}></span>);
+                    children.push(<span key={key} className={`${codicon(val.name)}${animation}`}></span>);
                 }
             } else {
                 children.push(<span key={key}>{val}</span>);

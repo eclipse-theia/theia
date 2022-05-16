@@ -19,12 +19,17 @@ import { AccessibilityInformation } from '../../common/accessibility';
 
 export interface StatusBarEntry {
     /**
-     * For icons we use octicons and fontawesome icons. octicons take precedence over fontawesome. Get more information and the class names
-     * here: http://fontawesome.io/icons/
-     * To set a text with icon use the following pattern in text string:
-     * $(fontawesomeClassName)
+     * For icons we use Codicons by default, and Font Awesome icons will also be respected.
+     * You can find Codicon classnames here: https://microsoft.github.io/vscode-codicons/dist/codicon.html
+     * You can find Font Awesome classnames here: http://fontawesome.io/icons/
+     *
+     *
+     * Codicon: $(<codiconClassName>) or $(codicon-<codiconClassName>)
+     *
+     * Font Awesome: $(fa-<fontAwesomeClassName>)
+     *
      * To use animated icons use the following pattern:
-     * $(fontawesomeClassName~typeOfAnimation)
+     * $(iconClassName~typeOfAnimation)
      * Type of animation can be either spin or pulse.
      * Look here for more information to animated icons:
      * http://fontawesome.io/examples/#animated

@@ -108,9 +108,6 @@ export class StatusBarHoverManager {
 
     protected unRenderHover(): void {
         this.hoverHost.remove();
-        let child;
-        while (child = this.hoverHost?.lastChild) {
-            this.hoverHost.removeChild(child);
-        }
+        this.hoverHost.replaceChildren();
     }
 }
