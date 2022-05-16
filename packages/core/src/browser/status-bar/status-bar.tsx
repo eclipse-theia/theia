@@ -120,6 +120,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected createAttributes(viewEntry: StatusBarViewEntry): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const attrs: React.Attributes & React.HTMLAttributes<HTMLElement> = {};
         const entry = viewEntry.entry;
+        attrs.id = 'status-bar-' + viewEntry.id;
         attrs.className = 'element';
         if (entry.command || entry.onclick || entry.tooltip) {
             attrs.className += ' hasCommand';
