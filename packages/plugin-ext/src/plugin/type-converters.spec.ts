@@ -129,7 +129,8 @@ describe('Type converters:', () => {
                 const result = Converter.fromMarkdown(pluginMarkdown);
 
                 // then
-                assert.deepStrictEqual(result, { ...modelMarkdown, supportThemeIcons: false }, 'The implementation includes an explicit default `false` for `supportThemeIcons`');
+                assert.deepStrictEqual(result, { ...modelMarkdown, supportThemeIcons: false, supportHtml: false },
+                    'The implementation includes an explicit default `false` for `supportThemeIcons` and `supportHtml`');
             });
 
             it('should convert string to model markdown', () => {
@@ -154,17 +155,21 @@ describe('Type converters:', () => {
                 const markups: (theia.MarkdownString | theia.MarkedString)[] = [
                     pluginMarkdown,
                     aStringWithMarkdown,
-                    codeblock
+                    codeblock,
+                    new MarkdownString('hello', true),
                 ];
 
                 // when
                 const result: model.MarkdownString[] = Converter.fromManyMarkdown(markups);
                 // then
                 assert.deepStrictEqual(Array.isArray(result), true);
-                assert.deepStrictEqual(result.length, 3);
-                assert.deepStrictEqual(result[0], { ...modelMarkdown, supportThemeIcons: false }, 'MarkdownString implementation includes default value for `supportThemeIcons`');
+                assert.deepStrictEqual(result.length, 4);
+                assert.deepStrictEqual(result[0], { ...modelMarkdown, supportThemeIcons: false, supportHtml: false, },
+                    'MarkdownString implementation includes default value for `supportThemeIcons` and `supportHtml`');
                 assert.deepStrictEqual(result[1], modelMarkdown, 'Strings should be converted to Markdown.');
                 assert.deepStrictEqual(result[2], modelMarkdownWithCode, 'Objects matching the interface should be unchanged');
+                assert.deepStrictEqual(result[3], { value: 'hello', supportThemeIcons: true, supportHtml: false },
+                    'The constructor argument to MarkdownString for theme icons is respected.');
             });
         });
 
