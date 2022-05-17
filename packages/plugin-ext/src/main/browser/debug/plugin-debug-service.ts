@@ -23,6 +23,7 @@ import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-p
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
 import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
@@ -225,6 +226,18 @@ export class PluginDebugService implements DebugService {
                 this.debuggers.splice(index, 1);
             }
         });
+    }
+
+    async provideDebuggerVariables(debugType: string): Promise<CommandIdVariables> {
+        for (const contribution of this.debuggers) {
+            if (contribution.type === debugType) {
+                const variables = contribution.variables;
+                if (variables && Object.keys(variables).length > 0) {
+                    return variables;
+                }
+            }
+        }
+        return {};
     }
 
     async getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]> {

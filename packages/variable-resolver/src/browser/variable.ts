@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
+import { CommandIdVariables } from './variable-resolver-service';
 
 /**
  * Variable can be used inside of strings using ${variableName} syntax.
@@ -38,7 +39,13 @@ export interface Variable {
      * `undefined` if variable cannot be resolved.
      * Never reject.
      */
-    resolve(context?: URI, argument?: string, configurationSection?: string): MaybePromise<Object | undefined>;
+    resolve(
+        context?: URI,
+        argument?: string,
+        configurationSection?: string,
+        commandIdVariables?: CommandIdVariables,
+        configuration?: unknown
+    ): MaybePromise<Object | undefined>;
 }
 
 export const VariableContribution = Symbol('VariableContribution');

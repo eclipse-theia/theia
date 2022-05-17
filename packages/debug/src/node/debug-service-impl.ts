@@ -19,6 +19,7 @@ import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugService, DebuggerDescription } from '../common/debug-service';
 
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
 
@@ -52,6 +53,11 @@ export class DebugServiceImpl implements DebugService {
 
     getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
         return this.registry.getConfigurationSnippets();
+    }
+
+    async provideDebuggerVariables(debugType: string): Promise<CommandIdVariables> {
+        // TODO: Support resolution of variables map through Theia extensions?
+        return {};
     }
 
     async provideDebugConfigurations(debugType: string, workspaceFolderUri?: string): Promise<DebugConfiguration[]> {
