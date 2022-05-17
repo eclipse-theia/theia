@@ -19,7 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 @injectable()
 export class ConsoleHistory {
 
-    static limit = 50;
+    static limit = 3;
 
     protected values: string[] = [];
     protected index = -1;
@@ -39,7 +39,7 @@ export class ConsoleHistory {
     protected trim(): void {
         const index = this.values.length - ConsoleHistory.limit;
         if (index > 0) {
-            this.values.slice(index);
+            this.values = this.values.slice(index);
         }
     }
 
