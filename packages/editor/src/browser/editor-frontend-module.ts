@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
+import '../../src/browser/language-status/editor-language-status.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';

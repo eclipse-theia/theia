@@ -30,7 +30,7 @@ export class TheiaNotificationIndicator extends TheiaStatusIndicator {
     override async waitForVisible(expectNotifications = false): Promise<void> {
         await super.waitForVisible();
         if (expectNotifications && !(await this.hasNotifications())) {
-            throw new Error('No notifications when notifcations expected.');
+            throw new Error('No notifications when notifications expected.');
         }
     }
 

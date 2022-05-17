@@ -137,7 +137,6 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
         if (entry.tooltip) {
             attrs.onMouseEnter = e => this.hoverManager.requestHover(entry.tooltip!, e.currentTarget);
-            // attrs.onMouseLeave = () => this.hoverManager.cancelHover();
         }
         if (entry.className) {
             attrs.className += ' ' + entry.className;

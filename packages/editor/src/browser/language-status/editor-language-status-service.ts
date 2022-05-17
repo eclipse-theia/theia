@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '../../../src/browser/language-status/editor-language-status.css';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { codicon, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
 import { LanguageService } from '@theia/core/lib/browser/language-service';

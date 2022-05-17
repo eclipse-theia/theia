@@ -52,7 +52,7 @@
 }
 
 .hover-language-status>.element>.left>.detail:not(:empty)::before {
-    /* endash */
+    /* en-dash */
     content: '–';
     padding: 0 4px;
     opacity: 0.6;
