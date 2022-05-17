@@ -185,20 +185,28 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return 100;
     }
 
-    // This override only serves to inform external callers that they can use EditorOpenerOptions.
     override open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-
-        /* check whether we have a split request without a counter */
-        if (options && options.counter === undefined && options.widgetOptions?.mode) {
-            switch (options.widgetOptions.mode) {
-                case 'split-right':
-                case 'split-bottom':
-                case 'split-top':
-                case 'split-left':
-                    const counter = this.createCounterForUri(uri);
-                    const splitOptions: EditorOpenerOptions = { counter, ...options };
-                    return super.open(uri, splitOptions);
+        if (options?.counter === undefined) {
+            const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
+            // Definitely creating a new tabbar - no widget can match.
+            if (insertionOptions.addOptions.mode?.startsWith('split')) {
+                return super.open(uri, { counter: this.createCounterForUri(uri), ...options });
             }
+            // Check the target tabbar for an existing widget.
+            const tabbar = insertionOptions.addOptions.ref && this.shell.getTabBarFor(insertionOptions.addOptions.ref);
+            if (tabbar) {
+                const currentUri = uri.toString();
+                for (const title of tabbar.titles) {
+                    if (title.owner instanceof EditorWidget) {
+                        const { uri: otherWidgetUri, id } = this.extractIdFromWidget(title.owner);
+                        if (otherWidgetUri === currentUri) {
+                            return super.open(uri, { counter: id, ...options });
+                        }
+                    }
+                }
+            }
+            // Open a new widget.
+            return super.open(uri, { counter: this.createCounterForUri(uri), ...options });
         }
 
         return super.open(uri, options);

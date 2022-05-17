@@ -251,12 +251,19 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         if (viewColumn === undefined || viewColumn === -1) {
             /* active group -> skip (default behaviour) */
             widgetOptions = undefined;
-        } else if (viewColumn > 0) {
+        } else if (viewColumn > 0 && shell.mainAreaTabBars.length > 0) {
             const tabBars = shell.mainAreaTabBars;
-            // convert to zero-based index
-            const tabBar = tabBars[viewColumn - 1];
-            if (tabBar && tabBar.currentTitle) {
-                widgetOptions = { ref: tabBar.currentTitle.owner };
+            if (viewColumn <= tabBars.length) {
+                // convert to zero-based index
+                const tabBar = tabBars[viewColumn - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions = { ref: tabBar.currentTitle.owner };
+                }
+            } else {
+                const tabBar = tabBars[tabBars.length - 1];
+                if (tabBar?.currentTitle) {
+                    widgetOptions!.ref = tabBar.currentTitle.owner;
+                }
             }
         }
         return {
