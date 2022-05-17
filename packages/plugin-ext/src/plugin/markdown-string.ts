@@ -105,7 +105,7 @@ export class MarkdownString implements pluginAPI.MarkdownString {
             plainObject.supportThemeIcons = this.supportThemeIcons;
         }
         if (this.supportHtml !== undefined) {
-            plainObject.supportThemeIcons = this.supportHtml;
+            plainObject.supportHtml = this.supportHtml;
         }
         if (this.baseUri !== undefined) {
             plainObject.baseUri = this.baseUri.toJSON();
