@@ -39,7 +39,7 @@ export class ConsoleHistory {
     protected trim(): void {
         const index = this.values.length - ConsoleHistory.limit;
         if (index > 0) {
-            this.values.slice(index);
+            this.values = this.values.slice(index);
         }
     }
 
