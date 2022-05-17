@@ -71,7 +71,7 @@ describe('variable-resolver-service', () => {
 
     it('should resolve known variables in a string array', async () => {
         const resolved = await variableResolverService.resolveArray(['file: ${file}', 'line: ${lineNumber}']);
-        expect(resolved.length).to.be.equal(2);
+        expect(resolved!.length).to.be.equal(2);
         expect(resolved).to.contain('file: package.json');
         expect(resolved).to.contain('line: 6');
     });
@@ -79,5 +79,13 @@ describe('variable-resolver-service', () => {
     it('should skip unknown variables', async () => {
         const resolved = await variableResolverService.resolve('workspace: ${workspaceRoot}; file: ${file}; line: ${lineNumber}');
         expect(resolved).is.equal('workspace: ${workspaceRoot}; file: package.json; line: 6');
+    });
+
+    it('should check if all variables are resolved', async () => {
+        const options = {
+            checkAllResolved: true
+        };
+        const resolved = await variableResolverService.resolve('workspace: ${command:testCommand}; file: ${file}; line: ${lineNumber}', options);
+        expect(resolved).equal(undefined);
     });
 });

@@ -21,12 +21,24 @@ import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
 import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
+/**
+ * Holds variable-names to command id mappings (e.g. Provided by specific plugins / extensions)
+ * see "variables": https://code.visualstudio.com/api/references/contribution-points#contributes.debuggers
+ */
+export interface CommandIdVariables {
+    [id: string]: string
+}
+
 export interface VariableResolveOptions {
     context?: URI;
     /**
      * Used for resolving inputs, see https://code.visualstudio.com/docs/editor/variables-reference#_input-variables
      */
     configurationSection?: string;
+    commandIdVariables?: CommandIdVariables;
+    configuration?: unknown;
+    // Return 'undefined' if not all variables were successfully resolved.
+    checkAllResolved?: boolean;
 }
 
 /**
@@ -46,7 +58,7 @@ export class VariableResolverService {
      * @returns promise resolved to the provided string array with already resolved variables.
      * Never reject.
      */
-    resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[]> {
+    resolveArray(value: string[], options: VariableResolveOptions = {}): Promise<string[] | undefined> {
         return this.resolve(value, options);
     }
 
@@ -57,9 +69,12 @@ export class VariableResolverService {
      * @returns promise resolved to the provided string with already resolved variables.
      * Never reject.
      */
-    async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T> {
+    async resolve<T>(value: T, options: VariableResolveOptions = {}): Promise<T | undefined> {
         const context = new VariableResolverService.Context(this.variableRegistry, options);
         const resolved = await this.doResolve(value, context);
+        if (options.checkAllResolved && !context.allDefined()) {
+            return undefined;
+        }
         return resolved as any;
     }
 
@@ -133,6 +148,15 @@ export namespace VariableResolverService {
             return this.resolved.get(name);
         }
 
+        allDefined(): boolean {
+            for (const value of this.resolved.values()) {
+                if (value === undefined) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         async resolve(name: string): Promise<void> {
             if (this.resolved.has(name)) {
                 return;
@@ -146,7 +170,15 @@ export namespace VariableResolverService {
                     argument = parts[1];
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
-                const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection);
+                const value =
+                    variable &&
+                    (await variable.resolve(
+                        this.options.context,
+                        argument,
+                        this.options.configurationSection,
+                        this.options.commandIdVariables,
+                        this.options.configuration
+                    ));
                 // eslint-disable-next-line no-null/no-null
                 const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
                 this.resolved.set(name, stringValue);

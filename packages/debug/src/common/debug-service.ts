@@ -19,6 +19,7 @@
 import { Disposable } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
 import { DebugConfiguration } from './debug-configuration';
 
 export interface DebuggerDescription {
@@ -53,6 +54,12 @@ export interface DebugService extends Disposable {
     debugTypes(): Promise<string[]>;
 
     getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]>;
+
+    /**
+     * Provide debugger contributed variables
+     * see "variables" at https://code.visualstudio.com/api/references/contribution-points#contributes.debuggers
+     */
+    provideDebuggerVariables(debugType: string): Promise<CommandIdVariables>;
 
     /**
      * Provides the schema attributes.

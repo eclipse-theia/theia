@@ -244,15 +244,22 @@ export class DebugSessionManager {
         let configuration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
 
         if (configuration) {
+            // Resolve command variables provided by the debugger
+            const commandIdVariables = await this.debug.provideDebuggerVariables(configuration.type);
             configuration = await this.variableResolver.resolve(configuration, {
                 context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
                 configurationSection: 'launch',
+                commandIdVariables,
+                configuration,
+                checkAllResolved: true
             });
 
-            configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(
-                configuration,
-                workspaceFolderUri
-            );
+            if (configuration) {
+                configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(
+                    configuration,
+                    workspaceFolderUri
+                );
+            }
         }
 
         if (!configuration) {
