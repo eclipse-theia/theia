@@ -17,7 +17,7 @@
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
-import { DisposableCollection, MaybePromise } from '@theia/core/lib/common';
+import { MaybePromise } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
 import { EditorPreviewWidget } from './editor-preview-widget';
@@ -30,8 +30,6 @@ export class EditorPreviewManager extends EditorManager {
     @inject(EditorPreviewPreferences) protected readonly preferences: EditorPreviewPreferences;
     @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
 
-    protected currentPreview: EditorPreviewWidget | undefined;
-    protected toDisposeOnPreviewChange = new DisposableCollection();
     /**
      * Until the layout has been restored, widget state is not reliable, so we ignore creation events.
      */
@@ -44,9 +42,7 @@ export class EditorPreviewManager extends EditorManager {
         this.onCreated((widget: EditorPreviewWidget) => {
             if (this.layoutIsSet && widget.isPreview) {
                 const oneTimeDisposable = widget.onDidChangeVisibility(() => {
-                    const { currentPreview } = this;
                     this.handleNewPreview(widget);
-                    currentPreview?.dispose();
                     oneTimeDisposable.dispose();
                 });
             }
@@ -54,7 +50,11 @@ export class EditorPreviewManager extends EditorManager {
 
         this.preferences.onPreferenceChanged(change => {
             if (!change.newValue) {
-                this.currentPreview?.convertToNonPreview();
+                this.all.forEach((editor: EditorPreviewWidget) => {
+                    if (editor.isPreview) {
+                        editor.convertToNonPreview();
+                    }
+                });
             };
         });
 
@@ -73,13 +73,8 @@ export class EditorPreviewManager extends EditorManager {
     protected override async doOpen(widget: EditorPreviewWidget, options?: EditorOpenerOptions): Promise<void> {
         const { preview, widgetOptions = { area: 'main' }, mode = 'activate' } = options ?? {};
         if (!widget.isAttached) {
-            if (preview) {
-                const insertionOptions = this.currentPreview ? { ref: this.currentPreview } : widgetOptions;
-                await this.shell.addWidget(widget, insertionOptions);
-            } else {
-                this.shell.addWidget(widget, widgetOptions);
-            }
-        } else if (!preview && widget === this.currentPreview) {
+            this.shell.addWidget(widget, widgetOptions);
+        } else if (!preview && widget.isPreview) {
             widget.convertToNonPreview();
         }
 
@@ -90,12 +85,17 @@ export class EditorPreviewManager extends EditorManager {
         }
     }
 
-    protected handleNewPreview(widget: EditorPreviewWidget): void {
-        this.toDisposeOnPreviewChange.dispose();
-        this.currentPreview = widget;
-        this.toDisposeOnPreviewChange.push({ dispose: () => this.currentPreview = undefined });
-        this.toDisposeOnPreviewChange.push(widget.onDidChangePreviewState(() => this.toDisposeOnPreviewChange.dispose()));
-        this.toDisposeOnPreviewChange.push(widget.onDidDispose(() => this.toDisposeOnPreviewChange.dispose()));
+    protected handleNewPreview(newPreviewWidget: EditorPreviewWidget): void {
+        if (newPreviewWidget.isPreview) {
+            const tabbar = this.shell.getTabBarFor(newPreviewWidget);
+            if (tabbar) {
+                for (const title of tabbar.titles) {
+                    if (title.owner !== newPreviewWidget && title.owner instanceof EditorPreviewWidget && title.owner.isPreview) {
+                        title.owner.dispose();
+                    }
+                }
+            }
+        }
     }
 
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
@@ -118,8 +118,8 @@ export class EditorPreviewManager extends EditorManager {
 
     protected convertEditorOnDoubleClick(event: Event): void {
         const widget = this.shell.findTargetedWidget(event);
-        if (widget === this.currentPreview) {
-            this.currentPreview?.convertToNonPreview();
+        if (widget instanceof EditorPreviewWidget && widget.isPreview) {
+            widget.convertToNonPreview();
         }
     }
 }
