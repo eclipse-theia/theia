@@ -25,7 +25,7 @@ import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/s
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
@@ -51,6 +51,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     static LABEL = nls.localizeByDefault('Terminal');
     protected terminalKind = 'user';
     protected _terminalId = -1;
+    protected _exitStatus?: TerminalExitStatus;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
     protected term: Terminal;
@@ -189,15 +190,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
+                this.fireOnDidClose();
                 this.onTermDidClose.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, signal }) => {
             if (terminalId === this.terminalId) {
                 this.dispose();
-                this.onTermDidClose.fire(this);
+                this.fireOnDidClose(code);
                 this.onTermDidClose.dispose();
             }
         }));
@@ -346,6 +347,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get lastTouchEndEvent(): TouchEvent | undefined {
         return this.lastTouchEnd;
+    }
+
+    get exitStatus(): TerminalExitStatus | undefined {
+        return this._exitStatus;
     }
 
     onDispose(onDispose: () => void): void {
@@ -632,7 +637,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
-            this.onTermDidClose.fire(this);
+            this.fireOnDidClose();
         }
         super.dispose();
     }
@@ -715,7 +720,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
             if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
                 this.shellTerminalServer.close(this.terminalId);
-                this.onTermDidClose.fire(this);
+                this.fireOnDidClose();
             }
             this.attachPressEnterKeyToCloseListener(this.term);
             return;
@@ -735,5 +740,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     private disableEnterWhenAttachCloseListener(): boolean {
         return this.isAttachedCloseListener;
+    }
+
+    // define exit status before firing onTermDidClose
+    protected fireOnDidClose(code?: number): void {
+        this._exitStatus = { code };
+        this.onTermDidClose.fire(this);
     }
 }

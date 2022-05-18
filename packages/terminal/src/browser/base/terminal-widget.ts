@@ -26,6 +26,10 @@ export interface TerminalDimensions {
     rows: number;
 }
 
+export interface TerminalExitStatus {
+    readonly code: number | undefined;
+}
+
 /**
  * Terminal UI widget.
  */
@@ -44,6 +48,8 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract readonly terminalId: number;
 
     abstract readonly dimensions: TerminalDimensions;
+
+    abstract readonly exitStatus: TerminalExitStatus | undefined;
 
     /** The last CWD assigned to the terminal, useful when attempting getCwdURI on a task terminal fails */
     lastCwd: URI;
