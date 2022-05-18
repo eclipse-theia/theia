@@ -125,7 +125,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     }
 
     protected async onMouseDown(event: MouseEvent): Promise<void> {
-        // Support to navigate in history when mouse buttons 4/5 are pressed
+        // Support navigation in history when mouse buttons 4/5 are pressed
         switch (event.button) {
             case 3:
                 event.preventDefault();
