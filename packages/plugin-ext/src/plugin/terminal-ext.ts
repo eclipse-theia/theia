@@ -141,7 +141,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     $terminalClosed(id: string, exitStatus: theia.TerminalExitStatus | undefined): void {
         const terminal = this._terminals.get(id);
         if (terminal) {
-            terminal.updateExitStatus(exitStatus)
+            terminal.updateExitStatus(exitStatus);
             this.onDidCloseTerminalEmitter.fire(terminal);
             this._terminals.delete(id);
         }
@@ -299,7 +299,7 @@ export class TerminalExtImpl implements Terminal {
         this.id.promise.then(id => this.proxy.$dispose(id));
     }
 
-    updateExitStatus(exitStatus: theia.TerminalExitStatus | undefined) {
+    updateExitStatus(exitStatus: theia.TerminalExitStatus | undefined): void {
         this._exitStatus = exitStatus;
     }
 }
