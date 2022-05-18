@@ -530,6 +530,14 @@ export module '@theia/plugin' {
         Command = 3
     }
 
+    export enum TextDocumentChangeReason {
+        /** The text change is caused by an undo operation. */
+        Undo = 1,
+
+        /** The text change is caused by a redo operation. */
+        Redo = 2,
+    }
+
     /**
      * Represents an event describing the change in text editor selections.
      */
@@ -735,11 +743,50 @@ export module '@theia/plugin' {
         isTrusted?: boolean;
 
         /**
+         * Indicates that this markdown string can contain {@link ThemeIcon ThemeIcons}, e.g. `$(zap)`.
+         */
+        supportThemeIcons?: boolean;
+
+        /**
+         * Indicates that this markdown string can contain raw html tags. Defaults to `false`.
+         *
+         * When `supportHtml` is false, the markdown renderer will strip out any raw html tags
+         * that appear in the markdown text. This means you can only use markdown syntax for rendering.
+         *
+         * When `supportHtml` is true, the markdown render will also allow a safe subset of html tags
+         * and attributes to be rendered. See https://github.com/microsoft/vscode/blob/6d2920473c6f13759c978dd89104c4270a83422d/src/vs/base/browser/markdownRenderer.ts#L296
+         * for a list of all supported tags and attributes.
+         */
+        supportHtml?: boolean;
+
+        /**
+         * Uri that relative paths are resolved relative to.
+         *
+         * If the `baseUri` ends with `/`, it is considered a directory and relative paths in the markdown are resolved relative to that directory:
+         *
+         * ```ts
+         * const md = new vscode.MarkdownString(`[link](./file.js)`);
+         * md.baseUri = vscode.Uri.file('/path/to/dir/');
+         * // Here 'link' in the rendered markdown resolves to '/path/to/dir/file.js'
+         * ```
+         *
+         * If the `baseUri` is a file, relative paths in the markdown are resolved relative to the parent dir of that file:
+         *
+         * ```ts
+         * const md = new vscode.MarkdownString(`[link](./file.js)`);
+         * md.baseUri = vscode.Uri.file('/path/to/otherFile.js');
+         * // Here 'link' in the rendered markdown resolves to '/path/to/file.js'
+         * ```
+         */
+        baseUri?: Uri;
+
+        /**
          * Creates a new markdown string with the given value.
          *
          * @param value Optional, initial value.
+         * @param supportThemeIcons Optional, Specifies whether {@link ThemeIcon ThemeIcons} are supported within the {@linkcode MarkdownString}.
          */
-        constructor(value?: string);
+        constructor(value?: string, supportThemeIcons?: boolean);
 
         /**
          * Appends and escapes the given string to this markdown string.
@@ -1788,10 +1835,26 @@ export module '@theia/plugin' {
         readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
     }
 
+    /**
+     * An event describing a transactional {@link TextDocument document} change.
+     */
     export interface TextDocumentChangeEvent {
-        document: TextDocument;
 
-        contentChanges: TextDocumentContentChangeEvent[];
+        /**
+         * The affected document.
+         */
+        readonly document: TextDocument;
+
+        /**
+         * An array of content changes.
+         */
+        readonly contentChanges: readonly TextDocumentContentChangeEvent[];
+
+        /**
+         * The reason why the document was changed.
+         * Is `undefined` if the reason is not known.
+         */
+        readonly reason: TextDocumentChangeReason | undefined;
     }
 
     export interface TextDocumentContentChangeEvent {
@@ -2516,7 +2579,7 @@ export module '@theia/plugin' {
         /**
          * The tooltip text when you hover over this entry.
          */
-        tooltip: string | undefined;
+        tooltip: string | MarkdownString | undefined;
 
         /**
          * The foreground color for this entry.
@@ -7920,6 +7983,82 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Represents the severity of a language status item.
+     */
+    export enum LanguageStatusSeverity {
+        Information = 0,
+        Warning = 1,
+        Error = 2
+    }
+
+    /**
+     * A language status item is the preferred way to present language status reports for the active text editors,
+     * such as selected linter or notifying about a configuration problem.
+     */
+    export interface LanguageStatusItem {
+
+        /**
+         * The identifier of this item.
+         */
+        readonly id: string;
+
+        /**
+         * The short name of this item, like 'Java Language Status', etc.
+         */
+        name: string | undefined;
+
+        /**
+         * A {@link DocumentSelector selector} that defines for what editors
+         * this item shows.
+         */
+        selector: DocumentSelector;
+
+        /**
+         * The severity of this item.
+         *
+         * Defaults to {@link LanguageStatusSeverity.Information information}. You can use this property to
+         * signal to users that there is a problem that needs attention, like a missing executable or an
+         * invalid configuration.
+         */
+        severity: LanguageStatusSeverity;
+
+        /**
+         * The text to show for the entry. You can embed icons in the text by leveraging the syntax:
+         *
+         * `My text $(icon-name) contains icons like $(icon-name) this one.`
+         *
+         * Where the icon-name is taken from the ThemeIcon [icon set](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing), e.g.
+         * `light-bulb`, `thumbsup`, `zap` etc.
+         */
+        text: string;
+
+        /**
+         * Optional, human-readable details for this item.
+         */
+        detail?: string;
+
+        /**
+         * Controls whether the item is shown as "busy". Defaults to `false`.
+         */
+        busy: boolean;
+
+        /**
+         * A {@linkcode Command command} for this item.
+         */
+        command: Command | undefined;
+
+        /**
+         * Accessibility information used when a screen reader interacts with this item
+         */
+        accessibilityInformation?: AccessibilityInformation;
+
+        /**
+         * Dispose and free associated resources.
+         */
+        dispose(): void;
+    }
+
+    /**
      * A code action represents a change that can be performed in code, e.g. to fix a problem or
      * to refactor code.
      *
@@ -9246,6 +9385,13 @@ export module '@theia/plugin' {
          */
         export function registerLinkedEditingRangeProvider(selector: DocumentSelector, provider: LinkedEditingRangeProvider): Disposable;
 
+        /**
+         * Creates a new {@link LanguageStatusItem language status item}.
+         *
+         * @param id The identifier of the item.
+         * @param selector The document selector that defines for what editors the item shows.
+         */
+        export function createLanguageStatusItem(id: string, selector: DocumentSelector): LanguageStatusItem;
     }
 
     /**

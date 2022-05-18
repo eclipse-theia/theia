@@ -141,7 +141,9 @@ import {
     URI,
     FileDecoration,
     ExtensionMode,
-    LinkedEditingRanges
+    LinkedEditingRanges,
+    LanguageStatusSeverity,
+    TextDocumentChangeReason
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -156,7 +158,7 @@ import { LanguagesExtImpl } from './languages';
 import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
-import { score } from '@theia/callhierarchy/lib/common/language-selector';
+import { score } from '@theia/editor/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { ConnectionImpl } from '../common/connection';
@@ -783,6 +785,9 @@ export function createAPIFactory(
             },
             registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
                 return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
+            },
+            createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
+                return languagesExt.createLanguageStatusItem(plugin, id, selector);
             }
         };
 
@@ -959,6 +964,7 @@ export function createAPIFactory(
             DebugConsoleMode,
             DiagnosticSeverity,
             DiagnosticRelatedInformation,
+            LanguageStatusSeverity,
             Location,
             LogLevel,
             DiagnosticTag,
@@ -1035,6 +1041,7 @@ export function createAPIFactory(
             SemanticTokens,
             SemanticTokensEdits,
             SemanticTokensEdit,
+            TextDocumentChangeReason,
             ColorThemeKind,
             SourceControlInputBoxValidationType,
             FileDecoration,

@@ -10,6 +10,10 @@
 - [plugin] Introduce `DebugSession#workspaceFolder` [#11090](https://github.com/eclipse-theia/theia/pull/11090) - Contributed on behalf of STMicroelectronics
 - [console] fixed issue in Debug console where console history was not being trimmed in accordance with the maximum commands limit [#10598](https://github.com/eclipse-theia/theia/pull/10598)
 
+<a name="breaking_changes_1.26.0">[Breaking Changes:](#breaking_changes_1.26.0)</a>
+
+- [callhierarchy] `paths.ts` and `glob.ts` moved to `core/src/common`; `language-selector.ts` moved to `editor/src/common`. Any imports will need to be updated.
+
 ## v1.25.0 - 4/28/2022
 
 [1.25.0 Milestone](https://github.com/eclipse-theia/theia/milestone/35)

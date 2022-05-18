@@ -17,60 +17,31 @@
 import { ElementHandle } from '@playwright/test';
 import { TheiaPageObject } from './theia-page-object';
 
-export class TheiaStatusIndicator extends TheiaPageObject {
+export abstract class TheiaStatusIndicator extends TheiaPageObject {
+    protected abstract id: string;
 
-    protected elementSpanSelector = '#theia-statusBar .element span';
+    protected statusBarElementSelector = '#theia-statusBar div.element';
 
-    protected async getElementHandle(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        return this.page.$(this.elementSpanSelector);
+    protected getSelectorForId(id: string): string {
+        return `${this.statusBarElementSelector}#status-bar-${id}`;
     }
 
-    async waitForVisible(): Promise<void> {
-        await this.page.waitForSelector(this.elementSpanSelector);
+    async waitForVisible(waitForDetached = false): Promise<void> {
+        await this.page.waitForSelector(this.getSelectorForId(this.id), waitForDetached ? { state: 'detached' } : {});
     }
 
-    protected getSelectorByTitle(title: string): string {
-        return `.element[title="${title}"]`;
-    }
-
-    async getElementHandleByTitle(title: string): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        // Fetch element via title in case status elements exist without a dedicated Codicon icon
-        return this.page.$(this.getSelectorByTitle(title));
-    }
-
-    protected getSelectorByIcon(icon: string): string {
-        return `${this.elementSpanSelector}.codicon.${icon}`;
-    }
-
-    async getElementHandleByIcon(iconClass: string | string[], titleContain = ''): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        const icons = Array.isArray(iconClass) ? iconClass : [iconClass];
-        for (const icon of icons) {
-            const span = await this.page.$(this.getSelectorByIcon(icon));
-            if (span) {
-                const parent = await span.$('..');
-                if (titleContain === '') {
-                    return parent;
-                } else {
-                    const parentTitle = await parent?.getAttribute('title');
-                    if (parentTitle?.includes(titleContain)) { return parent; }
-                }
-            }
+    async getElementHandle(): Promise<ElementHandle<SVGElement | HTMLElement>> {
+        const element = await this.page.$(this.getSelectorForId(this.id));
+        if (element) {
+            return element;
         }
-        throw new Error('Cannot find indicator');
+        throw new Error('Could not find status bar element with ID ' + this.id);
     }
 
-    async waitForVisibleByTitle(title: string, waitForDetached = false): Promise<void> {
-        await this.page.waitForSelector(this.getSelectorByTitle(title), waitForDetached ? { state: 'detached' } : {});
-    }
-
-    async waitForVisibleByIcon(icon: string, waitForDetached = false): Promise<void> {
-        await this.page.waitForSelector(this.getSelectorByIcon(icon), waitForDetached ? { state: 'detached' } : {});
-    }
-
-    async isVisible(icon: string | string[], titleContain = ''): Promise<boolean> {
+    async isVisible(): Promise<boolean> {
         try {
-            const element = await this.getElementHandleByIcon(icon, titleContain);
-            return !!element && element.isVisible();
+            const element = await this.getElementHandle();
+            return element.isVisible();
         } catch (err) {
             return false;
         }

@@ -19,6 +19,7 @@ import * as types from '../../plugin/types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {
     private readonly delegate: StatusBar;
@@ -45,7 +46,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         alignment: number,
         color: string | undefined,
         backgroundColor: string | undefined,
-        tooltip: string | undefined,
+        tooltip: string | MarkdownString | undefined,
         command: string | undefined,
         accessibilityInformation: types.AccessibilityInformation,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

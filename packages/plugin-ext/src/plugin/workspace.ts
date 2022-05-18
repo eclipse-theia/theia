@@ -35,7 +35,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { URI } from './types-impl';
-import { normalize } from '@theia/callhierarchy/lib/common/paths';
+import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';

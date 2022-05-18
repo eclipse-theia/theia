@@ -26,18 +26,18 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { EditorCommands } from './editor-command';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 import { EditorWidget } from './editor-widget';
+import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(LanguageService) protected readonly languages: LanguageService;
+    @inject(EditorLanguageStatusService) protected readonly languageStatusService: EditorLanguageStatusService;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
     @inject(ContextKeyService)
@@ -90,19 +90,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
     }
 
     protected updateLanguageStatus(editor: TextEditor | undefined): void {
-        if (!editor) {
-            this.statusBar.removeElement('editor-status-language');
-            return;
-        }
-        const language = this.languages.getLanguage(editor.document.languageId);
-        const languageName = language ? language.name : '';
-        this.statusBar.setElement('editor-status-language', {
-            text: languageName,
-            alignment: StatusBarAlignment.RIGHT,
-            priority: 1,
-            command: EditorCommands.CHANGE_LANGUAGE.id,
-            tooltip: nls.localizeByDefault('Select Language Mode')
-        });
+        this.languageStatusService.updateLanguageStatus(editor);
     }
 
     protected updateEncodingStatus(editor: TextEditor | undefined): void {

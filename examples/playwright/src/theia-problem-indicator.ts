@@ -17,14 +17,8 @@
 import { ElementHandle } from '@playwright/test';
 import { TheiaStatusIndicator } from './theia-status-indicator';
 
-const PROBLEM_ICON = 'codicon-error';
-
 export class TheiaProblemIndicator extends TheiaStatusIndicator {
-
-    override async isVisible(): Promise<boolean> {
-        const handle = await super.getElementHandleByIcon(PROBLEM_ICON);
-        return !!handle && handle.isVisible();
-    }
+    id = 'problem-marker-status';
 
     async numberOfProblems(): Promise<number> {
         const spans = await this.getSpans();
@@ -37,8 +31,7 @@ export class TheiaProblemIndicator extends TheiaStatusIndicator {
     }
 
     protected async getSpans(): Promise<ElementHandle[] | undefined> {
-        const handle = await super.getElementHandleByIcon(PROBLEM_ICON);
+        const handle = await this.getElementHandle();
         return handle?.$$('span');
     }
-
 }

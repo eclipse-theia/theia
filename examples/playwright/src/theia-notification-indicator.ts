@@ -16,31 +16,26 @@
 
 import { TheiaStatusIndicator } from './theia-status-indicator';
 
-const NOTIFICATION_ICON = 'codicon-bell';
 const NOTIFICATION_DOT_ICON = 'codicon-bell-dot';
-const NOTIFICATION_ICONS = [NOTIFICATION_ICON, NOTIFICATION_DOT_ICON];
 
 export class TheiaNotificationIndicator extends TheiaStatusIndicator {
-
-    protected get title(): string {
-        return 'Notification';
-    }
-
-    override async isVisible(): Promise<boolean> {
-        return super.isVisible(NOTIFICATION_ICONS, this.title);
-    }
+    id = 'theia-notification-center';
 
     async hasNotifications(): Promise<boolean> {
-        return super.isVisible(NOTIFICATION_DOT_ICON, this.title);
+        const container = await this.getElementHandle();
+        const bellWithDot = await container.$(`.${NOTIFICATION_DOT_ICON}`);
+        return Boolean(bellWithDot?.isVisible());
     }
 
     override async waitForVisible(expectNotifications = false): Promise<void> {
-        await super.waitForVisibleByIcon(expectNotifications ? NOTIFICATION_DOT_ICON : NOTIFICATION_ICON);
+        await super.waitForVisible();
+        if (expectNotifications && !(await this.hasNotifications())) {
+            throw new Error('No notifications when notifications expected.');
+        }
     }
 
     async toggleOverlay(): Promise<void> {
-        const hasNotifications = await this.hasNotifications();
-        const element = await this.getElementHandleByIcon(hasNotifications ? NOTIFICATION_DOT_ICON : NOTIFICATION_ICON, this.title);
+        const element = await this.getElementHandle();
         if (element) {
             await element.click();
         }

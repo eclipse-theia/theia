@@ -22,11 +22,12 @@ import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
-import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
-import { isMarkdownString, MarkdownString } from './markdown-string';
+import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
+import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { isReadonlyArray } from '../common/arrays';
+import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -172,7 +173,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
     }
 }
 
-export function fromManyMarkdown(markup: (theia.MarkdownString | theia.MarkedString)[]): model.MarkdownString[] {
+export function fromManyMarkdown(markup: (theia.MarkdownString | theia.MarkedString)[]): MarkdownStringDTO[] {
     return markup.map(fromMarkdown);
 }
 
@@ -188,23 +189,27 @@ function isCodeblock(thing: any): thing is Codeblock {
         && typeof (<Codeblock>thing).value === 'string';
 }
 
-export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): model.MarkdownString {
+export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): MarkdownStringDTO {
     if (isCodeblock(markup)) {
         const { language, value } = markup;
         return { value: '```' + language + '\n' + value + '\n```\n' };
-    } else if (isMarkdownString(markup)) {
+    } else if (markup instanceof PluginMarkdownStringImpl) {
+        return markup.toJSON();
+    } else if (MarkdownStringDTO.is(markup)) {
         return markup;
     } else if (typeof markup === 'string') {
-        return { value: <string>markup };
+        return { value: markup };
     } else {
         return { value: '' };
     }
 }
 
-export function toMarkdown(value: model.MarkdownString): MarkdownString {
-    const ret = new MarkdownString(value.value);
-    ret.isTrusted = value.isTrusted;
-    return ret;
+export function toMarkdown(value: MarkdownStringDTO): PluginMarkdownStringImpl {
+    const implemented = new PluginMarkdownStringImpl(value.value, value.supportThemeIcons);
+    implemented.isTrusted = value.isTrusted;
+    implemented.supportHtml = value.supportHtml;
+    implemented.baseUri = value.baseUri && URI.revive(implemented.baseUri);
+    return implemented;
 }
 
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
@@ -466,7 +471,7 @@ export namespace ParameterInformation {
     export function to(info: model.ParameterInformation): types.ParameterInformation {
         return {
             label: info.label,
-            documentation: isMarkdownString(info.documentation) ? toMarkdown(info.documentation) : info.documentation
+            documentation: MarkdownStringDTO.is(info.documentation) ? toMarkdown(info.documentation) : info.documentation
         };
     }
 }
@@ -484,7 +489,7 @@ export namespace SignatureInformation {
     export function to(info: model.SignatureInformation): types.SignatureInformation {
         return {
             label: info.label,
-            documentation: isMarkdownString(info.documentation) ? toMarkdown(info.documentation) : info.documentation,
+            documentation: MarkdownStringDTO.is(info.documentation) ? toMarkdown(info.documentation) : info.documentation,
             parameters: info.parameters && info.parameters.map(ParameterInformation.to)
         };
     }

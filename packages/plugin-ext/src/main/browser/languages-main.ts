@@ -32,7 +32,8 @@ import {
     LanguagesExt,
     WorkspaceEditDto,
     WorkspaceTextEditDto,
-    PluginInfo
+    PluginInfo,
+    LanguageStatus as LanguageStatusDTO
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
@@ -49,7 +50,6 @@ import * as vst from '@theia/core/shared/vscode-languageserver-protocol';
 import * as theia from '@theia/plugin';
 import { UriComponents } from '../../common/uri-components';
 import { CancellationToken } from '@theia/core/lib/common';
-import { LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { CallHierarchyService, CallHierarchyServiceProvider, CallHierarchyItem } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller, toCallee } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri, DiagnosticTag } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -64,6 +64,8 @@ import { IMarkerService } from '@theia/monaco-editor-core/esm/vs/platform/marker
 import * as MonacoLanguageSelector from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import * as MonacoPath from '@theia/monaco-editor-core/esm/vs/base/common/path';
 import { IRelativePattern } from '@theia/monaco-editor-core/esm/vs/base/common/glob';
+import { EditorLanguageStatusService, LanguageStatus as EditorLanguageStatus } from '@theia/editor/lib/browser/language-status/editor-language-status-service';
+import { LanguageSelector, RelativePattern } from '@theia/editor/lib/common/language-selector';
 
 interface RegistrationFunction<T> {
     (languageId: MonacoLanguageSelector.LanguageSelector, service: T): Disposable;
@@ -80,6 +82,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(CallHierarchyServiceProvider)
     private readonly callHierarchyServiceContributionRegistry: CallHierarchyServiceProvider;
+
+    @inject(EditorLanguageStatusService)
+    protected readonly languageStatusService: EditorLanguageStatusService;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -974,6 +979,16 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         };
     };
 
+    // -- Language status
+
+    $setLanguageStatus(handle: number, status: LanguageStatusDTO): void {
+        const internal: EditorLanguageStatus = { ...status, selector: this.toLanguageSelector(status.selector) };
+        this.languageStatusService.setLanguageStatusItem(handle, internal);
+    };
+
+    $removeLanguageStatus(handle: number): void {
+        this.languageStatusService.removeLanguageStatusItem(handle);
+    };
 }
 
 function reviveMarker(marker: MarkerData): vst.Diagnostic {

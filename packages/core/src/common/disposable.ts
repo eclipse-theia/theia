@@ -127,3 +127,8 @@ export namespace DisposableGroup {
         return Boolean(candidate && (candidate as { add(): void }).add);
     }
 }
+
+export function disposableTimeout(...args: Parameters<typeof setTimeout>): Disposable {
+    const handle = setTimeout(...args);
+    return { dispose: () => clearTimeout(handle) };
+}
