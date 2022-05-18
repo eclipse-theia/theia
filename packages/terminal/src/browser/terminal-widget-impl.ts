@@ -189,17 +189,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
+                this.setExitStatus();
                 this.dispose();
-                this.fireOnDidClose();
-                this.onTermDidClose.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, signal }) => {
             if (terminalId === this.terminalId) {
+                this.setExitStatus(code);
                 this.dispose();
-                this.fireOnDidClose(code);
-                this.onTermDidClose.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -637,7 +635,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
-            this.fireOnDidClose();
+            this.onTermDidClose.fire(this);
         }
         super.dispose();
     }
@@ -718,10 +716,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 message = `\r\n\x1b[1m${message}\x1b[0m`;
                 this.write(message);
             }
-            if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
-                this.shellTerminalServer.close(this.terminalId);
-                this.fireOnDidClose();
-            }
             this.attachPressEnterKeyToCloseListener(this.term);
             return;
         }
@@ -743,8 +737,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     // define exit status before firing onTermDidClose
-    protected fireOnDidClose(code?: number): void {
+    protected setExitStatus(code?: number): void {
         this._exitStatus = { code };
-        this.onTermDidClose.fire(this);
     }
 }
