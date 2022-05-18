@@ -513,6 +513,12 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
  - Install Node.js with `nvm`: `nvm install 12.14.1`, then use it: `nvm use 12.14.1`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
  - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
+ - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
+   - Python 3.6 or higher
+- Visual Studio [build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) 17
+ - If you have multiple versions of either python or Visual Studio installed or if the tool is not found, you may adjust the used version via the npm config:
+   - `npm config set python /path/to/executable/python --global`
+   - `npm config set msvs_version 2017 --global`
 
 Clone, build and run Theia.
 Using Git Bash as administrator:
@@ -548,7 +554,7 @@ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo s
 
 ### Windows
 
-If you see `LINK : fatal error LNK1104: cannot open file 'C:\\Users\\path\\to\\node.lib' [C:\path\to\theia\node_modules\drivelist\build\drivelist.vcxproj]`, then set the Visual Studio version manually with `npm config set msvs_version 2017 --global`. Note, if you have `2015` installed, use `2015` instead of `2017.`
+If you see `LINK : fatal error LNK1104: cannot open file 'C:\\Users\\path\\to\\node.lib' [C:\path\to\theia\node_modules\drivelist\build\drivelist.vcxproj]`, then set the Visual Studio version manually with `npm config set msvs_version 2017 --global`.
 
 If you are facing with `EPERM: operation not permitted` or `permission denied`
 errors while building, testing or running the application then;

@@ -21,6 +21,7 @@ import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
 import { Event as TheiaEvent } from '@theia/core/lib/common/event';
 import { URI } from '@theia/core/shared/vscode-uri';
+import { SerializedRegExp } from './plugin-api-rpc';
 
 // Should contains internal Plugin API types
 
@@ -534,6 +535,11 @@ export interface CallHierarchyIncomingCall {
 export interface CallHierarchyOutgoingCall {
     to: CallHierarchyItem;
     fromRanges: Range[];
+}
+
+export interface LinkedEditingRanges {
+    ranges: Range[];
+    wordPattern?: SerializedRegExp;
 }
 
 export interface SearchInWorkspaceResult {

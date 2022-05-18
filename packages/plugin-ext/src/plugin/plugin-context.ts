@@ -141,6 +141,7 @@ import {
     URI,
     FileDecoration,
     ExtensionMode,
+    LinkedEditingRanges,
     LanguageStatusSeverity,
     TextDocumentChangeReason
 } from './types-impl';
@@ -782,6 +783,9 @@ export function createAPIFactory(
             registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
                 return languagesExt.registerCallHierarchyProvider(selector, provider);
             },
+            registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
+                return languagesExt.registerLinkedEditingRangeProvider(selector, provider);
+            },
             createLanguageStatusItem(id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
                 return languagesExt.createLanguageStatusItem(plugin, id, selector);
             }
@@ -1042,7 +1046,8 @@ export function createAPIFactory(
             SourceControlInputBoxValidationType,
             FileDecoration,
             CancellationError,
-            ExtensionMode
+            ExtensionMode,
+            LinkedEditingRanges
         };
     };
 }

@@ -19,9 +19,6 @@ import {
     PLUGIN_RPC_CONTEXT,
     LanguagesMain,
     SerializedLanguageConfiguration,
-    SerializedRegExp,
-    SerializedOnEnterRule,
-    SerializedIndentationRule,
     Position,
     Selection,
     RawColorInfo,
@@ -64,6 +61,7 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
+    LinkedEditingRanges,
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -96,6 +94,8 @@ import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } fro
 import { isReadonlyArray } from '../common/arrays';
 import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable } from '@theia/core/lib/common/disposable';
 import { Severity } from '@theia/core/lib/common/severity';
+import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
+import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -120,7 +120,8 @@ type Adapter = CompletionAdapter |
     RenameAdapter |
     CallHierarchyAdapter |
     DocumentRangeSemanticTokensAdapter |
-    DocumentSemanticTokensAdapter;
+    DocumentSemanticTokensAdapter |
+    LinkedEditingRangeAdapter;
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -632,6 +633,19 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
     // ### Call Hierarchy Provider end
 
+    // ### Linked Editing Range Provider begin
+    registerLinkedEditingRangeProvider(selector: theia.DocumentSelector, provider: theia.LinkedEditingRangeProvider): theia.Disposable {
+        const handle = this.addNewAdapter(new LinkedEditingRangeAdapter(this.documents, provider));
+        this.proxy.$registerLinkedEditingRangeProvider(handle, this.transformDocumentSelector(selector));
+        return this.createDisposable(handle);
+    }
+
+    $provideLinkedEditingRanges(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<LinkedEditingRanges | undefined> {
+        return this.withAdapter(handle, LinkedEditingRangeAdapter, async adapter => adapter.provideRanges(URI.revive(resource), position, token), undefined);
+    }
+
+    // ### Linked Editing Range Provider end
+
     // #region semantic coloring
 
     registerDocumentSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentSemanticTokensProvider, legend: theia.SemanticTokensLegend,
@@ -792,43 +806,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     // #endregion
 }
 
-function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
-    if (typeof rules === 'undefined' || rules === null) {
-        return undefined;
-    }
-
-    return rules.map(r =>
-    ({
-        action: r.action,
-        beforeText: serializeRegExp(r.beforeText),
-        afterText: serializeRegExp(r.afterText)
-    } as SerializedOnEnterRule));
-}
-
-function serializeRegExp(regexp?: RegExp): SerializedRegExp | undefined {
-    if (typeof regexp === 'undefined' || regexp === null) {
-        return undefined;
-    }
-
-    return {
-        pattern: regexp.source,
-        flags: (regexp.global ? 'g' : '') + (regexp.ignoreCase ? 'i' : '') + (regexp.multiline ? 'm' : '')
-    };
-}
-
-function serializeIndentation(indentationRules?: theia.IndentationRule): SerializedIndentationRule | undefined {
-    if (typeof indentationRules === 'undefined' || indentationRules === null) {
-        return undefined;
-    }
-
-    return {
-        increaseIndentPattern: serializeRegExp(indentationRules.increaseIndentPattern),
-        decreaseIndentPattern: serializeRegExp(indentationRules.decreaseIndentPattern),
-        indentNextLinePattern: serializeRegExp(indentationRules.indentNextLinePattern),
-        unIndentedLinePattern: serializeRegExp(indentationRules.unIndentedLinePattern)
-    };
-}
-
 function getPluginLabel(pluginInfo: PluginInfo): string {
     return pluginInfo.displayName || pluginInfo.name;
 }
+

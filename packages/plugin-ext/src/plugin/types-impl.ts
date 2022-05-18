@@ -2495,6 +2495,18 @@ export enum LanguageStatusSeverity {
 }
 
 @es5ClassCompat
+export class LinkedEditingRanges {
+
+    ranges: theia.Range[];
+    wordPattern?: RegExp;
+
+    constructor(ranges: Range[], wordPattern?: RegExp) {
+        this.ranges = ranges;
+        this.wordPattern = wordPattern;
+    }
+}
+
+@es5ClassCompat
 export class TimelineItem {
     timestamp: number;
     label: string;
