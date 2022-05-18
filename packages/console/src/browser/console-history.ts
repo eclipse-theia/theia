@@ -19,7 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 @injectable()
 export class ConsoleHistory {
 
-    static limit = 3;
+    static limit = 50;
 
     protected values: string[] = [];
     protected index = -1;

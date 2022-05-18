@@ -32,7 +32,7 @@ export interface ApplicationConfig {
 export type ElectronFrontendApplicationConfig = RequiredRecursive<ElectronFrontendApplicationConfig.Partial>;
 export namespace ElectronFrontendApplicationConfig {
     export const DEFAULT: ElectronFrontendApplicationConfig = {
-        disallowReloadKeybinding: false,
+        // disallowReloadKeybinding: false,
         windowOptions: {}
     };
     export interface Partial {
@@ -44,7 +44,7 @@ export namespace ElectronFrontendApplicationConfig {
          *
          * Defaults to `false`.
          */
-        readonly disallowReloadKeybinding?: boolean;
+        // readonly disallowReloadKeybinding?: boolean;
 
         /**
          * Override or add properties to the electron `windowOptions`.
