@@ -49,9 +49,11 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     static LABEL = nls.localizeByDefault('Terminal');
+
+    exitStatus: TerminalExitStatus | undefined;
+
     protected terminalKind = 'user';
     protected _terminalId = -1;
-    protected _exitStatus?: TerminalExitStatus;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
     protected term: Terminal;
@@ -189,14 +191,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId, error }) => {
             if (terminalId === this.terminalId) {
-                this.setExitStatus();
+                this.exitStatus = { code: undefined };
                 this.dispose();
                 this.logger.error(`The terminal process terminated. Cause: ${error}`);
             }
         }));
-        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code, signal }) => {
+        this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId, code }) => {
             if (terminalId === this.terminalId) {
-                this.setExitStatus(code);
+                this.exitStatus = { code };
                 this.dispose();
             }
         }));
@@ -345,10 +347,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     get lastTouchEndEvent(): TouchEvent | undefined {
         return this.lastTouchEnd;
-    }
-
-    get exitStatus(): TerminalExitStatus | undefined {
-        return this._exitStatus;
     }
 
     onDispose(onDispose: () => void): void {
@@ -631,10 +629,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     override dispose(): void {
-        /* Close the backend terminal only when explicitly closing the terminal
-         * a refresh for example won't close it.  */
-        if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
+        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus) {
+            // Close the backend terminal only when explicitly closing the terminal
+            // a refresh for example won't close it.
             this.shellTerminalServer.close(this.terminalId);
+            this.exitStatus = { code: undefined };
+        }
+        if (this.exitStatus) {
             this.onTermDidClose.fire(this);
         }
         super.dispose();
@@ -734,10 +735,5 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     private disableEnterWhenAttachCloseListener(): boolean {
         return this.isAttachedCloseListener;
-    }
-
-    // define exit status before firing onTermDidClose
-    protected setExitStatus(code?: number): void {
-        this._exitStatus = { code };
     }
 }
