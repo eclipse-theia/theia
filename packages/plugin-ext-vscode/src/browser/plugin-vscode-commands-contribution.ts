@@ -599,7 +599,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 execute: async (resource: URI, position: Position): Promise<CallHierarchyItem[]> => {
                     const provider = await this.getCallHierarchyServiceForUri(resource);
                     const definition = await provider?.getRootDefinition(
-                        resource.fsPath,
+                        resource.path,
                         toPosition(position),
                         new CancellationTokenSource().token
                     );
