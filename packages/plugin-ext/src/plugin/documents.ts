@@ -163,7 +163,8 @@ export class DocumentsExtImpl implements DocumentsExt {
         data.acceptIsDirty(isDirty);
         this._onDidChangeDocument.fire({
             document: data.document,
-            contentChanges: []
+            contentChanges: [],
+            reason: undefined,
         });
     }
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void {
@@ -177,13 +178,13 @@ export class DocumentsExtImpl implements DocumentsExt {
         data.onEvents(e);
         this._onDidChangeDocument.fire({
             document: data.document,
-            contentChanges: e.changes.map(change =>
-                ({
-                    range: Converter.toRange(change.range),
-                    rangeOffset: change.rangeOffset,
-                    rangeLength: change.rangeLength,
-                    text: change.text
-                }))
+            reason: e.reason,
+            contentChanges: e.changes.map(change => ({
+                range: Converter.toRange(change.range),
+                rangeOffset: change.rangeOffset,
+                rangeLength: change.rangeLength,
+                text: change.text
+            }))
         });
     }
     getAllDocumentData(): DocumentDataExt[] {

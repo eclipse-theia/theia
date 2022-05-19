@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,19 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from 'inversify';
-import { StatusBarImpl } from './status-bar';
-import { StatusBarHoverManager } from './status-bar-hover-manager';
-import { StatusBar } from './status-bar-types';
-import { StatusBarViewModel } from './status-bar-view-model';
-export * from './status-bar';
-export * from './status-bar-types';
-export * from './status-bar-view-model';
-export * from './status-bar-hover-manager';
-
-export function bindStatusBar(bind: interfaces.Bind): void {
-    bind(StatusBarImpl).toSelf().inSingletonScope();
-    bind(StatusBar).to(StatusBarImpl).inSingletonScope();
-    bind(StatusBarViewModel).toSelf().inSingletonScope();
-    bind(StatusBarHoverManager).toSelf().inSingletonScope();
-}
+export * from './markdown-string';
+export * from './icon-utilities';

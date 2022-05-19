@@ -19,7 +19,8 @@ import * as Converter from './type-converters';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import * as model from '../common/plugin-api-rpc-model';
-import { MarkdownString, isMarkdownString } from './markdown-string';
+import { MarkdownString } from './markdown-string';
+import { MarkdownString as MarkdownStringInterface } from '@theia/core/lib/common/markdown-rendering';
 import { TaskDto } from '../common/plugin-api-rpc';
 import { TaskGroup } from './types-impl';
 
@@ -63,7 +64,7 @@ describe('Type converters:', () => {
                 const markdownString = new MarkdownString('**test**');
 
                 // when
-                const result = isMarkdownString(markdownString);
+                const result = MarkdownStringInterface.is(markdownString);
 
                 // then
                 assert.deepStrictEqual(result !== false, true);
@@ -74,7 +75,7 @@ describe('Type converters:', () => {
                 const markdownObject = { value: '*test*' };
 
                 // when
-                const result = isMarkdownString(markdownObject);
+                const result = MarkdownStringInterface.is(markdownObject);
 
                 // then
                 assert.deepStrictEqual(result !== false, true);
@@ -85,7 +86,7 @@ describe('Type converters:', () => {
                 const markdownObject = { field1: 5, value: '*test*', field2: 'test' };
 
                 // when
-                const result = isMarkdownString(markdownObject);
+                const result = MarkdownStringInterface.is(markdownObject);
 
                 // then
                 assert.deepStrictEqual(result !== false, true);
@@ -96,7 +97,7 @@ describe('Type converters:', () => {
                 const nonMarkdownObject = { field1: 5, field2: 'test' };
 
                 // when
-                const result = isMarkdownString(nonMarkdownObject);
+                const result = MarkdownStringInterface.is(nonMarkdownObject);
 
                 // then
                 assert.deepStrictEqual(result === false, true);
@@ -107,7 +108,7 @@ describe('Type converters:', () => {
                 const nonMarkdownObject = { isTrusted: true, field1: 5, field2: 'test' };
 
                 // when
-                const result = isMarkdownString(nonMarkdownObject);
+                const result = MarkdownStringInterface.is(nonMarkdownObject);
 
                 // then
                 assert.deepStrictEqual(result === false, true);
@@ -125,10 +126,11 @@ describe('Type converters:', () => {
 
             it('should convert plugin markdown to model markdown', () => {
                 // when
-                const result = { ...Converter.fromMarkdown(pluginMarkdown) };
+                const result = Converter.fromMarkdown(pluginMarkdown);
 
                 // then
-                assert.deepStrictEqual(result, modelMarkdown);
+                assert.deepStrictEqual(result, { ...modelMarkdown, supportThemeIcons: false, supportHtml: false },
+                    'The implementation includes an explicit default `false` for `supportThemeIcons` and `supportHtml`');
             });
 
             it('should convert string to model markdown', () => {
@@ -153,20 +155,21 @@ describe('Type converters:', () => {
                 const markups: (theia.MarkdownString | theia.MarkedString)[] = [
                     pluginMarkdown,
                     aStringWithMarkdown,
-                    codeblock
+                    codeblock,
+                    new MarkdownString('hello', true),
                 ];
 
                 // when
-                const result: model.MarkdownString[] = Converter.fromManyMarkdown(markups)
-                    // convert to vanilla JS Object for deepStrictEqual comparison:
-                    .map(md => ({ ...md }));
-
+                const result: model.MarkdownString[] = Converter.fromManyMarkdown(markups);
                 // then
                 assert.deepStrictEqual(Array.isArray(result), true);
-                assert.deepStrictEqual(result.length, 3);
-                assert.deepStrictEqual(result[0], modelMarkdown);
-                assert.deepStrictEqual(result[1], modelMarkdown);
-                assert.deepStrictEqual(result[2], modelMarkdownWithCode);
+                assert.deepStrictEqual(result.length, 4);
+                assert.deepStrictEqual(result[0], { ...modelMarkdown, supportThemeIcons: false, supportHtml: false, },
+                    'MarkdownString implementation includes default value for `supportThemeIcons` and `supportHtml`');
+                assert.deepStrictEqual(result[1], modelMarkdown, 'Strings should be converted to Markdown.');
+                assert.deepStrictEqual(result[2], modelMarkdownWithCode, 'Objects matching the interface should be unchanged');
+                assert.deepStrictEqual(result[3], { value: 'hello', supportThemeIcons: true, supportHtml: false },
+                    'The constructor argument to MarkdownString for theme icons is respected.');
             });
         });
 

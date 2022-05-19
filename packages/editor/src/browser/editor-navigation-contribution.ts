@@ -26,13 +26,14 @@ import { EditorManager } from './editor-manager';
 import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
 import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
-import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
+import { PreferenceService, PreferenceScope, addEventListener } from '@theia/core/lib/browser';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
 
     private static ID = 'editor-navigation-contribution';
     private static CLOSED_EDITORS_KEY = 'recently-closed-editors';
+    private static MOUSE_NAVIGATION_PREFERENCE = 'workbench.editor.mouseBackForwardToNavigate';
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposePerCurrentEditor = new DisposableCollection();
@@ -102,6 +103,39 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         this.commandRegistry.registerHandler(EditorCommands.REOPEN_CLOSED_EDITOR.id, {
             execute: () => this.reopenLastClosedEditor()
         });
+
+        this.installMouseNavigationSupport();
+    }
+
+    protected async installMouseNavigationSupport(): Promise<void> {
+        const mouseNavigationSupport = new DisposableCollection();
+        const updateMouseNavigationListener = () => {
+            mouseNavigationSupport.dispose();
+            if (this.shouldNavigateWithMouse()) {
+                mouseNavigationSupport.push(addEventListener(document.body, 'mousedown', event => this.onMouseDown(event), true));
+            }
+        };
+        this.toDispose.push(this.preferenceService.onPreferenceChanged(change => {
+            if (change.preferenceName === EditorNavigationContribution.MOUSE_NAVIGATION_PREFERENCE) {
+                updateMouseNavigationListener();
+            }
+        }));
+        updateMouseNavigationListener();
+        this.toDispose.push(mouseNavigationSupport);
+    }
+
+    protected async onMouseDown(event: MouseEvent): Promise<void> {
+        // Support navigation in history when mouse buttons 4/5 are pressed
+        switch (event.button) {
+            case 3:
+                event.preventDefault();
+                this.locationStack.back();
+                break;
+            case 4:
+                event.preventDefault();
+                this.locationStack.forward();
+                break;
+        }
     }
 
     /**
@@ -272,6 +306,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     private shouldStoreClosedEditors(): boolean {
         return !!this.preferenceService.get('editor.history.persistClosedEditors');
+    }
+
+    private shouldNavigateWithMouse(): boolean {
+        return !!this.preferenceService.get(EditorNavigationContribution.MOUSE_NAVIGATION_PREFERENCE);
     }
 
 }

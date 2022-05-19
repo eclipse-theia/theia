@@ -29,7 +29,7 @@
 /* eslint-disable @typescript-eslint/tslint/config */
 
 import { Emitter, WaitUntilEvent, AsyncEmitter } from '@theia/core/lib/common/event';
-import { IRelativePattern, parse } from '@theia/callhierarchy/lib/common/glob';
+import { IRelativePattern, parse } from '@theia/core/lib/common/glob';
 import { UriComponents } from '@theia/core/shared/vscode-uri';
 import { Disposable, URI, WorkspaceEdit } from './types-impl';
 import { EditorsAndDocumentsExtImpl as ExtHostDocumentsAndEditors } from './editors-and-documents';

@@ -55,7 +55,7 @@ body.theia-no-open-workspace #theia-statusBar {
     font-size: var(--theia-statusBar-font-size);
 }
 
-#theia-statusBar .area .element > * {
+#theia-statusBar .area .element>* {
     margin-left: calc(var(--theia-ui-padding)/2);
 }
 
@@ -64,7 +64,7 @@ body.theia-no-open-workspace #theia-statusBar {
     font-size: 14px;
 }
 
-#theia-statusBar .area .element > *:last-child {
+#theia-statusBar .area .element>*:last-child {
     margin-right: calc(var(--theia-ui-padding)/2);
 }
 
@@ -101,6 +101,20 @@ body.theia-no-open-workspace #theia-statusBar {
     margin-left: var(--theia-ui-padding);
 }
 
+#theia-statusBar .area.right .element.compact-right,
+#theia-statusBar .area.right .element.compact-left+.element {
+    margin-left: 0;
+}
+
+#theia-statusBar .area.left .element.compact-left {
+    margin-right: 0;
+}
+
+#theia-statusBar .area.left .element.compact-right {
+    margin-left: calc(-1 * var(--theia-ui-padding));
+}
+
+
 #theia-statusBar .element {
     /* https://css-tricks.com/os-specific-fonts-css/#article-header-id-0 */
     /* https://github.com/Microsoft/vscode/blob/5dbdc8d19c8cf6dd10d558eabcc48bba962ea45f/src/vs/workbench/browser/media/style.css#L8-L24 */
@@ -110,4 +124,53 @@ body.theia-no-open-workspace #theia-statusBar {
     text-decoration: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* Adapted from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/workbench/services/hover/browser/hoverService.ts */
+
+.theia-status-bar-hover {
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-editorHoverWidget-foreground);
+    background-color: var(--theia-editorHoverWidget-background);
+    border: 1px solid var(--theia-editorHoverWidget-border);
+    padding: var(--theia-ui-padding);
+
+}
+
+.theia-status-bar-hover .hover-row:not(:first-child):not(:empty) {
+    border-top: 1px solid var(--theia-editorHoverWidgetInteralBorder);
+}
+
+.theia-status-bar-hover hr {
+    border-top: 1px solid var(--theia-editorHoverWidgetInteralBorder);
+    border-bottom: 0px solid var(--theia-editorHoverWidgetInteralBorder);
+}
+
+.theia-status-bar-hover a {
+    color: var(--theia-textLink-foreground);
+}
+
+.theia-status-bar-hover a:hover {
+    color: var(--theia-textLink-active-foreground);
+}
+
+.theia-status-bar-hover .hover-row .actions {
+    background-color: var(--theia-editorHoverWidget-statusBarBackground);
+}
+
+.theia-status-bar-hover code {
+    background-color: var(--theia-textCodeBlock-background);
+    font-family: var(--theia-code-font-family);
+}
+
+.theia-status-bar-hover::before {
+    content: '';
+    position: absolute;
+    /* Set by the StatusBarHoverManager */
+    left: var(--theia-status-bar-hover-before-left);
+    bottom: -5px;
+    border-top: 5px solid var(--theia-editorHoverWidget-border);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
 }

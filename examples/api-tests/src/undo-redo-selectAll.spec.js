@@ -67,7 +67,7 @@ describe('Undo, Redo and Select All', function () {
     let originalValue = undefined;
     before(async () => {
         originalValue = preferenceService.inspect('files.autoSave').globalValue;
-        await preferenceService.set('files.autoSave', false, PreferenceScope.User);
+        await preferenceService.set('files.autoSave', 'off', PreferenceScope.User);
         shell.leftPanelHandler.collapse();
     });
 

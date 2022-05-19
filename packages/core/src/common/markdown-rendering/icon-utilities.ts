@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2022 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,19 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { interfaces } from 'inversify';
-import { StatusBarImpl } from './status-bar';
-import { StatusBarHoverManager } from './status-bar-hover-manager';
-import { StatusBar } from './status-bar-types';
-import { StatusBarViewModel } from './status-bar-view-model';
-export * from './status-bar';
-export * from './status-bar-types';
-export * from './status-bar-view-model';
-export * from './status-bar-hover-manager';
+// Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/base/common/codicons.ts
+export namespace CSSIcon {
+    export const iconNameSegment = '[A-Za-z0-9]+';
+    export const iconNameExpression = '[A-Za-z0-9-]+';
+    export const iconModifierExpression = '~[A-Za-z]+';
+    export const iconNameCharacter = '[A-Za-z0-9~-]';
+}
 
-export function bindStatusBar(bind: interfaces.Bind): void {
-    bind(StatusBarImpl).toSelf().inSingletonScope();
-    bind(StatusBar).to(StatusBarImpl).inSingletonScope();
-    bind(StatusBarViewModel).toSelf().inSingletonScope();
-    bind(StatusBarHoverManager).toSelf().inSingletonScope();
+const iconsRegex = new RegExp(`\\$\\(${CSSIcon.iconNameExpression}(?:${CSSIcon.iconModifierExpression})?\\)`, 'g'); // no capturing groups
+
+const escapeIconsRegex = new RegExp(`(\\\\)?${iconsRegex.source}`, 'g');
+export function escapeIcons(text: string): string {
+    return text.replace(escapeIconsRegex, (match, escaped) => escaped ? match : `\\${match}`);
 }

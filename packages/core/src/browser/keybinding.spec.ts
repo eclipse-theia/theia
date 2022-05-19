@@ -28,7 +28,6 @@ import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
-import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { CorePreferences } from './core-preferences';
@@ -39,6 +38,8 @@ import { Emitter, Event } from '../common/event';
 import { bindPreferenceService } from './frontend-application-bindings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps } from '@theia/application-package/lib/';
+import { bindStatusBar } from './status-bar';
+import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 
 disableJSDOM();
 
@@ -83,8 +84,10 @@ before(async () => {
             }
         });
 
-        bind(StatusBarImpl).toSelf().inSingletonScope();
-        bind(StatusBar).toService(StatusBarImpl);
+        bindStatusBar(bind);
+        bind(MarkdownRendererImpl).toSelf().inSingletonScope();
+        bind(MarkdownRenderer).toService(MarkdownRendererImpl);
+        bind(MarkdownRendererFactory).toFactory(({ container }) => container.get(MarkdownRenderer));
         bind(CommandService).toService(CommandRegistry);
         bind(LabelParser).toSelf().inSingletonScope();
         bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();

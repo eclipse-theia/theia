@@ -48,6 +48,7 @@ describe('TypeScript', function () {
     const contextKeyService = container.get(ContextKeyService);
     const commands = container.get(CommandRegistry);
     const openerService = container.get(OpenerService);
+    /** @type {KeybindingRegistry} */
     const keybindings = container.get(KeybindingRegistry);
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
@@ -108,11 +109,12 @@ describe('TypeScript', function () {
     /**
      * @param {() => Promise<unknown> | unknown} condition
      * @param {number | undefined} [timeout]
+     * @param {string | undefined} [message]
      * @returns {Promise<void>}
      */
-    function waitForAnimation(condition, timeout) {
-        const success = new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
+    function waitForAnimation(condition, timeout, message) {
+        const success = new Promise(async (resolve, reject) => {
+            toTearDown.push({ dispose: () => reject(message ?? 'Test terminated before resolution.') });
             do {
                 await animationFrame();
             } while (!condition());
@@ -120,8 +122,8 @@ describe('TypeScript', function () {
         });
         if (timeout !== undefined) {
             const timedOut = new Promise((_, fail) => {
-                const toClear = setTimeout(() => fail(new Error('Wait for animation timed out.')), timeout);
-                toTearDown.push({ dispose: () => (fail(new Error('Wait for animation timed out.')), clearTimeout(toClear)) });
+                const toClear = setTimeout(() => fail(new Error(message ?? 'Wait for animation timed out.')), timeout);
+                toTearDown.push({ dispose: () => (fail(new Error(message ?? 'Wait for animation timed out.')), clearTimeout(toClear)) });
             });
             return Promise.race([success, timedOut]);
         }
@@ -277,6 +279,7 @@ describe('TypeScript', function () {
             const from = 'an editor' + (preview ? ' preview' : '');
             it('within ' + from, async function () {
                 const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(24);
                 // const demoInstance = new Demo|Class('demo');
                 editor.getControl().setPosition({ lineNumber: 24, column: 30 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DemoClass');
@@ -299,6 +302,7 @@ describe('TypeScript', function () {
                 await editorManager.open(definitionFileUri, { mode: 'open' });
 
                 const editor = await openEditor(demoFileUri, preview);
+                editor.getControl().revealLine(32);
                 // const bar: Defined|Interface = { coolField: [] };
                 editor.getControl().setPosition({ lineNumber: 32, column: 19 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
@@ -319,6 +323,7 @@ describe('TypeScript', function () {
 
             it(`from ${from} to an editor preview`, async function () {
                 const editor = await openEditor(demoFileUri);
+                editor.getControl().revealLine(32);
                 // const bar: Defined|Interface = { coolField: [] };
                 editor.getControl().setPosition({ lineNumber: 32, column: 19 });
                 assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'DefinedInterface');
@@ -729,5 +734,4 @@ SPAN {
             assert.equal(getResultText(), expectedMessage);
         });
     }
-
 });

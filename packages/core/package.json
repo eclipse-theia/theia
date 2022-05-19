@@ -16,7 +16,6 @@
     "@phosphor/signaling": "1",
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
-    "@primer/octicons-react": "^9.0.0",
     "@theia/application-package": "1.25.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",

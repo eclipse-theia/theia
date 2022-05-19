@@ -37,7 +37,7 @@ import { Command } from '../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { URI } from './types-impl';
 import { ScmCommandArg } from '../common/plugin-api-rpc';
-import { sep } from '@theia/callhierarchy/lib/common/paths';
+import { sep } from '@theia/core/lib/common/paths';
 type ProviderHandle = number;
 type GroupHandle = number;
 type ResourceStateHandle = number;

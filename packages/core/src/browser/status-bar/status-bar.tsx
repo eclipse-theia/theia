@@ -16,68 +16,31 @@
 
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import Octicon, { getIconByName } from '@primer/octicons-react';
+import debounce = require('lodash.debounce');
 import { CommandService } from '../../common';
 import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { PreferenceService } from '../preferences';
-import { AccessibilityInformation } from '../../common/accessibility';
-
-export interface StatusBarEntry {
-    /**
-     * For icons we use octicons and fontawesome icons. octicons take precedence over fontawesome. Get more information and the class names
-     * here: http://fontawesome.io/icons/
-     * To set a text with icon use the following pattern in text string:
-     * $(fontawesomeClassName)
-     * To use animated icons use the following pattern:
-     * $(fontawesomeClassName~typeOfAnimation)
-     * Type of animation can be either spin or pulse.
-     * Look here for more information to animated icons:
-     * http://fontawesome.io/examples/#animated
-     */
-    text: string;
-    alignment: StatusBarAlignment;
-    name?: string;
-    color?: string;
-    backgroundColor?: string;
-    className?: string;
-    tooltip?: string;
-    command?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    arguments?: any[];
-    priority?: number;
-    accessibilityInformation?: AccessibilityInformation;
-    onclick?: (e: MouseEvent) => void;
-}
-
-export enum StatusBarAlignment {
-    LEFT, RIGHT
-}
-
-export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
-
-export const StatusBar = Symbol('StatusBar');
-
-export interface StatusBar {
-    setBackgroundColor(color?: string): Promise<void>;
-    setColor(color?: string): Promise<void>;
-    setElement(id: string, entry: StatusBarEntry): Promise<void>;
-    removeElement(id: string): Promise<void>;
-}
+import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types';
+import { StatusBarViewModel } from './status-bar-view-model';
+import { StatusBarHoverManager } from './status-bar-hover-manager';
+import { codicon } from '../widgets';
+export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
 @injectable()
 export class StatusBarImpl extends ReactWidget implements StatusBar {
 
     protected backgroundColor: string | undefined;
     protected color: string | undefined;
-    protected entries: Map<string, StatusBarEntry> = new Map();
 
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
         @inject(LabelParser) protected readonly entryService: LabelParser,
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(PreferenceService) protected readonly preferences: PreferenceService,
+        @inject(StatusBarViewModel) protected readonly viewModel: StatusBarViewModel,
+        @inject(StatusBarHoverManager) protected readonly hoverManager: StatusBarHoverManager,
     ) {
         super();
         delete this.scrollOptions;
@@ -96,7 +59,10 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
                 }
             })
         );
+        this.toDispose.push(this.viewModel.onDidChange(() => this.debouncedUpdate()));
     }
+
+    protected debouncedUpdate = debounce(() => this.update(), 50);
 
     protected get ready(): Promise<void> {
         return this.applicationStateService.reachedAnyState('initialized_layout', 'ready');
@@ -104,14 +70,12 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
     async setElement(id: string, entry: StatusBarEntry): Promise<void> {
         await this.ready;
-        this.entries.set(id, entry);
-        this.update();
+        this.viewModel.set(id, entry);
     }
 
     async removeElement(id: string): Promise<void> {
         await this.ready;
-        this.entries.delete(id);
-        this.update();
+        this.viewModel.remove(id);
     }
 
     async setBackgroundColor(color?: string): Promise<void> {
@@ -134,22 +98,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected internalSetColor(color?: string): void {
         this.color = color;
     }
-
     protected render(): JSX.Element {
-        const leftEntries: JSX.Element[] = [];
-        const rightEntries: JSX.Element[] = [];
-        const elements = Array.from(this.entries).sort((left, right) => {
-            const lp = left[1].priority || 0;
-            const rp = right[1].priority || 0;
-            return rp - lp;
-        });
-        elements.forEach(([id, entry]) => {
-            if (entry.alignment === StatusBarAlignment.LEFT) {
-                leftEntries.push(this.renderElement(id, entry));
-            } else {
-                rightEntries.push(this.renderElement(id, entry));
-            }
-        });
+        const leftEntries = Array.from(this.viewModel.getLeft(), entry => this.renderElement(entry));
+        const rightEntries = Array.from(this.viewModel.getRight(), entry => this.renderElement(entry));
 
         return <React.Fragment>
             <div className='area left'>{leftEntries}</div>
@@ -166,21 +117,26 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         };
     }
 
-    protected createAttributes(entry: StatusBarEntry): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected createAttributes(viewEntry: StatusBarViewEntry): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const attrs: React.Attributes & React.HTMLAttributes<HTMLElement> = {};
-
+        const entry = viewEntry.entry;
+        attrs.id = 'status-bar-' + viewEntry.id;
+        attrs.className = 'element';
+        if (entry.command || entry.onclick || entry.tooltip) {
+            attrs.className += ' hasCommand';
+        }
         if (entry.command) {
             attrs.onClick = this.onclick(entry);
-            attrs.className = 'element hasCommand';
         } else if (entry.onclick) {
             attrs.onClick = e => entry.onclick?.(e.nativeEvent);
-            attrs.className = 'element hasCommand';
-        } else {
-            attrs.className = 'element';
+        }
+
+        if (viewEntry.compact && viewEntry.alignment !== undefined) {
+            attrs.className += viewEntry.alignment === StatusBarAlignment.RIGHT ? ' compact-right' : ' compact-left';
         }
 
         if (entry.tooltip) {
-            attrs.title = entry.tooltip;
+            attrs.onMouseEnter = e => this.hoverManager.requestHover(entry.tooltip!, e.currentTarget);
         }
         if (entry.className) {
             attrs.className += ' ' + entry.className;
@@ -200,27 +156,26 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         return attrs;
     }
 
-    protected renderElement(id: string, entry: StatusBarEntry): JSX.Element {
-        const childStrings = this.entryService.parse(entry.text);
+    protected renderElement(entry: StatusBarViewEntry): JSX.Element {
+        const childStrings = this.entryService.parse(entry.entry.text);
         const children: JSX.Element[] = [];
 
         childStrings.forEach((val, key) => {
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
-                const octicon = getIconByName(val.name);
-                if (octicon) {
-                    children.push(<span key={key} className={val.animation ? 'fa-' + val.animation : 'fa'}><Octicon icon={octicon} height={12.5} width={12.5} /></span>);
-                } else if (val.name.startsWith('codicon-')) {
-                    children.push(<span key={key} className={`codicon ${val.name}${val.animation ? ' fa-' + val.animation : ''}`}></span>);
+                const animation = val.animation ? ` fa-${val.animation}` : '';
+                if (val.name.startsWith('codicon-')) {
+                    children.push(<span key={key} className={`codicon ${val.name}${animation}`}></span>);
+                } else if (val.name.startsWith('fa-')) {
+                    children.push(<span key={key} className={`fa ${val.name}${animation}`}></span>);
                 } else {
-                    children.push(<span key={key} className={`fa fa-${val.name}${val.animation ? ' fa-' + val.animation : ''}`}></span>);
+                    children.push(<span key={key} className={`${codicon(val.name)}${animation}`}></span>);
                 }
             } else {
                 children.push(<span key={key}>{val}</span>);
             }
         });
         const elementInnerDiv = <React.Fragment>{children}</React.Fragment>;
-
-        return React.createElement('div', { key: id, ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement('div', { key: entry.id, ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }

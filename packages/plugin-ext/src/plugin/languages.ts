@@ -23,13 +23,14 @@ import {
     Selection,
     RawColorInfo,
     WorkspaceEditDto,
-    PluginInfo
+    PluginInfo,
+    Plugin,
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
-import { Disposable, URI } from './types-impl';
+import { Disposable, URI, LanguageStatusSeverity } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import {
     CodeActionProviderDocumentation,
@@ -91,7 +92,8 @@ import { CallHierarchyAdapter } from './languages/call-hierarchy';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 import { isReadonlyArray } from '../common/arrays';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { DisposableCollection, disposableTimeout, Disposable as TheiaDisposable } from '@theia/core/lib/common/disposable';
+import { Severity } from '@theia/core/lib/common/severity';
 import { LinkedEditingRangeAdapter } from './languages/linked-editing-range';
 import { serializeEnterRules, serializeIndentation, serializeRegExp } from './languages-utils';
 
@@ -682,6 +684,125 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DocumentRangeSemanticTokensAdapter, adapter => adapter.provideDocumentRangeSemanticTokens(URI.revive(resource), range, token), null);
     }
 
+    // Copied from https://github.com/microsoft/vscode/blob/7d9b1c37f8e5ae3772782ba3b09d827eb3fdd833/src/vs/workbench/api/common/extHostLanguages.ts
+    protected statusItemHandlePool = 0;
+    protected readonly statusItemIds = new Set<string>();
+    createLanguageStatusItem(extension: Plugin, id: string, selector: theia.DocumentSelector): theia.LanguageStatusItem {
+
+        const handle = this.statusItemHandlePool++;
+        const proxy = this.proxy;
+        const ids = this.statusItemIds;
+
+        // enforce extension unique identifier
+        const fullyQualifiedId = `${extension.model.id}/${id}`;
+        if (ids.has(fullyQualifiedId)) {
+            throw new Error(`LanguageStatusItem with id '${id}' ALREADY exists`);
+        }
+        ids.add(fullyQualifiedId);
+
+        const data: Omit<theia.LanguageStatusItem, 'dispose'> = {
+            selector,
+            id,
+            name: extension.model.displayName ?? extension.model.name,
+            severity: LanguageStatusSeverity.Information,
+            command: undefined,
+            text: '',
+            detail: '',
+            busy: false
+        };
+
+        let soonHandle: TheiaDisposable | undefined;
+        const commandDisposables = new DisposableCollection();
+        const updateAsync = () => {
+            soonHandle?.dispose();
+            soonHandle = disposableTimeout(() => {
+                commandDisposables.dispose();
+                commandDisposables.push({ dispose: () => { } }); // Mark disposable as undisposed.
+                this.proxy.$setLanguageStatus(handle, {
+                    id: fullyQualifiedId,
+                    name: data.name ?? extension.model.displayName ?? extension.model.name,
+                    source: extension.model.displayName ?? extension.model.name,
+                    selector: this.transformDocumentSelector(data.selector),
+                    label: data.text,
+                    detail: data.detail ?? '',
+                    severity: data.severity === LanguageStatusSeverity.Error ? Severity.Error : data.severity === LanguageStatusSeverity.Warning ? Severity.Warning : Severity.Info,
+                    command: data.command && this.commands.converter.toSafeCommand(data.command, commandDisposables),
+                    accessibilityInfo: data.accessibilityInformation,
+                    busy: data.busy
+                });
+            }, 0);
+        };
+
+        const result: theia.LanguageStatusItem = {
+            dispose(): void {
+                commandDisposables.dispose();
+                soonHandle?.dispose();
+                proxy.$removeLanguageStatus(handle);
+                ids.delete(fullyQualifiedId);
+            },
+            get id(): string {
+                return data.id;
+            },
+            get name(): string | undefined {
+                return data.name;
+            },
+            set name(value) {
+                data.name = value;
+                updateAsync();
+            },
+            get selector(): theia.DocumentSelector {
+                return data.selector;
+            },
+            set selector(value) {
+                data.selector = value;
+                updateAsync();
+            },
+            get text(): string {
+                return data.text;
+            },
+            set text(value) {
+                data.text = value;
+                updateAsync();
+            },
+            get detail(): string | undefined {
+                return data.detail;
+            },
+            set detail(value) {
+                data.detail = value;
+                updateAsync();
+            },
+            get severity(): theia.LanguageStatusSeverity {
+                return data.severity;
+            },
+            set severity(value) {
+                data.severity = value;
+                updateAsync();
+            },
+            get accessibilityInformation(): theia.AccessibilityInformation | undefined {
+                return data.accessibilityInformation;
+            },
+            set accessibilityInformation(value) {
+                data.accessibilityInformation = value;
+                updateAsync();
+            },
+            get command(): theia.Command | undefined {
+                return data.command;
+            },
+            set command(value) {
+                data.command = value;
+                updateAsync();
+            },
+            get busy(): boolean {
+                return data.busy;
+            },
+            set busy(value: boolean) {
+                data.busy = value;
+                updateAsync();
+            }
+        };
+        updateAsync();
+        return result;
+    }
     // #endregion
 }
 

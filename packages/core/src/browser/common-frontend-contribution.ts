@@ -1608,7 +1608,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'statusBarItem.warningBackground', defaults: {
                     dark: Color.darken('warningBackground', 0.4),
-                    light:  Color.darken('warningBackground', 0.4),
+                    light: Color.darken('warningBackground', 0.4),
                     hc: undefined
                 }, description: 'Status bar warning items background color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
             },
@@ -2227,6 +2227,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: Color.lighten('activityBar.foreground', 0.1),
                 }, description: 'Foreground color of active toolbar item',
             },
+            {
+                id: 'editorHoverWidgetInternalBorder',
+                defaults: {
+                    dark: Color.transparent('editorHoverWidget.border', 0.5),
+                    light: Color.transparent('editorHoverWidget.border', 0.5),
+                    hc: Color.transparent('editorHoverWidget.border', 0.5),
+                },
+                description: 'The border between subelements of a hover widget'
+            }
         );
     }
 }

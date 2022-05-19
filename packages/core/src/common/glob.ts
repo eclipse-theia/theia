@@ -20,9 +20,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as strings from '@theia/core/lib/common/strings';
+import * as strings from './strings';
 import * as paths from './paths';
-import { CharCode } from '@theia/core/lib/common/char-code';
+import { CharCode } from './char-code';
 
 /* eslint-disable @typescript-eslint/no-shadow, no-null/no-null */
 export interface IExpression {
