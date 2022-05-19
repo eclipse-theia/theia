@@ -179,7 +179,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
                 return this.formatUri(uri, formatting);
             }
         }
-        return uri && uri.path.toString();
+        return uri && uri.path.fsPath();
     }
 
     protected getUri(element: URI | URIIconReference): URI | undefined {

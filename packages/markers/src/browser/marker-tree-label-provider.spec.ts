@@ -40,6 +40,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { FileUri } from '@theia/core/lib/node';
+import { OS } from '@theia/core/lib/common/os';
 import * as temp from 'temp';
 
 disableJSDOM();
@@ -131,7 +132,11 @@ describe('Marker Tree Label Provider', () => {
                 const label = markerTreeLabelProvider.getLongName(
                     createMarkerInfoNode('file:///home/b/foo.ts')
                 );
-                expect(label).equals('/home/b');
+                if (OS.backend.isWindows) {
+                    expect(label).eq('\\home\\b');
+                } else {
+                    expect(label).eq('/home/b');
+                }
             });
         });
         describe('multi-root workspace', () => {
@@ -165,7 +170,12 @@ describe('Marker Tree Label Provider', () => {
                 const label = markerTreeLabelProvider.getLongName(
                     createMarkerInfoNode('file:///home/a/b/foo.ts')
                 );
-                expect(label).equals('/home/a/b');
+
+                if (OS.backend.isWindows) {
+                    expect(label).eq('\\home\\a\\b');
+                } else {
+                    expect(label).eq('/home/a/b');
+                }
             });
         });
     });

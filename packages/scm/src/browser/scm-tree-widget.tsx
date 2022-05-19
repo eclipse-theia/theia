@@ -525,10 +525,10 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         const letter = decoration && decoration.letter || '';
         const tooltip = decoration && decoration.tooltip || '';
         const relativePath = parentPath.relative(resourceUri.parent);
-        const path = relativePath ? relativePath.toString() : labelProvider.getLongName(resourceUri.parent);
+        const path = relativePath ? relativePath.fsPath() : labelProvider.getLongName(resourceUri.parent);
         const title = tooltip.length !== 0
-            ? `${resourceUri.path.toString()} • ${tooltip}`
-            : resourceUri.path.toString();
+            ? `${resourceUri.path.fsPath()} • ${tooltip}`
+            : resourceUri.path.fsPath();
 
         return <div key={sourceUri}
             className={`scmItem ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS}`}
@@ -684,7 +684,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
         const { model, treeNode, sourceUri, labelProvider, commands, menus, contextKeys, caption } = this.props;
         const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
         const icon = labelProvider.getIcon(sourceFileStat);
-        const title = new URI(sourceUri).path.toString();
+        const title = new URI(sourceUri).path.fsPath();
 
         return <div key={sourceUri}
             className={`scmItem  ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
