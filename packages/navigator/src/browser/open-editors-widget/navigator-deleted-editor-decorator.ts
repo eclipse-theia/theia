@@ -18,7 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { ApplicationShell, DepthFirstTreeIterator, NavigatableWidget, Tree, TreeDecoration, TreeDecorator } from '@theia/core/lib/browser';
 import { FileSystemFrontendContribution } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { Emitter } from '@theia/core';
-import { FileChangeType, FileStatNode } from '@theia/filesystem/lib/browser';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
+import { FileChangeType } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class NavigatorDeletedEditorDecorator implements TreeDecorator {

@@ -29,10 +29,10 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -682,7 +682,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
     override render(): JSX.Element {
         const { hover } = this.state;
         const { model, treeNode, sourceUri, labelProvider, commands, menus, contextKeys, caption } = this.props;
-        const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
+        const sourceFileStat = FileStat.dir(sourceUri);
         const icon = labelProvider.getIcon(sourceFileStat);
         const title = new URI(sourceUri).path.fsPath();
 

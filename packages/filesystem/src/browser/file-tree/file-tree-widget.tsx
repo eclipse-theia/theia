@@ -280,7 +280,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
             if (node.fileStat) {
                 stat = {
                     type: node.fileStat.isDirectory ? FileType.Directory : FileType.File,
-                    mtime: node.fileStat.lastModification,
+                    mtime: node.fileStat.mtime,
                     size: node.fileStat.size
                 };
                 delete node['fileStat'];
