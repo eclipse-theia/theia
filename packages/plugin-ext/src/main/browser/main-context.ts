@@ -46,7 +46,6 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
-import { UntitledResourceResolver } from './editor/untitled-resource';
 import { MainFileSystemEventService } from './main-file-system-event-service';
 import { LabelServiceMainImpl } from './label-service-main';
 import { TimelineMainImpl } from './timeline-main';
@@ -58,6 +57,7 @@ import { SecretsMainImpl } from './secrets-main';
 import { WebviewViewsMainImpl } from './webview-views/webview-views-main';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { NotificationExtImpl } from '../../plugin/notification';
+import { UntitledResourceResolver } from '@theia/core/lib/common/resource';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);

@@ -73,13 +73,6 @@ export interface MiniBrowserEndpointHandler {
 @injectable()
 export class MiniBrowserEndpoint implements BackendApplicationContribution, MiniBrowserService {
 
-    /**
-     * Endpoint path to handle the request for the given resource.
-     *
-     * @deprecated since 1.8.0
-     */
-    static HANDLE_PATH = '/mini-browser/';
-
     private attachRequestHandlerPromise: Promise<void>;
 
     @inject(ILogger)

@@ -30,7 +30,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { Emitter } from '@theia/core/lib/common/event';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
-import { ThemeType } from '@theia/core/lib/browser/theming';
+import { ThemeType } from '@theia/core/lib/common/theme';
 import { FileStatNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';

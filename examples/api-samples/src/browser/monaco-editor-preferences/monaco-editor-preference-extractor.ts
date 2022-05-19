@@ -28,8 +28,9 @@ import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls }
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { JsonType, PreferenceItem, PreferenceValidationService } from '@theia/core/lib/browser';
+import { PreferenceItem, PreferenceValidationService } from '@theia/core/lib/browser';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
+import { JsonType } from '@theia/core/lib/common/json-schema';
 
 function generateContent(properties: string, interfaceEntries: string[]): string {
     return `/********************************************************************************

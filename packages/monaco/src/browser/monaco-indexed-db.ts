@@ -16,8 +16,10 @@
 
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { BuiltinThemeProvider, Theme, ThemeService, ThemeServiceSymbol } from '@theia/core/lib/browser/theming';
+import { BuiltinThemeProvider, ThemeService, ThemeServiceSymbol } from '@theia/core/lib/browser/theming';
+import { Theme } from '@theia/core/lib/common/theme';
 import * as monaco from '@theia/monaco-editor-core';
+
 type ThemeMix = import('./textmate/monaco-theme-registry').ThemeMix;
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;

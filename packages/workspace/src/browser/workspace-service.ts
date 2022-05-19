@@ -162,14 +162,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Get the path of the workspace to use initially.
-     * @deprecated use `WorkspaceService#getDefaultWorkspaceUri` instead.
-     */
-    protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
-        return this.getDefaultWorkspaceUri();
-    }
-
-    /**
      * Set the URL fragment to the given workspace path.
      */
     protected setURLFragment(workspacePath: string): void {

@@ -17,13 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { JSONValue } from '@phosphor/coreutils';
-import { IJSONSchema, JsonType } from '../json-schema';
+import { IJSONSchema } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
-
-/**
- * @deprecated since 1.22.0. Import from @theia/core/common/json-schema.ts instead.
- */
-export { JsonType };
 
 export interface PreferenceSchema {
     [name: string]: any,

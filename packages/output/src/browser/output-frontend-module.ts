@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OutputWidget, OUTPUT_WIDGET_KIND } from './output-widget';
+import { OutputWidget } from './output-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WidgetFactory, bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
@@ -40,7 +40,7 @@ export default new ContainerModule(bind => {
 
     bind(OutputWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: OUTPUT_WIDGET_KIND,
+        id: OutputWidget.ID,
         createWidget: () => context.container.get<OutputWidget>(OutputWidget)
     }));
     bindViewContribution(bind, OutputContribution);

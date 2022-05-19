@@ -18,10 +18,10 @@ import { inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ApplicationShell, OpenHandler, Widget, WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
-import * as glob from './glob';
 import { CustomEditorWidget } from './custom-editor-widget';
 import { v4 } from 'uuid';
 import { Emitter } from '@theia/core';
+import { match } from '@theia/core/lib/common/glob';
 
 export class CustomEditorOpener implements OpenHandler {
 
@@ -96,7 +96,7 @@ export class CustomEditorOpener implements OpenHandler {
 
     selectorMatches(selector: CustomEditorSelector, resource: URI): boolean {
         if (selector.filenamePattern) {
-            if (glob.match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase())) {
+            if (match(selector.filenamePattern.toLowerCase(), resource.path.name.toLowerCase() + resource.path.ext.toLowerCase())) {
                 return true;
             }
         }

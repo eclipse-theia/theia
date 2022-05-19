@@ -21,10 +21,10 @@ import {
     CompositeTreeNode as BaseCompositeTreeNode,
     PreferenceInspection,
     CommonCommands,
-    JsonType,
 } from '@theia/core/lib/browser';
 import { Command, MenuPath } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
+import { JsonType } from '@theia/core/lib/common/json-schema';
 
 export namespace Preference {
 
@@ -104,14 +104,6 @@ export namespace Preference {
         activeScopeIsFolder: false
     };
 
-    /**
-     * @deprecated since 1.15.0 this type is no longer used.
-     */
-    export interface ContextMenuCallbacks {
-        resetCallback(): void;
-        copyIDCallback(): void;
-        copyJSONCallback(): void;
-    }
 }
 
 export namespace PreferencesCommands {

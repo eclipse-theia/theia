@@ -249,11 +249,6 @@ export namespace OutputWidget {
 }
 
 /**
- * @deprecated Use `OutputWidget.ID` instead.
- */
-export const OUTPUT_WIDGET_KIND = OutputWidget.ID;
-
-/**
  * Customized `DockPanel` that does not allow dropping widgets into it.
  * Intercepts `'p-dragover'` events, and sets the desired drop action to `'none'`.
  */
