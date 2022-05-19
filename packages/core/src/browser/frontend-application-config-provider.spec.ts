@@ -33,14 +33,10 @@ describe('FrontendApplicationConfigProvider', function (): void {
     it('should use defaults when calling `set`', function (): void {
         FrontendApplicationConfigProvider.set({
             applicationName: DEFAULT.applicationName + ' Something Else',
-            electron: {
-                disallowReloadKeybinding: !DEFAULT.electron.disallowReloadKeybinding
-            }
         });
         const config = FrontendApplicationConfigProvider.get();
         // custom values
         expect(config.applicationName).not.equal(DEFAULT.applicationName);
-        expect(config.electron.disallowReloadKeybinding).not.equal(DEFAULT.electron.disallowReloadKeybinding);
         // defaults
         expect(config.defaultIconTheme).equal(DEFAULT.defaultIconTheme);
         expect(config.defaultTheme).equal(DEFAULT.defaultTheme);
