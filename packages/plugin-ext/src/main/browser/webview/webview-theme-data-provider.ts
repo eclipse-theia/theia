@@ -22,7 +22,8 @@
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { EditorPreferences, EditorConfiguration } from '@theia/editor/lib/browser/editor-preferences';
-import { Theme, ThemeService } from '@theia/core/lib/browser/theming';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { Theme } from '@theia/core/lib/common/theme';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ColorApplicationContribution } from '@theia/core/lib/browser/color-application-contribution';
 

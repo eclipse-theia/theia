@@ -248,11 +248,6 @@ export namespace OutputWidget {
 }
 
 /**
- * @deprecated Use `OutputWidget.ID` instead.
- */
-export const OUTPUT_WIDGET_KIND = OutputWidget.ID;
-
-/**
  * Customized `DockPanel` that does not allow dropping widgets into it.
  */
 class NoopDragOverDockPanel extends DockPanel { }

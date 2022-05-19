@@ -79,17 +79,25 @@ export abstract class ContextMenuRenderer {
         }
     }
 
-    render(options: RenderContextMenuOptions): ContextMenuAccess;
-    /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
-    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
-    render(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): ContextMenuAccess {
-        const resolvedOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
+    render(options: RenderContextMenuOptions): ContextMenuAccess {
+        const resolvedOptions = this.resolve(options);
         const access = this.doRender(resolvedOptions);
         this.setCurrent(access);
         return access;
     }
 
     protected abstract doRender(options: RenderContextMenuOptions): ContextMenuAccess;
+
+    protected resolve(options: RenderContextMenuOptions): RenderContextMenuOptions {
+        const args: any[] = options.args ? options.args.slice() : [];
+        if (options.includeAnchorArg !== false) {
+            args.push(options.anchor);
+        }
+        return {
+            ...options,
+            args
+        };
+    }
 
 }
 
@@ -105,28 +113,4 @@ export interface RenderContextMenuOptions {
      */
     includeAnchorArg?: boolean;
     onHide?: () => void;
-}
-export namespace RenderContextMenuOptions {
-    export function resolve(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
-        let menuPath: MenuPath;
-        let args: any[];
-        if (Array.isArray(menuPathOrOptions)) {
-            menuPath = menuPathOrOptions;
-            args = [anchor!];
-        } else {
-            menuPath = menuPathOrOptions.menuPath;
-            anchor = menuPathOrOptions.anchor;
-            onHide = menuPathOrOptions.onHide;
-            args = menuPathOrOptions.args ? menuPathOrOptions.args.slice() : [];
-            if (menuPathOrOptions.includeAnchorArg !== false) {
-                args.push(anchor);
-            }
-        }
-        return {
-            menuPath,
-            anchor: anchor!,
-            onHide,
-            args
-        };
-    }
 }

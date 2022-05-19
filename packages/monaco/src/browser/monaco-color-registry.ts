@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ColorRegistry, ColorDefinition, Color } from '@theia/core/lib/browser/color-registry';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Color, ColorDefinition } from '@theia/core/lib/common/color';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ColorDefaults, ColorValue, getColorRegistry } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/colorRegistry';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';

@@ -29,6 +29,28 @@
   [#11228](https://github.com/eclipse-theia/theia/pull/11228) - Contributed on behalf of STMicroelectronics.
 - [core] Drop support for Node 12.x, recommend Node 16.x.
   - Update CI/CD matrix to run on Node 14.x, 16.x and 18.x.
+- [callhierarchy] removed the deprecated `current-editor-access.ts` file [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] `ColorRegistry` no longer exports `Color`, `ColorDefaults`, `ColorDefinition` and `ColorCssVariable`. Import from `core/lib/common/color` instead [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] removed deprecated `ContextMenuRenderer` method `render` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] removed deprecated `FOLDER_ICON` and `FILE_ICON` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] removed deprecated `theme` re-export, should be imported from `common/theme` instead [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] removed deprecated `onVisibilityChanged` event from `view-container` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [core] removed deprecated methods and re-export in `preference-contribution` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+  - removed `overridePreferenceName`.
+  - removed `testOverrideValue`.
+  - removed `overriddenPreferenceName`.
+  - removed `OVERRIDE_PROPERTY_PATTERN` re-export.
+- [core] removed deprecated `JsonType` re-export from `preference-schema` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [file-search] removed deprecated `defaultIgnorePatterns` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [mini-browser] removed deprecated `MiniBrowserEndpoint` and `MiniBrowserEndpoint.HANDLE_PATH` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [output] removed `setVisibility` from `OutputChannelManager` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [output] removed deprecated const `OUTPUT_WIDGET_KIND` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [plugin-ext] deleted `untitled-resource.ts` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [plugin-ext] deleted `glob.ts` and `paths.ts` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [preferences] removed deprecated `ContextMenuCallbacks` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [process] removed the deprecated getters `input`, `output` and `errorOutput` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [workspace] removed deprecated `getDefaultWorkspacePath` [#11185](https://github.com/eclipse-theia/theia/pull/11185)
+- [vsx-registry] removed deprecated `VSXExtensionsCommands` re-export [#11185](https://github.com/eclipse-theia/theia/pull/11185)
 
 ## v1.26.0 - 5/26/2022
 

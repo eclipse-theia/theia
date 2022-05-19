@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { JsonType, PreferenceItem } from '../../common/preferences/preference-schema';
+import { PreferenceItem } from '../../common/preferences/preference-schema';
 import { JSONObject, JSONValue } from '../../../shared/@phosphor/coreutils';
 import { PreferenceSchemaProvider } from './preference-contribution';
 import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import { inject, injectable } from '../../../shared/inversify';
-import { IJSONSchema } from '../../common/json-schema';
+import { IJSONSchema, JsonType } from '../../common/json-schema';
 import { deepClone, unreachable } from '../../common';
 import { PreferenceProvider } from './preference-provider';
 

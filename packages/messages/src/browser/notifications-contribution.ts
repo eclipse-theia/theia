@@ -24,7 +24,8 @@ import { CommandContribution, CommandRegistry } from '@theia/core';
 import { NotificationManager } from './notifications-manager';
 import { NotificationsRenderer } from './notifications-renderer';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Color } from '@theia/core/lib/common/color';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

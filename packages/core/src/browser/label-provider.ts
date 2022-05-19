@@ -34,19 +34,6 @@ const DEFAULT_FOLDER_ICON = `${codicon('folder')} default-folder-icon`;
  */
 const DEFAULT_FILE_ICON = `${codicon('file')} default-file-icon`;
 
-/**
- * Internal folder icon class for the default (File Icons) theme.
- *
- * @deprecated Use `LabelProvider.folderIcon` to get a folder icon class for the current icon theme.
- */
-export const FOLDER_ICON = DEFAULT_FOLDER_ICON;
-/**
- * Internal file icon class for the default (File Icons) theme.
- *
- * @deprecated Use `LabelProvider.fileIcon` to get a file icon class for the current icon theme.
- */
-export const FILE_ICON = DEFAULT_FILE_ICON;
-
 export const LabelProviderContribution = Symbol('LabelProviderContribution');
 /**
  * A {@link LabelProviderContribution} determines how specific elements/nodes are displayed in the workbench.

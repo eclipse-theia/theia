@@ -46,12 +46,6 @@ export namespace FileSearchService {
         rootOptions?: RootOptions
         fuzzyMatch?: boolean
         limit?: number
-        /**
-         * when `undefined`, no excludes will apply, when empty array, default excludes will apply
-         *
-         * @deprecated since 0.5.0 use `excludePatterns` instead
-         */
-        defaultIgnorePatterns?: string[]
     }
 }
 

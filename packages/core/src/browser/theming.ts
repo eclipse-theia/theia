@@ -20,11 +20,6 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { ApplicationProps } from '@theia/application-package/lib/application-props';
 import { Theme, ThemeChangeEvent } from '../common/theme';
 
-/**
- * @deprecated since 1.20.0. Import from `@theia/core/lib/common/theme` instead.
- */
-export * from '../common/theme';
-
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
 export class ThemeService {
