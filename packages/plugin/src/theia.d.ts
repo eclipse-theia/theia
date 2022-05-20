@@ -2835,6 +2835,16 @@ export module '@theia/plugin' {
 
         /**
          * The exit status of the terminal, this will be undefined while the terminal is active.
+         *
+         * **Example:** Show a notification with the exit code when the terminal exits with a
+         * non-zero exit code.
+         * ```typescript
+         * window.onDidCloseTerminal(t => {
+         *   if (t.exitStatus && t.exitStatus.code) {
+         *     vscode.window.showInformationMessage(`Exit code: ${t.exitStatus.code}`);
+         *   }
+         * });
+         * ```
          */
         readonly exitStatus: TerminalExitStatus | undefined;
 
