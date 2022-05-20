@@ -24,7 +24,7 @@ import { CancellationToken, CancellationError, cancelled } from './cancellation'
  */
 export class Deferred<T = void> {
     state: 'resolved' | 'rejected' | 'unresolved' = 'unresolved';
-    resolve: (value: T) => void;
+    resolve: (value: T | PromiseLike<T>) => void;
     reject: (err?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     promise = new Promise<T>((resolve, reject) => {

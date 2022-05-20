@@ -20,6 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { injectable } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { MaybePromise } from '@theia/core';
 
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
@@ -46,5 +47,22 @@ export class CommonWorkspaceUtils {
 
     isUntitledWorkspace(candidate?: URI): boolean {
         return !!candidate && this.isWorkspaceFile(candidate) && candidate.path.base.startsWith('Untitled');
+    }
+
+    async getUntitledWorkspaceUri(configDirUri: URI, isAcceptable: (candidate: URI) => MaybePromise<boolean>, warnOnHits?: () => unknown): Promise<URI> {
+        const parentDir = configDirUri.resolve('workspaces');
+        let uri;
+        let attempts = 0;
+        do {
+            attempts++;
+            uri = parentDir.resolve(`Untitled-${Math.round(Math.random() * 1000)}.${THEIA_EXT}`);
+            if (attempts === 10) {
+                warnOnHits?.();
+            }
+            if (attempts === 50) {
+                throw new Error('Workspace Service: too many attempts to find unused filename.');
+            }
+        } while (!(await isAcceptable(uri)));
+        return uri;
     }
 }

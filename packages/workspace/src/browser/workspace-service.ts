@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { WorkspaceServer, THEIA_EXT, CommonWorkspaceUtils } from '../common';
+import { WorkspaceServer, CommonWorkspaceUtils } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
@@ -438,24 +438,16 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     async getUntitledWorkspace(): Promise<URI> {
-        const configDirURI = await this.envVariableServer.getConfigDirUri();
-        let uri;
-        let attempts = 0;
-        do {
-            attempts++;
-            uri = new URI(configDirURI).resolve(`workspaces/Untitled-${Math.round(Math.random() * 1000)}.${THEIA_EXT}`);
-            if (attempts === 10) {
-                this.messageService.warn(nls.localize(
-                    'theia/workspace/untitled-cleanup',
-                    'There appear to be many untitled workspace files. Please check {0} and remove any unused files.',
-                    new URI(configDirURI).resolve('workspaces').path.toString())
-                );
-            }
-            if (attempts === 50) {
-                throw new Error('Workspace Service: too many attempts to find unused filename.');
-            }
-        } while (await this.fileService.exists(uri));
-        return uri;
+        const configDirURI = new URI(await this.envVariableServer.getConfigDirUri());
+        return this.utils.getUntitledWorkspaceUri(
+            configDirURI,
+            uri => this.fileService.exists(uri).then(exists => !exists),
+            () => this.messageService.warn(nls.localize(
+                'theia/workspace/untitled-cleanup',
+                'There appear to be many untitled workspace files. Please check {0} and remove any unused files.',
+                configDirURI.resolve('workspaces').path.fsPath())
+            ),
+        );
     }
 
     protected async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
