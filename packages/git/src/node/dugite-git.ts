@@ -54,7 +54,7 @@ import { GitInit } from './init/git-init';
 @injectable()
 export abstract class OutputParser<T> {
 
-    /** This is the `NUL` delimiter. Equals wih `%x00`. */
+    /** This is the `NUL` delimiter. Equals `%x00`. */
     static readonly LINE_DELIMITER = '\0';
 
     abstract parse(repositoryUri: string, raw: string, delimiter?: string): T[];

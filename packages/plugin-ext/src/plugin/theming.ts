@@ -29,13 +29,13 @@ import { ThemeType } from '@theia/core/lib/browser/theming';
 export class ThemingExtImpl implements ThemingExt {
 
     private actual: ColorTheme;
-    private ondDidChangeActiveColorTheme: Emitter<ColorTheme>;
+    private _onDidChangeActiveColorTheme: Emitter<ColorTheme>;
 
     constructor(
         readonly rpc: RPCProtocol
     ) {
         this.actual = new ColorTheme(ColorThemeKind.Dark);
-        this.ondDidChangeActiveColorTheme = new Emitter<ColorTheme>();
+        this._onDidChangeActiveColorTheme = new Emitter<ColorTheme>();
     }
 
     get activeColorTheme(): ColorTheme {
@@ -44,7 +44,7 @@ export class ThemingExtImpl implements ThemingExt {
 
     $onColorThemeChange(type: ThemeType): void {
         this.actual = new ColorTheme(this.convertKind(type));
-        this.ondDidChangeActiveColorTheme.fire(this.actual);
+        this._onDidChangeActiveColorTheme.fire(this.actual);
     }
 
     protected convertKind(type: ThemeType): ColorThemeKind {
@@ -64,7 +64,7 @@ export class ThemingExtImpl implements ThemingExt {
     }
 
     get onDidChangeActiveColorTheme(): Event<ColorTheme> {
-        return this.ondDidChangeActiveColorTheme.event;
+        return this._onDidChangeActiveColorTheme.event;
     }
 
 }

@@ -143,7 +143,7 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
     }
 
     /**
-     *  Sort higher priorities earier. I.e. positive number means right higher than left.
+     *  Sort higher priorities earlier. I.e. positive number means right higher than left.
      */
     protected compareWeight(left: Decoration, right: Decoration): number {
         return (right.weight ?? 0) - (left.weight ?? 0);

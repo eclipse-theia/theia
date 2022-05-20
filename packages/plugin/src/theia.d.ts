@@ -2185,7 +2185,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * The type of a {@link QuickPickItem quitk pick item}. If `Separator` is set, all fields other than {@link QuickPickItem.label label} will be ignored.
+     * The type of a {@link QuickPickItem quick pick item}. If `Separator` is set, all fields other than {@link QuickPickItem.label label} will be ignored.
      */
     export enum QuickPickItemKind {
         Separator = -1,

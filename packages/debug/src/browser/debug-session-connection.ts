@@ -92,8 +92,8 @@ export interface DebugEventTypes {
 export type DebugEventNames = keyof DebugEventTypes;
 
 export namespace DebugEventTypes {
-    export function isStandardEvent(evt: string): evt is DebugEventNames {
-        return standardDebugEvents.has(evt);
+    export function isStandardEvent(event: string): event is DebugEventNames {
+        return standardDebugEvents.has(event);
     };
 }
 

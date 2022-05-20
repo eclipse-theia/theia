@@ -21,7 +21,7 @@
 
 - [callhierarchy] added handling to cache instances of `callhierarchy` providers [#10857](https://github.com/eclipse-theia/theia/pull/10857)
 - [core] added `property-view` API documentation [#11022](https://github.com/eclipse-theia/theia/pull/11022)
-- [core] added `selection-service` APIdocumentation [#11022](https://github.com/eclipse-theia/theia/pull/11022)
+- [core] added `selection-service` API documentation [#11022](https://github.com/eclipse-theia/theia/pull/11022)
 - [core] added additional statusbar theming colors [#11026](https://github.com/eclipse-theia/theia/pull/11026)
 - [core] added better support for conversion between windows and posix paths [#10591](https://github.com/eclipse-theia/theia/pull/10591)
 - [core] added handling to guarantee `showQuickPick` resolves on hide [#11068](https://github.com/eclipse-theia/theia/pull/11068)
