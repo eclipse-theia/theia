@@ -47,7 +47,6 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
         } else {
             this.resolved = false;
         }
-        this.storeValue('isUnderDevelopment', originId === 'Hosted Plugin');
     }
 
     id(): string {
