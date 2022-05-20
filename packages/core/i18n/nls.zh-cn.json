@@ -1,25 +1,25 @@
 {
   "theia": {
     "callhierarchy": {
-      "open": "公开征集等级制度"
+      "open": "打开调用层次结构"
     },
     "core": {
       "common": {
-        "closeAll": "关闭所有标签",
-        "closeAllTabMain": "关闭主区域的所有标签",
-        "closeOtherTabMain": "关闭主区域的其他标签",
-        "closeOthers": "关闭其他标签",
-        "closeRight": "向右关闭标签",
-        "closeTab": "关闭标签",
-        "closeTabMain": "在主区域关闭标签",
-        "collapseAllTabs": "折叠 所有侧板",
-        "collapseBottomPanel": "拨动底部面板",
-        "collapseTab": "塌陷侧板",
-        "showNextTabGroup": "切换到下一个标签组",
-        "showNextTabInGroup": "切换到组中的下一个标签",
-        "showPreviousTabGroup": "切换到上一个标签组",
-        "showPreviousTabInGroup": "切换到组中的上一个标签",
-        "toggleMaximized": "切换到最大限度"
+        "closeAll": "全部关闭",
+        "closeAllTabMain": "关闭主区域的所有标签页",
+        "closeOtherTabMain": "关闭主区域的其他标签页",
+        "closeOthers": "关闭其他标签页",
+        "closeRight": "关闭右侧标签页",
+        "closeTab": "关闭标签页",
+        "closeTabMain": "关闭主区域标签页",
+        "collapseAllTabs": "折叠所有面板",
+        "collapseBottomPanel": "折叠底部面板",
+        "collapseTab": "折叠面板",
+        "showNextTabGroup": "切换到下一个标签页组",
+        "showNextTabInGroup": "切换到组中的下一个标签页",
+        "showPreviousTabGroup": "切换到上一个标签页组",
+        "showPreviousTabInGroup": "切换到组中的上一个标签页",
+        "toggleMaximized": "切换最大化面板"
       },
       "file": {
         "browse": "浏览"
@@ -43,31 +43,31 @@
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
-      "continueAll": "继续 所有",
+      "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
       "debugViewLocation": "控制调试视图的位置。",
-      "openBottom": "开放式底部",
-      "openLeft": "向左开放",
-      "openRight": "右边开放",
+      "openBottom": "打开底部",
+      "openLeft": "打开左侧",
+      "openRight": "打开右侧",
       "pauseAll": "暂停所有",
-      "reveal": "揭秘",
+      "reveal": "显示",
       "threads": "线程",
       "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
     },
     "editor": {
-      "diffEditor.maxFileSize": "计算差异的最大文件大小,以MB为单位。使用0表示没有限制。",
-      "editor.accessibilityPageSize": "控制编辑器中可被屏幕阅读器一次性读出的行数。当我们检测到一个屏幕阅读器时,我们会自动将默认值设置为500。警告:对于大于默认值的数字,这对性能会有影响。",
-      "editor.autoClosingDelete": "控制编辑器在删除时是否应删除相邻的闭合引号或括号。",
+      "diffEditor.maxFileSize": "要为其计算差异的最大文件大小(MB)。使用 0 表示无限制。",
+      "editor.accessibilityPageSize": "控制编辑器中可由屏幕阅读器一次读出的行数。当检测到屏幕阅读器时，会自动将默认值设置为 500。警告: 如果行数大于默认值，可能会影响性能。",
+      "editor.autoClosingDelete": "控制在删除时编辑器是否应删除相邻的右引号或右方括号。",
       "editor.autoClosingDelete1": "只有在相邻的闭合引号或方括号被自动插入的情况下,才能删除它们。",
-      "editor.bracketPairColorization.enabled": "控制是否启用括号对的着色。使用'workbench.colorCustomizations'来覆盖括号的高亮颜色。",
-      "editor.codeLensFontSize": "控制CodeLens的字体大小(像素)。当设置为 \"0 \"时,将使用90%的 `#editor.fontSize#`。",
-      "editor.find.autoFindInSelection0": "永远不要自动打开在选择中查找(默认)。",
-      "editor.find.autoFindInSelection1": "始终自动打开在选择中查找。",
-      "editor.find.seedSearchStringFromSelection0": "不要从编辑器选择的种子搜索字符串。",
-      "editor.find.seedSearchStringFromSelection1": "始终从编辑器选择的种子搜索字符串,包括光标位置的单词。",
-      "editor.find.seedSearchStringFromSelection2": "只从编辑器选择种子搜索字符串。",
-      "editor.foldingImportsByDefault": "控制编辑器是否自动折叠进口范围。",
-      "editor.foldingMaximumRegions": "可折叠区域的最大数量。当电流源有大量的可折叠区域时,增加这个值可能会导致编辑器的反应速度变慢。",
+      "editor.bracketPairColorization.enabled": "控制是否已启用括号对着色。使用 `#workbench.colorCustomizations#` 替代括号高亮颜色。",
+      "editor.codeLensFontSize": "控制 CodeLens 的字号(以像素为单位)。设置为 `0` 时，将使用 90% 的 `#editor.fontSize#`。",
+      "editor.find.autoFindInSelection0": "从不自动打开“在选定内容中查找”(默认)。",
+      "editor.find.autoFindInSelection1": "始终自动打开“在选定内容中查找”。",
+      "editor.find.seedSearchStringFromSelection0": "切勿为编辑器选择中的搜索字符串设定种子。",
+      "editor.find.seedSearchStringFromSelection1": "始终为编辑器选择中的搜索字符串设定种子，包括光标位置的字词。",
+      "editor.find.seedSearchStringFromSelection2": "仅为编辑器选择中的搜索字符串设定种子。",
+      "editor.foldingImportsByDefault": "控制编辑器是否自动折叠导入范围。",
+      "editor.foldingMaximumRegions": "可折叠区域的最大数量。如果当前源具有大量可折叠区域，那么增加此值可能会导致编辑器的响应速度变慢。",
       "editor.formatOnSaveMode.modificationsIfAvailable": "将尝试只对修改部分进行格式化(需要源代码控制)。如果不能使用源码控制,那么整个文件将被格式化。",
       "editor.guides.bracketPairs": "控制是否启用托架对指南。",
       "editor.guides.bracketPairs0": "启用支架配对指南。",
@@ -79,9 +79,9 @@
       "editor.guides.bracketPairsHorizontal2": "禁用水平托架对导板。",
       "editor.guides.highlightActiveBracketPair": "控制编辑器是否应突出显示活动的括号对。",
       "editor.hover.above": "如果有空间的话,更倾向于显示悬停在该线之上。",
-      "editor.inlayHints.enabled": "启用编辑器中的镶嵌提示。",
-      "editor.inlayHints.fontFamily": "控制编辑器中镶嵌提示的字体家族。当设置为空时,使用`#editor.fontFamily#`。",
-      "editor.inlayHints.fontSize": "控制编辑器中镶嵌提示的字体大小。当配置值小于`5'或大于编辑器的字体大小时,默认使用`#editor.fontSize#`的90%。",
+      "editor.inlayHints.enabled": "启用编辑器中的内联提示。",
+      "editor.inlayHints.fontFamily": "控制编辑器中内联提示的字体家族。当设置为空时,使用`#editor.fontFamily#`。",
+      "editor.inlayHints.fontSize": "控制编辑器中内联提示的字体大小。当配置值小于`5'或大于编辑器的字体大小时,默认使用`#editor.fontSize#`的90%。",
       "editor.inlineSuggest.enabled": "控制是否在编辑器中自动显示内联建议。",
       "editor.language.colorizedBracketPairs": "如果启用了括号对着色,则定义括号对按其嵌套级别进行着色。",
       "editor.lineHeight": "控制行高。\n - 使用0可以根据字体大小自动计算行高。\n - 0到8之间的值将被用作字体大小的乘数。\n - 大于或等于8的值将作为有效值使用。",
@@ -118,8 +118,8 @@
       "formatOnSaveTimeout": "超时,以毫秒为单位,超时后文件保存时运行的格式化被取消。",
       "persistClosedEditors": "控制是否为工作区持续保存关闭的编辑器历史,跨越窗口重新加载。",
       "showAllEditors": "显示所有打开的编辑器",
-      "splitHorizontal": "横向分割编辑",
-      "splitVertical": "分离式编辑垂直"
+      "splitHorizontal": "水平拆分编辑器",
+      "splitVertical": "垂直拆分编辑器"
     },
     "file-search": {
       "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"
@@ -145,8 +145,8 @@
       "uploadedOutOf": "上传了{0}出{1}。"
     },
     "getting-started": {
-      "newExtension": "建立一个新的分机",
-      "newPlugin": "建立一个新的插件"
+      "newExtension": "构建一个新的扩展",
+      "newPlugin": "构建一个新的插件"
     },
     "git": {
       "addSignedOff": "添加 \"已签署\"。",
@@ -160,9 +160,9 @@
       "compareWith": "对比...",
       "compareWithBranchOrTag": "挑选一个分支或标签,与当前活动的{0}分支进行比较。",
       "dirtyDiffLinesLimit": "如果编辑器的行数超过这个限制,则不显示肮脏的差异装饰。",
-      "dropStashMessage": "藏品成功删除。",
-      "editorDecorationsEnabled": "在编辑器中显示git的装饰。",
-      "fetchPickRemote": "挑选一个遥控器来取物。",
+      "dropStashMessage": "存储删除成功。",
+      "editorDecorationsEnabled": "在编辑器中显示 git 的装饰。",
+      "fetchPickRemote": "选择一个远程存储库抓取",
       "gitDecorationsColors": "在导航器中使用颜色装饰。",
       "mergeQuickPickPlaceholder": "挑选一个分支来合并到当前活动的{0}分支。",
       "missingUserInfo": "确保你在git中配置了'user.name'和'user.email'。",
@@ -192,9 +192,9 @@
       "typeToSearchForSymbols": "键入以搜索符号"
     },
     "navigator": {
-      "autoReveal": "自动揭幕",
+      "autoReveal": "自动显示",
       "refresh": "在资源管理器中刷新",
-      "reveal": "在资源管理器中显示出来",
+      "reveal": "在资源管理器中显示",
       "toggleHiddenFiles": "切换隐藏文件"
     },
     "output": {
@@ -214,8 +214,8 @@
       "hostedPlugin": "托管的插件",
       "hostedPluginRunning": "托管的插件: 运行",
       "hostedPluginStarting": "托管的插件: 开始",
-      "hostedPluginStopped": "托管的插件: 停止了",
-      "hostedPluginWatching": "托管的插件。观察",
+      "hostedPluginStopped": "托管的插件: 停止",
+      "hostedPluginWatching": "托管的插件: 观察",
       "instanceTerminated": "{0}已被终止",
       "launchOutFiles": "用于定位生成的JavaScript文件的glob模式数组(`${pluginPath}`将被插件的实际路径所取代)。",
       "noValidPlugin": "指定的文件夹不包含有效的插件。",
@@ -243,23 +243,23 @@
     },
     "property-view": {
       "created": "创建",
-      "directory": "指南",
+      "directory": "目录",
       "lastModified": "最后修改",
-      "location": "地点",
+      "location": "位置",
       "path": "路径",
-      "properties": "财产",
+      "properties": "属性",
       "size": "尺寸",
-      "symbolicLink": "象征性的联系"
+      "symbolicLink": "符号链接"
     },
     "scm": {
-      "amend": "修正",
-      "amendHeadCommit": "HEAD承诺",
-      "amendLastCommit": "修正最后的承诺",
-      "changeRepository": "改变存储库...",
+      "amend": "修改",
+      "amendHeadCommit": "HEAD 提交",
+      "amendLastCommit": "修改最后的提交",
+      "changeRepository": "修改存储库...",
       "history": "历史",
       "noRepositoryFound": "没有找到存储库",
       "unamend": "撤销",
-      "unamendCommit": "未修改的提交"
+      "unamendCommit": "撤销提交"
     },
     "search-in-workspace": {
       "includeIgnoredFiles": "包括被忽略的文件",
@@ -290,7 +290,7 @@
       "terminateActiveMultiple": "你想终止{0}活动的终端会话吗?"
     },
     "toolbar": {
-      "addCommand": "将命令添加到工具条",
+      "addCommand": "将命令添加到工具栏",
       "addCommandPlaceholder": "找到一个要添加到工具栏的命令",
       "centerColumn": "中心柱",
       "failedUpdate": "更新'{0}'在'{1}'的值失败。",
@@ -300,12 +300,12 @@
       "insertGroupLeft": "插入组的分隔符(左)。",
       "insertGroupRight": "插入群组分隔符(右)。",
       "leftColumn": "左栏",
-      "openJSON": "自定义工具条(打开JSON)",
-      "removeCommand": "从工具条上删除命令",
-      "restoreDefaults": "恢复工具条的默认值",
+      "openJSON": "自定义工具栏(打开JSON)",
+      "removeCommand": "从工具栏上删除命令",
+      "restoreDefaults": "恢复工具栏的默认值",
       "rightColumn": "右栏",
       "selectIcon": "选择图标",
-      "toggleToolbar": "切换工具条",
+      "toggleToolbar": "切换工具栏",
       "toolbarLocationPlaceholder": "你想把命令加在哪里?",
       "useDefaultIcon": "使用默认图标"
     },
@@ -329,7 +329,7 @@
       "confirmDeletePermanently.description": "使用垃圾箱删除\"{0}\"失败。你想永久删除吗?",
       "confirmDeletePermanently.solution": "你可以在偏好设置中禁用垃圾桶的使用。",
       "confirmDeletePermanently.title": "删除文件时出错",
-      "duplicate": "重复的",
+      "duplicate": "复制",
       "failApply": "无法将更改应用于新文件",
       "failSaveAs": "无法为当前的小组件运行\"{0}\"。",
       "noErasure": "注意:没有任何东西会从磁盘上被删除",
