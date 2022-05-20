@@ -45,6 +45,12 @@ export enum NodePtyErrors {
     ENOENT = 'No such file or directory'
 }
 
+// Max size of a data batch. Note that this value can be exceeded by ~4k (chunk sizes seem to be 4k at the most)
+export const BATCH_MAX_SIZE = 200 * 1024;
+
+// Max duration to batch data before sending it to the renderer process.
+export const BATCH_DURATION_MS = 16;
+
 /**
  * Run arbitrary processes inside pseudo-terminals (PTY).
  *
@@ -54,6 +60,8 @@ export enum NodePtyErrors {
 export class TerminalProcess extends Process {
 
     protected readonly terminal: IPty | undefined;
+    protected batchedData: string;
+    protected timeout: NodeJS.Timeout | undefined;
 
     readonly outputStream = this.createOutputStream();
     readonly errorStream = new DevNullStream({ autoDestroy: true });
@@ -79,6 +87,8 @@ export class TerminalProcess extends Process {
         }
         this.logger.debug('Starting terminal process', JSON.stringify(options, undefined, 2));
 
+        this.resetBatchedData();
+
         try {
             this.terminal = spawn(
                 options.command,
@@ -90,7 +100,7 @@ export class TerminalProcess extends Process {
 
             // node-pty actually wait for the underlying streams to be closed before emitting exit.
             // We should emulate the `exit` and `close` sequence.
-            this.terminal.on('exit', (code, signal) => {
+            this.terminal.onExit(({ exitCode, signal }) => {
                 // Make sure to only pass either code or signal as !undefined, not
                 // both.
                 //
@@ -100,21 +110,33 @@ export class TerminalProcess extends Process {
                 // signal parameter will hold the signal number and code should
                 // be ignored.
                 if (signal === undefined || signal === 0) {
-                    this.onTerminalExit(code, undefined);
+                    this.onTerminalExit(exitCode, undefined);
                 } else {
                     this.onTerminalExit(undefined, signame(signal));
                 }
                 process.nextTick(() => {
                     if (signal === undefined || signal === 0) {
-                        this.emitOnClose(code, undefined);
+                        this.emitOnClose(exitCode, undefined);
                     } else {
                         this.emitOnClose(undefined, signame(signal));
                     }
                 });
             });
 
-            this.terminal.on('data', (data: string) => {
-                ringBuffer.enq(data);
+            this.terminal.onData((data: string) => {
+                if (this.batchedData.length + data.length >= BATCH_MAX_SIZE) {
+                    // We've reached the max batch size. Flush it and start another one
+                    if (this.timeout) {
+                        clearTimeout(this.timeout);
+                        this.timeout = undefined;
+                    }
+                    this.flushBatchedData();
+                }
+                this.batchedData += data;
+                if (!this.timeout) {
+                    this.flushBatchedData();
+                    this.timeout = setTimeout(() => this.flushBatchedData(), BATCH_DURATION_MS);
+                }
             });
 
             this.inputStream = new Writable({
@@ -189,10 +211,22 @@ export class TerminalProcess extends Process {
         this.terminal!.write(data);
     }
 
+    protected resetBatchedData(): void {
+        this.batchedData = '';
+        this.timeout = undefined;
+    }
+
+    protected flushBatchedData(): void {
+        // Reset before emitting to allow for potential reentrancy
+        const data = this.batchedData;
+        this.resetBatchedData();
+
+        this.ringBuffer.enq(data);
+    }
+
     protected checkTerminal(): void | never {
         if (!this.terminal) {
             throw new Error('pty process did not start correctly');
         }
     }
-
 }
