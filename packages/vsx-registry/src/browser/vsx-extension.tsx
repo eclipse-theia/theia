@@ -118,6 +118,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     protected readonly data: Partial<VSXExtensionData> = {};
 
+    get acceptFocus(): boolean {
+        return true;
+    }
+
     get uri(): URI {
         return VSXExtensionUri.toUri(this.id);
     }
@@ -389,19 +393,19 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
         const extension = this.props.extension;
         const { builtin, busy, installed } = extension;
         if (builtin) {
-            return <div className="codicon codicon-settings-gear action" onClick={this.manage}></div>;
+            return <div className="codicon codicon-settings-gear action" tabIndex={0} onClick={this.manage}></div>;
         }
         if (busy) {
             if (installed) {
-                return <button className="theia-button action theia-mod-disabled">Uninstalling</button>;
+                return <button className="theia-button action theia-mod-disabled" tabIndex={0}>Uninstalling</button>;
             }
-            return <button className="theia-button action prominent theia-mod-disabled">Installing</button>;
+            return <button className="theia-button action prominent theia-mod-disabled" tabIndex={0}>Installing</button>;
         }
         if (installed) {
-            return <div><button className="theia-button action" onClick={this.uninstall}>Uninstall</button>
-                <div className="codicon codicon-settings-gear action" onClick={this.manage}></div></div>;
+            return <div><button className="theia-button action" tabIndex={0} onClick={this.uninstall}>Uninstall</button>
+                <div className="codicon codicon-settings-gear action" tabIndex={0} onClick={this.manage}></div></div>;
         }
-        return <button className="theia-button prominent action" onClick={this.install}>Install</button>;
+        return <button className="theia-button prominent action" tabIndex={0} onClick={this.install}>Install</button>;
     }
 
 }

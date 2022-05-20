@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
 import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel } from '../tree';
+import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel, NodeProps } from '../tree';
 import { TreeSource, TreeElement } from './tree-source';
 import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
 
@@ -76,6 +76,14 @@ export class SourceTreeWidget extends TreeWidget {
         }
         return super.renderTree(model);
 
+    }
+
+    protected override createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+        const attributes = super.createNodeAttributes(node, props);
+        if (TreeElementNode.is(node) && node.element.acceptFocus) {
+            attributes.tabIndex = 0;
+        }
+        return attributes;
     }
 
     protected override renderCaption(node: TreeNode): React.ReactNode {

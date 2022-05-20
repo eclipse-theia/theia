@@ -88,17 +88,17 @@
     transform: rotate(-90deg);
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
     background: var(--theia-list-activeSelectionBackground);
     color: var(--theia-list-activeSelectionForeground) !important;
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
-.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeInfo,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegment {
     color: var(--theia-list-activeSelectionForeground) !important;

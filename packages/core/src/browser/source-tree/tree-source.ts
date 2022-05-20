@@ -26,7 +26,9 @@ export interface TreeElement {
     /** default: parent id + position among siblings */
     readonly id?: number | string | undefined
     /** default: true */
-    readonly visible?: boolean
+    readonly visible?: boolean;
+    /** default: false */
+    readonly acceptFocus?: boolean;
     render(): ReactNode
     open?(): MaybePromise<any>
 }
