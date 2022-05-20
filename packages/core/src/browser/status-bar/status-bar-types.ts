@@ -92,6 +92,6 @@ export interface StatusBarViewEntry {
     id: string,
     entry: StatusBarEntry;
     compact?: boolean;
-    /** Only presenti if compact = true */
+    /** Only present if compact = true */
     alignment?: StatusBarAlignment;
 }

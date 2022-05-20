@@ -302,15 +302,15 @@ export class MonacoQuickInputService implements QuickInputService {
                         options.onDidTriggerButton(button);
                     }
                 });
-                wrapped.onDidTriggerItemButton((evt: QuickPickItemButtonEvent<T>) => {
+                wrapped.onDidTriggerItemButton((event: QuickPickItemButtonEvent<T>) => {
                     if (options.onDidTriggerItemButton) {
                         // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/base/parts/quickinput/browser/quickInput.ts#L1387
                         options.onDidTriggerItemButton(
                             {
-                                ...evt,
+                                ...event,
                                 removeItem: () => {
-                                    wrapped.items = wrapped.items.filter(item => item !== evt.item);
-                                    wrapped.activeItems = wrapped.activeItems.filter(item => item !== evt.item);
+                                    wrapped.items = wrapped.items.filter(item => item !== event.item);
+                                    wrapped.activeItems = wrapped.activeItems.filter(item => item !== event.item);
                                 }
                             });
                     }

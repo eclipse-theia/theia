@@ -139,12 +139,12 @@ body.theia-no-open-workspace #theia-statusBar {
 }
 
 .theia-status-bar-hover .hover-row:not(:first-child):not(:empty) {
-    border-top: 1px solid var(--theia-editorHoverWidgetInteralBorder);
+    border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
 }
 
 .theia-status-bar-hover hr {
-    border-top: 1px solid var(--theia-editorHoverWidgetInteralBorder);
-    border-bottom: 0px solid var(--theia-editorHoverWidgetInteralBorder);
+    border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
+    border-bottom: 0px solid var(--theia-editorHoverWidgetInternalBorder);
 }
 
 .theia-status-bar-hover a {

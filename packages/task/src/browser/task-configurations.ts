@@ -133,12 +133,12 @@ export class TaskConfigurations implements Disposable {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
         const detectedTasksAsConfigured: TaskConfiguration[] = [];
         for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
-            for (const cus of customizations) {
+            for (const customization of customizations) {
                 // TODO: getTasksToCustomize() will ask all task providers to contribute tasks. Doing this in a loop is bad.
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, cus, rootFolder);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, customization, rootFolder);
                 if (detected) {
                     // there might be a provided task that has a different scope from the task we're inspecting
-                    detectedTasksAsConfigured.push({ ...detected, ...cus });
+                    detectedTasksAsConfigured.push({ ...detected, ...customization });
                 }
             }
         }
