@@ -188,12 +188,18 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return inverseChanges;
     }
 
-    protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
+    protected validateSchema(schema: PreferenceSchema): void {
         const ajv = new Ajv();
         const valid = ajv.validateSchema(schema);
         if (!valid) {
             const errors = !!ajv.errors ? ajv.errorsText(ajv.errors) : 'unknown validation error';
             console.warn('A contributed preference schema has validation issues : ' + errors);
+        }
+    }
+
+    protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
+        if (FrontendApplicationConfigProvider.get().validatePreferencesSchema) {
+            this.validateSchema(schema);
         }
         const scope = PreferenceScope.Default;
         const domain = this.getDomain();
