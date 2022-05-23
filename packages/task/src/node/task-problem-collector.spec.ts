@@ -60,7 +60,6 @@ const startStopMatcher2: ProblemMatcher = {
     severity: Severity.Error
 };
 
-
 const startStopMatcher3: ProblemMatcher = {
     owner: 'test2',
     source: 'test2',
