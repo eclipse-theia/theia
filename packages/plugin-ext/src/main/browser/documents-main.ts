@@ -247,7 +247,19 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         }
         /* fall back to side group -> split relative to the active widget */
         let widgetOptions: ApplicationShell.WidgetOptions | undefined = { mode: 'split-right' };
-        const viewColumn = options.viewColumn;
+        let viewColumn = options.viewColumn;
+        if (viewColumn === -2) {
+            /* show besides -> compute current column and adjust viewColumn accordingly */
+            const tabBars = shell.mainAreaTabBars;
+            const currentTabBar = shell.currentTabBar;
+            if (currentTabBar) {
+                const currentColumn = tabBars.indexOf(currentTabBar);
+                if (currentColumn > -1) {
+                    // +2 because conversion from 0-based to 1-based index and increase of 1
+                    viewColumn = currentColumn + 2;
+                }
+            }
+        }
         if (viewColumn === undefined || viewColumn === -1) {
             /* active group -> skip (default behaviour) */
             widgetOptions = undefined;
