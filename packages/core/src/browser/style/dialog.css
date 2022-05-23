@@ -78,11 +78,6 @@
     min-height: 21px;
 }
 
-.dialogOverlay :focus {
-  box-shadow: 0px 0px 1px 1px var(--theia-focusBorder);
-  outline: none;
-}
-
 .p-Widget.dialogOverlay.hidden {
     display: none;
 }
