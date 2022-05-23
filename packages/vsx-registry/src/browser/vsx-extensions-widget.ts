@@ -80,9 +80,9 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
         }
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
-        this.model.openNode(node); // Open the editor view on a single click.
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
+        this.model.openNode(node);
     }
 
     protected override handleDblClickEvent(): void {

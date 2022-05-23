@@ -69,8 +69,8 @@ export class BulkEditTreeWidget extends TreeWidget {
         this.quickView?.showItem(BULK_EDIT_WIDGET_NAME);
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
         if (BulkEditNode.is(node)) {
             this.doOpen(node);
         }

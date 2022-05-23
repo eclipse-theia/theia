@@ -618,7 +618,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected override handleUp(event: KeyboardEvent): void {
-        if (!this.model.getPrevSelectableNode(this.model.selectedNodes[0])) {
+        if (!this.model.getPrevSelectableNode(this.model.getFocusedNode())) {
             this.focusInputEmitter.fire(true);
         } else {
             super.handleUp(event);

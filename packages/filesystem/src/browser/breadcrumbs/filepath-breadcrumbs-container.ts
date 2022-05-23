@@ -55,11 +55,11 @@ export class BreadcrumbsFileTreeWidget extends FileTreeWidget {
         };
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override tapNode(node?: TreeNode): void {
         if (FileStatNode.is(node) && !node.fileStat.isDirectory) {
             open(this.openerService, node.uri, { preview: true });
         } else {
-            super.handleClickEvent(node, event);
+            super.tapNode(node);
         }
     }
 }

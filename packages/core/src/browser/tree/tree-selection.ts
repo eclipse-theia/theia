@@ -42,6 +42,11 @@ export interface TreeSelectionService extends Disposable, SelectionProvider<Read
     addSelection(selectionOrTreeNode: TreeSelection | Readonly<SelectableTreeNode>): void;
 
     /**
+     * Clears all selected nodes
+     */
+    clearSelection(): void;
+
+    /**
      * Store selection state.
      */
     storeState(): object;
@@ -114,6 +119,8 @@ export interface SelectableTreeNode extends TreeNode {
     selected: boolean;
 
     /**
+     * @deprecated @since 1.27.0. Use TreeFocusService to track the focused node.
+     *
      * `true` if the tree node has the focus. Otherwise, `false`. Defaults to `false`.
      */
     focus?: boolean;
@@ -130,6 +137,9 @@ export namespace SelectableTreeNode {
         return is(node) && node.selected;
     }
 
+    /**
+     * @deprecated @since 1.27.0. Use TreeFocusService to track the focused node.
+     */
     export function hasFocus(node: TreeNode | undefined): boolean {
         return is(node) && node.focus === true;
     }

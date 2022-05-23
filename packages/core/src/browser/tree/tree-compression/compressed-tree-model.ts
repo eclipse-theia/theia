@@ -39,7 +39,7 @@ export class CompressedTreeModel extends TreeModelImpl {
     @inject(TreeCompressionService) protected readonly compressionService: TreeCompressionService;
 
     protected selectAdjacentRow(direction: BackOrForward, type: TreeSelection.SelectionType = TreeSelection.SelectionType.DEFAULT): void {
-        let startingPoint: TreeNode = this.selectedNodes[0];
+        let startingPoint: TreeNode | undefined = this.getFocusedNode();
         if (this.compressionService.isCompressionParticipant(startingPoint)) {
             const chain = this.compressionService.getCompressionChain(startingPoint);
             startingPoint = (direction === BackOrForward.Backward ? chain?.head() : chain?.tail()) ?? startingPoint;

@@ -31,7 +31,16 @@ export namespace TreeWidgetSelection {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return Array.isArray(selection) && ('source' in selection) && <any>selection['source'] instanceof TreeWidget;
     }
+
     export function create(source: TreeWidget): TreeWidgetSelection {
-        return Object.assign(source.model.selectedNodes, { source });
+        const focusedNode = source.model.getFocusedNode();
+        const selectedNodes = source.model.selectedNodes;
+        const focusedIndex = selectedNodes.indexOf(focusedNode as SelectableTreeNode);
+        // Ensure that the focused node is at index 0 - used as default single selection.
+        if (focusedNode && focusedIndex > 0) {
+            const selection = [focusedNode, ...selectedNodes.slice(0, focusedIndex), ...selectedNodes.slice(focusedIndex + 1)];
+            return Object.assign(selection, { source });
+        }
+        return Object.assign(selectedNodes, { source });
     }
 }

@@ -120,11 +120,11 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
         return undefined;
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override tapNode(node?: TreeNode): void {
         if (TreeElementNode.is(node) && node.element instanceof LoadMoreStackFrames) {
             node.element.open();
         }
-        super.handleClickEvent(node, event);
+        super.tapNode(node);
     }
 
     protected override getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {

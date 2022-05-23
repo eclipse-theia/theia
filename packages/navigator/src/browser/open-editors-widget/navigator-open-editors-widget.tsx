@@ -256,12 +256,11 @@ export class OpenEditorsWidget extends FileTreeWidget {
         }
     }
 
-    protected override handleClickEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected override tapNode(node?: TreeNode): void {
         if (OpenEditorNode.is(node)) {
-            const { widget } = node;
-            this.applicationShell.activateWidget(widget.id);
+            this.applicationShell.activateWidget(node.widget.id);
         }
-        super.handleClickEvent(node, event);
+        super.tapNode(node);
     }
 
     protected override handleContextMenuEvent(node: OpenEditorNode | undefined, event: React.MouseEvent<HTMLElement>): void {

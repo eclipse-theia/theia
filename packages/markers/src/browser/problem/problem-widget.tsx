@@ -113,8 +113,8 @@ export class ProblemWidget extends TreeWidget {
         return;
     }
 
-    protected override handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
-        super.handleClickEvent(node, event);
+    protected override tapNode(node?: TreeNode): void {
+        super.tapNode(node);
         if (MarkerNode.is(node)) {
             this.model.revealNode(node);
         }
