@@ -241,7 +241,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[1] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[1] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
         expect((allMatches[1] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Warning,
@@ -250,7 +250,7 @@ describe('ProblemCollector', () => {
             code: 'semi'
         });
 
-        expect((allMatches[2] as ProblemMatchData).resource!.path).eq('/home/test/test-dir.js');
+        expect((allMatches[2] as ProblemMatchData).resource?.path).eq('/home/test/test-dir.js');
         expect((allMatches[2] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,
@@ -258,7 +258,7 @@ describe('ProblemCollector', () => {
             message: 'Parsing error: Unexpected token inte'
         });
 
-        expect((allMatches[3] as ProblemMatchData).resource!.path).eq('/home/test/more-test.js');
+        expect((allMatches[3] as ProblemMatchData).resource?.path).eq('/home/test/more-test.js');
         expect((allMatches[3] as ProblemMatchData).marker).deep.equal({
             range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
             severity: DiagnosticSeverity.Error,
