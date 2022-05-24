@@ -55,7 +55,8 @@ export namespace FrontendApplicationConfig {
         defaultTheme: 'dark',
         defaultIconTheme: 'none',
         electron: ElectronFrontendApplicationConfig.DEFAULT,
-        defaultLocale: ''
+        defaultLocale: '',
+        validatePreferencesSchema: true
     };
     export interface Partial extends ApplicationConfig {
 
@@ -93,6 +94,14 @@ export namespace FrontendApplicationConfig {
          * Defaults to "".
          */
         readonly defaultLocale?: string;
+
+        /**
+         * When `true`, the application will validate the JSON schema of the preferences on start
+         * and log warnings to the console if the schema is not valid.
+         *
+         * Defaults to `true`.
+         */
+        readonly validatePreferencesSchema?: boolean;
     }
 }
 
