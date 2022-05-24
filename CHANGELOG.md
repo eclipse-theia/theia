@@ -13,6 +13,7 @@
 <a name="breaking_changes_1.26.0">[Breaking Changes:](#breaking_changes_1.26.0)</a>
 
 - [callhierarchy] `paths.ts` and `glob.ts` moved to `core/src/common`; `language-selector.ts` moved to `editor/src/common`. Any imports will need to be updated.
+- [electron] removed redundant config option `disallowReloadKeybinding` from `dev-packages/application-package/src/application-props.ts` file and corresponding test [#11099](https://github.com/eclipse-theia/theia/pull/11099)
 
 ## v1.25.0 - 4/28/2022
 
