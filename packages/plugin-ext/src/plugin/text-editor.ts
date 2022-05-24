@@ -263,6 +263,14 @@ export class TextEditorExt implements theia.TextEditor {
             return undefined;
         });
     }
+
+    show(column?: theia.ViewColumn): void {
+        return; // no-op - method is deprecated.
+    }
+
+    hide(): void {
+        return; // no-op - method is deprecated.
+    }
 }
 
 export class TextEditorOptionsExt implements theia.TextEditorOptions {
