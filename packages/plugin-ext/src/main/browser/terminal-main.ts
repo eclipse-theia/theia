@@ -90,7 +90,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         );
         updateProcessId();
         this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));
-        this.toDispose.push(terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id)));
+        this.toDispose.push(terminal.onTerminalDidClose(term => this.extProxy.$terminalClosed(term.id, term.exitStatus)));
         this.toDispose.push(terminal.onSizeChanged(({ cols, rows }) => {
             this.extProxy.$terminalSizeChanged(terminal.id, cols, rows);
         }));
