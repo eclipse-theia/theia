@@ -66,6 +66,17 @@ export interface DownloadPluginsOptions {
      * The open-vsx registry API url.
      */
     apiUrl?: string;
+
+    /**
+     * Fetch plugins in parallel
+     */
+    parallel?: boolean;
+}
+
+interface PluginDownload {
+    id: string,
+    downloadUrl: string,
+    version?: string | undefined
 }
 
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
@@ -73,7 +84,8 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         packed = false,
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
-        apiUrl = 'https://open-vsx.org/api'
+        apiUrl = 'https://open-vsx.org/api',
+        parallel = true
     } = options;
 
     // Collect the list of failures to be appended at the end of the script.
@@ -88,6 +100,19 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     // Excluded extension ids.
     const excludedIds = new Set<string>(pck.theiaPluginsExcludeIds || []);
 
+    // Downloader wrapper
+    const downloadPlugin = (plugin: PluginDownload): Promise<void> => downloadPluginAsync(failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
+
+    const downloader = async (plugins: PluginDownload[]) => {
+        if (parallel) {
+            await Promise.all(plugins.map(downloadPlugin));
+        } else {
+            for (const plugin of plugins) {
+                await downloadPlugin(plugin);
+            }
+        }
+    };
+
     await fs.mkdir(pluginsDir, { recursive: true });
 
     if (!pck.theiaPlugins) {
@@ -98,14 +123,10 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         console.warn('--- downloading plugins ---');
         // Download the raw plugins defined by the `theiaPlugins` property.
         // This will include both "normal" plugins as well as "extension packs".
-        const downloads = [];
-        for (const [plugin, pluginUrl] of Object.entries(pck.theiaPlugins)) {
-            if (typeof pluginUrl !== 'string') {
-                continue;
-            }
-            downloads.push(downloadPluginAsync(failures, plugin, pluginUrl, pluginsDir, packed));
-        }
-        await Promise.all(downloads);
+        const pluginsToDownload = Object.entries(pck.theiaPlugins)
+            .filter((entry: [string, unknown]): entry is [string, string] => typeof entry[1] === 'string')
+            .map(([pluginId, url]: [string, string]) => <PluginDownload>{ id: pluginId, downloadUrl: url });
+        await downloader(pluginsToDownload);
 
         console.warn('--- collecting extension-packs ---');
         const extensionPacks = await collectExtensionPacks(pluginsDir, excludedIds);
@@ -114,13 +135,18 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             const client = new OVSXClient({ apiVersion, apiUrl });
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(Array.from(extensionPacks.values()).flat());
-            await Promise.all(Array.from(ids, async id => {
+            const extensionPacksToDownload: PluginDownload[] = [];
+            for (const id of ids) {
                 const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const version = extension?.version;
                 const downloadUrl = extension?.files.download;
                 if (downloadUrl) {
-                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
+                    extensionPacksToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
+                } else {
+                    failures.push(`No download url for extension pack ${id} (${version})`);
                 }
-            }));
+            }
+            await downloader(extensionPacksToDownload);
         }
 
         console.warn('--- collecting extension dependencies ---');
@@ -130,13 +156,18 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             const client = new OVSXClient({ apiVersion, apiUrl });
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(pluginDependencies);
-            await Promise.all(Array.from(ids, async id => {
+            const extensionDependenciesToDownload: PluginDownload[] = [];
+            for (const id of ids) {
                 const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const version = extension?.version;
                 const downloadUrl = extension?.files.download;
                 if (downloadUrl) {
-                    await downloadPluginAsync(failures, id, downloadUrl, pluginsDir, packed, extension?.version);
+                    extensionDependenciesToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
+                } else {
+                    failures.push(`No download url for extension dependency ${id} (${version})`);
                 }
-            }));
+            }
+            await downloader(extensionDependenciesToDownload);
         }
 
     } finally {
