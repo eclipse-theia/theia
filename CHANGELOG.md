@@ -18,13 +18,6 @@
 
 <a name="breaking_changes_1.26.0">[Breaking Changes:](#breaking_changes_1.26.0)</a>
 
-- [core] Refactored the core messaging API. Replaced `vscode-ws-jsonrpc` with a custom RPC protocol that is better suited for handling binary data and enables message tunneling.
-  - This impacts all main concepts of the messaging API. The API no longer exposes a `Connection` object and uses a generic `Channel` implementation instead.
-  - Replaces usage of `vscode-json-rpc`'s `Connection` with the new generic `Channel`. Affects `AbstractConnectionProvider`, `MessagingService`, `IPCConnectionProvider`, `ElectronMessagingService`
-  - `MessagingService`: No longer offers the `listen` and `forward` method. Use `wsChannel` instead.
-  - `RemoteFileSystemServer`: Use `UInt8Array` instead of plain number arrays for all arguments and return type that store binary data
-  - `DebugAdapter`: Replaced the debug-service internal `Channel` implementation with the newly introduced generic `Channel`.
-  - [#11011](https://github.com/eclipse-theia/theia/pull/11011) - Contributed on behalf of STMicroelectronics.
 - [filesystem] Remove deprecated APIs:
   - Deleted `@theia/filesystem/lib/browser/filesystem-watcher`:
     - `FileChangeType`, `FileChange`, `FileChangeEvent`, `FileMoveEvent`, `FileEvent`, `FileOperationEmitter`, `FileSystemWatcher`

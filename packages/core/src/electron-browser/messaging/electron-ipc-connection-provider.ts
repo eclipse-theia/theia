@@ -17,11 +17,9 @@
 import { Event as ElectronEvent, ipcRenderer } from '@theia/electron/shared/electron';
 import { injectable, interfaces } from 'inversify';
 import { JsonRpcProxy } from '../../common/messaging';
+import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { THEIA_ELECTRON_IPC_CHANNEL_NAME } from '../../electron-common/messaging/electron-connection-handler';
-import { Emitter, Event } from '../../common';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { Channel, MessageProvider } from '../../common/message-rpc/channel';
 
 export interface ElectronIpcOptions {
 }
@@ -36,25 +34,17 @@ export class ElectronIpcConnectionProvider extends AbstractConnectionProvider<El
         return container.get(ElectronIpcConnectionProvider).createProxy<T>(path, arg);
     }
 
-    protected createMainChannel(): Channel {
-        const onMessageEmitter = new Emitter<MessageProvider>();
-        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (_event: ElectronEvent, data: Uint8Array) => {
-            onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(data));
+    constructor() {
+        super();
+        ipcRenderer.on(THEIA_ELECTRON_IPC_CHANNEL_NAME, (event: ElectronEvent, data: string) => {
+            this.handleIncomingRawMessage(data);
         });
-        return {
-            close: () => Event.None,
-            getWriteBuffer: () => {
-                const writer = new Uint8ArrayWriteBuffer();
-                writer.onCommit(buffer =>
-                    // The ipcRenderer cannot handle ArrayBuffers directly=> we have to convert to Uint8Array.
-                    ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, buffer)
-                );
-                return writer;
-            },
-            onClose: Event.None,
-            onError: Event.None,
-            onMessage: onMessageEmitter.event
-        };
+    }
+
+    protected createChannel(id: number): WebSocketChannel {
+        return new WebSocketChannel(id, content => {
+            ipcRenderer.send(THEIA_ELECTRON_IPC_CHANNEL_NAME, content);
+        });
     }
 
 }

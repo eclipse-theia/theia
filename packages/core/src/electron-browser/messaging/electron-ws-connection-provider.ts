@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
+import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
-import { Channel } from '../../common';
 
 /**
  * Customized connection provider between the frontend and the backend in electron environment.
@@ -34,13 +34,16 @@ export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProv
 
     onStop(): void {
         this.stopping = true;
-        // Manually close the websocket connections `onStop`. Otherwise, the channels will be closed with 30 sec (`MessagingContribution#checkAliveTimeout`) delay.
+        // Close the websocket connection `onStop`. Otherwise, the channels will be closed with 30 sec (`MessagingContribution#checkAliveTimeout`) delay.
         // https://github.com/eclipse-theia/theia/issues/6499
-        // `1001` indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page.
-        this.channelMultiPlexer.closeUnderlyingChannel({ reason: 'The frontend is "going away"', code: 1001 });
+        for (const channel of [...this.channels.values()]) {
+            // `1001` indicates that an endpoint is "going away", such as a server going down or a browser having navigated away from a page.
+            // But we cannot use `1001`: https://github.com/TypeFox/vscode-ws-jsonrpc/issues/15
+            channel.close(1000, 'The frontend is "going away"...');
+        }
     }
 
-    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
+    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         if (!this.stopping) {
             super.openChannel(path, handler, options);
         }

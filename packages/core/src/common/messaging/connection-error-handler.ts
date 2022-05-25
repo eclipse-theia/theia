@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Message } from 'vscode-ws-jsonrpc';
 import { ILogger } from '../../common';
 
 export interface ResolvedConnectionErrorHandlerOptions {
@@ -50,7 +51,7 @@ export class ConnectionErrorHandler {
         };
     }
 
-    shouldStop(error: Error, count?: number): boolean {
+    shouldStop(error: Error, message?: Message, count?: number): boolean {
         return !count || count > this.options.maxErrors;
     }
 
