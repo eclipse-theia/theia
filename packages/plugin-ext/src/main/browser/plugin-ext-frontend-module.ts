@@ -35,7 +35,6 @@ import { PluginWidget } from './plugin-ext-widget';
 import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { EditorModelService } from './text-editor-model-service';
-import { UntitledResourceResolver } from './editor/untitled-resource';
 import { CodeEditorWidgetUtil, MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry';
@@ -107,9 +106,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CommandContribution).toService(PluginApiFrontendContribution);
 
     bind(EditorModelService).toSelf().inSingletonScope();
-
-    bind(UntitledResourceResolver).toSelf().inSingletonScope();
-    bind(ResourceResolver).toService(UntitledResourceResolver);
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(): MaybePromise<void> {
