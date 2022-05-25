@@ -56,7 +56,6 @@ export class IPCChannel implements Channel {
             this.setupProcess();
         }
         this.messagePipe.onMessage(message => {
-            console.log(`IPChannel: fire on message with ${message.length}`);
             this.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(message));
         });
         this.toDispose.pushAll([this.onCloseEmitter, this.onMessageEmitter, this.onErrorEmitter]);
