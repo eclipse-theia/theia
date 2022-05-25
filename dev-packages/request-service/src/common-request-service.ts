@@ -38,7 +38,12 @@ export interface RequestContext {
         headers: Headers;
         statusCode?: number;
     };
-    buffer: Uint8Array;
+    /**
+     * Contains the data returned by the request.
+     *
+     * If the request was transferred from the backend to the frontend, the buffer has been compressed into a string. In every case the buffer is an {@link Uint8Array}.
+     */
+    buffer: Uint8Array | string;
 }
 
 export namespace RequestContext {
@@ -57,8 +62,10 @@ export namespace RequestContext {
         if (hasNoContent(context)) {
             return '';
         }
+        // Ensures that the buffer is an Uint8Array
+        context = decompress(context);
         if (textDecoder) {
-            return textDecoder.decode(context.buffer);
+            return textDecoder.decode(context.buffer as Uint8Array);
         } else {
             return context.buffer.toString();
         }
@@ -81,10 +88,7 @@ export namespace RequestContext {
      */
     export function compress(context: RequestContext): RequestContext {
         if (context.buffer instanceof Uint8Array && Buffer !== undefined) {
-            const base64Data = Buffer.from(context.buffer).toString('base64');
-            Object.assign(context, {
-                buffer: base64Data
-            });
+            context.buffer = Buffer.from(context.buffer).toString('base64');
         }
         return context;
     }
