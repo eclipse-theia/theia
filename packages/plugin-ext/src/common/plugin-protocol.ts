@@ -795,6 +795,7 @@ export interface PluginMetadata {
     host: string;
     model: PluginModel;
     lifecycle: PluginLifecycle;
+    isUnderDevelopment?: boolean;
 }
 
 export const MetadataProcessor = Symbol('MetadataProcessor');

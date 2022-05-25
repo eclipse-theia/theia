@@ -131,6 +131,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             }
 
             const metadata = this.reader.readMetadata(manifest);
+            metadata.isUnderDevelopment = entry.getValue('isUnderDevelopment') ?? false;
 
             const deployedLocations = this.deployedLocations.get(metadata.model.id) || new Set<string>();
             deployedLocations.add(entry.rootPath);

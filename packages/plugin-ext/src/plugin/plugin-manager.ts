@@ -30,6 +30,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
+import * as types from './types-impl';
 import { join } from './path';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
@@ -372,6 +373,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const secrets = new SecretStorageExt(plugin, this.secrets);
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const extension = new PluginExt(this, plugin);
+        const extensionModeValue = plugin.isUnderDevelopment ? types.ExtensionMode.Development : types.ExtensionMode.Production;
         const pluginContext: theia.PluginContext = {
             extensionPath: extension.extensionPath,
             extensionUri: extension.extensionUri,
@@ -386,7 +388,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             globalStoragePath: globalStoragePath,
             globalStorageUri: Uri.file(globalStoragePath),
             environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id),
-            extensionMode: 1, // @todo: implement proper `extensionMode`.
+            extensionMode: extensionModeValue,
             extension,
             logUri: Uri.file(logPath)
         };

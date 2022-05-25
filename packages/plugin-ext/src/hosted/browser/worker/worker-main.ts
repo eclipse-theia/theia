@@ -129,7 +129,8 @@ const pluginManager = new PluginManagerExtImpl({
                     pluginUri: pluginModel.packageUri,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
-                    rawModel
+                    rawModel,
+                    isUnderDevelopment: !!plg.isUnderDevelopment
                 };
                 const apiImpl = apiFactory(plugin);
                 pluginsApiImpl.set(plugin.model.id, apiImpl);
@@ -146,7 +147,8 @@ const pluginManager = new PluginManagerExtImpl({
                         lifecycle: pluginLifecycle,
                         get rawModel(): never {
                             throw new Error('not supported');
-                        }
+                        },
+                        isUnderDevelopment: !!plg.isUnderDevelopment
                     }
                 };
             }

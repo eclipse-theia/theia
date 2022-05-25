@@ -167,7 +167,8 @@ export class PluginHostRPC {
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
-                                rawModel
+                                rawModel,
+                                isUnderDevelopment: !!plg.isUnderDevelopment
                             });
                         } else {
                             let backendInitPath = pluginLifecycle.backendInitPath;
@@ -182,7 +183,8 @@ export class PluginHostRPC {
                                 pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
-                                rawModel
+                                rawModel,
+                                isUnderDevelopment: !!plg.isUnderDevelopment
                             };
 
                             self.initContext(backendInitPath, plugin);
