@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, interfaces, decorate, unmanaged } from 'inversify';
-import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from '../../common';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { io, Socket } from 'socket.io-client';
+import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 decorate(injectable(), JsonRpcProxyFactory);
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
@@ -35,6 +35,8 @@ export interface WebSocketOptions {
 export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebSocketOptions> {
 
     protected readonly onSocketDidOpenEmitter: Emitter<void> = new Emitter();
+    // Socket that is used by the main channel
+    protected socket: Socket;
     get onSocketDidOpen(): Event<void> {
         return this.onSocketDidOpenEmitter.event;
     }
@@ -48,31 +50,39 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 
-    protected readonly socket: Socket;
-
-    constructor() {
-        super();
+    protected createMainChannel(): Channel {
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
+        const channel = new WebSocketChannel(this.toIWebSocket(socket));
         socket.on('connect', () => {
             this.fireSocketDidOpen();
         });
-        socket.on('disconnect', reason => {
-            for (const channel of [...this.channels.values()]) {
-                channel.close(undefined, reason);
-            }
-            this.fireSocketDidClose();
-        });
-        socket.on('message', data => {
-            this.handleIncomingRawMessage(data);
-        });
+        channel.onClose(() => this.fireSocketDidClose());
         socket.connect();
         this.socket = socket;
+
+        return channel;
     }
 
-    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
+    protected toIWebSocket(socket: Socket): IWebSocket {
+        return {
+            close: () => {
+                socket.removeAllListeners('disconnect');
+                socket.removeAllListeners('error');
+                socket.removeAllListeners('message');
+                socket.close();
+            },
+            isConnected: () => socket.connected,
+            onClose: cb => socket.on('disconnect', reason => cb(reason)),
+            onError: cb => socket.on('error', reason => cb(reason)),
+            onMessage: cb => socket.on('message', data => cb(data)),
+            send: message => socket.emit('message', message)
+        };
+    }
+
+    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
         if (this.socket.connected) {
-            super.openChannel(path, handler, options);
+            return super.openChannel(path, handler, options);
         } else {
             const openChannel = () => {
                 this.socket.off('connect', openChannel);
@@ -80,14 +90,6 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             };
             this.socket.on('connect', openChannel);
         }
-    }
-
-    protected createChannel(id: number): WebSocketChannel {
-        return new WebSocketChannel(id, content => {
-            if (this.socket.connected) {
-                this.socket.send(content);
-            }
-        });
     }
 
     /**
@@ -143,3 +145,4 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         this.onSocketDidCloseEmitter.fire(undefined);
     }
 }
+

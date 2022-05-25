@@ -17,7 +17,7 @@
 import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-session';
 import * as theia from '@theia/plugin';
 import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
-import { Channel } from '@theia/debug/lib/common/debug-service';
+import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
