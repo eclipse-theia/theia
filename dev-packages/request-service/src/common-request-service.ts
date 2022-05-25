@@ -14,8 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { CancellationToken } from 'vscode-languageserver-protocol';
-
 const textDecoder = typeof TextDecoder !== 'undefined' ? new TextDecoder() : undefined;
 
 export interface Headers {
@@ -118,3 +116,8 @@ export interface RequestService {
 export const RequestService = Symbol('RequestService');
 export const BackendRequestService = Symbol('BackendRequestService');
 export const REQUEST_SERVICE_PATH = '/services/request-service';
+
+export interface CancellationToken {
+    readonly isCancellationRequested: boolean;
+    readonly onCancellationRequested: (listener: () => void) => void;
+}

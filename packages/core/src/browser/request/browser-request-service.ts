@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { CancellationToken } from 'vscode-languageserver-protocol';
-import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService } from '@theia/request-service';
+import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request-service';
 import { PreferenceService } from '../preferences/preference-service';
 
 @injectable()
@@ -88,7 +87,7 @@ export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
         return super.configure(config);
     }
 
-    override async request(options: RequestOptions, token = CancellationToken.None): Promise<RequestContext> {
+    override async request(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
         try {
             const xhrResult = await this.xhrRequest(options, token);
             const statusCode = xhrResult.res.statusCode ?? 200;
@@ -103,7 +102,7 @@ export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
         }
     }
 
-    protected xhrRequest(options: RequestOptions, token: CancellationToken): Promise<RequestContext> {
+    protected xhrRequest(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
         const authorization = this.authorization || options.proxyAuthorization;
         if (authorization) {
             options.headers = {
@@ -138,8 +137,7 @@ export class XHRBrowserRequestService extends ProxyingBrowserRequestService {
 
             xhr.send(options.data);
 
-            // cancel
-            token.onCancellationRequested(() => {
+            token?.onCancellationRequested(() => {
                 xhr.abort();
                 reject();
             });

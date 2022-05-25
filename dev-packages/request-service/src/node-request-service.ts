@@ -17,8 +17,7 @@
 import * as http from 'http';
 import * as https from 'https';
 import { getProxyAgent, ProxyAgent } from './proxy';
-import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService } from './common-request-service';
-import { CancellationToken } from 'vscode-languageserver-protocol';
+import { Headers, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from './common-request-service';
 
 export interface RawRequestFunction {
     (options: http.RequestOptions, callback?: (res: http.IncomingMessage) => void): http.ClientRequest;
@@ -78,7 +77,7 @@ export class NodeRequestService implements RequestService {
         return options;
     }
 
-    request(options: NodeRequestOptions, token = CancellationToken.None): Promise<RequestContext> {
+    request(options: NodeRequestOptions, token?: CancellationToken): Promise<RequestContext> {
         return new Promise(async (resolve, reject) => {
             options = await this.processOptions(options);
 
@@ -145,7 +144,7 @@ export class NodeRequestService implements RequestService {
 
             req.end();
 
-            token.onCancellationRequested(() => {
+            token?.onCancellationRequested(() => {
                 req.abort();
                 reject();
             });

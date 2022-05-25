@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "http-proxy-agent": "^5.0.0",
-    "https-proxy-agent": "^5.0.0",
-    "vscode-languageserver-protocol": "~3.15.3"
+    "https-proxy-agent": "^5.0.0"
   }
 }

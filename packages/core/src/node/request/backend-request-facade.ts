@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { CancellationToken } from 'vscode-languageserver-protocol';
 import { RequestConfiguration, RequestContext, RequestOptions, RequestService } from '@theia/request-service';
 
 @injectable()
@@ -28,8 +27,8 @@ export class BackendRequestFacade implements RequestService {
         return this.requestService.configure(config);
     }
 
-    async request(options: RequestOptions, token?: CancellationToken): Promise<RequestContext> {
-        const context = await this.requestService.request(options, token);
+    async request(options: RequestOptions): Promise<RequestContext> {
+        const context = await this.requestService.request(options);
         return RequestContext.compress(context);
     }
 
