@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - REQUEST SERVICE</h2>
+<h2>ECLIPSE THEIA - REQUEST</h2>
 
 <hr />
 
@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/request-service` package is used to send proxy-aware http requests to other services.
+The `@theia/request` package is used to send proxy-aware http requests to other services.
 
 ## Additional Information
 

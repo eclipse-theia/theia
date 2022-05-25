@@ -22,7 +22,7 @@
    This file can be removed once we have real unit
    tests in place. */
 
-describe('request-service package', () => {
+describe('request package', () => {
 
     it('should support code coverage statistics', () => true);
 });

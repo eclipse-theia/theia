@@ -143,7 +143,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         await downloader(pluginsToDownload);
 
         const handleDependencyList = async (dependencies: Array<string | string[]>) => {
-            const client = new OVSXClient({ apiVersion, apiUrl });
+            const client = new OVSXClient({ apiVersion, apiUrl }, requestService);
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(dependencies.flat());
             await parallelOrSequence(...Array.from(ids, id => async () => {

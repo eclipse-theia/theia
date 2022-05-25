@@ -19,13 +19,13 @@ import * as path from 'path';
 import * as semver from 'semver';
 import * as fs from '@theia/core/shared/fs-extra';
 import { v4 as uuidv4 } from 'uuid';
-import * as requestretry from 'requestretry';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
+import { RequestService } from '@theia/core/shared/@theia/request';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
@@ -35,6 +35,9 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
 
     @inject(PluginDeployerHandler)
     protected pluginDeployerHandler: PluginDeployerHandler;
+
+    @inject(RequestService)
+    protected requestService: RequestService;
 
     protected readonly downloadPath: string;
 
@@ -95,23 +98,14 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     }
 
     protected async download(downloadUrl: string, downloadPath: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            requestretry(downloadUrl, {
-                method: 'GET',
-                maxAttempts: 5,
-                retryDelay: 2000,
-                retryStrategy: requestretry.RetryStrategies.HTTPOrNetworkError
-            }, (err, response) => {
-                if (err) {
-                    reject(err);
-                } else if (response && response.statusCode === 404) {
-                    resolve(false);
-                } else if (response && response.statusCode !== 200) {
-                    reject(new Error(response.statusMessage));
-                }
-            }).pipe(fs.createWriteStream(downloadPath))
-                .on('error', reject)
-                .on('close', () => resolve(true));
-        });
+        const context = await this.requestService.request({ url: downloadUrl });
+        if (context.res.statusCode === 404) {
+            return false;
+        } else if (context.res.statusCode !== 200) {
+            throw new Error('Request returned status code: ' + context.res.statusCode);
+        } else {
+            await fs.writeFile(downloadPath, context.buffer);
+            return true;
+        }
     }
 }
