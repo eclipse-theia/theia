@@ -71,7 +71,7 @@ export class EditorWidgetFactory implements WidgetFactory {
     }
 
     private setLabels(editor: EditorWidget, uri: URI): void {
-        editor.title.caption = uri.path.toString();
+        editor.title.caption = uri.path.fsPath();
         const icon = this.labelProvider.getIcon(uri);
         editor.title.label = this.labelProvider.getName(uri);
         editor.title.iconClass = icon + ' file-icon';

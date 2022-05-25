@@ -80,7 +80,7 @@ export class QuickEditorService implements QuickAccessContribution, QuickAccessP
             label: this.labelProvider.getName(uri),
             description: description,
             iconClasses,
-            ariaLabel: uri.path.toString(),
+            ariaLabel: uri.path.fsPath(),
             alwaysShow: true,
             execute: () => this.openFile(uri)
         };

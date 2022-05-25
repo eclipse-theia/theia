@@ -187,7 +187,7 @@ export class LocationListRenderer extends ReactRenderer {
     protected renderTextInput(): React.ReactNode {
         return (
             <input className={'theia-select ' + LocationListRenderer.Styles.LOCATION_TEXT_INPUT_CLASS}
-                defaultValue={this.service.location?.path.toString()}
+                defaultValue={this.service.location?.path.fsPath()}
                 onBlur={this.handleTextInputOnBlur}
                 onChange={this.handleTextInputOnChange}
                 onKeyDown={this.handleTextInputKeyDown}
@@ -278,7 +278,7 @@ export class LocationListRenderer extends ReactRenderer {
     protected renderLocation(location: LocationListRenderer.Location): React.ReactNode {
         const { uri, isDrive } = location;
         const value = uri.toString();
-        return <option value={value} key={uri.toString()}>{isDrive ? uri.path.toString() : uri.displayName}</option>;
+        return <option value={value} key={uri.toString()}>{isDrive ? uri.path.fsPath() : uri.displayName}</option>;
     }
 
     protected onLocationChanged(e: React.ChangeEvent<HTMLSelectElement>): void {

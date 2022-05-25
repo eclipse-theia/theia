@@ -226,7 +226,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         } else {
             const items: QuickPickItem[] = roots.map(root => ({
                 label: root.name,
-                description: root.resource.path.toString(),
+                description: root.resource.path.fsPath(),
                 execute: () => callback(root)
             }));
             this.quickInputService?.showQuickPick(items, { placeholder: 'Select workspace folder' });

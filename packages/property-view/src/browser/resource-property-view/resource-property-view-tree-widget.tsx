@@ -116,7 +116,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
     }
 
     protected getLocationString(fileStat: FileStat): string {
-        return fileStat.resource.path.toString();
+        return fileStat.resource.path.fsPath();
     }
 
     protected getFileName(fileStat: FileStat): string {

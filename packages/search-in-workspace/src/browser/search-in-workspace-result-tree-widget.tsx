@@ -470,7 +470,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
         let path: string;
         if (result.root === this.defaultRootName) {
-            path = new URI(result.fileUri).path.dir.toString();
+            path = new URI(result.fileUri).path.dir.fsPath();
         } else {
             path = this.filenameAndPath(result.root, result.fileUri).path;
         }
@@ -662,7 +662,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const uri = new URI(rootUri);
         return {
             selected: false,
-            path: uri.path.toString(),
+            path: uri.path.fsPath(),
             folderUri: rootUri,
             uri: new URI(rootUri),
             children: [],
@@ -718,7 +718,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const relativePath = new URI(rootUriStr).relative(uri.parent);
         return {
             name: this.labelProvider.getName(uri),
-            path: relativePath ? relativePath.toString() : ''
+            path: relativePath ? relativePath.fsPath() : ''
         };
     }
 
@@ -980,7 +980,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
-                    title={new URI(node.fileUri).path.toString()}>
+                    title={new URI(node.fileUri).path.fsPath()}>
                     <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>

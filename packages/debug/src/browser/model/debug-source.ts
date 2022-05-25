@@ -63,7 +63,7 @@ export class DebugSource extends DebugSourceData {
 
     get name(): string {
         if (this.inMemory) {
-            return this.raw.name || this.uri.path.base || this.uri.path.toString();
+            return this.raw.name || this.uri.path.base || this.uri.path.fsPath();
         }
         return this.labelProvider.getName(this.uri);
     }

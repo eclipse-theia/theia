@@ -109,10 +109,10 @@ export class ProblemDecorator implements TreeDecorator {
         if (parentWorkspace) {
             const relativeDirFromWorkspace = parentWorkspace.relative(nodeURIDir);
             workspacePrefixString = workspaceRoots.length > 1 ? this.labelProvider.getName(parentWorkspace) : '';
-            filePathString = relativeDirFromWorkspace?.toString() ?? '';
+            filePathString = relativeDirFromWorkspace?.fsPath() ?? '';
             separator = filePathString && workspacePrefixString ? ' \u2022 ' : ''; // add a bullet point between workspace and path
         } else {
-            workspacePrefixString = nodeURIDir.path.toString();
+            workspacePrefixString = nodeURIDir.path.fsPath();
         }
         return `${workspacePrefixString}${separator}${filePathString}`;
     }

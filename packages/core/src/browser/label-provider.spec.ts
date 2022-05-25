@@ -17,6 +17,7 @@
 import { expect } from 'chai';
 import { DefaultUriLabelProviderContribution, URIIconReference } from './label-provider';
 import URI from '../common/uri';
+import { OS } from '../common/os';
 
 describe('DefaultUriLabelProviderContribution', function (): void {
 
@@ -31,7 +32,11 @@ describe('DefaultUriLabelProviderContribution', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
         const longName = prov.getLongName(new URI('file:///tmp/hello/you.txt'));
 
-        expect(longName).eq('/tmp/hello/you.txt');
+        if (OS.backend.isWindows) {
+            expect(longName).eq('\\tmp\\hello\\you.txt');
+        } else {
+            expect(longName).eq('/tmp/hello/you.txt');
+        }
     });
 
     it('should return icon class for something that seems to be a file', function (): void {
