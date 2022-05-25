@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2022 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,25 +13,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
-
-import { Logger } from 'vscode-ws-jsonrpc';
-
-export class ConsoleLogger implements Logger {
-
-    error(message: string): void {
-        console.log(message);
-    }
-
-    warn(message: string): void {
-        console.log(message);
-    }
-
-    info(message: string): void {
-        console.log(message);
-    }
-
-    log(message: string): void {
-        console.log(message);
-    }
-
-}
+export { RequestHandler, RpcProtocol, RpcProtocolOptions } from './rpc-protocol';
+export { Channel, ChannelCloseEvent, MessageProvider } from './channel';
+export { ReadBuffer, WriteBuffer } from './message-buffer';

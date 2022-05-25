@@ -68,7 +68,6 @@
     "uuid": "^8.3.2",
     "vscode-languageserver-protocol": "~3.15.3",
     "vscode-uri": "^2.1.1",
-    "vscode-ws-jsonrpc": "^0.2.0",
     "ws": "^7.1.2",
     "yargs": "^15.3.1"
   },
@@ -108,8 +107,7 @@
         "react-dom",
         "react-virtualized",
         "vscode-languageserver-protocol",
-        "vscode-uri",
-        "vscode-ws-jsonrpc"
+        "vscode-uri"
       ],
       "export =": [
         "dompurify as DOMPurify",

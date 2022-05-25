@@ -17,7 +17,7 @@
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, RpcProtocol, RequestHandler } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode, codicon } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -26,7 +26,6 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
-import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
@@ -58,7 +57,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForConnection: Deferred<MessageConnection> | undefined;
+    protected waitForConnection: Deferred<RpcProtocol> | undefined;
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
     protected isAttachedCloseListener: boolean = false;
@@ -507,16 +506,23 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
+        const waitForConnection = this.waitForConnection = new Deferred<RpcProtocol>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.write(data));
+                const requestHandler: RequestHandler = _method => this.logger.warn('Received an unhandled RPC request from the terminal process');
+
+                const rpc = new RpcProtocol(connection, requestHandler);
+                rpc.onNotification(event => {
+                    if (event.method === 'onData') {
+                        this.write(event.args[0]);
+                    }
+                });
 
                 // Excludes the device status code emitted by Xterm.js
                 const sendData = (data?: string) => {
                     if (data && !this.deviceStatusCodes.has(data) && !this.disableEnterWhenAttachCloseListener()) {
-                        return connection.sendRequest('write', data);
+                        return rpc.sendRequest('write', [data]);
                     }
                 };
 
@@ -524,12 +530,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 disposable.push(this.term.onData(sendData));
                 disposable.push(this.term.onBinary(sendData));
 
-                connection.onDispose(() => disposable.dispose());
+                connection.onClose(() => disposable.dispose());
 
-                this.toDisposeOnConnect.push(connection);
-                connection.listen();
                 if (waitForConnection) {
-                    waitForConnection.resolve(connection);
+                    waitForConnection.resolve(rpc);
                 }
             }
         }, { reconnecting: false });
@@ -579,7 +583,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     sendText(text: string): void {
         if (this.waitForConnection) {
             this.waitForConnection.promise.then(connection =>
-                connection.sendRequest('write', text)
+                connection.sendRequest('write', [text])
             );
         }
     }
