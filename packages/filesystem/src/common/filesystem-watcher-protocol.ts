@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
+import { JsonRpcServer } from '@theia/core';
 import { FileChangeType } from './files';
 export { FileChangeType };
 
@@ -94,69 +93,4 @@ export interface WatchOptions {
 export interface FileChange {
     uri: string;
     type: FileChangeType;
-}
-
-export const FileSystemWatcherServerProxy = Symbol('FileSystemWatcherServerProxy');
-export type FileSystemWatcherServerProxy = JsonRpcProxy<FileSystemWatcherServer>;
-
-/**
- * @deprecated not used internally anymore.
- */
-@injectable()
-export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherServer {
-
-    protected watcherSequence = 1;
-    protected readonly watchParams = new Map<number, {
-        uri: string;
-        options?: WatchOptions
-    }>();
-    protected readonly localToRemoteWatcher = new Map<number, number>();
-
-    constructor(
-        @inject(FileSystemWatcherServerProxy) protected readonly proxy: FileSystemWatcherServerProxy
-    ) {
-        const onInitialized = this.proxy.onDidOpenConnection(() => {
-            // skip reconnection on the first connection
-            onInitialized.dispose();
-            this.proxy.onDidOpenConnection(() => this.reconnect());
-        });
-    }
-
-    protected reconnect(): void {
-        for (const [watcher, { uri, options }] of this.watchParams.entries()) {
-            this.doWatchFileChanges(watcher, uri, options);
-        }
-    }
-
-    dispose(): void {
-        this.proxy.dispose();
-    }
-
-    watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
-        const watcher = this.watcherSequence++;
-        this.watchParams.set(watcher, { uri, options });
-        return this.doWatchFileChanges(watcher, uri, options);
-    }
-
-    protected doWatchFileChanges(watcher: number, uri: string, options?: WatchOptions): Promise<number> {
-        return this.proxy.watchFileChanges(uri, options).then(remote => {
-            this.localToRemoteWatcher.set(watcher, remote);
-            return watcher;
-        });
-    }
-
-    unwatchFileChanges(watcher: number): Promise<void> {
-        this.watchParams.delete(watcher);
-        const remote = this.localToRemoteWatcher.get(watcher);
-        if (remote) {
-            this.localToRemoteWatcher.delete(watcher);
-            return this.proxy.unwatchFileChanges(remote);
-        }
-        return Promise.resolve();
-    }
-
-    setClient(client: FileSystemWatcherClient | undefined): void {
-        this.proxy.setClient(client);
-    }
-
 }
