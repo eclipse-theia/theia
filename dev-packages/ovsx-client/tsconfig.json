@@ -10,7 +10,7 @@
   ],
   "references": [
     {
-      "path": "../request-service"
+      "path": "../request"
     }
   ]
 }

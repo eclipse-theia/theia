@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { RequestConfiguration, RequestContext, RequestOptions, RequestService } from '@theia/request-service';
+import { RequestConfiguration, RequestContext, RequestOptions, RequestService } from '@theia/request';
 
 @injectable()
 export class BackendRequestFacade implements RequestService {

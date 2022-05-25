@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { decorate, injectable } from 'inversify';
-import { NodeRequestService } from '@theia/request-service/lib/node-request-service';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 
 decorate(injectable(), NodeRequestService);
 

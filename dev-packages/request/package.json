@@ -1,5 +1,5 @@
 {
-  "name": "@theia/request-service",
+  "name": "@theia/request",
   "version": "1.25.0",
   "description": "Theia Proxy-Aware Request Service",
   "publishConfig": {

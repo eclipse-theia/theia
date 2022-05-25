@@ -25,7 +25,7 @@ import {
     VSXSearchParam,
     VSXSearchResult
 } from './ovsx-types';
-import { RequestContext, RequestService } from '@theia/request-service';
+import { RequestContext, RequestService } from '@theia/request';
 
 export interface OVSXClientOptions {
     apiVersion: string

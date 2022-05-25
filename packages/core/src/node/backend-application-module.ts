@@ -16,7 +16,7 @@
 
 import { ContainerModule, decorate, injectable } from 'inversify';
 import { ApplicationPackage } from '@theia/application-package';
-import { REQUEST_SERVICE_PATH } from '@theia/request-service';
+import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath

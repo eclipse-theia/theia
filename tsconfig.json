@@ -31,7 +31,7 @@
       "path": "dev-packages/private-re-exports"
     },
     {
-      "path": "dev-packages/request-service"
+      "path": "dev-packages/request"
     },
     {
       "path": "examples/api-samples"

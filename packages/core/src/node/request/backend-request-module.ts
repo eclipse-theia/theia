@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { ContainerModule, decorate, injectable } from 'inversify';
-import { RequestService } from '@theia/request-service';
-import { NodeRequestService } from '@theia/request-service/lib/node-request-service';
+import { RequestService } from '@theia/request';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 
 decorate(injectable(), NodeRequestService);
 

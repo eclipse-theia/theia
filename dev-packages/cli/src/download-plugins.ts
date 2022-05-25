@@ -29,9 +29,9 @@ import * as decompress from 'decompress';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as temp from 'temp';
-import { NodeRequestService } from '@theia/request-service/lib/node-request-service';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
-import { RequestContext } from '@theia/request-service';
+import { RequestContext } from '@theia/request';
 
 temp.track();
 

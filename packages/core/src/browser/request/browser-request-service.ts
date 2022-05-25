@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request-service';
+import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request';
 import { PreferenceService } from '../preferences/preference-service';
 
 @injectable()

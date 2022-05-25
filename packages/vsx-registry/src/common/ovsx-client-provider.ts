@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { RequestService } from '@theia/core/shared/@theia/request-service';
+import { RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXClient } from '@theia/ovsx-client';
 import { VSXEnvironment } from './vsx-environment';
 

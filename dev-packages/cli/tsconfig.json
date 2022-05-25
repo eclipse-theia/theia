@@ -25,7 +25,7 @@
       "path": "../ovsx-client"
     },
     {
-      "path": "../request-service"
+      "path": "../request"
     }
   ]
 }

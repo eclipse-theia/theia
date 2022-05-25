@@ -20,7 +20,7 @@ import { FrontendApplicationContribution } from './frontend-application';
 import { MaybePromise } from '../common';
 import { Endpoint } from './endpoint';
 import { timeout, Deferred } from '../common/promise-util';
-import { RequestContext, RequestService } from '@theia/request-service';
+import { RequestContext, RequestService } from '@theia/request';
 
 export interface JsonSchemaConfiguration {
     fileMatch: string | string[];
@@ -124,4 +124,3 @@ export namespace DefaultJsonSchemaContribution {
         schema: any;
     }
 }
-

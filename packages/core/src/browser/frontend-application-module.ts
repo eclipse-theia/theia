@@ -119,7 +119,7 @@ import {
 } from './breadcrumbs';
 import { RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
-import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request-service';
+import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';

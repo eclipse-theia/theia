@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { RequestService } from '@theia/request-service';
+import { RequestService } from '@theia/request';
 import { XHRBrowserRequestService } from './browser-request-service';
 
 export default new ContainerModule(bind => {

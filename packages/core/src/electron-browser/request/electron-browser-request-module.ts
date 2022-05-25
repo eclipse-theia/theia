@@ -16,7 +16,7 @@
 
 import { ContainerModule } from 'inversify';
 import { ProxyingBrowserRequestService } from '../../browser/request/browser-request-service';
-import { RequestService } from '@theia/request-service';
+import { RequestService } from '@theia/request';
 
 export default new ContainerModule(bind => {
     // This version of the request service will always proxy every request through the backend.
