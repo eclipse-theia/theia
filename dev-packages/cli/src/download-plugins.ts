@@ -100,17 +100,21 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     // Excluded extension ids.
     const excludedIds = new Set<string>(pck.theiaPluginsExcludeIds || []);
 
+    const parallelOrSequence = async (...tasks: Array<() => unknown>) => {
+        if (parallel) {
+            await Promise.all(tasks.map(task => task()));
+        } else {
+            for (const task of tasks) {
+                await task();
+            }
+        }
+    };
+
     // Downloader wrapper
     const downloadPlugin = (plugin: PluginDownload): Promise<void> => downloadPluginAsync(failures, plugin.id, plugin.downloadUrl, pluginsDir, packed, plugin.version);
 
     const downloader = async (plugins: PluginDownload[]) => {
-        if (parallel) {
-            await Promise.all(plugins.map(downloadPlugin));
-        } else {
-            for (const plugin of plugins) {
-                await downloadPlugin(plugin);
-            }
-        }
+        await parallelOrSequence(...plugins.map(plugin => () => downloadPlugin(plugin)));
     };
 
     await fs.mkdir(pluginsDir, { recursive: true });
@@ -125,49 +129,37 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         // This will include both "normal" plugins as well as "extension packs".
         const pluginsToDownload = Object.entries(pck.theiaPlugins)
             .filter((entry: [string, unknown]): entry is [string, string] => typeof entry[1] === 'string')
-            .map(([pluginId, url]: [string, string]) => <PluginDownload>{ id: pluginId, downloadUrl: url });
+            .map(([pluginId, url]) => ({ id: pluginId, downloadUrl: url }));
         await downloader(pluginsToDownload);
+
+        const handleDependencyList = async (dependencies: Array<string | string[]>) => {
+            const client = new OVSXClient({ apiVersion, apiUrl });
+            // De-duplicate extension ids to only download each once:
+            const ids = new Set<string>(dependencies.flat());
+            await parallelOrSequence(...Array.from(ids, id => async () => {
+                const extension = await client.getLatestCompatibleExtensionVersion(id);
+                const version = extension?.version;
+                const downloadUrl = extension?.files.download;
+                if (downloadUrl) {
+                    await downloadPlugin({ id, downloadUrl, version });
+                } else {
+                    failures.push(`No download url for extension pack ${id} (${version})`);
+                }
+            }));
+        };
 
         console.warn('--- collecting extension-packs ---');
         const extensionPacks = await collectExtensionPacks(pluginsDir, excludedIds);
         if (extensionPacks.size > 0) {
             console.warn(`--- resolving ${extensionPacks.size} extension-packs ---`);
-            const client = new OVSXClient({ apiVersion, apiUrl });
-            // De-duplicate extension ids to only download each once:
-            const ids = new Set<string>(Array.from(extensionPacks.values()).flat());
-            const extensionPacksToDownload: PluginDownload[] = [];
-            for (const id of ids) {
-                const extension = await client.getLatestCompatibleExtensionVersion(id);
-                const version = extension?.version;
-                const downloadUrl = extension?.files.download;
-                if (downloadUrl) {
-                    extensionPacksToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
-                } else {
-                    failures.push(`No download url for extension pack ${id} (${version})`);
-                }
-            }
-            await downloader(extensionPacksToDownload);
+            await handleDependencyList(Array.from(extensionPacks.values()));
         }
 
         console.warn('--- collecting extension dependencies ---');
         const pluginDependencies = await collectPluginDependencies(pluginsDir, excludedIds);
         if (pluginDependencies.length > 0) {
             console.warn(`--- resolving ${pluginDependencies.length} extension dependencies ---`);
-            const client = new OVSXClient({ apiVersion, apiUrl });
-            // De-duplicate extension ids to only download each once:
-            const ids = new Set<string>(pluginDependencies);
-            const extensionDependenciesToDownload: PluginDownload[] = [];
-            for (const id of ids) {
-                const extension = await client.getLatestCompatibleExtensionVersion(id);
-                const version = extension?.version;
-                const downloadUrl = extension?.files.download;
-                if (downloadUrl) {
-                    extensionDependenciesToDownload.push({ id: id, downloadUrl: downloadUrl, version: version });
-                } else {
-                    failures.push(`No download url for extension dependency ${id} (${version})`);
-                }
-            }
-            await downloader(extensionDependenciesToDownload);
+            await handleDependencyList(pluginDependencies);
         }
 
     } finally {
@@ -321,7 +313,7 @@ async function collectExtensionPacks(pluginDir: string, excludedIds: Set<string>
         if (Array.isArray(extensionPack)) {
             extensionPackPaths.set(packageJsonPath, extensionPack.filter(id => {
                 if (excludedIds.has(id)) {
-                    console.log(chalk.yellow(`'${id}' referenced by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${id}' referred to by '${json.name}' (ext pack) is excluded because of 'theiaPluginsExcludeIds'`));
                     return false; // remove
                 }
                 return true; // keep
@@ -347,7 +339,7 @@ async function collectPluginDependencies(pluginDir: string, excludedIds: Set<str
         if (Array.isArray(extensionDependencies)) {
             for (const dependency of extensionDependencies) {
                 if (excludedIds.has(dependency)) {
-                    console.log(chalk.yellow(`'${dependency}' referenced by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
+                    console.log(chalk.yellow(`'${dependency}' referred to by '${json.name}' is excluded because of 'theiaPluginsExcludeIds'`));
                 } else {
                     dependencyIds.push(dependency);
                 }
