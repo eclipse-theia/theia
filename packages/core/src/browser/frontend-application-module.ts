@@ -30,7 +30,8 @@ import {
     MessageClient,
     InMemoryResources,
     messageServicePath,
-    InMemoryTextResourceResolver
+    InMemoryTextResourceResolver,
+    UntitledResourceResolver
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
@@ -222,6 +223,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(InMemoryTextResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(InMemoryTextResourceResolver);
+
+    bind(UntitledResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(UntitledResourceResolver);
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope().onActivation(({ container }, registry) => {
