@@ -225,7 +225,7 @@ async function runElectronRebuild(modules: string[], forceAbi: NodeABI | undefin
             if (signal) {
                 reject(new Error(`electron-rebuild exited with "${signal}"`));
             } else {
-                resolve(code);
+                resolve(code!);
             }
         });
     });

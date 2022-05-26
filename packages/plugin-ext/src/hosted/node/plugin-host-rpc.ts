@@ -114,7 +114,7 @@ export class PluginHostRPC {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 // cleaning the cache for all files of that plug-in.
                 Object.keys(require.cache).forEach(function (key): void {
-                    const mod: NodeJS.Module = require.cache[key];
+                    const mod: NodeJS.Module = require.cache[key]!;
 
                     // attempting to reload a native module will throw an error, so skip them
                     if (mod.id.endsWith('.node')) {
