@@ -4,21 +4,47 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## v1.26.0 - 5/26/2022
 
-## v.1.26.0
-
-- [plugin] Introduce `DebugSession#workspaceFolder` [#11090](https://github.com/eclipse-theia/theia/pull/11090) - Contributed on behalf of STMicroelectronics
-- [console] fixed issue in Debug console where console history was not being trimmed in accordance with the maximum commands limit [#10598](https://github.com/eclipse-theia/theia/pull/10598)
-- [plugin] added support for `ExtensionMode` [#10201](https://github.com/eclipse-theia/theia/pull/10201) - Contributed on behalf of STMicroelectronics
+- [application-package] introduce application config prop `validatePreferencesSchema` to control whether to validate preferences on start [#11189](https://github.com/eclipse-theia/theia/pull/11189)
+- [cli] added ability to perform the download of plugins sequentially [#11112](https://github.com/eclipse-theia/theia/pull/11112)
+- [cli] updated the `download:plugins` script to respect proxy settings [#11043](https://github.com/eclipse-theia/theia/pull/11043)
+- [console] fixed issue where the maximum debug console history was not respected [#10598](https://github.com/eclipse-theia/theia/pull/10598)
+- [core] added `TheiaDockPanel` factory binding for extensibility [#11154](https://github.com/eclipse-theia/theia/pull/11154)
+- [core] added support for traversing editor history through mouse buttons [#11163](https://github.com/eclipse-theia/theia/pull/11163)
+- [core] added support to respect the `visible` option for `menuBarVisibility` when in fullscreen [#11119](https://github.com/eclipse-theia/theia/pull/11119)
+- [core] added timestamps to console logs [#11150](https://github.com/eclipse-theia/theia/pull/11150)
+- [core] fixed filesystem path display for Windows [#11180](https://github.com/eclipse-theia/theia/pull/11180)
+- [core] fixed statusbar `onclick` handling [#11117](https://github.com/eclipse-theia/theia/pull/11117)
+- [core] fixed the display of keybindings for macOS in the browser [#11092](https://github.com/eclipse-theia/theia/pull/11092)
+- [core] updated Chinese localization translations [#11182](https://github.com/eclipse-theia/theia/pull/11182)
+- [core] updated `UntitledResourceResolver` binding so it is available outside the plugin system [#11195](https://github.com/eclipse-theia/theia/pull/11195)
+- [core] updated handling of `ApplicationError` to not re-register the same codes [#11160](https://github.com/eclipse-theia/theia/pull/11160)
+- [core] updated styling of buttons when focused [#11192](https://github.com/eclipse-theia/theia/pull/11192)
+- [core] updated tree styling to respect decorations during selection [#11118](https://github.com/eclipse-theia/theia/pull/11118)
+- [debug] added handling to resolve command variables contributed by debuggers [#11170](https://github.com/eclipse-theia/theia/pull/11170)
+- [documentation] updated instructions for building on Windows [#11165](https://github.com/eclipse-theia/theia/pull/11165)
+- [filesystem] un-deprecated permission flags [#9269](https://github.com/eclipse-theia/theia/pull/9269)
+- [keymaps] added handling to properly update the keybinding widget on keybindings change [#11102](https://github.com/eclipse-theia/theia/pull/11102)
+- [monaco] added handling to ensure monaco keybindings are updated on keybindings change [#11101](https://github.com/eclipse-theia/theia/pull/11101)
+- [monaco] fixed `onHide` callback in `MonacoContextMenuService` [#11152](https://github.com/eclipse-theia/theia/pull/11152)
+- [monaco] fixed an issue where `when` and custom context keys were ignored by monaco [#11095](https://github.com/eclipse-theia/theia/pull/11095)
+- [playwright] improved getting started documentation [#11094](https://github.com/eclipse-theia/theia/pull/11094)
+- [plugin] added support for the `DebugSession#workspaceFolder` VS Code API [#11090](https://github.com/eclipse-theia/theia/pull/11090) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `ExtensionMode` VS Code API [#10201](https://github.com/eclipse-theia/theia/pull/10201) - Contributed on behalf of STMicroelectronics
+- [plugin] added support for the `LinkedEditingRanges` VS Code API [#11137](https://github.com/eclipse-theia/theia/pull/11137)
+- [plugin] added support for the `Terminal#exitStatus` VS Code API [#11175](https://github.com/eclipse-theia/theia/pull/11175)
+- [plugin] fixed document path for callhierarchy [#11178](https://github.com/eclipse-theia/theia/pull/11178)
+- [repo] updated imports to avoid circular errors [#11142](https://github.com/eclipse-theia/theia/pull/11142)
+- [request] introduced `@theia/request` package to send proxy-aware http requests to other services [#11043](https://github.com/eclipse-theia/theia/pull/11043)
+- [task] fixed problem matchers when `kind` is a file [#11190](https://github.com/eclipse-theia/theia/pull/11190)
+- [workspace] added support to open multi-root workspaces from the cli [#11034](https://github.com/eclipse-theia/theia/pull/11034)
 
 <a name="breaking_changes_1.26.0">[Breaking Changes:](#breaking_changes_1.26.0)</a>
 
-- [callhierarchy] `paths.ts` and `glob.ts` moved to `core/src/common`; `language-selector.ts` moved to `editor/src/common`. Any imports will need to be updated.
+- [callhierarchy] `paths.ts` and `glob.ts` moved to `core/src/common`; `language-selector.ts` moved to `editor/src/common`. Any imports will need to be updated [#11083](https://github.com/eclipse-theia/theia/pull/11083)
 - [electron] removed redundant config option `disallowReloadKeybinding` from `dev-packages/application-package/src/application-props.ts` file and corresponding test [#11099](https://github.com/eclipse-theia/theia/pull/11099)
-
-<a name="breaking_changes_1.26.0">[Breaking Changes:](#breaking_changes_1.26.0)</a>
-
-- [filesystem] Remove deprecated APIs:
+- [filesystem] remove deprecated APIs [#11176](https://github.com/eclipse-theia/theia/pull/1176):
   - Deleted `@theia/filesystem/lib/browser/filesystem-watcher`:
     - `FileChangeType`, `FileChange`, `FileChangeEvent`, `FileMoveEvent`, `FileEvent`, `FileOperationEmitter`, `FileSystemWatcher`
   - Deleted `@theia/filesystem/lib/node/node-file-upload`:
@@ -27,7 +53,7 @@
     - `WatcherOptions`, `NsfwFileSystemWatcherServer`
   - Removed from `@theia/filesystem/lib/common/filesystem`:
     - `FileSystem`, `FileMoveOptions`, `FileDeleteOptions`, `FileStat`, `FileSystemError`
-- [filesystem] Update `FileStatNodeData.fileStat` to use the non-deprecated `FileStat` from `@theia/core/lib/common/files`
+- [filesystem] updated `FileStatNodeData.fileStat` to use the non-deprecated `FileStat` from `@theia/core/lib/common/files` [#11176](https://github.com/eclipse-theia/theia/pull/1176)
 
 ## v1.25.0 - 4/28/2022
 
@@ -115,7 +141,7 @@
 - [core] added handling to ensure the active element is preserved when opening a context menu [#10852](https://github.com/eclipse-theia/theia/pull/10852)
 - [core] added handling to ensure the default icon theme is applied properly [#10938](https://github.com/eclipse-theia/theia/pull/10938)
 - [core] added support for pinned tabs [#10817](https://github.com/eclipse-theia/theia/pull/10817)
-- [core] fixed <kbd>cmd</kbd>+`click` check on macos [#10883](https://github.com/eclipse-theia/theia/pull/10883)
+- [core] fixed <kbd>cmd</kbd>+`click` check on macOS [#10883](https://github.com/eclipse-theia/theia/pull/10883)
 - [core] fixed `socket.io` endpoint path [#10858](https://github.com/eclipse-theia/theia/pull/10858)
 - [core] fixed an issue with editor preferences not being applied [#10965](https://github.com/eclipse-theia/theia/pull/10965)
 - [core] fixed compression if parent is also visible [#10872](https://github.com/eclipse-theia/theia/pull/10872)
@@ -141,7 +167,7 @@
 - [monaco] upgraded `monaco` dependency from `0.23` to ca. `0.33` (state as of VSCode 1.65.2) [#10736](https://github.com/eclipse-theia/theia/pull/10736)
 - [navigator] fixed `initiallyCollapsed` option for the `'Open Editors'` [#10930](https://github.com/eclipse-theia/theia/pull/10930)
 - [navigator] updated visibility of the `add folder` command [#10840](https://github.com/eclipse-theia/theia/pull/10840)
-- [playwright] fixed playwright tests for Windows and MacOS [#10826](https://github.com/eclipse-theia/theia/pull/10826) - Contributed on behalf of STMicroelectronics
+- [playwright] fixed playwright tests for Windows and macOS [#10826](https://github.com/eclipse-theia/theia/pull/10826) - Contributed on behalf of STMicroelectronics
 - [playwright] updated tests to use `THEIA_CONFIG_DIR` [#10925](https://github.com/eclipse-theia/theia/pull/10925)
 - [plugin] added `SourceFixAll` declaration [#10921](https://github.com/eclipse-theia/theia/pull/10921)
 - [plugin] added `allow` attributes in webviews [#10848](https://github.com/eclipse-theia/theia/pull/10848)
