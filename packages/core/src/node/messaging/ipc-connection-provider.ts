@@ -15,11 +15,10 @@
 // *****************************************************************************
 
 import * as cp from 'child_process';
-import { inject, injectable } from 'inversify';
 import * as path from 'path';
-import { createInterface } from 'readline';
-import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common';
-import { IPCChannel } from './ipc-channel';
+import { injectable, inject } from 'inversify';
+import { Trace, Tracer, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from 'vscode-ws-jsonrpc';
+import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '../../common';
 import { createIpcEnv } from './ipc-protocol';
 
 export interface ResolvedIPCConnectionOptions {
@@ -41,7 +40,7 @@ export class IPCConnectionProvider {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    listen(options: IPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {
+    listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         return this.doListen({
             logger: this.logger,
             args: [],
@@ -49,21 +48,19 @@ export class IPCConnectionProvider {
         }, acceptor);
     }
 
-    protected doListen(options: ResolvedIPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {
+    protected doListen(options: ResolvedIPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         const childProcess = this.fork(options);
-        const channel = new IPCChannel(childProcess);
+        const connection = this.createConnection(childProcess, options);
         const toStop = new DisposableCollection();
         const toCancelStop = toStop.push(Disposable.create(() => childProcess.kill()));
         const errorHandler = options.errorHandler;
         if (errorHandler) {
-            let errorCount = 0;
-            channel.onError((err: Error) => {
-                errorCount++;
-                if (errorHandler.shouldStop(err, errorCount)) {
+            connection.onError((e: [Error, Message | undefined, number | undefined]) => {
+                if (errorHandler.shouldStop(e[0], e[1], e[2])) {
                     toStop.dispose();
                 }
             });
-            channel.onClose(() => {
+            connection.onClose(() => {
                 if (toStop.disposed) {
                     return;
                 }
@@ -73,15 +70,36 @@ export class IPCConnectionProvider {
                 }
             });
         }
-        acceptor(channel);
+        acceptor(connection);
         return toStop;
+    }
+
+    protected createConnection(childProcess: cp.ChildProcess, options: ResolvedIPCConnectionOptions): MessageConnection {
+        const reader = new IPCMessageReader(childProcess);
+        const writer = new IPCMessageWriter(childProcess);
+        const connection = createMessageConnection(reader, writer, {
+            error: (message: string) => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${message}`),
+            warn: (message: string) => this.logger.warn(`[${options.serverName}: ${childProcess.pid}] ${message}`),
+            info: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`),
+            log: (message: string) => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${message}`)
+        });
+        const tracer: Tracer = {
+            log: (message: unknown, data?: string) => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] ${message}` + (typeof data === 'string' ? ' ' + data : ''))
+        };
+        connection.trace(Trace.Verbose, tracer);
+        this.logger.isDebug().then(isDebug => {
+            if (!isDebug) {
+                connection.trace(Trace.Off, tracer);
+            }
+        });
+        return connection;
     }
 
     protected fork(options: ResolvedIPCConnectionOptions): cp.ChildProcess {
         const forkOptions: cp.ForkOptions = {
+            silent: true,
             env: createIpcEnv(options),
-            execArgv: [],
-            stdio: ['pipe', 'pipe', 'pipe', 'ipc', 'pipe']
+            execArgv: []
         };
         const inspectArgPrefix = `--${options.serverName}-inspect`;
         const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
@@ -90,9 +108,8 @@ export class IPCConnectionProvider {
         }
 
         const childProcess = cp.fork(path.join(__dirname, 'ipc-bootstrap'), options.args, forkOptions);
-
-        createInterface(childProcess.stdout!).on('line', line => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${line}`));
-        createInterface(childProcess.stderr!).on('line', line => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${line}`));
+        childProcess.stdout!.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
+        childProcess.stderr!.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
         childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));

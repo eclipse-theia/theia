@@ -15,10 +15,20 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
+import { ConsoleLogger } from '../../node/messaging/logger';
 import { JsonRpcProxyFactory, JsonRpcProxy } from './proxy-factory';
-import { ChannelPipe } from '../message-rpc/channel.spec';
+import { createMessageConnection } from 'vscode-jsonrpc/lib/main';
+import * as stream from 'stream';
 
 const expect = chai.expect;
+
+class NoTransform extends stream.Transform {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    override _transform(chunk: any, encoding: string, callback: Function): void {
+        callback(undefined, chunk);
+    }
+}
 
 class TestServer {
     requests: string[] = [];
@@ -92,12 +102,15 @@ function getSetup(): {
     const server = new TestServer();
 
     const serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client);
-    const pipe = new ChannelPipe();
-    serverProxyFactory.listen(pipe.right);
+    const client2server = new NoTransform();
+    const server2client = new NoTransform();
+    const serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger());
+    serverProxyFactory.listen(serverConnection);
     const serverProxy = serverProxyFactory.createProxy();
 
     const clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server);
-    clientProxyFactory.listen(pipe.left);
+    const clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger());
+    clientProxyFactory.listen(clientConnection);
     const clientProxy = clientProxyFactory.createProxy();
     return {
         client,

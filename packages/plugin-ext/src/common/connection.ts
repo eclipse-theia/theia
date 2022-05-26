@@ -13,38 +13,27 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
+import { Channel } from '@theia/debug/lib/common/debug-service';
 import { ConnectionExt, ConnectionMain } from './plugin-api-rpc';
-import { Emitter, Event } from '@theia/core/lib/common/event';
-import { ChannelCloseEvent, MessageProvider } from '@theia/core/lib/common/message-rpc/channel';
-import { WriteBuffer, Channel } from '@theia/core';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
+import { Emitter } from '@theia/core/lib/common/event';
 
 /**
  * A channel communicating with a counterpart in a plugin host.
  */
 export class PluginChannel implements Channel {
-    private messageEmitter: Emitter<MessageProvider> = new Emitter();
+    private messageEmitter: Emitter<string> = new Emitter();
     private errorEmitter: Emitter<unknown> = new Emitter();
-    private closedEmitter: Emitter<ChannelCloseEvent> = new Emitter();
+    private closedEmitter: Emitter<void> = new Emitter();
 
     constructor(
-        readonly id: string,
+        protected readonly id: string,
         protected readonly connection: ConnectionExt | ConnectionMain) { }
-
-    getWriteBuffer(): WriteBuffer {
-        const result = new Uint8ArrayWriteBuffer();
-        result.onCommit(buffer => {
-            this.connection.$sendMessage(this.id, new Uint8ArrayReadBuffer(buffer).readString());
-        });
-
-        return result;
-    }
 
     send(content: string): void {
         this.connection.$sendMessage(this.id, content);
     }
 
-    fireMessageReceived(msg: MessageProvider): void {
+    fireMessageReceived(msg: string): void {
         this.messageEmitter.fire(msg);
     }
 
@@ -53,19 +42,21 @@ export class PluginChannel implements Channel {
     }
 
     fireClosed(): void {
-        this.closedEmitter.fire({ reason: 'Plugin channel has been closed from the extension side' });
+        this.closedEmitter.fire();
     }
 
-    get onMessage(): Event<MessageProvider> {
-        return this.messageEmitter.event;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onMessage(cb: (data: any) => void): void {
+        this.messageEmitter.event(cb);
     }
 
-    get onError(): Event<unknown> {
-        return this.errorEmitter.event;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError(cb: (reason: any) => void): void {
+        this.errorEmitter.event(cb);
     }
 
-    get onClose(): Event<ChannelCloseEvent> {
-        return this.closedEmitter.event;
+    onClose(cb: (code: number, reason: string) => void): void {
+        this.closedEmitter.event(() => cb(-1, 'closed'));
     }
 
     close(): void {
@@ -89,10 +80,7 @@ export class ConnectionImpl implements ConnectionMain, ConnectionExt {
      */
     async $sendMessage(id: string, message: string): Promise<void> {
         if (this.connections.has(id)) {
-            const writer = new Uint8ArrayWriteBuffer().writeString(message);
-            const reader = new Uint8ArrayReadBuffer(writer.getCurrentContents());
-            writer.dispose();
-            this.connections.get(id)!.fireMessageReceived(() => reader);
+            this.connections.get(id)!.fireMessageReceived(message);
         } else {
             console.warn(`Received message for unknown connection: ${id}`);
         }
