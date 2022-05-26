@@ -17,6 +17,7 @@
     "@phosphor/virtualdom": "1",
     "@phosphor/widgets": "1",
     "@theia/application-package": "1.25.0",
+    "@theia/request": "1.25.0",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/dompurify": "^2.2.2",
@@ -44,6 +45,8 @@
     "font-awesome": "^4.7.0",
     "fs-extra": "^4.0.2",
     "fuzzy": "^0.1.3",
+    "http-proxy-agent": "^5.0.0",
+    "https-proxy-agent": "^5.0.0",
     "iconv-lite": "^0.6.0",
     "inversify": "^5.1.1",
     "jschardet": "^2.1.1",
@@ -101,6 +104,9 @@
         "@theia/application-package",
         "@theia/application-package/lib/api",
         "@theia/application-package/lib/environment",
+        "@theia/request",
+        "@theia/request/lib/proxy",
+        "@theia/request/lib/node-request-service",
         "fs-extra",
         "fuzzy",
         "inversify",
@@ -148,6 +154,14 @@
     {
       "backend": "lib/node/hosting/backend-hosting-module",
       "backendElectron": "lib/electron-node/hosting/electron-backend-hosting-module"
+    },
+    {
+      "frontend": "lib/browser/request/browser-request-module",
+      "frontendElectron": "lib/electron-browser/request/electron-browser-request-module"
+    },
+    {
+      "backend": "lib/node/request/backend-request-module",
+      "backendElectron": "lib/electron-node/request/electron-backend-request-module"
     }
   ],
   "keywords": [

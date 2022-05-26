@@ -26,17 +26,12 @@ declare global {
 import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
 import * as chalk from 'chalk';
 import * as decompress from 'decompress';
-import { createWriteStream, promises as fs } from 'fs';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import fetch, { RequestInit, Response } from 'node-fetch';
+import { promises as fs } from 'fs';
 import * as path from 'path';
-import { getProxyForUrl } from 'proxy-from-env';
-import * as stream from 'stream';
 import * as temp from 'temp';
-import { promisify } from 'util';
+import { NodeRequestService } from '@theia/request/lib/node-request-service';
 import { DEFAULT_SUPPORTED_API_VERSION } from '@theia/application-package/lib/api';
-
-const pipelineAsPromised = promisify(stream.pipeline);
+import { RequestContext } from '@theia/request';
 
 temp.track();
 
@@ -71,6 +66,10 @@ export interface DownloadPluginsOptions {
      * Fetch plugins in parallel
      */
     parallel?: boolean;
+
+    proxyUrl?: string;
+    proxyAuthorization?: string;
+    strictSsl?: boolean;
 }
 
 interface PluginDownload {
@@ -79,14 +78,25 @@ interface PluginDownload {
     version?: string | undefined
 }
 
+const requestService = new NodeRequestService();
+
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
     const {
         packed = false,
         ignoreErrors = false,
         apiVersion = DEFAULT_SUPPORTED_API_VERSION,
         apiUrl = 'https://open-vsx.org/api',
-        parallel = true
+        parallel = true,
+        proxyUrl,
+        proxyAuthorization,
+        strictSsl
     } = options;
+
+    requestService.configure({
+        proxyUrl,
+        proxyAuthorization,
+        strictSSL: strictSsl
+    });
 
     // Collect the list of failures to be appended at the end of the script.
     const failures: string[] = [];
@@ -133,7 +143,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         await downloader(pluginsToDownload);
 
         const handleDependencyList = async (dependencies: Array<string | string[]>) => {
-            const client = new OVSXClient({ apiVersion, apiUrl });
+            const client = new OVSXClient({ apiVersion, apiUrl }, requestService);
             // De-duplicate extension ids to only download each once:
             const ids = new Set<string>(dependencies.flat());
             await parallelOrSequence(...Array.from(ids, id => async () => {
@@ -210,7 +220,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
 
     let attempts: number;
     let lastError: Error | undefined;
-    let response: Response | undefined;
+    let response: RequestContext | undefined;
 
     for (attempts = 0; attempts < maxAttempts; attempts++) {
         if (attempts > 0) {
@@ -218,12 +228,15 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         }
         lastError = undefined;
         try {
-            response = await xfetch(pluginUrl);
+            response = await requestService.request({
+                url: pluginUrl
+            });
         } catch (error) {
             lastError = error;
             continue;
         }
-        const retry = response.status === 439 || response.status >= 500;
+        const status = response.res.statusCode;
+        const retry = status && (status === 439 || status >= 500);
         if (!retry) {
             break;
         }
@@ -236,20 +249,19 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
         failures.push(chalk.red(`x ${plugin}: failed to download (unknown reason)`));
         return;
     }
-    if (response.status !== 200) {
-        failures.push(chalk.red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
+    if (response.res.statusCode !== 200) {
+        failures.push(chalk.red(`x ${plugin}: failed to download with: ${response.res.statusCode}`));
         return;
     }
 
     if ((fileExt === '.vsix' || fileExt === '.theia') && packed === true) {
         // Download .vsix without decompressing.
-        const file = createWriteStream(targetPath);
-        await pipelineAsPromised(response.body, file);
+        await fs.writeFile(targetPath, response.buffer);
     } else {
         await fs.mkdir(targetPath, { recursive: true });
-        const tempFile = temp.createWriteStream('theia-plugin-download');
-        await pipelineAsPromised(response.body, tempFile);
-        await decompress(tempFile.path, targetPath);
+        const tempFile = temp.path('theia-plugin-download');
+        await fs.writeFile(tempFile, response.buffer);
+        await decompress(tempFile, targetPath);
     }
 
     console.warn(chalk.green(`+ ${plugin}${version ? `@${version}` : ''}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
@@ -263,18 +275,6 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
  */
 async function isDownloaded(filePath: string): Promise<boolean> {
     return fs.stat(filePath).then(() => true, () => false);
-}
-
-/**
- * Follow HTTP(S)_PROXY, ALL_PROXY and NO_PROXY environment variables.
- */
-export function xfetch(url: string, options?: RequestInit): Promise<Response> {
-    const proxiedOptions: RequestInit = { ...options };
-    const proxy = getProxyForUrl(url);
-    if (!proxiedOptions.agent && proxy !== '') {
-        proxiedOptions.agent = new HttpsProxyAgent(proxy);
-    }
-    return fetch(url, proxiedOptions);
 }
 
 /**

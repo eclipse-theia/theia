@@ -34,6 +34,7 @@ import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { SecretsExtImpl } from '../../plugin/secrets-ext';
 import { BackendInitializationFn } from '../../common';
+import { connectProxyResolver } from './plugin-host-proxy';
 
 /**
  * Handle the RPC calls.
@@ -81,6 +82,7 @@ export class PluginHostRPC {
             clipboardExt,
             webviewExt
         );
+        connectProxyResolver(preferenceRegistryExt);
     }
 
     async terminate(): Promise<void> {

@@ -1,7 +1,7 @@
 {
-  "name": "@theia/ovsx-client",
+  "name": "@theia/request",
   "version": "1.25.0",
-  "description": "Theia Open-VSX Client",
+  "description": "Theia Proxy-Aware Request Service",
   "publishConfig": {
     "access": "public"
   },
@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.25.0",
-    "semver": "^5.4.1"
+    "http-proxy-agent": "^5.0.0",
+    "https-proxy-agent": "^5.0.0"
   }
 }

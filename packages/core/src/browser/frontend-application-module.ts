@@ -119,6 +119,7 @@ import {
 } from './breadcrumbs';
 import { RendererHost } from './widgets';
 import { TooltipService, TooltipServiceImpl } from './tooltip-service';
+import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveResourceService } from './save-resource-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
@@ -406,6 +407,10 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         child.bind(Coordinate).toConstantValue(position);
         return child.get(BreadcrumbPopupContainer);
     });
+
+    bind(BackendRequestService).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy<RequestService>(ctx.container, REQUEST_SERVICE_PATH)
+    ).inSingletonScope();
 
     bindFrontendStopwatch(bind);
     bindBackendStopwatch(bind);

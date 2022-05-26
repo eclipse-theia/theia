@@ -75,6 +75,44 @@ export const corePreferenceSchema: PreferenceSchema = {
             markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. By default, the menu bar will be visible, unless the window is full screen."),
             included: !isOSX
         },
+        'http.proxy': {
+            type: 'string',
+            pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
+            // eslint-disable-next-line max-len
+            markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables.'),
+            scope: 'application'
+        },
+        'http.proxyStrictSSL': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs.'),
+            scope: 'application'
+        },
+        'http.proxyAuthorization': {
+            type: 'string',
+            markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request.'),
+            scope: 'application'
+        },
+        'http.proxySupport': {
+            type: 'string',
+            enum: ['off', 'on', 'fallback', 'override'],
+            enumDescriptions: [
+                nls.localizeByDefault('Disable proxy support for extensions.'),
+                nls.localizeByDefault('Enable proxy support for extensions.'),
+                nls.localize('theia/core/proxySupportFallback', 'Enable proxy support for extensions, fall back to request options, when no proxy found.'),
+                nls.localizeByDefault('Enable proxy support for extensions, override request options.'),
+            ],
+            default: 'override',
+            description: nls.localizeByDefault('Use the proxy support for extensions.'),
+            scope: 'application'
+        },
+        'http.systemCertificates': {
+            type: 'boolean',
+            default: true,
+            // eslint-disable-next-line max-len
+            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS a reload of the window is required after turning this off.)'),
+            scope: 'application'
+        },
         'workbench.list.openMode': {
             type: 'string',
             enum: [

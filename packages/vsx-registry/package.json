@@ -12,7 +12,6 @@
     "@theia/workspace": "1.25.0",
     "@types/showdown": "^1.7.1",
     "p-debounce": "^2.1.0",
-    "requestretry": "^7.0.0",
     "semver": "^5.4.1",
     "showdown": "^1.9.1",
     "uuid": "^8.0.0"
@@ -51,8 +50,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.25.0",
-    "@types/requestretry": "^1.12.8"
+    "@theia/ext-scripts": "1.25.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
