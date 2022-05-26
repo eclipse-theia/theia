@@ -1,6 +1,6 @@
 {
   "name": "@theia/cli",
-  "version": "1.25.0",
+  "version": "1.26.0",
   "description": "Theia CLI.",
   "publishConfig": {
     "access": "public"
@@ -30,12 +30,12 @@
     "clean": "theiaext clean"
   },
   "dependencies": {
-    "@theia/application-manager": "1.25.0",
-    "@theia/application-package": "1.25.0",
-    "@theia/ffmpeg": "1.25.0",
-    "@theia/localization-manager": "1.25.0",
-    "@theia/ovsx-client": "1.25.0",
-    "@theia/request": "1.25.0",
+    "@theia/application-manager": "1.26.0",
+    "@theia/application-package": "1.26.0",
+    "@theia/ffmpeg": "1.26.0",
+    "@theia/localization-manager": "1.26.0",
+    "@theia/ovsx-client": "1.26.0",
+    "@theia/request": "1.26.0",
     "@types/chai": "^4.2.7",
     "@types/mocha": "^5.2.7",
     "@types/node-fetch": "^2.5.7",

@@ -2,7 +2,7 @@
   "lerna": "2.2.0",
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "version": "1.25.0",
+  "version": "1.26.0",
   "command": {
     "run": {
       "stream": true
