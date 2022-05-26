@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { decorate, injectable } from 'inversify';
-import { NodeRequestService } from '@theia/request/lib/node-request-service';
+import { NodeRequestOptions, NodeRequestService } from '@theia/request/lib/node-request-service';
+import { ElectronSecurityToken } from '../../electron-common/electron-token';
 
 decorate(injectable(), NodeRequestService);
 
@@ -53,5 +54,25 @@ export class ElectronBackendRequestService extends NodeRequestService {
             return 'https://' + proxyHost;
         }
         return proxyHost;
+    }
+
+    protected override async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
+        options = await super.processOptions(options);
+        const endpoint = new URL(options.url);
+        if (endpoint.hostname === 'localhost') {
+            const securityToken = process.env[ElectronSecurityToken];
+            if (securityToken) {
+                let cookie = options.headers?.['Cookie'] ?? '';
+                if (cookie) {
+                    cookie += '; ';
+                }
+                cookie += `${ElectronSecurityToken}=${securityToken}`;
+                options.headers = {
+                    ...(options.headers || {}),
+                    'Cookie': cookie
+                };
+            }
+        }
+        return options;
     }
 }
