@@ -89,9 +89,6 @@ self.MonacoEnvironment = {
 }
 `)}
 
-const { ThemeService } = require('@theia/core/lib/browser/theming');
-ThemeService.get().loadUserTheme();
-
 const preloader = require('@theia/core/lib/browser/preloader');
 
 // We need to fetch some data from the backend before the frontend starts (nls, os)

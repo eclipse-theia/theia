@@ -59,9 +59,11 @@ export interface MonacoThemeJson {
 @injectable()
 export class MonacoThemingService {
 
-    @inject(FileService)
-    protected readonly fileService: FileService;
+    @inject(FileService) protected readonly fileService: FileService;
+    @inject(MonacoThemeRegistry) protected readonly monacoThemeRegistry: MonacoThemeRegistry;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
 
+    /** Register themes whose configuration needs to be loaded */
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         this.doRegister(theme, pending, toDispose);
@@ -80,7 +82,7 @@ export class MonacoThemingService {
             }
             const label = theme.label || new URI(theme.uri).path.base;
             const { id, description, uiTheme } = theme;
-            toDispose.push(MonacoThemingService.register({ id, label, description, uiTheme: uiTheme, json, includes }));
+            toDispose.push(this.registerParsedTheme({ id, label, description, uiTheme: uiTheme, json, includes }));
         } catch (e) {
             console.error('Failed to load theme from ' + theme.uri, e);
         }
@@ -137,43 +139,45 @@ export class MonacoThemingService {
         return pending[referencedUri];
     }
 
-    static init(): void {
+    initialize(): void {
+        this.monacoThemeRegistry.initializeDefaultThemes();
         this.updateBodyUiTheme();
-        ThemeService.get().onDidColorThemeChange(() => this.updateBodyUiTheme());
+        this.themeService.onDidColorThemeChange(() => this.updateBodyUiTheme());
         this.restore();
     }
 
-    static register(theme: MonacoThemeJson): Disposable {
+    /** register a theme whose configuration has already been loaded */
+    registerParsedTheme(theme: MonacoThemeJson): Disposable {
         const uiTheme = theme.uiTheme || 'vs-dark';
         const { label, description, json, includes } = theme;
         const id = theme.id || label;
         const cssSelector = MonacoThemingService.toCssSelector(id);
-        const data = MonacoThemeRegistry.SINGLETON.register(json, includes, cssSelector, uiTheme);
-        return MonacoThemingService.doRegister({ id, label, description, uiTheme, data });
+        const data = this.monacoThemeRegistry.register(json, includes, cssSelector, uiTheme);
+        return this.doRegisterParsedTheme({ id, label, description, uiTheme, data });
     }
 
-    protected static toUpdateUiTheme = new DisposableCollection();
-    protected static updateBodyUiTheme(): void {
+    protected toUpdateUiTheme = new DisposableCollection();
+    protected updateBodyUiTheme(): void {
         this.toUpdateUiTheme.dispose();
-        const type = ThemeService.get().getCurrentTheme().type;
+        const type = this.themeService.getCurrentTheme().type;
         const uiTheme: monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
         document.body.classList.add(uiTheme);
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }
 
-    protected static doRegister(state: MonacoThemeState): Disposable {
+    protected doRegisterParsedTheme(state: MonacoThemeState): Disposable {
         return new DisposableCollection(
-            ThemeService.get().register(stateToTheme(state)),
+            this.themeService.register(stateToTheme(state)),
             putTheme(state)
         );
     }
 
-    protected static async restore(): Promise<void> {
+    protected async restore(): Promise<void> {
         try {
             const themes = await getThemes();
             for (const state of themes) {
-                MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
-                MonacoThemingService.doRegister(state);
+                this.monacoThemeRegistry.setTheme(state.data.name!, state.data);
+                this.doRegisterParsedTheme(state);
             }
         } catch (e) {
             console.error('Failed to restore monaco themes', e);

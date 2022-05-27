@@ -17,7 +17,7 @@
 import { nls } from '../common/nls';
 import { Endpoint } from './endpoint';
 import { OS } from '../common/os';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY, FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 function fetchFrom(path: string): Promise<Response> {
     const endpoint = new Endpoint({ path }).getRestUrl().toString();
@@ -47,9 +47,16 @@ async function loadBackendOS(): Promise<void> {
     OS.backend.type = () => osType;
 }
 
+function initBackground(): void {
+    const value = window.localStorage.getItem(DEFAULT_BACKGROUND_COLOR_STORAGE_KEY) || '#1d1d1d';
+    const documentElement = document.documentElement;
+    documentElement.style.setProperty('--theia-editor-background', value);
+}
+
 export async function preload(): Promise<void> {
     await Promise.allSettled([
         loadTranslations(),
-        loadBackendOS()
+        loadBackendOS(),
+        initBackground(),
     ]);
 }
