@@ -23,7 +23,7 @@ import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-p
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
 import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';

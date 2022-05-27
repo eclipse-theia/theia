@@ -17,9 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugService, DebuggerDescription } from '../common/debug-service';
-
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
 
