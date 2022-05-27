@@ -20,14 +20,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
 import { JSONExt, ReadonlyJSONValue } from '@theia/core/shared/@phosphor/coreutils';
-
-/**
- * Holds variable-names to command id mappings (e.g. Provided by specific plugins / extensions)
- * see "variables": https://code.visualstudio.com/api/references/contribution-points#contributes.debuggers
- */
-export interface CommandIdVariables {
-    [id: string]: string
-}
+import { CommandIdVariables } from '../common/variable-types';
 
 export interface VariableResolveOptions {
     context?: URI;

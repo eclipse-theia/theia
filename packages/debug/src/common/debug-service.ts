@@ -19,7 +19,7 @@
 import { Disposable } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { CommandIdVariables } from '@theia/variable-resolver/lib/browser';
+import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
 import { DebugConfiguration } from './debug-configuration';
 
 export interface DebuggerDescription {
