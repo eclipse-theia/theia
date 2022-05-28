@@ -17,20 +17,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as electron from '../../../electron-shared/electron';
+import { v4 } from 'uuid';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
-import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
+import { MenuPath, MenuContribution, MenuModelRegistry, isWindows } from '../../common';
 import { BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
-import { RequestTitleBarStyle, TitleBarStyleAtStartup } from '../../electron-common/messaging/electron-messages';
+import { ContextMenuDidClose, RequestTitleBarStyle, ShowContextMenu, CloseContextMenu, TitleBarStyleAtStartup } from '../../electron-common/messaging/electron-messages';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
-    constructor(readonly menu: electron.Menu) {
+    constructor(contextMenuId: string) {
         super({
-            dispose: () => menu.closePopup()
+            dispose: () => electron.ipcRenderer.send(CloseContextMenu.Signal, { contextMenuId }) // This might have no effect when the context menu was already closed.
         });
     }
 }
@@ -102,19 +103,34 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
         if (this.useNativeStyle) {
             const { menuPath, anchor, args, onHide } = options;
-            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args);
+            const template = this.electronMenuFactory.createElectronContextMenu(menuPath, args);
             const { x, y } = coordinateFromAnchor(anchor);
+            const contextMenuId = v4();
             const zoom = electron.webFrame.getZoomFactor();
             // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641
-            const offset = process.platform === 'win32' ? 0 : 2;
+            const offset = isWindows ? 0 : 2;
             // x and y values must be Ints or else there is a conversion error
-            menu.popup({ x: Math.round(x * zoom) + offset, y: Math.round(y * zoom) + offset });
+            electron.ipcRenderer.send(
+                ShowContextMenu.Signal,
+                {
+                    x: Math.round(x * zoom) + offset,
+                    y: Math.round(y * zoom) + offset,
+                    template,
+                    contextMenuId
+                }
+            );
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
             if (onHide) {
-                menu.once('menu-will-close', () => onHide());
+                const listener: (event: Electron.IpcRendererEvent, { contextMenuId: otherUuid }: { contextMenuId: string }) => void = (_event, { contextMenuId: otherId }) => {
+                    if (contextMenuId === otherId) {
+                        onHide();
+                        electron.ipcRenderer.removeListener(ContextMenuDidClose.Signal, listener);
+                    }
+                };
+                electron.ipcRenderer.on(ContextMenuDidClose.Signal, listener);
             }
-            return new ElectronContextMenuAccess(menu);
+            return new ElectronContextMenuAccess(contextMenuId);
         } else {
             return super.doRender(options);
         }
