@@ -1075,7 +1075,8 @@ function reviveOnEnterRule(onEnterRule: SerializedOnEnterRule): monaco.languages
     return {
         beforeText: reviveRegExp(onEnterRule.beforeText)!,
         afterText: reviveRegExp(onEnterRule.afterText),
-        action: onEnterRule.action
+        previousLineText: reviveRegExp(onEnterRule.previousLineText),
+        action: onEnterRule.action,
     };
 }
 

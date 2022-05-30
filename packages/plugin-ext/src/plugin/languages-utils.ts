@@ -24,9 +24,10 @@ export function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEn
 
     return rules.map(r =>
     ({
-        action: r.action,
         beforeText: serializeRegExp(r.beforeText),
-        afterText: serializeRegExp(r.afterText)
+        afterText: serializeRegExp(r.afterText),
+        previousLineText: serializeRegExp(r.previousLineText),
+        action: r.action,
     } as SerializedOnEnterRule));
 }
 

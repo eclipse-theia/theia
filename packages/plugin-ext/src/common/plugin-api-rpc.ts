@@ -1316,6 +1316,7 @@ export interface EnterAction {
 export interface SerializedOnEnterRule {
     beforeText: SerializedRegExp;
     afterText?: SerializedRegExp;
+    previousLineText?: SerializedRegExp;
     action: EnterAction;
 }
 
