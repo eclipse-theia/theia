@@ -99,8 +99,7 @@ import type {
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import { Disposable } from '@theia/core/lib/common/disposable';
-// eslint-disable-next-line @theia/runtime-import-check
-import { PickOptions, QuickInputButtonHandle, QuickPickItem, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { PickOptions, QuickInputButtonHandle, QuickPickItem } from '@theia/core/lib/common';
 import { Severity } from '@theia/core/lib/common/severity';
 
 export interface PreferenceData {
@@ -1620,12 +1619,12 @@ export interface WebviewViewsMain extends Disposable {
 }
 
 export interface CustomEditorsExt {
-    $resolveWebviewEditor(
+    $resolveWebviewEditor<T>(
         resource: UriComponents,
         newWebviewHandle: string,
         viewType: string,
         title: string,
-        widgetOpenerOptions: WidgetOpenerOptions | undefined,
+        widgetOpenerOptions: T | undefined,
         options: theia.WebviewPanelOptions,
         cancellation: CancellationToken): Promise<void>;
     $createCustomDocument(resource: UriComponents, viewType: string, openContext: theia.CustomDocumentOpenContext, cancellation: CancellationToken): Promise<{ editable: boolean }>;
@@ -1648,7 +1647,7 @@ export interface CustomEditorsMain {
     $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
     $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
     $unregisterEditorProvider(viewType: string): void;
-    $createCustomEditorPanel(handle: string, title: string, widgetOpenerOptions: WidgetOpenerOptions | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $createCustomEditorPanel<T>(handle: string, title: string, widgetOpenerOptions: T | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
     $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
     $onContentChange(resource: UriComponents, viewType: string): void;
 }

@@ -33,6 +33,7 @@ export * from './message-service';
 export * from './message-service-protocol';
 export * from './progress-service';
 export * from './progress-service-protocol';
+export * from './quick-pick-service';
 export * from './selection';
 export * from './strings';
 export * from './application-error';
