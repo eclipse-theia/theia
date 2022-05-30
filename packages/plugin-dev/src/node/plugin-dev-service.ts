@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
+import { PluginDebugConfiguration, PluginDevServer, PluginDevClient } from '../common/plugin-dev-protocol';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -22,8 +22,6 @@ import URI from '@theia/core/lib/common/uri';
 import { HostedPluginReader } from './hosted-plugin-reader';
 import { HostedPluginsManager } from './hosted-plugins-manager';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
-// eslint-disable-next-line @theia/runtime-import-check
-import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contribution';
 
 @injectable()
 export class PluginDevServerImpl implements PluginDevServer {
@@ -66,7 +64,7 @@ export class PluginDevServerImpl implements PluginDevServer {
         return this.uriToStrPromise(this.hostedInstanceManager.run(new URI(uri)));
     }
 
-    runDebugHostedPluginInstance(uri: string, debugConfig: DebugPluginConfiguration): Promise<string> {
+    runDebugHostedPluginInstance(uri: string, debugConfig: PluginDebugConfiguration): Promise<string> {
         return this.uriToStrPromise(this.hostedInstanceManager.debug(new URI(uri), debugConfig));
     }
 
