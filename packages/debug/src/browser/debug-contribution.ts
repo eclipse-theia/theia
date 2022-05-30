@@ -23,12 +23,6 @@ export interface DebugContribution {
     register(configType: string, connection: DebugSessionConnection): void;
 }
 
-export interface DebugPluginConfiguration {
-    debugMode?: string;
-    pluginLocation?: string;
-    debugPort?: string;
-}
-
 // copied from https://github.com/microsoft/vscode-node-debug2/blob/bcd333ef87642b817ac96d28fde7ab96fee3f6a9/src/nodeDebugInterfaces.d.ts
 export interface LaunchVSCodeRequest extends DebugProtocol.Request {
     arguments: LaunchVSCodeArguments;
