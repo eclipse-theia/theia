@@ -6,6 +6,8 @@
 
 ## v1.27.0 - Unreleased
 
+- [plugin] moved `WebviewViewResolveContext` from `window` to `root` namespace [#11216](https://github.com/eclipse-theia/theia/pull/11216) - Contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.27.0">[Breaking Changes:](#breaking_changes_1.27.0)</a>
 
 - [plugin-dev] moved and renamed interface from: `@theia/debug/lib/browser/debug-contribution/DebugPluginConfiguration` to: `plugin-dev/src/common/PluginDebugConfiguration` [#11224](https://github.com/eclipse-theia/theia/pull/11224)
