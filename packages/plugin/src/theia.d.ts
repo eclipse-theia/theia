@@ -6710,6 +6710,10 @@ export module '@theia/plugin' {
          */
         afterText?: RegExp;
         /**
+         * This rule will only execute if the text above the current line matches this regular expression.
+         */
+        previousLineText?: RegExp;
+        /**
          * The action to execute.
          */
         action: EnterAction;
