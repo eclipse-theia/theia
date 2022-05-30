@@ -26,9 +26,9 @@ import {
     TextEditorLineNumbersStyle,
     EndOfLine,
     OverviewRulerLane,
-    IndentAction,
     FileOperationOptions,
     TextDocumentChangeReason,
+    IndentAction,
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
 import {
@@ -1306,18 +1306,18 @@ export interface SerializedIndentationRule {
     unIndentedLinePattern?: SerializedRegExp;
 }
 
-export interface EnterAction {
-    indentAction: IndentAction;
-    outdentCurrentLine?: boolean;
-    appendText?: string;
-    removeText?: number;
-}
-
 export interface SerializedOnEnterRule {
     beforeText: SerializedRegExp;
     afterText?: SerializedRegExp;
     previousLineText?: SerializedRegExp;
-    action: EnterAction;
+    action: SerializedEnterAction;
+}
+
+export interface SerializedEnterAction {
+    indentAction: IndentAction;
+    outdentCurrentLine?: boolean;
+    appendText?: string;
+    removeText?: number;
 }
 
 export interface SerializedLanguageConfiguration {

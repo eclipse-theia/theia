@@ -20,7 +20,7 @@ import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarD
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution } from '../../common';
+import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution, EnterAction, OnEnterRule } from '../../common';
 import {
     DefaultUriLabelProviderContribution,
     LabelProviderContribution,
@@ -172,7 +172,8 @@ export class PluginContributionHandler {
                         comments: langConfiguration.comments,
                         folding: this.convertFolding(langConfiguration.folding),
                         surroundingPairs: langConfiguration.surroundingPairs,
-                        indentationRules: this.convertIndentationRules(langConfiguration.indentationRules)
+                        indentationRules: this.convertIndentationRules(langConfiguration.indentationRules),
+                        onEnterRules: this.convertOnEnterRules(langConfiguration.onEnterRules),
                     }));
                 }
             }
@@ -484,7 +485,6 @@ export class PluginContributionHandler {
         }
 
         return result;
-
     }
 
     private convertTokenTypes(tokenTypes?: ScopeMap): ITokenTypeMap | undefined {
@@ -528,6 +528,44 @@ export class PluginContributionHandler {
             }
         }
         return result;
+    }
+
+    private convertOnEnterRules(onEnterRules?: OnEnterRule[]): monaco.languages.OnEnterRule[] | undefined {
+        if (!onEnterRules) {
+            return undefined;
+        }
+
+        const result: monaco.languages.OnEnterRule[] = [];
+        for (const onEnterRule of onEnterRules) {
+            const rule: monaco.languages.OnEnterRule = {
+                beforeText: this.createRegex(onEnterRule.beforeText)!,
+                afterText: this.createRegex(onEnterRule.afterText),
+                previousLineText: this.createRegex(onEnterRule.previousLineText),
+                action: this.createEnterAction(onEnterRule.action),
+            };
+            result.push(rule);
+        }
+
+        return result;
+    }
+
+    private createEnterAction(action: EnterAction): monaco.languages.EnterAction {
+        let indentAction: monaco.languages.IndentAction;
+        switch (action.indent) {
+            case 'indent':
+                indentAction = monaco.languages.IndentAction.Indent;
+                break;
+            case 'indentOutdent':
+                indentAction = monaco.languages.IndentAction.IndentOutdent;
+                break;
+            case 'outdent':
+                indentAction = monaco.languages.IndentAction.Outdent;
+                break;
+            default:
+                indentAction = monaco.languages.IndentAction.None;
+                break;
+        }
+        return { indentAction, appendText: action.appendText, removeText: action.removeText };
     }
 
 }

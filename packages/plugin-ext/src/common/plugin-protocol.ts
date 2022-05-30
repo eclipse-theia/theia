@@ -271,6 +271,7 @@ export interface PluginPackageLanguageContributionConfiguration {
     wordPattern?: string;
     indentationRules?: IndentationRules;
     folding?: FoldingRules;
+    onEnterRules?: OnEnterRule[];
 }
 
 export interface PluginTaskDefinitionContribution {
@@ -622,6 +623,7 @@ export interface LanguageConfiguration {
     comments?: CommentRule;
     folding?: FoldingRules;
     wordPattern?: string;
+    onEnterRules?: OnEnterRule[];
 }
 
 /**
@@ -668,6 +670,19 @@ export interface FoldingMarkers {
 export interface FoldingRules {
     offSide?: boolean;
     markers?: FoldingMarkers;
+}
+
+export interface OnEnterRule {
+    beforeText: string;
+    afterText?: string;
+    previousLineText?: string;
+    action: EnterAction;
+}
+
+export interface EnterAction {
+    indent: 'none' | 'indent' | 'outdent' | 'indentOutdent';
+    appendText?: string;
+    removeText?: number;
 }
 
 /**

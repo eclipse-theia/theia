@@ -660,7 +660,8 @@ export class TheiaPluginScanner implements PluginScanner {
                     wordPattern: rawConfiguration.wordPattern,
                     autoClosingPairs: this.extractValidAutoClosingPairs(rawLang.id, rawConfiguration),
                     indentationRules: rawConfiguration.indentationRules,
-                    surroundingPairs: this.extractValidSurroundingPairs(rawLang.id, rawConfiguration)
+                    surroundingPairs: this.extractValidSurroundingPairs(rawLang.id, rawConfiguration),
+                    onEnterRules: rawConfiguration.onEnterRules,
                 };
                 result.configuration = configuration;
             }
