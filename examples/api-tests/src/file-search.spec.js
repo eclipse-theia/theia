@@ -58,8 +58,8 @@ describe('file-search', function () {
             });
 
             it('should not place very good matches above exact matches', () => {
-                const exactMatch = 'aa_bb_cc_dd.file';
-                const veryGoodMatch = 'aa_bb_cc_ed_fd.file';
+                const exactMatch = 'almost_absurdly_long_file_name_with_many_parts.file';
+                const veryGoodMatch = 'almost_absurdly_long_file_name_with_many_parts_plus_one.file';
                 quickFileOpenService['filterAndRange'] = { filter: exactMatch };
                 /** @type import ('@theia/file-search/lib/browser/quick-file-open').FileQuickPickItem*/
                 const a = { label: exactMatch, uri: new Uri.default(exactMatch) };

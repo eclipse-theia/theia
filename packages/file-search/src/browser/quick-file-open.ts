@@ -19,7 +19,7 @@ import { OpenerService, KeybindingRegistry, QuickAccessRegistry, QuickAccessProv
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import { CancellationToken, Command, nls, MAX_SAFE_INTEGER } from '@theia/core/lib/common';
+import { CancellationToken, Command, nls } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
@@ -245,7 +245,7 @@ export class QuickFileOpenService implements QuickAccessProvider {
             // Check fuzzy matches.
             const fuzzyMatch = fuzzy.match(queryJoin, str) ?? { score: 0 };
             if (fuzzyMatch.score === Infinity && exactMatch) {
-                return MAX_SAFE_INTEGER;
+                return Number.MAX_SAFE_INTEGER;
             }
 
             return fuzzyMatch.score + partialMatches + (exactMatch ? QuickFileOpenService.Scores.exact : 0);
