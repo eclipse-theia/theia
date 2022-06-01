@@ -15,14 +15,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessageConnection } from 'vscode-ws-jsonrpc';
+import { Channel } from '../../common/message-rpc/channel';
 
 const THEIA_PARENT_PID = 'THEIA_PARENT_PID';
 const THEIA_ENTRY_POINT = 'THEIA_ENTRY_POINT';
 
 export const ipcEntryPoint: string | undefined = process.env[THEIA_ENTRY_POINT];
 
-export type IPCEntryPoint = (connection: MessageConnection) => void;
+export type IPCEntryPoint = (connection: Channel) => void;
 export namespace IPCEntryPoint {
     /**
      * Throws if `THEIA_ENTRY_POINT` is undefined or empty.

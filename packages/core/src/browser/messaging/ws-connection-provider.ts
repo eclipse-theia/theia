@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, interfaces, decorate, unmanaged } from 'inversify';
-import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from '../../common';
-import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
+import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
 import { io, Socket } from 'socket.io-client';
+import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 
 decorate(injectable(), JsonRpcProxyFactory);
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
@@ -53,26 +53,42 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     constructor() {
         super();
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
-        const socket = this.createWebSocket(url);
-        socket.on('connect', () => {
+        this.socket = this.createWebSocket(url);
+        this.socket.on('connect', () => {
+            this.initializeMultiplexer();
+            if (this.reconnectChannelOpeners.length > 0) {
+                this.reconnectChannelOpeners.forEach(opener => opener());
+                this.reconnectChannelOpeners = [];
+            }
+            this.socket.on('disconnect', () => this.fireSocketDidClose());
+            this.socket.on('message', () => this.onIncomingMessageActivityEmitter.fire(undefined));
             this.fireSocketDidOpen();
         });
-        socket.on('disconnect', reason => {
-            for (const channel of [...this.channels.values()]) {
-                channel.close(undefined, reason);
-            }
-            this.fireSocketDidClose();
-        });
-        socket.on('message', data => {
-            this.handleIncomingRawMessage(data);
-        });
-        socket.connect();
-        this.socket = socket;
+        this.socket.connect();
     }
 
-    override openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
+    protected createMainChannel(): Channel {
+        return new WebSocketChannel(this.toIWebSocket(this.socket));
+    }
+
+    protected toIWebSocket(socket: Socket): IWebSocket {
+        return {
+            close: () => {
+                socket.removeAllListeners('disconnect');
+                socket.removeAllListeners('error');
+                socket.removeAllListeners('message');
+            },
+            isConnected: () => socket.connected,
+            onClose: cb => socket.on('disconnect', reason => cb(reason)),
+            onError: cb => socket.on('error', reason => cb(reason)),
+            onMessage: cb => socket.on('message', data => cb(data)),
+            send: message => socket.emit('message', message)
+        };
+    }
+
+    override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
         if (this.socket.connected) {
-            super.openChannel(path, handler, options);
+            return super.openChannel(path, handler, options);
         } else {
             const openChannel = () => {
                 this.socket.off('connect', openChannel);
@@ -80,14 +96,6 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             };
             this.socket.on('connect', openChannel);
         }
-    }
-
-    protected createChannel(id: number): WebSocketChannel {
-        return new WebSocketChannel(id, content => {
-            if (this.socket.connected) {
-                this.socket.send(content);
-            }
-        });
     }
 
     /**
@@ -143,3 +151,4 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         this.onSocketDidCloseEmitter.fire(undefined);
     }
 }
+

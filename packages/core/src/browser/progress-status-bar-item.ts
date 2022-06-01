@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CancellationToken } from 'vscode-ws-jsonrpc';
+import { CancellationToken } from '../../shared/vscode-languageserver-protocol';
 import { ProgressClient, ProgressMessage, ProgressUpdate } from '../common';
 import { StatusBar, StatusBarAlignment } from './status-bar';
 import { Deferred } from '../common/promise-util';
