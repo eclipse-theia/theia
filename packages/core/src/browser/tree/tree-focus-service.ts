@@ -21,7 +21,7 @@ import { SelectableTreeNode } from './tree-selection';
 
 export interface TreeFocusService {
     readonly focusedNode: SelectableTreeNode | undefined;
-    onDidChangeFocus: Event<SelectableTreeNode | undefined>;
+    readonly onDidChangeFocus: Event<SelectableTreeNode | undefined>;
     setFocus(node?: SelectableTreeNode): void;
     hasFocus(node?: TreeNode): boolean;
 }

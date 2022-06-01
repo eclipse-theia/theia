@@ -450,6 +450,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (!this.rows.size) {
             classNames.push('empty');
         }
+        if (this.model.selectedNodes.length === 0 && !this.focusService.focusedNode) {
+            classNames.push('focused');
+        }
         return {
             className: classNames.join(' '),
             onContextMenu: event => this.handleContextMenuEvent(this.getContainerTreeNode(), event)
@@ -1201,12 +1204,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected handleEscape(event: KeyboardEvent): void {
-        if (this.model.selectedNodes.length) {
-            this.model.clearSelection();
-        } else {
+        if (this.model.selectedNodes.length <= 1) {
             this.focusService.setFocus(undefined);
             this.node.focus();
         }
+        this.model.clearSelection();
     }
 
     /**
