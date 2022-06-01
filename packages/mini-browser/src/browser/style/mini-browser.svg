@@ -1,0 +1,17 @@
+<!--Copyright (c) 2019 Kenneth Auchenberg. -->
+<!--Copyright (C) 2019 TypeFox and others.-->
+<!--Licensed under the MIT License.-->
+<svg width="25px" height="25px" viewBox="0 0 25 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 52.2 (67145) - http://www.bohemiancoding.com/sketch -->
+    <title>icon</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="icon" fill="#2879FF">
+            <polygon id="Path" points="13.8671875 15.625 13.8671875 14.0625 18.5546875 14.0625 18.5546875 15.625"></polygon>
+            <polygon id="Path" points="13.8671875 12.5 13.8671875 10.9375 21.6796875 10.9375 21.6796875 12.5"></polygon>
+            <polygon id="Path" points="13.8671875 9.375 13.8671875 7.8125 21.6796875 7.8125 21.6796875 9.375"></polygon>
+            <rect id="Rectangle" x="2.9296875" y="7.8125" width="7.8125" height="7.8125"></rect>
+            <path d="M0,0 L0,25 L24.9992188,25 L25,0 L0,0 Z M17.1875,1.5625 L17.1875,3.125 L7.8125,3.125 L7.8125,1.5625 L17.1875,1.5625 Z M6.25,1.5625 L6.25,3.125 L4.6875,3.125 L4.6875,1.5625 L6.25,1.5625 Z M1.5625,1.5625 L3.125,1.5625 L3.125,3.125 L1.5625,3.125 L1.5625,1.5625 Z M23.4367188,23.046875 L1.5625,23.046875 L1.5625,4.6875 L23.4367188,4.6875 L23.4367188,23.046875 Z M23.4375,3.125 L20.3125,3.125 L20.3125,1.5625 L23.4375,1.5625 L23.4375,3.125 Z" id="Shape" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>

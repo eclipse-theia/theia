@@ -1,0 +1,5 @@
+# plugin
+packages/plugin/** @theia-ide/plugin-system
+packages/plugin-dev/** @theia-ide/plugin-system
+packages/plugin-ext/** @theia-ide/plugin-system
+packages/plugin-ext-vscode/** @theia-ide/plugin-system

@@ -1,0 +1,16 @@
+{
+  "startup_duration": 10,
+  "result_file": "{{placeholder}}.json",
+  "trace_config": {
+    "enable_argument_filter": false,
+    "enable_systrace": false,
+    "included_categories": [
+      "blink",
+      "loading",
+      "disabled-by-default-devtools.timeline"
+    ],
+    "excluded_categories": [
+      "*"
+    ]
+  }
+}

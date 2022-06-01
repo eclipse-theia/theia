@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for i in $@
+do
+   sleep 1
+   echo "tasking... $i"
+done
+

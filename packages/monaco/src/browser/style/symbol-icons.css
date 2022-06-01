@@ -1,0 +1,49 @@
+.symbol-icon {
+    background-image: url(symbol-sprite.svg);
+    background-repeat: no-repeat;
+    overflow: hidden;
+    min-width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    margin-right: 4px;
+}
+
+.symbol-icon-center {
+    align-self: center;
+}
+
+.symbol-icon.method {
+    background-position: 0 calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.constant,
+.symbol-icon.variable {
+    background-position: -22px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.class {
+    background-position: -42px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.interface {
+    background-position: -62px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.module {
+    background-position: -82px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.property {
+    background-position: -102px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.enum {
+    background-position: -122px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.rule {
+    background-position: -242px calc(var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.file {
+    background-position: -262px calc(var(--theia-sprite-y-offset));
+}

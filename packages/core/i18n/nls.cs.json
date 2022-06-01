@@ -1,0 +1,351 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "Hierarchie otevřených výzev"
+    },
+    "core": {
+      "common": {
+        "closeAll": "Zavřít všechny karty",
+        "closeAllTabMain": "Zavření všech karet v hlavní oblasti",
+        "closeOtherTabMain": "Zavření dalších karet v hlavní oblasti",
+        "closeOthers": "Zavření dalších karet",
+        "closeRight": "Zavření karet vpravo",
+        "closeTab": "Zavřít kartu",
+        "closeTabMain": "Zavřít kartu v hlavní oblasti",
+        "collapseAllTabs": "Sbalit všechny boční panely",
+        "collapseBottomPanel": "Přepínání spodního panelu",
+        "collapseTab": "Sbalení bočního panelu",
+        "showNextTabGroup": "Přepnutí na další skupinu karet",
+        "showNextTabInGroup": "Přepnutí na další kartu ve skupině",
+        "showPreviousTabGroup": "Přepnutí na předchozí skupinu karet",
+        "showPreviousTabInGroup": "Přepnutí na předchozí kartu ve skupině",
+        "toggleMaximized": "Přepínání Maximalizováno"
+      },
+      "file": {
+        "browse": "Procházet"
+      },
+      "highlightModifiedTabs": "Řídí, zda se na upravených (špinavých) kartách editoru vykreslí horní rámeček, nebo ne.",
+      "keyboard": {
+        "choose": "Výběr rozložení klávesnice",
+        "chooseLayout": "Výběr rozložení klávesnice",
+        "current": "(aktuální: {0})",
+        "currentLayout": " - aktuální rozvržení",
+        "mac": "Klávesnice pro Mac",
+        "pc": "Klávesnice PC",
+        "tryDetect": "Pokuste se zjistit rozložení klávesnice z informací o prohlížeči a stisknutých klávesách."
+      },
+      "quitMessage": "Neuložené změny se neuloží.",
+      "quitTitle": "Jste si jistý, že chcete skončit?",
+      "resetWorkbenchLayout": "Obnovení rozložení pracovního stolu",
+      "sashDelay": "Řídí zpoždění zpětné vazby při najetí na plochu v milisekundách mezi jednotlivými zobrazeními/editory.",
+      "sashSize": "Ovládá velikost oblasti zpětné vazby v pixelech v oblasti přetahování mezi zobrazeními/editory. V případě potřeby ji nastavte na větší hodnotu.",
+      "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními."
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
+      "continueAll": "Pokračovat ve všem",
+      "copyExpressionValue": "Kopírování hodnoty výrazu",
+      "debugViewLocation": "Ovládá umístění zobrazení ladění.",
+      "openBottom": "Otevřené dno",
+      "openLeft": "Otevřená levice",
+      "openRight": "Otevřená pravice",
+      "pauseAll": "Pozastavit vše",
+      "reveal": "Odhalení",
+      "threads": "Vlákna",
+      "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
+    },
+    "editor": {
+      "diffEditor.maxFileSize": "Maximální velikost souboru v MB, pro kterou se vypočítávají rozdíly. Použijte hodnotu 0 pro žádný limit.",
+      "editor.accessibilityPageSize": "Řídí počet řádků v editoru, které může čtečka obrazovky přečíst najednou. Při detekci čtečky obrazovky automaticky nastavíme výchozí hodnotu na 500. Upozornění: Pro čísla větší než výchozí to má vliv na výkon.",
+      "editor.autoClosingDelete": "Řídí, zda má editor při mazání odstranit sousední uzavírací uvozovky nebo závorky.",
+      "editor.autoClosingDelete1": "Odstraňte sousední uzavírací uvozovky nebo závorky pouze v případě, že byly vloženy automaticky.",
+      "editor.bracketPairColorization.enabled": "Ovládá, zda je obarvení dvojice závorek povoleno, nebo ne. Pro přepsání barev zvýraznění závorek použijte 'workbench.colorCustomizations'.",
+      "editor.codeLensFontSize": "Ovládá velikost písma v pixelech pro CodeLens. Při nastavení na `0` se použije 90 % hodnoty `#editor.fontSize#`.",
+      "editor.find.autoFindInSelection0": "Nikdy automaticky nezapínat funkci Najít ve výběru (výchozí nastavení).",
+      "editor.find.autoFindInSelection1": "Vždy automaticky zapněte funkci Najít ve výběru.",
+      "editor.find.seedSearchStringFromSelection0": "Nikdy nezadávejte vyhledávací řetězec z výběru editoru.",
+      "editor.find.seedSearchStringFromSelection1": "Hledaný řetězec se vždy vytvoří z výběru editoru, včetně slova na pozici kurzoru.",
+      "editor.find.seedSearchStringFromSelection2": "Z výběru v editoru vybíráte pouze vyhledávací řetězec.",
+      "editor.foldingImportsByDefault": "Řídí, zda editor automaticky sbalí rozsahy importu.",
+      "editor.foldingMaximumRegions": "Maximální počet skládaných oblastí. Zvýšení této hodnoty může vést k tomu, že editor bude méně citlivý, pokud má aktuální zdroj velký počet skládaných oblastí.",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "Pokusí se formátovat pouze změny (vyžaduje kontrolu zdrojů). Pokud nelze použít kontrolu zdrojů, bude formátován celý soubor.",
+      "editor.guides.bracketPairs": "Řídí, zda jsou vodítka dvojic držáků povolena, nebo ne.",
+      "editor.guides.bracketPairs0": "Povoluje vodítka dvojic držáků.",
+      "editor.guides.bracketPairs1": "Povolí vodítka dvojice držáků pouze pro aktivní dvojici držáků.",
+      "editor.guides.bracketPairs2": "Zakáže vodítka dvojic držáků.",
+      "editor.guides.bracketPairsHorizontal": "Řídí, zda jsou vodítka vodorovných dvojic konzol povolena, nebo ne.",
+      "editor.guides.bracketPairsHorizontal0": "Umožňuje kromě vodítek svislých dvojic držáků také vodorovná vodítka.",
+      "editor.guides.bracketPairsHorizontal1": "Povolí vodorovná vodítka pouze pro aktivní pár držáků.",
+      "editor.guides.bracketPairsHorizontal2": "Zakáže vodítka vodorovných dvojic konzol.",
+      "editor.guides.highlightActiveBracketPair": "Řídí, zda má editor zvýraznit aktivní dvojici závorek.",
+      "editor.hover.above": "Pokud je místo, raději se zobrazí nad řádkem.",
+      "editor.inlayHints.enabled": "Povolí v editoru nápovědy pro vložení.",
+      "editor.inlayHints.fontFamily": "Řídí rodinu písma vložených nápověd v editoru. Je-li nastaveno na prázdnou hodnotu, použije se `#editor.fontFamily#`.",
+      "editor.inlayHints.fontSize": "Ovládá velikost písma vložených nápověd v editoru. Pokud je nakonfigurovaná hodnota menší než `5` nebo větší než velikost písma editoru, použije se výchozí hodnota 90 % z `#editor.fontSize#`.",
+      "editor.inlineSuggest.enabled": "Ovládá, zda se mají v editoru automaticky zobrazovat návrhy na řádkování.",
+      "editor.language.colorizedBracketPairs": "Definuje dvojice závorek, které jsou obarveny podle úrovně vnoření, pokud je obarvení dvojic závorek povoleno.",
+      "editor.lineHeight": "Ovládá výšku čáry.\n - Chcete-li automaticky vypočítat výšku řádku z velikosti písma, použijte hodnotu 0.\n - Hodnoty mezi 0 a 8 se použijí jako násobitel s velikostí písma.\n - Hodnoty větší nebo rovné 8 budou použity jako efektivní hodnoty.",
+      "editor.renderLineHighlightOnlyWhenFocus": "Řídí, zda má editor vykreslovat zvýraznění aktuálního řádku pouze tehdy, když je editor zaměřen.",
+      "editor.renderWhitespace3": "Vykresluje pouze koncové bílé znaky.",
+      "editor.scrollbar.horizontal": "Ovládá viditelnost vodorovného posuvníku.",
+      "editor.scrollbar.horizontal0": "Vodorovný posuvník se zobrazí pouze v případě potřeby.",
+      "editor.scrollbar.horizontal1": "Vodorovný posuvník bude vždy viditelný.",
+      "editor.scrollbar.horizontal2": "Vodorovný posuvník bude vždy skrytý.",
+      "editor.scrollbar.horizontalScrollbarSize": "Výška horizontálního posuvníku.",
+      "editor.scrollbar.scrollByPage": "Řídí, zda se kliknutí posouvají podle stránky, nebo zda se přeskočí na pozici kliknutí.",
+      "editor.scrollbar.vertical": "Ovládá viditelnost svislého posuvníku.",
+      "editor.scrollbar.vertical0": "Svislý posuvník se zobrazí pouze v případě potřeby.",
+      "editor.scrollbar.vertical1": "Svislý posuvník bude vždy viditelný.",
+      "editor.scrollbar.vertical2": "Svislý posuvník bude vždy skrytý.",
+      "editor.scrollbar.verticalScrollbarSize": "Šířka svislého posuvníku.",
+      "editor.stickyTabStops": "Emulovat chování znaků tabulátoru při použití mezer pro odsazení. Výběr se bude držet zarážek tabulátoru.",
+      "editor.suggest.localityBonus": "Řídí, zda se při řazení upřednostňují slova, která se zobrazují v blízkosti kurzoru.",
+      "editor.suggest.preview": "Ovládá, zda se má v editoru zobrazit náhled výsledku návrhu.",
+      "editor.suggest.showDeprecated": "Pokud je funkce IntelliSense zapnutá, zobrazuje `deprecated` návrhy.",
+      "editor.unicodeHighlight.allowedCharacters": "Definuje povolené znaky, které nejsou zvýrazněny.",
+      "editor.unicodeHighlight.allowedLocales": "Znaky Unicode, které jsou běžné v povolených lokalitách, nejsou zvýrazněny.",
+      "editor.unicodeHighlight.ambiguousCharacters": "Řídí, zda budou zvýrazněny znaky, které lze zaměnit se základními znaky ASCII, s výjimkou těch, které jsou běžné v aktuálním uživatelském prostředí.",
+      "editor.unicodeHighlight.includeComments": "Řídí, zda mají být zvýrazněny i znaky v komentářích.",
+      "editor.unicodeHighlight.includeStrings": "Řídí, zda mají být znaky v řetězcích také zvýrazněny pomocí unicode.",
+      "editor.unicodeHighlight.invisibleCharacters": "Řídí, zda se zvýrazní znaky, které mají pouze rezervní místo nebo nemají žádnou šířku.",
+      "editor.unicodeHighlight.nonBasicASCII": "Řídí, zda se zvýrazní všechny nezákladní znaky ASCII. Za základní ASCII se považují pouze znaky mezi U+0020 a U+007E, tabulátor, řádkový posuv a carriage-return.",
+      "editor.wordBasedSuggestionsMode": "Řídí, z jakých dokumentů se vypočítávají doplnění na základě slov.",
+      "files.autoSave": "Ovládá [automatické ukládání](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save) editorů, které mají neuložené změny.",
+      "files.autoSave.afterDelay": "Editor se změnami se automaticky uloží po uplynutí nastavené doby `#files.autoSaveDelay#`.",
+      "files.autoSave.off": "Editor se změnami se nikdy automaticky neuloží.",
+      "files.autoSave.onFocusChange": "Editor se změnami se automaticky uloží, když ztratí fokus.",
+      "files.autoSave.onWindowChange": "Editor se změnami se automaticky uloží, když okno ztratí fokus.",
+      "formatOnSaveTimeout": "Časový limit v milisekundách, po jehož uplynutí se formátování spuštěné při ukládání souboru zruší.",
+      "persistClosedEditors": "Řídí, zda má historie zavřených editorů přetrvávat v pracovním prostoru i po opětovném načtení okna.",
+      "showAllEditors": "Zobrazit všechny otevřené editory",
+      "splitHorizontal": "Rozdělený editor Horizontální",
+      "splitVertical": "Rozdělený editor Vertikální"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "Chcete přepsat změny provedené v souboru '{0}' v souborovém systému?"
+      }
+    },
+    "filesystem": {
+      "copyDownloadLink": "Kopírovat odkaz ke stažení",
+      "fileResource": {
+        "binaryFileQuery": "Jeho otevření může trvat nějakou dobu a může způsobit, že IDE nebude reagovat. Chcete přesto otevřít '{0}'?",
+        "binaryTitle": "Soubor je buď binární, nebo používá nepodporované kódování textu.",
+        "largeFileTitle": "Soubor je příliš velký ({0}).",
+        "overwriteTitle": "Soubor '{0}' byl v souborovém systému změněn."
+      },
+      "filesExclude": "Konfigurace globálních vzorů pro vyloučení souborů a složek. Například Průzkumník souborů na základě tohoto nastavení rozhodne, které soubory a složky zobrazí nebo skryje.",
+      "maxConcurrentUploads": "Maximální počet současně nahrávaných souborů při nahrávání více souborů. 0 znamená, že všechny soubory budou nahrávány současně.",
+      "maxFileSizeMB": "Ovládá maximální velikost souboru v MB, který je možné otevřít.",
+      "processedOutOf": "Zpracováno {0} z {1}",
+      "uploadFiles": "Nahrávání souborů...",
+      "uploadedOutOf": "Nahráno {0} z {1}"
+    },
+    "getting-started": {
+      "newExtension": "Budování nového rozšíření",
+      "newPlugin": "Vytvoření nového pluginu"
+    },
+    "git": {
+      "addSignedOff": "Přidat Signed-off-by",
+      "amendReuseMessag": "Chcete-li znovu použít poslední zprávu o revizi, stiskněte klávesu \"Enter\" nebo klávesu \"Escape\" pro zrušení.",
+      "amendRewrite": "Přepsání předchozí zprávy o revizi. Stisknutím klávesy 'Enter' potvrdíte nebo klávesou 'Escape' zrušíte.",
+      "checkoutCreateLocalBranchWithName": "Vytvořte novou místní větev s názvem: {0}. Stiskněte klávesu \"Enter\" pro potvrzení nebo \"Escape\" pro zrušení.",
+      "checkoutProvideBranchName": "Uveďte prosím název pobočky.",
+      "checkoutSelectRef": "Zvolte referenční číslo, které chcete odhlásit, nebo vytvořte novou místní pobočku:",
+      "cloneQuickInputLabel": "Uveďte prosím umístění úložiště Git. Stisknutím klávesy \"Enter\" potvrdíte nebo klávesou \"Escape\" zrušíte.",
+      "cloneRepository": "Klonování úložiště Git: {0}. Stiskněte klávesu 'Enter' pro potvrzení nebo 'Escape' pro zrušení.",
+      "compareWith": "Porovnat s...",
+      "compareWithBranchOrTag": "Vyberte větev nebo značku, kterou chcete porovnat s aktuálně aktivní větví {0}:",
+      "dirtyDiffLinesLimit": "Pokud počet řádků editoru překročí tento limit, nezobrazují se špinavé rozdílové dekorace.",
+      "dropStashMessage": "Úschovna byla úspěšně odstraněna.",
+      "editorDecorationsEnabled": "Zobrazení dekorací git v editoru.",
+      "fetchPickRemote": "Vyberte vzdálené zařízení, ze kterého chcete načíst:",
+      "gitDecorationsColors": "Použití barevné dekorace v navigátoru.",
+      "mergeQuickPickPlaceholder": "Vyberte větev, kterou chcete sloučit s aktuálně aktivní větví {0}:",
+      "missingUserInfo": "Ujistěte se, že jste v systému git nakonfigurovali položky 'user.name' a 'user.email'.",
+      "noPreviousCommit": "Žádný předchozí závazek ke změně",
+      "noRepositoriesSelected": "Nebyla vybrána žádná úložiště.",
+      "repositoryNotInitialized": "Úložiště {0} ještě není inicializováno.",
+      "stashChanges": "Změny v úložišti. Stisknutím klávesy \"Enter\" potvrďte nebo klávesou \"Escape\" zrušte zadání.",
+      "stashChangesWithMessage": "Úschovna se mění se zprávou: {0}. Stisknutím klávesy 'Enter' potvrďte nebo klávesou 'Escape' zrušte.",
+      "toggleBlameAnnotations": "Přepínání Anotace obvinění"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "Místo toho použijte klauzuli `when`."
+    },
+    "markers": {
+      "clearAll": "Vymazat vše",
+      "tabbarDecorationsEnabled": "Zobrazení dekorátorů problémů (diagnostických značek) na pásech karet."
+    },
+    "messages": {
+      "notificationTimeout": "Po uplynutí tohoto časového limitu budou informativní oznámení skryta.",
+      "toggleNotifications": "Přepínání oznámení"
+    },
+    "mini-browser": {
+      "typeUrl": "Zadejte adresu URL"
+    },
+    "monaco": {
+      "noSymbolsMatching": "Žádné odpovídající symboly",
+      "typeToSearchForSymbols": "Zadejte hledání symbolů"
+    },
+    "navigator": {
+      "autoReveal": "Automatické odhalení",
+      "refresh": "Obnovení v Průzkumníku",
+      "reveal": "Odhalení v Průzkumníkovi",
+      "toggleHiddenFiles": "Přepínání skrytých souborů"
+    },
+    "output": {
+      "clearOutputChannel": "Jasný výstupní kanál...",
+      "closeOutputChannel": "Zavřít výstupní kanál...",
+      "hiddenChannels": "Skryté kanály",
+      "hideOutputChannel": "Skrýt výstupní kanál...",
+      "maxChannelHistory": "Maximální počet záznamů ve výstupním kanálu.",
+      "outputChannels": "Výstupní kanály",
+      "showOutputChannel": "Zobrazit výstupní kanál..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "Hostovaná instance je již spuštěna.",
+      "debugInstance": "Instance ladění",
+      "debugMode": "Použití inspect nebo inspect-brk pro ladění Node.js",
+      "failed": "Nepodařilo se spustit hostovanou instanci zásuvného modulu: {0}",
+      "hostedPlugin": "Hostovaný plugin",
+      "hostedPluginRunning": "Hostovaný plugin: Spuštěn",
+      "hostedPluginStarting": "Hostovaný plugin: Spuštění",
+      "hostedPluginStopped": "Hostovaný plugin: Zastaven",
+      "hostedPluginWatching": "Hostovaný plugin: Sledování",
+      "instanceTerminated": "{0} bylo ukončeno",
+      "launchOutFiles": "Pole glob vzorů pro vyhledávání generovaných souborů JavaScript (`${pluginPath}` bude nahrazeno skutečnou cestou k zásuvnému modulu).",
+      "noValidPlugin": "Zadaná složka neobsahuje platný zásuvný modul.",
+      "notRunning": "Hostovaná instance není spuštěna.",
+      "pluginFolder": "Složka pluginu je nastavena na: {0}",
+      "preventedNewTab": "Váš prohlížeč zabránil otevření nové karty",
+      "restartInstance": "Restartování instance",
+      "running": "Hostovaná instance je spuštěna na adrese:",
+      "select": "Vyberte",
+      "selectPath": "Vybrat cestu",
+      "startInstance": "Spuštění instance",
+      "starting": "Spuštění serveru hostované instance ...",
+      "stopInstance": "Zastavit instanci",
+      "unknownTerminated": "Instance byla ukončena",
+      "watchMode": "Spuštění sledovacího nástroje na vyvíjeném zásuvném modulu"
+    },
+    "plugin-ext": {
+      "plugins": "Zásuvné moduly",
+      "signInAgain": "Rozšíření \"{0}\" po vás chce, abyste se znovu přihlásili pomocí {1}.",
+      "webviewTrace": "Řídí sledování komunikace s webovými pohledy.",
+      "webviewWarnIfUnsecure": "Upozorňuje uživatele, že webové náhledy jsou v současné době nasazeny nezabezpečeně."
+    },
+    "preview": {
+      "openByDefault": "Ve výchozím nastavení otevřete místo editoru náhled."
+    },
+    "property-view": {
+      "created": "Vytvořeno",
+      "directory": "Adresář",
+      "lastModified": "Naposledy upraveno",
+      "location": "Umístění",
+      "path": "Cesta",
+      "properties": "Vlastnosti",
+      "size": "Velikost",
+      "symbolicLink": "Symbolický odkaz"
+    },
+    "scm": {
+      "amend": "Změnit",
+      "amendHeadCommit": "HEAD Commit",
+      "amendLastCommit": "Změnit poslední revizi",
+      "changeRepository": "Úložiště změn...",
+      "history": "Historie",
+      "noRepositoryFound": "Nebylo nalezeno žádné úložiště",
+      "unamend": "Odstranit změny",
+      "unamendCommit": "Změna revize"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "Zahrnout ignorované soubory",
+      "noFolderSpecified": "Složku jste neotevřeli ani nezadali. Aktuálně se prohledávají pouze otevřené soubory.",
+      "resultSubset": "Jedná se pouze o podmnožinu všech výsledků. Pro zúžení seznamu výsledků použijte konkrétnější vyhledávací výraz.",
+      "searchOnEditorModification": "Prohledat aktivní editor při úpravě."
+    },
+    "task": {
+      "attachTask": "Připojte úkol...",
+      "clearHistory": "Vymazat historii",
+      "openUserTasks": "Otevřené uživatelské úlohy"
+    },
+    "terminal": {
+      "confirmClose": "Řídí, zda se má při zavření okna potvrdit, že jsou aktivní relace terminálu.",
+      "confirmCloseAlways": "Vždy si ověřte, zda jsou k dispozici svorky.",
+      "confirmCloseChildren": "Zkontrolujte, zda existují terminály s podřízenými procesy.",
+      "confirmCloseNever": "Nikdy nepotvrzujte.",
+      "enableCopy": "Povolení funkce ctrl-c (cmd-c v systému macOS) pro kopírování vybraného textu",
+      "enablePaste": "Povolení funkce ctrl-v (cmd-v v systému macOS) pro vkládání ze schránky",
+      "shellArgsLinux": "Argumenty příkazového řádku, které se použijí v terminálu Linuxu.",
+      "shellArgsOsx": "Argumenty příkazového řádku, které se použijí v terminálu systému macOS.",
+      "shellArgsWindows": "Argumenty příkazového řádku, které se použijí v terminálu systému Windows.",
+      "shellLinux": "Cesta k shellu, který terminál používá v Linuxu (výchozí: '{0}'}).",
+      "shellOsx": "Cesta k shellu, který terminál používá v systému macOS (výchozí: '{0}'}).",
+      "shellWindows": "Cesta k shellu, který terminál používá v systému Windows. (výchozí: '{0}').",
+      "terminate": "Konec",
+      "terminateActive": "Chcete ukončit aktivní relaci terminálu?",
+      "terminateActiveMultiple": "Chcete ukončit aktivní relace terminálu {0}?"
+    },
+    "toolbar": {
+      "addCommand": "Přidání příkazu na panel nástrojů",
+      "addCommandPlaceholder": "Najděte příkaz, který chcete přidat na panel nástrojů",
+      "centerColumn": "Středový sloupec",
+      "failedUpdate": "Nepodařilo se aktualizovat hodnotu '{0}' v '{1}'.",
+      "filterIcons": "Ikony filtrů",
+      "iconSelectDialog": "Výběr ikony pro '{0}'",
+      "iconSet": "Sada ikon",
+      "insertGroupLeft": "Vložit oddělovač skupin (vlevo)",
+      "insertGroupRight": "Vložit oddělovač skupin (vpravo)",
+      "leftColumn": "Levý sloupec",
+      "openJSON": "Přizpůsobení panelu nástrojů (Otevřít JSON)",
+      "removeCommand": "Odstranění příkazu z panelu nástrojů",
+      "restoreDefaults": "Obnovení výchozího nastavení panelu nástrojů",
+      "rightColumn": "Pravý sloupec",
+      "selectIcon": "Vybrat ikonu",
+      "toggleToolbar": "Přepínání panelu nástrojů",
+      "toolbarLocationPlaceholder": "Kam chcete příkaz přidat?",
+      "useDefaultIcon": "Použití výchozí ikony"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "Hierarchie podtypů",
+      "supertypeHierarchy": "Hierarchie nadtypů",
+      "typeHierarchy": "Hierarchie typů"
+    },
+    "vsx-registry": {
+      "openVSX": "Otevření registru VSX",
+      "recommendedExtensions": "Seznam názvů rozšíření doporučených pro použití v tomto pracovním prostoru.",
+      "showRecommendedExtensions": "Řídí, zda se mají zobrazovat oznámení pro doporučení rozšíření."
+    },
+    "webview": {
+      "goToReadme": "Přejít na README",
+      "messageWarning": "            Vzor hostitele {0} byl změněn na `{1}`; změna vzoru může vést k bezpečnostním zranitelnostem.             Další informace naleznete v části `{2}`."
+    },
+    "workspace": {
+      "closeWorkspace": "Opravdu chcete zavřít pracovní prostor?",
+      "compareWithEachOther": "Vzájemné porovnání",
+      "confirmDeletePermanently.description": "Nepodařilo se odstranit položku \"{0}\" pomocí Koše. Chcete jej místo toho trvale odstranit?",
+      "confirmDeletePermanently.solution": "Používání Koše můžete zakázat v předvolbách.",
+      "confirmDeletePermanently.title": "Chyba při mazání souboru",
+      "duplicate": "Duplikát",
+      "failApply": "Nelze použít změny v novém souboru",
+      "failSaveAs": "Nelze spustit \"{0}\" pro aktuální widget.",
+      "noErasure": "Poznámka: Z disku se nic nevymaže",
+      "openRecentPlaceholder": "Zadejte název pracovního prostoru, který chcete otevřít.",
+      "openRecentWorkspace": "Otevřít nedávný pracovní prostor...",
+      "preserveWindow": "Povolit otevírání pracovních ploch v aktuálním okně.",
+      "removeFolder": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složku?",
+      "removeFolders": "Jste si jisti, že chcete z pracovního prostoru odebrat následující složky?",
+      "supportMultiRootWorkspace": "Řídí, zda je povolena podpora více kořenových pracovních prostorů.",
+      "trustEmptyWindow": "Řídí, zda má být prázdný pracovní prostor ve výchozím nastavení důvěryhodný.",
+      "trustEnabled": "Řídí, zda je povolena důvěryhodnost pracovního prostoru. Pokud je zakázáno, jsou důvěryhodné všechny pracovní prostory.",
+      "trustPrompt": "Řídí, kdy se zobrazí výzva ke svěření pracovního prostoru při spuštění.",
+      "trustRequest": "Rozšíření požaduje důvěryhodnost pracovního prostoru, ale odpovídající rozhraní API ještě není plně podporováno. Chcete tomuto pracovnímu prostoru důvěřovat?",
+      "untitled-cleanup": "Zdá se, že existuje mnoho nepojmenovaných souborů pracovního prostoru. Zkontrolujte prosím {0} a odstraňte všechny nepoužívané soubory.",
+      "workspaceFolderAdded": "Byl vytvořen pracovní prostor s více kořeny. Chcete uložit konfiguraci pracovního prostoru jako soubor?",
+      "workspaceFolderAddedTitle": "Složka přidaná do pracovního prostoru"
+    }
+  }
+}

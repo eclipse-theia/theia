@@ -1,0 +1,170 @@
+/********************************************************************************
+ * Copyright (C) 2018 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+#kb-main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#kb-table-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.fuzzy-match {
+    font-weight: 600;
+    color: var(--theia-list-highlightForeground);
+}
+
+.kb-actions {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.kb-action-item {
+    visibility: hidden;
+    padding-right: 5px;
+}
+
+.kb table {
+    border-spacing: 0;
+    border-collapse: separate;
+    background-color: var(--theia-editor-background);
+    width: 100%;
+    table-layout: fixed;
+}
+
+.kb table tr {
+    min-height: var(--theia-icon-size);
+}
+
+.th-action, .th-keybinding,
+.kb-actions, .kb-keybinding {
+    min-height: 18px;
+    overflow: hidden;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.th-action,
+.kb-actions {
+    padding: 2px 0px 5px 0px;
+}
+
+.th-keybinding,
+.kb-keybinding {
+    padding: 2px 10px 5px 10px;
+}
+
+.th-label, .th-source, .th-context, .th-keybinding,
+.kb-label, .kb-source, .kb-context {
+    padding: 2px 10px 5px 10px;
+    min-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.kb table th {
+    font-size: var(--theia-ui-font-size1);
+}
+
+.kb table td code {
+    font-size: 90%;
+}
+
+.td-source {
+    text-transform: lowercase;
+}
+
+.kb table tr:nth-child(odd) {
+    background-color: rgba(130, 130, 130, 0.04);
+}
+
+.kb table tbody tr:hover {
+    background-color: var(--theia-list-focusBackground);
+}
+
+.kb table tbody tr:hover .kb-action-item {
+    visibility: visible;
+    color: var(--theia-icon-foreground);
+    text-decoration: none;
+}
+
+.kb table th {
+    word-break: keep-all;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    text-align: left;
+    vertical-align: middle;
+    position: sticky;
+    top: 0;
+    background-color: var(--theia-editorWidget-background);
+}
+
+.kb table .th-action {
+    width: 4%;
+}
+
+.kb table .th-label {
+    width: 25%;
+}
+
+.kb table .th-keybinding {
+    width: 20%;
+}
+
+.kb table .th-source {
+    width: 10%;
+}
+
+.kb table .th-context {
+    width: 25%;
+}
+
+.no-kb {
+    border: 1px solid  var(--theia-editorWarning-foreground);
+}
+
+#search-kb {
+    height: 25px;
+    flex: 1;
+}
+
+.vs #search-kb {
+    border: 1px solid #ddd;
+}
+
+.search-kb-container {
+    padding: 10px;
+    display: flex;
+}
+
+.kb-item-row td a,
+.kb-item-row td a:active,
+.kb-item-row td a:focus {
+    outline: 0;
+    border: none;
+}
+
+.kb-actions-icons {
+    display: block;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}

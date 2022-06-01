@@ -1,0 +1,351 @@
+{
+  "theia": {
+    "callhierarchy": {
+      "open": "オープンコールヒエラルキー"
+    },
+    "core": {
+      "common": {
+        "closeAll": "すべてのタブを閉じる",
+        "closeAllTabMain": "メインエリアのすべてのタブを閉じる",
+        "closeOtherTabMain": "メインエリアの他のタブを閉じる",
+        "closeOthers": "他のタブを閉じる",
+        "closeRight": "閉じるタブを右に",
+        "closeTab": "タブを閉じる",
+        "closeTabMain": "メインエリアのタブを閉じる",
+        "collapseAllTabs": "すべてのサイドパネルを閉じる",
+        "collapseBottomPanel": "トグルボトムパネル",
+        "collapseTab": "折りたたみ式サイドパネル",
+        "showNextTabGroup": "次のタブグループに切り替える",
+        "showNextTabInGroup": "グループ内の次のタブに切り替える",
+        "showPreviousTabGroup": "前のタブグループに切り替える",
+        "showPreviousTabInGroup": "グループ内の前のタブに切り替える",
+        "toggleMaximized": "トグル・マキシマイズ"
+      },
+      "file": {
+        "browse": "ブラウズ"
+      },
+      "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
+      "keyboard": {
+        "choose": "キーボードレイアウトの選択",
+        "chooseLayout": "キーボードレイアウトの選択",
+        "current": "(現在: {0})",
+        "currentLayout": "- 現在のレイアウト",
+        "mac": "Mac用キーボード",
+        "pc": "PCキーボード",
+        "tryDetect": "ブラウザの情報や押されたキーからキーボードの配列を検出してみてください。"
+      },
+      "quitMessage": "保存されていない変更は、保存されません。",
+      "quitTitle": "本当に辞めたいのか?",
+      "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
+      "sashDelay": "ビュー/エディター間でのドラッグ領域のホバーフィードバックの遅延をミリ秒単位で制御します。",
+      "sashSize": "ビュー/エディタ間でのドラッグ領域のフィードバック領域のサイズをピクセル単位で制御します。必要に応じて、より大きな値に設定してください。",
+      "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。"
+    },
+    "debug": {
+      "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
+      "continueAll": "すべてを続ける",
+      "copyExpressionValue": "コピー式の値",
+      "debugViewLocation": "デバッグビューの位置を制御します。",
+      "openBottom": "オープンボトム",
+      "openLeft": "左開き",
+      "openRight": "オープンライト",
+      "pauseAll": "ポーズ・オール",
+      "reveal": "暴露",
+      "threads": "スレッド",
+      "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
+    },
+    "editor": {
+      "diffEditor.maxFileSize": "差分を計算するファイルの最大サイズをMBで指定します。制限しない場合は 0 を使用します。",
+      "editor.accessibilityPageSize": "スクリーン・リーダーが一度に読み上げられるエディターの行数を制御します。スクリーン・リーダーが検出されると、自動的にデフォルトが500に設定されます。警告: デフォルト値よりも大きな数値を設定した場合、パフォーマンスが低下します。",
+      "editor.autoClosingDelete": "削除の際に、隣接する閉じ引用符や括弧を削除するかどうかを制御します。",
+      "editor.autoClosingDelete1": "自動的に挿入された場合のみ、隣接する閉じ引用符または括弧を削除します。",
+      "editor.bracketPairColorization.enabled": "ブラケットペアの色付けを有効にするかどうかを制御します。ブラケットのハイライト色をオーバーライドするには 'workbench.colorCustomizations' を使用します。",
+      "editor.codeLensFontSize": "CodeLensのフォントサイズをピクセル単位で制御します。0`に設定すると、`#editor.fontSize#`の90%が使用されます。",
+      "editor.find.autoFindInSelection0": "選択部分の検索を自動的にオンにしない(デフォルト)。",
+      "editor.find.autoFindInSelection1": "常に「選択中の検索」を自動的にオンにします。",
+      "editor.find.seedSearchStringFromSelection0": "エディタ選択から検索文字列をシードすることはありません。",
+      "editor.find.seedSearchStringFromSelection1": "カーソル位置の単語を含め、常にエディタの選択範囲から検索文字列をシードします。",
+      "editor.find.seedSearchStringFromSelection2": "エディタ選択からシード検索文字列のみ。",
+      "editor.foldingImportsByDefault": "エディターがインポート範囲を自動的に折りたたむかどうかを制御します。",
+      "editor.foldingMaximumRegions": "折りたたみ可能な領域の最大数。この値を大きくすると、電流源の折りたたみ領域が多い場合にエディタの応答が悪くなることがあります。",
+      "editor.formatOnSaveMode.modificationsIfAvailable": "変更点のみをフォーマットしようとします(ソースコントロールが必要です)。ソースコントロールが使用できない場合は、ファイル全体がフォーマットされます。",
+      "editor.guides.bracketPairs": "ブラケットペアガイドを有効にするかどうかを制御します。",
+      "editor.guides.bracketPairs0": "ブラケットペアガイドを有効にします。",
+      "editor.guides.bracketPairs1": "アクティブなブラケットペアにのみブラケットペアガイドを有効にします。",
+      "editor.guides.bracketPairs2": "ブラケットペアガイドを無効化します。",
+      "editor.guides.bracketPairsHorizontal": "水平ブラケットペアガイドを有効にするかどうかを制御します。",
+      "editor.guides.bracketPairsHorizontal0": "垂直方向のブラケットペアガイドに加え、水平方向のガイドを有効にします。",
+      "editor.guides.bracketPairsHorizontal1": "アクティブなブラケットペアにのみ水平方向のガイドを有効にします。",
+      "editor.guides.bracketPairsHorizontal2": "水平ブラケットペアガイドを無効にします。",
+      "editor.guides.highlightActiveBracketPair": "エディターがアクティブなブラケットペアをハイライト表示するかどうかを制御します。",
+      "editor.hover.above": "スペースがある場合は、行の上にホバー表示することを優先します。",
+      "editor.inlayHints.enabled": "エディタでインレイのヒントを有効にします。",
+      "editor.inlayHints.fontFamily": "エディタ内のインレイヒントのフォントファミリーを制御します。空白に設定すると、`#editor.fontFamily#`が使用されます。",
+      "editor.inlayHints.fontSize": "エディターでのインレイヒントのフォントサイズを制御します。設定値が `5` 未満またはエディタのフォントサイズより大きい場合、デフォルトの `#editor.fontSize#` の 90% が使用されます。",
+      "editor.inlineSuggest.enabled": "エディタにインラインのサジェストを自動的に表示するかどうかを制御します。",
+      "editor.language.colorizedBracketPairs": "ブラケットペアの色付けが有効な場合に、その入れ子レベルによって色付けされるブラケットペアを定義する。",
+      "editor.lineHeight": "行の高さを制御します。\n - 0を指定すると、フォントサイズから自動的に行の高さが計算されます。\n - 0から8までの値は、フォントサイズとの乗数として使用されます。\n - 8以上の値は、有効な値として使用されます。",
+      "editor.renderLineHighlightOnlyWhenFocus": "エディタがフォーカスされているときのみ、現在の行のハイライトをレンダリングするかどうかを制御します。",
+      "editor.renderWhitespace3": "末尾の空白文字のみをレンダリングする。",
+      "editor.scrollbar.horizontal": "水平スクロールバーの表示/非表示を制御します。",
+      "editor.scrollbar.horizontal0": "水平スクロールバーは、必要なときだけ表示されます。",
+      "editor.scrollbar.horizontal1": "水平方向のスクロールバーは常に表示されます。",
+      "editor.scrollbar.horizontal2": "水平方向のスクロールバーは常に非表示になります。",
+      "editor.scrollbar.horizontalScrollbarSize": "水平スクロールバーの高さを指定します。",
+      "editor.scrollbar.scrollByPage": "クリックがページ単位でスクロールするか、クリック位置までジャンプするかを制御します。",
+      "editor.scrollbar.vertical": "垂直スクロールバーの表示/非表示を制御する。",
+      "editor.scrollbar.vertical0": "垂直スクロールバーは、必要なときだけ表示されます。",
+      "editor.scrollbar.vertical1": "垂直スクロールバーは常に表示されます。",
+      "editor.scrollbar.vertical2": "垂直スクロールバーは常に非表示になります。",
+      "editor.scrollbar.verticalScrollbarSize": "縦スクロールバーの幅を指定します。",
+      "editor.stickyTabStops": "スペースでインデントを行う際に、タブ文字の選択動作をエミュレートします。選択範囲がタブストップに張り付きます。",
+      "editor.suggest.localityBonus": "カーソルの近くに表示される単語を優先してソートするかどうかを制御します。",
+      "editor.suggest.preview": "提案の結果をエディターでプレビューするかどうかを制御します。",
+      "editor.suggest.showDeprecated": "IntelliSenseを有効にすると、「非推奨」のサジェスチョンが表示されます。",
+      "editor.unicodeHighlight.allowedCharacters": "ハイライトされない文字を定義する。",
+      "editor.unicodeHighlight.allowedLocales": "許可されたロケールで一般的なUnicode文字がハイライトされていません。",
+      "editor.unicodeHighlight.ambiguousCharacters": "現在のユーザーロケールで一般的な文字を除き、基本的なASCII文字と混同される可能性のある文字をハイライト表示するかどうかを制御します。",
+      "editor.unicodeHighlight.includeComments": "コメント中の文字もunicodeハイライトの対象とするかどうかを制御する。",
+      "editor.unicodeHighlight.includeStrings": "文字列内の文字もUnicodeハイライトの対象とするかどうかを制御する。",
+      "editor.unicodeHighlight.invisibleCharacters": "スペースを確保するだけの文字や幅のない文字を強調表示するかどうかを制御します。",
+      "editor.unicodeHighlight.nonBasicASCII": "すべての非基本ASCII文字をハイライト表示するかどうかを制御します。U+0020 から U+007E までの文字、タブ、ラインフィード、キャリッジリターンのみが基本 ASCII とみなされます。",
+      "editor.wordBasedSuggestionsMode": "どの文書から単語ベースの補完を計算するかを制御します。",
+      "files.autoSave": "未保存の変更があるエディターの[自動保存](https://code.visualstudio.com/docs/editor/codebasics#_save-auto-save)を制御します。",
+      "files.autoSave.afterDelay": "変更されたエディターは、設定された `#files.autoSaveDelay#` の後に自動的に保存されます。",
+      "files.autoSave.off": "変更されたエディタは、自動的に保存されることはありません。",
+      "files.autoSave.onFocusChange": "変更されたエディタは、エディタがフォーカスを失うと自動的に保存されます。",
+      "files.autoSave.onWindowChange": "変更されたエディタは、ウィンドウのフォーカスが外れたときに自動的に保存されます。",
+      "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
+      "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
+      "showAllEditors": "開いているエディタをすべて表示",
+      "splitHorizontal": "スプリットエディタ横",
+      "splitVertical": "スプリットエディタ縦"
+    },
+    "file-search": {
+      "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
+    },
+    "fileSystem": {
+      "fileResource": {
+        "overWriteBody": "ファイルシステム上の'{0}'に加えられた変更を上書きしますか?"
+      }
+    },
+    "filesystem": {
+      "copyDownloadLink": "コピー・ダウンロード・リンク",
+      "fileResource": {
+        "binaryFileQuery": "開くと時間がかかり、IDEが反応しなくなる可能性があります。とにかく'{0}'を開きたいのですか?",
+        "binaryTitle": "ファイルがバイナリであるか、サポートされていないテキストエンコーディングが使用されています。",
+        "largeFileTitle": "ファイルが大きすぎます({0})。",
+        "overwriteTitle": "ファイル '{0}' はファイルシステム上で変更されました。"
+      },
+      "filesExclude": "ファイルやフォルダーを除外するためのグロブパターンを設定します。例えば、ファイルエクスプローラーでは、この設定をもとにファイルやフォルダーの表示・非表示を決定します。",
+      "maxConcurrentUploads": "複数のファイルをアップロードする際に、同時にアップロードするファイルの最大数です。0の場合は、すべてのファイルが同時にアップロードされます。",
+      "maxFileSizeMB": "開くことのできる最大ファイルサイズ(MB)を制御します。",
+      "processedOutOf": "{1}のうち{0}を処理",
+      "uploadFiles": "ファイルのアップロード...",
+      "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
+    },
+    "getting-started": {
+      "newExtension": "新しいエクステンションの構築",
+      "newPlugin": "新しいプラグインの構築"
+    },
+    "git": {
+      "addSignedOff": "サイン・オフ・バイの追加",
+      "amendReuseMessag": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
+      "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutCreateLocalBranchWithName": "名前:{0}で新しいローカルブランチを作成します。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "checkoutProvideBranchName": "支店名をご記入ください。",
+      "checkoutSelectRef": "チェックアウトするRefを選択するか、新しいローカルブランチを作成します。",
+      "cloneQuickInputLabel": "Gitリポジトリの場所を指定してください。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "cloneRepository": "Gitリポジトリをクローンします。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "compareWith": "比べてみると...",
+      "compareWithBranchOrTag": "現在アクティブな{0}のブランチと比較するブランチやタグを選びます。",
+      "dirtyDiffLinesLimit": "エディタの行数がこの制限を超えている場合、ダーティな diff デコレーションを表示しません。",
+      "dropStashMessage": "スタッシュの削除に成功しました。",
+      "editorDecorationsEnabled": "エディタにgitデコレーションを表示します。",
+      "fetchPickRemote": "フェッチするリモートを選びます。",
+      "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
+      "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
+      "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
+      "noPreviousCommit": "修正する前のコミットがない",
+      "noRepositoriesSelected": "リポジトリが選択されていません。",
+      "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
+      "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
+      "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
+      "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
+    },
+    "keybinding-schema-updater": {
+      "deprecation": "代わりに `when` 句を使用してください。"
+    },
+    "markers": {
+      "clearAll": "クリアオール",
+      "tabbarDecorationsEnabled": "タブバーに問題のデコレーター(診断マーカー)を表示する。"
+    },
+    "messages": {
+      "notificationTimeout": "このタイムアウト後は、情報提供のための通知が非表示になります。",
+      "toggleNotifications": "通知の切り替え"
+    },
+    "mini-browser": {
+      "typeUrl": "URLを入力する"
+    },
+    "monaco": {
+      "noSymbolsMatching": "シンボルが一致しない",
+      "typeToSearchForSymbols": "記号を検索するタイプ"
+    },
+    "navigator": {
+      "autoReveal": "オートリヴェール",
+      "refresh": "エクスプローラーでの更新",
+      "reveal": "エクスプローラーでの表示",
+      "toggleHiddenFiles": "隠しファイルのトグル"
+    },
+    "output": {
+      "clearOutputChannel": "クリア出力チャンネル...",
+      "closeOutputChannel": "出力チャンネルを閉じる...",
+      "hiddenChannels": "隠しチャンネル",
+      "hideOutputChannel": "出力チャンネルを隠す...",
+      "maxChannelHistory": "1つの出力チャネルの最大エントリ数。",
+      "outputChannels": "出力チャンネル",
+      "showOutputChannel": "出力チャンネルを表示..."
+    },
+    "plugin-dev": {
+      "alreadyRunning": "ホストされているインスタンスはすでに実行されています。",
+      "debugInstance": "デバッグインスタンス",
+      "debugMode": "Node.js のデバッグに inspect または inspect-brk を使用する",
+      "failed": "ホストされたプラグインインスタンスの実行に失敗しました。{0}",
+      "hostedPlugin": "ホスト型プラグイン",
+      "hostedPluginRunning": "ホスト型プラグイン: 実行中",
+      "hostedPluginStarting": "ホスト型プラグイン: 開始",
+      "hostedPluginStopped": "ホスト型プラグイン: 停止中",
+      "hostedPluginWatching": "ホストされたプラグイン: ウォッチング",
+      "instanceTerminated": "{0}は終了しました。",
+      "launchOutFiles": "生成されたJavaScriptファイルを探すためのグロブパターンの配列です(`${pluginPath}`はプラグインの実際のパスに置き換えられます)。",
+      "noValidPlugin": "指定されたフォルダに有効なプラグインが含まれていません。",
+      "notRunning": "ホスト側のインスタンスが起動していない。",
+      "pluginFolder": "プラグインフォルダが設定されています。{0}",
+      "preventedNewTab": "お使いのブラウザで新しいタブが開かない",
+      "restartInstance": "インスタンスの再起動",
+      "running": "ホストされているインスタンスは、次のように実行されています。",
+      "select": "セレクト",
+      "selectPath": "セレクトパス",
+      "startInstance": "インスタンスの開始",
+      "starting": "ホストされたインスタンス・サーバーの起動 ...",
+      "stopInstance": "インスタンスの停止",
+      "unknownTerminated": "インスタンスが終了しました。",
+      "watchMode": "開発中のプラグインにウォッチャーを実行"
+    },
+    "plugin-ext": {
+      "plugins": "プラグイン",
+      "signInAgain": "拡張子「{0}」は、「{1}」を使って再度サインインしてほしいと言っています。",
+      "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
+      "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
+    },
+    "preview": {
+      "openByDefault": "デフォルトではエディタではなくプレビューを開くようになっています。"
+    },
+    "property-view": {
+      "created": "作成",
+      "directory": "ディレクトリ",
+      "lastModified": "最終更新日",
+      "location": "所在地",
+      "path": "パス",
+      "properties": "プロパティ",
+      "size": "サイズ",
+      "symbolicLink": "シンボリックリンク"
+    },
+    "scm": {
+      "amend": "修正",
+      "amendHeadCommit": "HEADコミット",
+      "amendLastCommit": "前回のコミットを修正",
+      "changeRepository": "リポジトリの変更...",
+      "history": "歴史",
+      "noRepositoryFound": "リポジトリが見つからない",
+      "unamend": "くり返す",
+      "unamendCommit": "未修正のコミット"
+    },
+    "search-in-workspace": {
+      "includeIgnoredFiles": "無視されたファイルを含める",
+      "noFolderSpecified": "フォルダを開いていない、または指定していない。現在、開いているファイルのみが検索されます。",
+      "resultSubset": "これは、すべての結果の一部に過ぎません。より具体的な検索用語を使って、結果リストを絞り込んでください。",
+      "searchOnEditorModification": "修正されたときにアクティブなエディタを検索します。"
+    },
+    "task": {
+      "attachTask": "タスクの添付...",
+      "clearHistory": "明確な歴史",
+      "openUserTasks": "ユーザータスクを開く"
+    },
+    "terminal": {
+      "confirmClose": "アクティブなターミナルセッションがある場合、ウィンドウが閉じるときに確認するかどうかを制御します。",
+      "confirmCloseAlways": "端子があるかどうかは必ず確認してください。",
+      "confirmCloseChildren": "子プロセスが存在する端末があるかどうかを確認します。",
+      "confirmCloseNever": "絶対に確認しないでください。",
+      "enableCopy": "ctrl-c(macOSではcmd-c)で選択されたテキストをコピーできるようになりました。",
+      "enablePaste": "ctrl-v(macOSではcmd-v)でクリップボードからの貼り付けを可能にする。",
+      "shellArgsLinux": "Linux端末で使用するコマンドライン引数です。",
+      "shellArgsOsx": "macOSのターミナルで使用するコマンドライン引数です。",
+      "shellArgsWindows": "Windows端末で使用するコマンドライン引数です。",
+      "shellLinux": "Linuxでターミナルが使用するシェルのパス(デフォルト:'{0}'})。",
+      "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
+      "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。",
+      "terminate": "終了",
+      "terminateActive": "アクティブなターミナルセッションを終了しますか?",
+      "terminateActiveMultiple": "{0}のアクティブな端末セッションを終了しますか?"
+    },
+    "toolbar": {
+      "addCommand": "ツールバーへのコマンド追加",
+      "addCommandPlaceholder": "ツールバーに追加するコマンドを探す",
+      "centerColumn": "センターポール",
+      "failedUpdate": "1}'の'{0}'の値を更新できませんでした。",
+      "filterIcons": "フィルターアイコン",
+      "iconSelectDialog": "{0}」のアイコンを選択します。",
+      "iconSet": "アイコンセット",
+      "insertGroupLeft": "インサートグループセパレーター(左)",
+      "insertGroupRight": "インサートグループセパレーター(右)",
+      "leftColumn": "左欄",
+      "openJSON": "ツールバーのカスタマイズ(JSONを開く)",
+      "removeCommand": "ツールバーからコマンドを削除する",
+      "restoreDefaults": "ツールバーの初期設定に戻す",
+      "rightColumn": "右列",
+      "selectIcon": "アイコンの選択",
+      "toggleToolbar": "ツールバーのトグル",
+      "toolbarLocationPlaceholder": "コマンドを追加したい場所はどこですか?",
+      "useDefaultIcon": "デフォルトアイコンを使用する"
+    },
+    "typehierarchy": {
+      "subtypeHierarchy": "サブタイプヒエラルキー",
+      "supertypeHierarchy": "スーパータイプヒエラルキー",
+      "typeHierarchy": "タイプ階層"
+    },
+    "vsx-registry": {
+      "openVSX": "VSXレジストリを開く",
+      "recommendedExtensions": "このワークスペースでの使用が推奨される拡張機能の名前のリストです。",
+      "showRecommendedExtensions": "拡張機能の推奨事項について、通知を表示するかどうかを制御します。"
+    },
+    "webview": {
+      "goToReadme": "READMEに戻る",
+      "messageWarning": "           {0}エンドポイントのホストパターンが`{1}`に変更されました。パターンを変更すると、セキュリティ上の脆弱性が発生する可能性があります。             詳しくは `{2}` をご覧ください。"
+    },
+    "workspace": {
+      "closeWorkspace": "本当にワークスペースを閉じたいのですか?",
+      "compareWithEachOther": "互いの比較",
+      "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
+      "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
+      "confirmDeletePermanently.title": "ファイル削除時のエラー",
+      "duplicate": "デュプリケート",
+      "failApply": "新しいファイルに変更を適用できなかった",
+      "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
+      "noErasure": "注:ディスクからは何も消去されません",
+      "openRecentPlaceholder": "開きたいワークスペースの名前を入力する",
+      "openRecentWorkspace": "最近のワークスペースを開く...",
+      "preserveWindow": "ワークスペースを現在のウィンドウで開けるようにします。",
+      "removeFolder": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "removeFolders": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "supportMultiRootWorkspace": "マルチルート・ワークスペースのサポートを有効にするかどうかを制御します。",
+      "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
+      "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
+      "trustPrompt": "ワークスペースを信頼するための起動時のプロンプトを表示するタイミングを制御します。",
+      "trustRequest": "拡張機能がワークスペースの信頼を要求していますが、対応する API はまだ完全にはサポートされていません。このワークスペースを信頼しますか?",
+      "untitled-cleanup": "名称未設定のワークスペースファイルが多数あるようです。{0}を確認して、未使用のファイルを削除してください。",
+      "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
+      "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  // override existing rules for ui-tests playwright package
+  "rules": {
+    "no-null/no-null": "off"
+  }
+}
