@@ -15,42 +15,38 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { app, BrowserWindow, ipcMain, WebContents } from '../../electron-shared/electron';
+import { app, BrowserWindow, ipcMain, IpcMainEvent, WebContents } from '../../electron-shared/electron';
 import { Menu } from '../../electron-shared/electron/index';
 import { isOSX } from '../common';
 import { MenuItemConstructorOptions } from '../electron-common/menu';
-import {
-    CloseContextMenu,
-    ContextMenuDidClose, MenuItemDidClick, SetMenu, ShowContextMenu, UpdateMenuItems
-} from '../electron-common/messaging/electron-messages';
+import { CloseContextMenu, ContextMenuDidClose, MenuItemDidClick, SetMenu, ShowContextMenu, UpdateMenuItems } from '../electron-common/messaging/electron-messages';
 import { ElectronMainApplicationContribution } from './electron-main-application';
 
 @injectable()
 export class ElectronMainMenu implements ElectronMainApplicationContribution {
 
-    // keys are the sender IDS, values are the current menu per window.
-    protected readonly menus = new Map<number, Menu | null>();
-    // keys are sender IDs, values are the open context menus per sender.
-    protected readonly openContextMenus = new Map<number, Map<string, Menu>>();
+    /** Keys are the sender IDS, values are the current menu per window. */
+    protected menus = new Map<number, Menu | null>();
+    /** Keys are sender IDs, values are the open context menus per sender. */
+    protected openContextMenus = new Map<number, Map<string, Menu>>();
 
     onStart(): void {
-        ipcMain.on(SetMenu.Signal, ({ sender }, params: SetMenu.Params) => this.setMenu({ sender }, params));
-        ipcMain.on(UpdateMenuItems.Signal, ({ sender }, params: UpdateMenuItems.Params) => this.updateMenuItems({ sender }, params));
-        ipcMain.on(ShowContextMenu.Signal, ({ sender }, params: ShowContextMenu.Params) => this.showContextMenu({ sender }, params));
-        ipcMain.on(CloseContextMenu.Signal, ({ sender }, params: CloseContextMenu.Params) => this.closeContextMenu({ sender }, params));
+        ipcMain.on(SetMenu.Signal, (event, params: SetMenu.Params) => this.handleSetMenuSignal(event, params));
+        ipcMain.on(UpdateMenuItems.Signal, (event, params: UpdateMenuItems.Params) => this.handleUpdateMenuItemsSignal(event, params));
+        ipcMain.on(ShowContextMenu.Signal, (event, params: ShowContextMenu.Params) => this.handleShowContextMenuSignal(event, params));
+        ipcMain.on(CloseContextMenu.Signal, (event, params: CloseContextMenu.Params) => this.handleCloseContextMenuSignal(event, params));
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
             // OSX only has one menu bar for all windows, so we need to swap
             // between them as the user switches windows.
-            app.on('browser-window-focus', (_event, browserWindow) => {
-                const { id } = browserWindow;
-                const menu = this.menus.get(id);
+            app.on('browser-window-focus', (event, browserWindow) => {
+                const menu = this.menus.get(browserWindow.id);
                 if (menu !== undefined) {
                     Menu.setApplicationMenu(menu);
                 }
             });
         }
-        app.on('browser-window-created', (_event, browserWindow) => {
+        app.on('browser-window-created', (event, browserWindow) => {
             const { id } = browserWindow;
             browserWindow.once('closed', () => {
                 this.menus.delete(id);
@@ -64,15 +60,14 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
         this.openContextMenus.clear();
     }
 
-    async setMenu(
-        { sender }: { sender: WebContents },
-        params: SetMenu.Params
-    ): Promise<void> {
+    protected async handleSetMenuSignal(event: IpcMainEvent, params: SetMenu.Params): Promise<void> {
+        const { sender } = event;
+        const { id } = sender;
         const { template } = params;
-        console.debug(SetMenu.Signal, `sender ID: ${sender.id}`);
-        const browserWindow = BrowserWindow.fromId(sender.id);
+        console.debug(SetMenu.Signal, `sender ID: ${id}`);
+        const browserWindow = BrowserWindow.fromId(id);
         if (!browserWindow) {
-            console.warn(SetMenu.Signal, `Could not find BrowserWindow with ID: <${sender.id}>.`);
+            console.warn(SetMenu.Signal, `Could not find BrowserWindow with ID: <${id}>.`);
             return;
         }
         // eslint-disable-next-line no-null/no-null
@@ -80,17 +75,15 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
         if (template) {
             menu = buildFromTemplate(sender, template);
         }
-        this.doSetMenu({ sender }, { menu, browserWindow });
+        this.doSetMenu(sender, menu, browserWindow);
     }
 
-    async updateMenuItems(
-        { sender }: { sender: WebContents },
-        params: UpdateMenuItems.Params
-    ): Promise<void> {
+    protected async handleUpdateMenuItemsSignal(event: IpcMainEvent, params: UpdateMenuItems.Params): Promise<void> {
+        const { sender } = event;
         const { id } = sender;
         const { menuItems } = params;
         console.debug(UpdateMenuItems.Signal, `Sender ID: <${id}>, menu items to update: <${JSON.stringify(menuItems)}>.`);
-        const browserWindow = BrowserWindow.fromId(sender.id);
+        const browserWindow = BrowserWindow.fromId(id);
         if (!browserWindow) {
             console.warn(UpdateMenuItems.Signal, `Could not find BrowserWindow with ID: <${id}>.`);
             return;
@@ -106,42 +99,40 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
                 menuItem.checked = checked;
             }
         }
-        this.doSetMenu({ sender }, { menu, browserWindow });
+        this.doSetMenu(sender, menu, browserWindow);
     }
 
-    async showContextMenu(
-        { sender }: { sender: WebContents },
-        params: ShowContextMenu.Params
-    ): Promise<void> {
+    protected async handleShowContextMenuSignal(event: IpcMainEvent, params: ShowContextMenu.Params): Promise<void> {
+        const { sender } = event;
+        const { id } = sender;
         const { template, x, y, contextMenuId } = params;
-        console.debug(ShowContextMenu.Signal, `Sender ID: <${sender.id}>, context menu ID: <${contextMenuId}>.`);
-        const browserWindow = BrowserWindow.fromId(sender.id);
+        console.debug(ShowContextMenu.Signal, `Sender ID: <${id}>, context menu ID: <${contextMenuId}>.`);
+        const browserWindow = BrowserWindow.fromId(id);
         if (!browserWindow) {
-            console.warn(ShowContextMenu.Signal, `Could not find BrowserWindow with ID: <${sender.id}>.`);
+            console.warn(ShowContextMenu.Signal, `Could not find BrowserWindow with ID: <${id}>.`);
             return;
         }
         const contextMenu = buildFromTemplate(sender, template);
-        contextMenu.once('menu-will-show', () => this.register({ sender, contextMenuId, contextMenu }));
+        contextMenu.once('menu-will-show', () => this.register(sender, contextMenuId, contextMenu));
         contextMenu.popup({
             window: browserWindow,
             x,
             y,
-            callback: () => this.unregister({ sender, contextMenuId })
+            callback: () => this.unregister(sender, contextMenuId)
         });
     }
 
-    async closeContextMenu(
-        { sender }: { sender: WebContents },
-        params: CloseContextMenu.Params
-    ): Promise<void> {
+    protected async handleCloseContextMenuSignal(event: IpcMainEvent, params: CloseContextMenu.Params): Promise<void> {
+        const { sender } = event;
+        const { id } = sender;
         const { contextMenuId } = params;
-        console.debug(CloseContextMenu.Signal, `Sender ID: <${sender.id}>, context menu ID: <${contextMenuId}>.`);
-        this.unregister({ sender, contextMenuId });
+        console.debug(CloseContextMenu.Signal, `Sender ID: <${id}>, context menu ID: <${contextMenuId}>.`);
+        this.unregister(sender, contextMenuId);
     }
 
-    private register({ sender, contextMenuId, contextMenu }: { sender: WebContents, contextMenuId: string, contextMenu: Menu }): boolean {
+    protected register(sender: WebContents, contextMenuId: string, contextMenu: Menu): boolean {
         const { id } = sender;
-        console.debug(`>>> Registering open context meu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
+        console.debug(`>>> Registering open context menu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
         this.dumpOpenContextMenus();
         let contextMenusPerSender = this.openContextMenus.get(id);
         if (!contextMenusPerSender) {
@@ -155,14 +146,15 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
             }
         }
         contextMenusPerSender.set(contextMenuId, contextMenu);
-        console.debug(`<<< Registered open context meu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
+        console.debug(`<<< Registered open context menu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
         this.dumpOpenContextMenus();
         return true;
     }
 
-    private unregister({ sender, contextMenuId, silent }: { sender: WebContents, contextMenuId: string, silent?: boolean }): boolean {
+    protected unregister(sender: WebContents, contextMenuId: string, options?: { silent?: boolean }): boolean {
         const { id } = sender;
-        console.debug(`>>> Removing open context meu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
+        const silent = options?.silent ?? false;
+        console.debug(`>>> Removing open context menu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
         this.dumpOpenContextMenus('before unregister');
         const contextMenusPerSender = this.openContextMenus.get(id);
         if (!contextMenusPerSender) {
@@ -188,15 +180,12 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
         if (!contextMenusPerSender.size) {
             this.openContextMenus.delete(id);
         }
-        console.debug(`>>> Removed open context meu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
+        console.debug(`>>> Removed open context menu for sender <${id}> with context menu ID: <${contextMenuId}>.`);
         this.dumpOpenContextMenus('after unregister');
         return true;
     }
 
-    private doSetMenu(
-        { sender }: { sender: WebContents },
-        { menu, browserWindow }: { menu: Menu | null, browserWindow: Electron.BrowserWindow }
-    ): void {
+    protected doSetMenu(sender: WebContents, menu: Menu | null, browserWindow: Electron.BrowserWindow): void {
         const { id } = sender;
         this.menus.set(id, menu);
         if (isOSX) {
@@ -207,7 +196,7 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
         }
     }
 
-    private dumpOpenContextMenus(message: string = ''): void {
+    protected dumpOpenContextMenus(message: string = ''): void {
         console.debug(`------- Open context menus ${message ? `[${message}] ` : ''}-------`);
         for (const [id, contextMenusPerSender] of this.openContextMenus.entries()) {
             if (contextMenusPerSender.size) {
@@ -222,17 +211,11 @@ export class ElectronMainMenu implements ElectronMainApplicationContribution {
 
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildFromTemplate(
-    sender: WebContents,
-    options: MenuItemConstructorOptions[]
-): Menu {
+function buildFromTemplate(sender: WebContents, options: MenuItemConstructorOptions[]): Menu {
     const template = options.map(o => MenuItemConstructorOptions.toElectron(o, menuItemClickHandler(sender)));
     return Menu.buildFromTemplate(template);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function menuItemClickHandler(sender: WebContents): ({ commandId, args }: { commandId: string; args?: any[]; }) => () => void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return ({ commandId, args }: { commandId: string; args?: any[]; }) => () => sender.send(MenuItemDidClick.Signal, { commandId, args });
+function menuItemClickHandler(sender: WebContents): (params: { commandId: string; args?: unknown[]; }) => () => void {
+    return (params: { commandId: string; args?: unknown[]; }) => () => sender.send(MenuItemDidClick.Signal, params);
 }
