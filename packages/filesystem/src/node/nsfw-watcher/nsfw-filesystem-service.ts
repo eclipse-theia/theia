@@ -252,13 +252,13 @@ export class NsfwWatcher {
                 await Promise.all(events.map(async event => {
                     if (event.action === nsfw.actions.RENAMED) {
                         const [oldPath, newPath] = await Promise.all([
-                            this.resolveEventPath(event.directory, event.oldFile!),
+                            this.resolveEventPath(event.directory, event.oldFile!, nsfw.actions.DELETED),
                             this.resolveEventPath(event.newDirectory || event.directory, event.newFile!),
                         ]);
                         this.pushFileChange(fileChangeCollection, FileChangeType.DELETED, oldPath);
                         this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, newPath);
                     } else {
-                        const path = await this.resolveEventPath(event.directory, event.file!);
+                        const path = await this.resolveEventPath(event.directory, event.file!, event.action);
                         if (event.action === nsfw.actions.CREATED) {
                             this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, path);
                         } else if (event.action === nsfw.actions.DELETED) {
@@ -280,10 +280,14 @@ export class NsfwWatcher {
         }
     }
 
-    protected async resolveEventPath(directory: string, file: string): Promise<string> {
+    protected async resolveEventPath(directory: string, file: string, action?: nsfw.ActionType): Promise<string> {
         const path = join(directory, file);
         try {
-            return await fsp.realpath(path);
+            if (action !== nsfw.actions.DELETED) {
+                return await fsp.realpath(path);
+            } else {
+                throw new Error('File is deleted.');
+            }
         } catch {
             try {
                 // file does not exist try to resolve directory
