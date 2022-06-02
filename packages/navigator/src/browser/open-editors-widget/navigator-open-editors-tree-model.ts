@@ -30,7 +30,7 @@ import {
 } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
-import { DisposableCollection } from '@theia/core/lib/common';
+import { DisposableCollection, nls } from '@theia/core/lib/common';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export interface OpenEditorNode extends FileStatNode {
@@ -157,7 +157,7 @@ export class OpenEditorsModel extends FileTreeModel {
         if (mainTabBars.length > 1) {
             mainTabBars.forEach((tabbar, index) => {
                 const groupNumber = index + 1;
-                const newCaption = `GROUP ${groupNumber}`;
+                const newCaption = nls.localizeByDefault('Group {0}', groupNumber);
                 const groupNode = {
                     parent: undefined,
                     id: `${OpenEditorsModel.GROUP_NODE_ID_PREFIX}:${groupNumber}`,
