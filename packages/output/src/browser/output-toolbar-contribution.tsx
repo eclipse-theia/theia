@@ -97,7 +97,11 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
             });
         }
         return <div id='outputChannelList'>
-            <SelectComponent options={channelOptionElements} value={this.outputChannelManager.selectedChannel?.name} onChange={option => this.changeChannel(option)} />
+            <SelectComponent
+                options={channelOptionElements}
+                defaultValue={this.outputChannelManager.selectedChannel?.name}
+                onChange={option => this.changeChannel(option)}
+            />
         </div>;
     }
 

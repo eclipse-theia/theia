@@ -15,8 +15,6 @@
 // *****************************************************************************
 
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
-// eslint-disable-next-line @theia/runtime-import-check
-import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-contribution';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 export const pluginDevServicePath = '/services/plugin-dev';
@@ -24,7 +22,7 @@ export const PluginDevServer = Symbol('PluginDevServer');
 export interface PluginDevServer extends JsonRpcServer<PluginDevClient> {
     getHostedPlugin(): Promise<PluginMetadata | undefined>;
     runHostedPluginInstance(uri: string): Promise<string>;
-    runDebugHostedPluginInstance(uri: string, debugConfig: DebugPluginConfiguration): Promise<string>;
+    runDebugHostedPluginInstance(uri: string, debugConfig: PluginDebugConfiguration): Promise<string>;
     terminateHostedPluginInstance(): Promise<void>;
     isHostedPluginInstanceRunning(): Promise<boolean>;
     getHostedPluginInstanceURI(): Promise<string>;
@@ -38,4 +36,10 @@ export interface PluginDevServer extends JsonRpcServer<PluginDevClient> {
 }
 
 export interface PluginDevClient {
+}
+
+export interface PluginDebugConfiguration {
+    debugMode?: string;
+    pluginLocation?: string;
+    debugPort?: string;
 }

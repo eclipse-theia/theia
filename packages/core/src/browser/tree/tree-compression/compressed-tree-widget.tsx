@@ -123,8 +123,8 @@ export class CompressedTreeWidget extends TreeViewWelcomeWidget {
     protected getCaptionChildEventHandlers(node: TreeNode, props: CompressedNodeProps): React.Attributes & React.HtmlHTMLAttributes<HTMLElement> {
         return {
             onClick: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
-            onDoubleClick: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
-            onContextMenu: event => (event.stopPropagation(), this.handleClickEvent(node, event)),
+            onDoubleClick: event => (event.stopPropagation(), this.handleDblClickEvent(node, event)),
+            onContextMenu: event => (event.stopPropagation(), this.handleContextMenuEvent(node, event)),
         };
     }
 

@@ -22,8 +22,8 @@ import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
-import { PluginDevServer } from '../common/plugin-dev-protocol';
-import { DebugPluginConfiguration, LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
+import { PluginDebugConfiguration, PluginDevServer } from '../common/plugin-dev-protocol';
+import { LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -145,7 +145,7 @@ export class HostedPluginManagerClient {
         return undefined;
     }
 
-    async start(debugConfig?: DebugPluginConfiguration): Promise<void> {
+    async start(debugConfig?: PluginDebugConfiguration): Promise<void> {
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
             this.messageService.warn(nls.localize('theia/plugin-dev/alreadyRunning', 'Hosted instance is already running.'));
             return;
@@ -181,7 +181,7 @@ export class HostedPluginManagerClient {
         }
     }
 
-    async debug(config?: DebugPluginConfiguration): Promise<string | undefined> {
+    async debug(config?: PluginDebugConfiguration): Promise<string | undefined> {
         await this.start(this.setDebugConfig(config));
         await this.startDebugSessionManager();
 
@@ -361,7 +361,7 @@ export class HostedPluginManagerClient {
         return error?.message?.substring(error.message.indexOf(':') + 1) || '';
     }
 
-    private setDebugConfig(config?: DebugPluginConfiguration): DebugPluginConfiguration {
+    private setDebugConfig(config?: PluginDebugConfiguration): PluginDebugConfiguration {
         config = Object.assign(config || {}, { debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
         if (config.pluginLocation) {
             this.pluginLocation = new URI((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).withScheme('file');
@@ -369,7 +369,7 @@ export class HostedPluginManagerClient {
         return config;
     }
 
-    private getDebugPluginConfig(args: LaunchVSCodeArgument[]): DebugPluginConfiguration {
+    private getDebugPluginConfig(args: LaunchVSCodeArgument[]): PluginDebugConfiguration {
         let pluginLocation;
         for (const arg of args) {
             if (arg?.prefix === '--extensionDevelopmentPath=') {

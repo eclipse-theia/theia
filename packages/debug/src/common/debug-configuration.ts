@@ -74,9 +74,6 @@ export interface DebugConfiguration {
 
     /** Task to run after debug session ends */
     postDebugTask?: string | TaskIdentifier;
-
-    /** Indicates if it's a dynamic debug configuration */
-    dynamic?: boolean;
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {
