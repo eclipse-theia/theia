@@ -61,7 +61,6 @@
     "react-dom": "^16.8.0",
     "react-tooltip": "^4.2.21",
     "react-virtualized": "^9.20.0",
-    "reconnecting-websocket": "^4.2.0",
     "reflect-metadata": "^0.1.10",
     "route-parser": "^0.0.5",
     "safer-buffer": "^2.1.2",
@@ -70,7 +69,6 @@
     "uuid": "^8.3.2",
     "vscode-languageserver-protocol": "~3.15.3",
     "vscode-uri": "^2.1.1",
-    "vscode-ws-jsonrpc": "^0.2.0",
     "ws": "^7.1.2",
     "yargs": "^15.3.1"
   },
@@ -113,8 +111,7 @@
         "react-dom",
         "react-virtualized",
         "vscode-languageserver-protocol",
-        "vscode-uri",
-        "vscode-ws-jsonrpc"
+        "vscode-uri"
       ],
       "export =": [
         "dompurify as DOMPurify",
