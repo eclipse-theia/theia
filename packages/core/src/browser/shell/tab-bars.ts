@@ -686,7 +686,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
             if (this.breadcrumbsContainer) {
                 this.node.appendChild(this.breadcrumbsContainer);
             }
-            this.breadcrumbsRenderer?.refresh();
+            this.updateBreadcrumbs();
         }
         super.onAfterAttach(msg);
     }
