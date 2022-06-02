@@ -16,7 +16,7 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewSelection } from '../../../common/plugin-api-rpc';
+import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewSelection, ThemeIcon } from '../../../common/plugin-api-rpc';
 import { Command } from '../../../common/plugin-api-rpc-model';
 import {
     TreeNode,
@@ -46,6 +46,7 @@ import * as markdownit from '@theia/core/shared/markdown-it';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { AccessibilityInformation } from '@theia/plugin';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -60,7 +61,7 @@ export interface TreeViewNode extends SelectableTreeNode {
     contextValue?: string;
     command?: Command;
     resourceUri?: string;
-    themeIconId?: string | 'folder' | 'file';
+    themeIcon?: ThemeIcon;
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
@@ -68,7 +69,7 @@ export interface TreeViewNode extends SelectableTreeNode {
 }
 export namespace TreeViewNode {
     export function is(arg: TreeNode | undefined): arg is TreeViewNode {
-        return !!arg && SelectableTreeNode.is(arg) && !ExpandableTreeNode.is(arg) && !CompositeTreeNode.is(arg);
+        return !!arg && SelectableTreeNode.is(arg);
     }
 }
 
@@ -151,12 +152,12 @@ export class PluginTree extends TreeImpl {
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
         const icon = this.toIconClass(item);
         const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
-        const themeIconId = item.themeIconId ? item.themeIconId : item.collapsibleState !== TreeViewItemCollapsibleState.None ? 'folder' : 'file';
+        const themeIcon = item.themeIcon ? item.themeIcon : item.collapsibleState !== TreeViewItemCollapsibleState.None ? { id: 'folder' } : { id: 'file' };
         const update: Partial<TreeViewNode> = {
             name: item.label,
             icon,
             description: item.description,
-            themeIconId,
+            themeIcon,
             resourceUri,
             tooltip: item.tooltip,
             contextValue: item.contextValue,
@@ -178,7 +179,7 @@ export class PluginTree extends TreeImpl {
                 command: item.command
             }, update);
         }
-        if (TreeViewNode.is(node)) {
+        if (TreeViewNode.is(node) && !ExpandableTreeNode.is(node)) {
             return Object.assign(node, update, { command: item.command });
         }
         return Object.assign({
@@ -257,6 +258,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(LabelParser)
     protected readonly labelParser: LabelParser;
 
+    @inject(ColorRegistry)
+    protected readonly colorRegistry: ColorRegistry;
+
     protected readonly markdownIt = markdownit();
 
     @postConstruct()
@@ -286,7 +290,14 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     protected override renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         const icon = this.toNodeIcon(node);
         if (icon) {
-            return <div className={icon + ' theia-tree-view-icon'}></div>;
+            let style: React.CSSProperties | undefined;
+            if (TreeViewNode.is(node) && node.themeIcon?.color) {
+                const color = this.colorRegistry.getCurrentColor(node.themeIcon.color.id);
+                if (color) {
+                    style = { color };
+                }
+            }
+            return <div className={icon + ' theia-tree-view-icon'} style={style}></div>;
         }
         return undefined;
     }
