@@ -40,7 +40,7 @@ export class ProxyCliContribution implements CliContribution {
             type: 'string'
         });
         conf.option(StrictSSL, {
-            description: 'Detemines whether SSL is strictly set for outgoing requests.',
+            description: 'Determines whether SSL is strictly set for outgoing requests.',
             type: 'boolean'
         });
     }
