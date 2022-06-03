@@ -31,6 +31,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceItem, PreferenceValidationService } from '@theia/core/lib/browser';
 import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 import { JsonType } from '@theia/core/lib/common/json-schema';
+import { editorOptionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 
 function generateContent(properties: string, interfaceEntries: string[]): string {
     return `/********************************************************************************
@@ -86,9 +88,23 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(PreferenceValidationService) protected readonly preferenceValidationService: PreferenceValidationService;
+    @inject(MonacoEditorProvider) protected readonly monacoEditorProvider: MonacoEditorProvider;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract Editor preference schema from Monaco' }, {
+        commands.registerCommand({ id: 'check-for-unvalidated-editor-preferences', label: 'Check for unvalidated editor preferences in Monaco' }, {
+            execute: () => {
+                const firstRootUri = this.workspaceService.tryGetRoots()[0]?.resource;
+                if (firstRootUri) {
+                    const validatedEditorPreferences = new Set(editorOptionsRegistry.map(validator => validator.name));
+                    const allEditorPreferenceKeys = Object.keys(this.monacoEditorProvider['createOptions'](
+                        this.monacoEditorProvider['preferencePrefixes'], firstRootUri.toString(), 'typescript'
+                    ));
+                    const unvalidatedKeys = allEditorPreferenceKeys.filter(key => !validatedEditorPreferences.has(key));
+                    console.log('Unvalidated keys are:', unvalidatedKeys);
+                }
+            }
+        });
+        commands.registerCommand({ id: 'extract-editor-preference-schema', label: 'Extract editor preference schema from Monaco' }, {
             execute: async () => {
                 const roots = this.workspaceService.tryGetRoots();
                 if (roots.length !== 1 || !(roots[0].resource.path.toString() ?? '').includes('theia')) {

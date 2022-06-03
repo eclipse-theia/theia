@@ -31,6 +31,9 @@ import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/c
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoThemingService } from './monaco-theming-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';
+import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { MAX_SAFE_INTEGER } from '@theia/core';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 
 @injectable()
 export class MonacoFrontendApplicationContribution implements FrontendApplicationContribution, StylingParticipant {
@@ -60,6 +63,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
 
     @postConstruct()
     protected init(): void {
+        this.addAdditionalPreferenceValidations();
         const { codeEditorService, textModelService, contextKeyService, contextMenuService } = this;
         StandaloneServices.initialize({
             [ICodeEditorService.toString()]: codeEditorService,
@@ -131,4 +135,40 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         }
     }
 
+    /**
+     * For reasons that are unclear, while most preferences that apply in editors are validated, a few are not.
+     * There is a utility in `examples/api-samples/src/browser/monaco-editor-preferences/monaco-editor-preference-extractor.ts` to help determine which are not.
+     * Check `src/vs/editor/common/config/editorOptions.ts` for constructor arguments and to make sure that the preference names used to extract constructors are still accurate.
+     */
+    protected addAdditionalPreferenceValidations(): void {
+        let editorIntConstructor: undefined | (new (...args: unknown[]) => IEditorOption<number, number>);
+        let editorBoolConstructor: undefined | (new (...args: unknown[]) => IEditorOption<number, boolean>);
+        let editorStringEnumConstructor: undefined | (new (...args: unknown[]) => IEditorOption<number, string>);
+        for (const validator of editorOptionsRegistry) {
+            /* eslint-disable @typescript-eslint/no-explicit-any,max-len */
+            if (editorIntConstructor && editorBoolConstructor && editorStringEnumConstructor) { break; }
+            if (validator.name === 'acceptSuggestionOnCommitCharacter') {
+                editorBoolConstructor = validator.constructor as any;
+            } else if (validator.name === 'acceptSuggestionOnEnter') {
+                editorStringEnumConstructor = validator.constructor as any;
+            } else if (validator.name === 'accessibilityPageSize') {
+                editorIntConstructor = validator.constructor as any;
+            }
+            /* eslint-enable @typescript-eslint/no-explicit-any */
+        }
+        if (editorIntConstructor && editorBoolConstructor && editorStringEnumConstructor) {
+            let id = 200; // Needs to be bigger than the biggest index in the EditorOption enum.
+            editorOptionsRegistry.push(
+                new editorIntConstructor(id++, 'tabSize', 4, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.tabSize']),
+                new editorBoolConstructor(id++, 'insertSpaces', true, editorGeneratedPreferenceProperties['editor.insertSpaces']),
+                new editorBoolConstructor(id++, 'detectIndentation', true, editorGeneratedPreferenceProperties['editor.detectIndentation']),
+                new editorBoolConstructor(id++, 'trimAutoWhitespace', true, editorGeneratedPreferenceProperties['editor.trimAutoWhitespace']),
+                new editorBoolConstructor(id++, 'largeFileOptimizations', true, editorGeneratedPreferenceProperties['editor.largeFileOptimizations']),
+                new editorBoolConstructor(id++, 'wordBasedSuggestions', true, editorGeneratedPreferenceProperties['editor.wordBasedSuggestions']),
+                new editorStringEnumConstructor(id++, 'wordBasedSuggestionsMode', 'matchingDocuments', editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode'].enum, editorGeneratedPreferenceProperties['editor.wordBasedSuggestionsMode']),
+                new editorBoolConstructor(id++, 'stablePeek', false, editorGeneratedPreferenceProperties['editor.stablePeek']),
+                new editorIntConstructor(id++, 'maxTokenizationLength', 20000, 1, MAX_SAFE_INTEGER, editorGeneratedPreferenceProperties['editor.maxTokenizationLength']),
+            );
+        }
+    }
 }

@@ -19,6 +19,9 @@
       "path": "../../packages/filesystem"
     },
     {
+      "path": "../../packages/monaco"
+    },
+    {
       "path": "../../packages/output"
     },
     {
