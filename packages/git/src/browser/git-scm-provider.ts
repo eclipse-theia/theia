@@ -180,7 +180,7 @@ export class GitScmProvider implements ScmProvider {
         state.groups.push(this.createGroup('merge', nls.localize('vscode.git/repository/merge changes', 'Merge Changes'), state.mergeChanges, true));
         state.groups.push(this.createGroup('index', nls.localize('vscode.git/repository/staged changes', 'Staged changes'), state.stagedChanges, true));
         state.groups.push(this.createGroup('workingTree', nls.localize('vscode.git/repository/changes', 'Changes'), forWorkingTree, hideWorkingIfEmpty));
-        state.groups.push(this.createGroup('untrackedChanged', nls.localize('vscode.git/repository/untracked changes', 'Untracked Changes'), forUntracked, true));
+        state.groups.push(this.createGroup('untrackedChanges', nls.localize('vscode.git/repository/untracked changes', 'Untracked Changes'), forUntracked, true));
         this.state = state;
         if (status && status.branch) {
             this.input.placeholder = nls.localize('vscode.git/repository/commitMessageWithHeadLabel', 'Message (press {0} to commit on {1})', '{0}', status.branch);

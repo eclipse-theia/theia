@@ -303,15 +303,15 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
         registerResourceAction('navigation', {
             commandId: GIT_COMMANDS.OPEN_CHANGED_FILE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
 
         registerResourceAction('navigation', {
@@ -343,11 +343,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
         registerResourceFolderAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
         registerResourceFolderAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree'
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges'
         });
 
         registerResourceFolderAction('1_modification', {
@@ -379,11 +379,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         });
         registerResourceGroupAction('1_modification', {
             commandId: GIT_COMMANDS.STAGE_ALL.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree',
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges',
         });
         registerResourceGroupAction('1_modification', {
             commandId: GIT_COMMANDS.DISCARD_ALL.id,
-            when: 'scmProvider == git && scmResourceGroup == workingTree',
+            when: 'scmProvider == git && scmResourceGroup == workingTree || scmProvider == git && scmResourceGroup == untrackedChanges',
         });
     }
 
