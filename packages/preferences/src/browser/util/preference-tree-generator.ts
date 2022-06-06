@@ -98,7 +98,7 @@ export class PreferenceTreeGenerator {
         }
         for (const propertyName of propertyNames) {
             const property = preferencesSchema.properties[propertyName];
-            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
+            if (!this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName) && !property.deprecationMessage) {
                 const labels = propertyName.split('.');
                 const groupID = this.getGroupName(labels);
                 const subgroupName = this.getSubgroupName(labels, groupID);
