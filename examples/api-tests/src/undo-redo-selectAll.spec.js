@@ -94,7 +94,7 @@ describe('Undo, Redo and Select All', function () {
      */
     async function assertInEditor(widget) {
         const originalContent = widget.editor.document.getText();
-        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
+        const editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
         editor.getControl().pushUndoStop();
         editor.getControl().executeEdits('test', [{
             range: new Range(1, 1, 1, 1),

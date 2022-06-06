@@ -25,7 +25,7 @@ export namespace FileSelection {
     export function is(arg: Object | undefined): arg is FileSelection {
         return typeof arg === 'object' && ('fileStat' in arg) && FileStat.is(arg['fileStat']);
     }
-    export class CommandHandler extends SelectionCommandHandler<FileSelection> {
+    export class CommandHandler extends SelectionCommandHandler<FileSelection> {
 
         constructor(
             protected override readonly selectionService: SelectionService,

@@ -106,7 +106,7 @@
     padding-left: var(--theia-ui-padding);
 }
 
-.theia-vsx-extension-description {
+.theia-vsx-extension-description {
     padding-right: calc(var(--theia-ui-padding)*2);
 }
 
