@@ -40,10 +40,7 @@ export class DebugStackFramesSource extends TreeSource {
         if (!thread) {
             return;
         }
-        for (const frame of thread.frames) {
-            yield frame;
-
-        }
+        yield* thread.frames;
         if (thread.stoppedDetails) {
             const { framesErrorMessage, totalFrames } = thread.stoppedDetails;
             if (framesErrorMessage) {

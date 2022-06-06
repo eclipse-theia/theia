@@ -39,8 +39,6 @@ import { DebugFrontendApplicationContribution } from './debug-frontend-applicati
 import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugEditorService } from './editor/debug-editor-service';
-import { DebugViewOptions } from './view/debug-view-model';
-import { DebugSessionWidget, DebugSessionWidgetFactory } from './view/debug-session-widget';
 import { InDebugModeContext, BreakpointWidgetInputFocusContext, BreakpointWidgetInputStrictFocusContext } from './debug-keybinding-contexts';
 import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor-model';
 import { bindDebugPreferences } from './debug-preferences';
@@ -81,9 +79,6 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         return service;
     });
 
-    bind(DebugSessionWidgetFactory).toDynamicValue(({ container }) =>
-        (options: DebugViewOptions) => DebugSessionWidget.createWidget(container, options)
-    ).inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: DebugWidget.ID,
         createWidget: () => DebugWidget.createWidget(container)

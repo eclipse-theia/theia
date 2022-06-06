@@ -16,8 +16,6 @@
 import { TaskIdentifier } from '@theia/task/lib/common';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type DebugViewLocation = 'default' | 'left' | 'right' | 'bottom';
-
 /**
  * Configuration for a debug adapter session.
  */
@@ -59,9 +57,6 @@ export interface DebugConfiguration {
      * The client should leave the data intact.
      */
     __restart?: any;
-
-    /** default: default */
-    debugViewLocation?: DebugViewLocation
 
     /** default: neverOpen */
     openDebug?: 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
