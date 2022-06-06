@@ -17,4 +17,4 @@
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 
 export const DebugCallStackItemTypeKey = Symbol('DebugCallStackItemTypeKey');
-export type DebugCallStackItemTypeKey = ContextKey<'session' | 'thread' | 'stackFrame'>;
+export type DebugCallStackItemTypeKey = ContextKey<'session' | 'thread' | 'stackFrame'>;

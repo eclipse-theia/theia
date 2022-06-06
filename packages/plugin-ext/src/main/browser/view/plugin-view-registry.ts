@@ -715,7 +715,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * retrieve restored layout state from previous user session but close widgets
+     * retrieve restored layout state from previous user session but close widgets
      * widgets should be opened only when view data providers are registered
      */
     onDidInitializeLayout(): void {

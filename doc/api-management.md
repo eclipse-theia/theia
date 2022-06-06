@@ -44,7 +44,7 @@ An API without a stability tag is considered to be experimental and does not req
 /**
  * One does not need any annotations while working on experimental APIs.
  */
-export interface ExperimentalInterface {
+export interface ExperimentalInterface {
 }
 
 /**

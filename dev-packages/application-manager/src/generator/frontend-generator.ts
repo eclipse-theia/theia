@@ -122,7 +122,7 @@ module.exports = preloader.preload().then(() => {
     }
 
     function start() {
-        (window['theia'] = window['theia'] || {}).container = container;
+        (window['theia'] = window['theia'] || {}).container = container;
         return container.get(FrontendApplication).start();
     }
 });
