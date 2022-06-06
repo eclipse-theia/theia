@@ -149,6 +149,10 @@ export class RpcMessageDecoder {
     protected decoders: Map<number, ValueDecoder> = new Map();
 
     constructor() {
+        this.registerDecoders();
+    }
+
+    protected registerDecoders(): void {
         this.registerDecoder(ObjectType.JSON, {
             read: buf => {
                 const json = buf.readString();
@@ -206,7 +210,6 @@ export class RpcMessageDecoder {
         this.registerDecoder(ObjectType.Number, {
             read: buf => buf.readNumber()
         });
-
     }
 
     /**
@@ -215,9 +218,10 @@ export class RpcMessageDecoder {
      * by retrieving the highest tag value and calculating the required Uint size to store it.
      * @param tag the tag for which the decoder should be registered.
      * @param decoder the decoder that should be registered.
+     * @param overwrite flag to indicate wether an existing registration with the same tag should be overwritten with the new registration.
      */
-    registerDecoder(tag: number, decoder: ValueDecoder): void {
-        if (this.decoders.has(tag)) {
+    registerDecoder(tag: number, decoder: ValueDecoder, overwrite = false): void {
+        if (!overwrite && this.decoders.has(tag)) {
             throw new Error(`Decoder already registered: ${tag}`);
         }
         this.decoders.set(tag, decoder);
@@ -435,14 +439,20 @@ export class RpcMessageEncoder {
      * After the successful registration the {@link tagIntType} is recomputed
      * by retrieving the highest tag value and calculating the required Uint size to store it.
      * @param tag the tag for which the encoder should be registered.
-     * @param decoder the encoder that should be registered.
+     * @param encoder the encoder that should be registered.
+     * @param overwrite to indicate wether an existing registration with the same tag should be overwritten with the new registration.
      */
-    registerEncoder<T>(tag: number, encoder: ValueEncoder): void {
-        if (this.registeredTags.has(tag)) {
+    registerEncoder<T>(tag: number, encoder: ValueEncoder, overwrite = false): void {
+        if (!overwrite && this.registeredTags.has(tag)) {
             throw new Error(`Tag already registered: ${tag}`);
         }
-        this.registeredTags.add(tag);
-        this.encoders.push([tag, encoder]);
+        if (!overwrite) {
+            this.registeredTags.add(tag);
+            this.encoders.push([tag, encoder]);
+        } else {
+            const overrideIndex = this.encoders.findIndex(existingEncoder => existingEncoder[0] === tag);
+            this.encoders[overrideIndex] = [tag, encoder];
+        }
     }
 
     cancel(buf: WriteBuffer, requestId: number): void {

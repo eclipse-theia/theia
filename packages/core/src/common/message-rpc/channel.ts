@@ -159,6 +159,10 @@ export class ChannelMultiplexer implements Disposable {
 
     }
 
+    protected getUnderlyingWriteBuffer(): WriteBuffer {
+        return this.underlyingChannel.getWriteBuffer();
+    }
+
     protected handleMessage(buffer: ReadBuffer): void {
         const type = buffer.readUint8();
         const id = buffer.readString();
@@ -185,7 +189,7 @@ export class ChannelMultiplexer implements Disposable {
             const channel = this.createChannel(id);
             this.pendingOpen.delete(id);
             this.openChannels.set(id, channel);
-            resolve!(channel);
+            resolve(channel);
             this.onOpenChannelEmitter.fire({ id, channel });
         }
     }
@@ -199,7 +203,7 @@ export class ChannelMultiplexer implements Disposable {
                 // edge case: both side try to open a channel at the same time.
                 resolve(channel);
             }
-            this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
+            this.getUnderlyingWriteBuffer().writeUint8(MessageTypes.AckOpen).writeString(id).commit();
             this.onOpenChannelEmitter.fire({ id, channel });
         }
     }
@@ -215,7 +219,9 @@ export class ChannelMultiplexer implements Disposable {
     protected handleData(id: string, data: ReadBuffer): void {
         const channel = this.openChannels.get(id);
         if (channel) {
-            channel.onMessageEmitter.fire(() => data);
+            channel.onMessageEmitter.fire(() => data.sliceAtReadPosition());
+        } else {
+            console.warn(`Could not handle data for channel ${id} because it is not open`);
         }
     }
 
@@ -226,14 +232,14 @@ export class ChannelMultiplexer implements Disposable {
     // Prepare the write buffer for the channel with the give, id. The channel id has to be encoded
     // and written to the buffer before the actual message.
     protected prepareWriteBuffer(id: string): WriteBuffer {
-        const underlying = this.underlyingChannel.getWriteBuffer();
+        const underlying = this.getUnderlyingWriteBuffer();
         underlying.writeUint8(MessageTypes.Data);
         underlying.writeString(id);
         return underlying;
     }
 
     protected closeChannel(id: string): void {
-        this.underlyingChannel.getWriteBuffer()
+        this.getUnderlyingWriteBuffer()
             .writeUint8(MessageTypes.Close)
             .writeString(id)
             .commit();
@@ -242,10 +248,14 @@ export class ChannelMultiplexer implements Disposable {
     }
 
     open(id: string): Promise<Channel> {
+        const existingChannel = this.getOpenChannel(id);
+        if (existingChannel) {
+            return Promise.resolve(existingChannel);
+        }
         const result = new Promise<Channel>((resolve, reject) => {
             this.pendingOpen.set(id, resolve);
         });
-        this.underlyingChannel.getWriteBuffer().writeUint8(MessageTypes.Open).writeString(id).commit();
+        this.getUnderlyingWriteBuffer().writeUint8(MessageTypes.Open).writeString(id).commit();
         return result;
     }
 

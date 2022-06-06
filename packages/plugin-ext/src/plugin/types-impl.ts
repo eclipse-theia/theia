@@ -31,20 +31,7 @@ import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 import * as paths from 'path';
-import { ObjectsTransferrer } from '../common/rpc-protocol';
 import { es5ClassCompat } from '../common/types';
-
-/**
- * A reviver that takes URI's transferred via JSON.stringify() and makes
- * instances of our local plugin API URI class (below)
- */
-export function reviver(key: string | undefined, value: any): any {
-    const revived = ObjectsTransferrer.reviver(key, value);
-    if (CodeURI.isUri(revived)) {
-        return URI.revive(revived);
-    }
-    return revived;
-}
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.

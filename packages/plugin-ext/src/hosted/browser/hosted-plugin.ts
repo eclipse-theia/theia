@@ -33,7 +33,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService, nls
+    CancellationTokenSource, JsonRpcProxy, ProgressService, nls, ChannelCloseEvent, MessageProvider
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -66,6 +66,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '@theia/core/lib/common/message-rpc/uint8-array-message-buffer';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
@@ -521,20 +522,38 @@ export class HostedPluginSupport {
     }
 
     private createServerRpc(pluginHostId: string): RPCProtocol {
-        const emitter = new Emitter<string>();
+
+        const onCloseEmitter = new Emitter<ChannelCloseEvent>();
+        const onErrorEmitter = new Emitter<unknown>();
+        const onMessageEmitter = new Emitter<MessageProvider>();
+
+        // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
+        const rpc = new RPCProtocolImpl({
+            close: () => {
+                onCloseEmitter.dispose();
+                onErrorEmitter.dispose();
+                onMessageEmitter.dispose();
+            },
+            getWriteBuffer: () => {
+                const writer = new Uint8ArrayWriteBuffer();
+                writer.onCommit(buffer => {
+                    this.server.onMessage(pluginHostId, buffer);
+                });
+                return writer;
+            },
+            onClose: onCloseEmitter.event,
+            onError: onErrorEmitter.event,
+            onMessage: onMessageEmitter.event
+        });
+
         this.watcher.onPostMessageEvent(received => {
             if (pluginHostId === received.pluginHostId) {
-                emitter.fire(received.message);
+                onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
             }
         });
-        return new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: message => {
-                this.server.onMessage(pluginHostId, message);
-            }
-        });
-    }
 
+        return rpc;
+    }
     private async updateStoragePath(): Promise<void> {
         const path = await this.getStoragePath();
         for (const manager of this.managers.values()) {
