@@ -12,7 +12,7 @@
 
 - [plugin-dev] moved and renamed interface from: `@theia/debug/lib/browser/debug-contribution/DebugPluginConfiguration` to: `plugin-dev/src/common/PluginDebugConfiguration` [#11224](https://github.com/eclipse-theia/theia/pull/11224)
 - [debug, plugin-ext] [Debug view] Add dynamic debug configurations [#10212](https://github.com/eclipse-theia/theia/pull/10212)
-  - Changed signature of `DebugConfigurationManager.find` to receive a target DebugConfiguration instead of a configuration's name.  
+  - Changed signature of `DebugConfigurationManager.find` to receive a target DebugConfiguration instead of a configuration's name.
     NOTE: The original signature is still available but no longer used inside the framework and therefore marked as `deprecated`
   - Multiple methods related to the selection of Debug configuration options were relocated from `debug-configuration-widget.tsx` to the new file `debug-configuration-select.tsx`.
   - Removed optional interface property `DebugConfiguration.dynamic`.
@@ -26,6 +26,8 @@
   - `RemoteFileSystemServer`: Use `UInt8Array` instead of plain number arrays for all arguments and return type that store binary data
   - `DebugAdapter`: Replaced the debug-service internal `Channel` implementation with the newly introduced generic `Channel`.
   [#11228](https://github.com/eclipse-theia/theia/pull/11228) - Contributed on behalf of STMicroelectronics.
+- [core] Drop support for Node 12.x, recommend Node 16.x.
+  - Update CI/CD matrix to run on Node 14.x, 16.x and 18.x.
 
 ## v1.26.0 - 5/26/2022
 
