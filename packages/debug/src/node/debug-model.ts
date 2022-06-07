@@ -25,7 +25,8 @@
 import { DebugConfiguration } from '../common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { Channel, Event } from '@theia/core';
+import { Event } from '@theia/core';
+import { DebugChannel } from '../common/debug-service';
 
 // FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
@@ -42,7 +43,7 @@ export const DebugAdapterSession = Symbol('DebugAdapterSession');
 export interface DebugAdapterSession {
     id: string;
     parentSession?: DebugAdapterSession;
-    start(channel: Channel): Promise<void>
+    start(channel: DebugChannel): Promise<void>
     stop(): Promise<void>
 }
 

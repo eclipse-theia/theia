@@ -26,14 +26,14 @@ import {
     DebugAdapterSession
 } from './debug-model';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Channel } from '@theia/core';
+import { DebugChannel } from '../common/debug-service';
 
 /**
  * [DebugAdapterSession](#DebugAdapterSession) implementation.
  */
 export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
-    private channel: Channel | undefined;
+    private channel: DebugChannel | undefined;
     private isClosed: boolean = false;
 
     constructor(
@@ -46,14 +46,14 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     }
 
-    async start(channel: Channel): Promise<void> {
+    async start(channel: DebugChannel): Promise<void> {
 
         console.debug(`starting debug adapter session '${this.id}'`);
         if (this.channel) {
             throw new Error('The session has already been started, id: ' + this.id);
         }
         this.channel = channel;
-        this.channel.onMessage(message => this.write(message().readString()));
+        this.channel.onMessage((message: string) => this.write(message));
         this.channel.onClose(() => this.channel = undefined);
 
     }
@@ -80,7 +80,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
     protected send(message: string): void {
         if (this.channel) {
-            this.channel.getWriteBuffer().writeString(message);
+            this.channel.send(message);
         }
     }
 

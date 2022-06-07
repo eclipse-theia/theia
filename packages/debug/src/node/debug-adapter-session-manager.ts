@@ -18,7 +18,7 @@ import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
-import { DebugAdapterPath } from '../common/debug-service';
+import { DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugAdapterSession, DebugAdapterSessionFactory, DebugAdapterFactory } from './debug-model';
 import { DebugAdapterContributionRegistry } from './debug-adapter-contribution-registry';
@@ -37,13 +37,13 @@ export class DebugAdapterSessionManager implements MessagingService.Contribution
     protected readonly debugAdapterFactory: DebugAdapterFactory;
 
     configure(service: MessagingService): void {
-        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, channel) => {
+        service.wsChannel(`${DebugAdapterPath}/:id`, ({ id }: { id: string }, wsChannel) => {
             const session = this.find(id);
             if (!session) {
-                channel.close();
+                wsChannel.close();
                 return;
             }
-            session.start(channel);
+            session.start(new ForwardingDebugChannel(wsChannel));
         });
     }
 

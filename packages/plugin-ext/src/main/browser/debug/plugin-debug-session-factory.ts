@@ -30,8 +30,8 @@ import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { Channel } from '@theia/core/lib/common/message-rpc/channel';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { PluginChannel } from '../../../common/connection';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -71,7 +71,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly messages: MessageClient,
         protected override readonly outputChannelManager: OutputChannelManager,
         protected override readonly debugPreferences: DebugPreferences,
-        protected readonly connectionFactory: (sessionId: string) => Promise<Channel>,
+        protected readonly connectionFactory: (sessionId: string) => Promise<PluginChannel>,
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,

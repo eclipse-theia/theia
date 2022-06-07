@@ -17,7 +17,7 @@
 import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-session';
 import * as theia from '@theia/plugin';
 import { DebugAdapter } from '@theia/debug/lib/node/debug-model';
-import { Channel } from '@theia/core/lib/common/message-rpc/channel';
+import { DebugChannel } from '@theia/debug/lib/common/debug-service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -43,7 +43,7 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl {
         this.configuration = theiaSession.configuration;
     }
 
-    override async start(channel: Channel): Promise<void> {
+    override async start(channel: DebugChannel): Promise<void> {
         if (this.tracker.onWillStartSession) {
             this.tracker.onWillStartSession();
         }
