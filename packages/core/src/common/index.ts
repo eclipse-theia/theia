@@ -21,6 +21,7 @@ export * from './event';
 export * from './cancellation';
 export * from './command';
 export * from './menu';
+export * from './menu-adapter';
 export * from './selection-service';
 export * from './objects';
 export * from './os';

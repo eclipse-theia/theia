@@ -758,6 +758,7 @@ export interface Menu {
 export interface Submenu {
     id: string;
     label: string;
+    icon?: IconUrl;
 }
 
 /**

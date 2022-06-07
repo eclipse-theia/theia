@@ -25,9 +25,10 @@ import { CommandRegistry } from '../../common/command';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
-import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
-import { MenuModelRegistry } from '../../common/menu';
+import { ContextMenuRenderer, Anchor, ContextMenuAccess } from '../context-menu-renderer';
+import { MenuModelRegistry, MenuNode, MenuPath } from '../../common/menu';
 import { nls } from '../../common/nls';
+import { MenuCommandExecutor } from '../../common';
 
 /**
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
@@ -57,7 +58,7 @@ export namespace TabBarDelegator {
         return false;
     };
 }
-
+const menuDelegateSeparator = '@=@';
 /**
  * Representation of an item in the tab
  */
@@ -130,6 +131,17 @@ export interface TabBarToolbarItem {
 
 }
 
+export interface MenuDelegateToolbarItem extends TabBarToolbarItem {
+    menuPath: MenuPath;
+}
+
+export namespace MenuDelegateToolbarItem {
+    export function getMenuPath(item: TabBarToolbarItem): MenuPath | undefined {
+        const asDelegate = item as MenuDelegateToolbarItem;
+        return Array.isArray(asDelegate.menuPath) ? asDelegate.menuPath : undefined;
+    }
+}
+
 /**
  * Tab-bar toolbar item backed by a `React.ReactNode`.
  * Unlike the `TabBarToolbarItem`, this item is not connected to the command service.
@@ -183,22 +195,27 @@ export namespace TabBarToolbarItem {
 
 }
 
+interface MenuDelegate {
+    menuPath: MenuPath;
+    isEnabled: (widget: Widget) => boolean;
+}
+
+function yes(): true { return true; }
+
 /**
  * Main, shared registry for tab-bar toolbar items.
  */
 @injectable()
 export class TabBarToolbarRegistry implements FrontendApplicationContribution {
 
-    protected items: Map<string, TabBarToolbarItem | ReactTabBarToolbarItem> = new Map();
+    protected items = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
+    protected menuDelegates = new Map<string, MenuDelegate>();
 
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(MenuModelRegistry) protected readonly menuRegistry: MenuModelRegistry;
 
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
-
-    @inject(ContributionProvider)
-    @named(TabBarToolbarContribution)
+    @inject(ContributionProvider) @named(TabBarToolbarContribution)
     protected readonly contributionProvider: ContributionProvider<TabBarToolbarContribution>;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -244,7 +261,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         if (widget.isDisposed) {
             return [];
         }
-        const result = [];
+        const result: Array<TabBarToolbarItem | ReactTabBarToolbarItem> = [];
         for (const item of this.items.values()) {
             const visible = TabBarToolbarItem.is(item)
                 ? this.commandRegistry.isVisible(item.command, widget)
@@ -253,7 +270,51 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 result.push(item);
             }
         }
+        for (const delegate of this.menuDelegates.values()) {
+            if (delegate.isEnabled(widget)) {
+                const menu = this.menuRegistry.getMenu(delegate.menuPath);
+                const menuToTabbarItems = (item: MenuNode, group = '') => {
+                    if (Array.isArray(item.children) && (!item.when || this.contextKeyService.match(item.when, widget.node))) {
+                        const nextGroup = item === menu
+                            ? group
+                            : this.formatGroupForSubmenus(group, item.id, item.label);
+                        item.children.forEach(child => menuToTabbarItems(child, nextGroup));
+                    } else if (!Array.isArray(item.children)) {
+                        const asToolbarItem: MenuDelegateToolbarItem = {
+                            id: `menu_as_toolbar_item_${item.id}`,
+                            command: item.id,
+                            when: item.when,
+                            icon: item.icon,
+                            tooltip: item.label ?? item.id,
+                            menuPath: delegate.menuPath,
+                            group,
+                        };
+                        if (!asToolbarItem.when || this.contextKeyService.match(asToolbarItem.when, widget.node)) {
+                            result.push(asToolbarItem);
+                        }
+                    }
+                };
+                menuToTabbarItems(menu);
+            }
+        }
         return result;
+    }
+
+    protected formatGroupForSubmenus(lastGroup: string, currentId?: string, currentLabel?: string): string {
+        const split = lastGroup.length ? lastGroup.split(menuDelegateSeparator).filter(segment => segment.length) : [];
+        // If the submenu is in the 'navigation' group, then it's an item that opens its own context menu, so it should be navigation/id/label...
+        const expectedParity = split[0] === 'navigation' ? 1 : 0;
+        if (split.length % 2 !== expectedParity && (currentId || currentLabel)) {
+            console.warn('Something went wrong with a contributed tabbar menu delegate.', lastGroup, currentId, currentLabel);
+            split.push('<children but no label>');
+        }
+        if (currentId || currentLabel) {
+            split.push(currentId || (currentLabel + '_id'));
+        }
+        if (currentLabel) {
+            split.push(currentLabel);
+        }
+        return split.join(menuDelegateSeparator);
     }
 
     unregisterItem(itemOrId: TabBarToolbarItem | ReactTabBarToolbarItem | string): void {
@@ -263,6 +324,27 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         }
     }
 
+    registerMenuDelegate(menuPath: MenuPath, when?: string | ((widget: Widget) => boolean)): Disposable {
+        const id = menuPath.join(menuDelegateSeparator);
+        if (!this.menuDelegates.has(id)) {
+            const isEnabled: MenuDelegate['isEnabled'] = !when
+                ? yes
+                : typeof when === 'function'
+                    ? when
+                    : widget => this.contextKeyService.match(when, widget.node);
+            this.menuDelegates.set(id, { menuPath, isEnabled });
+            this.fireOnDidChange();
+            return { dispose: () => this.unregisterMenuDelegate(menuPath) };
+        }
+        console.warn('Unable to register menu delegate. Delegate has already been registered', menuPath);
+        return Disposable.NULL;
+    }
+
+    unregisterMenuDelegate(menuPath: MenuPath): void {
+        if (this.menuDelegates.delete(menuPath.join(menuDelegateSeparator))) {
+            this.fireOnDidChange();
+        }
+    }
 }
 
 /**
@@ -272,6 +354,8 @@ export const TabBarToolbarFactory = Symbol('TabBarToolbarFactory');
 export interface TabBarToolbarFactory {
     (): TabBarToolbar;
 }
+
+export const TAB_BAR_TOOLBAR_CONTEXT_MENU = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
 
 /**
  * Tab-bar toolbar widget representing the active [tab-bar toolbar items](TabBarToolbarItem).
@@ -283,20 +367,12 @@ export class TabBarToolbar extends ReactWidget {
     protected inline = new Map<string, TabBarToolbarItem | ReactTabBarToolbarItem>();
     protected more = new Map<string, TabBarToolbarItem>();
 
-    @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
-
-    @inject(LabelParser)
-    protected readonly labelParser: LabelParser;
-
-    @inject(MenuModelRegistry)
-    protected readonly menus: MenuModelRegistry;
-
-    @inject(ContextMenuRenderer)
-    protected readonly contextMenuRenderer: ContextMenuRenderer;
-
-    @inject(TabBarToolbarRegistry)
-    protected readonly toolbarRegistry: TabBarToolbarRegistry;
+    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
+    @inject(LabelParser) protected readonly labelParser: LabelParser;
+    @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
+    @inject(MenuCommandExecutor) protected readonly menuCommandExecutor: MenuCommandExecutor;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(TabBarToolbarRegistry) protected readonly toolbarRegistry: TabBarToolbarRegistry;
 
     constructor() {
         super();
@@ -416,16 +492,16 @@ export class TabBarToolbar extends ReactWidget {
         this.renderMoreContextMenu(event.nativeEvent);
     };
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    renderMoreContextMenu(anchor: Anchor): any {
-        const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
+    renderMoreContextMenu(anchor: Anchor): ContextMenuAccess {
+        const menuPath = TAB_BAR_TOOLBAR_CONTEXT_MENU;
         const toDisposeOnHide = new DisposableCollection();
         this.addClass('menu-open');
         toDisposeOnHide.push(Disposable.create(() => this.removeClass('menu-open')));
         for (const item of this.more.values()) {
+            const separator = item.group && [menuDelegateSeparator, '/'].find(candidate => item.group?.includes(candidate));
             // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
-            if (item.group?.includes('/')) {
-                const split = item.group.split('/');
+            if (separator) {
+                const split = item.group.split(separator);
                 const paths: string[] = [];
                 for (let i = 0; i < split.length - 1; i += 2) {
                     paths.push(split[i], split[i + 1]);
@@ -444,6 +520,7 @@ export class TabBarToolbar extends ReactWidget {
             menuPath,
             args: [this.current],
             anchor,
+            context: this.current?.node,
             onHide: () => toDisposeOnHide.dispose()
         });
     }
@@ -466,7 +543,12 @@ export class TabBarToolbar extends ReactWidget {
 
         const item = this.inline.get(e.currentTarget.id);
         if (TabBarToolbarItem.is(item)) {
-            this.commands.executeCommand(item.command, this.current);
+            const menuPath = MenuDelegateToolbarItem.getMenuPath(item);
+            if (menuPath) {
+                this.menuCommandExecutor.executeCommand(menuPath, item.command, this.current);
+            } else {
+                this.commands.executeCommand(item.command, this.current);
+            }
         }
         this.update();
     };

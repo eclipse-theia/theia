@@ -101,8 +101,8 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
 
     protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
         if (this.useNativeStyle) {
-            const { menuPath, anchor, args, onHide } = options;
-            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args);
+            const { menuPath, anchor, args, onHide, context } = options;
+            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context);
             const { x, y } = coordinateFromAnchor(anchor);
             const zoom = electron.webFrame.getZoomFactor();
             // TODO: Remove the offset once Electron fixes https://github.com/electron/electron/issues/31641

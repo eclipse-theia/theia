@@ -40,13 +40,13 @@ export class ScmTreeWidget extends TreeWidget {
     static ID = 'scm-resource-widget';
 
     static RESOURCE_GROUP_CONTEXT_MENU = ['RESOURCE_GROUP_CONTEXT_MENU'];
-    static RESOURCE_GROUP_INLINE_MENU = ['RESOURCE_GROUP_INLINE_MENU'];
+    static RESOURCE_GROUP_INLINE_MENU = ['RESOURCE_GROUP_CONTEXT_MENU', 'inline'];
 
     static RESOURCE_FOLDER_CONTEXT_MENU = ['RESOURCE_FOLDER_CONTEXT_MENU'];
-    static RESOURCE_FOLDER_INLINE_MENU = ['RESOURCE_FOLDER_INLINE_MENU'];
+    static RESOURCE_FOLDER_INLINE_MENU = ['RESOURCE_FOLDER_CONTEXT_MENU', 'inline'];
 
-    static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
+    static RESOURCE_INLINE_MENU = ['RESOURCE_CONTEXT_MENU', 'inline'];
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;

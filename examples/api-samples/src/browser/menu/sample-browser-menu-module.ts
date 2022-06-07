@@ -17,7 +17,7 @@
 import { injectable, ContainerModule } from '@theia/core/shared/inversify';
 import { Menu as MenuWidget } from '@theia/core/shared/@phosphor/widgets';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MenuNode, CompositeMenuNode } from '@theia/core/lib/common/menu';
+import { MenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { BrowserMainMenuFactory, MenuCommandRegistry, DynamicMenuWidget } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 import { PlaceholderMenuNode } from './sample-menu-contribution';
 
@@ -41,7 +41,7 @@ class SampleBrowserMainMenuFactory extends BrowserMainMenuFactory {
         return menuCommandRegistry;
     }
 
-    override createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry }): DynamicMenuWidget {
+    override createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry, rootMenuPath: MenuPath }): DynamicMenuWidget {
         return new SampleDynamicMenuWidget(menu, options, this.services);
     }
 
@@ -60,8 +60,8 @@ class SampleMenuCommandRegistry extends MenuCommandRegistry {
         this.placeholders.set(id, menu);
     }
 
-    override snapshot(): this {
-        super.snapshot();
+    override snapshot(menuPath: MenuPath): this {
+        super.snapshot(menuPath);
         for (const menu of this.placeholders.values()) {
             this.toDispose.push(this.registerPlaceholder(menu));
         }

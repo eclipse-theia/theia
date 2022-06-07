@@ -31,7 +31,6 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager, EditorCommands } from '@theia/editor/lib/browser';
-import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
 import {
     TextDocumentShowOptions,
     Location,
@@ -77,6 +76,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import * as monaco from '@theia/monaco-editor-core';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
+import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/vscode-theia-menu-mappings';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {

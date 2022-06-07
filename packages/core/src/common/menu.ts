@@ -26,7 +26,7 @@ export interface MenuAction {
     /**
      * The command to execute.
      */
-    commandId: string
+    commandId: string;
     /**
      * In addition to the mandatory command property, an alternative command can be defined.
      * It will be shown and invoked when pressing Alt while opening a menu.
@@ -35,22 +35,22 @@ export interface MenuAction {
     /**
      * A specific label for this action. If not specified the command label or command id will be used.
      */
-    label?: string
+    label?: string;
     /**
      * Icon class(es). If not specified the icon class associated with the specified command
      * (i.e. `command.iconClass`) will be used if it exists.
      */
-    icon?: string
+    icon?: string;
     /**
      * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
      * label will be used instead.
      */
-    order?: string
+    order?: string;
     /**
      * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
      * of the action, e.g. `resourceLangId == markdown`.
      */
-    when?: string
+    when?: string;
 }
 
 export namespace MenuAction {
@@ -68,12 +68,16 @@ export interface SubMenuOptions {
     /**
      * The class to use for the submenu icon.
      */
-    iconClass?: string
+    iconClass?: string;
     /**
      * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
      * label will be used instead.
      */
-    order?: string
+    order?: string;
+    /**
+     * The conditions under which to include the specified submenu under the specified parent.
+     */
+    when?: string;
 }
 
 export type MenuPath = string[];
@@ -128,6 +132,7 @@ export interface MenuContribution {
 @injectable()
 export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
+    protected readonly independentSubmenus = new Map<string, CompositeMenuNode>();
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -156,9 +161,22 @@ export class MenuModelRegistry {
      *
      * @returns a disposable which, when called, will remove the menu node again.
      */
-    registerMenuNode(menuPath: MenuPath, menuNode: MenuNode): Disposable {
-        const parent = this.findGroup(menuPath);
+    registerMenuNode(menuPath: MenuPath | string, menuNode: MenuNode, group?: string): Disposable {
+        const parent = this.getMenuNode(menuPath, group);
         return parent.addNode(menuNode);
+    }
+
+    getMenuNode(menuPath: MenuPath | string, group?: string): CompositeMenuNode {
+        if (typeof menuPath === 'string') {
+            const target = this.independentSubmenus.get(menuPath);
+            if (!target) { throw new Error(`Could not find submenu with id ${menuPath}`); }
+            if (group) {
+                return this.findSubMenu(target, group);
+            }
+            return target;
+        } else {
+            return this.findGroup(group ? menuPath.concat(group) : menuPath);
+        }
     }
 
     /**
@@ -204,6 +222,27 @@ export class MenuModelRegistry {
             }
             return { dispose: () => { } };
         }
+    }
+
+    registerIndependentSubmenu(id: string, label: string): Disposable {
+        if (this.independentSubmenus.has(id)) {
+            console.debug(`Independent submenu with path ${id} registered, but given ID already exists.`);
+        }
+        this.independentSubmenus.set(id, new CompositeMenuNode(id, label));
+        return { dispose: () => this.independentSubmenus.delete(id) };
+    }
+
+    linkSubmenu(parentPath: MenuPath | string, childId: string, options?: SubMenuOptions, group?: string): Disposable {
+        const child = this.independentSubmenus.get(childId);
+        if (!child) {
+            throw new Error(`Attempted to link non-existent menu with id ${childId}`);
+        }
+        const parent = this.getMenuNode(parentPath, group);
+        if (!parent) {
+            throw new Error(`Attempted to link into a non-existent parent with path ${parentPath}`);
+        }
+        const wrapper = new CompositeMenuNodeWrapper(child, options);
+        return parent.addNode(wrapper);
     }
 
     /**
@@ -258,6 +297,10 @@ export class MenuModelRegistry {
         recurse(this.root);
     }
 
+    /**
+     * Finds a submenu as a descendant of the `root` node.
+     * See {@link MenuModelRegistry.findSubMenu findSubMenu}.
+     */
     protected findGroup(menuPath: MenuPath, options?: SubMenuOptions): CompositeMenuNode {
         let currentMenu = this.root;
         for (const segment of menuPath) {
@@ -266,6 +309,10 @@ export class MenuModelRegistry {
         return currentMenu;
     }
 
+    /**
+     * Finds or creates a submenu as an immediate child of `current`.
+     * @throws if a node with the given `menuId` exists but is not a {@link CompositeMenuNode}.
+     */
     protected findSubMenu(current: CompositeMenuNode, menuId: string, options?: SubMenuOptions): CompositeMenuNode {
         const sub = current.children.find(e => e.id === menuId);
         if (sub instanceof CompositeMenuNode) {
@@ -308,6 +355,16 @@ export interface MenuNode {
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
     readonly sortString: string
+    /**
+     * Additional conditions determining the visibility of a menu node
+     */
+    readonly when?: string;
+
+    readonly children?: ReadonlyArray<MenuNode>;
+
+    readonly isSubmenu?: boolean;
+
+    readonly icon?: string;
 }
 
 /**
@@ -317,6 +374,7 @@ export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
     public iconClass?: string;
     public order?: string;
+    readonly when?: string;
 
     constructor(
         public readonly id: string,
@@ -326,6 +384,7 @@ export class CompositeMenuNode implements MenuNode {
         if (options) {
             this.iconClass = options.iconClass;
             this.order = options.order;
+            this.when = options.when;
         }
     }
 
@@ -401,6 +460,26 @@ export class CompositeMenuNode implements MenuNode {
     }
 }
 
+export class CompositeMenuNodeWrapper implements MenuNode {
+    constructor(protected readonly wrapped: Readonly<CompositeMenuNode>, protected readonly options?: SubMenuOptions) { }
+
+    get id(): string { return this.wrapped.id; }
+
+    get label(): string | undefined { return this.wrapped.label; }
+
+    get sortString(): string { return this.order || this.id; }
+
+    get isSubmenu(): boolean { return this.label !== undefined; }
+
+    get iconClass(): string | undefined { return this.options?.iconClass; }
+
+    get order(): string | undefined { return this.options?.order; }
+
+    get when(): string | undefined { return this.options?.when; }
+
+    get children(): ReadonlyArray<MenuNode> { return this.wrapped.children; }
+}
+
 /**
  * Node representing an action in the menu tree structure.
  * It's based on {@link MenuAction} for which it tries to determine the
@@ -417,6 +496,10 @@ export class ActionMenuNode implements MenuNode {
         if (action.alt) {
             this.altNode = new ActionMenuNode({ commandId: action.alt }, commands);
         }
+    }
+
+    get when(): string | undefined {
+        return this.action.when;
     }
 
     get id(): string {

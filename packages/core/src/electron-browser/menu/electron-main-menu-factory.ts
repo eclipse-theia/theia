@@ -19,7 +19,7 @@
 import * as electronRemote from '../../../electron-shared/@electron/remote';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode
+    isOSX, ActionMenuNode, MAIN_MENU_BAR, MenuPath, MenuNode
 } from '../../common';
 import { Keybinding } from '../../common/keybinding';
 import { PreferenceService, CommonCommands } from '../../browser';
@@ -36,6 +36,15 @@ export interface ElectronMenuOptions {
      * Defaults to `true`.
      */
     readonly showDisabled?: boolean;
+    /**
+     * A DOM context to use when evaluating any `when` clauses
+     * of menu items registered for this item.
+     */
+    context?: HTMLElement;
+    /**
+     * The root menu path for which the menu is being built.
+     */
+    rootMenuPath: MenuPath
 }
 
 /**
@@ -100,7 +109,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
         if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
             const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
-            const template = this.fillMenuTemplate([], menuModel);
+            const template = this.fillMenuTemplate([], menuModel, [], { rootMenuPath: MAIN_MENU_BAR });
             if (isOSX) {
                 template.unshift(this.createOSXMenu());
             }
@@ -116,21 +125,21 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return null;
     }
 
-    createElectronContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
+    createElectronContextMenu(menuPath: MenuPath, args?: any[], context?: HTMLElement): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
-        const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false });
+        const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false, context, rootMenuPath: menuPath });
         return electronRemote.Menu.buildFromTemplate(template);
     }
 
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[],
-        menuModel: CompositeMenuNode,
+        menuModel: MenuNode,
         args: any[] = [],
-        options?: ElectronMenuOptions
+        options: ElectronMenuOptions
     ): Electron.MenuItemConstructorOptions[] {
         const showDisabled = (options?.showDisabled === undefined) ? true : options?.showDisabled;
-        for (const menu of menuModel.children) {
-            if (menu instanceof CompositeMenuNode) {
-                if (menu.children.length > 0) {
+        for (const menu of (menuModel.children ?? [])) {
+            if (menu.children) {
+                if (menu.children.length > 0 && (!menu.when || this.contextKeyService.match(menu.when, options?.context))) {
                     // do not render empty nodes
 
                     if (menu.isSubmenu) { // submenu node
@@ -146,6 +155,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                         });
 
                     } else { // group node
+                        if (menu.id === 'inline') {
+                            continue;
+                        }
 
                         // process children
                         const submenu = this.fillMenuTemplate([], menu, args, options);
@@ -175,13 +187,13 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     continue;
                 }
 
-                if (!this.commandRegistry.isVisible(commandId, ...args)
-                    || (!!node.action.when && !this.contextKeyService.match(node.action.when))) {
+                if (!this.menuCommandExecutor.isVisible(options.rootMenuPath, commandId, ...args)
+                    || (node.action.when && !this.contextKeyService.match(node.action.when, options?.context))) {
                     continue;
                 }
 
                 // We should omit rendering context-menu items which are disabled.
-                if (!showDisabled && !this.commandRegistry.isEnabled(commandId, ...args)) {
+                if (!showDisabled && !this.menuCommandExecutor.isEnabled(options.rootMenuPath, commandId, ...args)) {
                     continue;
                 }
 
@@ -197,7 +209,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                     enabled: true, // https://github.com/eclipse-theia/theia/issues/446
                     visible: true,
                     accelerator,
-                    click: () => this.execute(commandId, args)
+                    click: () => this.execute(commandId, args, options.rootMenuPath)
                 };
 
                 if (isOSX) {
@@ -268,17 +280,17 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         return role;
     }
 
-    protected async execute(command: string, args: any[]): Promise<void> {
+    protected async execute(command: string, args: any[], menuPath: MenuPath): Promise<void> {
         try {
             // This is workaround for https://github.com/eclipse-theia/theia/issues/446.
             // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
             // We need to check if we can execute it.
-            if (this.commandRegistry.isEnabled(command, ...args)) {
-                await this.commandRegistry.executeCommand(command, ...args);
-                if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
+            if (this.menuCommandExecutor.isEnabled(menuPath, command, ...args)) {
+                await this.menuCommandExecutor.executeCommand(menuPath, command, ...args);
+                if (this._menu && this.menuCommandExecutor.isVisible(menuPath, command, ...args)) {
                     const item = this._menu.getMenuItemById(command);
                     if (item) {
-                        item.checked = this.commandRegistry.isToggled(command, ...args);
+                        item.checked = this.menuCommandExecutor.isToggled(menuPath, command, ...args);
                         electronRemote.getCurrentWindow().setMenu(this._menu);
                     }
                 }
