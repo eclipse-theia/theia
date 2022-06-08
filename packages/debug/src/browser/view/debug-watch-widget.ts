@@ -27,6 +27,7 @@ export class DebugWatchWidget extends SourceTreeWidget {
     static CONTEXT_MENU: MenuPath = ['debug-watch-context-menu'];
     static EDIT_MENU = [...DebugWatchWidget.CONTEXT_MENU, 'a_edit'];
     static REMOVE_MENU = [...DebugWatchWidget.CONTEXT_MENU, 'b_remove'];
+    static FACTORY_ID = 'debug:watch';
     static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugWatchWidget.CONTEXT_MENU,
@@ -51,7 +52,7 @@ export class DebugWatchWidget extends SourceTreeWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
-        this.id = 'debug:watch:' + this.viewModel.id;
+        this.id = DebugWatchWidget.FACTORY_ID + ':' + this.viewModel.id;
         this.title.label = nls.localizeByDefault('Watch');
         this.toDispose.push(this.variables);
         this.source = this.variables;

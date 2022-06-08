@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import {
-    Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer, codicon, ViewContainerTitleOptions
+    Message, ApplicationShell, Widget, BaseWidget, PanelLayout, StatefulWidget, ViewContainer, codicon, ViewContainerTitleOptions, WidgetManager
 } from '@theia/core/lib/browser';
 import { DebugThreadsWidget } from './debug-threads-widget';
 import { DebugStackFramesWidget } from './debug-stack-frames-widget';
@@ -25,6 +25,7 @@ import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel } from './debug-view-model';
 import { DebugWatchWidget } from './debug-watch-widget';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 export const DEBUG_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
     label: 'debug',
@@ -40,11 +41,6 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         child.parent = parent;
         child.bind(DebugViewModel).toSelf();
         child.bind(DebugToolBar).toSelf();
-        child.bind(DebugThreadsWidget).toDynamicValue(({ container }) => DebugThreadsWidget.createWidget(container));
-        child.bind(DebugStackFramesWidget).toDynamicValue(({ container }) => DebugStackFramesWidget.createWidget(container));
-        child.bind(DebugVariablesWidget).toDynamicValue(({ container }) => DebugVariablesWidget.createWidget(container));
-        child.bind(DebugWatchWidget).toDynamicValue(({ container }) => DebugWatchWidget.createWidget(container));
-        child.bind(DebugBreakpointsWidget).toDynamicValue(({ container }) => DebugBreakpointsWidget.createWidget(container));
         child.bind(DebugSessionWidget).toSelf();
         return child;
     }
@@ -52,6 +48,8 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     static createWidget(parent: interfaces.Container): DebugSessionWidget {
         return DebugSessionWidget.createContainer(parent).get(DebugSessionWidget);
     }
+
+    static subwidgets = [DebugThreadsWidget, DebugStackFramesWidget, DebugVariablesWidget, DebugWatchWidget, DebugBreakpointsWidget];
 
     protected viewContainer: ViewContainer;
 
@@ -64,20 +62,8 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     @inject(DebugToolBar)
     protected readonly toolbar: DebugToolBar;
 
-    @inject(DebugThreadsWidget)
-    protected readonly threads: DebugThreadsWidget;
-
-    @inject(DebugStackFramesWidget)
-    protected readonly stackFrames: DebugStackFramesWidget;
-
-    @inject(DebugVariablesWidget)
-    protected readonly variables: DebugVariablesWidget;
-
-    @inject(DebugWatchWidget)
-    protected readonly watch: DebugWatchWidget;
-
-    @inject(DebugBreakpointsWidget)
-    protected readonly breakpoints: DebugBreakpointsWidget;
+    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
+    @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService;
 
     @postConstruct()
     protected init(): void {
@@ -92,11 +78,17 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
             id: 'debug:view-container:' + this.model.id
         });
         this.viewContainer.setTitleOptions(DEBUG_VIEW_CONTAINER_TITLE_OPTIONS);
-        this.viewContainer.addWidget(this.threads, { weight: 30 });
-        this.viewContainer.addWidget(this.stackFrames, { weight: 20 });
-        this.viewContainer.addWidget(this.variables, { weight: 10 });
-        this.viewContainer.addWidget(this.watch, { weight: 10 });
-        this.viewContainer.addWidget(this.breakpoints, { weight: 10 });
+        this.stateService.reachedState('initialized_layout').then(() => {
+            for (const subwidget of DebugSessionWidget.subwidgets) {
+                const widgetPromises = [];
+                const existingWidget = this.widgetManager.tryGetPendingWidget(subwidget.FACTORY_ID);
+                // No other view container instantiated this widget during startup.
+                if (!existingWidget) {
+                    widgetPromises.push(this.widgetManager.getOrCreateWidget(subwidget.FACTORY_ID));
+                }
+                Promise.all(widgetPromises).then(widgets => widgets.forEach(widget => this.viewContainer.addWidget(widget)));
+            }
+        });
 
         this.toDispose.pushAll([
             this.toolbar,
@@ -129,5 +121,4 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     restoreState(oldState: ViewContainer.State): void {
         this.viewContainer.restoreState(oldState);
     }
-
 }

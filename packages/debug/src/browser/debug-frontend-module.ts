@@ -58,6 +58,9 @@ import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator
 import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
 import { DebugContribution } from './debug-contribution';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
+import { DebugViewModel } from './view/debug-view-model';
+import { DebugToolBar } from './view/debug-toolbar-widget';
+import { DebugSessionWidget } from './view/debug-session-widget';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -119,4 +122,13 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugTabBarDecorator).toSelf().inSingletonScope();
     bind(TabBarDecorator).toService(DebugTabBarDecorator);
+
+    bind(DebugViewModel).toSelf().inSingletonScope();
+    bind(DebugToolBar).toSelf().inSingletonScope();
+    for (const subwidget of DebugSessionWidget.subwidgets) {
+        bind(WidgetFactory).toDynamicValue(({ container }) => ({
+            id: subwidget.FACTORY_ID,
+            createWidget: () => subwidget.createWidget(container),
+        }));
+    }
 });

@@ -32,6 +32,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     static CONTROL_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'a_control'];
     static TERMINATE_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'b_terminate'];
     static OPEN_MENU = [...DebugThreadsWidget.CONTEXT_MENU, 'c_open'];
+    static FACTORY_ID = 'debug:threads';
     static override createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugThreadsWidget.CONTEXT_MENU,
@@ -59,7 +60,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
-        this.id = 'debug:threads:' + this.viewModel.id;
+        this.id = DebugThreadsWidget.FACTORY_ID + ':' + this.viewModel.id;
         this.title.label = nls.localize('theia/debug/threads', 'Threads');
         this.toDispose.push(this.threads);
         this.source = this.threads;
