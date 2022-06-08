@@ -34,7 +34,7 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed } from '../widgets';
+import { waitForRevealed, waitForClosed, PINNED_CLASS } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
@@ -622,7 +622,7 @@ export class ApplicationShell extends Widget {
         const pinned: boolean[] = [];
 
         toArray(this.mainPanel.widgets()).forEach((a, i) => {
-            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
+            pinned[i] = a.title.className.includes(PINNED_CLASS);
         });
 
         return pinned;
@@ -633,7 +633,7 @@ export class ApplicationShell extends Widget {
         const pinned: boolean[] = [];
 
         toArray(this.bottomPanel.widgets()).forEach((a, i) => {
-            pinned[i] = a.title.className.indexOf('theia-mod-pinned') >= 0;
+            pinned[i] = a.title.className.includes(PINNED_CLASS);
         });
 
         return pinned;
@@ -700,7 +700,7 @@ export class ApplicationShell extends Widget {
             if (bottomPanel.pinned && bottomPanel.pinned.length === widgets.length) {
                 widgets.forEach((a, i) => {
                     if (bottomPanel.pinned![i]) {
-                        a.title.className += ' theia-mod-pinned';
+                        a.title.className += ` ${PINNED_CLASS}`;
                         a.title.closable = false;
                     }
                 });
@@ -719,7 +719,7 @@ export class ApplicationShell extends Widget {
             if (mainPanelPinned && mainPanelPinned.length === widgets.length) {
                 widgets.forEach((a, i) => {
                     if (mainPanelPinned[i]) {
-                        a.title.className += ' theia-mod-pinned';
+                        a.title.className += ` ${PINNED_CLASS}`;
                         a.title.closable = false;
                     }
                 });
