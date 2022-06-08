@@ -734,4 +734,43 @@ SPAN {
             assert.equal(getResultText(), expectedMessage);
         });
     }
+
+    it('Can execute code actions', async function () {
+        const editor = await openEditor(demoFileUri);
+        /** @type {import('@theia/monaco-editor-core/src/vs/editor/contrib/codeAction/browser/codeActionCommands').QuickFixController} */
+        const quickFixController = editor.getControl().getContribution('editor.contrib.quickFixController');
+        const isActionAvailable = () => {
+            const lightbulbVisibility = quickFixController['_ui'].rawValue?.['_lightBulbWidget'].rawValue?.['_domNode'].style.visibility;
+            return lightbulbVisibility !== undefined && lightbulbVisibility !== 'hidden';
+        }
+        assert.isFalse(isActionAvailable());
+        // import { DefinedInterface } from "./demo-definitions-file";
+        assert.strictEqual(editor.getControl().getModel().getLineContent(30), 'import { DefinedInterface } from "./demo-definitions-file";');
+        editor.getControl().revealLine(30);
+        editor.getControl().setSelection(new Selection(30, 1, 30, 60));
+        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (1)');
+        assert.isTrue(isActionAvailable());
+
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (1)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('ArrowDown');
+        keybindings.dispatchKeyDown('Enter');
+
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
+
+        editor.getControl().setSelection(new Selection(30, 1, 30, 64));
+        await waitForAnimation(() => isActionAvailable(), 5000, 'No code action available. (2)');
+
+        // Change it back: https://github.com/eclipse-theia/theia/issues/11059
+        await commands.executeCommand('editor.action.quickFix');
+        await waitForAnimation(() => Boolean(document.querySelector('.p-Widget.p-Menu')), 5000, 'No context menu appeared. (2)');
+        await animationFrame();
+
+        keybindings.dispatchKeyDown('ArrowDown');
+        keybindings.dispatchKeyDown('Enter');
+
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
+    });
 });
