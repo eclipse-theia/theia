@@ -17,7 +17,6 @@
 import '../../src/browser/style/output.css';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { toArray } from '@theia/core/shared/@phosphor/algorithm';
-import { IDragEvent } from '@theia/core/shared/@phosphor/dragdrop';
 import { EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
@@ -255,17 +254,8 @@ export const OUTPUT_WIDGET_KIND = OutputWidget.ID;
 
 /**
  * Customized `DockPanel` that does not allow dropping widgets into it.
- * Intercepts `'p-dragover'` events, and sets the desired drop action to `'none'`.
  */
-class NoopDragOverDockPanel extends DockPanel {
-
-    constructor(options?: DockPanel.IOptions) {
-        super(options);
-        NoopDragOverDockPanel.prototype['_evtDragOver'] = (event: IDragEvent) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.dropAction = 'none';
-        };
-    }
-
-}
+class NoopDragOverDockPanel extends DockPanel { }
+NoopDragOverDockPanel.prototype['_evtDragOver'] = () => { };
+NoopDragOverDockPanel.prototype['_evtDrop'] = () => { };
+NoopDragOverDockPanel.prototype['_evtDragLeave'] = () => { };
