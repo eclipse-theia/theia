@@ -302,6 +302,9 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     getPrevSelectableNode(node: TreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
+        if (!node) {
+            return this.getNextSelectableNode(this.root);
+        }
         const iterator = this.createBackwardIterator(node);
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
@@ -313,7 +316,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
-    getNextSelectableNode(node: TreeNode | undefined = this.getFocusedNode()): SelectableTreeNode | undefined {
+    getNextSelectableNode(node: TreeNode | undefined = this.getFocusedNode() ?? this.root): SelectableTreeNode | undefined {
         const iterator = this.createIterator(node);
         return iterator && this.doGetNextNode(iterator, this.isVisibleSelectableNode.bind(this));
     }
