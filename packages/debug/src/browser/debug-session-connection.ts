@@ -18,8 +18,12 @@
 
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Event, Emitter, DisposableCollection, Disposable, MaybePromise, Channel } from '@theia/core';
+import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
+
+import { DebugChannel } from '../common/debug-service';
+
+export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 
 export interface DebugRequestTypes {
     'attach': [DebugProtocol.AttachRequestArguments, DebugProtocol.AttachResponse]
@@ -112,14 +116,12 @@ const standardDebugEvents = new Set<string>([
     'thread'
 ]);
 
-export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
-
 export class DebugSessionConnection implements Disposable {
 
     private sequence = 1;
 
     protected readonly pendingRequests = new Map<number, Deferred<DebugProtocol.Response>>();
-    protected readonly connectionPromise: Promise<Channel>;
+    protected readonly connectionPromise: Promise<DebugChannel>;
 
     protected readonly requestHandlers = new Map<string, DebugRequestHandler>();
 
@@ -139,7 +141,7 @@ export class DebugSessionConnection implements Disposable {
 
     constructor(
         readonly sessionId: string,
-        connectionFactory: (sessionId: string) => Promise<Channel>,
+        connectionFactory: (sessionId: string) => Promise<DebugChannel>,
         protected readonly traceOutputChannel: OutputChannel | undefined
     ) {
         this.connectionPromise = this.createConnection(connectionFactory);
@@ -159,14 +161,14 @@ export class DebugSessionConnection implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected async createConnection(connectionFactory: (sessionId: string) => Promise<Channel>): Promise<Channel> {
+    protected async createConnection(connectionFactory: (sessionId: string) => Promise<DebugChannel>): Promise<DebugChannel> {
         const connection = await connectionFactory(this.sessionId);
         connection.onClose(() => {
             this.isClosed = true;
             this.cancelPendingRequests();
             this.onDidCloseEmitter.fire();
         });
-        connection.onMessage(data => this.handleMessage(data().readString()));
+        connection.onMessage(data => this.handleMessage(data));
         return connection;
     }
 
@@ -245,7 +247,7 @@ export class DebugSessionConnection implements Disposable {
             const dateStr = `${now.toLocaleString(undefined, { hour12: false })}.${now.getMilliseconds()}`;
             this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} ${dateStr} theia -> adapter: ${JSON.stringify(message, undefined, 4)}`);
         }
-        connection.getWriteBuffer().writeString(messageStr).commit();
+        connection.send(messageStr);
     }
 
     protected handleMessage(data: string): void {
