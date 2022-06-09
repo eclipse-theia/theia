@@ -15,13 +15,12 @@
 // *****************************************************************************
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CancellationToken, CancellationTokenSource } from '../cancellation';
-import { DisposableCollection } from '../disposable';
+import { CancellationError, CancellationToken, CancellationTokenSource } from '../cancellation';
+import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
 import { Channel } from './channel';
 import { RpcMessage, RpcMessageDecoder, RpcMessageEncoder, RpcMessageType } from './rpc-message-encoder';
-import { Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 
 /**
  * Handles request messages received by the {@link RPCProtocol}.
@@ -145,23 +144,19 @@ export class RpcProtocol {
     }
 
     sendRequest<T>(method: string, args: any[]): Promise<T> {
-        const id = this.nextMessageId++;
-        const reply = new Deferred<T>();
-
         // The last element of the request args might be a cancellation token. As these tokens are not serializable we have to remove it from the
         // args array and the `CANCELLATION_TOKEN_KEY` string instead.
         const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
         if (cancellationToken && cancellationToken.isCancellationRequested) {
-            return Promise.reject(this.cancelError());
+            return Promise.reject(new CancellationError());
         }
+
+        const id = this.nextMessageId++;
+        const reply = new Deferred<T>();
 
         if (cancellationToken) {
             args.push(RpcProtocol.CANCELLATION_TOKEN_KEY);
-            cancellationToken.onCancellationRequested(() => {
-                this.sendCancel(id);
-                this.pendingRequests.get(id)?.reject(this.cancelError());
-            }
-            );
+            cancellationToken.onCancellationRequested(() => this.sendCancel(id));
         }
         this.pendingRequests.set(id, reply);
 
@@ -190,16 +185,9 @@ export class RpcProtocol {
         output.commit();
     }
 
-    cancelError(): Error {
-        const error = new Error('"Request has already been canceled by the sender"');
-        error.name = 'Cancel';
-        return error;
-    }
-
     protected handleCancel(id: number): void {
         const cancellationTokenSource = this.cancellationTokenSources.get(id);
         if (cancellationTokenSource) {
-            this.cancellationTokenSources.delete(id);
             cancellationTokenSource.cancel();
         }
     }
@@ -224,7 +212,7 @@ export class RpcProtocol {
         } catch (err) {
             // In case of an error the output buffer might already contains parts of an message.
             // => Dispose the current buffer and retrieve a new, clean one for writing the response error.
-            if (output instanceof Uint8ArrayWriteBuffer) {
+            if (Disposable.is(output)) {
                 output.dispose();
             }
             const errorOutput = this.channel.getWriteBuffer();
