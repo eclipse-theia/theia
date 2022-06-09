@@ -18,10 +18,7 @@ import { enableJSDOM } from './test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { ApplicationProps } from '@theia/application-package/lib/application-props';
-FrontendApplicationConfigProvider.set({
-    ...ApplicationProps.DEFAULT.frontend.config
-});
+FrontendApplicationConfigProvider.set({});
 
 import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
