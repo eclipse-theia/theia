@@ -57,6 +57,7 @@
 - [plugin] Remove `TreeItem2` from proposed plugin API. `TreeItem` can be used instead. [#11288](https://github.com/eclipse-theia/theia/pull/11288) - Contributed on behalf of STMicroelectronics
 - [core] removed `ThemeService.get()`; inject the `ThemeService` instead. Removed `ColorApplicationContribution.initBackground()`; by default the `editor.background` color variable will be initialized through the normal theme initialization process. It is now expected that the `ThemeService` will call `this.deferredInitializer.resolve()` when the `ThemeService` finishes its initialization. Failure to do so in any overrides may cause failures to apply default themes.  [#11213](https://github.com/eclipse-theia/theia/pull/11213)
 - [monaco] removed static methods `init()`, `register()`, `restore(), `updateBodyUiTheme()` from `MonacoThemingService`; use instance methods `initialize()`, `registerParsedTheme()`, `restore()`, `updateBodyUiTheme()` instead. Removed `MonacoThemeRegistry.SINGLETON`, inject `MonacoThemeRegistry` instead. [#11213](https://github.com/eclipse-theia/theia/pull/11213)
+- [core] double-click no longer maximizes a tab by default - controllable through `workbench.tab.maximize` preference [#11279](https://github.com/eclipse-theia/theia/pull/11279)
 
 ## v1.26.0 - 5/26/2022
 
