@@ -26,9 +26,10 @@ import {
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { TimelineWidget } from './timeline-widget';
 import { TimelineService } from './timeline-service';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { toArray } from '@theia/core/shared/@phosphor/algorithm';
+import { LOAD_MORE_COMMAND } from './timeline-tree-model';
 
 @injectable()
 export class TimelineContribution implements CommandContribution, TabBarToolbarContribution {
@@ -44,9 +45,8 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    public static readonly LOAD_MORE_COMMAND: Command = {
-        id: 'timeline-load-more'
-    };
+    /** @deprecated @since 1.28.0. Import from timeline-tree-model instead */
+    public static readonly LOAD_MORE_COMMAND = LOAD_MORE_COMMAND;
     private readonly toolbarItem = {
         id: 'timeline-refresh-toolbar-item',
         command: 'timeline-refresh',
@@ -79,7 +79,7 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
                 }
             }
         });
-        commands.registerCommand(TimelineContribution.LOAD_MORE_COMMAND, {
+        commands.registerCommand(LOAD_MORE_COMMAND, {
             execute: async () => {
                 const widget = toArray(this.shell.mainPanel.widgets()).find(w => Navigatable.is(w) && w.isVisible && !w.isHidden);
                 if (Navigatable.is(widget)) {
