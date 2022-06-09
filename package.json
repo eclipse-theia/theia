@@ -40,6 +40,7 @@
     "ignore-styles": "^5.0.1",
     "jsdom": "^11.5.1",
     "lerna": "^4.0.0",
+    "node-gyp": "^9.0.0",
     "nsfw": "^2.1.2",
     "nyc": "^15.0.0",
     "puppeteer": "^2.0.0",
